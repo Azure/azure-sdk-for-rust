@@ -78,36 +78,73 @@ impl VectorSessionToken {
         true
     }
 
-    /// Merges `other` into `self`, keeping the higher version and
-    /// per-region maximum LSN values. Returns `true` if `self` was modified.
+    /// Merges `other` into `self`, returning `true` if `self` was modified.
     ///
-    /// # Divergence from Java SDK
+    /// # False-Progress Protection
     ///
-    /// Java's `VectorSessionToken.merge()` throws `InternalServerErrorException`
-    /// if the versions differ or if region sets don't match. Our implementation
-    /// uses a silent-union approach (take max of each region, ignore missing),
-    /// following the .NET/Python pattern which is more tolerant of topology
-    /// changes during splits/merges.
+    /// When versions differ (topology changed due to partition split/merge/failover),
+    /// the higher-version token's `global_lsn` is used directly — **not** `max(a, b)`.
+    /// Taking the max would create a "false progress" token combining a newer topology
+    /// version with an older LSN that never existed in that topology.
+    ///
+    /// For region progress, only the higher-version's regions are kept. Regions
+    /// present only in the lower-version token are dropped (they may no longer exist
+    /// after the topology change). Regions present in both use `max(regionLSN)`.
+    ///
+    /// When versions are equal, `max(globalLSN)` and per-region `max(regionLSN)` are
+    /// used, matching the behavior of all SDKs.
+    ///
+    /// This matches Java's `isSessionTokenFalseProgressMergeEnabled=true` (the default).
     pub(crate) fn merge(&mut self, other: &Self) -> bool {
-        let mut changed = false;
-
-        if other.version > self.version {
-            self.version = other.version;
-            changed = true;
-        }
-        if other.global_lsn > self.global_lsn {
-            self.global_lsn = other.global_lsn;
-            changed = true;
-        }
-        for (&region, &other_lsn) in &other.region_progress {
-            let entry = self.region_progress.entry(region).or_insert(0);
-            if other_lsn > *entry {
-                *entry = other_lsn;
+        if self.version == other.version {
+            // Same topology: take max of everything (standard merge)
+            let mut changed = false;
+            if other.global_lsn > self.global_lsn {
+                self.global_lsn = other.global_lsn;
                 changed = true;
             }
-        }
+            for (&region, &other_lsn) in &other.region_progress {
+                let entry = self.region_progress.entry(region).or_insert(0);
+                if other_lsn > *entry {
+                    *entry = other_lsn;
+                    changed = true;
+                }
+            }
+            changed
+        } else {
+            // Different topology: higher-version wins for globalLSN and region set.
+            let (higher, lower) = if other.version > self.version {
+                (other, &*self)
+            } else {
+                (&*self, other)
+            };
 
-        changed
+            // Build merged region map: iterate higher-version's regions,
+            // take max with lower-version where both exist.
+            let mut merged_regions = HashMap::with_capacity(higher.region_progress.len());
+            for (&region, &higher_lsn) in &higher.region_progress {
+                let merged_lsn = match lower.region_progress.get(&region) {
+                    Some(&lower_lsn) => std::cmp::max(higher_lsn, lower_lsn),
+                    None => higher_lsn,
+                };
+                merged_regions.insert(region, merged_lsn);
+            }
+            // Regions only in lower-version are intentionally dropped.
+
+            let new_version = higher.version;
+            let new_global_lsn = higher.global_lsn;
+
+            let changed = self.version != new_version
+                || self.global_lsn != new_global_lsn
+                || self.region_progress != merged_regions;
+
+            if changed {
+                self.version = new_version;
+                self.global_lsn = new_global_lsn;
+                self.region_progress = merged_regions;
+            }
+            changed
+        }
     }
 }
 
@@ -286,6 +323,57 @@ mod tests {
         let b = VectorSessionToken::parse("5#100").unwrap();
         assert!(a.merge(&b));
         assert_eq!(a.version, 5);
+    }
+
+    #[test]
+    fn merge_cross_version_uses_higher_version_global_lsn() {
+        // False-progress protection: when versions differ, use the
+        // higher-version's globalLSN, not max(both).
+        let mut a = VectorSessionToken::parse("1#500#1=100").unwrap();
+        let b = VectorSessionToken::parse("2#200#1=50").unwrap();
+        assert!(a.merge(&b));
+        // Higher version (2) wins — its globalLSN=200 is used, not max(500,200)
+        assert_eq!(a.version, 2);
+        assert_eq!(a.global_lsn, 200);
+    }
+
+    #[test]
+    fn merge_cross_version_drops_lower_version_only_regions() {
+        // Region 2 only exists in the lower-version token — it should be dropped
+        // because the topology changed and that region may no longer exist.
+        let mut a = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
+        let b = VectorSessionToken::parse("2#50#1=5").unwrap();
+        assert!(a.merge(&b));
+        assert_eq!(a.version, 2);
+        assert_eq!(a.global_lsn, 50);
+        // Region 1 exists in both: max(10, 5) = 10
+        assert_eq!(a.region_progress[&1], 10);
+        // Region 2 was only in lower-version — dropped
+        assert!(!a.region_progress.contains_key(&2));
+    }
+
+    #[test]
+    fn merge_cross_version_takes_max_of_shared_regions() {
+        // When a region exists in both tokens, take max even across versions.
+        let mut a = VectorSessionToken::parse("1#100#1=50#2=30").unwrap();
+        let b = VectorSessionToken::parse("2#80#1=10#2=40").unwrap();
+        assert!(a.merge(&b));
+        assert_eq!(a.version, 2);
+        assert_eq!(a.global_lsn, 80); // higher-version's globalLSN
+        assert_eq!(a.region_progress[&1], 50); // max(50, 10)
+        assert_eq!(a.region_progress[&2], 40); // max(30, 40)
+    }
+
+    #[test]
+    fn merge_cross_version_higher_version_new_region() {
+        // Higher-version has a region that lower-version doesn't — keep it.
+        let mut a = VectorSessionToken::parse("1#100#1=10").unwrap();
+        let b = VectorSessionToken::parse("2#80#1=5#3=25").unwrap();
+        assert!(a.merge(&b));
+        assert_eq!(a.version, 2);
+        assert_eq!(a.region_progress[&1], 10); // max(10, 5)
+        assert_eq!(a.region_progress[&3], 25); // new region from higher version
+        assert_eq!(a.region_progress.len(), 2);
     }
 
     #[test]
