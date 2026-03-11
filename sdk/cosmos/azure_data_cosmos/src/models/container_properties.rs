@@ -70,7 +70,10 @@ where
     match ttl {
         TimeToLive::Off => serializer.serialize_none(),
         TimeToLive::NoDefault => serializer.serialize_i64(-1),
-        TimeToLive::Seconds(d) => serializer.serialize_u64(d.as_secs()),
+        TimeToLive::Seconds(d) => {
+            let secs = i64::try_from(d.as_secs()).map_err(serde::ser::Error::custom)?;
+            serializer.serialize_i64(secs)
+        }
     }
 }
 
@@ -177,13 +180,13 @@ impl ContainerProperties {
         self
     }
 
-    pub fn with_default_ttl(mut self, default_ttl: TimeToLive) -> Self {
-        self.default_ttl = default_ttl;
+    pub fn with_default_ttl(mut self, default_ttl: impl Into<TimeToLive>) -> Self {
+        self.default_ttl = default_ttl.into();
         self
     }
 
-    pub fn with_analytical_storage_ttl(mut self, analytical_storage_ttl: TimeToLive) -> Self {
-        self.analytical_storage_ttl = analytical_storage_ttl;
+    pub fn with_analytical_storage_ttl(mut self, analytical_storage_ttl: impl Into<TimeToLive>) -> Self {
+        self.analytical_storage_ttl = analytical_storage_ttl.into();
         self
     }
 }
@@ -384,6 +387,68 @@ mod tests {
     fn deserialize_ttl_invalid_negative() {
         let result = serde_json::from_str::<TtlHolder>(r#"{"ttl":-2}"#);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn round_trip_ttl_seconds() {
+        let original = TtlHolder {
+            ttl: TimeToLive::Seconds(Duration::from_secs(86400)),
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        let deserialized: TtlHolder = serde_json::from_str(&json).unwrap();
+        assert_eq!(original.ttl, deserialized.ttl);
+    }
+
+    #[test]
+    fn round_trip_ttl_no_default() {
+        let original = TtlHolder {
+            ttl: TimeToLive::NoDefault,
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        let deserialized: TtlHolder = serde_json::from_str(&json).unwrap();
+        assert_eq!(original.ttl, deserialized.ttl);
+    }
+
+    #[test]
+    fn from_duration_for_time_to_live() {
+        let ttl: TimeToLive = Duration::from_secs(3600).into();
+        assert_eq!(TimeToLive::Seconds(Duration::from_secs(3600)), ttl);
+    }
+
+    #[test]
+    fn builder_accepts_duration_and_time_to_live() {
+        let with_duration = ContainerProperties::new("c", "/pk".into())
+            .with_default_ttl(Duration::from_secs(60));
+        assert_eq!(TimeToLive::Seconds(Duration::from_secs(60)), with_duration.default_ttl);
+
+        let with_no_default = ContainerProperties::new("c", "/pk".into())
+            .with_default_ttl(TimeToLive::NoDefault);
+        assert_eq!(TimeToLive::NoDefault, with_no_default.default_ttl);
+    }
+
+    #[test]
+    fn deserialize_container_properties_with_ttl_negative_one() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2},
+            "defaultTtl": -1
+        }"#;
+        let props: ContainerProperties = serde_json::from_str(json).unwrap();
+        assert_eq!(TimeToLive::NoDefault, props.default_ttl);
+        assert_eq!(TimeToLive::Off, props.analytical_storage_ttl);
+    }
+
+    #[test]
+    fn deserialize_container_properties_with_ttl_seconds() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2},
+            "defaultTtl": 3600,
+            "analyticalStorageTtl": -1
+        }"#;
+        let props: ContainerProperties = serde_json::from_str(json).unwrap();
+        assert_eq!(TimeToLive::Seconds(Duration::from_secs(3600)), props.default_ttl);
+        assert_eq!(TimeToLive::NoDefault, props.analytical_storage_ttl);
     }
 
     #[test]

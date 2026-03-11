@@ -1,5 +1,11 @@
 # Release History
 
+## Unreleased
+
+### Breaking Changes
+
+- Changed `default_ttl` and `analytical_storage_ttl` fields on `ContainerProperties` from `Option<Duration>` to `TimeToLive`, a new enum with variants `Off`, `NoDefault`, and `Seconds(Duration)`, to correctly handle the `-1` wire value (TTL enabled with no default expiration).
+
 ## 0.31.0 (2026-02-25)
 
 ### Features Added
