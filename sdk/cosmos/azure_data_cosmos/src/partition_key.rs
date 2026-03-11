@@ -526,7 +526,7 @@ mod tests {
         assert_eq!(constants::QUERY_ENABLE_CROSS_PARTITION, name);
         assert_eq!("True", value.as_str());
     }
-<<<<<<< cosmos-partition-key-examples
+
     #[test]
     pub fn string_ownership() {
         // Validates that owned Strings and Cow types are correctly converted.
@@ -540,7 +540,7 @@ mod tests {
 
         let cow_owned: Cow<'static, str> = Cow::Owned(String::from("cow-owned"));
         assert_eq!(key_to_string(cow_owned), r#"["cow-owned"]"#);
-=======
+    }
 
     /// Helper to get the partition key header value (not cross-partition header).
     fn key_to_pk_header(v: impl Into<PartitionKey>) -> (String, String) {
@@ -609,6 +609,5 @@ mod tests {
         let keys = vec![PartitionKeyValue::from("tenant1"), PartitionKey::UNDEFINED];
         let partition_key = PartitionKey::from(keys);
         assert_eq!(key_to_string(partition_key), r#"["tenant1",{}]"#);
->>>>>>> main
     }
 }
