@@ -13,7 +13,7 @@ use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode}
 
 /// Options to be passed to `BlockBlobClient::managed_download()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobClientManagedDownloadOptions<'a> {
+pub(crate) struct BlobClientManagedDownloadOptions<'a> {
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
