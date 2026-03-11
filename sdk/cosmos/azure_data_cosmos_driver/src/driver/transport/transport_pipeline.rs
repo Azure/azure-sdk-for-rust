@@ -26,7 +26,8 @@ use crate::{
 };
 
 use super::{
-    cosmos_headers::apply_cosmos_headers, infer_request_sent_status, request_signing::sign_request,
+    adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
+    infer_request_sent_status, request_signing::sign_request,
 };
 
 use crate::driver::pipeline::components::{
@@ -135,14 +136,14 @@ pub(crate) fn evaluate_transport_retry(
 
 /// Executes a single transport attempt.
 ///
-/// Applies headers, signs the request, sends it via the `HttpClient`, and
+/// Applies headers, signs the request, sends it via the selected transport, and
 /// handles 429 throttle retry internally. Returns a `TransportResult` to the
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
-    http_client: &dyn azure_core::http::HttpClient,
+    transport: &AdaptiveTransport,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
     pipeline_type: PipelineType,
@@ -171,6 +172,7 @@ pub(crate) async fn execute_transport_pipeline(
             execution_context,
             pipeline_type,
             transport_security,
+            transport.diagnostics_kind(),
             &request.endpoint,
         );
 
@@ -218,7 +220,7 @@ pub(crate) async fn execute_transport_pipeline(
 
         let result = execute_http_attempt(
             &http_request,
-            http_client,
+            transport,
             per_request_timeout,
             request_handle,
             diagnostics,
@@ -293,13 +295,13 @@ fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult 
 
 async fn execute_http_attempt(
     http_request: &Request,
-    http_client: &dyn azure_core::http::HttpClient,
+    transport: &AdaptiveTransport,
     per_request_timeout: Option<Duration>,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     if let Some(timeout_duration) = per_request_timeout {
-        let transport_future = execute_http_attempt_future(http_request, http_client);
+        let transport_future = execute_http_attempt_future(http_request, transport);
         let timeout_future = async {
             azure_core::sleep(
                 azure_core::time::Duration::try_from(timeout_duration)
@@ -327,15 +329,15 @@ async fn execute_http_attempt(
         };
     }
 
-    let attempt_result = execute_http_attempt_future(http_request, http_client).await;
+    let attempt_result = execute_http_attempt_future(http_request, transport).await;
     finalize_http_attempt(attempt_result, request_handle, diagnostics)
 }
 
 async fn execute_http_attempt_future(
     http_request: &Request,
-    http_client: &dyn azure_core::http::HttpClient,
+    transport: &AdaptiveTransport,
 ) -> HttpAttemptResult {
-    match http_client.execute_request(http_request).await {
+    match transport.send(http_request).await {
         Ok(response) => {
             let status_code = response.status();
             let headers = response.headers().clone();
@@ -466,7 +468,7 @@ mod tests {
 
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
-        driver::routing::CosmosEndpoint,
+        driver::{routing::CosmosEndpoint, transport::adaptive_transport::AdaptiveTransport},
         models::{ActivityId, Credential, ResourceType},
         options::DiagnosticsOptions,
     };
@@ -683,9 +685,9 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
-        let client = HangingHttpClient {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
             delay: Duration::from_secs(2),
-        };
+        }));
         let mut diagnostics = DiagnosticsContextBuilder::new(
             ActivityId::from_string("transport-timeout".to_owned()),
             Arc::new(DiagnosticsOptions::default()),

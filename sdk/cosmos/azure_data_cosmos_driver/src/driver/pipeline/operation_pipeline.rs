@@ -11,7 +11,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::HttpClient;
+use tracing::warn;
+use url::Url;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
@@ -20,7 +21,7 @@ use crate::{
         ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
         SubStatusCode,
     },
-    options::{OperationOptions, RuntimeOptions},
+    options::{OperationOptions, Region, RuntimeOptions},
 };
 
 use super::{
@@ -32,7 +33,8 @@ use super::{
 };
 
 use crate::driver::transport::{
-    transport_pipeline::execute_transport_pipeline, AuthorizationContext,
+    adaptive_transport::TransportContext, transport_pipeline::execute_transport_pipeline,
+    AuthorizationContext,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
@@ -45,7 +47,7 @@ pub(crate) async fn execute_operation_pipeline(
     _options: &OperationOptions,
     effective_options: &RuntimeOptions,
     location_state_store: &LocationStateStore,
-    http_client: Arc<dyn HttpClient>,
+    transport_context: TransportContext,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
@@ -115,6 +117,7 @@ pub(crate) async fn execute_operation_pipeline(
         let transport_request = build_transport_request(
             operation,
             &routing,
+            transport_context.thin_client_overrides.as_deref(),
             activity_id,
             execution_context,
             deadline,
@@ -123,7 +126,7 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
             transport_request,
-            http_client.as_ref(),
+            &transport_context.transport,
             credential,
             user_agent,
             pipeline_type,
@@ -296,6 +299,7 @@ fn preferred_endpoints_for_attempt<'a>(
 fn build_transport_request(
     operation: &CosmosOperation,
     routing: &RoutingDecision,
+    thin_client_overrides: Option<&std::collections::HashMap<Region, Url>>,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
@@ -303,7 +307,18 @@ fn build_transport_request(
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
     let url = {
-        let mut base = routing.endpoint.url().clone();
+        let mut base = match (thin_client_overrides, routing.endpoint.region()) {
+            (Some(overrides), Some(region)) => {
+                overrides.get(region).cloned().unwrap_or_else(|| {
+                    warn!(
+                        %region,
+                        "No thin-client endpoint override for region; falling back to standard gateway URL"
+                    );
+                    routing.endpoint.url().clone()
+                })
+            }
+            _ => routing.endpoint.url().clone(),
+        };
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -389,7 +404,7 @@ fn build_cosmos_response(
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::Arc, time::Duration};
+    use std::{collections::HashMap, sync::Arc, time::Duration};
 
     use azure_core::http::headers::HeaderName;
     use url::Url;
@@ -406,6 +421,7 @@ mod tests {
             DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
             SystemProperties,
         },
+        options::Region,
     };
 
     fn test_account() -> AccountReference {
@@ -453,6 +469,7 @@ mod tests {
         let request = build_transport_request(
             &operation,
             &test_routing(),
+            None,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
@@ -470,6 +487,7 @@ mod tests {
         let request = build_transport_request(
             &operation,
             &test_routing(),
+            None,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
@@ -487,6 +505,7 @@ mod tests {
         let request = build_transport_request(
             &operation,
             &test_routing(),
+            None,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
@@ -509,6 +528,7 @@ mod tests {
         let request = build_transport_request(
             &operation,
             &test_routing(),
+            None,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Retry,
             Some(std::time::Instant::now() + Duration::from_secs(5)),
@@ -520,6 +540,100 @@ mod tests {
             .get_optional_str(&HeaderName::from_static("x-ms-documentdb-partitionkey"))
             .expect("partition key header should be set");
         assert_eq!(partition_key_header, "[\"pk1\"]");
+    }
+
+    #[test]
+    fn build_transport_request_overrides_regional_url_for_thin_client() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::regional(
+                "westus2".into(),
+                Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            ),
+        };
+        let overrides = HashMap::from([(
+            Region::new("westus2"),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        )]);
+
+        let request = build_transport_request(
+            &operation,
+            &routing,
+            Some(&overrides),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        assert_eq!(
+            request.url.as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/dbs/mydb"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_uses_default_url_for_global_endpoint_with_overrides() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::global(
+                Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            ),
+        };
+        let overrides = HashMap::from([(
+            Region::new("westus2"),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        )]);
+
+        let request = build_transport_request(
+            &operation,
+            &routing,
+            Some(&overrides),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        // Global endpoint has no region, so the override should NOT apply.
+        assert_eq!(
+            request.url.as_str(),
+            "https://test.documents.azure.com/dbs/mydb"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_falls_back_to_gateway_url_when_thin_client_override_missing() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::regional(
+                "westus2".into(),
+                Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            ),
+        };
+        let overrides = HashMap::from([(
+            Region::new("eastus"),
+            Url::parse("https://test-eastus-thin.documents.azure.com:444/").unwrap(),
+        )]);
+
+        let request = build_transport_request(
+            &operation,
+            &routing,
+            Some(&overrides),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should succeed by falling back to standard gateway URL");
+
+        // Falls back to the standard gateway URL since westus2 is not in the overrides.
+        assert_eq!(
+            request.url.as_str(),
+            "https://test-westus2.documents.azure.com/dbs/mydb"
+        );
     }
 
     #[test]
