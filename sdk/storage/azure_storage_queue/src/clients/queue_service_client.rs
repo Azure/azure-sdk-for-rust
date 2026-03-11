@@ -20,8 +20,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication.
-    ///   If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Service")]
     pub fn new(
@@ -85,5 +84,49 @@ impl QueueServiceClient {
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{QueueServiceClient, QueueServiceClientOptions};
+    use azure_core_test::credentials::MockCredential;
+
+    #[test]
+    fn new_requires_https_with_credential() {
+        let cred = MockCredential::new().unwrap();
+        let err = QueueServiceClient::new(
+            "http://myaccount.queue.core.windows.net/",
+            Some(cred),
+            None,
+        )
+        .err()
+        .unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected error message to contain 'must use https', got: {err}"
+        );
+    }
+
+    #[test]
+    fn new_allows_http_without_credential() {
+        // HTTP is allowed when no credential is provided (e.g., SAS token in URL)
+        let result = QueueServiceClient::new(
+            "http://myaccount.queue.core.windows.net/",
+            None,
+            None,
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_allows_https_with_credential() {
+        let cred = MockCredential::new().unwrap();
+        let result = QueueServiceClient::new(
+            "https://myaccount.queue.core.windows.net/",
+            Some(cred),
+            Some(QueueServiceClientOptions::default()),
+        );
+        assert!(result.is_ok());
     }
 }

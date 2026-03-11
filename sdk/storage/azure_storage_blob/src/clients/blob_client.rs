@@ -311,3 +311,70 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
             .map(AsyncRawResponse::from)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{BlobClient, BlobClientOptions};
+    use azure_core::http::Url;
+    use azure_core_test::credentials::MockCredential;
+    use std::sync::Arc;
+
+    #[test]
+    fn new_requires_https_with_credential() {
+        let credential = Arc::new(MockCredential);
+        let err = BlobClient::new(
+            "http://myaccount.blob.core.windows.net/",
+            "mycontainer",
+            "myblob",
+            Some(credential),
+            None,
+        )
+        .err()
+        .unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected 'must use https' error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn from_url_requires_https_with_credential() {
+        let credential = Arc::new(MockCredential);
+        let url = Url::parse(
+            "http://myaccount.blob.core.windows.net/mycontainer/myblob",
+        )
+        .unwrap();
+        let err = BlobClient::from_url(url, Some(credential), None)
+            .err()
+            .unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected 'must use https' error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn new_allows_http_without_credential() {
+        BlobClient::new(
+            "http://myaccount.blob.core.windows.net/",
+            "mycontainer",
+            "myblob",
+            None,
+            None,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn new_allows_https_with_credential() {
+        let credential = Arc::new(MockCredential);
+        BlobClient::new(
+            "https://myaccount.blob.core.windows.net/",
+            "mycontainer",
+            "myblob",
+            Some(credential),
+            Some(BlobClientOptions::default()),
+        )
+        .unwrap();
+    }
+}

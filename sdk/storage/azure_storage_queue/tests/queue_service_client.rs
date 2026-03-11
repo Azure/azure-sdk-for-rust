@@ -3,36 +3,39 @@
 
 mod common;
 
-use azure_core::time::OffsetDateTime;
-use azure_core::Result;
+use azure_core::{http::StatusCode, time::OffsetDateTime, Result};
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
-    models::{GeoReplicationStatus, QueueServiceClientListQueuesOptions},
+    models::{GeoReplicationStatus, ListQueuesIncludeType, QueueServiceClientListQueuesOptions},
     QueueServiceClient, QueueServiceClientOptions,
 };
 use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 use futures::StreamExt;
 
+use std::collections::HashMap;
 use std::option::Option;
 
 /// Creates a new queue under the given account.
 #[recorded::test]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
+    // Recording Setup
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
     let queue_name = get_queue_name(recording);
 
+    // Act
     let response = queue_service_client
         .queue_client(&queue_name)?
         .create(None)
         .await?;
     let test_result = async {
+        // Assert
         assert_successful_response(&response);
         Ok::<(), azure_core::Error>(())
     }
     .await;
 
-    // Clean up by deleting the queue - this always executes
+    // Cleanup
     queue_service_client
         .queue_client(&queue_name)?
         .delete(None)
@@ -47,23 +50,26 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 /// Tests the deletion of a queue in Azure Storage Queue service.
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
+    // Recording Setup
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
-
     let queue_name = get_queue_name(recording);
 
+    // Arrange
     queue_service_client
         .queue_client(&queue_name)?
         .create(None)
         .await?;
 
+    // Act
     let response = queue_service_client
         .queue_client(&queue_name)?
         .delete(None)
         .await?;
 
+    // Assert
     assert!(
-        response.status() == 204,
+        response.status() == StatusCode::NoContent,
         "Expected status code 204, got {}",
         response.status(),
     );
@@ -73,13 +79,16 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 /// Retrieves the properties of a storage account's Queue service.
 #[recorded::test]
 async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
+    // Recording Setup
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
 
-    let response = queue_service_client.get_properties(None).await.unwrap();
+    // Act
+    let response = queue_service_client.get_properties(None).await?;
 
+    // Assert
     assert!(
-        response.status() == 200,
+        response.status() == StatusCode::Ok,
         "Expected status code 200, got {}",
         response.status(),
     );
@@ -90,21 +99,24 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
 /// Retrieves the properties of a storage account's Queue service.
 #[recorded::test]
 async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
+    // Recording Setup
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
 
+    // Arrange
     let properties = queue_service_client
         .get_properties(None)
         .await?
         .into_model()?;
 
+    // Act
     let response = queue_service_client
         .set_properties(properties.try_into()?, None)
-        .await
-        .unwrap();
+        .await?;
 
+    // Assert
     assert!(
-        response.status() == 202,
+        response.status() == StatusCode::Accepted,
         "Expected status code 202, got {}",
         response.status(),
     );
@@ -115,16 +127,18 @@ async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
 /// Lists all queues in the storage account, ensuring that at least one queue is present.
 #[recorded::test]
 pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
+    // Recording Setup
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
-
-    // Create a queue to ensure we have at least one queue to list
     let queue_name = get_queue_name(recording);
+
+    // Arrange — create a queue to ensure we have at least one to list
     queue_service_client
         .queue_client(&queue_name)?
         .create(None)
         .await?;
 
+    // Act
     let options = QueueServiceClientListQueuesOptions {
         maxresults: Some(1),
         ..Default::default()
@@ -156,7 +170,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         all_queue_names
     );
 
-    // Clean up by deleting the created queue
+    // Cleanup
     queue_service_client
         .queue_client(&queue_name)?
         .delete(None)
@@ -165,15 +179,181 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+/// Lists queues filtered by a prefix and verifies that all returned queues start with that prefix.
+#[recorded::test]
+pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
+    let queue_name_a = format!("{queue_name}-a");
+    let queue_name_b = format!("{queue_name}-b");
+
+    // Arrange — create two queues that share the same base name as prefix
+    queue_service_client
+        .queue_client(&queue_name_a)?
+        .create(None)
+        .await?;
+    queue_service_client
+        .queue_client(&queue_name_b)?
+        .create(None)
+        .await?;
+
+    let test_result = async {
+        // Act
+        let options = QueueServiceClientListQueuesOptions {
+            prefix: Some(queue_name.clone()),
+            ..Default::default()
+        };
+
+        let mut page_iterator = queue_service_client
+            .list_queues(Some(options))?
+            .into_pages();
+        let mut returned_names = Vec::new();
+
+        while let Some(page) = page_iterator.next().await {
+            let queue_list = page?.into_model()?;
+            for queue_item in &queue_list.queue_items {
+                if let Some(name) = &queue_item.name {
+                    returned_names.push(name.clone());
+                }
+            }
+        }
+
+        // Assert — both test queues are returned
+        assert!(
+            returned_names.contains(&queue_name_a),
+            "Expected '{}' in results: {:?}",
+            queue_name_a,
+            returned_names
+        );
+        assert!(
+            returned_names.contains(&queue_name_b),
+            "Expected '{}' in results: {:?}",
+            queue_name_b,
+            returned_names
+        );
+
+        // Assert — all returned queues start with the prefix
+        for name in &returned_names {
+            assert!(
+                name.starts_with(&queue_name),
+                "Queue '{}' does not start with prefix '{}'",
+                name,
+                queue_name
+            );
+        }
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_service_client
+        .queue_client(&queue_name_a)?
+        .delete(None)
+        .await
+        .unwrap();
+    queue_service_client
+        .queue_client(&queue_name_b)?
+        .delete(None)
+        .await
+        .unwrap();
+
+    test_result?;
+
+    Ok(())
+}
+
+/// Lists queues with metadata included and verifies the metadata is populated on matching queues.
+#[recorded::test]
+pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
+
+    // Arrange — create a queue and set metadata on it
+    queue_service_client
+        .queue_client(&queue_name)?
+        .create(None)
+        .await?;
+
+    let test_result = async {
+        // Arrange — set metadata on the queue
+        let metadata = HashMap::from([("env".to_string(), "test".to_string())]);
+        queue_service_client
+            .queue_client(&queue_name)?
+            .set_metadata(&metadata, None)
+            .await?;
+
+        // Act — list queues with metadata included and filter to our prefix
+        let options = QueueServiceClientListQueuesOptions {
+            prefix: Some(queue_name.clone()),
+            include: Some(vec![ListQueuesIncludeType::Metadata]),
+            ..Default::default()
+        };
+
+        let mut page_iterator = queue_service_client
+            .list_queues(Some(options))?
+            .into_pages();
+        let mut found_queue = None;
+
+        while let Some(page) = page_iterator.next().await {
+            let queue_list = page?.into_model()?;
+            for queue_item in queue_list.queue_items {
+                if queue_item.name.as_deref() == Some(&queue_name) {
+                    found_queue = Some(queue_item);
+                    break;
+                }
+            }
+            if found_queue.is_some() {
+                break;
+            }
+        }
+
+        // Assert — queue was found in the listing
+        let found = found_queue.expect("Expected to find test queue in list");
+
+        // Assert — metadata was returned and contains the expected key-value pair
+        let returned_metadata = found
+            .metadata
+            .expect("Expected metadata to be present when include=metadata");
+        assert_eq!(
+            returned_metadata.get("env").map(String::as_str),
+            Some("test"),
+            "Expected metadata key 'env' with value 'test'"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_service_client
+        .queue_client(&queue_name)?
+        .delete(None)
+        .await
+        .unwrap();
+
+    test_result?;
+
+    Ok(())
+}
+
 /// Gets statistics for the Queue service, ensuring that the service is available and returns a successful response.
 #[recorded::test]
 pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
+    // Recording Setup
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client_secondary(recording).await?;
 
+    // Act
     let response = queue_service_client.get_statistics(None).await?;
+
+    // Assert
     assert!(
-        response.status() == 200,
+        response.status() == StatusCode::Ok,
         "Expected status code 200, got {}",
         response.status(),
     );

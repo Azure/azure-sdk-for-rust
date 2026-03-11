@@ -144,3 +144,65 @@ impl BlobContainerClient {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{BlobContainerClient, BlobContainerClientOptions};
+    use azure_core::http::Url;
+    use azure_core_test::credentials::MockCredential;
+    use std::sync::Arc;
+
+    #[test]
+    fn new_requires_https_with_credential() {
+        let credential = Arc::new(MockCredential);
+        let err = BlobContainerClient::new(
+            "http://myaccount.blob.core.windows.net/",
+            "mycontainer",
+            Some(credential),
+            None,
+        )
+        .err()
+        .unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected 'must use https' error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn from_url_requires_https_with_credential() {
+        let credential = Arc::new(MockCredential);
+        let url =
+            Url::parse("http://myaccount.blob.core.windows.net/mycontainer").unwrap();
+        let err = BlobContainerClient::from_url(url, Some(credential), None)
+            .err()
+            .unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected 'must use https' error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn new_allows_http_without_credential() {
+        BlobContainerClient::new(
+            "http://myaccount.blob.core.windows.net/",
+            "mycontainer",
+            None,
+            None,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn new_allows_https_with_credential() {
+        let credential = Arc::new(MockCredential);
+        BlobContainerClient::new(
+            "https://myaccount.blob.core.windows.net/",
+            "mycontainer",
+            Some(credential),
+            Some(BlobContainerClientOptions::default()),
+        )
+        .unwrap();
+    }
+}
