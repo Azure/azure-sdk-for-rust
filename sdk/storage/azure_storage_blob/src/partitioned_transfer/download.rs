@@ -9,7 +9,7 @@ use azure_core::{
     stream::BytesStream,
 };
 use bytes::Bytes;
-use futures::{stream::FuturesOrdered, StreamExt};
+use futures::{stream::FuturesOrdered, stream::FuturesUnordered, StreamExt};
 
 use crate::models::http_ranges::ContentRange;
 
@@ -121,6 +121,137 @@ async fn download_range_to_bytes(
 
 trait DownloadRangeFuture: Future + Send {}
 impl<T: Future + Send> DownloadRangeFuture for T {}
+
+/// Downloads a blob directly into a caller-provided buffer with unordered parallel chunk writes.
+///
+/// Uses a large `initial_partition_size` for the first request (so small/medium blobs complete
+/// in a single HTTP request), then fills the remainder with `partition_size` chunks in parallel
+/// using `FuturesUnordered`. Chunks are copied into the buffer at their correct offsets as they
+/// complete, in any order.
+///
+/// Returns the number of bytes written to the buffer.
+pub(crate) async fn download_to<Behavior>(
+    buffer: &mut [u8],
+    range: Option<Range<usize>>,
+    parallel: NonZero<usize>,
+    initial_partition_size: NonZero<usize>,
+    partition_size: NonZero<usize>,
+    client: Arc<Behavior>,
+) -> AzureResult<usize>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    let parallel = parallel.get();
+    let initial_partition_size = initial_partition_size.get();
+    let partition_size = partition_size.get();
+
+    let max_download_range = range.unwrap_or(0..usize::MAX);
+    if max_download_range.is_empty() {
+        return Ok(0);
+    }
+
+    // Initial request uses the large initial_partition_size to probe blob size
+    // and download small/medium blobs in a single request.
+    let initial_response = match client
+        .transfer_range(Some(
+            max_download_range.start
+                ..min(
+                    max_download_range.end,
+                    max_download_range.start.saturating_add(initial_partition_size),
+                ),
+        ))
+        .await
+    {
+        Ok(response) => response,
+        Err(err) => match (err.http_status(), max_download_range.start) {
+            (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
+                client.transfer_range(None).await?
+            }
+            _ => Err(err)?,
+        },
+    };
+
+    // Parse Content-Range to determine total blob size and compute remaining ranges.
+    let mut ranges: VecDeque<_> = match initial_response
+        .headers()
+        .get_optional_as::<ContentRange, _>(&"content-range".into())?
+    {
+        Some(content_range) => match (content_range.range, content_range.total_len) {
+            (Some(received_range), Some(resource_len)) => {
+                let remainder_start = received_range.1;
+                let remainder_end = min(max_download_range.end, resource_len);
+                (remainder_start..remainder_end)
+                    .step_by(partition_size)
+                    .map(|i| i..min(i.saturating_add(partition_size), remainder_end))
+                    .collect()
+            }
+            _ => VecDeque::new(),
+        },
+        None => VecDeque::new(),
+    };
+
+    // Collect the initial response body and copy into the buffer.
+    let initial_bytes: Bytes = initial_response.into_body().collect().await?;
+    if initial_bytes.len() > buffer.len() {
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Io,
+            format!(
+                "Buffer is not big enough: buffer size is {} but blob data is at least {} bytes",
+                buffer.len(),
+                initial_bytes.len()
+            ),
+        ));
+    }
+    buffer[..initial_bytes.len()].copy_from_slice(&initial_bytes);
+    let mut total_written = initial_bytes.len();
+
+    // Run remaining chunk downloads in parallel with FuturesUnordered.
+    // Chunks complete in any order and are copied directly to their correct buffer offset.
+    type DownloadToFut = Pin<Box<dyn DownloadRangeFuture<Output = AzureResult<(usize, Bytes)>>>>;
+    let mut futures: FuturesUnordered<DownloadToFut> = FuturesUnordered::new();
+
+    // Seed up to parallel-1 tasks (initial request counted as one slot).
+    let seed_count = min(parallel.saturating_sub(1), ranges.len());
+    for _ in 0..seed_count {
+        if let Some(r) = ranges.pop_front() {
+            let c = client.clone();
+            let buf_offset = r.start - max_download_range.start;
+            futures.push(Box::pin(async move {
+                let bytes = download_range_to_bytes(c, r).await?;
+                Ok((buf_offset, bytes))
+            }));
+        }
+    }
+
+    // Poll loop: as each chunk completes, copy into buffer and launch next chunk.
+    while let Some(result) = futures.next().await {
+        let (offset, bytes) = result?;
+        let end = offset + bytes.len();
+        if end > buffer.len() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Io,
+                format!(
+                    "Buffer is not big enough: buffer size is {} but download requires {} bytes",
+                    buffer.len(),
+                    end
+                ),
+            ));
+        }
+        buffer[offset..end].copy_from_slice(&bytes);
+        total_written += bytes.len();
+
+        if let Some(r) = ranges.pop_front() {
+            let c = client.clone();
+            let buf_offset = r.start - max_download_range.start;
+            futures.push(Box::pin(async move {
+                let bytes = download_range_to_bytes(c, r).await?;
+                Ok((buf_offset, bytes))
+            }));
+        }
+    }
+
+    Ok(total_written)
+}
 
 #[cfg(test)]
 mod tests {
