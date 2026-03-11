@@ -6,9 +6,36 @@
 //! [`SessionManager`] wraps [`SessionContainer`] and provides consistency-gated
 //! resolve / capture / clear operations that the pipeline calls directly.
 
-use crate::models::{CosmosOperation, CosmosResponseHeaders, SessionToken};
+use crate::models::{
+    CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
+};
 
 use super::session_container::SessionContainer;
+
+/// Determines whether a given resource type + operation type combination targets
+/// the master partition (metadata), meaning session tokens should NOT be
+/// captured from its response.
+///
+/// This mirrors Java's `ReplicatedResourceClientUtils.isReadingFromMaster()`.
+/// Most metadata resources always target master, but `DocumentCollection` is
+/// special: only ReadFeed/Query/SqlQuery go to master. CRUD operations like
+/// Create/Replace/Delete/Read target data partitions and should capture session
+/// tokens.
+fn is_reading_from_master(resource_type: ResourceType, operation_type: OperationType) -> bool {
+    match resource_type {
+        ResourceType::DatabaseAccount | ResourceType::Database | ResourceType::Offer => true,
+
+        ResourceType::PartitionKeyRange => true,
+
+        ResourceType::DocumentCollection => matches!(
+            operation_type,
+            OperationType::ReadFeed | OperationType::Query | OperationType::SqlQuery
+        ),
+
+        // Data-plane resources: Document, StoredProcedure, Trigger, UDF
+        _ => false,
+    }
+}
 
 /// Manages session token resolution and capture for the operation pipeline.
 ///
@@ -77,10 +104,11 @@ impl SessionManager {
         operation: &CosmosOperation,
         headers: &CosmosResponseHeaders,
     ) {
-        // Skip capture for master/metadata resource types. Session tokens
+        // Skip capture for master/metadata resource operations. Session tokens
         // from metadata partition replicas should not be used for data reads.
-        // Matches Java's isMasterResource() and .NET's IsReadingFromMaster().
-        if operation.resource_type().is_metadata() {
+        // For DocumentCollection, only ReadFeed/Query/SqlQuery target master;
+        // CRUD operations (Create/Replace/Delete/Read) should still capture.
+        if is_reading_from_master(operation.resource_type(), operation.operation_type()) {
             return;
         }
 
@@ -133,8 +161,8 @@ mod tests {
     use super::*;
     use crate::models::{
         AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
-        CosmosResponseHeaders, ItemReference, PartitionKey, PartitionKeyDefinition, SessionToken,
-        SystemProperties,
+        CosmosResponseHeaders, DatabaseReference, ItemReference, OperationType, PartitionKey,
+        PartitionKeyDefinition, ResourceType, SessionToken, SystemProperties,
     };
     use url::Url;
 
@@ -434,5 +462,144 @@ mod tests {
 
         let token = mgr.resolve_session_token(&op, None).unwrap();
         assert!(token.as_str().contains("0:") && token.as_str().contains("1:"));
+    }
+
+    // ── is_reading_from_master unit tests ──
+
+    #[test]
+    fn master_resources_always_reading_from_master() {
+        // DatabaseAccount, Database, Offer always read from master
+        for rt in [
+            ResourceType::DatabaseAccount,
+            ResourceType::Database,
+            ResourceType::Offer,
+        ] {
+            for ot in [
+                OperationType::Read,
+                OperationType::Create,
+                OperationType::Delete,
+                OperationType::ReadFeed,
+                OperationType::Query,
+            ] {
+                assert!(
+                    is_reading_from_master(rt, ot),
+                    "{rt:?}/{ot:?} should be master"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn partition_key_range_always_reading_from_master() {
+        assert!(is_reading_from_master(
+            ResourceType::PartitionKeyRange,
+            OperationType::ReadFeed,
+        ));
+        assert!(is_reading_from_master(
+            ResourceType::PartitionKeyRange,
+            OperationType::Read,
+        ));
+    }
+
+    #[test]
+    fn document_collection_read_feed_query_is_master() {
+        for ot in [
+            OperationType::ReadFeed,
+            OperationType::Query,
+            OperationType::SqlQuery,
+        ] {
+            assert!(
+                is_reading_from_master(ResourceType::DocumentCollection, ot),
+                "DocumentCollection/{ot:?} should be master"
+            );
+        }
+    }
+
+    #[test]
+    fn document_collection_crud_is_not_master() {
+        for ot in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Delete,
+        ] {
+            assert!(
+                !is_reading_from_master(ResourceType::DocumentCollection, ot),
+                "DocumentCollection/{ot:?} should NOT be master"
+            );
+        }
+    }
+
+    #[test]
+    fn data_plane_resources_never_master() {
+        for rt in [
+            ResourceType::Document,
+            ResourceType::StoredProcedure,
+            ResourceType::Trigger,
+            ResourceType::UserDefinedFunction,
+        ] {
+            assert!(
+                !is_reading_from_master(rt, OperationType::Read),
+                "{rt:?} should not be master"
+            );
+        }
+    }
+
+    #[test]
+    fn capture_allowed_for_container_create() {
+        // Container Create targets data partitions, so we should capture.
+        let mgr = SessionManager::new();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let db = DatabaseReference::from_name(account, "db1");
+        let op = CosmosOperation::create_container(db);
+
+        // create_container has resource_type=DocumentCollection, operation_type=Create
+        assert!(!is_reading_from_master(
+            op.resource_type(),
+            op.operation_type()
+        ));
+
+        let headers = make_response_headers(
+            Some("0:1#100"),
+            Some("coll_rid_new"),
+            Some("dbs/db1/colls/new_coll"),
+        );
+        mgr.capture_session_token(&op, &headers);
+
+        // The token should have been captured (name-based resolve)
+        let resolved = mgr.container.resolve_rid("dbs/db1/colls/new_coll");
+        assert!(resolved.is_some());
+    }
+
+    #[test]
+    fn capture_skipped_for_container_read_feed() {
+        // Container ReadFeed (list containers) targets master, so skip capture.
+        let mgr = SessionManager::new();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let db = DatabaseReference::from_name(account, "db1");
+        let op = CosmosOperation::read_all_containers(db);
+
+        // read_all_containers has resource_type=DocumentCollection, operation_type=ReadFeed
+        assert!(is_reading_from_master(
+            op.resource_type(),
+            op.operation_type()
+        ));
+
+        let headers = make_response_headers(
+            Some("0:1#100"),
+            Some("coll_rid"),
+            Some("dbs/db1/colls/coll1"),
+        );
+        mgr.capture_session_token(&op, &headers);
+
+        // Should NOT have captured
+        let resolved = mgr.container.resolve_rid("dbs/db1/colls/coll1");
+        assert!(resolved.is_none());
     }
 }
