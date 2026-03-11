@@ -156,7 +156,7 @@ write locations.
      will now apply the updated partition-level override.
 
 3. **Background failback**:
-   - A periodic task scans all failed-over partitions.
+   - A periodic task scans all circuit-breaker failed-over partitions.
    - Partitions whose first failure is older than the configured unavailability
      duration are optimistically marked healthy and their overrides are removed.
 
@@ -168,7 +168,7 @@ write locations.
 
 | Flag | Source | Default | Description |
 |---|---|---|---|
-| `partition_level_circuit_breaker_enabled` | Env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Master switch for PPCB. When `false`, PPCB is disabled entirely. |
+| `partition_level_circuit_breaker_enabled` | Env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. The effective PPCB value is `server_flag \|\| env_var`, so PPCB remains enabled if the server flag is `true` regardless of this env var. |
 | `partition_level_automatic_failover_enabled` | Server-side `AccountProperties.enable_per_partition_failover_behavior` | `false` | PPAF is enabled when the Cosmos DB account has this flag set. Updated dynamically on each account properties refresh. |
 
 ### Dynamic Reconfiguration
@@ -387,13 +387,14 @@ The key type used to identify partitions in the failover maps.
 ```rust
 pub struct PartitionKeyRange {
     pub id: String,
+    pub resource_id: String,
     pub min_inclusive: String,
     pub max_exclusive: String,
 }
 ```
 
-Equality and hashing are based on `id` only, which uniquely identifies a partition
-key range within a collection.
+Equality and hashing are based on all four fields: `id`, `resource_id`, `min_inclusive`,
+and `max_exclusive`.
 
 ---
 
@@ -769,7 +770,7 @@ The following table maps each status code to its behavior with respect to PPAF/P
 | 503 | Any | Mark partition unavailable | Mark partition unavailable | `should_retry_on_unavailable_endpoint_status_codes()` |
 | 429 | 3092 (SystemResourceUnavailable) | Mark partition unavailable | Mark partition unavailable | Treated as 503 for write requests on multi-master |
 | 410 | 1022 (LeaseNotFound) | Mark partition unavailable | Mark partition unavailable | `should_retry_on_unavailable_endpoint_status_codes()` |
-| 404 | 1022 (ReadSessionNotAvailable) | N/A | N/A | `should_retry_on_session_not_available()` |
+| 404 | 1002 (ReadSessionNotAvailable) | N/A | N/A | `should_retry_on_session_not_available()` |
 | Any other | Read operations | N/A | N/A | Retry on non-fatal status codes |
 
 ### Partition Marking vs. Account-Level Retry
@@ -886,7 +887,7 @@ distinct partitions failing simultaneously, write-lock contention on the map cou
 become a bottleneck.
 
 **Future improvement**: Migration to the unified `LocationStateStore` (see
-[Transport Pipeline Spec §4.6](TRANSPORT_PIPELINE_SPEC.md)) with epoch-guarded
+[Transport Pipeline Spec §4.6](../../azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md)) with epoch-guarded
 atomic pointers (`crossbeam::epoch::Atomic<T>`) will eliminate reader/writer
 contention on the hot path.
 
