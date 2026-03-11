@@ -184,13 +184,13 @@ impl CosmosTransport {
             && is_emulator_host(endpoint)
     }
 
-    /// Returns the adaptive transport for metadata operations.
+    /// Returns a [`TransportContext`] for metadata operations.
     pub(crate) fn get_metadata_transport(
         &self,
         endpoint: &AccountEndpoint,
-    ) -> azure_core::Result<AdaptiveTransport> {
-        if self.should_use_insecure_emulator_transport(endpoint) {
-            let transport = match self.insecure_emulator_metadata_transport.get() {
+    ) -> azure_core::Result<TransportContext> {
+        let transport = if self.should_use_insecure_emulator_transport(endpoint) {
+            match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
                 None => {
                     let config =
@@ -201,11 +201,14 @@ impl CosmosTransport {
                         .get_or_init(|| t)
                         .clone()
                 }
-            };
-            Ok(transport)
+            }
         } else {
-            Ok(self.metadata_transport.clone())
-        }
+            self.metadata_transport.clone()
+        };
+        Ok(TransportContext {
+            transport,
+            thin_client_overrides: None,
+        })
     }
 
     /// Returns cached thin-client overrides if the account properties etag
@@ -545,7 +548,7 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport.get_metadata_transport(&endpoint).unwrap(),
+            transport.get_metadata_transport(&endpoint).unwrap().transport,
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -561,7 +564,7 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport.get_metadata_transport(&endpoint).unwrap(),
+            transport.get_metadata_transport(&endpoint).unwrap().transport,
             AdaptiveTransport::Gateway(_)
         ));
     }

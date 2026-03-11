@@ -59,7 +59,7 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.transport();
-        let adaptive_transport = transport.get_metadata_transport(&endpoint)?;
+        let metadata_ctx = transport.get_metadata_transport(&endpoint)?;
         let user_agent = runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
@@ -78,7 +78,7 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = adaptive_transport.send(&request).await?;
+        let response = metadata_ctx.transport.send(&request).await?;
         let raw = response.try_into_raw_response().await?;
         Self::parse_account_properties_payload(raw.body())
     }
@@ -462,10 +462,7 @@ impl CosmosDriver {
         let transport_context = if is_dataplane {
             transport.get_dataplane_transport(&endpoint, account_properties.as_ref())?
         } else {
-            super::transport::adaptive_transport::TransportContext {
-                transport: transport.get_metadata_transport(&endpoint)?,
-                thin_client_overrides: None,
-            }
+            transport.get_metadata_transport(&endpoint)?
         };
 
         // Step 6: Initialize diagnostics
