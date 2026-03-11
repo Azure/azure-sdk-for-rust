@@ -207,7 +207,6 @@ impl CosmosTransport {
             TransportContext {
                 transport,
                 thin_client_overrides: None,
-                is_gateway20: false,
             }
         } else if self.connection_pool.is_gateway20_allowed()
             && account_properties.has_thin_client_endpoints()
@@ -217,7 +216,6 @@ impl CosmosTransport {
                 return TransportContext {
                     transport: self.dataplane_gateway_transport.clone(),
                     thin_client_overrides: None,
-                    is_gateway20: false,
                 };
             }
 
@@ -236,13 +234,11 @@ impl CosmosTransport {
             TransportContext {
                 transport,
                 thin_client_overrides: Some(Arc::new(overrides)),
-                is_gateway20: true,
             }
         } else {
             TransportContext {
                 transport: self.dataplane_gateway_transport.clone(),
                 thin_client_overrides: None,
-                is_gateway20: false,
             }
         }
     }
@@ -461,7 +457,6 @@ pub(crate) mod tests {
         let ctx =
             transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
     }
 
@@ -478,7 +473,6 @@ pub(crate) mod tests {
 
         let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway20(_)));
-        assert!(ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_some());
     }
 
@@ -495,7 +489,6 @@ pub(crate) mod tests {
 
         let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
     }
 
@@ -512,7 +505,6 @@ pub(crate) mod tests {
 
         let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
     }
 
@@ -533,7 +525,6 @@ pub(crate) mod tests {
         );
 
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
     }
 

@@ -20,7 +20,7 @@ use tracing::trace;
 use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestEvent, RequestEventType,
-        RequestHandle, RequestSentStatus, TransportSecurity,
+        RequestHandle, RequestSentStatus, TransportKind, TransportSecurity,
     },
     models::{CosmosResponseHeaders, CosmosStatus, Credential},
 };
@@ -172,6 +172,10 @@ pub(crate) async fn execute_transport_pipeline(
             execution_context,
             pipeline_type,
             transport_security,
+            match transport {
+                AdaptiveTransport::Gateway(_) => TransportKind::Gateway,
+                AdaptiveTransport::Gateway20(_) => TransportKind::Gateway20,
+            },
             &request.endpoint,
         );
 

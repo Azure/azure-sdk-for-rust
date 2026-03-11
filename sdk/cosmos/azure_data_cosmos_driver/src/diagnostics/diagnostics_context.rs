@@ -150,6 +150,54 @@ pub enum TransportSecurity {
     EmulatorWithInsecureCertificates,
 }
 
+/// The concrete transport kind used for a request.
+///
+/// This distinguishes the standard gateway path from Gateway 2.0 thin-client
+/// routing while keeping TLS/emulator concerns in [`TransportSecurity`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum TransportKind {
+    /// Standard gateway transport.
+    #[default]
+    Gateway,
+
+    /// Gateway 2.0 thin-client transport.
+    Gateway20,
+}
+
+impl TransportKind {
+    /// Returns the string representation of this transport kind.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TransportKind::Gateway => "gateway",
+            TransportKind::Gateway20 => "gateway20",
+        }
+    }
+
+    /// Returns true if this request used the standard gateway transport.
+    pub fn is_gateway(self) -> bool {
+        matches!(self, TransportKind::Gateway)
+    }
+
+    /// Returns true if this request used the Gateway 2.0 transport.
+    pub fn is_gateway20(self) -> bool {
+        matches!(self, TransportKind::Gateway20)
+    }
+}
+
+impl std::fmt::Display for TransportKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for TransportKind {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl TransportSecurity {
     /// Returns the string representation of this transport security mode.
     pub fn as_str(self) -> &'static str {
@@ -278,6 +326,9 @@ pub struct RequestDiagnostics {
     /// The transport security mode used for this request.
     transport_security: TransportSecurity,
 
+    /// The concrete transport kind used for this request.
+    transport_kind: TransportKind,
+
     /// Region this request was sent to.
     region: Option<Region>,
 
@@ -332,12 +383,14 @@ impl RequestDiagnostics {
         execution_context: ExecutionContext,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
+        transport_kind: TransportKind,
         endpoint: &CosmosEndpoint,
     ) -> Self {
         Self {
             execution_context,
             pipeline_type,
             transport_security,
+            transport_kind,
             region: endpoint.region().cloned(),
             endpoint: endpoint.url().as_str().to_owned(),
             // Status is set when the request completes via `complete()`.
@@ -468,6 +521,11 @@ impl RequestDiagnostics {
     /// Returns the transport security mode used for this request.
     pub fn transport_security(&self) -> TransportSecurity {
         self.transport_security
+    }
+
+    /// Returns the concrete transport kind used for this request.
+    pub fn transport_kind(&self) -> TransportKind {
+        self.transport_kind
     }
 
     /// Returns the region this request was sent to.
@@ -954,12 +1012,14 @@ impl DiagnosticsContextBuilder {
         execution_context: ExecutionContext,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
+        transport_kind: TransportKind,
         endpoint: &CosmosEndpoint,
     ) -> RequestHandle {
         let request = RequestDiagnostics::new(
             execution_context,
             pipeline_type,
             transport_security,
+            transport_kind,
             endpoint,
         );
         let handle = RequestHandle(self.requests.len());
@@ -1503,6 +1563,7 @@ mod tests {
                 execution_context,
                 PipelineType::DataPlane,
                 TransportSecurity::Secure,
+                TransportKind::Gateway,
                 &cosmos_endpoint,
             )
         }
@@ -1705,6 +1766,7 @@ mod tests {
                 "execution_context": "initial",
                 "pipeline_type": "data_plane",
                 "transport_security": "secure",
+                "transport_kind": "gateway",
                 "region": "westus2",
                 "endpoint": "https://test.documents.azure.com/",
                 "status": "200",
@@ -1952,8 +2014,21 @@ mod tests {
     }
 
     #[test]
+    fn transport_kind_classification() {
+        assert!(TransportKind::Gateway.is_gateway());
+        assert!(!TransportKind::Gateway.is_gateway20());
+        assert!(TransportKind::Gateway20.is_gateway20());
+        assert!(!TransportKind::Gateway20.is_gateway());
+    }
+
+    #[test]
     fn transport_security_default() {
         assert_eq!(TransportSecurity::default(), TransportSecurity::Secure);
+    }
+
+    #[test]
+    fn transport_kind_default() {
+        assert_eq!(TransportKind::default(), TransportKind::Gateway);
     }
 
     #[test]
@@ -1977,6 +2052,18 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&TransportSecurity::EmulatorWithInsecureCertificates).unwrap(),
             "\"emulator_with_insecure_certificates\""
+        );
+    }
+
+    #[test]
+    fn transport_kind_serialization() {
+        assert_eq!(
+            serde_json::to_string(&TransportKind::Gateway).unwrap(),
+            "\"gateway\""
+        );
+        assert_eq!(
+            serde_json::to_string(&TransportKind::Gateway20).unwrap(),
+            "\"gateway20\""
         );
     }
 

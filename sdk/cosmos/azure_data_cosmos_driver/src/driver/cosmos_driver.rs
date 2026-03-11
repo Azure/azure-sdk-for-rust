@@ -465,7 +465,6 @@ impl CosmosDriver {
             super::transport::adaptive_transport::TransportContext {
                 transport: transport.get_metadata_transport(&endpoint),
                 thin_client_overrides: None,
-                is_gateway20: false,
             }
         };
 

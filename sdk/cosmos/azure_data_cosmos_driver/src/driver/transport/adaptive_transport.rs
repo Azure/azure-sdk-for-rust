@@ -89,9 +89,6 @@ pub(crate) struct TransportContext {
     /// merged into a single map so that retries across read/write
     /// endpoint lists do not miss regions.
     pub thin_client_overrides: Option<Arc<HashMap<Region, Url>>>,
-    /// Whether Gateway 2.0 was selected for this transport.
-    #[allow(dead_code)] // Used for diagnostics and future routing decisions.
-    pub is_gateway20: bool,
 }
 
 /// Builds a region-to-endpoint map for Gateway 2.0 (thin client) routing.
