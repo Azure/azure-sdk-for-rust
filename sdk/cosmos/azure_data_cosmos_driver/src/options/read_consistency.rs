@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::models::ConsistencyLevel;
+
 /// Read consistency strategies supported by Azure Cosmos DB.
 ///
 /// The requested read consistency strategy can be chosen independent of the consistency level
@@ -79,6 +81,21 @@ impl ReadConsistencyStrategy {
             Self::GlobalStrong => "GlobalStrong",
         }
     }
+
+    /// Returns `true` if session consistency is effective for this strategy
+    /// given the account's default consistency level.
+    ///
+    /// Session consistency is effective when:
+    /// - The strategy explicitly requests [`Session`](Self::Session), or
+    /// - The strategy is [`Default`](Self::Default) and the account default is
+    ///   [`ConsistencyLevel::Session`].
+    pub fn is_session_effective(&self, account_default: ConsistencyLevel) -> bool {
+        match self {
+            Self::Session => true,
+            Self::Default => account_default.is_session(),
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Display for ReadConsistencyStrategy {
@@ -149,5 +166,34 @@ mod tests {
             let s = strategy.to_string();
             assert_eq!(s.parse::<ReadConsistencyStrategy>().ok(), Some(*strategy));
         }
+    }
+
+    #[test]
+    fn session_effective_when_strategy_is_session() {
+        assert!(ReadConsistencyStrategy::Session.is_session_effective(ConsistencyLevel::Strong));
+        assert!(ReadConsistencyStrategy::Session.is_session_effective(ConsistencyLevel::Eventual));
+    }
+
+    #[test]
+    fn session_effective_when_default_and_account_is_session() {
+        assert!(ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Session));
+    }
+
+    #[test]
+    fn not_session_effective_when_default_and_account_is_not_session() {
+        assert!(!ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Strong));
+        assert!(!ReadConsistencyStrategy::Default
+            .is_session_effective(ConsistencyLevel::BoundedStaleness));
+        assert!(!ReadConsistencyStrategy::Default
+            .is_session_effective(ConsistencyLevel::ConsistentPrefix));
+        assert!(!ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Eventual));
+    }
+
+    #[test]
+    fn not_session_effective_for_eventual_or_global_strong() {
+        assert!(!ReadConsistencyStrategy::Eventual.is_session_effective(ConsistencyLevel::Session));
+        assert!(
+            !ReadConsistencyStrategy::GlobalStrong.is_session_effective(ConsistencyLevel::Session)
+        );
     }
 }

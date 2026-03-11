@@ -70,7 +70,7 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy
         .unwrap_or(ReadConsistencyStrategy::Default);
     let session_consistency_active = session_capturing_enabled
-        && is_session_consistency_effective(read_consistency_strategy, account_default_consistency);
+        && read_consistency_strategy.is_session_effective(account_default_consistency);
     let max_session_retries = effective_options
         .max_session_retry_count
         .unwrap_or_else(|| {
@@ -448,26 +448,6 @@ fn build_cosmos_response(
                 "build_cosmos_response called with non-success result",
             ))
         }
-    }
-}
-
-/// Returns `true` if session consistency is effectively active for an operation.
-///
-/// Session token capture/resolve only occurs when the effective consistency
-/// level is Session. Combines the per-operation read consistency strategy with
-/// the account-level default.
-///
-/// TODO(read-consistency-strategy): Once full consistency level override pipeline
-/// is wired up, revisit this to use the merged consistency level rather than just
-/// the runtime strategy + account default.
-fn is_session_consistency_effective(
-    strategy: ReadConsistencyStrategy,
-    account_default: ConsistencyLevel,
-) -> bool {
-    match strategy {
-        ReadConsistencyStrategy::Session => true,
-        ReadConsistencyStrategy::Default => account_default.is_session(),
-        _ => false,
     }
 }
 
@@ -905,46 +885,36 @@ mod tests {
     mod effective_consistency_tests {
         use crate::{models::ConsistencyLevel, options::ReadConsistencyStrategy};
 
-        use super::super::is_session_consistency_effective;
-
         #[test]
         fn default_strategy_with_session_account() {
-            assert!(is_session_consistency_effective(
-                ReadConsistencyStrategy::Default,
-                ConsistencyLevel::Session,
-            ));
+            assert!(
+                ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Session)
+            );
         }
 
         #[test]
         fn default_strategy_with_strong_account() {
-            assert!(!is_session_consistency_effective(
-                ReadConsistencyStrategy::Default,
-                ConsistencyLevel::Strong,
-            ));
+            assert!(
+                !ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Strong)
+            );
         }
 
         #[test]
         fn session_strategy_overrides_account() {
-            assert!(is_session_consistency_effective(
-                ReadConsistencyStrategy::Session,
-                ConsistencyLevel::Strong,
-            ));
+            assert!(ReadConsistencyStrategy::Session.is_session_effective(ConsistencyLevel::Strong));
         }
 
         #[test]
         fn eventual_strategy_never_session() {
-            assert!(!is_session_consistency_effective(
-                ReadConsistencyStrategy::Eventual,
-                ConsistencyLevel::Session,
-            ));
+            assert!(
+                !ReadConsistencyStrategy::Eventual.is_session_effective(ConsistencyLevel::Session)
+            );
         }
 
         #[test]
         fn consistent_prefix_not_session() {
-            assert!(!is_session_consistency_effective(
-                ReadConsistencyStrategy::Default,
-                ConsistencyLevel::ConsistentPrefix,
-            ));
+            assert!(!ReadConsistencyStrategy::Default
+                .is_session_effective(ConsistencyLevel::ConsistentPrefix));
         }
     }
 }
