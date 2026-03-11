@@ -214,10 +214,12 @@ impl BlockBlobClient {
             commit_block_list_options,
         );
         partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
-        Ok(behavior
-            .result
-            .into_inner()
-            .expect("upload completed without setting result"))
+        behavior.result.into_inner().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Upload completed without setting result.",
+            )
+        })
     }
 }
 
