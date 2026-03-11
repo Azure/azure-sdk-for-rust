@@ -57,8 +57,7 @@ impl Serialize for TimeToLive {
         match self {
             TimeToLive::Off => serializer.serialize_none(),
             TimeToLive::NoDefault => serializer.serialize_i64(-1),
-            TimeToLive::Seconds(n) => { serializer.serialize_i64(*n)
-            }
+            TimeToLive::Seconds(n) => serializer.serialize_i64(*n),
         }
     }
 }
@@ -445,10 +444,7 @@ mod tests {
             "analyticalStorageTtl": -1
         }"#;
         let props: ContainerProperties = serde_json::from_str(json).unwrap();
-        assert_eq!(
-            TimeToLive::Seconds(3600),
-            props.default_ttl
-        );
+        assert_eq!(TimeToLive::Seconds(3600), props.default_ttl);
         assert_eq!(TimeToLive::NoDefault, props.analytical_storage_ttl);
     }
 
