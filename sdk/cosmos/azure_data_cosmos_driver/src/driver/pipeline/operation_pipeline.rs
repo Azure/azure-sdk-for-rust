@@ -21,7 +21,7 @@ use crate::{
     },
     models::{
         request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
-        Credential, SubStatusCode,
+        Credential, SessionToken, SubStatusCode,
     },
     options::{OperationOptions, RuntimeOptions},
 };
@@ -117,26 +117,18 @@ pub(crate) async fn execute_operation_pipeline(
             ExecutionContext::RegionFailover
         };
 
-        let mut transport_request = build_transport_request(
+        let transport_request = build_transport_request(
             operation,
             &routing,
             activity_id,
             execution_context,
             deadline,
+            session_consistency_active
+                .then(|| {
+                    session_manager.resolve_session_token(operation, options.session_token_ref())
+                })
+                .flatten(),
         )?;
-
-        // ── STAGE 3b: Resolve session token ────────────────────────────
-        // If session consistency is active and the user hasn't already set a
-        // session token on the request headers, resolve from the cache.
-        if session_consistency_active {
-            let user_token = options.session_token_ref();
-            if let Some(token) = session_manager.resolve_session_token(operation, user_token) {
-                transport_request.headers.insert(
-                    request_header_names::SESSION_TOKEN.clone(),
-                    HeaderValue::from(token.as_str().to_owned()),
-                );
-            }
-        }
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
@@ -344,12 +336,15 @@ fn preferred_endpoints_for_attempt<'a>(
 }
 
 /// Builds a `TransportRequest` from the operation and routing decision.
+///
+/// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
     routing: &RoutingDecision,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
+    resolved_session_token: Option<SessionToken>,
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
@@ -391,6 +386,14 @@ fn build_transport_request(
         for (name, value) in pk_headers {
             headers.insert(name, value);
         }
+    }
+
+    // Add resolved session token
+    if let Some(token) = resolved_session_token {
+        headers.insert(
+            request_header_names::SESSION_TOKEN.clone(),
+            HeaderValue::from(token.as_str().to_owned()),
+        );
     }
 
     Ok(TransportRequest {
@@ -539,6 +542,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
+            None,
         )
         .expect("request should build");
 
@@ -556,6 +560,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
+            None,
         )
         .expect("request should build");
 
@@ -572,6 +577,7 @@ mod tests {
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
+            None,
             None,
         )
         .expect("request should build");
@@ -595,6 +601,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Retry,
             Some(std::time::Instant::now() + Duration::from_secs(5)),
+            None,
         )
         .expect("request should build");
 
