@@ -117,16 +117,14 @@ impl BlockBlobClient {
         &self.endpoint
     }
 
-    /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites
-    /// any existing metadata on the blob. Partial updates are not supported; the content of the existing blob is
-    /// overwritten with the content of the new blob. Updating an existing block blob overwrites the blob by default.
-    /// Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
-    /// content of the new blob. To perform a partial update of the content of a block blob, use
-    /// [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
+    /// Uploads content to a block blob, overwriting any existing blob by default.
+    ///
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// To perform a partial update of the content of a block blob, use [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
     ///
     /// # Arguments
     ///
-    /// * `body` - The body of the request.
+    /// * `content` - The content to upload.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlockBlob.upload")]
     pub async fn upload(

@@ -236,7 +236,6 @@ impl BlobClient {
         })
     }
 
-    // TODO: Partitioned upload will obsolete this wrapper.
     /// Downloads a blob from the service, including its metadata and properties.
     ///
     /// * `options` - Optional configuration for the request.
@@ -247,12 +246,15 @@ impl BlobClient {
         self.download_internal(options).await
     }
 
-    /// Creates a new blob from a data source.
+    /// Uploads content to a block blob, overwriting any existing blob by default.
+    ///
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// To perform a partial update of the content of a block blob, use [`BlockBlobClient::stage_block()`] and [`BlockBlobClient::commit_block_list()`] directly.
     ///
     /// # Arguments
     ///
-    /// * `data` - The blob data to upload.
-    /// * `options` - Optional configuration for the request.
+    /// * `content` - The content to upload.
+    /// * `options` - Optional parameters for the request.
     pub async fn upload(
         &self,
         data: RequestContent<Bytes, NoFormat>,
