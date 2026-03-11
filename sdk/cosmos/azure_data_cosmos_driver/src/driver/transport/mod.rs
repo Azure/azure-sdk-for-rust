@@ -31,6 +31,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, Mutex, OnceLock},
 };
+use tracing::warn;
 use url::Url;
 
 use self::{
@@ -267,6 +268,7 @@ impl CosmosTransport {
         {
             let overrides = self.get_or_refresh_thin_client_overrides(account_properties);
             if overrides.is_empty() {
+                warn!("Gateway 2.0 enabled but all thin-client endpoint URLs are malformed; falling back to standard gateway transport");
                 return Ok(TransportContext {
                     transport: self.dataplane_gateway_transport.clone(),
                     thin_client_overrides: None,
