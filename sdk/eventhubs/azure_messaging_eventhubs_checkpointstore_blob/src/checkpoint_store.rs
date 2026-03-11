@@ -18,7 +18,7 @@ use azure_messaging_eventhubs::{
 use azure_storage_blob::{
     models::{
         BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
+        BlockBlobClientUploadOptions, ListBlobsIncludeItem,
     },
     BlobContainerClient,
 };
@@ -85,11 +85,9 @@ impl BlobCheckpointStore {
                         ..Default::default()
                     };
 
-                    let upload_result = blob_client
-                        .upload(blob_content, true, 0, Some(options))
-                        .await;
+                    let upload_result = blob_client.upload(blob_content, Some(options)).await;
                     match upload_result {
-                        Ok(r) => Ok((r.last_modified()?, r.etag()?)),
+                        Ok(r) => Ok((r.last_modified, r.etag)),
                         Err(e) => Err(e),
                     }
                 }
@@ -133,11 +131,9 @@ impl BlobCheckpointStore {
             ..Default::default()
         };
 
-        let upload_result = blob_client
-            .upload(blob_content, true, 0, Some(options))
-            .await;
+        let upload_result = blob_client.upload(blob_content, Some(options)).await;
         match upload_result {
-            Ok(r) => Ok((r.last_modified()?, r.etag()?)),
+            Ok(r) => Ok((r.last_modified, r.etag)),
             Err(e) => Err(e),
         }
     }

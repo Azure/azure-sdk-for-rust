@@ -8,7 +8,7 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        method_options::BlockBlobClientManagedUploadOptions, BlobClientDownloadResultHeaders,
+        method_options::BlockBlobClientUploadOptions, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
         BlockListType, BlockLookupList,
@@ -346,7 +346,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 }
 
 #[recorded::test(live)]
-async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
         stage_block_count.clone(),
@@ -375,7 +375,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         (8, 31, 34),
     ] {
         stage_block_count.store(0, Ordering::Relaxed);
-        let options = BlockBlobClientManagedUploadOptions {
+        let options = BlockBlobClientUploadOptions {
             parallel: Some(NonZero::new(parallel).unwrap()),
             partition_size: Some(NonZero::new(partition_size).unwrap()),
             ..Default::default()
@@ -383,7 +383,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         {
             let _scope = count_policy.check_request_scope();
             block_blob_client
-                .managed_upload(bytes.clone().into(), Some(options))
+                .upload(bytes.clone().into(), Some(options))
                 .await?;
         }
         assert_eq!(
@@ -411,7 +411,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
@@ -430,13 +430,13 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let bytes: Bytes = data.to_vec().into();
 
     request_count.store(0, Ordering::Relaxed);
-    let options = BlockBlobClientManagedUploadOptions {
+    let options = BlockBlobClientUploadOptions {
         ..Default::default()
     };
     {
         let _scope = count_policy.check_request_scope();
         block_blob_client
-            .managed_upload(bytes.clone().into(), Some(options))
+            .upload(bytes.clone().into(), Some(options))
             .await?;
     }
     assert_eq!(
@@ -454,7 +454,7 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
         stage_block_count.clone(),
@@ -487,9 +487,7 @@ async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     stage_block_count.store(0, Ordering::Relaxed);
     {
         let _scope = count_policy.check_request_scope();
-        block_blob_client
-            .managed_upload(bytes.clone().into(), None)
-            .await?;
+        block_blob_client.upload(bytes.clone().into(), None).await?;
     }
     assert_eq!(
         blob_client
