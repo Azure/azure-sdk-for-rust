@@ -25,9 +25,13 @@ pub(crate) mod transport_pipeline;
 use crate::{
     driver::cache::AccountProperties,
     models::{AccountEndpoint, OperationType, ResourceType},
-    options::ConnectionPoolOptions,
+    options::{ConnectionPoolOptions, Region},
 };
-use std::sync::{Arc, OnceLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex, OnceLock},
+};
+use url::Url;
 
 use self::{
     adaptive_transport::{thin_client_endpoint_overrides, AdaptiveTransport, TransportContext},
@@ -65,6 +69,21 @@ pub(crate) fn uses_dataplane_pipeline(
         ResourceType::Document => true,
         ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
         _ => false,
+    }
+}
+
+/// Cached thin-client endpoint overrides, keyed by account properties etag.
+struct CachedOverrides {
+    etag: String,
+    overrides: Arc<HashMap<Region, Url>>,
+}
+
+impl std::fmt::Debug for CachedOverrides {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CachedOverrides")
+            .field("etag", &self.etag)
+            .field("regions", &self.overrides.len())
+            .finish()
     }
 }
 
@@ -113,6 +132,11 @@ pub(crate) struct CosmosTransport {
     /// The emulator does not support Gateway 2.0, so this always uses
     /// the standard gateway configuration.
     insecure_emulator_dataplane_transport: OnceLock<AdaptiveTransport>,
+
+    /// Cached thin-client endpoint overrides, keyed by the account properties
+    /// etag. Avoids re-parsing URLs and re-allocating the HashMap on every
+    /// operation when the account properties haven't changed.
+    cached_thin_client_overrides: Mutex<Option<CachedOverrides>>,
 }
 
 impl CosmosTransport {
@@ -145,6 +169,7 @@ impl CosmosTransport {
             dataplane_gateway20_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
+            cached_thin_client_overrides: Mutex::new(None),
         })
     }
 
@@ -182,6 +207,31 @@ impl CosmosTransport {
         }
     }
 
+    /// Returns cached thin-client overrides if the account properties etag
+    /// matches, otherwise recomputes and caches the result.
+    fn get_or_refresh_thin_client_overrides(
+        &self,
+        account_properties: &AccountProperties,
+    ) -> Arc<HashMap<Region, Url>> {
+        let mut guard = self
+            .cached_thin_client_overrides
+            .lock()
+            .expect("thin-client overrides cache lock poisoned");
+
+        if let Some(cached) = guard.as_ref() {
+            if cached.etag == account_properties.etag {
+                return Arc::clone(&cached.overrides);
+            }
+        }
+
+        let overrides = Arc::new(thin_client_endpoint_overrides(account_properties));
+        *guard = Some(CachedOverrides {
+            etag: account_properties.etag.clone(),
+            overrides: Arc::clone(&overrides),
+        });
+        overrides
+    }
+
     /// Returns a [`TransportContext`] for dataplane operations.
     ///
     /// Selects Gateway 2.0 when allowed and thin-client endpoints are
@@ -215,7 +265,7 @@ impl CosmosTransport {
         } else if self.connection_pool.is_gateway20_allowed()
             && account_properties.has_thin_client_endpoints()
         {
-            let overrides = thin_client_endpoint_overrides(account_properties);
+            let overrides = self.get_or_refresh_thin_client_overrides(account_properties);
             if overrides.is_empty() {
                 return Ok(TransportContext {
                     transport: self.dataplane_gateway_transport.clone(),
@@ -237,7 +287,7 @@ impl CosmosTransport {
             };
             Ok(TransportContext {
                 transport,
-                thin_client_overrides: Some(Arc::new(overrides)),
+                thin_client_overrides: Some(overrides),
             })
         } else {
             Ok(TransportContext {
