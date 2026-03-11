@@ -3,7 +3,7 @@
 
 //! In-memory session token cache keyed by collection resource ID.
 
-use crate::models::vector_session_token::VectorSessionToken;
+use crate::models::vector_session_token::SessionTokenValue;
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -24,8 +24,8 @@ pub(crate) struct SessionContainer {
 
 #[derive(Default)]
 struct SessionContainerInner {
-    /// `collection_rid → (pk_range_id → VectorSessionToken)`
-    tokens: HashMap<String, HashMap<String, VectorSessionToken>>,
+    /// `collection_rid → (pk_range_id → SessionTokenValue)`
+    tokens: HashMap<String, HashMap<String, SessionTokenValue>>,
     /// `collection_name_path → collection_rid` (name path = `dbs/{db}/colls/{coll}`)
     name_to_rid: HashMap<String, String>,
 }
@@ -138,14 +138,14 @@ impl SessionContainer {
             if segment.is_empty() {
                 continue;
             }
-            if let Some((pk_range_id, vector_str)) = segment.split_once(':') {
-                if let Some(new_vector) = VectorSessionToken::parse(vector_str) {
+            if let Some((pk_range_id, token_str)) = segment.split_once(':') {
+                if let Some(new_token) = SessionTokenValue::parse(token_str) {
                     pk_map
                         .entry(pk_range_id.to_owned())
                         .and_modify(|existing| {
-                            existing.merge(&new_vector);
+                            existing.merge(&new_token);
                         })
-                        .or_insert(new_vector);
+                        .or_insert(new_token);
                 }
             }
         }

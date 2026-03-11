@@ -3,8 +3,10 @@
 
 //! Internal representation of a Cosmos DB session token version vector.
 //!
-//! A session token on the wire looks like `<pkRangeId>:<version>#<globalLSN>#<region>=<lsn>#…`.
-//! This module handles the portion **after** the colon — the version vector itself.
+//! A session token on the wire looks like `<pkRangeId>:<version>#<globalLSN>#<region>=<lsn>#…`
+//! (V2 vector format) or `<pkRangeId>:<lsn>` (V1 simple format).
+//!
+//! This module handles the portion **after** the colon — the token value itself.
 
 use std::{collections::HashMap, fmt};
 
@@ -119,6 +121,85 @@ impl fmt::Display for VectorSessionToken {
             write!(f, "#{}={}", region, lsn)?;
         }
         Ok(())
+    }
+}
+
+/// A parsed session token value, either V1 (simple LSN) or V2 (version vector).
+///
+/// V1 tokens are a bare integer LSN (e.g., `500`), used by older Cosmos DB
+/// configurations. V2 tokens carry a version, global LSN, and per-region
+/// progress (e.g., `1#100#1=20#2=5`).
+///
+/// Parsing tries V2 first; if that fails, falls back to V1.
+#[derive(Clone, SafeDebug, PartialEq, Eq)]
+pub(crate) enum SessionTokenValue {
+    /// V1 simple token: a single LSN value.
+    Simple(u64),
+    /// V2 vector token: version + global LSN + per-region progress.
+    Vector(VectorSessionToken),
+}
+
+impl SessionTokenValue {
+    /// Parses a session token value string, trying V2 (vector) first, then V1 (simple).
+    pub(crate) fn parse(s: &str) -> Option<Self> {
+        if let Some(vector) = VectorSessionToken::parse(s) {
+            return Some(Self::Vector(vector));
+        }
+        // V1 fallback: bare integer
+        let lsn: u64 = s.parse().ok()?;
+        Some(Self::Simple(lsn))
+    }
+
+    /// Merges `other` into `self`, returning `true` if `self` was modified.
+    ///
+    /// Merging across token types (V1 with V2) is not meaningful — the newer
+    /// token type wins outright when types differ.
+    pub(crate) fn merge(&mut self, other: &Self) -> bool {
+        match (self as &Self, other) {
+            (Self::Vector(_), Self::Vector(other_v)) => {
+                if let Self::Vector(ref mut self_v) = self {
+                    self_v.merge(other_v)
+                } else {
+                    unreachable!()
+                }
+            }
+            (Self::Simple(self_lsn), Self::Simple(other_lsn)) => {
+                if other_lsn > self_lsn {
+                    *self = Self::Simple(*other_lsn);
+                    true
+                } else {
+                    false
+                }
+            }
+            // V2 supersedes V1
+            (Self::Simple(_), Self::Vector(_)) => {
+                *self = other.clone();
+                true
+            }
+            // V2 stays; V1 is obsolete
+            (Self::Vector(_), Self::Simple(_)) => false,
+        }
+    }
+
+    /// Returns `true` if this token is at least as recent as `other`.
+    #[allow(dead_code)] // Will be used by PKRange cache resolution
+    pub(crate) fn is_at_least_as_recent_as(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Vector(a), Self::Vector(b)) => a.is_at_least_as_recent_as(b),
+            (Self::Simple(a), Self::Simple(b)) => a >= b,
+            // V2 is always more recent than V1
+            (Self::Vector(_), Self::Simple(_)) => true,
+            (Self::Simple(_), Self::Vector(_)) => false,
+        }
+    }
+}
+
+impl fmt::Display for SessionTokenValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Simple(lsn) => write!(f, "{lsn}"),
+            Self::Vector(v) => v.fmt(f),
+        }
     }
 }
 
@@ -241,5 +322,79 @@ mod tests {
         let b = VectorSessionToken::parse("1#100#1=10").unwrap();
         assert!(a.is_at_least_as_recent_as(&b));
         assert!(!b.is_at_least_as_recent_as(&a));
+    }
+
+    // === SessionTokenValue tests ===
+
+    #[test]
+    fn parse_v2_token() {
+        let t = SessionTokenValue::parse("1#100#1=10").unwrap();
+        assert!(matches!(t, SessionTokenValue::Vector(_)));
+    }
+
+    #[test]
+    fn parse_v1_simple_token() {
+        let t = SessionTokenValue::parse("500").unwrap();
+        assert!(matches!(t, SessionTokenValue::Simple(500)));
+    }
+
+    #[test]
+    fn parse_v1_display_roundtrip() {
+        let t = SessionTokenValue::parse("12345").unwrap();
+        assert_eq!(t.to_string(), "12345");
+    }
+
+    #[test]
+    fn parse_invalid_returns_none() {
+        assert!(SessionTokenValue::parse("not_a_token").is_none());
+        assert!(SessionTokenValue::parse("").is_none());
+    }
+
+    #[test]
+    fn v1_merge_takes_max() {
+        let mut a = SessionTokenValue::parse("100").unwrap();
+        let b = SessionTokenValue::parse("200").unwrap();
+        assert!(a.merge(&b));
+        assert_eq!(a, SessionTokenValue::Simple(200));
+    }
+
+    #[test]
+    fn v1_merge_no_change_when_lower() {
+        let mut a = SessionTokenValue::parse("200").unwrap();
+        let b = SessionTokenValue::parse("100").unwrap();
+        assert!(!a.merge(&b));
+        assert_eq!(a, SessionTokenValue::Simple(200));
+    }
+
+    #[test]
+    fn v2_supersedes_v1_on_merge() {
+        let mut a = SessionTokenValue::parse("500").unwrap();
+        let b = SessionTokenValue::parse("1#100#1=10").unwrap();
+        assert!(a.merge(&b));
+        assert!(matches!(a, SessionTokenValue::Vector(_)));
+    }
+
+    #[test]
+    fn v2_not_replaced_by_v1_on_merge() {
+        let mut a = SessionTokenValue::parse("1#100#1=10").unwrap();
+        let b = SessionTokenValue::parse("99999").unwrap();
+        assert!(!a.merge(&b));
+        assert!(matches!(a, SessionTokenValue::Vector(_)));
+    }
+
+    #[test]
+    fn v1_is_at_least_as_recent() {
+        let a = SessionTokenValue::parse("200").unwrap();
+        let b = SessionTokenValue::parse("100").unwrap();
+        assert!(a.is_at_least_as_recent_as(&b));
+        assert!(!b.is_at_least_as_recent_as(&a));
+    }
+
+    #[test]
+    fn v2_always_more_recent_than_v1() {
+        let v2 = SessionTokenValue::parse("1#50#1=5").unwrap();
+        let v1 = SessionTokenValue::parse("99999").unwrap();
+        assert!(v2.is_at_least_as_recent_as(&v1));
+        assert!(!v1.is_at_least_as_recent_as(&v2));
     }
 }
