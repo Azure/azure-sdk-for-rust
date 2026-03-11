@@ -27,6 +27,7 @@ reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
+tokio = { workspace = true, features = ["rt", "sync"] }
 
 [lints]
 workspace = true

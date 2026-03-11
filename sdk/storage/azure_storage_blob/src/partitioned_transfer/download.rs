@@ -9,7 +9,7 @@ use azure_core::{
     stream::BytesStream,
 };
 use bytes::Bytes;
-use futures::{stream::FuturesOrdered, stream::FuturesUnordered, StreamExt};
+use futures::{stream::FuturesOrdered, StreamExt};
 
 use crate::models::http_ranges::ContentRange;
 
@@ -122,12 +122,47 @@ async fn download_range_to_bytes(
 trait DownloadRangeFuture: Future + Send {}
 impl<T: Future + Send> DownloadRangeFuture for T {}
 
-/// Downloads a blob directly into a caller-provided buffer with unordered parallel chunk writes.
+/// A wrapper around a raw pointer to a mutable byte slice that can be sent across threads.
+///
+/// # Safety
+/// The caller must ensure that:
+/// - The underlying buffer outlives all `SendSlice` instances
+/// - No two `SendSlice` instances cover overlapping memory regions when used concurrently
+pub(crate) struct SendSlice {
+    ptr: *mut u8,
+    len: usize,
+}
+
+// SAFETY: SendSlice is only created from non-overlapping sub-regions of a buffer
+// that outlives the spawned tasks. The caller guarantees exclusive access to each region.
+unsafe impl Send for SendSlice {}
+
+impl SendSlice {
+    /// Creates a SendSlice from a raw pointer and length.
+    ///
+    /// # Safety
+    /// The caller must ensure the pointer is valid for `len` bytes and that no other
+    /// `SendSlice` or reference accesses overlapping memory concurrently.
+    pub(crate) unsafe fn from_raw(ptr: *mut u8, len: usize) -> Self {
+        Self { ptr, len }
+    }
+
+    /// Returns a mutable slice from the raw pointer.
+    ///
+    /// # Safety
+    /// The caller must ensure no other references to this memory region exist concurrently.
+    pub(crate) unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        std::slice::from_raw_parts_mut(self.ptr, self.len)
+    }
+}
+
+/// Downloads a blob directly into a caller-provided buffer with true parallel chunk writes.
 ///
 /// Uses a large `initial_partition_size` for the first request (so small/medium blobs complete
-/// in a single HTTP request), then fills the remainder with `partition_size` chunks in parallel
-/// using `FuturesUnordered`. Chunks are copied into the buffer at their correct offsets as they
-/// complete, in any order.
+/// in a single HTTP request), then fills the remainder with `partition_size` chunks using
+/// `tokio::spawn` for real OS-thread-level parallelism. Each spawned task streams its response
+/// body directly into a non-overlapping sub-slice of the buffer via unsafe `SendSlice`, avoiding
+/// intermediate `Bytes` allocations.
 ///
 /// Returns the number of bytes written to the buffer.
 pub(crate) async fn download_to<Behavior>(
@@ -172,7 +207,7 @@ where
     };
 
     // Parse Content-Range to determine total blob size and compute remaining ranges.
-    let mut ranges: VecDeque<_> = match initial_response
+    let ranges: Vec<_> = match initial_response
         .headers()
         .get_optional_as::<ContentRange, _>(&"content-range".into())?
     {
@@ -185,68 +220,99 @@ where
                     .map(|i| i..min(i.saturating_add(partition_size), remainder_end))
                     .collect()
             }
-            _ => VecDeque::new(),
+            _ => Vec::new(),
         },
-        None => VecDeque::new(),
+        None => Vec::new(),
     };
 
-    // Collect the initial response body and copy into the buffer.
-    let initial_bytes: Bytes = initial_response.into_body().collect().await?;
-    if initial_bytes.len() > buffer.len() {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Io,
-            format!(
-                "Buffer is not big enough: buffer size is {} but blob data is at least {} bytes",
-                buffer.len(),
-                initial_bytes.len()
-            ),
-        ));
-    }
-    buffer[..initial_bytes.len()].copy_from_slice(&initial_bytes);
-    let mut total_written = initial_bytes.len();
-
-    // Run remaining chunk downloads in parallel with FuturesUnordered.
-    // Chunks complete in any order and are copied directly to their correct buffer offset.
-    type DownloadToFut = Pin<Box<dyn DownloadRangeFuture<Output = AzureResult<(usize, Bytes)>>>>;
-    let mut futures: FuturesUnordered<DownloadToFut> = FuturesUnordered::new();
-
-    // Seed up to parallel-1 tasks (initial request counted as one slot).
-    let seed_count = min(parallel.saturating_sub(1), ranges.len());
-    for _ in 0..seed_count {
-        if let Some(r) = ranges.pop_front() {
-            let c = client.clone();
-            let buf_offset = r.start - max_download_range.start;
-            futures.push(Box::pin(async move {
-                let bytes = download_range_to_bytes(c, r).await?;
-                Ok((buf_offset, bytes))
-            }));
-        }
-    }
-
-    // Poll loop: as each chunk completes, copy into buffer and launch next chunk.
-    while let Some(result) = futures.next().await {
-        let (offset, bytes) = result?;
-        let end = offset + bytes.len();
+    // Stream initial response body directly into buffer (no intermediate Bytes allocation).
+    let mut body = initial_response.into_body();
+    let mut write_offset = 0usize;
+    while let Some(chunk) = body.next().await {
+        let chunk = chunk?;
+        let end = write_offset + chunk.len();
         if end > buffer.len() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Io,
                 format!(
-                    "Buffer is not big enough: buffer size is {} but download requires {} bytes",
+                    "Buffer too small: size {} but need at least {} bytes",
                     buffer.len(),
                     end
                 ),
             ));
         }
-        buffer[offset..end].copy_from_slice(&bytes);
-        total_written += bytes.len();
+        buffer[write_offset..end].copy_from_slice(&chunk);
+        write_offset += chunk.len();
+    }
+    let mut total_written = write_offset;
 
-        if let Some(r) = ranges.pop_front() {
-            let c = client.clone();
-            let buf_offset = r.start - max_download_range.start;
-            futures.push(Box::pin(async move {
-                let bytes = download_range_to_bytes(c, r).await?;
-                Ok((buf_offset, bytes))
-            }));
+    if ranges.is_empty() {
+        return Ok(total_written);
+    }
+
+    // Use raw pointer to create non-overlapping SendSlice instances for true parallel writes.
+    let buffer_ptr = buffer.as_mut_ptr();
+    let buffer_len = buffer.len();
+
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(parallel));
+    let mut join_set = tokio::task::JoinSet::new();
+
+    for r in ranges {
+        let c = client.clone();
+        let sem = semaphore.clone();
+        let buf_offset = r.start - max_download_range.start;
+        let chunk_max_len = r.end - r.start;
+
+        if buf_offset + chunk_max_len > buffer_len {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Io,
+                format!(
+                    "Buffer too small: size {} but download requires {} bytes",
+                    buffer_len,
+                    buf_offset + chunk_max_len
+                ),
+            ));
+        }
+
+        // SAFETY: Each range is non-overlapping and within buffer bounds.
+        // The buffer outlives all spawned tasks because we join/shutdown before returning.
+        // SAFETY: buf_offset + chunk_max_len is within buffer bounds (checked above).
+        let mut send_slice = unsafe { SendSlice::from_raw(buffer_ptr.add(buf_offset), chunk_max_len) };
+
+        // tokio::spawn for real OS-thread-level parallelism.
+        join_set.spawn(async move {
+            let _permit = sem.acquire().await.map_err(|e| {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
+            })?;
+
+            let response = c.transfer_range(Some(r)).await?;
+            let mut body = response.into_body();
+            let mut written = 0usize;
+            // SAFETY: No other task accesses this slice region concurrently.
+            let slice = unsafe { send_slice.as_mut_slice() };
+            while let Some(chunk) = body.next().await {
+                let chunk = chunk?;
+                slice[written..written + chunk.len()].copy_from_slice(&chunk);
+                written += chunk.len();
+            }
+            Ok::<usize, azure_core::Error>(written)
+        });
+    }
+
+    while let Some(result) = join_set.join_next().await {
+        match result {
+            Ok(Ok(written)) => total_written += written,
+            Ok(Err(e)) => {
+                join_set.shutdown().await;
+                return Err(e);
+            }
+            Err(join_err) => {
+                join_set.shutdown().await;
+                return Err(azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    join_err,
+                ));
+            }
         }
     }
 

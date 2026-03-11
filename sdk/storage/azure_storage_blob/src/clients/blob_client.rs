@@ -11,7 +11,7 @@ use crate::{
         BlobClientDownloadOptions, BlobClientDownloadResult, BlockBlobClientUploadOptions,
         BlockBlobClientUploadResult, StorageErrorCode,
     },
-    partitioned_transfer::{self, PartitionedDownloadBehavior},
+    partitioned_transfer::{self, PartitionedDownloadBehavior, SendSlice},
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
@@ -27,7 +27,6 @@ use azure_core::{
     },
     tracing, Bytes, Result,
 };
-use futures::StreamExt;
 use std::sync::Arc;
 use std::{num::NonZero, ops::Range};
 
@@ -338,18 +337,25 @@ impl BlobClient {
     /// Azure Core pipeline for maximum performance.
     ///
     /// The caller is responsible for acquiring a bearer token (e.g. via `credential.get_token()`)
-    /// and passing it as a string. This method makes direct HTTP range requests using a shared
-    /// `reqwest::Client` for connection pooling.
+    /// and passing it as a string. A shared `reqwest::Client` should be provided for connection
+    /// pooling across calls.
+    ///
+    /// Uses `tokio::spawn` for true OS-thread-level parallelism, streaming response bodies
+    /// directly into non-overlapping buffer sub-slices via unsafe `SendSlice`.
     ///
     /// Returns the number of bytes written to the buffer.
     pub async fn reqwest_download_to(
         &self,
         buffer: &mut [u8],
         bearer_token: &str,
+        http_client: &reqwest::Client,
         options: Option<BlobClientManagedDownloadOptions<'_>>,
     ) -> Result<usize> {
         let options = options.unwrap_or_default();
-        let parallel = options.parallel.unwrap_or(DEFAULT_DOWNLOAD_TO_PARALLEL).get();
+        let parallel = options
+            .parallel
+            .unwrap_or(DEFAULT_DOWNLOAD_TO_PARALLEL)
+            .get();
         let initial_partition_size = options
             .initial_partition_size
             .unwrap_or(DEFAULT_INITIAL_PARTITION_SIZE)
@@ -364,24 +370,9 @@ impl BlobClient {
             return Ok(0);
         }
 
-        let http_client = reqwest::Client::new();
-        let url = self.url().to_string();
-        let auth_header = format!("Bearer {bearer_token}");
-        let version = self.version.clone();
-
-        // Helper to build a range request.
-        let make_range_request =
-            |client: &reqwest::Client, range_start: usize, range_end_exclusive: usize| {
-                client
-                    .get(&url)
-                    .header("Authorization", &auth_header)
-                    .header("x-ms-version", &version)
-                    .header(
-                        "Range",
-                        format!("bytes={}-{}", range_start, range_end_exclusive - 1),
-                    )
-                    .send()
-            };
+        let url: Arc<str> = Arc::from(self.url().as_str());
+        let auth_header: Arc<str> = Arc::from(format!("Bearer {bearer_token}").as_str());
+        let version: Arc<str> = Arc::from(self.version.as_str());
 
         // Initial request with large initial_partition_size.
         let initial_range_end = std::cmp::min(
@@ -390,7 +381,20 @@ impl BlobClient {
                 .start
                 .saturating_add(initial_partition_size),
         );
-        let initial_response = make_range_request(&http_client, max_download_range.start, initial_range_end).await
+        let mut initial_response = http_client
+            .get(&*url)
+            .header("Authorization", &*auth_header)
+            .header("x-ms-version", &*version)
+            .header(
+                "Range",
+                format!(
+                    "bytes={}-{}",
+                    max_download_range.start,
+                    initial_range_end - 1
+                ),
+            )
+            .send()
+            .await
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
 
         if !initial_response.status().is_success() {
@@ -414,31 +418,36 @@ impl BlobClient {
             let cr_str = content_range.to_str().map_err(|e| {
                 azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
             })?;
-            // Format: "bytes start-end/total"
             parse_content_range_for_remainder(cr_str, &max_download_range)?
         } else {
             (0, 0) // No Content-Range means entire blob fit in response
         };
 
-        // Collect initial bytes and copy into buffer.
-        let initial_bytes = initial_response.bytes().await
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
-        if initial_bytes.len() > buffer.len() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Io,
-                format!(
-                    "Buffer is not big enough: buffer size is {} but blob data is at least {} bytes",
-                    buffer.len(),
-                    initial_bytes.len()
-                ),
-            ));
+        // Stream initial response body directly into buffer (no intermediate Bytes).
+        let mut write_offset = 0usize;
+        while let Some(chunk) = initial_response
+            .chunk()
+            .await
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?
+        {
+            let end = write_offset + chunk.len();
+            if end > buffer.len() {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Io,
+                    format!(
+                        "Buffer too small: size {} but need at least {} bytes",
+                        buffer.len(),
+                        end
+                    ),
+                ));
+            }
+            buffer[write_offset..end].copy_from_slice(&chunk);
+            write_offset += chunk.len();
         }
-        buffer[..initial_bytes.len()].copy_from_slice(&initial_bytes);
-        let mut total_written = initial_bytes.len();
+        let mut total_written = write_offset;
 
         // Compute remaining chunk ranges.
-        let mut ranges: std::collections::VecDeque<Range<usize>> = (remainder_start
-            ..remainder_end)
+        let ranges: Vec<Range<usize>> = (remainder_start..remainder_end)
             .step_by(partition_size)
             .map(|i| i..std::cmp::min(i.saturating_add(partition_size), remainder_end))
             .collect();
@@ -447,76 +456,82 @@ impl BlobClient {
             return Ok(total_written);
         }
 
-        // Run parallel chunk downloads with FuturesUnordered.
-        use futures::stream::FuturesUnordered;
+        // Use raw pointer for non-overlapping SendSlice instances.
+        let buffer_ptr = buffer.as_mut_ptr();
+        let buffer_len = buffer.len();
 
-        let http_client = Arc::new(http_client);
-        let auth_header = Arc::new(auth_header);
-        let url = Arc::new(url);
-        let version = Arc::new(version);
+        let http_client = http_client.clone(); // reqwest::Client clones cheaply (internal Arc)
+        let semaphore = Arc::new(tokio::sync::Semaphore::new(parallel));
+        let mut join_set = tokio::task::JoinSet::new();
 
-        type DownloadFut = std::pin::Pin<Box<dyn std::future::Future<Output = Result<(usize, bytes::Bytes)>> + Send>>;
-        let mut futures: FuturesUnordered<DownloadFut> = FuturesUnordered::new();
+        for r in ranges {
+            let client = http_client.clone();
+            let sem = semaphore.clone();
+            let u = url.clone();
+            let auth = auth_header.clone();
+            let v = version.clone();
+            let buf_offset = r.start - max_download_range.start;
+            let chunk_max_len = r.end - r.start;
 
-        let seed_count = std::cmp::min(parallel.saturating_sub(1), ranges.len());
-        for _ in 0..seed_count {
-            if let Some(r) = ranges.pop_front() {
-                let client = http_client.clone();
-                let auth = auth_header.clone();
-                let u = url.clone();
-                let v = version.clone();
-                let buf_offset = r.start - max_download_range.start;
-                futures.push(Box::pin(async move {
-                    let resp = client
-                        .get(u.as_str())
-                        .header("Authorization", auth.as_str())
-                        .header("x-ms-version", v.as_str())
-                        .header("Range", format!("bytes={}-{}", r.start, r.end - 1))
-                        .send()
-                        .await
-                        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
-                    let bytes = resp.bytes().await
-                        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
-                    Ok((buf_offset, bytes))
-                }));
-            }
-        }
-
-        while let Some(result) = futures.next().await {
-            let (offset, bytes) = result?;
-            let end = offset + bytes.len();
-            if end > buffer.len() {
+            if buf_offset + chunk_max_len > buffer_len {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Io,
                     format!(
-                        "Buffer is not big enough: buffer size is {} but download requires {} bytes",
-                        buffer.len(),
-                        end
+                        "Buffer too small: size {} but download requires {} bytes",
+                        buffer_len,
+                        buf_offset + chunk_max_len
                     ),
                 ));
             }
-            buffer[offset..end].copy_from_slice(&bytes);
-            total_written += bytes.len();
 
-            if let Some(r) = ranges.pop_front() {
-                let client = http_client.clone();
-                let auth = auth_header.clone();
-                let u = url.clone();
-                let v = version.clone();
-                let buf_offset = r.start - max_download_range.start;
-                futures.push(Box::pin(async move {
-                    let resp = client
-                        .get(u.as_str())
-                        .header("Authorization", auth.as_str())
-                        .header("x-ms-version", v.as_str())
-                        .header("Range", format!("bytes={}-{}", r.start, r.end - 1))
-                        .send()
-                        .await
-                        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
-                    let bytes = resp.bytes().await
-                        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
-                    Ok((buf_offset, bytes))
-                }));
+            // SAFETY: Each range is non-overlapping and within buffer bounds.
+            // The buffer outlives all spawned tasks (we join/shutdown before returning).
+            let mut send_slice = unsafe { SendSlice::from_raw(buffer_ptr.add(buf_offset), chunk_max_len) };
+
+            join_set.spawn(async move {
+                let _permit = sem.acquire().await.map_err(|e| {
+                    azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
+                })?;
+
+                let mut resp = client
+                    .get(&*u)
+                    .header("Authorization", &*auth)
+                    .header("x-ms-version", &*v)
+                    .header("Range", format!("bytes={}-{}", r.start, r.end - 1))
+                    .send()
+                    .await
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+
+                // Stream response directly into buffer slice.
+                let mut written = 0usize;
+                // SAFETY: No other task accesses this slice region concurrently.
+                let slice = unsafe { send_slice.as_mut_slice() };
+                while let Some(chunk) = resp
+                    .chunk()
+                    .await
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?
+                {
+                    slice[written..written + chunk.len()].copy_from_slice(&chunk);
+                    written += chunk.len();
+                }
+                Ok::<usize, azure_core::Error>(written)
+            });
+        }
+
+        while let Some(result) = join_set.join_next().await {
+            match result {
+                Ok(Ok(written)) => total_written += written,
+                Ok(Err(e)) => {
+                    join_set.shutdown().await;
+                    return Err(e);
+                }
+                Err(join_err) => {
+                    join_set.shutdown().await;
+                    return Err(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        join_err,
+                    ));
+                }
             }
         }
 
