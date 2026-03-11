@@ -50,8 +50,6 @@ pub struct DriverOptions {
     account: AccountReference,
     /// Thread-safe runtime options for operation options at the driver level.
     runtime_options: SharedRuntimeOptions,
-    /// Whether session token capturing is enabled for all operations.
-    session_capturing_enabled: bool,
 }
 
 impl DriverOptions {
@@ -73,16 +71,6 @@ impl DriverOptions {
     pub fn runtime_options(&self) -> &SharedRuntimeOptions {
         &self.runtime_options
     }
-
-    /// Returns whether session token capturing is enabled.
-    ///
-    /// When `true` (the default), the driver captures, resolves, and clears
-    /// session tokens from response headers for session consistency.
-    /// Set to `false` to disable session token management for scenarios where
-    /// session consistency is not needed.
-    pub fn session_capturing_enabled(&self) -> bool {
-        self.session_capturing_enabled
-    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -94,7 +82,6 @@ impl DriverOptions {
 pub struct DriverOptionsBuilder {
     account: AccountReference,
     runtime_options: Option<RuntimeOptions>,
-    session_capturing_enabled: bool,
 }
 
 impl DriverOptionsBuilder {
@@ -103,7 +90,6 @@ impl DriverOptionsBuilder {
         Self {
             account,
             runtime_options: None,
-            session_capturing_enabled: true,
         }
     }
 
@@ -115,15 +101,6 @@ impl DriverOptionsBuilder {
         self
     }
 
-    /// Enables or disables session token capturing.
-    ///
-    /// When `true` (the default), the driver captures, resolves, and clears
-    /// session tokens for session consistency. Set to `false` to disable.
-    pub fn with_session_capturing_enabled(mut self, enabled: bool) -> Self {
-        self.session_capturing_enabled = enabled;
-        self
-    }
-
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
@@ -131,7 +108,6 @@ impl DriverOptionsBuilder {
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
-            session_capturing_enabled: self.session_capturing_enabled,
         }
     }
 }

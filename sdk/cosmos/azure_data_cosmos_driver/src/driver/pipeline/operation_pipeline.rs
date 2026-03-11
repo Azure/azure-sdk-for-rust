@@ -56,7 +56,6 @@ pub(crate) async fn execute_operation_pipeline(
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
-    session_capturing_enabled: bool,
     account_default_consistency: &str,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -64,6 +63,9 @@ pub(crate) async fn execute_operation_pipeline(
     let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
+    let session_capturing_enabled = !effective_options
+        .session_capturing_disabled
+        .unwrap_or(false);
     let read_consistency_strategy = effective_options
         .read_consistency_strategy
         .unwrap_or(ReadConsistencyStrategy::Default);
