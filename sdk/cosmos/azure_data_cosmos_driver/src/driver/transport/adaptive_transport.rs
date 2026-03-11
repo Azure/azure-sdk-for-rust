@@ -48,13 +48,6 @@ impl AdaptiveTransport {
         }
     }
 
-    fn transport_kind(&self) -> &'static str {
-        match self {
-            Self::Gateway(_) => "Gateway",
-            Self::Gateway20(_) => "Gateway20",
-        }
-    }
-
     /// Returns the [`TransportKind`] for diagnostics reporting.
     pub(crate) fn diagnostics_kind(&self) -> TransportKind {
         match self {
@@ -82,7 +75,7 @@ impl AdaptiveTransport {
 impl fmt::Debug for AdaptiveTransport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AdaptiveTransport")
-            .field("kind", &self.transport_kind())
+            .field("kind", &self.diagnostics_kind().as_ref())
             .finish_non_exhaustive()
     }
 }

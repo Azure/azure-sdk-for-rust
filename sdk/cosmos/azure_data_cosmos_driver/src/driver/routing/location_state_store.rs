@@ -144,6 +144,12 @@ impl LocationStateStore {
     }
 
     /// Returns a snapshot of account and partition state.
+    ///
+    /// Uses a fast path when the version hasn't changed since the last
+    /// snapshot: the cached `Arc` is cloned without touching the
+    /// epoch-protected pointers. On a version mismatch (slow path),
+    /// the current state is loaded under an epoch guard, cloned into
+    /// fresh `Arc`s, and cached for subsequent callers.
     pub fn snapshot(&self) -> LocationSnapshot {
         let current_version = self.account_version.load(Ordering::Acquire);
 
@@ -232,9 +238,8 @@ impl LocationStateStore {
                 Ordering::Acquire,
                 &guard,
             ) {
-                Ok(_new) => {
+                Ok(_) => {
                     // `current` is the old value that was just replaced.
-                    // `_new` is the newly installed value (do NOT retire it).
                     unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
