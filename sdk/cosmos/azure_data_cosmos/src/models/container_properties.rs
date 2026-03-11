@@ -33,6 +33,8 @@ pub enum TimeToLive {
     NoDefault,
 
     /// TTL is enabled with a default expiration of the given duration.
+    ///
+    /// Only whole seconds are used; any sub-second component is truncated during serialization.
     Seconds(Duration),
 }
 
