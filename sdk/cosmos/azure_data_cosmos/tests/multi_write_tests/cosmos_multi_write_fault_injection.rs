@@ -485,9 +485,10 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
     .await
 }
 
-/// Test write failover on connection error — inject ConnectionError on hub for CreateItem.
-/// The retry policy retries 3 times on the same endpoint, then fails over to satellite.
-/// hit_limit(4) ensures the fault fires for all local retries plus the one that triggers failover.
+/// Test that write connection errors are NOT retried — the retry policy returns
+/// DoNotRetry for writes when the request sent status is Unknown (connection errors
+/// produce ErrorKind::Io which classifies as Unknown). The write may have been
+/// applied on the server, so retrying is unsafe.
 #[tokio::test]
 pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
@@ -535,15 +536,11 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
             };
             let pk = format!("Partition-{}", unique_id);
 
-            let response = fault_container_client
-                .create_item(&pk, &item, None)
-                .await
-                .expect("write should succeed via failover to satellite");
+            let result = fault_container_client.create_item(&pk, &item, None).await;
 
-            let request_url = response.request_url().to_string();
             assert!(
-                request_url.contains(SATELLITE_REGION.as_str()),
-                "request should have failed over to satellite region, got: {request_url}"
+                result.is_err(),
+                "write should fail on connection error (not retried), but got success"
             );
 
             Ok(())
@@ -786,8 +783,10 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
     .await
 }
 
-/// Test connection error reverse failover — inject on satellite, preferred [SATELLITE, HUB].
-/// Verifies failover works in the opposite direction (satellite → hub).
+/// Test that write connection errors on satellite are NOT retried — the retry policy
+/// returns DoNotRetry for writes when the request sent status is Unknown (connection
+/// errors produce ErrorKind::Io which classifies as Unknown). The write may have been
+/// applied on the server, so retrying is unsafe.
 #[tokio::test]
 pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
@@ -835,15 +834,11 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
             };
             let pk = format!("Partition-{}", unique_id);
 
-            let response = fault_container_client
-                .create_item(&pk, &item, None)
-                .await
-                .expect("write should succeed via reverse failover to hub");
+            let result = fault_container_client.create_item(&pk, &item, None).await;
 
-            let request_url = response.request_url().to_string();
             assert!(
-                request_url.contains(HUB_REGION.as_str()),
-                "request should have failed over to hub region, got: {request_url}"
+                result.is_err(),
+                "write should fail on connection error (not retried), but got success"
             );
 
             Ok(())
@@ -857,9 +852,11 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
     .await
 }
 
-/// Test that a transient connection error clears before failover is needed.
-/// With hit_limit(2), the fault fires twice then stops. Since MAX_RETRY_COUNT is 3,
-/// the third local retry succeeds on the same hub endpoint — no failover occurs.
+/// Test that a read connection error causes failover to the next preferred endpoint.
+/// With hit_limit(2), the fault fires twice. Since connection errors classify as
+/// Unknown + ErrorKind::Io for reads, the retry policy uses
+/// should_retry_on_unavailable_endpoint_status_codes() which moves to the next
+/// preferred endpoint (satellite) rather than retrying locally on hub.
 #[tokio::test]
 pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
@@ -913,13 +910,13 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
-                .expect("read should succeed on hub after transient fault clears");
+                .expect("read should succeed via failover to satellite");
 
             let request_url = response.request_url().to_string();
-            // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
+            // Connection error on hub triggers failover to satellite (next preferred endpoint).
             assert!(
-                request_url.contains(HUB_REGION.as_str()),
-                "request should have succeeded on hub without failover, got: {request_url}"
+                request_url.contains(SATELLITE_REGION.as_str()),
+                "request should have failed over to satellite region, got: {request_url}"
             );
 
             Ok(())
