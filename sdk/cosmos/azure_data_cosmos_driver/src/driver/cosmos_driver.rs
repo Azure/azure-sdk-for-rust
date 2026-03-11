@@ -510,7 +510,7 @@ impl CosmosDriver {
             transport_security,
             diagnostics_builder,
             &self.session_manager,
-            &account_properties
+            account_properties
                 .user_consistency_policy
                 .default_consistency_level,
         )

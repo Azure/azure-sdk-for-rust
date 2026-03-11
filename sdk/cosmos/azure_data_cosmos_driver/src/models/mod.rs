@@ -12,6 +12,7 @@
 mod account_reference;
 mod activity_id;
 mod connection_string;
+mod consistency_level;
 mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
@@ -32,6 +33,7 @@ pub(crate) use cosmos_headers::request_header_names;
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
+pub use consistency_level::ConsistencyLevel;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
