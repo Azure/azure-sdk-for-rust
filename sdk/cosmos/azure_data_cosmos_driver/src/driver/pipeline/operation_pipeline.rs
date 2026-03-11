@@ -15,12 +15,9 @@ use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::{
-        effective_consistency::is_session_consistency_effective,
-        routing::{
-            session_manager::SessionManager, AccountEndpointState, CosmosEndpoint,
-            LocationSnapshot, LocationStateStore,
-        },
+    driver::routing::{
+        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
+        LocationStateStore,
     },
     models::{
         request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
@@ -452,6 +449,26 @@ fn build_cosmos_response(
     }
 }
 
+/// Returns `true` if session consistency is effectively active for an operation.
+///
+/// Session token capture/resolve only occurs when the effective consistency
+/// level is Session. Combines the per-operation read consistency strategy with
+/// the account-level default.
+///
+/// TODO(read-consistency-strategy): Once full consistency level override pipeline
+/// is wired up, revisit this to use the merged consistency level rather than just
+/// the runtime strategy + account default.
+fn is_session_consistency_effective(
+    strategy: ReadConsistencyStrategy,
+    account_default: &str,
+) -> bool {
+    match strategy {
+        ReadConsistencyStrategy::Session => true,
+        ReadConsistencyStrategy::Default => account_default.eq_ignore_ascii_case("Session"),
+        _ => false,
+    }
+}
+
 /// Determines whether a session token should be captured from this response.
 ///
 /// Follows Java/.NET patterns: capture on success (2xx), and on error responses
@@ -880,6 +897,52 @@ mod tests {
         fn skips_on_500_internal_server_error() {
             let outcome = http_error_outcome(StatusCode::InternalServerError);
             assert!(!should_capture_session_token_from_status(None, &outcome));
+        }
+    }
+
+    mod effective_consistency_tests {
+        use crate::options::ReadConsistencyStrategy;
+
+        use super::super::is_session_consistency_effective;
+
+        #[test]
+        fn default_strategy_with_session_account() {
+            assert!(is_session_consistency_effective(
+                ReadConsistencyStrategy::Default,
+                "Session",
+            ));
+        }
+
+        #[test]
+        fn default_strategy_with_strong_account() {
+            assert!(!is_session_consistency_effective(
+                ReadConsistencyStrategy::Default,
+                "Strong",
+            ));
+        }
+
+        #[test]
+        fn session_strategy_overrides_account() {
+            assert!(is_session_consistency_effective(
+                ReadConsistencyStrategy::Session,
+                "Strong",
+            ));
+        }
+
+        #[test]
+        fn eventual_strategy_never_session() {
+            assert!(!is_session_consistency_effective(
+                ReadConsistencyStrategy::Eventual,
+                "Session",
+            ));
+        }
+
+        #[test]
+        fn case_insensitive_account_default() {
+            assert!(is_session_consistency_effective(
+                ReadConsistencyStrategy::Default,
+                "session",
+            ));
         }
     }
 }
