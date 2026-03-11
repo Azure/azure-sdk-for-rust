@@ -12,8 +12,9 @@ use crate::options::ConnectionPoolOptions;
 /// HTTP protocol policy required by a transport.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum HttpVersionPolicy {
-    Http1Only,
+    /// Prefer HTTP/2 via ALPN, fall back to HTTP/1.1 automatically.
     Http2Preferred,
+    /// HTTP/2 only (`http2_prior_knowledge`), no HTTP/1.1 fallback.
     Http2Only,
 }
 
@@ -27,11 +28,7 @@ pub(crate) struct HttpClientConfig {
 impl HttpClientConfig {
     pub(crate) fn metadata(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
-            version_policy: if connection_pool.is_http2_allowed() {
-                HttpVersionPolicy::Http2Preferred
-            } else {
-                HttpVersionPolicy::Http1Only
-            },
+            version_policy: HttpVersionPolicy::Http2Preferred,
             request_timeout: connection_pool.max_metadata_request_timeout(),
             for_emulator: false,
         }
@@ -39,11 +36,7 @@ impl HttpClientConfig {
 
     pub(crate) fn dataplane_gateway(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
-            version_policy: if connection_pool.is_http2_allowed() {
-                HttpVersionPolicy::Http2Preferred
-            } else {
-                HttpVersionPolicy::Http1Only
-            },
+            version_policy: HttpVersionPolicy::Http2Preferred,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
         }
@@ -112,7 +105,6 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         }
 
         builder = match config.version_policy {
-            HttpVersionPolicy::Http1Only => builder.http1_only(),
             HttpVersionPolicy::Http2Preferred => builder,
             HttpVersionPolicy::Http2Only => builder.http2_prior_knowledge(),
         };

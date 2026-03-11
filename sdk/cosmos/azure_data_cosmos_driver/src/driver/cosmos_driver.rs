@@ -23,8 +23,8 @@ use std::time::Duration;
 use super::{
     cache::AccountRegion,
     transport::{
-        adaptive_transport::thin_client_endpoint_overrides, cosmos_headers, is_emulator_host,
-        request_signing, uses_dataplane_pipeline, AuthorizationContext,
+        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
+        AuthorizationContext,
     },
     CosmosDriverRuntime,
 };
@@ -454,27 +454,19 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        // Step 5: Select appropriate HttpClient based on pipeline type
+        // Step 5: Select appropriate transport based on pipeline type
         let transport = self.runtime.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        let adaptive_transport = if is_dataplane {
+        let transport_context = if is_dataplane {
             transport.get_dataplane_transport(&endpoint, account_properties.as_ref())
         } else {
-            transport.get_metadata_transport(&endpoint)
-        };
-        let thin_client_overrides = if is_dataplane
-            && matches!(
-                adaptive_transport.version_policy(),
-                super::transport::http_client_factory::HttpVersionPolicy::Http2Only
-            ) {
-            Some(thin_client_endpoint_overrides(
-                account_properties.as_ref(),
-                operation.is_read_only(),
-            ))
-        } else {
-            None
+            super::transport::adaptive_transport::TransportContext {
+                transport: transport.get_metadata_transport(&endpoint),
+                thin_client_overrides: None,
+                is_gateway20: false,
+            }
         };
 
         // Step 6: Initialize diagnostics
@@ -511,8 +503,7 @@ impl CosmosDriver {
             &options,
             &effective_options,
             self.location_state_store.as_ref(),
-            adaptive_transport,
-            thin_client_overrides,
+            transport_context,
             auth,
             &user_agent,
             &activity_id,

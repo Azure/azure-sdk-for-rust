@@ -2414,13 +2414,23 @@ HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 
 | Sub-step | Work Item                                                                                                                                     | Files                                     |
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 5.1      | **Gateway probing** — ALPN negotiation to detect HTTP/2 vs HTTP/1.1. Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. | `driver/transport/adaptive_transport.rs`  |
+| 5.1      | **Gateway detection** — Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. HTTP/2 vs HTTP/1.1 selection via `is_http2_allowed` configuration flag (runtime ALPN probing deferred — see note below). | `driver/transport/adaptive_transport.rs`  |
 | 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                          | `driver/transport/adaptive_transport.rs`  |
 | 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                         | `driver/transport/http_client_factory.rs` |
 | 5.4      | **Tests** — Protocol detection, factory creates clients, adaptive dispatch.                                                                   | `tests/`                                  |
 
 **What works after Step 5**: HTTP/2 requests work (via a single connection). Gateway 2.0
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
+
+> **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses configuration flags
+> (`is_http2_allowed`, `is_gateway20_allowed`) and `AccountProperties` metadata
+> (`thinClient*Locations`) to determine the transport strategy, rather than runtime ALPN
+> negotiation against the gateway. This is sufficient because:
+> (1) reqwest with `http2` feature already performs ALPN automatically for `Http2Preferred`,
+> (2) Gateway 2.0 is definitively identified by the presence of thin-client locations in
+> account metadata, and (3) `http2_prior_knowledge()` for `Http2Only` skips ALPN entirely
+> (h2 is guaranteed). Runtime probing may be revisited if a use case arises where the
+> configuration-based approach is insufficient.
 
 ### Step 6: HTTP/2 connection sharding
 

@@ -30,7 +30,7 @@ use crate::{
 use std::sync::{Arc, OnceLock};
 
 use self::{
-    adaptive_transport::AdaptiveTransport,
+    adaptive_transport::{thin_client_endpoint_overrides, AdaptiveTransport, TransportContext},
     http_client_factory::{DefaultHttpClientFactory, HttpClientConfig, HttpClientFactory},
 };
 
@@ -101,13 +101,17 @@ pub(crate) struct CosmosTransport {
     /// Transport for dataplane gateway operations.
     dataplane_gateway_transport: AdaptiveTransport,
 
-    /// Transport for dataplane Gateway 2.0 operations.
-    dataplane_gateway20_transport: AdaptiveTransport,
+    /// Lazily-initialized transport for dataplane Gateway 2.0 operations.
+    /// Only allocated when `is_gateway20_allowed()` is true and the account
+    /// has thin-client endpoints — most deployments never create this.
+    dataplane_gateway20_transport: OnceLock<AdaptiveTransport>,
 
     /// Lazily-initialized transport for emulator metadata operations.
     insecure_emulator_metadata_transport: OnceLock<AdaptiveTransport>,
 
     /// Lazily-initialized transport for emulator dataplane operations.
+    /// The emulator does not support Gateway 2.0, so this always uses
+    /// the standard gateway configuration.
     insecure_emulator_dataplane_transport: OnceLock<AdaptiveTransport>,
 }
 
@@ -121,28 +125,16 @@ impl CosmosTransport {
         let http_client_factory: Arc<dyn HttpClientFactory> =
             Arc::new(DefaultHttpClientFactory::new());
 
+        let metadata_config = HttpClientConfig::metadata(&connection_pool);
         let metadata_transport = AdaptiveTransport::from_policy(
-            HttpClientConfig::metadata(&connection_pool).version_policy,
-            http_client_factory.build(
-                &connection_pool,
-                HttpClientConfig::metadata(&connection_pool),
-            )?,
+            metadata_config.version_policy,
+            http_client_factory.build(&connection_pool, metadata_config)?,
         );
 
+        let gateway_config = HttpClientConfig::dataplane_gateway(&connection_pool);
         let dataplane_gateway_transport = AdaptiveTransport::from_policy(
-            HttpClientConfig::dataplane_gateway(&connection_pool).version_policy,
-            http_client_factory.build(
-                &connection_pool,
-                HttpClientConfig::dataplane_gateway(&connection_pool),
-            )?,
-        );
-
-        let dataplane_gateway20_transport = AdaptiveTransport::from_policy(
-            HttpClientConfig::dataplane_gateway20(&connection_pool).version_policy,
-            http_client_factory.build(
-                &connection_pool,
-                HttpClientConfig::dataplane_gateway20(&connection_pool),
-            )?,
+            gateway_config.version_policy,
+            http_client_factory.build(&connection_pool, gateway_config)?,
         );
 
         Ok(Self {
@@ -150,7 +142,7 @@ impl CosmosTransport {
             http_client_factory,
             metadata_transport,
             dataplane_gateway_transport,
-            dataplane_gateway20_transport,
+            dataplane_gateway20_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
         })
@@ -185,14 +177,21 @@ impl CosmosTransport {
         }
     }
 
-    /// Returns the adaptive transport for dataplane operations.
+    /// Returns a [`TransportContext`] for dataplane operations.
+    ///
+    /// Selects Gateway 2.0 when allowed and thin-client endpoints are available.
+    /// Computes thin-client endpoint overrides (merged read + write) when
+    /// Gateway 2.0 is selected. The emulator does not support Gateway 2.0.
     pub(crate) fn get_dataplane_transport(
         &self,
         endpoint: &AccountEndpoint,
         account_properties: &AccountProperties,
-    ) -> AdaptiveTransport {
+    ) -> TransportContext {
         if self.should_use_insecure_emulator_transport(endpoint) {
-            self.insecure_emulator_dataplane_transport
+            // The Cosmos emulator does not support Gateway 2.0 — always
+            // use the standard gateway transport with insecure TLS.
+            let transport = self
+                .insecure_emulator_dataplane_transport
                 .get_or_init(|| {
                     let config =
                         HttpClientConfig::dataplane_gateway(&self.connection_pool).for_emulator();
@@ -203,23 +202,50 @@ impl CosmosTransport {
                             .expect("failed to create emulator dataplane client"),
                     )
                 })
-                .clone()
+                .clone();
+            TransportContext {
+                transport,
+                thin_client_overrides: None,
+                is_gateway20: false,
+            }
         } else if self.connection_pool.is_gateway20_allowed()
             && account_properties.has_thin_client_endpoints()
         {
-            self.dataplane_gateway20_transport.clone()
+            let transport = self
+                .dataplane_gateway20_transport
+                .get_or_init(|| {
+                    let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
+                    AdaptiveTransport::from_policy(
+                        config.version_policy,
+                        self.http_client_factory
+                            .build(&self.connection_pool, config)
+                            .expect("failed to create Gateway 2.0 dataplane client"),
+                    )
+                })
+                .clone();
+            let overrides = thin_client_endpoint_overrides(account_properties);
+            TransportContext {
+                transport,
+                thin_client_overrides: Some(Arc::new(overrides)),
+                is_gateway20: true,
+            }
         } else {
-            self.dataplane_gateway_transport.clone()
+            TransportContext {
+                transport: self.dataplane_gateway_transport.clone(),
+                thin_client_overrides: None,
+                is_gateway20: false,
+            }
         }
     }
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::options::{ConnectionPoolOptionsBuilder, EmulatorServerCertValidation};
 
-    fn account_properties_with_thin_client() -> AccountProperties {
+    /// Shared test fixture: `AccountProperties` with thin-client endpoints.
+    pub(crate) fn account_properties_with_thin_client() -> AccountProperties {
         serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -251,7 +277,8 @@ mod tests {
         .unwrap()
     }
 
-    fn account_properties_without_thin_client() -> AccountProperties {
+    /// Shared test fixture: `AccountProperties` without thin-client endpoints.
+    pub(crate) fn account_properties_without_thin_client() -> AccountProperties {
         serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -331,7 +358,9 @@ mod tests {
     }
 
     #[test]
-    fn metadata_transport_is_http1_when_http2_disabled() {
+    fn metadata_transport_is_http2_preferred_even_when_http2_flag_disabled() {
+        // Http2Preferred with ALPN falls back to HTTP/1.1 automatically
+        // against RoutingGateway, so there is no need for a separate Http1 variant.
         let pool = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(false)
             .build()
@@ -342,7 +371,7 @@ mod tests {
 
         assert!(matches!(
             transport.get_metadata_transport(&endpoint),
-            AdaptiveTransport::Http1(_)
+            AdaptiveTransport::Http2Preferred(_)
         ));
     }
 
@@ -357,10 +386,11 @@ mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        assert!(matches!(
-            transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client()),
-            AdaptiveTransport::Http2Only(_)
-        ));
+        let ctx =
+            transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
+        assert!(matches!(ctx.transport, AdaptiveTransport::Http2Only(_)));
+        assert!(ctx.is_gateway20);
+        assert!(ctx.thin_client_overrides.is_some());
     }
 
     #[test]
@@ -374,10 +404,35 @@ mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
+        let ctx =
+            transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
         assert!(matches!(
-            transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client()),
+            ctx.transport,
             AdaptiveTransport::Http2Preferred(_)
         ));
+        assert!(!ctx.is_gateway20);
+        assert!(ctx.thin_client_overrides.is_none());
+    }
+
+    #[test]
+    fn dataplane_transport_ignores_thin_client_when_gateway20_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(true)
+            .with_is_gateway20_allowed(false)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::new(pool).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx =
+            transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
+        assert!(matches!(
+            ctx.transport,
+            AdaptiveTransport::Http2Preferred(_)
+        ));
+        assert!(!ctx.is_gateway20);
+        assert!(ctx.thin_client_overrides.is_none());
     }
 
     #[test]

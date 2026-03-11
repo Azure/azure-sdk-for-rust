@@ -157,11 +157,13 @@ impl LocationStateStore {
         let guard = epoch::pin();
 
         let account = {
+            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.account.load(Ordering::Acquire, &guard).deref() };
             Arc::new(current.clone())
         };
 
         let partitions = {
+            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.partitions.load(Ordering::Acquire, &guard).deref() };
             Arc::new(current.clone())
         };
@@ -188,6 +190,7 @@ impl LocationStateStore {
     #[allow(dead_code)]
     pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
         let guard = epoch::pin();
+        // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
         let current = unsafe { self.account.load(Ordering::Acquire, &guard).deref() };
         Arc::new(current.clone())
     }
@@ -218,6 +221,7 @@ impl LocationStateStore {
 
         loop {
             let current = self.account.load(Ordering::Acquire, &guard);
+            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current_ref = unsafe { current.deref() };
             let next_state = f(current_ref);
 

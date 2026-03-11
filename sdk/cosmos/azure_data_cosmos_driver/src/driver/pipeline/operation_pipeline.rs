@@ -7,7 +7,6 @@
 //! session retry, endpoint unavailability tracking, and deadline
 //! enforcement. No hedging or circuit breaker yet (planned for later steps).
 
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -21,7 +20,7 @@ use crate::{
         ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
         SubStatusCode,
     },
-    options::{OperationOptions, RuntimeOptions},
+    options::{OperationOptions, Region, RuntimeOptions},
 };
 
 use super::{
@@ -33,7 +32,7 @@ use super::{
 };
 
 use crate::driver::transport::{
-    adaptive_transport::AdaptiveTransport, transport_pipeline::execute_transport_pipeline,
+    adaptive_transport::TransportContext, transport_pipeline::execute_transport_pipeline,
     AuthorizationContext,
 };
 
@@ -47,8 +46,7 @@ pub(crate) async fn execute_operation_pipeline(
     _options: &OperationOptions,
     effective_options: &RuntimeOptions,
     location_state_store: &LocationStateStore,
-    transport: AdaptiveTransport,
-    thin_client_overrides: Option<HashMap<crate::options::Region, Url>>,
+    transport_context: TransportContext,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
@@ -118,7 +116,7 @@ pub(crate) async fn execute_operation_pipeline(
         let transport_request = build_transport_request(
             operation,
             &routing,
-            thin_client_overrides.as_ref(),
+            transport_context.thin_client_overrides.as_deref(),
             activity_id,
             execution_context,
             deadline,
@@ -127,7 +125,7 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
             transport_request,
-            &transport,
+            &transport_context.transport,
             credential,
             user_agent,
             pipeline_type,
@@ -300,7 +298,7 @@ fn preferred_endpoints_for_attempt<'a>(
 fn build_transport_request(
     operation: &CosmosOperation,
     routing: &RoutingDecision,
-    thin_client_overrides: Option<&HashMap<crate::options::Region, Url>>,
+    thin_client_overrides: Option<&std::collections::HashMap<Region, Url>>,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
@@ -419,6 +417,7 @@ mod tests {
             DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
             SystemProperties,
         },
+        options::Region,
     };
 
     fn test_account() -> AccountReference {
@@ -550,7 +549,7 @@ mod tests {
             ),
         };
         let overrides = HashMap::from([(
-            "westus2".into(),
+            Region::new("westus2"),
             Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
         )]);
 
@@ -567,6 +566,37 @@ mod tests {
         assert_eq!(
             request.url.as_str(),
             "https://test-westus2-thin.documents.azure.com:444/dbs/mydb"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_uses_default_url_for_global_endpoint_with_overrides() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::global(
+                Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            ),
+        };
+        let overrides = HashMap::from([(
+            Region::new("westus2"),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        )]);
+
+        let request = build_transport_request(
+            &operation,
+            &routing,
+            Some(&overrides),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        // Global endpoint has no region, so the override should NOT apply.
+        assert_eq!(
+            request.url.as_str(),
+            "https://test.documents.azure.com/dbs/mydb"
         );
     }
 
