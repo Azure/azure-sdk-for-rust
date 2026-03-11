@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{borrow::Cow, time::Duration};
+use std::borrow::Cow;
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -15,8 +15,8 @@ use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
 /// - **NoDefault**: TTL is enabled at the container level, but items have no default expiration.
 ///   Individual items can still set their own TTL via the `ttl` property.
 ///   Corresponds to the value `-1` on the wire.
-/// - **Seconds**: TTL is enabled with a default expiration. Items expire after the given duration
-///   unless they override it with their own `ttl` property.
+/// - **Seconds**: TTL is enabled with a default expiration in seconds. Items expire after the given
+///   number of seconds unless they override it with their own `ttl` property.
 ///
 /// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
 #[derive(Clone, Default, SafeDebug, PartialEq, Eq)]
@@ -32,10 +32,8 @@ pub enum TimeToLive {
     /// Individual items can still define their own TTL.
     NoDefault,
 
-    /// TTL is enabled with a default expiration of the given duration.
-    ///
-    /// Only whole seconds are used; any sub-second component is truncated during serialization.
-    Seconds(Duration),
+    /// TTL is enabled with a default expiration of the given number of seconds.
+    Seconds(i64),
 }
 
 impl TimeToLive {
@@ -45,9 +43,9 @@ impl TimeToLive {
     }
 }
 
-impl From<Duration> for TimeToLive {
-    fn from(d: Duration) -> Self {
-        TimeToLive::Seconds(d)
+impl From<i64> for TimeToLive {
+    fn from(n: i64) -> Self {
+        TimeToLive::Seconds(n)
     }
 }
 
@@ -59,9 +57,7 @@ impl Serialize for TimeToLive {
         match self {
             TimeToLive::Off => serializer.serialize_none(),
             TimeToLive::NoDefault => serializer.serialize_i64(-1),
-            TimeToLive::Seconds(d) => {
-                let secs = i64::try_from(d.as_secs()).map_err(serde::ser::Error::custom)?;
-                serializer.serialize_i64(secs)
+            TimeToLive::Seconds(n) => { serializer.serialize_i64(*n)
             }
         }
     }
@@ -75,7 +71,7 @@ impl<'de> Deserialize<'de> for TimeToLive {
         match Option::<i64>::deserialize(deserializer)? {
             None => Ok(TimeToLive::Off),
             Some(-1) => Ok(TimeToLive::NoDefault),
-            Some(n) if n >= 0 => Ok(TimeToLive::Seconds(Duration::from_secs(n as u64))),
+            Some(n) if n >= 0 => Ok(TimeToLive::Seconds(n)),
             Some(n) => Err(serde::de::Error::invalid_value(
                 serde::de::Unexpected::Signed(n),
                 &"a non-negative integer or -1",
@@ -318,7 +314,6 @@ pub enum ConflictResolutionMode {
 #[cfg(test)]
 mod tests {
     use serde::{Deserialize, Serialize};
-    use std::time::Duration;
 
     use super::TimeToLive;
     use crate::models::ContainerProperties;
@@ -333,7 +328,7 @@ mod tests {
     #[test]
     fn serialize_ttl_seconds() {
         let value = TtlHolder {
-            ttl: TimeToLive::Seconds(Duration::from_secs(4200)),
+            ttl: TimeToLive::Seconds(4200),
         };
         let json = serde_json::to_string(&value).unwrap();
         assert_eq!(r#"{"ttl":4200}"#, json);
@@ -360,7 +355,7 @@ mod tests {
     #[test]
     fn deserialize_ttl_seconds() {
         let value: TtlHolder = serde_json::from_str(r#"{"ttl":4200}"#).unwrap();
-        assert_eq!(TimeToLive::Seconds(Duration::from_secs(4200)), value.ttl);
+        assert_eq!(TimeToLive::Seconds(4200), value.ttl);
     }
 
     #[test]
@@ -384,7 +379,7 @@ mod tests {
     #[test]
     fn deserialize_ttl_zero() {
         let value: TtlHolder = serde_json::from_str(r#"{"ttl":0}"#).unwrap();
-        assert_eq!(TimeToLive::Seconds(Duration::ZERO), value.ttl);
+        assert_eq!(TimeToLive::Seconds(0), value.ttl);
     }
 
     #[test]
@@ -396,7 +391,7 @@ mod tests {
     #[test]
     fn round_trip_ttl_seconds() {
         let original = TtlHolder {
-            ttl: TimeToLive::Seconds(Duration::from_secs(86400)),
+            ttl: TimeToLive::Seconds(86400),
         };
         let json = serde_json::to_string(&original).unwrap();
         let deserialized: TtlHolder = serde_json::from_str(&json).unwrap();
@@ -414,19 +409,15 @@ mod tests {
     }
 
     #[test]
-    fn from_duration_for_time_to_live() {
-        let ttl: TimeToLive = Duration::from_secs(3600).into();
-        assert_eq!(TimeToLive::Seconds(Duration::from_secs(3600)), ttl);
+    fn from_i64_for_time_to_live() {
+        let ttl: TimeToLive = 3600i64.into();
+        assert_eq!(TimeToLive::Seconds(3600), ttl);
     }
 
     #[test]
-    fn builder_accepts_duration_and_time_to_live() {
-        let with_duration =
-            ContainerProperties::new("c", "/pk".into()).with_default_ttl(Duration::from_secs(60));
-        assert_eq!(
-            TimeToLive::Seconds(Duration::from_secs(60)),
-            with_duration.default_ttl
-        );
+    fn builder_accepts_i64_and_time_to_live() {
+        let with_i64 = ContainerProperties::new("c", "/pk".into()).with_default_ttl(60i64);
+        assert_eq!(TimeToLive::Seconds(60), with_i64.default_ttl);
 
         let with_no_default =
             ContainerProperties::new("c", "/pk".into()).with_default_ttl(TimeToLive::NoDefault);
@@ -455,7 +446,7 @@ mod tests {
         }"#;
         let props: ContainerProperties = serde_json::from_str(json).unwrap();
         assert_eq!(
-            TimeToLive::Seconds(Duration::from_secs(3600)),
+            TimeToLive::Seconds(3600),
             props.default_ttl
         );
         assert_eq!(TimeToLive::NoDefault, props.analytical_storage_ttl);
