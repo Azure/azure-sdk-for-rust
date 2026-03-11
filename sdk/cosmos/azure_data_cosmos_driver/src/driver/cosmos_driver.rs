@@ -59,7 +59,7 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.transport();
-        let adaptive_transport = transport.get_metadata_transport(&endpoint);
+        let adaptive_transport = transport.get_metadata_transport(&endpoint)?;
         let user_agent = runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
@@ -460,10 +460,10 @@ impl CosmosDriver {
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         let transport_context = if is_dataplane {
-            transport.get_dataplane_transport(&endpoint, account_properties.as_ref())
+            transport.get_dataplane_transport(&endpoint, account_properties.as_ref())?
         } else {
             super::transport::adaptive_transport::TransportContext {
-                transport: transport.get_metadata_transport(&endpoint),
+                transport: transport.get_metadata_transport(&endpoint)?,
                 thin_client_overrides: None,
             }
         };
