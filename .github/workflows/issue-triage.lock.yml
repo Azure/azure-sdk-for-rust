@@ -29,14 +29,13 @@
 #
 # Source: githubnext/agentics/workflows/issue-triage.md@8e6d7c86bba37371d2d0eee1a23563db3e561eb5
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"501e1b6a5e9fb8766d9472b5f74c950ac572406054822d8548bf5cc338470860","compiler_version":"v0.57.2","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"4a09583b0882fbadf3e2c1c39f3890ba579f557f5b62e5f7d289afdb579c2384","compiler_version":"v0.57.2","strict":true}
 
 name: "Agentic Triage"
 "on":
   issues:
     types:
     - opened
-    - reopened
 
 permissions: {}
 
