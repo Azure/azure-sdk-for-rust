@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
+use tracing::warn;
 use url::Url;
 
 use crate::{
@@ -307,14 +308,15 @@ fn build_transport_request(
     let request_path = resource_ref.request_path();
     let url = {
         let mut base = match (thin_client_overrides, routing.endpoint.region()) {
-            (Some(overrides), Some(region)) => overrides.get(region).cloned().ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!(
-                        "Gateway20 selected but no thin-client endpoint override was available for region '{region}'"
-                    ),
-                )
-            })?,
+            (Some(overrides), Some(region)) => {
+                overrides.get(region).cloned().unwrap_or_else(|| {
+                    warn!(
+                        %region,
+                        "No thin-client endpoint override for region; falling back to standard gateway URL"
+                    );
+                    routing.endpoint.url().clone()
+                })
+            }
             _ => routing.endpoint.url().clone(),
         };
         let normalized = if request_path.starts_with('/') {
@@ -603,7 +605,7 @@ mod tests {
     }
 
     #[test]
-    fn build_transport_request_fails_when_regional_thin_client_override_is_missing() {
+    fn build_transport_request_falls_back_to_gateway_url_when_thin_client_override_missing() {
         let operation =
             CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let routing = RoutingDecision {
@@ -617,7 +619,7 @@ mod tests {
             Url::parse("https://test-eastus-thin.documents.azure.com:444/").unwrap(),
         )]);
 
-        let error = build_transport_request(
+        let request = build_transport_request(
             &operation,
             &routing,
             Some(&overrides),
@@ -625,12 +627,12 @@ mod tests {
             ExecutionContext::Initial,
             None,
         )
-        .expect_err("request should fail without a regional thin-client override");
+        .expect("request should succeed by falling back to standard gateway URL");
 
-        assert!(
-            error
-                .to_string()
-                .contains("no thin-client endpoint override was available for region 'westus2'")
+        // Falls back to the standard gateway URL since westus2 is not in the overrides.
+        assert_eq!(
+            request.url.as_str(),
+            "https://test-westus2.documents.azure.com/dbs/mydb"
         );
     }
 
