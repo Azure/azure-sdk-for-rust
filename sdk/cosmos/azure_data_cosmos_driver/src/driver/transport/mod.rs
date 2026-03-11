@@ -425,6 +425,72 @@ pub(crate) mod tests {
         .unwrap()
     }
 
+    /// Shared test fixture: same region in both readable and writable thin-client lists with the same URL.
+    pub(crate) fn account_properties_with_duplicate_region_same_url() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [],
+            "readableLocations": [],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}",
+            "thinClientReadableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
+                }
+            ],
+            "thinClientWritableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
+    /// Shared test fixture: same region in both readable and writable thin-client lists with different URLs.
+    pub(crate) fn account_properties_with_duplicate_region_conflicting_url() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [],
+            "readableLocations": [],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}",
+            "thinClientReadableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "https://test-westus2-read-thin.documents.azure.com:444/"
+                }
+            ],
+            "thinClientWritableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "https://test-westus2-write-thin.documents.azure.com:444/"
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn transport_creates_with_default_options() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();

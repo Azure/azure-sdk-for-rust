@@ -111,7 +111,8 @@ pub(crate) struct TransportContext {
 pub(crate) fn thin_client_endpoint_overrides(
     properties: &AccountProperties,
 ) -> HashMap<Region, Url> {
-    properties
+    let mut map = HashMap::new();
+    let entries = properties
         .thin_client_readable_locations
         .iter()
         .chain(properties.thin_client_writable_locations.iter())
@@ -128,14 +129,31 @@ pub(crate) fn thin_client_endpoint_overrides(
                     None
                 }
             },
-        )
-        .collect()
+        );
+
+    for (region, url) in entries {
+        if let Some(existing) = map.get(&region) {
+            if *existing != url {
+                warn!(
+                    %region,
+                    existing_url = %existing,
+                    new_url = %url,
+                    "Duplicate thin-client region with conflicting URL; keeping first entry"
+                );
+                continue;
+            }
+        }
+        map.insert(region, url);
+    }
+    map
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::driver::transport::tests::{
+        account_properties_with_duplicate_region_conflicting_url,
+        account_properties_with_duplicate_region_same_url,
         account_properties_with_partially_malformed_thin_client,
         account_properties_with_thin_client,
     };
@@ -167,6 +185,33 @@ mod tests {
         assert_eq!(
             overrides[&Region::new("eastus")].as_str(),
             "https://test-eastus-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn duplicate_region_same_url_deduplicates() {
+        let properties = account_properties_with_duplicate_region_same_url();
+        let overrides = thin_client_endpoint_overrides(&properties);
+
+        // westus2 appears in both read and write with the same URL — should deduplicate to 1 entry.
+        assert_eq!(overrides.len(), 1);
+        assert_eq!(
+            overrides[&Region::new("westus2")].as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn duplicate_region_conflicting_url_keeps_first() {
+        let properties = account_properties_with_duplicate_region_conflicting_url();
+        let overrides = thin_client_endpoint_overrides(&properties);
+
+        // westus2 appears in both read and write with different URLs —
+        // should keep the first (readable) entry.
+        assert_eq!(overrides.len(), 1);
+        assert_eq!(
+            overrides[&Region::new("westus2")].as_str(),
+            "https://test-westus2-read-thin.documents.azure.com:444/"
         );
     }
 }
