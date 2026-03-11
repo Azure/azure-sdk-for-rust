@@ -8,7 +8,7 @@ mod generated;
 
 mod logging;
 
-pub mod models;
 pub mod clients;
+pub mod models;
 
 pub use clients::{QueueClient, QueueClientOptions, QueueServiceClient, QueueServiceClientOptions};

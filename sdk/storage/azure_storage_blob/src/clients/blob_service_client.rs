@@ -144,12 +144,7 @@ mod tests {
 
     #[test]
     fn new_allows_http_without_credential() {
-        BlobServiceClient::new(
-            "http://myaccount.blob.core.windows.net/",
-            None,
-            None,
-        )
-        .unwrap();
+        BlobServiceClient::new("http://myaccount.blob.core.windows.net/", None, None).unwrap();
     }
 
     #[test]

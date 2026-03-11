@@ -1,6 +1,16 @@
 # Storage Queue Examples
 
-This directory contains a set of example for the use of the Storage Queue clients.
+This directory contains a set of examples for the use of the Storage Queue clients.
+
+## Examples
+
+| File | Description |
+|---|---|
+| `hello_world.rs` | Getting started: create a queue, send and receive messages |
+| `queue_client.rs` | Queue-level operations: messages, metadata, access policies, TTL/visibility options |
+| `queue_service_client.rs` | Service-level operations: list queues, service properties, statistics |
+| `access_policy.rs` | Set and get queue access policies (stored access policies for SAS) |
+| `queue_storage_logging.rs` | Logging and OpenTelemetry distributed tracing |
 
 ## Setup
 

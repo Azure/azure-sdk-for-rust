@@ -11,8 +11,8 @@ use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{
         QueueClientGetPropertiesResultHeaders, QueueClientPeekMessagesOptions,
-        QueueClientReceiveMessagesOptions, QueueClientUpdateMessageOptions, QueueMessage,
-        SentMessage,
+        QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions,
+        QueueClientUpdateMessageOptions, QueueMessage, SentMessage,
     },
     QueueClient,
 };
@@ -177,6 +177,41 @@ async fn peek_and_receive_messages(
     Ok(())
 }
 
+/// Demonstrates sending a message with a custom time-to-live and initial visibility delay.
+///
+/// - `message_time_to_live`: how long (in seconds) the message stays in the queue before expiring.
+/// - `visibility_timeout` on send: how long (in seconds) the message is hidden after being enqueued,
+///   useful for scheduling deferred processing.
+/// - `visibility_timeout` on receive: extends how long the message stays invisible after dequeue,
+///   giving the consumer extra processing time.
+async fn send_with_options(queue_client: &QueueClient) -> Result<(), Box<dyn std::error::Error>> {
+    let body = QueueMessage {
+        message_text: Some("Deferred message: visible after 10s, expires after 60s".to_string()),
+    };
+
+    // Hide the message for 10 seconds after enqueue; expire it after 60 seconds.
+    let send_options = QueueClientSendMessageOptions {
+        visibility_timeout: Some(10),
+        message_time_to_live: Some(60),
+        ..Default::default()
+    };
+    let result = queue_client
+        .send_message(body.try_into()?, Some(send_options))
+        .await;
+    log_operation_result(&result, "send_message_with_options");
+
+    // Receive with a custom visibility timeout so the message stays invisible for 30s
+    // after dequeue, giving the consumer time to process it before it reappears.
+    let recv_options = QueueClientReceiveMessagesOptions {
+        visibility_timeout: Some(30),
+        ..Default::default()
+    };
+    let result = queue_client.receive_messages(Some(recv_options)).await;
+    log_operation_result(&result, "receive_messages_with_visibility_timeout");
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
@@ -219,6 +254,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Peek and Receive messages
     peek_and_receive_messages(&queue_client).await?;
+
+    // Send with message TTL and visibility timeout options
+    send_with_options(&queue_client).await?;
 
     // Cleanup
     let result = queue_client.delete(None).await;

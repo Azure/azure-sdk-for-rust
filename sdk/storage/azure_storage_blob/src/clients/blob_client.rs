@@ -340,10 +340,7 @@ mod tests {
     #[test]
     fn from_url_requires_https_with_credential() {
         let credential = Arc::new(MockCredential);
-        let url = Url::parse(
-            "http://myaccount.blob.core.windows.net/mycontainer/myblob",
-        )
-        .unwrap();
+        let url = Url::parse("http://myaccount.blob.core.windows.net/mycontainer/myblob").unwrap();
         let err = BlobClient::from_url(url, Some(credential), None)
             .err()
             .unwrap();

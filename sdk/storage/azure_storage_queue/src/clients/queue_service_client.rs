@@ -95,13 +95,10 @@ mod tests {
     #[test]
     fn new_requires_https_with_credential() {
         let cred = MockCredential::new().unwrap();
-        let err = QueueServiceClient::new(
-            "http://myaccount.queue.core.windows.net/",
-            Some(cred),
-            None,
-        )
-        .err()
-        .unwrap();
+        let err =
+            QueueServiceClient::new("http://myaccount.queue.core.windows.net/", Some(cred), None)
+                .err()
+                .unwrap();
         assert!(
             err.to_string().contains("must use https"),
             "Expected error message to contain 'must use https', got: {err}"
@@ -111,11 +108,8 @@ mod tests {
     #[test]
     fn new_allows_http_without_credential() {
         // HTTP is allowed when no credential is provided (e.g., SAS token in URL)
-        let result = QueueServiceClient::new(
-            "http://myaccount.queue.core.windows.net/",
-            None,
-            None,
-        );
+        let result =
+            QueueServiceClient::new("http://myaccount.queue.core.windows.net/", None, None);
         assert!(result.is_ok());
     }
 
