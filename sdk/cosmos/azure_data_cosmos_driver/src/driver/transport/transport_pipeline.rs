@@ -136,7 +136,7 @@ pub(crate) fn evaluate_transport_retry(
 
 /// Executes a single transport attempt.
 ///
-/// Applies headers, signs the request, sends it via the `HttpClient`, and
+/// Applies headers, signs the request, sends it via the selected transport, and
 /// handles 429 throttle retry internally. Returns a `TransportResult` to the
 /// operation pipeline for higher-level decision making.
 ///

@@ -179,7 +179,8 @@ impl CosmosTransport {
 
     /// Returns a [`TransportContext`] for dataplane operations.
     ///
-    /// Selects Gateway 2.0 when allowed and thin-client endpoints are available.
+    /// Selects Gateway 2.0 when allowed and thin-client endpoints are
+    /// available.
     /// Computes thin-client endpoint overrides (merged read + write) when
     /// Gateway 2.0 is selected. The emulator does not support Gateway 2.0.
     pub(crate) fn get_dataplane_transport(
@@ -211,6 +212,15 @@ impl CosmosTransport {
         } else if self.connection_pool.is_gateway20_allowed()
             && account_properties.has_thin_client_endpoints()
         {
+            let overrides = thin_client_endpoint_overrides(account_properties);
+            if overrides.is_empty() {
+                return TransportContext {
+                    transport: self.dataplane_gateway_transport.clone(),
+                    thin_client_overrides: None,
+                    is_gateway20: false,
+                };
+            }
+
             let transport = self
                 .dataplane_gateway20_transport
                 .get_or_init(|| {
@@ -223,7 +233,6 @@ impl CosmosTransport {
                     )
                 })
                 .clone();
-            let overrides = thin_client_endpoint_overrides(account_properties);
             TransportContext {
                 transport,
                 thin_client_overrides: Some(Arc::new(overrides)),
@@ -271,6 +280,72 @@ pub(crate) mod tests {
                 {
                     "name": "eastus",
                     "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/"
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
+    /// Shared test fixture: one malformed thin-client endpoint and one valid endpoint.
+    pub(crate) fn account_properties_with_partially_malformed_thin_client() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [],
+            "readableLocations": [],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}",
+            "thinClientReadableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "not-a-url"
+                }
+            ],
+            "thinClientWritableLocations": [
+                {
+                    "name": "eastus",
+                    "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/"
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
+    /// Shared test fixture: all thin-client endpoints are malformed.
+    pub(crate) fn account_properties_with_only_malformed_thin_client() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [],
+            "readableLocations": [],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}",
+            "thinClientReadableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "not-a-url"
+                }
+            ],
+            "thinClientWritableLocations": [
+                {
+                    "name": "eastus",
+                    "databaseAccountEndpoint": "still-not-a-url"
                 }
             ]
         }))
@@ -401,8 +476,7 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx =
-            transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
+        let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway20(_)));
         assert!(ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_some());
@@ -419,8 +493,7 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx =
-            transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
+        let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
@@ -437,8 +510,28 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx =
-            transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
+        let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
+        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
+        assert!(!ctx.is_gateway20);
+        assert!(ctx.thin_client_overrides.is_none());
+    }
+
+    #[test]
+    fn dataplane_transport_falls_back_to_gateway_when_all_thin_client_urls_are_malformed() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(true)
+            .with_is_gateway20_allowed(true)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::new(pool).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport.get_dataplane_transport(
+            &endpoint,
+            &account_properties_with_only_malformed_thin_client(),
+        );
+
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());

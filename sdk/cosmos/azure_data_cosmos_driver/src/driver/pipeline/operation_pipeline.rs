@@ -306,15 +306,17 @@ fn build_transport_request(
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
     let url = {
-        let mut base = thin_client_overrides
-            .and_then(|overrides| {
-                routing
-                    .endpoint
-                    .region()
-                    .and_then(|region| overrides.get(region))
-            })
-            .cloned()
-            .unwrap_or_else(|| routing.endpoint.url().clone());
+        let mut base = match (thin_client_overrides, routing.endpoint.region()) {
+            (Some(overrides), Some(region)) => overrides.get(region).cloned().ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!(
+                        "Gateway20 selected but no thin-client endpoint override was available for region '{region}'"
+                    ),
+                )
+            })?,
+            _ => routing.endpoint.url().clone(),
+        };
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -597,6 +599,38 @@ mod tests {
         assert_eq!(
             request.url.as_str(),
             "https://test.documents.azure.com/dbs/mydb"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_fails_when_regional_thin_client_override_is_missing() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::regional(
+                "westus2".into(),
+                Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            ),
+        };
+        let overrides = HashMap::from([(
+            Region::new("eastus"),
+            Url::parse("https://test-eastus-thin.documents.azure.com:444/").unwrap(),
+        )]);
+
+        let error = build_transport_request(
+            &operation,
+            &routing,
+            Some(&overrides),
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect_err("request should fail without a regional thin-client override");
+
+        assert!(
+            error
+                .to_string()
+                .contains("no thin-client endpoint override was available for region 'westus2'")
         );
     }
 

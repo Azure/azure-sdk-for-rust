@@ -128,7 +128,10 @@ pub(crate) fn thin_client_endpoint_overrides(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::transport::tests::account_properties_with_thin_client;
+    use crate::driver::transport::tests::{
+        account_properties_with_partially_malformed_thin_client,
+        account_properties_with_thin_client,
+    };
 
     #[test]
     fn merges_read_and_write_thin_client_overrides() {
@@ -141,6 +144,19 @@ mod tests {
             overrides[&Region::new("westus2")].as_str(),
             "https://test-westus2-thin.documents.azure.com:444/"
         );
+        assert_eq!(
+            overrides[&Region::new("eastus")].as_str(),
+            "https://test-eastus-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn ignores_malformed_thin_client_endpoints() {
+        let properties = account_properties_with_partially_malformed_thin_client();
+        let overrides = thin_client_endpoint_overrides(&properties);
+
+        assert_eq!(overrides.len(), 1);
+        assert!(!overrides.contains_key(&Region::new("westus2")));
         assert_eq!(
             overrides[&Region::new("eastus")].as_str(),
             "https://test-eastus-thin.documents.azure.com:444/"

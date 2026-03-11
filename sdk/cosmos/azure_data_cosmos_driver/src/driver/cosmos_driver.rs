@@ -454,7 +454,7 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        // Step 5: Select appropriate transport based on pipeline type
+        // Step 5: Select the adaptive transport context for the chosen pipeline
         let transport = self.runtime.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
