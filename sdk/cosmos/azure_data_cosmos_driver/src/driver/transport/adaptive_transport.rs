@@ -118,7 +118,18 @@ pub(crate) fn thin_client_endpoint_overrides(
         .chain(properties.thin_client_writable_locations.iter())
         .filter_map(
             |region| match Url::parse(&region.database_account_endpoint) {
-                Ok(url) => Some((region.name.clone(), url)),
+                Ok(url) => {
+                    if url.scheme() != "https" {
+                        warn!(
+                            region = %region.name,
+                            endpoint = %region.database_account_endpoint,
+                            scheme = url.scheme(),
+                            "Ignoring non-HTTPS thin-client endpoint URL"
+                        );
+                        return None;
+                    }
+                    Some((region.name.clone(), url))
+                }
                 Err(err) => {
                     warn!(
                         region = %region.name,
@@ -154,6 +165,7 @@ mod tests {
     use crate::driver::transport::tests::{
         account_properties_with_duplicate_region_conflicting_url,
         account_properties_with_duplicate_region_same_url,
+        account_properties_with_non_https_thin_client,
         account_properties_with_partially_malformed_thin_client,
         account_properties_with_thin_client,
     };
@@ -212,6 +224,20 @@ mod tests {
         assert_eq!(
             overrides[&Region::new("westus2")].as_str(),
             "https://test-westus2-read-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn rejects_non_https_thin_client_endpoints() {
+        let properties = account_properties_with_non_https_thin_client();
+        let overrides = thin_client_endpoint_overrides(&properties);
+
+        // The http:// endpoint should be rejected; only the https:// one should remain.
+        assert_eq!(overrides.len(), 1);
+        assert!(!overrides.contains_key(&Region::new("westus2")));
+        assert_eq!(
+            overrides[&Region::new("eastus")].as_str(),
+            "https://test-eastus-thin.documents.azure.com:444/"
         );
     }
 }

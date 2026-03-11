@@ -494,6 +494,39 @@ pub(crate) mod tests {
         .unwrap()
     }
 
+    /// Shared test fixture: one non-HTTPS thin-client endpoint and one valid HTTPS endpoint.
+    pub(crate) fn account_properties_with_non_https_thin_client() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [],
+            "readableLocations": [],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}",
+            "thinClientReadableLocations": [
+                {
+                    "name": "westus2",
+                    "databaseAccountEndpoint": "http://test-westus2-thin.documents.azure.com:444/"
+                }
+            ],
+            "thinClientWritableLocations": [
+                {
+                    "name": "eastus",
+                    "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/"
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn transport_creates_with_default_options() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
