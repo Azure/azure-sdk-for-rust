@@ -185,7 +185,10 @@ impl ContainerProperties {
         self
     }
 
-    pub fn with_analytical_storage_ttl(mut self, analytical_storage_ttl: impl Into<TimeToLive>) -> Self {
+    pub fn with_analytical_storage_ttl(
+        mut self,
+        analytical_storage_ttl: impl Into<TimeToLive>,
+    ) -> Self {
         self.analytical_storage_ttl = analytical_storage_ttl.into();
         self
     }
@@ -417,12 +420,15 @@ mod tests {
 
     #[test]
     fn builder_accepts_duration_and_time_to_live() {
-        let with_duration = ContainerProperties::new("c", "/pk".into())
-            .with_default_ttl(Duration::from_secs(60));
-        assert_eq!(TimeToLive::Seconds(Duration::from_secs(60)), with_duration.default_ttl);
+        let with_duration =
+            ContainerProperties::new("c", "/pk".into()).with_default_ttl(Duration::from_secs(60));
+        assert_eq!(
+            TimeToLive::Seconds(Duration::from_secs(60)),
+            with_duration.default_ttl
+        );
 
-        let with_no_default = ContainerProperties::new("c", "/pk".into())
-            .with_default_ttl(TimeToLive::NoDefault);
+        let with_no_default =
+            ContainerProperties::new("c", "/pk".into()).with_default_ttl(TimeToLive::NoDefault);
         assert_eq!(TimeToLive::NoDefault, with_no_default.default_ttl);
     }
 
@@ -447,7 +453,10 @@ mod tests {
             "analyticalStorageTtl": -1
         }"#;
         let props: ContainerProperties = serde_json::from_str(json).unwrap();
-        assert_eq!(TimeToLive::Seconds(Duration::from_secs(3600)), props.default_ttl);
+        assert_eq!(
+            TimeToLive::Seconds(Duration::from_secs(3600)),
+            props.default_ttl
+        );
         assert_eq!(TimeToLive::NoDefault, props.analytical_storage_ttl);
     }
 
