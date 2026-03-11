@@ -96,6 +96,64 @@ mod tests {
             HttpVersionPolicy::Http11Only
         );
     }
+
+    #[test]
+    fn metadata_uses_http2_preferred_when_http2_allowed() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(true)
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            HttpClientConfig::metadata(&pool).version_policy,
+            HttpVersionPolicy::Http2Preferred
+        );
+    }
+
+    #[test]
+    fn dataplane_gateway_uses_http2_preferred_when_http2_allowed() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(true)
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            HttpClientConfig::dataplane_gateway(&pool).version_policy,
+            HttpVersionPolicy::Http2Preferred
+        );
+    }
+
+    #[test]
+    fn dataplane_gateway20_always_uses_http2_only() {
+        let pool_http2_off = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(false)
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            HttpClientConfig::dataplane_gateway20(&pool_http2_off).version_policy,
+            HttpVersionPolicy::Http2Only
+        );
+
+        let pool_http2_on = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(true)
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            HttpClientConfig::dataplane_gateway20(&pool_http2_on).version_policy,
+            HttpVersionPolicy::Http2Only
+        );
+    }
+
+    #[test]
+    fn for_emulator_sets_emulator_flag() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let config = HttpClientConfig::metadata(&pool);
+
+        assert!(!config.for_emulator);
+        assert!(config.for_emulator().for_emulator);
+    }
 }
 
 pub(crate) trait HttpClientFactory: fmt::Debug + Send + Sync {
