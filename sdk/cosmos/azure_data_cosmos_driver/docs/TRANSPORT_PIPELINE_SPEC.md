@@ -18,6 +18,7 @@
 8. [Migration Plan (Step 1 → Step 2)](#8-migration-plan-step-1--step-2)
 9. [Configuration Surface](#9-configuration-surface)
 10. [Open Questions](#10-open-questions)
+11. [Crossbeam & Lock-Free Data Structures](#11-crossbeam--lock-free-data-structures)
 
 ---
 
@@ -256,19 +257,19 @@ pub(crate) struct LocationSnapshot {
 
 /// Newtype wrapper for a Cosmos DB Log Sequence Number (LSN).
 ///
-/// LSNs are monotonically increasing 64-bit integers assigned by the
-/// storage engine to each committed write within a partition. They are
+/// LSNs are monotonically increasing unsigned 64-bit integers assigned by
+/// the storage engine to each committed write within a partition. They are
 /// used for session-consistency tracking, quorum reads, and
 /// change-feed continuation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct LogSequenceNumber(i64);
+pub(crate) struct LogSequenceNumber(u64);
 
 impl LogSequenceNumber {
-    pub fn new(value: i64) -> Self {
+    pub fn new(value: u64) -> Self {
         Self(value)
     }
 
-    pub fn value(self) -> i64 {
+    pub fn value(self) -> u64 {
         self.0
     }
 }
@@ -530,15 +531,13 @@ values returned from `evaluate_transport_result` and applied in a single, well-d
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptions,
-    account_state_store: &AccountEndpointStateStore,
-    partition_state_store: &PartitionEndpointStateStore,
-    account_metadata_cache: &AccountMetadataCache,
+    location_store: &LocationStateStore,
     transport: &AdaptiveTransport,
     auth_context: &AuthContext,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> Result<CosmosResponse> {
     let mut retry_state = OperationRetryState::initial(
-        operation, options, &account_state_store.snapshot(),
+        operation, options, &location_store.account_snapshot(),
     );
     let mut session_state = SessionState::from_operation(operation, options);
     let deadline = options.e2e_deadline();
@@ -548,10 +547,7 @@ pub(crate) async fn execute_operation_pipeline(
         // One immutable snapshot per iteration. All routing decisions in
         // this iteration are based on this view. Mutations (STAGE 6)
         // apply to the stores; the next iteration re-snapshots.
-        let location = LocationSnapshot {
-            account: account_state_store.snapshot(),
-            partitions: partition_state_store.snapshot(),
-        };
+        let location = location_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
         let routing = resolve_endpoint(
@@ -587,15 +583,12 @@ pub(crate) async fn execute_operation_pipeline(
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // This is the ONLY place in the loop where location state is
-        // mutated. Each effect produces a new snapshot and swaps it into
-        // the appropriate store.
-        apply_location_effects(
-            &effects,
-            &location,
-            account_state_store,
-            partition_state_store,
-            account_metadata_cache,
-        ).await;
+        // mutated. The unified `LocationStateStore::apply` method
+        // processes all effects, applying each via a CAS loop against
+        // the *current* state (not the stale STAGE 1 snapshot). It
+        // handles `RefreshAccountProperties` internally by delegating
+        // to the `AccountMetadataCache`.
+        location_store.apply(&effects).await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
@@ -609,12 +602,20 @@ pub(crate) async fn execute_operation_pipeline(
             }
             OperationAction::SessionRetry { new_state } => {
                 retry_state = new_state;
+                // Advance to next preferred region. In Gateway mode, in-region
+                // replica retries are already handled by Gateway, so the
+                // operation-level session retry moves to the next suitable
+                // region (hub/write region for single-write accounts,
+                // round-robin for multi-write accounts).
+                retry_state = retry_state.advance_location(endpoints_len);
+                // Check deadline — same as FailoverRetry.
+                check_deadline(deadline)?;
             }
             OperationAction::Hedge { secondary_routing } => {
                 // See §4.2 Hedging
                 return execute_hedged(
                     operation, options, &routing, &secondary_routing,
-                    &session_state, transport, diagnostics, deadline,
+                    &session_state, transport, auth_context, diagnostics, deadline,
                 ).await;
             }
             OperationAction::Abort(error) => {
@@ -624,44 +625,8 @@ pub(crate) async fn execute_operation_pipeline(
     }
 }
 
-/// SYSTEM: Apply location effects to the stores.
-///
-/// Each effect reads the current snapshot, produces a new one via a pure
-/// system function, and swaps the result into the store. This is the only
-/// function that mutates location state during the operation loop.
-async fn apply_location_effects(
-    effects: &[LocationEffect],
-    location: &LocationSnapshot,
-    account_state_store: &AccountEndpointStateStore,
-    partition_state_store: &PartitionEndpointStateStore,
-    account_metadata_cache: &AccountMetadataCache,
-) {
-    for effect in effects {
-        match effect {
-            LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
-                let new_state = mark_endpoint_unavailable(
-                    &location.account,
-                    endpoint,
-                    reason.clone(),
-                );
-                account_state_store.swap(new_state);
-            }
-            LocationEffect::MarkPartitionUnavailable(partition) => {
-                let new_state = mark_partition_unavailable(
-                    &location.partitions,
-                    partition,
-                );
-                partition_state_store.swap(new_state);
-            }
-            LocationEffect::RefreshAccountProperties => {
-                // Trigger an async (rate-limited) refresh of account
-                // metadata. The cache internally rate-limits to avoid
-                // overwhelming the metadata endpoint.
-                account_metadata_cache.refresh_if_stale().await;
-            }
-        }
-    }
-}
+// NOTE: `apply_location_effects` is now the `LocationStateStore::apply`
+// method (§4.6). See that section for the full implementation.
 ```
 
 ### 4.2 Hedging (Speculative Execution)
@@ -837,9 +802,16 @@ fn evaluate_transport_result(
                 }
 
                 // 404/1002 ReadSessionNotAvailable → session retry.
-                // No location effects — session consistency errors are resolved
-                // by retrying with a different session token, not by changing
-                // the endpoint topology.
+                // In Gateway mode, in-region replica retries are already
+                // handled by Gateway. The operation-level session retry
+                // advances to the next preferred region (hub/write region
+                // for single-write accounts, round-robin for multi-write).
+                //
+                // Default max retries (Java SDK parity):
+                //   - Single-write: 2 (try local + hub + one more)
+                //   - Multi-write: endpoints.len() (try each region once)
+                // For single-write accounts, abort after 2 retries even if
+                // max_session_retries is higher.
                 CosmosStatus::READ_SESSION_NOT_AVAILABLE => {
                     if retry_state.session_token_retry_count < MAX_SESSION_RETRIES {
                         (
@@ -959,9 +931,10 @@ Following the DOP principle, the account-level endpoint routing is split into:
   routing system needs to pick an endpoint. Replaced atomically on refresh.
   Together with `PartitionEndpointState`, it forms the `LocationSnapshot` (§3.1) that
   the operation loop acquires once per iteration and passes to `resolve_endpoint`.
-- **Store (Infrastructure)**: `AccountEndpointStateStore` — a thin `RwLock<Arc<_>>` wrapper
-  that provides thread-safe snapshot access and atomic swap. Mutated exclusively in
-  STAGE 6 (`apply_location_effects`) of the operation loop.
+- **Store (Infrastructure)**: `LocationStateStore` — a unified store (§4.6) that holds both
+  account-level and partition-level state behind separate epoch-guarded atomic pointers (§11.1).
+  Provides a single `apply(&self, effects, cache)` method that applies all `LocationEffect`s
+  atomically via CAS loops. Mutated exclusively in STAGE 6 of the operation loop.
 - **Systems (Behavior)**: Pure functions that read state and produce `RoutingDecision`s, or
   take old state + an event and produce new state.
 
@@ -998,26 +971,10 @@ pub(crate) struct AccountEndpointState {
     pub default_endpoint: CosmosEndpoint,
 }
 
-/// Thread-safe holder for the current `AccountEndpointState` snapshot.
-///
-/// Read path: clone the `Arc` (lock-free via `RwLock::read`).
-/// Write path: build a new `AccountEndpointState`, take the write lock,
-/// and swap the `Arc`.
-pub(crate) struct AccountEndpointStateStore {
-    state: RwLock<Arc<AccountEndpointState>>,
-}
-
-impl AccountEndpointStateStore {
-    /// Get a cheap clone of the current snapshot.
-    pub fn snapshot(&self) -> Arc<AccountEndpointState> {
-        Arc::clone(&self.state.read())
-    }
-
-    /// Atomically replace the current snapshot.
-    pub fn swap(&self, new_state: AccountEndpointState) {
-        *self.state.write() = Arc::new(new_state);
-    }
-}
+// NOTE: The thread-safe store for `AccountEndpointState` (and
+// `PartitionEndpointState`) lives in the unified `LocationStateStore`
+// defined in §4.6.  See that section for the epoch-guarded atomic
+// pointers, snapshot access, CAS-loop `apply`, and unconditional `swap`.
 
 /// A Cosmos DB service endpoint: region name, URL, and whether
 /// the endpoint is global or regional.
@@ -1083,18 +1040,20 @@ fn expire_unavailable_endpoints(
 
 **Key difference from previous design**: There is no `GlobalEndpointManager` struct with methods.
 The `AccountEndpointState` is pure data, and each mutation is an explicit system function that
-returns a new snapshot. The `AccountEndpointStateStore` is a trivial `RwLock<Arc<_>>` holder —
-it has no routing logic. The `AccountMetadataCache` remains a separate infrastructure component
+returns a new snapshot. The `LocationStateStore` (§4.6) is a trivial epoch-guarded holder — it
+has no routing logic. The `AccountMetadataCache` remains a separate infrastructure component
 responsible for async-fetching and caching `AccountProperties`; on refresh, it calls
-`build_account_endpoint_state` and swaps the result into the store.
+`build_account_endpoint_state` and swaps the result into the store via
+`location_store.swap_account(new_state)`.
 
-This makes the read path lock-free (clone the `Arc`), keeps mutation explicit and traceable,
-and means every system function can be unit-tested with a hand-constructed `AccountEndpointState`
-— no mocking required.
+This makes the read path fully lock-free (epoch pin + atomic load), keeps mutation explicit and
+traceable, and means every system function can be unit-tested with a hand-constructed
+`AccountEndpointState` — no mocking required.
 
 ### 4.5 Partition Endpoint State & Circuit-Breaker Systems
 
-Same DOP split as §4.4: data component + state store + system functions.
+Same DOP split as §4.4: data component + system functions.  The store is the unified
+`LocationStateStore` (§4.6).
 
 ```rust
 /// COMPONENT: Immutable snapshot of partition-level circuit-breaker state.
@@ -1108,8 +1067,8 @@ pub(crate) struct PartitionEndpointState {
     /// (partition_key_range_id, region). Value is the circuit-breaker
     /// state for that partition/region pair.
     pub unavailable_partitions: HashMap<PartitionRegionKey, PartitionCircuitBreaker>,
-    /// Circuit-breaker configuration thresholds (resolved from `CircuitBreakerOptions`).
-    pub config: CircuitBreakerOptions,
+    /// Circuit-breaker configuration thresholds (resolved from `CircuitBreakerOptions` §9.4).
+    pub config: CircuitBreakerConfig,
 }
 
 /// Composite key for partition-level circuit-breaker tracking.
@@ -1144,13 +1103,14 @@ pub(crate) struct UnavailablePartition {
     pub is_read: bool,
 }
 
-/// Circuit-breaker configuration thresholds.
+/// Resolved circuit-breaker configuration thresholds.
 ///
 /// This is a resolved snapshot built from `CircuitBreakerOptions` (§9.4)
 /// after layered option resolution. All fields are concrete (non-`Option`)
-/// with defaults applied.
+/// with defaults applied. Named `Config` (not `Options`) to distinguish
+/// from the user-facing `CircuitBreakerOptions` in §9.4.
 #[derive(Clone, Debug)]
-pub(crate) struct CircuitBreakerOptions {
+pub(crate) struct CircuitBreakerConfig {
     /// Read failures within the counter reset window before tripping. Default: 2.
     pub read_failure_threshold: u32,
     /// Write failures within the counter reset window before tripping. Default: 5.
@@ -1163,27 +1123,15 @@ pub(crate) struct CircuitBreakerOptions {
     pub failback_interval: Duration,
 }
 
-/// Thread-safe holder for the current `PartitionEndpointState` snapshot.
-pub(crate) struct PartitionEndpointStateStore {
-    state: RwLock<Arc<PartitionEndpointState>>,
-}
-
-impl PartitionEndpointStateStore {
-    pub fn snapshot(&self) -> Arc<PartitionEndpointState> {
-        Arc::clone(&self.state.read())
-    }
-
-    pub fn swap(&self, new_state: PartitionEndpointState) {
-        *self.state.write() = Arc::new(new_state);
-    }
-}
+// NOTE: The thread-safe store for `PartitionEndpointState` lives in the
+// unified `LocationStateStore` (§4.6), alongside `AccountEndpointState`.
 ```
 
 **Systems (pure functions) operating on `PartitionEndpointState`**:
 
 ```rust
 // SYSTEM: Produce a new state with the given partition marked unavailable.
-// Called from STAGE 6 (`apply_location_effects`) when a
+// Called from STAGE 6 via `LocationStateStore::apply` (§4.6) when a
 // `LocationEffect::MarkPartitionUnavailable` effect is applied.
 fn mark_partition_unavailable(
     state: &PartitionEndpointState,
@@ -1227,6 +1175,180 @@ defaults):
 - Counter reset window: 300 seconds
 - Background failback interval: 300 seconds
 - Partition unavailability duration before probe: 5 seconds
+
+### 4.6 Unified `LocationStateStore`
+
+Both `AccountEndpointState` and `PartitionEndpointState` are held behind a single
+`LocationStateStore`. Each inner state has its own `crossbeam::epoch::Atomic<T>` — they're
+independent atomics (no shared lock), so a CAS on one never contends with a CAS on the other.
+
+The store exposes:
+- **`snapshot()`** — returns a `LocationSnapshot` with consistent (point-in-time) views of both
+  states.
+- **`apply(effects)`** — processes a `&[LocationEffect]` slice, applying each effect atomically
+  via the appropriate inner CAS loop. This is the single mutation entry point used by STAGE 6 of
+  the operation loop.
+- **`swap_account(state)`** / **`swap_partitions(state)`** — unconditional replacement of one
+  sub-state (used by `AccountMetadataCache` on refresh, or bulk partition reset).
+
+```rust
+/// Unified thread-safe holder for all location routing state.
+///
+/// Combines the account-level endpoint routing state and the partition-level
+/// circuit-breaker state into a single store. Each sub-state is stored
+/// behind its own `crossbeam::epoch::Atomic<T>` — reads and writes to
+/// account state do not contend with reads or writes to partition state.
+///
+/// Having a single store simplifies call sites: instead of threading two
+/// store references and an `AccountMetadataCache` through the pipeline,
+/// callers pass one `&LocationStateStore` and call `store.apply(effects)`.
+pub(crate) struct LocationStateStore {
+    account: crossbeam::epoch::Atomic<AccountEndpointState>,
+    partitions: crossbeam::epoch::Atomic<PartitionEndpointState>,
+    /// Reference to the metadata cache for `RefreshAccountProperties`.
+    account_metadata_cache: Arc<AccountMetadataCache>,
+}
+
+impl LocationStateStore {
+    /// Acquire a consistent snapshot of both sub-states.
+    ///
+    /// Each load is a single epoch-pinned atomic read — fully lock-free.
+    /// The two loads are NOT jointly atomic, but that is fine: routing
+    /// decisions are tolerant of a one-iteration lag between account and
+    /// partition state (the next loop iteration re-snapshots anyway).
+    pub fn snapshot(&self) -> LocationSnapshot {
+        let guard = crossbeam::epoch::pin();
+        LocationSnapshot {
+            account: unsafe {
+                self.account.load(Ordering::Acquire, &guard).deref()
+            }.clone().into(),
+            partitions: unsafe {
+                self.partitions.load(Ordering::Acquire, &guard).deref()
+            }.clone().into(),
+        }
+    }
+
+    /// Convenience accessor for account state only (used during init).
+    pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
+        let guard = crossbeam::epoch::pin();
+        unsafe {
+            self.account.load(Ordering::Acquire, &guard).deref()
+        }.clone().into()
+    }
+
+    /// Apply a batch of `LocationEffect`s.
+    ///
+    /// Each effect is applied via a CAS loop against the *current* state
+    /// of the relevant sub-store — not a stale snapshot. On contention
+    /// (concurrent hedged attempt, background refresh), the CAS retries
+    /// automatically, re-reading current state and re-applying the
+    /// mutation until it succeeds.
+    ///
+    /// `RefreshAccountProperties` delegates to the `AccountMetadataCache`,
+    /// which may eventually call `swap_account` with fully rebuilt state.
+    pub async fn apply(&self, effects: &[LocationEffect]) {
+        for effect in effects {
+            match effect {
+                LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
+                    let endpoint = endpoint.clone();
+                    let reason = reason.clone();
+                    self.apply_account(|current| {
+                        mark_endpoint_unavailable(current, &endpoint, reason.clone())
+                    });
+                }
+                LocationEffect::MarkPartitionUnavailable(partition) => {
+                    let partition = partition.clone();
+                    self.apply_partitions(|current| {
+                        mark_partition_unavailable(current, &partition)
+                    });
+                }
+                LocationEffect::RefreshAccountProperties => {
+                    // Rate-limited async refresh — may eventually call
+                    // `swap_account` with a freshly built state.
+                    self.account_metadata_cache.refresh_if_stale().await;
+                }
+            }
+        }
+    }
+
+    // ── CAS-loop helpers (private) ─────────────────────────────────────
+
+    fn apply_account(&self, mut f: impl FnMut(&AccountEndpointState) -> AccountEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        loop {
+            let current = self.account.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_state = f(current_ref);
+            match self.account.compare_exchange(
+                current,
+                crossbeam::epoch::Owned::new(new_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+
+    fn apply_partitions(
+        &self,
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
+    ) {
+        let guard = crossbeam::epoch::pin();
+        loop {
+            let current = self.partitions.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_state = f(current_ref);
+            match self.partitions.compare_exchange(
+                current,
+                crossbeam::epoch::Owned::new(new_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+
+    // ── Unconditional swap (full refresh) ──────────────────────────────
+
+    /// Unconditionally replace the account endpoint state.
+    ///
+    /// Use after a full metadata refresh that rebuilds the state from
+    /// scratch. Concurrent `apply_account` CAS loops will simply fail
+    /// and retry against the freshly swapped value.
+    pub fn swap_account(&self, new_state: AccountEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        let old = self.account.swap(
+            crossbeam::epoch::Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
+    }
+
+    /// Unconditionally replace the partition endpoint state.
+    pub fn swap_partitions(&self, new_state: PartitionEndpointState) {
+        let guard = crossbeam::epoch::pin();
+        let old = self.partitions.swap(
+            crossbeam::epoch::Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
+    }
+}
+```
 
 ---
 
@@ -1370,7 +1492,7 @@ principle of separating behavior from state — there's no `CosmosHeadersPolicy`
 Cosmos DB exposes **three gateway flavors** that differ in HTTP version support:
 
 | Gateway            | Usage                | HTTP Version                   | Notes                  |
-|--------------------|----------------------|--------------------------------|------------------------|
+| ------------------ | -------------------- | ------------------------------ | ---------------------- |
 | **RoutingGateway** | Metadata + Dataplane | HTTP/1.1 only                  | Legacy, no ALPN        |
 | **ComputeGateway** | Metadata + Dataplane | HTTP/2 via ALPN                | Preferred for metadata |
 | **Gateway 2.0**    | Dataplane only       | HTTP/2 forced (different port) | No HTTP/1.1 fallback   |
@@ -1461,11 +1583,16 @@ pub(crate) struct HttpClientConfig {
 
 /// Manages a pool of HttpClient instances per target endpoint.
 /// Distributes requests to avoid exceeding HTTP/2 stream limits.
+///
+/// `pools` uses `crossbeam::epoch::Atomic` for lock-free reads (§11.1).
+/// The map is read on every HTTP request and mutated only when a new
+/// endpoint is first seen or during health-sweep eviction.
 pub(crate) struct ShardedHttpTransport {
     /// Configuration for the sharding behavior.
     config: ShardingConfig,
     /// Per-endpoint shard pools. Key = endpoint authority (host:port).
-    pools: RwLock<HashMap<EndpointKey, Arc<EndpointShardPool>>>,
+    /// Lock-free reads via epoch; writers clone-and-swap the HashMap.
+    pools: crossbeam::epoch::Atomic<HashMap<EndpointKey, Arc<EndpointShardPool>>>,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
 }
@@ -1533,17 +1660,17 @@ pub struct ShardingConfig {
 ```rust
 /// A pool of HttpClient instances for a single endpoint.
 ///
-/// The shard list is stored as an immutable `Arc<Vec<...>>` and swapped
-/// atomically on writes (clone-on-write). This makes the read path
-/// (shard selection) lock-free — callers clone the `Arc` and iterate
-/// without holding a lock. Mutations (add/remove shard) take a write
-/// lock, build a new `Vec`, and swap the `Arc`.
+/// The shard list is stored in a `crossbeam::epoch::Atomic` and swapped
+/// atomically on writes (clone-on-write).  The read path (`select_shard`)
+/// is fully lock-free — pin the epoch, load the pointer, iterate.
+/// Mutations (add/remove shard) build a new `Vec` and `swap` +
+/// `defer_destroy` the old one.
 struct EndpointShardPool {
     endpoint: EndpointKey,
     config: ShardingConfig,
-    /// The shards. Stored as Arc<Vec<...>> for lock-free reads.
+    /// The shards. Epoch-guarded for lock-free reads (§11.1).
     /// Replaced atomically on shard add/remove.
-    shards: RwLock<Arc<Vec<Arc<ClientShard>>>>,
+    shards: crossbeam::epoch::Atomic<Vec<Arc<ClientShard>>>,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
     /// HttpClient configuration for this pool.
@@ -1566,29 +1693,32 @@ struct ClientShard {
 
 /// Per-endpoint statistics on a single shard.
 /// Uses atomics for lock-free updates on the hot path.
+/// Each field is wrapped in `CachePadded` to prevent false sharing
+/// between cores updating adjacent counters concurrently (§11.3).
 struct EndpointStats {
     /// Currently inflight requests to this endpoint on this shard.
-    inflight: AtomicU32,
+    inflight: CachePadded<AtomicU32>,
     /// Timestamp of last successful response (nanos since epoch).
-    last_success_nanos: AtomicU64,
+    last_success_nanos: CachePadded<AtomicU64>,
     /// Timestamp of last request (success or failure).
-    last_request_nanos: AtomicU64,
+    last_request_nanos: CachePadded<AtomicU64>,
     /// Consecutive failure count (reset on success).
-    consecutive_failures: AtomicU32,
+    consecutive_failures: CachePadded<AtomicU32>,
     /// Total requests sent.
-    total_requests: AtomicU64,
+    total_requests: CachePadded<AtomicU64>,
     /// Total failures.
-    total_failures: AtomicU64,
+    total_failures: CachePadded<AtomicU64>,
 }
 
 /// Shard-level health tracking (across all endpoints on this shard).
+/// Fields are `CachePadded` to avoid false sharing (§11.3).
 struct ShardHealth {
     /// Total inflight across all endpoints.
-    total_inflight: AtomicU32,
+    total_inflight: CachePadded<AtomicU32>,
     /// Last successful response on any endpoint.
-    last_success_nanos: AtomicU64,
+    last_success_nanos: CachePadded<AtomicU64>,
     /// Whether this shard is marked for eviction.
-    marked_for_eviction: AtomicBool,
+    marked_for_eviction: CachePadded<AtomicBool>,
 }
 ```
 
@@ -1674,59 +1804,80 @@ impl EndpointShardPool {
     /// Select the best shard for a new request to the given endpoint.
     ///
     /// Algorithm:
-    /// 1. Filter out shards marked for eviction.
-    /// 2. Compute the "active set" size: ceil(total_shards * load_spread_ratio).
-    ///    Only shards in the active set are candidates for new requests.
-    /// 3. Among active shards, pick the one with the lowest inflight count
-    ///    for this endpoint (least-loaded first).
-    /// 4. If the best active shard's inflight >= max_streams_per_client,
-    ///    create a new shard (if under max_clients_per_endpoint).
-    /// 5. If at max clients, use the least-loaded shard from the FULL pool
-    ///    (queue pressure, but bounded).
+    /// 1. Filter out shards marked for eviction **and** shards already at
+    ///    `max_streams_per_client` — both are ineligible for new requests.
+    /// 2. Compute the "active set" size: `ceil(eligible * load_spread_ratio)`.
+    ///    Only shards in the active set are preferred for new requests.
+    /// 3. Among the active set, pick the shard with the lowest inflight
+    ///    count for this endpoint (least-loaded first).  If found, return it.
+    /// 4. If no active-set shard has capacity, check the **remaining**
+    ///    (draining) eligible shards — they still have room below
+    ///    `max_streams_per_client`.  Pick least-loaded.  This avoids
+    ///    creating a new shard when an existing one can absorb the request.
+    /// 5. If *all* eligible shards are at capacity, create a new shard
+    ///    (if under `max_clients_per_endpoint`).
+    /// 6. If at max clients, fall back to the least-loaded shard across
+    ///    the full pool (including saturated ones) to bound queue depth.
+    // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
+    // readability. The actual implementation should use epoch-pinned loads
+    // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
     fn select_shard(&self, endpoint: &EndpointKey) -> Arc<ClientShard> {
-        let mut candidates = {
+        let fallback = {
             let shards = self.shards.read();
 
-            // Healthy shards, sorted by inflight count ascending
-            let mut candidates: Vec<_> = shards.iter()
+            // Eligible shards: healthy AND below the stream limit.
+            let max = self.config.max_streams_per_client;
+            let mut eligible: Vec<_> = shards.iter()
+                .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
+                .map(|s| {
+                    let inflight = s.endpoint_inflight(endpoint);
+                    (s.clone(), inflight)
+                })
+                .filter(|(_, inflight)| *inflight < max)
+                .collect();
+
+            eligible.sort_by_key(|(_, inflight)| *inflight);
+
+            // Active set: only the top N eligible shards are preferred.
+            // Remaining eligible shards are left to drain (scale-down path)
+            // but can still absorb overflow before we create a new shard.
+            let active_count = (eligible.len() as f64 * self.config.load_spread_ratio)
+                .ceil()
+                .max(1.0) as usize;
+
+            // Step 3: try active set first (least-loaded).
+            let active_set = &eligible[..active_count.min(eligible.len())];
+            if let Some((best, _)) = active_set.first() {
+                return best.clone();
+            }
+
+            // Step 4: active set empty (all active shards saturated) —
+            // check remaining eligible (draining) shards before scaling up.
+            if let Some((best, _)) = eligible.first() {
+                return best.clone();
+            }
+
+            // No eligible shard has capacity.  Build a fallback from the
+            // full (unfiltered, including saturated) pool for step 6.
+            let mut all: Vec<_> = shards.iter()
                 .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
                 .map(|s| {
                     let inflight = s.endpoint_inflight(endpoint);
                     (s.clone(), inflight)
                 })
                 .collect();
-
-            candidates.sort_by_key(|(_, inflight)| *inflight);
-
-            // Active set: only the top N shards receive new requests.
-            // Remaining shards are left to drain (scale-down path).
-            let active_count = (candidates.len() as f64 * self.config.load_spread_ratio)
-                .ceil()
-                .max(1.0) as usize;
-
-            // Among active set, find least-loaded
-            // Note: candidates are sorted ascending by inflight, so we want
-            // to route to the least-loaded within the active set. The "active set"
-            // is the first `active_count` shards (sorted ascending = least loaded first).
-            let active_set = &candidates[..active_count.min(candidates.len())];
-
-            if let Some((best, inflight)) = active_set.first() {
-                if *inflight < self.config.max_streams_per_client {
-                    return best.clone();
-                }
-            }
-
-            candidates
+            all.sort_by_key(|(_, inflight)| *inflight);
+            all
         }; // read lock released here
 
-        // All active shards at capacity → try to create a new one
+        // Step 5: all eligible shards at capacity → try to create a new one.
         if let Some(new_shard) = self.try_create_shard() {
             return new_shard;
         }
 
-        // At max clients → fall back to least-loaded across ALL shards
-        // (including draining ones) to prevent request queuing
-        candidates.first()
+        // Step 6: at max clients → fall back to least-loaded across ALL
+        // shards (including saturated / draining ones) to bound queue depth.
+        fallback.first()
             .map(|(s, _)| s.clone())
             .unwrap_or_else(|| self.create_emergency_shard())
     }
@@ -1772,14 +1923,21 @@ pattern (ordered priority, first match returns):
 enum ShardHealthStatus {
     Healthy,
     Unhealthy { reason: EvictionReason },
+    /// This shard is the designated probe candidate: it should be evicted
+    /// and replaced with a fresh connection to test whether the network
+    /// has recovered.  Only ONE shard per sweep iteration receives this
+    /// status (the one with the most consecutive failures).
+    UnhealthyProbeCandidate,
     Idle,
 }
 
 enum EvictionReason {
-    /// No successful response within read-delay limit despite having inflight requests.
+    /// No successful response within read-delay limit despite having
+    /// inflight requests.
     ReadHang,
-    /// Consecutive failures exceeded threshold AND other shards to the same
-    /// endpoint are succeeding (connection-level problem, not service-level).
+    /// Consecutive failures exceeded threshold AND other shards to the
+    /// same endpoint are succeeding (connection-level problem, not
+    /// service-level).
     ConsecutiveFailuresWithHealthyPeers,
     /// No activity for longer than idle timeout.
     IdleTimeout,
@@ -1790,6 +1948,10 @@ fn check_shard_health(
     endpoint: &EndpointKey,
     peer_shards: &[Arc<ClientShard>],
     config: &ShardingConfig,
+    /// `true` when the caller (health sweep) has designated *this* shard
+    /// as the probe candidate for the current sweep iteration.
+    /// See the "all-shards-failing" protocol below.
+    is_probe_candidate: bool,
 ) -> ShardHealthStatus {
     let stats = shard.endpoint_stats(endpoint);
     let now_nanos = now_as_nanos();
@@ -1808,10 +1970,11 @@ fn check_shard_health(
         };
     }
 
-    // 3. Consecutive failures with healthy peers
+    // 3. Consecutive failures — two sub-cases:
     let consecutive = stats.consecutive_failures.load(Ordering::Relaxed);
     if consecutive >= config.consecutive_failure_threshold {
-        // Check if peers are healthier (indicates connection problem, not service)
+        // 3a. At least one peer is healthier → connection-level problem
+        //     on *this* shard.  Evict it (subject to grace period).
         let peers_healthy = peer_shards.iter().any(|peer| {
             let peer_stats = peer.endpoint_stats(endpoint);
             let peer_consecutive = peer_stats.consecutive_failures.load(Ordering::Relaxed);
@@ -1820,7 +1983,6 @@ fn check_shard_health(
         });
 
         if peers_healthy {
-            // Grace period: don't evict immediately after recent success
             let grace_ok = (now_nanos - last_success)
                 > config.eviction_grace_period.as_nanos() as u64;
             if grace_ok {
@@ -1828,6 +1990,32 @@ fn check_shard_health(
                     reason: EvictionReason::ConsecutiveFailuresWithHealthyPeers,
                 };
             }
+        }
+
+        // 3b. NO peer is healthier — every shard is failing equally.
+        //     This happens when an external event (network component
+        //     upgrade, firewall rule change, NAT timeout) corrupts ALL
+        //     existing TCP connections simultaneously.
+        //
+        //     We must NOT evict all shards at once (that would drop all
+        //     inflight traffic).  Instead, the health sweep designates
+        //     exactly ONE shard — the one with the most consecutive
+        //     failures — as the "probe candidate".  Only that shard is
+        //     evicted and immediately replaced with a fresh connection.
+        //
+        //     On the NEXT sweep iteration, one of two things has happened:
+        //       • The fresh shard is succeeding → it becomes a "healthy
+        //         peer", and subsequent sweeps evict the remaining bad
+        //         shards one-by-one via the normal 3a path.
+        //       • The fresh shard is also failing → it's a service-level
+        //         outage, not a connection-level problem.  No further
+        //         evictions are triggered (the probe candidate rotates
+        //         to the worst shard again, but the pool isn't drained).
+        //
+        //     This limits churn to at most one eviction + replacement per
+        //     sweep interval when the entire pool is unhealthy.
+        if is_probe_candidate {
+            return ShardHealthStatus::UnhealthyProbeCandidate;
         }
     }
 
@@ -1841,13 +2029,66 @@ fn check_shard_health(
 }
 ```
 
+**Probe-candidate selection** (in the health sweep loop):
+
+Before iterating over shards, the sweep checks whether the pool is in an "all-shards-failing"
+state.  If every non-eviction-marked shard has `consecutive_failures >= threshold` AND no shard
+has a recent success, the sweep designates the shard with the **highest** `consecutive_failures`
+(ties broken by oldest `last_success_nanos`) as the probe candidate.  Only that shard receives
+`is_probe_candidate = true`; all others get `false`.
+
+```rust
+/// Determine the probe candidate when all shards are failing.
+/// Returns `Some(shard_id)` if — and only if — all shards exceed the
+/// failure threshold with no healthy peer among them.
+fn pick_probe_candidate(
+    shards: &[Arc<ClientShard>],
+    endpoint: &EndpointKey,
+    config: &ShardingConfig,
+) -> Option<u64> {
+    let mut all_failing = true;
+    let mut worst: Option<(u64, u32, u64)> = None; // (id, consecutive, last_success)
+
+    for shard in shards {
+        if shard.health.marked_for_eviction.load(Ordering::Relaxed) {
+            continue;
+        }
+        let stats = shard.endpoint_stats(endpoint);
+        let consecutive = stats.consecutive_failures.load(Ordering::Relaxed);
+        let last_success = stats.last_success_nanos.load(Ordering::Relaxed);
+
+        if consecutive < config.consecutive_failure_threshold {
+            all_failing = false;
+            break;
+        }
+
+        // Track the worst shard (most failures, then oldest success).
+        let dominated = worst.map_or(true, |(_, wc, ws)| {
+            consecutive > wc || (consecutive == wc && last_success < ws)
+        });
+        if dominated {
+            worst = Some((shard.id, consecutive, last_success));
+        }
+    }
+
+    if all_failing { worst.map(|(id, _, _)| id) } else { None }
+}
+```
+
 **Eviction process**:
 1. Mark shard for eviction (`marked_for_eviction = true`)
-2. Stop routing new requests to it (the `load_spread_ratio` mechanism naturally does this
-   by excluding draining shards from the active set)
+2. Stop routing new requests to it (the `select_shard` algorithm already excludes
+   eviction-marked shards from the eligible set)
 3. Wait for inflight requests to drain (with a timeout)
 4. Drop the `Arc<dyn HttpClient>` (the underlying client closes connections on final `Drop`)
 5. If pool size drops below `min_clients_per_endpoint`, create a replacement
+6. **Probe-candidate eviction** (`UnhealthyProbeCandidate`): same steps 1–5, but the
+   replacement shard is created **immediately** (not deferred) — this is the fresh
+   connection that tests whether the network has recovered.  On the next sweep:
+   - If the replacement is succeeding → it becomes a "healthy peer" and remaining bad
+     shards are evicted one-by-one via the normal `ConsecutiveFailuresWithHealthyPeers` path.
+   - If the replacement is also failing → it's a service-level outage; the sweep picks a
+     new probe candidate (the current worst), limiting churn to one replacement per sweep.
 
 **Scale-down flow**: The `load_spread_ratio` and `idle_client_timeout` work together:
 
@@ -1855,7 +2096,11 @@ fn check_shard_health(
    (`ceil(N * load_spread_ratio)` shards).
 2. Shards outside the active set receive no new requests; their inflight drains to 0.
 3. Once `idle_client_timeout` elapses with 0 inflight, the health sweep marks them `Idle`.
-4. Idle shards above `min_clients_per_endpoint` are removed from the pool.
+4. The sweep runs in two phases: **Phase 1** evicts unhealthy shards and back-fills to
+   `min_clients_per_endpoint`. **Phase 2** removes idle shards only down to the minimum —
+   using the *post-eviction* pool size.  Because idle shards are already-warm connections,
+   the sweep keeps them around to absorb the loss from Phase 1 instead of creating new
+   shards (which are expensive: TLS handshake + TCP setup + H2 negotiation).
 5. The active set shrinks proportionally (`ceil(smaller_N * load_spread_ratio)`).
 6. The process continues until the pool stabilizes at `min_clients_per_endpoint`.
 
@@ -1884,48 +2129,95 @@ specific `reqwest` / `hyper` APIs for configuring keepalive intervals and probes
 ```rust
 impl ShardedHttpTransport {
     /// Background task that periodically:
-    /// 1. Checks shard health and evicts unhealthy shards
-    /// 2. Reclaims idle shards above minimum
-    /// 3. Proactively scales up if utilization is high
+    /// 1. **Phase 1** — Evicts unhealthy shards and back-fills to minimum.
+    /// 2. **Phase 2** — Reclaims idle shards *above* minimum, using the
+    ///    post-eviction pool size so that idle shards absorb the loss
+    ///    instead of being removed and immediately replaced.
+    /// 3. Proactively scales up if utilization is high.
+    // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
+    // readability. The actual implementation should use epoch-pinned loads
+    // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
     async fn health_sweep_loop(self: Arc<Self>) {
         loop {
             sleep(self.config.health_check_interval).await;
 
             for (endpoint, pool) in self.pools.read().iter() {
                 let shards = pool.shards.read().clone();
+                let min = pool.config.min_clients_per_endpoint as usize;
+
+                // ── Phase 1: identify & remove unhealthy shards ──────────
                 let mut to_evict = Vec::new();
-                let mut to_remove_idle = Vec::new();
+                let mut idle_candidates = Vec::new();
+                let mut probe_replacement_needed = false;
 
                 for shard in &shards {
+                    let is_probe = pick_probe_candidate(&shards, endpoint, &self.config)
+                        .map_or(false, |id| id == shard.id);
                     let status = check_shard_health(
-                        shard, endpoint, &shards, &self.config,
+                        shard, endpoint, &shards, &self.config, is_probe,
                     );
                     match status {
-                        ShardHealthStatus::Unhealthy { reason } => {
+                        ShardHealthStatus::Unhealthy { reason } |
+                        ShardHealthStatus::UnhealthyProbeCandidate { reason } => {
                             shard.health.marked_for_eviction.store(true, Ordering::Relaxed);
-                            to_evict.push((shard.id, reason));
+                            if matches!(status, ShardHealthStatus::UnhealthyProbeCandidate { .. }) {
+                                probe_replacement_needed = true;
+                            }
+                            to_evict.push(shard.id);
                         }
-                        ShardHealthStatus::Idle if shards.len() > pool.config.min_clients_per_endpoint as usize => {
-                            to_remove_idle.push(shard.id);
+                        ShardHealthStatus::Idle => {
+                            // Collect idle candidates; we'll decide which to remove
+                            // in Phase 2 based on post-eviction pool size.
+                            idle_candidates.push(shard.id);
                         }
                         _ => {}
                     }
                 }
 
-                // Remove evicted/idle shards
-                if !to_evict.is_empty() || !to_remove_idle.is_empty() {
+                // Remove unhealthy shards and bring pool back to minimum.
+                // Creating new shards is relatively expensive (TLS handshake,
+                // TCP setup, H2 negotiation), so we defer idle removal until
+                // after this step — keeping idle shards around avoids replacing
+                // them with brand-new ones when the pool would otherwise drop
+                // below `min_clients_per_endpoint`.
+                if !to_evict.is_empty() {
                     let mut shards_mut = pool.shards.write();
-                    shards_mut.retain(|s| {
-                        !to_evict.iter().any(|(id, _)| *id == s.id) &&
-                        !to_remove_idle.contains(&s.id)
-                    });
+                    shards_mut.retain(|s| !to_evict.contains(&s.id));
 
-                    // Ensure minimum shard count
-                    while shards_mut.len() < pool.config.min_clients_per_endpoint as usize {
+                    // For probe-candidate evictions, create a replacement
+                    // immediately (the fresh connection tests recovery).
+                    if probe_replacement_needed {
                         if let Some(new) = pool.create_shard_internal() {
                             shards_mut.push(Arc::new(new));
                         }
                     }
+
+                    // Back-fill to minimum if still short.
+                    while shards_mut.len() < min {
+                        if let Some(new) = pool.create_shard_internal() {
+                            shards_mut.push(Arc::new(new));
+                        } else {
+                            break; // factory failure; retry on next sweep
+                        }
+                    }
+                }
+
+                // ── Phase 2: remove idle shards (only those above minimum) ─
+                // Decision is based on the *current* pool size, which already
+                // accounts for the evictions (and any replacements) from Phase 1.
+                // This avoids a pathological pattern where evicting N unhealthy
+                // shards drops the pool below minimum, idle shards that could
+                // have filled those slots were also removed, and N new shards
+                // are created unnecessarily.
+                if !idle_candidates.is_empty() {
+                    let mut shards_mut = pool.shards.write();
+                    let can_remove = shards_mut.len().saturating_sub(min);
+                    if can_remove > 0 {
+                        let remove_count = can_remove.min(idle_candidates.len());
+                        let remove_set = &idle_candidates[..remove_count];
+                        shards_mut.retain(|s| !remove_set.contains(&s.id));
+                    }
+                    // No back-fill needed: we only remove down to `min`.
                 }
 
                 // Proactive scale-up check
@@ -2064,41 +2356,42 @@ Refactor `execute_operation` to use the new pipeline architecture with the absol
 viable transport. No HTTP/2 sharding, no hedging, no circuit breaker, no session consistency —
 just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                          |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                               | `driver/pipeline/components.rs`                                |
-| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff. | `driver/transport/transport_pipeline.rs`                       |
-| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Only the happy path + 429 retry propagation. No failover, no hedging. Hard-coded deadline.                                           | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
-| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                        | `driver/cosmos_driver.rs`                                      |
-| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                        | `tests/`                                                       |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                                            | Files                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                                                                                                                                                                                                      | `driver/pipeline/components.rs`                                |
+| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff.                                                                                                                                                                        | `driver/transport/transport_pipeline.rs`                       |
+| 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Include happy path plus minimal operation-level transport retries: retry `TransportError` only when request is definitely not sent or operation is idempotent and retry budget remains; propagate non-429 HTTP errors as abort (429 remains transport-level). No failover, no hedging. Hard-coded deadline. | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
+| 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                                                                                                                                                                                               | `driver/cosmos_driver.rs`                                      |
+| 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path + minimal transport-error retry semantics, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                                                                                                                                                     | `tests/`                                                       |
 
 **What works after Step 1**: Operations flow through the new pipeline end-to-end against a
-single region with basic 429 retry. The architecture is in place for incremental additions.
+single region with basic 429 retry and minimal safe transport-error retries (not-sent or
+idempotent-only within budget). The architecture is in place for incremental additions.
 
 ### Step 2: Multi-region failover & endpoint management
 
 Add cross-region failover, `AccountEndpointState` + routing systems, and the `AccountMetadataCache` integration.
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                      | Files                                                                      |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, `AccountEndpointStateStore`, and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                                  | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `routing_systems.rs` |
-| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`             |
-| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                   |
-| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                              |
-| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                   |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                      | Files                                                                                                 |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, the unified `LocationStateStore` (§4.6), and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                      | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `location_state_store.rs`, `routing_systems.rs` |
+| 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`                                        |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                                              |
+| 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                                                         |
+| 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                                              |
 
 **What works after Step 2**: Full multi-region failover, 403.3 recovery with cache refresh,
 session retry, deadline enforcement. Still HTTP/1.1, no hedging, no circuit breaker.
 
 ### Step 3: Session consistency & partition-level circuit breaker
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                           | Files                                                                      |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                    | `driver/routing/session_manager.rs`                                        |
-| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, `PartitionEndpointStateStore`, `CircuitBreakerOptions`, and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `circuit_breaker_systems.rs` |
-| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                             | `driver/pipeline/components.rs`, `operation_pipeline.rs`                   |
-| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                              | `options/availability.rs`                                                  |
-| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                              | `tests/`                                                                   |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                   | Files                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 3.1      | **Session tracking** — Session token management (resolve, propagate, track LSN).                                                                                                                                                                                                                                                                                                                            | `driver/routing/session_manager.rs`                                                                   |
+| 3.2      | **Partition endpoint state & circuit breaker** — Implement `PartitionEndpointState`, wire it into the existing `LocationStateStore` (§4.6), add `CircuitBreakerConfig` (resolved from `CircuitBreakerOptions` §9.4), and the system functions (`mark_partition_unavailable`, `record_partition_failure/success`, `sweep_partition_health`). Hard-coded default thresholds (read: 2, write: 5, reset: 5min). | `driver/routing/partition_endpoint_state.rs`, `location_state_store.rs`, `circuit_breaker_systems.rs` |
+| 3.3      | **`ReadConsistencyStrategy`** — Wire `effective_read_consistency_strategy` into `SessionState` and endpoint resolution.                                                                                                                                                                                                                                                                                     | `driver/pipeline/components.rs`, `operation_pipeline.rs`                                              |
+| 3.4      | **Circuit breaker config** — Make thresholds configurable via `CircuitBreakerOptions`.                                                                                                                                                                                                                                                                                                                      | `options/availability.rs`                                                                             |
+| 3.5      | **Tests** — Session consistency retry, circuit breaker trip/reset, partition failover.                                                                                                                                                                                                                                                                                                                      | `tests/`                                                                                              |
 
 **What works after Step 3**: Full session consistency routing, partition-level circuit breaker
 with failback. Still HTTP/1.1, no hedging.
@@ -2106,7 +2399,7 @@ with failback. Still HTTP/1.1, no hedging.
 ### Step 4: Hedging (speculative execution)
 
 | Sub-step | Work Item                                                                                                                                                                    | Files                        |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | 4.1      | **Hedging implementation** — `execute_hedged` with `tokio::select!` racing. Initial/Hedging `ExecutionContext` tracking. Static threshold first.                             | `driver/pipeline/hedging.rs` |
 | 4.2      | **Dynamic threshold** — P99 latency tracker with safety gates (50–4000 ms).                                                                                                  | `driver/pipeline/hedging.rs` |
 | 4.3      | **Hedging config** — `HedgingThreshold` enum (Dynamic/Static), `HedgingOptions` with `enabled` flag (§9.3). Nested in `RetryOptions`. Overridable at Runtime/Account layers. | `options/availability.rs`    |
@@ -2120,7 +2413,7 @@ Add protocol detection and the `AdaptiveTransport` enum, but without the sharded
 HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 
 | Sub-step | Work Item                                                                                                                                     | Files                                     |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 5.1      | **Gateway probing** — ALPN negotiation to detect HTTP/2 vs HTTP/1.1. Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. | `driver/transport/adaptive_transport.rs`  |
 | 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                          | `driver/transport/adaptive_transport.rs`  |
 | 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                         | `driver/transport/http_client_factory.rs` |
@@ -2132,8 +2425,8 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 ### Step 6: HTTP/2 connection sharding
 
 | Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                    |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
-| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via atomics. Immutable `Arc<Vec<...>>` snapshot for lock-free shard reads.                                                                            | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via `CachePadded` atomics. Epoch-guarded (`crossbeam::epoch::Atomic`) snapshot-swap for lock-free shard reads (§11.1).                                | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
 | 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                                                              | `driver/transport/shard_pool.rs`                         |
 | 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Resolved from `ConnectionPoolOptions` (§9.1). Environment variable overrides. | `options/connection_pool.rs`                             |
 | 6.4      | **Wire into `AdaptiveTransport`** — When HTTP/2 is detected, use `ShardedHttpTransport` instead of plain.                                                                                                                                                     | `driver/transport/adaptive_transport.rs`                 |
@@ -2145,7 +2438,7 @@ checks or eviction yet — shards accumulate but do not get reclaimed.
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
 | Sub-step | Work Item                                                                                                                                                          | Files                                     |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
 | 7.1      | **Shard health checks** — `check_shard_health` (read-hang, consecutive failures with healthy peers, idle timeout). CPU-aware eviction guard (90% threshold).       | `driver/transport/shard_health.rs`        |
 | 7.2      | **Background health sweep** — `health_sweep_loop` (evict unhealthy, reclaim idle, proactive scale-up). Scale-down via `load_spread_ratio` + `idle_client_timeout`. | `driver/transport/shard_health.rs`        |
 | 7.3      | **TCP keepalive** — Enable TCP keepalive on all `HttpClient` instances (30s interval). Research reqwest/hyper APIs.                                                | `driver/transport/http_client_factory.rs` |
@@ -2158,7 +2451,7 @@ checks or eviction yet — shards accumulate but do not get reclaimed.
 ### Step 8: Fault injection
 
 | Sub-step | Work Item                                                                                                                                                                                                                     | Files                                                                            |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | 8.1      | **Move fault injection** — Move `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult` from `azure_data_cosmos` to driver behind `fault_injection` feature flag.                                             | `driver/fault_injection/mod.rs`, `rule.rs`, `condition.rs`, `result.rs`          |
 | 8.2      | **`FaultInjectingHttpClientFactory`** — Wraps the real `HttpClientFactory`, producing `FaultInjectingHttpClient` instances that intercept at the `HttpClient` trait level (below `AdaptiveTransport`/`ShardedHttpTransport`). | `driver/fault_injection/fault_injecting_factory.rs`, `fault_injecting_client.rs` |
 | 8.3      | **Tests** — Shard eviction under injected failures, scale-up/down validation, full pipeline retry/failover with injected faults, rule matching, feature gate.                                                                 | `tests/`                                                                         |
@@ -2173,7 +2466,7 @@ new pipeline under real workloads with the two most common operations before com
 full cut-over.
 
 | Sub-step | Work Item                                                                                          | Files                                               |
-|----------|----------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | 9.1      | Wire `ContainerClient::read_item` to build `CosmosOperation` and call `driver.execute_operation()` | `azure_data_cosmos/src/clients/container_client.rs` |
 | 9.2      | Wire `ContainerClient::create_item` similarly                                                      | `azure_data_cosmos/src/clients/container_client.rs` |
 | 9.3      | Integration tests verifying read/create through the new pipeline                                   | `tests/`                                            |
@@ -2186,7 +2479,7 @@ All other operations still use the old pipeline. No code is removed yet.
 Cut over all remaining operations and remove the old pipeline code.
 
 | Sub-step | Work Item                                                                                             | Files                                |
-|----------|-------------------------------------------------------------------------------------------------------|--------------------------------------|
+| -------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | 10.1     | Cut over all remaining operations in `azure_data_cosmos/src/clients/` to `driver.execute_operation()` | `azure_data_cosmos/src/clients/*.rs` |
 | 10.2     | Remove `azure_data_cosmos/src/pipeline/`                                                              | —                                    |
 | 10.3     | Remove `azure_data_cosmos/src/retry_policies/`                                                        | —                                    |
@@ -2236,8 +2529,8 @@ pub struct ConnectionPoolOptions {
     // --- New fields for HTTP/2 sharding (this spec) ---
 
     /// Maximum concurrent HTTP/2 streams per `HttpClient` shard per endpoint
-    /// before a new shard is created. Default: 20 (aligned with current Cosmos
-    /// gateway stream limit).
+    /// before a new shard is created. Default: 16 (leaves headroom below the
+    /// Cosmos gateway's 20-stream H2 limit; see `ShardingConfig` §6.2).
     pub max_streams_per_client: Option<usize>,
     /// Maximum number of `HttpClient` shards per endpoint. Default: `num_cpus * 2`.
     pub max_clients_per_endpoint: Option<usize>,
@@ -2251,8 +2544,9 @@ pub struct ConnectionPoolOptions {
     /// Consecutive failures on a shard (with healthy peers) before eviction.
     /// Default: 5.
     pub consecutive_failure_threshold: Option<u32>,
-    /// Grace period after eviction-mark before a shard is actually dropped.
-    /// Default: 10 s.
+    /// Grace period after last successful request before a shard can be
+    /// evicted due to consecutive failures. Prevents premature eviction
+    /// during transient issues. Default: 2 s (see `ShardingConfig` §6.2).
     pub eviction_grace_period: Option<Duration>,
     /// Time a shard must be idle (0 inflight, 0 new requests) before
     /// the health sweep reclaims it. Default: 60 s.
@@ -2267,7 +2561,7 @@ pub struct ConnectionPoolOptions {
 ```
 
 | Option                          | Type               | Env Var                                           | Notes                                        |
-|---------------------------------|--------------------|---------------------------------------------------|----------------------------------------------|
+| ------------------------------- | ------------------ | ------------------------------------------------- | -------------------------------------------- |
 | `idle_timeout`                  | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                  | *(existing)*                                 |
 | `max_connections`               | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`               | *(existing)*                                 |
 | `max_streams_per_client`        | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_STREAMS_PER_CLIENT`        | **New.** H2 stream limit per shard.          |
@@ -2334,7 +2628,7 @@ pub struct HedgingOptions {
 ```
 
 | Option      | Type                       | Env Var                             | Notes                                                                     |
-|-------------|----------------------------|-------------------------------------|---------------------------------------------------------------------------|
+| ----------- | -------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
 | `enabled`   | `Option<bool>`             | `AZURE_COSMOS_HEDGING_ENABLED`      | Set `false` to disable hedging entirely.                                  |
 | `threshold` | `Option<HedgingThreshold>` | `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Static threshold in ms; dynamic threshold is configured programmatically. |
 
@@ -2385,7 +2679,7 @@ pub struct CircuitBreakerOptions {
 ```
 
 | Option                       | Type               | Env Var                                      | Notes                                                         |
-|------------------------------|--------------------|----------------------------------------------|---------------------------------------------------------------|
+| ---------------------------- | ------------------ | -------------------------------------------- | ------------------------------------------------------------- |
 | `read_failure_threshold`     | `Option<u32>`      | `AZURE_COSMOS_CB_READ_FAILURE_THRESHOLD`     | Trips after N read failures within the counter reset window.  |
 | `write_failure_threshold`    | `Option<u32>`      | `AZURE_COSMOS_CB_WRITE_FAILURE_THRESHOLD`    | Trips after N write failures within the counter reset window. |
 | `counter_reset_window`       | `Option<Duration>` | `AZURE_COSMOS_CB_COUNTER_RESET_WINDOW`       | Resets failure counters after this period of no new failures. |
@@ -2469,6 +2763,218 @@ at the Runtime and Account layers only (not Operation), the effective walk is
 10. ~~**`load_spread_ratio` tuning**~~: **Resolved** — Make `load_spread_ratio` **adaptive based
     on observed behavior** (request rate variance). Start with the default of 0.5 and adjust
     dynamically.
+
+---
+
+## 11. Crossbeam & Lock-Free Data Structures
+
+The `crossbeam` crate is available as a workspace dependency (`default-features = false`)
+and enabled in `azure_data_cosmos_driver` with the `crossbeam-epoch` and `crossbeam-utils`
+features.  This section describes where crossbeam primitives should replace (or augment)
+existing synchronization, and the general migration pattern for each case.
+
+### 11.1 Snapshot-Swap State Stores (`RwLock<Arc<T>>` → epoch-guarded atomic pointer)
+
+**Pattern**: Multiple structures in this spec use a `RwLock<Arc<T>>` where the write path
+builds a new `T`, wraps it in `Arc`, and swaps the pointer.  The read path acquires a read
+lock only to clone the `Arc`.  While `RwLock::read()` is cheap on uncontended paths, under
+high concurrency it still performs an atomic CAS on the lock word — and on some platforms
+(Windows `SRWLock`) read-locks can starve writers or introduce cache-line bouncing.
+
+**Crossbeam replacement**: Use `crossbeam::epoch::Atomic<T>` (or a thin wrapper around it)
+to replace these `RwLock<Arc<T>>` holders.  The read path becomes:
+
+```rust
+use std::sync::atomic::Ordering;
+
+use crossbeam::epoch::{self, Atomic, Guard, Owned};
+
+struct StateStore<T> {
+    state: Atomic<T>,
+}
+
+/// RAII wrapper that keeps the epoch guard alive for as long as the
+/// snapshot reference is used.  Derefs to `&T`.
+struct Snapshot<'g, T> {
+    _guard: Guard,
+    ptr: &'g T,
+}
+
+impl<T> std::ops::Deref for Snapshot<'_, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        self.ptr
+    }
+}
+
+impl<T> StateStore<T> {
+    /// Lock-free snapshot — costs a single atomic load + epoch pin.
+    ///
+    /// Returns a `Snapshot` that keeps the epoch guard alive.  The
+    /// caller can deref into `&T` for as long as it holds the
+    /// `Snapshot`.  Do **not** hold the snapshot across `.await`
+    /// points — the pinned epoch blocks garbage collection of
+    /// retired pointers while alive.
+    ///
+    /// The concrete `LocationStateStore` (§4.6) clones the inner
+    /// value into an `Arc<T>` so the snapshot can outlive the guard;
+    /// that is the preferred approach when the data must cross an
+    /// await boundary.
+    fn snapshot(&self) -> Snapshot<'_, T> {
+        let guard = epoch::pin();
+        // SAFETY: Writers use `swap`/`apply` + `defer_destroy`, so
+        // the pointee is valid for the lifetime of the guard.
+        let ptr = unsafe {
+            self.state
+                .load(Ordering::Acquire, &guard)
+                .deref()
+        };
+        Snapshot { _guard: guard, ptr }
+    }
+
+    /// Atomically apply a mutation to the current state (CAS loop).
+    ///
+    /// Reads the current value, applies `f`, and attempts a
+    /// compare-and-swap.  On contention (another writer changed the
+    /// state between load and CAS), re-reads and re-applies until
+    /// the CAS succeeds — no concurrent mutation is lost.
+    ///
+    /// Use this when the new state depends on the current state.
+    fn apply(&self, mut f: impl FnMut(&T) -> T) {
+        let guard = epoch::pin();
+        loop {
+            let current = self.state.load(Ordering::Acquire, &guard);
+            let current_ref = unsafe { current.deref() };
+            let new_val = f(current_ref);
+            match self.state.compare_exchange(
+                current,
+                Owned::new(new_val),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    unsafe { guard.defer_destroy(old); }
+                    return;
+                }
+                Err(_) => continue, // another writer won — retry
+            }
+        }
+    }
+
+    /// Unconditionally replace the current snapshot.
+    ///
+    /// Use when the new state does NOT depend on the current state
+    /// (e.g., full refresh from an external source).  Concurrent
+    /// `apply` calls are safe — their CAS will fail and retry
+    /// against the freshly swapped value.
+    fn swap(&self, new_state: T) {
+        let guard = epoch::pin();
+        let old = self.state.swap(
+            Owned::new(new_state),
+            Ordering::AcqRel,
+            &guard,
+        );
+        unsafe { guard.defer_destroy(old); }
+    }
+}
+```
+
+Alternatively, `arc_swap::ArcSwap<T>` provides a
+higher-level API with `load()` returning a `Guard` that derefs to `Arc<T>` - but this has more overhead.
+Prefer `Atomic<T>` for minimal overhead when the reader does not need to
+outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>`.
+
+**Already applied to spec structures** (see §4.6, §6.2, §6.3):
+
+| Structure              | Field        | Section | Hot-path?                                  | Notes                            |
+| ---------------------- | ------------ | ------- | ------------------------------------------ | -------------------------------- |
+| `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`   |
+| `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>` |
+| `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>`             |
+| `EndpointShardPool`    | `shards`     | §6.3    | Yes — every HTTP request selects a shard   | `Atomic<Vec<…>>`                 |
+| `EndpointStats`        | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
+| `ShardHealth`          | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
+
+**Applies to (existing driver code)**:
+
+| Structure                       | Field                          | File                            | Notes                                                                                                                                                   |
+| ------------------------------- | ------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AsyncCache<K, V>`              | inner `RwLock<HashMap>`        | `driver/cache/async_cache.rs`   | The outer map is read-heavy; writes only on cache miss. Wrap in `Atomic<HashMap<…>>` or `ArcSwap`. The per-entry `AsyncLazy` also benefits (see §11.2). |
+| `AsyncLazy<T>`                  | inner `RwLock<Option<Arc<T>>>` | `driver/cache/async_lazy.rs`    | After initialization the value is essentially immutable. Replace with `Atomic<T>` for truly zero-cost reads post-init. See §11.2.                       |
+| `DriverRuntime`                 | `driver_registry`              | `driver/runtime.rs`             | Read-heavy; new drivers created rarely.                                                                                                                 |
+| `SharedRuntimeOptions`          | inner `RwLock<RuntimeOptions>` | `options/runtime_options.rs`    | Read on every operation; mutated only by reconfiguration.                                                                                               |
+| `ThroughputControlGroupOptions` | mutable-value fields           | `options/throughput_control.rs` | Read per-request for throughput gating; written by background refresh.                                                                                  |
+| `CpuMemoryMonitorInner`         | `buffer` / `listener_count`    | `system/cpu_memory.rs`          | Lower priority — the monitor runs on a timer, not per-request. Still benefits from eliminating reader contention on the sample buffer.                  |
+
+### 11.2 `AsyncCache` / `AsyncLazy` — Epoch-Guarded Reads
+
+`AsyncCache` wraps `async_lock::RwLock<HashMap<K, Arc<AsyncLazy<V>>>>`.  The outer map
+lock is held for reads on every cache lookup (the hot path) and for writes only on cache
+miss.  This is the textbook crossbeam case:
+
+1. **Outer map**: Replace with `crossbeam::epoch::Atomic<HashMap<K, Arc<AsyncLazy<V>>>>`.
+   Readers pin the epoch, load the map pointer, do the lookup, and unpin.  Writers clone
+   the map, insert the new entry, and `swap` + `defer_destroy` the old map.
+2. **`AsyncLazy<T>` inner value**: After the one-time initialization completes, the value
+   never changes (or changes only on explicit invalidation).  Use
+   `crossbeam::epoch::Atomic<T>` for the read path (load + deref under epoch guard).  The
+   initialization path still needs an async mutex for single-flight, but the *read* path
+   after init becomes zero-cost.
+
+### 11.3 `CachePadded` for Atomics (False-Sharing Prevention)
+
+`crossbeam::utils::CachePadded<T>` pads `T` to a cache-line boundary, preventing false
+sharing when adjacent atomics are updated by different cores.
+
+**Applies to**:
+
+- `EndpointStats` (§6.3): Fields like `inflight: AtomicU32`, `consecutive_failures: AtomicU32`,
+  and `total_requests: AtomicU64` are updated concurrently from different request tasks.
+  Wrapping each field (or the whole struct) in `CachePadded` eliminates cross-core
+  invalidation traffic.
+- `ShardHealth` (§6.3): `total_inflight`, `last_success_nanos`, `marked_for_eviction` are
+  updated from multiple tasks. `CachePadded` avoids false sharing.
+- `CpuMemoryMonitorInner` atomics (`system/cpu_memory.rs`): `last_refresh`, `cached_cpu_usage`,
+  `cached_memory_usage` are adjacent `AtomicU64` / `AtomicU32` fields that benefit from
+  padding.
+- General guideline: Any struct with multiple `Atomic*` fields that are written by
+  independent tasks should wrap those fields in `CachePadded`.
+
+### 11.4 Migration Priority
+
+Recommended implementation order based on hot-path impact:
+
+1. **`LocationStateStore`** (§4.6) — unified account + partition state store,
+   read on every single Cosmos request.
+2. **`EndpointShardPool.shards`** and **`ShardedHttpTransport.pools`** (§6.2, §6.3) —
+   read on every HTTP send.
+3. **`AsyncCache` / `AsyncLazy`** — read on every operation for container metadata lookup.
+4. **`CachePadded` on `EndpointStats` / `ShardHealth`** — reduces cache-line bouncing
+   under high concurrency.
+5. **`DriverRuntime.driver_registry`**, **`SharedRuntimeOptions`**,
+   **`ThroughputControlGroupOptions`** — moderate impact; operations read these for
+   configuration but contention is lower because the data is small.
+6. **`CpuMemoryMonitorInner`** — lowest priority; timer-driven, not per-request.
+
+### 11.5 Crossbeam Feature Selection
+
+The driver crate enables only the features it needs:
+
+```toml
+# sdk/cosmos/azure_data_cosmos_driver/Cargo.toml
+[dependencies]
+crossbeam = { workspace = true, features = ["crossbeam-epoch"] }
+```
+
+- **`crossbeam-epoch`** (optional dep): Provides `Atomic<T>`, epoch-based memory reclamation,
+  `Guard`, and `Owned` / `Shared` pointer types.  Used for all snapshot-swap state stores.
+- **`crossbeam-utils`** (always included): Provides `CachePadded<T>` for false-sharing prevention.
+  Not listed as a feature because it is a non-optional dependency of `crossbeam`.
+
+Other crossbeam features (`crossbeam-channel`, `crossbeam-deque`, `crossbeam-queue`) are
+**not** enabled — the driver uses runtime-agnostic primitives and `azure_core` abstractions
+for async coordination and does not need lock-free work-stealing queues at this time.
 
 ---
 

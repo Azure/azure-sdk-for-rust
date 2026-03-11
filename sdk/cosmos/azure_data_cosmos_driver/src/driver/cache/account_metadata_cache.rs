@@ -156,6 +156,10 @@ pub(crate) struct AccountProperties {
     /// dataplane transport instead of the standard gateway endpoint.
     #[serde(default)]
     pub thin_client_readable_locations: Vec<AccountRegion>,
+
+    /// Server-assigned version tag. Changes when the account metadata is updated.
+    #[serde(rename = "_etag", default)]
+    pub etag: String,
 }
 
 // Convenience accessors for the account properties JSON contract. Some may not
@@ -361,6 +365,14 @@ impl AccountMetadataCache {
             Some(last) => cached.is_none() || last.elapsed() > self.staleness_threshold,
             None => true,
         }
+    }
+
+    /// Invalidates cached account properties for an endpoint.
+    pub(crate) async fn invalidate(
+        &self,
+        endpoint: &AccountEndpoint,
+    ) -> Option<Arc<AccountProperties>> {
+        self.cache.invalidate(endpoint).await
     }
 }
 

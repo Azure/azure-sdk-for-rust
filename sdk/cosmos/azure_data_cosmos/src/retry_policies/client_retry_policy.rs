@@ -527,10 +527,9 @@ impl ClientRetryPolicy {
         if status_code == StatusCode::Forbidden
             && sub_status_code == Some(SubStatusCode::WRITE_FORBIDDEN)
         {
-            if self
-                .partition_key_range_location_cache
-                .partition_level_failover_enabled()
-                && self.request.is_some()
+            if self.request.is_some()
+                && (self.is_request_eligible_for_per_partition_automatic_failover()
+                    || self.increment_failure_counter_and_check_circuit_breaker_eligibility())
                 && self
                     .partition_key_range_location_cache
                     .try_mark_endpoint_unavailable_for_partition_key_range(
@@ -542,7 +541,6 @@ impl ClientRetryPolicy {
                 });
             }
 
-            // automatic failover support needed to be plugged in here.
             return Some(
                 self.should_retry_on_endpoint_failure(false, false, true, false, false)
                     .await,
@@ -615,7 +613,7 @@ impl ClientRetryPolicy {
         if let Some(request) = self.request.as_ref() {
             if is_system_resource_unavailable_for_write
                 || self.is_request_eligible_for_per_partition_automatic_failover()
-                || self.is_request_eligible_for_partition_level_circuit_breaker()
+                || self.increment_failure_counter_and_check_circuit_breaker_eligibility()
             {
                 return self
                     .partition_key_range_location_cache
@@ -646,8 +644,8 @@ impl ClientRetryPolicy {
         false
     }
 
-    /// Checks if request is eligible for partition-level circuit breaker.
-    fn is_request_eligible_for_partition_level_circuit_breaker(&self) -> bool {
+    /// Increments failure counter and checks if request is eligible for partition-level circuit breaker.
+    fn increment_failure_counter_and_check_circuit_breaker_eligibility(&self) -> bool {
         if let Some(request) = self.request.as_ref() {
             return self
                 .partition_key_range_location_cache
@@ -741,12 +739,14 @@ impl ClientRetryPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::AccountRegion;
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
     use crate::regions;
     use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+    use crate::routing::partition_key_range::PartitionKeyRange;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;
@@ -877,6 +877,63 @@ mod tests {
             },
             "Test error with substatus",
         )
+    }
+
+    /// Creates a multi-master endpoint manager with two regions (West US + East US),
+    /// both configured as write AND read endpoints.
+    fn create_multi_master_endpoint_manager() -> Arc<GlobalEndpointManager> {
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+            None,
+        );
+
+        let manager = GlobalEndpointManager::new(
+            "https://test.documents.azure.com".parse().unwrap(),
+            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![],
+            pipeline,
+        );
+
+        let west = AccountRegion {
+            name: RegionName::from("West US"),
+            database_account_endpoint: "https://test-westus.documents.azure.com".parse().unwrap(),
+        };
+        let east = AccountRegion {
+            name: RegionName::from("East US"),
+            database_account_endpoint: "https://test-eastus.documents.azure.com".parse().unwrap(),
+        };
+
+        // Both regions as write + read → multi-master account
+        manager.update_location_cache(vec![west.clone(), east.clone()], vec![west, east]);
+        manager
+    }
+
+    /// Creates a policy configured for multi-master with PPCB enabled.
+    fn create_multi_master_ppcb_policy() -> ClientRetryPolicy {
+        let manager = create_multi_master_endpoint_manager();
+        // PPAF = false, PPCB = true
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, true);
+        ClientRetryPolicy::new(manager, partition_manager, None)
+    }
+
+    /// Creates a write request with a PartitionKeyRange and routed endpoint,
+    /// as the PPCB code path requires both to be present.
+    fn create_ppcb_write_request() -> CosmosRequest {
+        let resource_link = ResourceLink::root(ResourceType::Documents);
+        let mut request = CosmosRequest::builder(OperationType::Create, resource_link)
+            .partition_key(PartitionKey::from("test"))
+            .build()
+            .unwrap();
+        request.request_context.resolved_partition_key_range =
+            Some(PartitionKeyRange::new("0".into(), "".into(), "FF".into()));
+        request.request_context.resolved_collection_rid = Some("dbs/db1/colls/coll1".into());
+        request.request_context.location_endpoint_to_route =
+            Some("https://test-westus.documents.azure.com/".parse().unwrap());
+        request
     }
 
     #[tokio::test]
@@ -1554,5 +1611,113 @@ mod tests {
             RetryResult::DoNotRetry,
             "unknown IO errors should not retry write requests"
         );
+    }
+
+    /// **Core bug-fix test.** On a multi-master account with PPCB enabled, a write
+    /// receiving 403/3 must reach `is_request_eligible_for_partition_level_circuit_breaker`,
+    /// which internally calls `increment_request_failure_counter_and_check_if_partition_can_failover`.
+    ///
+    /// Before the fix, the outer `partition_level_failover_enabled()` guard short-circuited
+    /// on multi-master accounts, so the counter was never incremented and partition-level
+    /// failover could never trigger. After the fix, each 403/3 increments the counter.
+    #[tokio::test]
+    async fn write_forbidden_on_multi_master_increments_ppcb_counter() {
+        let mut policy = create_multi_master_ppcb_policy();
+        let request = create_ppcb_write_request();
+
+        policy.operation_type = Some(OperationType::Create);
+        policy.can_use_multiple_write_locations = true;
+        policy.location_endpoint = Some("https://test-westus.documents.azure.com".parse().unwrap());
+        policy.request = Some(request);
+
+        // Call the method that the 403/3 handler now invokes.
+        // Default write threshold = 5, so each of the first 5 calls should return false
+        // (counter not yet exceeded), but still increment the counter.
+        for i in 1..=5 {
+            let result = policy.increment_failure_counter_and_check_circuit_breaker_eligibility();
+            assert!(
+                !result,
+                "Attempt {i}: Expected false (counter {i} <= threshold 5)"
+            );
+        }
+
+        // The 6th call should exceed the threshold (6 > 5) and return true
+        let result = policy.increment_failure_counter_and_check_circuit_breaker_eligibility();
+        assert!(
+            result,
+            "Expected true after exceeding write failure threshold (6 > 5)"
+        );
+    }
+
+    /// On a multi-master account with PPCB enabled, once the write failure count
+    /// exceeds the threshold (default: 5), the next 403/3 should trigger partition-level
+    /// failover: the partition is marked unavailable and the retry is immediate
+    /// (Duration::ZERO) without going through account-level failover.
+    #[tokio::test]
+    async fn write_forbidden_on_multi_master_triggers_partition_failover_after_threshold() {
+        let mut policy = create_multi_master_ppcb_policy();
+        let request = create_ppcb_write_request();
+
+        policy.operation_type = Some(OperationType::Create);
+        policy.can_use_multiple_write_locations = true;
+        policy.location_endpoint = Some("https://test-westus.documents.azure.com".parse().unwrap());
+        policy.request = Some(request);
+
+        // Pre-pump the PPCB counter to just below threshold (5 increments).
+        // Each call to increment_failure_counter_and_check_circuit_breaker_eligibility()
+        // increments the counter via increment_request_failure_counter_and_check_if_partition_can_failover.
+        for _ in 1..=5 {
+            let _ = policy.increment_failure_counter_and_check_circuit_breaker_eligibility();
+        }
+
+        let failover_count_before = policy.failover_retry_count;
+
+        // Now call should_retry_error with a 403/3 error.
+        // The 6th increment will exceed the threshold → the PPCB path returns
+        // Retry { after: ZERO } immediately, without calling should_retry_on_endpoint_failure
+        // (and thus without any HTTP calls).
+        let error = create_error_with_substatus(
+            StatusCode::Forbidden,
+            SubStatusCode::WRITE_FORBIDDEN.value() as u32,
+        );
+
+        let result = policy.should_retry_error(&error).await;
+
+        assert!(
+            result.is_retry(),
+            "Expected retry after PPCB threshold exceeded"
+        );
+
+        // The partition-level path returns Retry { after: ZERO } directly,
+        // WITHOUT going through should_retry_on_endpoint_failure, so
+        // failover_retry_count should NOT have increased.
+        assert_eq!(
+            policy.failover_retry_count, failover_count_before,
+            "failover_retry_count should NOT increment when partition-level failover succeeds \
+             (partition path bypasses account-level retry)"
+        );
+    }
+
+    /// Without PPCB enabled, `is_request_eligible_for_partition_level_circuit_breaker`
+    /// should always return false, meaning partition-level failover never triggers
+    /// for 403/3 on multi-master accounts.
+    #[tokio::test]
+    async fn write_forbidden_on_multi_master_without_ppcb_returns_ineligible() {
+        let manager = create_multi_master_endpoint_manager();
+        // PPAF = false, PPCB = false
+        let partition_manager = GlobalPartitionEndpointManager::new(manager.clone(), false, false);
+        let mut policy = ClientRetryPolicy::new(manager, partition_manager, None);
+
+        let request = create_ppcb_write_request();
+        policy.operation_type = Some(OperationType::Create);
+        policy.can_use_multiple_write_locations = true;
+        policy.location_endpoint = Some("https://test-westus.documents.azure.com".parse().unwrap());
+        policy.request = Some(request);
+
+        // Even after many calls, should always return false (PPCB disabled)
+        for i in 1..=8 {
+            let result = policy.increment_failure_counter_and_check_circuit_breaker_eligibility();
+            assert!(!result, "Attempt {i}: Expected false when PPCB is disabled");
+        }
     }
 }
