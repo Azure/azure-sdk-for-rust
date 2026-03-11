@@ -440,7 +440,7 @@ fn build_cosmos_response(
 
 /// Determines whether a session token should be captured from this response.
 ///
-/// Follows Java/. NET patterns: capture on success (2xx), and on error responses
+/// Follows Java/.NET patterns: capture on success (2xx), and on error responses
 /// where the server still advanced the session token:
 /// - 409 Conflict
 /// - 412 Precondition Failed
@@ -795,5 +795,73 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(second_routing.endpoint, endpoint_b);
+    }
+
+    mod should_capture_session_token_from_status_tests {
+        use azure_core::http::{headers::Headers, StatusCode};
+
+        use crate::{
+            driver::pipeline::components::TransportOutcome,
+            models::{CosmosStatus, SubStatusCode},
+        };
+
+        use super::super::should_capture_session_token_from_status;
+
+        fn success_outcome() -> TransportOutcome {
+            TransportOutcome::Success {
+                status: CosmosStatus::new(StatusCode::Ok),
+                headers: Headers::new(),
+                body: Vec::new(),
+            }
+        }
+
+        fn http_error_outcome(status: StatusCode) -> TransportOutcome {
+            TransportOutcome::HttpError {
+                status: CosmosStatus::new(status),
+                headers: Headers::new(),
+                body: Vec::new(),
+                request_sent: crate::diagnostics::RequestSentStatus::Sent,
+            }
+        }
+
+        #[test]
+        fn captures_on_success() {
+            let outcome = success_outcome();
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn captures_on_409_conflict() {
+            let outcome = http_error_outcome(StatusCode::Conflict);
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn captures_on_412_precondition_failed() {
+            let outcome = http_error_outcome(StatusCode::PreconditionFailed);
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn skips_on_404_with_substatus_1002() {
+            let outcome = http_error_outcome(StatusCode::NotFound);
+            let substatus = SubStatusCode::READ_SESSION_NOT_AVAILABLE;
+            assert!(!should_capture_session_token_from_status(
+                Some(&substatus),
+                &outcome
+            ));
+        }
+
+        #[test]
+        fn captures_on_404_without_substatus_1002() {
+            let outcome = http_error_outcome(StatusCode::NotFound);
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn skips_on_500_internal_server_error() {
+            let outcome = http_error_outcome(StatusCode::InternalServerError);
+            assert!(!should_capture_session_token_from_status(None, &outcome));
+        }
     }
 }

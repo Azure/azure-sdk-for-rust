@@ -500,10 +500,6 @@ impl CosmosDriver {
         );
 
         // Step 7a: Determine if session consistency is active for this operation.
-        //
-        // TODO(read-consistency-strategy): Once full consistency level override
-        // pipeline is wired up, revisit this to use the merged consistency level
-        // rather than just the runtime strategy + account default.
         let read_consistency_strategy = effective_options
             .read_consistency_strategy
             .unwrap_or(ReadConsistencyStrategy::Default);

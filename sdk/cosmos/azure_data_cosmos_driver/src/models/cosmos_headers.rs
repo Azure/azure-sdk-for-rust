@@ -101,13 +101,13 @@ pub struct CosmosResponseHeaders {
     ///
     /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
     /// Used by the session token cache for name→RID mapping.
-    pub owner_full_name: Option<String>,
+    pub(crate) owner_full_name: Option<String>,
 
     /// Owner resource ID / content path (`x-ms-content-path`).
     ///
     /// Contains the RID of the owning collection. Used by the session token
     /// cache to key tokens by collection RID.
-    pub owner_id: Option<String>,
+    pub(crate) owner_id: Option<String>,
 }
 
 impl CosmosResponseHeaders {

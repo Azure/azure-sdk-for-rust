@@ -7,6 +7,8 @@ use crate::models::vector_session_token::VectorSessionToken;
 use std::collections::HashMap;
 use std::sync::RwLock;
 
+use azure_core::fmt::SafeDebug;
+
 /// An in-memory cache of session tokens for Cosmos DB containers.
 ///
 /// Tokens are stored **per partition-key-range within each collection**, keyed
@@ -15,12 +17,12 @@ use std::sync::RwLock;
 ///
 /// Thread-safety is provided via [`std::sync::RwLock`] because the lock is
 /// never held across `.await` points.
-#[derive(Debug)]
+#[derive(SafeDebug)]
 pub(crate) struct SessionContainer {
     inner: RwLock<SessionContainerInner>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct SessionContainerInner {
     /// `collection_rid → (pk_range_id → VectorSessionToken)`
     tokens: HashMap<String, HashMap<String, VectorSessionToken>>,
@@ -50,6 +52,8 @@ impl SessionContainer {
     }
 
     /// Builds a composite session token string from the cached inner state.
+    ///
+    /// Segments are sorted by partition-key-range ID for deterministic output.
     fn build_composite_token(
         inner: &SessionContainerInner,
         collection_rid: &str,
@@ -59,7 +63,9 @@ impl SessionContainer {
             return None;
         }
 
-        let composite: Vec<String> = pk_map
+        let mut entries: Vec<_> = pk_map.iter().collect();
+        entries.sort_by(|(a, _), (b, _)| a.cmp(b));
+        let composite: Vec<String> = entries
             .iter()
             .map(|(pk_range_id, vector)| format!("{pk_range_id}:{vector}"))
             .collect();

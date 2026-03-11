@@ -8,10 +8,12 @@
 
 use std::{collections::HashMap, fmt};
 
+use azure_core::fmt::SafeDebug;
+
 /// A parsed session-token version vector (the part after the `:`).
 ///
 /// Layout: `<version>#<global_lsn>#<region_id>=<region_lsn>#…`
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, PartialEq, Eq)]
 pub(crate) struct VectorSessionToken {
     version: u64,
     global_lsn: u64,
