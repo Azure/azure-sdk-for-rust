@@ -37,7 +37,8 @@ pub enum TimeToLive {
 }
 
 impl TimeToLive {
-    fn is_off(&self) -> bool {
+    /// Returns `true` if TTL is [`Off`](TimeToLive::Off).
+    pub fn is_off(&self) -> bool {
         matches!(self, TimeToLive::Off)
     }
 }
@@ -48,31 +49,35 @@ impl From<Duration> for TimeToLive {
     }
 }
 
-fn deserialize_ttl<'de, D>(deserializer: D) -> Result<TimeToLive, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    match Option::<i64>::deserialize(deserializer)? {
-        None => Ok(TimeToLive::Off),
-        Some(-1) => Ok(TimeToLive::NoDefault),
-        Some(n) if n >= 0 => Ok(TimeToLive::Seconds(Duration::from_secs(n as u64))),
-        Some(n) => Err(serde::de::Error::invalid_value(
-            serde::de::Unexpected::Signed(n),
-            &"a non-negative integer or -1",
-        )),
+impl Serialize for TimeToLive {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            TimeToLive::Off => serializer.serialize_none(),
+            TimeToLive::NoDefault => serializer.serialize_i64(-1),
+            TimeToLive::Seconds(d) => {
+                let secs = i64::try_from(d.as_secs()).map_err(serde::ser::Error::custom)?;
+                serializer.serialize_i64(secs)
+            }
+        }
     }
 }
 
-fn serialize_ttl<S>(ttl: &TimeToLive, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    match ttl {
-        TimeToLive::Off => serializer.serialize_none(),
-        TimeToLive::NoDefault => serializer.serialize_i64(-1),
-        TimeToLive::Seconds(d) => {
-            let secs = i64::try_from(d.as_secs()).map_err(serde::ser::Error::custom)?;
-            serializer.serialize_i64(secs)
+impl<'de> Deserialize<'de> for TimeToLive {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        match Option::<i64>::deserialize(deserializer)? {
+            None => Ok(TimeToLive::Off),
+            Some(-1) => Ok(TimeToLive::NoDefault),
+            Some(n) if n >= 0 => Ok(TimeToLive::Seconds(Duration::from_secs(n as u64))),
+            Some(n) => Err(serde::de::Error::invalid_value(
+                serde::de::Unexpected::Signed(n),
+                &"a non-negative integer or -1",
+            )),
         }
     }
 }
@@ -121,8 +126,6 @@ pub struct ContainerProperties {
     /// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
     #[serde(default)]
     #[serde(skip_serializing_if = "TimeToLive::is_off")]
-    #[serde(deserialize_with = "deserialize_ttl")]
-    #[serde(serialize_with = "serialize_ttl")]
     pub default_ttl: TimeToLive,
 
     /// The time-to-live for the analytical store in the container.
@@ -130,8 +133,6 @@ pub struct ContainerProperties {
     /// For more information see <https://learn.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
     #[serde(default)]
     #[serde(skip_serializing_if = "TimeToLive::is_off")]
-    #[serde(deserialize_with = "deserialize_ttl")]
-    #[serde(serialize_with = "serialize_ttl")]
     pub analytical_storage_ttl: TimeToLive,
 
     /// A [`SystemProperties`] object containing common system properties for the container.
@@ -324,8 +325,6 @@ mod tests {
     struct TtlHolder {
         #[serde(default)]
         #[serde(skip_serializing_if = "TimeToLive::is_off")]
-        #[serde(deserialize_with = "super::deserialize_ttl")]
-        #[serde(serialize_with = "super::serialize_ttl")]
         pub ttl: TimeToLive,
     }
 
