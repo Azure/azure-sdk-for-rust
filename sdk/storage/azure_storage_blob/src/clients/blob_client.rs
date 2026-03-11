@@ -257,10 +257,10 @@ impl BlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn upload(
         &self,
-        data: RequestContent<Bytes, NoFormat>,
+        content: RequestContent<Bytes, NoFormat>,
         options: Option<BlobClientUploadOptions<'_>>,
     ) -> Result<BlobClientUploadResult> {
-        self.block_blob_client().upload(data, options).await
+        self.block_blob_client().upload(content, options).await
     }
 
     /// Checks if the blob exists.
