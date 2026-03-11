@@ -13,9 +13,7 @@ use azure_core::http::{AsyncRawResponse, HttpClient, Request};
 use tracing::warn;
 use url::Url;
 
-use crate::{
-    diagnostics::TransportKind, driver::cache::AccountProperties, options::Region,
-};
+use crate::{diagnostics::TransportKind, driver::cache::AccountProperties, options::Region};
 
 use super::http_client_factory::HttpVersionPolicy;
 

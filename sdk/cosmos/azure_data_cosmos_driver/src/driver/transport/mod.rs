@@ -193,9 +193,10 @@ impl CosmosTransport {
             match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
                 None => {
-                    let config =
-                        HttpClientConfig::metadata(&self.connection_pool).for_emulator();
-                    let client = self.http_client_factory.build(&self.connection_pool, config)?;
+                    let config = HttpClientConfig::metadata(&self.connection_pool).for_emulator();
+                    let client = self
+                        .http_client_factory
+                        .build(&self.connection_pool, config)?;
                     let t = AdaptiveTransport::from_policy(config.version_policy, client);
                     self.insecure_emulator_metadata_transport
                         .get_or_init(|| t)
@@ -255,7 +256,9 @@ impl CosmosTransport {
                 None => {
                     let config =
                         HttpClientConfig::dataplane_gateway(&self.connection_pool).for_emulator();
-                    let client = self.http_client_factory.build(&self.connection_pool, config)?;
+                    let client = self
+                        .http_client_factory
+                        .build(&self.connection_pool, config)?;
                     let t = AdaptiveTransport::from_policy(config.version_policy, client);
                     self.insecure_emulator_dataplane_transport
                         .get_or_init(|| t)
@@ -281,13 +284,12 @@ impl CosmosTransport {
             let transport = match self.dataplane_gateway20_transport.get() {
                 Some(t) => t.clone(),
                 None => {
-                    let config =
-                        HttpClientConfig::dataplane_gateway20(&self.connection_pool);
-                    let client = self.http_client_factory.build(&self.connection_pool, config)?;
+                    let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
+                    let client = self
+                        .http_client_factory
+                        .build(&self.connection_pool, config)?;
                     let t = AdaptiveTransport::from_policy(config.version_policy, client);
-                    self.dataplane_gateway20_transport
-                        .get_or_init(|| t)
-                        .clone()
+                    self.dataplane_gateway20_transport.get_or_init(|| t).clone()
                 }
             };
             Ok(TransportContext {
@@ -581,7 +583,10 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport.get_metadata_transport(&endpoint).unwrap().transport,
+            transport
+                .get_metadata_transport(&endpoint)
+                .unwrap()
+                .transport,
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -597,7 +602,10 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport.get_metadata_transport(&endpoint).unwrap().transport,
+            transport
+                .get_metadata_transport(&endpoint)
+                .unwrap()
+                .transport,
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -612,8 +620,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx =
-            transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client()).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, &account_properties_without_thin_client())
+            .unwrap();
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(ctx.thin_client_overrides.is_none());
     }
@@ -629,7 +638,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client()).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, &account_properties_with_thin_client())
+            .unwrap();
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway20(_)));
         assert!(ctx.thin_client_overrides.is_some());
     }
@@ -645,7 +656,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client()).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, &account_properties_without_thin_client())
+            .unwrap();
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(ctx.thin_client_overrides.is_none());
     }
@@ -661,7 +674,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client()).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, &account_properties_with_thin_client())
+            .unwrap();
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(ctx.thin_client_overrides.is_none());
     }
@@ -677,10 +692,12 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(
-            &endpoint,
-            &account_properties_with_only_malformed_thin_client(),
-        ).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(
+                &endpoint,
+                &account_properties_with_only_malformed_thin_client(),
+            )
+            .unwrap();
 
         assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(ctx.thin_client_overrides.is_none());
