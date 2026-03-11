@@ -118,7 +118,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    pub async fn managed_download(
+    pub(crate) async fn managed_download(
         &self,
         options: Option<BlobClientManagedDownloadOptions<'_>>,
     ) -> Result<PinnedStream> {
