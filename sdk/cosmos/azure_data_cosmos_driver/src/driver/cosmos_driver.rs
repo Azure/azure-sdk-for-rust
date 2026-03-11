@@ -5,17 +5,14 @@
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
-    driver::{
-        effective_consistency::is_session_consistency_effective,
-        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
-    },
+    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        DiagnosticsOptions, DriverOptions, OperationOptions, ReadConsistencyStrategy,
-        RuntimeOptions, ThroughputControlGroupSnapshot,
+        DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
+        ThroughputControlGroupSnapshot,
     },
 };
 use azure_core::http::Request;
@@ -499,19 +496,7 @@ impl CosmosDriver {
             self.runtime.user_agent().as_str().to_owned(),
         );
 
-        // Step 7a: Determine if session consistency is active for this operation.
-        let read_consistency_strategy = effective_options
-            .read_consistency_strategy
-            .unwrap_or(ReadConsistencyStrategy::Default);
-        let session_consistency_active = self.options.session_capturing_enabled()
-            && is_session_consistency_effective(
-                read_consistency_strategy,
-                &account_properties
-                    .user_consistency_policy
-                    .default_consistency_level,
-            );
-
-        // Step 7b: Execute via the new operation pipeline
+        // Step 7: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
             &options,
@@ -525,7 +510,10 @@ impl CosmosDriver {
             transport_security,
             diagnostics_builder,
             &self.session_manager,
-            session_consistency_active,
+            self.options.session_capturing_enabled(),
+            &account_properties
+                .user_consistency_policy
+                .default_consistency_level,
         )
         .await
     }

@@ -15,15 +15,18 @@ use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{
-        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
-        LocationStateStore,
+    driver::{
+        effective_consistency::is_session_consistency_effective,
+        routing::{
+            session_manager::SessionManager, AccountEndpointState, CosmosEndpoint,
+            LocationSnapshot, LocationStateStore,
+        },
     },
     models::{
         request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
         Credential, SessionToken, SubStatusCode,
     },
-    options::{OperationOptions, RuntimeOptions},
+    options::{OperationOptions, ReadConsistencyStrategy, RuntimeOptions},
 };
 
 use super::{
@@ -56,11 +59,19 @@ pub(crate) async fn execute_operation_pipeline(
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
-    session_consistency_active: bool,
+    session_capturing_enabled: bool,
+    account_default_consistency: &str,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
+
+    // Determine if session consistency is active for this operation.
+    let read_consistency_strategy = effective_options
+        .read_consistency_strategy
+        .unwrap_or(ReadConsistencyStrategy::Default);
+    let session_consistency_active = session_capturing_enabled
+        && is_session_consistency_effective(read_consistency_strategy, account_default_consistency);
     let max_session_retries = effective_options
         .max_session_retry_count
         .unwrap_or_else(|| {
