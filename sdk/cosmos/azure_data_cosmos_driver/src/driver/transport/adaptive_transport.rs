@@ -3,7 +3,7 @@
 
 //! Adaptive HTTP transport layer.
 //!
-//! Provides [`AdaptiveTransport`] for protocol-aware dispatch and
+//! Provides [`AdaptiveTransport`] for transport-aware dispatch and
 //! [`TransportContext`] which bundles a transport with optional
 //! Gateway 2.0 endpoint overrides.
 
@@ -19,42 +19,43 @@ use super::http_client_factory::HttpVersionPolicy;
 
 /// Transport strategy selected for a request pipeline.
 ///
-/// Both metadata and standard dataplane transports use `Http2Preferred`,
-/// which negotiates HTTP/2 via ALPN and falls back to HTTP/1.1 if the
-/// server (e.g. RoutingGateway) does not support it. Gateway 2.0 uses
-/// `Http2Only` with `http2_prior_knowledge()` (no fallback).
+/// `Gateway` covers the standard metadata and dataplane gateway path. The
+/// underlying reqwest client may be configured as HTTP/1.1-only or
+/// HTTP/2-preferred depending on `ConnectionPoolOptions::is_http2_allowed()`.
+/// `Gateway20` is reserved for thin-client Gateway 2.0 requests and always
+/// uses HTTP/2 prior knowledge.
 ///
 /// In Step 6, both variants will transition to wrapping
 /// `ShardedHttpTransport` instead of a plain `Arc<dyn HttpClient>` —
 /// see spec §6 "HTTP/2 connection sharding".
 #[derive(Clone)]
 pub(crate) enum AdaptiveTransport {
-    /// HTTP/2-preferred transport with automatic HTTP/1.1 fallback.
-    /// Used for both RoutingGateway (falls back to HTTP/1.1) and
-    /// ComputeGateway (negotiates HTTP/2 via ALPN).
-    Http2Preferred(Arc<dyn HttpClient>),
-    /// HTTP/2-only transport, no HTTP/1.1 fallback (Gateway 2.0).
-    Http2Only(Arc<dyn HttpClient>),
+    /// Standard gateway transport for metadata and non-Gateway-2.0 dataplane requests.
+    Gateway(Arc<dyn HttpClient>),
+    /// Gateway 2.0 transport for thin-client dataplane requests.
+    Gateway20(Arc<dyn HttpClient>),
 }
 
 impl AdaptiveTransport {
     pub(crate) fn from_policy(policy: HttpVersionPolicy, client: Arc<dyn HttpClient>) -> Self {
         match policy {
-            HttpVersionPolicy::Http2Preferred => Self::Http2Preferred(client),
-            HttpVersionPolicy::Http2Only => Self::Http2Only(client),
+            HttpVersionPolicy::Http11Only | HttpVersionPolicy::Http2Preferred => {
+                Self::Gateway(client)
+            }
+            HttpVersionPolicy::Http2Only => Self::Gateway20(client),
         }
     }
 
-    pub(crate) fn version_policy(&self) -> HttpVersionPolicy {
+    fn transport_kind(&self) -> &'static str {
         match self {
-            Self::Http2Preferred(_) => HttpVersionPolicy::Http2Preferred,
-            Self::Http2Only(_) => HttpVersionPolicy::Http2Only,
+            Self::Gateway(_) => "Gateway",
+            Self::Gateway20(_) => "Gateway20",
         }
     }
 
     /// Sends an HTTP request through the underlying transport.
     ///
-    // TODO(Step 6): When sharding is added, `Http2Preferred` and `Http2Only`
+    // TODO(Step 6): When sharding is added, `Gateway` and `Gateway20`
     // variants will dispatch through `ShardedHttpTransport` instead of
     // delegating directly to the `HttpClient`.
     pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
@@ -63,7 +64,7 @@ impl AdaptiveTransport {
 
     fn client(&self) -> &Arc<dyn HttpClient> {
         match self {
-            Self::Http2Preferred(client) | Self::Http2Only(client) => client,
+            Self::Gateway(client) | Self::Gateway20(client) => client,
         }
     }
 }
@@ -71,7 +72,7 @@ impl AdaptiveTransport {
 impl fmt::Debug for AdaptiveTransport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AdaptiveTransport")
-            .field("version_policy", &self.version_policy())
+            .field("kind", &self.transport_kind())
             .finish_non_exhaustive()
     }
 }

@@ -12,6 +12,8 @@ use crate::options::ConnectionPoolOptions;
 /// HTTP protocol policy required by a transport.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum HttpVersionPolicy {
+    /// Use HTTP/1.1 only.
+    Http11Only,
     /// Prefer HTTP/2 via ALPN, fall back to HTTP/1.1 automatically.
     Http2Preferred,
     /// HTTP/2 only (`http2_prior_knowledge`), no HTTP/1.1 fallback.
@@ -28,7 +30,11 @@ pub(crate) struct HttpClientConfig {
 impl HttpClientConfig {
     pub(crate) fn metadata(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
-            version_policy: HttpVersionPolicy::Http2Preferred,
+            version_policy: if connection_pool.is_http2_allowed() {
+                HttpVersionPolicy::Http2Preferred
+            } else {
+                HttpVersionPolicy::Http11Only
+            },
             request_timeout: connection_pool.max_metadata_request_timeout(),
             for_emulator: false,
         }
@@ -36,7 +42,11 @@ impl HttpClientConfig {
 
     pub(crate) fn dataplane_gateway(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
-            version_policy: HttpVersionPolicy::Http2Preferred,
+            version_policy: if connection_pool.is_http2_allowed() {
+                HttpVersionPolicy::Http2Preferred
+            } else {
+                HttpVersionPolicy::Http11Only
+            },
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
         }
@@ -53,6 +63,38 @@ impl HttpClientConfig {
     pub(crate) fn for_emulator(mut self) -> Self {
         self.for_emulator = true;
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::options::ConnectionPoolOptionsBuilder;
+
+    #[test]
+    fn metadata_uses_http11_only_when_http2_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(false)
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            HttpClientConfig::metadata(&pool).version_policy,
+            HttpVersionPolicy::Http11Only
+        );
+    }
+
+    #[test]
+    fn dataplane_gateway_uses_http11_only_when_http2_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(false)
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            HttpClientConfig::dataplane_gateway(&pool).version_policy,
+            HttpVersionPolicy::Http11Only
+        );
     }
 }
 
@@ -105,6 +147,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         }
 
         builder = match config.version_policy {
+            HttpVersionPolicy::Http11Only => builder.http1_only(),
             HttpVersionPolicy::Http2Preferred => builder,
             HttpVersionPolicy::Http2Only => builder.http2_prior_knowledge(),
         };

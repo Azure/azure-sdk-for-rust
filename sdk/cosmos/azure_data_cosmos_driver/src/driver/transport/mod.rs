@@ -353,14 +353,12 @@ pub(crate) mod tests {
 
         assert!(matches!(
             transport.get_metadata_transport(&endpoint),
-            AdaptiveTransport::Http2Preferred(_)
+            AdaptiveTransport::Gateway(_)
         ));
     }
 
     #[test]
-    fn metadata_transport_is_http2_preferred_even_when_http2_flag_disabled() {
-        // Http2Preferred with ALPN falls back to HTTP/1.1 automatically
-        // against RoutingGateway, so there is no need for a separate Http1 variant.
+    fn metadata_transport_uses_gateway_when_http2_flag_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(false)
             .build()
@@ -371,8 +369,25 @@ pub(crate) mod tests {
 
         assert!(matches!(
             transport.get_metadata_transport(&endpoint),
-            AdaptiveTransport::Http2Preferred(_)
+            AdaptiveTransport::Gateway(_)
         ));
+    }
+
+    #[test]
+    fn dataplane_transport_uses_gateway_when_http2_flag_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(false)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::new(pool).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx =
+            transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
+        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
+        assert!(!ctx.is_gateway20);
+        assert!(ctx.thin_client_overrides.is_none());
     }
 
     #[test]
@@ -388,7 +403,7 @@ pub(crate) mod tests {
 
         let ctx =
             transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
-        assert!(matches!(ctx.transport, AdaptiveTransport::Http2Only(_)));
+        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway20(_)));
         assert!(ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_some());
     }
@@ -406,10 +421,7 @@ pub(crate) mod tests {
 
         let ctx =
             transport.get_dataplane_transport(&endpoint, &account_properties_without_thin_client());
-        assert!(matches!(
-            ctx.transport,
-            AdaptiveTransport::Http2Preferred(_)
-        ));
+        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
     }
@@ -427,10 +439,7 @@ pub(crate) mod tests {
 
         let ctx =
             transport.get_dataplane_transport(&endpoint, &account_properties_with_thin_client());
-        assert!(matches!(
-            ctx.transport,
-            AdaptiveTransport::Http2Preferred(_)
-        ));
+        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
         assert!(!ctx.is_gateway20);
         assert!(ctx.thin_client_overrides.is_none());
     }

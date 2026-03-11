@@ -684,7 +684,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
-        let client = AdaptiveTransport::Http2Preferred(Arc::new(HangingHttpClient {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
             delay: Duration::from_secs(2),
         }));
         let mut diagnostics = DiagnosticsContextBuilder::new(
