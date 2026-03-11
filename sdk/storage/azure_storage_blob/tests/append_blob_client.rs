@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{RequestContent, StatusCode};
+use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+    AppendBlobClientCreateOptions, BlobClientDownloadResultHeaders,
+    BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
@@ -141,6 +142,42 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(status_code.is_success());
     assert_eq!(0, content_length.unwrap());
     assert_eq!(b"".to_vec(), response_body.collect().await?.to_vec());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = blob_client.append_blob_client();
+
+    // Create with Content Headers
+    // Note: blob_content_md5 is validated against actual content on create and is excluded
+    // here; it is tested as stored metadata via set_properties in blob_client tests.
+    append_blob_client
+        .create(Some(AppendBlobClientCreateOptions {
+            blob_cache_control: Some("must-revalidate".to_string()),
+            blob_content_disposition: Some("inline".to_string()),
+            blob_content_encoding: Some("identity".to_string()),
+            blob_content_language: Some("es-ES".to_string()),
+            blob_content_type: Some("text/csv".to_string()),
+            ..Default::default()
+        }))
+        .await?;
+
+    // Assert Content Headers Roundtrip
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("must-revalidate".to_string()), props.cache_control()?);
+    assert_eq!(Some("inline".to_string()), props.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("es-ES".to_string()), props.content_language()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("text/csv".to_string()), content_type);
 
     container_client.delete(None).await?;
     Ok(())

@@ -2,21 +2,22 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{headers::CONTENT_TYPE, RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
         method_options::BlockBlobClientManagedUploadOptions, BlobClientDownloadResultHeaders,
+        BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
         BlockListType, BlockLookupList,
     },
     BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
-    StorageAccount, TestPolicy, KB, MB,
+    block_lookup, create_test_blob, get_blob_name, get_container_client, predicates,
+    ClientOptionsExt, StorageAccount, TestPolicy, KB, MB,
 };
 use bytes::{BufMut, BytesMut};
 use std::{
@@ -504,5 +505,59 @@ async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         expected_stage_block_count
     );
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_commit_block_list_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+    let block_id = b"block-1".to_vec();
+    let content = b"commit-block-list-content-headers";
+    let md5: Vec<u8> = (0u8..16).collect();
+
+    // Stage Block
+    block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content.to_vec()),
+            None,
+        )
+        .await?;
+
+    // Commit Block List with Content Headers
+    // Note: blob_content_md5 on commit_block_list is stored metadata (not validated against
+    // actual content), so an arbitrary value can be used to verify roundtrip behavior.
+    block_blob_client
+        .commit_block_list(
+            block_lookup(block_id).try_into()?,
+            Some(BlockBlobClientCommitBlockListOptions {
+                blob_cache_control: Some("max-age=600".to_string()),
+                blob_content_disposition: Some("inline".to_string()),
+                blob_content_encoding: Some("identity".to_string()),
+                blob_content_language: Some("de-DE".to_string()),
+                blob_content_md5: Some(md5.clone()),
+                blob_content_type: Some("application/json".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert Content Headers Roundtrip
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("max-age=600".to_string()), props.cache_control()?);
+    assert_eq!(Some("inline".to_string()), props.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("de-DE".to_string()), props.content_language()?);
+    assert_eq!(Some(md5), props.content_md5()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/json".to_string()), content_type);
+
+    container_client.delete(None).await?;
     Ok(())
 }
