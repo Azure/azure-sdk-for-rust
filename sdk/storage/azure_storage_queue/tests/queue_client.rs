@@ -9,9 +9,10 @@ use azure_core::{
         policies::{Policy, PolicyResult},
         Context, FixedRetryOptions, RetryOptions, StatusCode,
     },
+    time::{parse_rfc3339, to_rfc3339, Duration, OffsetDateTime},
     Result,
 };
-use azure_core_test::{recorded, Recording, TestContext, TestMode};
+use azure_core_test::{recorded, Recording, TestContext, TestMode, VarOptions};
 use azure_storage_queue::{
     models::{
         AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesResultHeaders,
@@ -1051,6 +1052,93 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
             .as_ref()
             .expect("Expected access policy");
         assert_eq!(ap.permission.as_deref(), Some("raup"));
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Sets an access policy with explicit `start` and `expiry` dates.
+#[recorded::test]
+async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        let start_str = recording.var(
+            "start",
+            Some(VarOptions {
+                default_value: Some(to_rfc3339(&OffsetDateTime::now_utc()).into()),
+                ..Default::default()
+            }),
+        );
+        let expiry_str = recording.var(
+            "expiry",
+            Some(VarOptions {
+                default_value: Some(
+                    to_rfc3339(&(OffsetDateTime::now_utc() + Duration::days(365))).into(),
+                ),
+                ..Default::default()
+            }),
+        );
+
+        let policy = SignedIdentifiers {
+            items: Some(vec![SignedIdentifier {
+                id: Some("timed-policy".to_string()),
+                access_policy: Some(AccessPolicy {
+                    permission: Some("r".to_string()),
+                    start: Some(parse_rfc3339(&start_str)?),
+                    expiry: Some(parse_rfc3339(&expiry_str)?),
+                }),
+            }]),
+        };
+
+        // Act
+        let set_response = queue_client
+            .set_access_policy(policy.try_into()?, None)
+            .await?;
+        assert_successful_response(&set_response);
+
+        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        }
+
+        let get_response = queue_client.get_access_policy(None).await?;
+        assert_successful_response(&get_response);
+
+        let acl = get_response.into_model()?;
+        let items = acl.items.expect("Expected signed identifiers");
+        assert_eq!(items.len(), 1, "Expected exactly one signed identifier");
+
+        let ap = items[0]
+            .access_policy
+            .as_ref()
+            .expect("Expected access policy");
+
+        // Assert — both dates survive the round-trip
+        assert_eq!(ap.permission.as_deref(), Some("r"));
+        assert!(ap.start.is_some(), "Expected start to round-trip");
+        assert!(ap.expiry.is_some(), "Expected expiry to round-trip");
+        assert_eq!(
+            ap.start.map(|t| t.unix_timestamp()),
+            Some(parse_rfc3339(&start_str)?.unix_timestamp()),
+            "start date did not round-trip"
+        );
+        assert_eq!(
+            ap.expiry.map(|t| t.unix_timestamp()),
+            Some(parse_rfc3339(&expiry_str)?.unix_timestamp()),
+            "expiry date did not round-trip"
+        );
 
         Ok::<(), azure_core::Error>(())
     }

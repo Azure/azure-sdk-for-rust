@@ -49,6 +49,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Creating queue '{queue_name}'...");
     queue_client.create(None).await?;
 
+    set_and_get_metadata(&queue_client).await?;
+    send_messages(&queue_client).await?;
+    peek_messages(&queue_client).await?;
+    receive_and_delete_messages(&queue_client).await?;
+
+    queue_client.clear(None).await?;
+    println!("Cleared any remaining messages");
+
+    queue_client.delete(None).await?;
+    println!("Deleted queue '{queue_name}'");
+
+    Ok(())
+}
+
+/// Sets two metadata keys on the queue, then reads them back via `get_properties`.
+async fn set_and_get_metadata(
+    queue_client: &QueueClient,
+) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = HashMap::from([
         ("sample".to_string(), "queue-client".to_string()),
         ("language".to_string(), "rust".to_string()),
@@ -62,48 +80,64 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  {key}: {value}");
     }
 
-    let visible_message = QueueMessage {
+    Ok(())
+}
+
+/// Sends one immediately-visible message and one deferred message that demonstrates
+/// the `visibility_timeout` and `message_time_to_live` send options.
+async fn send_messages(queue_client: &QueueClient) -> Result<(), Box<dyn std::error::Error>> {
+    let visible = QueueMessage {
         message_text: Some("Hello from the queue client example!".to_string()),
     };
-    queue_client
-        .send_message(visible_message.try_into()?, None)
-        .await?;
+    queue_client.send_message(visible.try_into()?, None).await?;
     println!("Sent one visible message");
 
-    let deferred_message = QueueMessage {
+    let deferred = QueueMessage {
         message_text: Some("This message becomes visible later".to_string()),
     };
-    let send_options = QueueClientSendMessageOptions {
+    let options = QueueClientSendMessageOptions {
         visibility_timeout: Some(10),
         message_time_to_live: Some(60),
         ..Default::default()
     };
     queue_client
-        .send_message(deferred_message.try_into()?, Some(send_options))
+        .send_message(deferred.try_into()?, Some(options))
         .await?;
     println!("Sent one deferred message with visibility timeout and TTL");
 
-    let peek_options = QueueClientPeekMessagesOptions {
+    Ok(())
+}
+
+/// Peeks up to 5 visible messages without removing them from the queue.
+async fn peek_messages(queue_client: &QueueClient) -> Result<(), Box<dyn std::error::Error>> {
+    let options = QueueClientPeekMessagesOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };
-    let peeked = queue_client.peek_messages(Some(peek_options)).await?;
-    let peeked_messages = peeked.into_model()?.items.unwrap_or_default();
-    println!("Peeked {} visible message(s):", peeked_messages.len());
-    for message in &peeked_messages {
+    let peeked = queue_client.peek_messages(Some(options)).await?;
+    let messages = peeked.into_model()?.items.unwrap_or_default();
+    println!("Peeked {} visible message(s):", messages.len());
+    for message in &messages {
         println!("  {}", message.message_text.as_deref().unwrap_or("<empty>"));
     }
 
-    let receive_options = QueueClientReceiveMessagesOptions {
+    Ok(())
+}
+
+/// Receives up to 5 visible messages and deletes each one after printing it.
+async fn receive_and_delete_messages(
+    queue_client: &QueueClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let options = QueueClientReceiveMessagesOptions {
         number_of_messages: Some(5),
         visibility_timeout: Some(30),
         ..Default::default()
     };
-    let received = queue_client.receive_messages(Some(receive_options)).await?;
-    let received_messages = received.into_model()?.items.unwrap_or_default();
-    println!("Received {} visible message(s)", received_messages.len());
+    let received = queue_client.receive_messages(Some(options)).await?;
+    let messages = received.into_model()?.items.unwrap_or_default();
+    println!("Received {} visible message(s):", messages.len());
 
-    for message in &received_messages {
+    for message in &messages {
         println!(
             "  Message {}: {}",
             message.message_id.as_deref().unwrap_or("<no-id>"),
@@ -120,12 +154,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  Deleted message {message_id}");
         }
     }
-
-    queue_client.clear(None).await?;
-    println!("Cleared any remaining messages");
-
-    queue_client.delete(None).await?;
-    println!("Deleted queue '{queue_name}'");
 
     Ok(())
 }

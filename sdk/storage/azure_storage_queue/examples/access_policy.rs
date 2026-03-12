@@ -27,6 +27,7 @@
 //! cargo run --package azure_storage_queue --example access_policy
 //! ```
 
+use azure_core::time::OffsetDateTime;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{AccessPolicy, SignedIdentifier, SignedIdentifiers},
@@ -50,12 +51,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // --- Set access policies ---
     // Define a policy that grants read ('r') and process ('p') access.
-    // start/expiry are optional; omitting them means the policy is active immediately
-    // and never expires. Use a Shared Access Signature (SAS) to attach this policy
-    // to a token with a specific expiry instead.
+    //
+    // `start` and `expiry` are `OffsetDateTime` values serialized as RFC 3339. Azure
+    // truncates sub-second precision, so whole-second timestamps are safest. Omitting
+    // either field means "now" (start) or "never" (expiry) from the service's perspective,
+    // but providing explicit values is recommended so the expiry is visible in the portal
+    // and can be audited.
+    //
+    // expiry: 2027-01-01T00:00:00Z (unix timestamp 1 798 761 600)
+    let expiry =
+        OffsetDateTime::from_unix_timestamp(1_798_761_600).expect("hardcoded timestamp is valid");
     let policy = AccessPolicy {
         start: None,
-        expiry: None,
+        expiry: Some(expiry),
         permission: Some("rp".to_string()),
     };
     let identifiers = SignedIdentifiers {
