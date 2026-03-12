@@ -94,7 +94,18 @@ mod tests {
             Method::Get,
         );
 
-        let result = client.execute_request(&request).await;
-        assert!(result.is_err(), "expected fault injection to trigger");
+        let err = client.execute_request(&request).await.unwrap_err();
+        assert_eq!(
+            err.http_status(),
+            Some(azure_core::http::StatusCode::InternalServerError)
+        );
+        assert!(
+            matches!(
+                err.kind(),
+                azure_core::error::ErrorKind::HttpResponse { .. }
+            ),
+            "expected HttpResponse error kind, got {:?}",
+            err.kind()
+        );
     }
 }

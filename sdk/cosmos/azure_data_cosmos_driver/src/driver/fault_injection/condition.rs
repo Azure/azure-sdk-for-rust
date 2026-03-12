@@ -65,14 +65,45 @@ impl FaultInjectionConditionBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::FaultInjectionConditionBuilder;
+    use super::{FaultInjectionCondition, FaultInjectionConditionBuilder};
+    use crate::driver::fault_injection::FaultOperationType;
+    use crate::options::Region;
 
     #[test]
-    fn builder_default() {
-        let builder = FaultInjectionConditionBuilder::default();
-        let condition = builder.build();
-        assert!(condition.operation_type.is_none());
-        assert!(condition.region.is_none());
-        assert!(condition.container_id.is_none());
+    fn builder_default_produces_empty_condition() {
+        let condition = FaultInjectionConditionBuilder::default().build();
+        assert_eq!(
+            (
+                condition.operation_type,
+                condition.region,
+                condition.container_id
+            ),
+            (None, None, None)
+        );
+    }
+
+    #[test]
+    fn builder_sets_all_fields() {
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::ReadItem)
+            .with_region(Region::new("East US"))
+            .with_container_id("my-container")
+            .build();
+        assert_eq!(condition.operation_type, Some(FaultOperationType::ReadItem));
+        assert_eq!(condition.region, Some(Region::new("East US")));
+        assert_eq!(condition.container_id, Some("my-container".to_string()));
+    }
+
+    #[test]
+    fn default_trait_produces_empty_condition() {
+        let condition = FaultInjectionCondition::default();
+        assert_eq!(
+            (
+                condition.operation_type,
+                condition.region,
+                condition.container_id
+            ),
+            (None, None, None)
+        );
     }
 }

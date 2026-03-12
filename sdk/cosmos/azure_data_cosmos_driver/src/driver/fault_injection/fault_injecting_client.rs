@@ -366,9 +366,9 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let response = fault_client.execute_request(&request).await.unwrap();
 
-        assert!(result.is_ok());
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
     }
 
@@ -378,9 +378,9 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![]);
 
         let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let response = fault_client.execute_request(&request).await.unwrap();
 
-        assert!(result.is_ok());
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
     }
 
@@ -399,15 +399,21 @@ mod tests {
         let request = create_test_request();
 
         // First two requests should hit the fault
-        let result1 = fault_client.execute_request(&request).await;
-        assert!(result1.is_err());
+        let err1 = fault_client.execute_request(&request).await.unwrap_err();
+        assert_eq!(
+            err1.http_status(),
+            Some(azure_core::http::StatusCode::InternalServerError)
+        );
 
-        let result2 = fault_client.execute_request(&request).await;
-        assert!(result2.is_err());
+        let err2 = fault_client.execute_request(&request).await.unwrap_err();
+        assert_eq!(
+            err2.http_status(),
+            Some(azure_core::http::StatusCode::InternalServerError)
+        );
 
         // Third request should pass through (hit limit reached)
-        let result3 = fault_client.execute_request(&request).await;
-        assert!(result3.is_ok());
+        let response = fault_client.execute_request(&request).await.unwrap();
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
     }
 
@@ -425,8 +431,8 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
-        assert!(result.is_ok());
+        let response = fault_client.execute_request(&request).await.unwrap();
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
     }
 
@@ -442,16 +448,17 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let err = fault_client.execute_request(&request).await.unwrap_err();
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
         assert_eq!(
             err.http_status(),
-            Some(azure_core::http::StatusCode::InternalServerError),
-            "expected InternalServerError status code"
+            Some(azure_core::http::StatusCode::InternalServerError)
         );
-
+        assert!(
+            matches!(err.kind(), ErrorKind::HttpResponse { .. }),
+            "expected HttpResponse error kind, got {:?}",
+            err.kind()
+        );
         assert_eq!(mock_client.call_count(), 0);
     }
 
@@ -467,15 +474,18 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let err = fault_client.execute_request(&request).await.unwrap_err();
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
         assert_eq!(
             err.http_status(),
-            Some(azure_core::http::StatusCode::TooManyRequests),
-            "expected TooManyRequests status code"
+            Some(azure_core::http::StatusCode::TooManyRequests)
         );
+        assert!(
+            matches!(err.kind(), ErrorKind::HttpResponse { .. }),
+            "expected HttpResponse error kind, got {:?}",
+            err.kind()
+        );
+        assert_eq!(mock_client.call_count(), 0);
     }
 
     #[tokio::test]
@@ -491,10 +501,10 @@ mod tests {
         let request = create_test_request();
 
         let start = std::time::Instant::now();
-        let result = fault_client.execute_request(&request).await;
+        let response = fault_client.execute_request(&request).await.unwrap();
         let elapsed = start.elapsed();
 
-        assert!(result.is_ok());
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
 
         assert!(
@@ -522,9 +532,9 @@ mod tests {
 
         // URL doesn't contain "my-container", should pass through
         let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let response = fault_client.execute_request(&request).await.unwrap();
 
-        assert!(result.is_ok());
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
     }
 
@@ -544,11 +554,19 @@ mod tests {
 
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
-        // URL contains "testdb", should match
+        // URL contains "testdb", should match and inject timeout error (HTTP 408)
         let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let err = fault_client.execute_request(&request).await.unwrap_err();
 
-        assert!(result.is_err());
+        assert_eq!(
+            err.http_status(),
+            Some(azure_core::http::StatusCode::RequestTimeout)
+        );
+        assert!(
+            matches!(err.kind(), ErrorKind::HttpResponse { .. }),
+            "expected HttpResponse error kind for Timeout, got {:?}",
+            err.kind()
+        );
         assert_eq!(mock_client.call_count(), 0);
     }
 
@@ -564,10 +582,9 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let err = fault_client.execute_request(&request).await.unwrap_err();
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        assert_eq!(err.http_status(), None);
         assert!(
             matches!(err.kind(), &ErrorKind::Io),
             "expected Io error kind, got {:?}",
@@ -588,10 +605,9 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let err = fault_client.execute_request(&request).await.unwrap_err();
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        assert_eq!(err.http_status(), None);
         assert!(
             matches!(err.kind(), &ErrorKind::Io),
             "expected Io error kind, got {:?}",
@@ -617,9 +633,9 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let response = fault_client.execute_request(&request).await.unwrap();
 
-        assert!(result.is_ok());
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 0); // Not forwarded to real client
     }
 
@@ -635,33 +651,30 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let err = fault_client.execute_request(&request).await.unwrap_err();
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
         assert_eq!(
             err.http_status(),
             Some(azure_core::http::StatusCode::NotFound)
         );
 
-        // Verify the raw response contains the substatus header
-        if let ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
-            let raw = raw_response
-                .as_ref()
-                .expect("raw_response should be present for substatus errors");
-            let sub = raw
-                .headers()
+        // Extract and verify the raw response's substatus header
+        let ErrorKind::HttpResponse { raw_response, .. } = err.kind() else {
+            panic!("expected HttpResponse error kind, got {:?}", err.kind());
+        };
+        let raw = raw_response
+            .as_ref()
+            .expect("raw_response should be present for substatus errors");
+        assert_eq!(raw.status(), azure_core::http::StatusCode::NotFound);
+        assert_eq!(
+            raw.headers()
                 .get_optional_str(&super::SUBSTATUS)
-                .expect("substatus header should be present");
-            assert_eq!(
-                sub,
-                SubStatusCode::READ_SESSION_NOT_AVAILABLE
-                    .value()
-                    .to_string()
-            );
-        } else {
-            panic!("expected HttpResponse error kind");
-        }
+                .expect("substatus header should be present"),
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE
+                .value()
+                .to_string()
+        );
+        assert_eq!(mock_client.call_count(), 0);
     }
 
     #[tokio::test]
@@ -676,19 +689,25 @@ mod tests {
         let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![rule.clone()]);
         let request = create_test_request();
 
-        // Rule is enabled by default
-        let result = fault_client.execute_request(&request).await;
-        assert!(result.is_err());
+        // Rule is enabled by default — should inject error
+        let err = fault_client.execute_request(&request).await.unwrap_err();
+        assert_eq!(
+            err.http_status(),
+            Some(azure_core::http::StatusCode::InternalServerError)
+        );
 
-        // Disable the rule
+        // Disable the rule — should pass through
         rule.disable();
-        let result = fault_client.execute_request(&request).await;
-        assert!(result.is_ok());
+        let response = fault_client.execute_request(&request).await.unwrap();
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         assert_eq!(mock_client.call_count(), 1);
 
-        // Re-enable the rule
+        // Re-enable the rule — should inject error again
         rule.enable();
-        let result = fault_client.execute_request(&request).await;
-        assert!(result.is_err());
+        let err = fault_client.execute_request(&request).await.unwrap_err();
+        assert_eq!(
+            err.http_status(),
+            Some(azure_core::http::StatusCode::InternalServerError)
+        );
     }
 }

@@ -116,34 +116,62 @@ mod tests {
     use std::time::Duration;
 
     #[test]
-    fn builder_default_values() {
-        let error = FaultInjectionResultBuilder::new()
+    fn builder_with_error_and_defaults() {
+        let result = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::Timeout)
             .build();
 
-        assert_eq!(error.error_type.unwrap(), FaultInjectionErrorType::Timeout);
-        assert_eq!(error.delay, Duration::ZERO);
-        assert!((error.probability() - 1.0).abs() < f32::EPSILON);
+        assert_eq!(result.error_type, Some(FaultInjectionErrorType::Timeout));
+        assert_eq!(result.custom_response.is_none(), true);
+        assert_eq!(result.delay, Duration::ZERO);
+        assert_eq!(result.probability(), 1.0);
+    }
+
+    #[test]
+    fn builder_with_all_fields() {
+        let result = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .with_delay(Duration::from_millis(500))
+            .with_probability(0.75)
+            .build();
+
+        assert_eq!(
+            result.error_type,
+            Some(FaultInjectionErrorType::ServiceUnavailable)
+        );
+        assert_eq!(result.custom_response.is_none(), true);
+        assert_eq!(result.delay, Duration::from_millis(500));
+        assert_eq!(result.probability(), 0.75);
     }
 
     #[test]
     fn builder_probability_clamped_above() {
-        let error = FaultInjectionResultBuilder::new()
+        let result = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .with_probability(1.5)
             .build();
 
-        assert!((error.probability() - 1.0).abs() < f32::EPSILON);
+        assert_eq!(
+            result.error_type,
+            Some(FaultInjectionErrorType::ServiceUnavailable)
+        );
+        assert_eq!(result.delay, Duration::ZERO);
+        assert_eq!(result.probability(), 1.0);
     }
 
     #[test]
     fn builder_probability_clamped_below() {
-        let error = FaultInjectionResultBuilder::new()
+        let result = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .with_probability(-0.5)
             .build();
 
-        assert!(error.probability().abs() < f32::EPSILON);
+        assert_eq!(
+            result.error_type,
+            Some(FaultInjectionErrorType::ServiceUnavailable)
+        );
+        assert_eq!(result.delay, Duration::ZERO);
+        assert_eq!(result.probability(), 0.0);
     }
 
     #[test]
@@ -157,9 +185,22 @@ mod tests {
             })
             .build();
 
-        assert!(result.error_type.is_none());
+        assert_eq!(result.error_type, None);
+        assert_eq!(result.delay, Duration::ZERO);
+        assert_eq!(result.probability(), 1.0);
         let custom = result.custom_response.unwrap();
         assert_eq!(custom.status_code, StatusCode::Ok);
+        assert_eq!(custom.headers.iter().count(), 0);
         assert_eq!(custom.body, body);
+    }
+
+    #[test]
+    fn builder_default_produces_no_fault() {
+        let result = FaultInjectionResultBuilder::default().build();
+
+        assert_eq!(result.error_type, None);
+        assert_eq!(result.custom_response.is_none(), true);
+        assert_eq!(result.delay, Duration::ZERO);
+        assert_eq!(result.probability(), 1.0);
     }
 }

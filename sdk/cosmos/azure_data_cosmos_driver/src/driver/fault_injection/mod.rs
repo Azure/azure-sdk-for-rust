@@ -280,30 +280,80 @@ mod tests {
     }
 
     #[test]
-    fn round_trip_from_str() {
-        for op in [
-            FaultOperationType::ReadItem,
-            FaultOperationType::QueryItem,
-            FaultOperationType::CreateItem,
-            FaultOperationType::UpsertItem,
-            FaultOperationType::ReplaceItem,
-            FaultOperationType::DeleteItem,
-            FaultOperationType::PatchItem,
-            FaultOperationType::BatchItem,
-            FaultOperationType::ChangeFeedItem,
-            FaultOperationType::MetadataReadContainer,
-            FaultOperationType::MetadataReadDatabaseAccount,
-            FaultOperationType::MetadataQueryPlan,
-            FaultOperationType::MetadataPartitionKeyRanges,
-        ] {
-            let s = op.as_str();
-            let parsed: FaultOperationType = s.parse().unwrap();
-            assert_eq!(parsed, op, "round-trip failed for {s}");
-        }
+    fn as_str_returns_expected_values() {
+        assert_eq!(FaultOperationType::ReadItem.as_str(), "ReadItem");
+        assert_eq!(FaultOperationType::QueryItem.as_str(), "QueryItem");
+        assert_eq!(FaultOperationType::CreateItem.as_str(), "CreateItem");
+        assert_eq!(FaultOperationType::UpsertItem.as_str(), "UpsertItem");
+        assert_eq!(FaultOperationType::ReplaceItem.as_str(), "ReplaceItem");
+        assert_eq!(FaultOperationType::DeleteItem.as_str(), "DeleteItem");
+        assert_eq!(FaultOperationType::PatchItem.as_str(), "PatchItem");
+        assert_eq!(FaultOperationType::BatchItem.as_str(), "BatchItem");
+        assert_eq!(
+            FaultOperationType::ChangeFeedItem.as_str(),
+            "ChangeFeedItem"
+        );
+        assert_eq!(
+            FaultOperationType::MetadataReadContainer.as_str(),
+            "MetadataReadContainer"
+        );
+        assert_eq!(
+            FaultOperationType::MetadataReadDatabaseAccount.as_str(),
+            "MetadataReadDatabaseAccount"
+        );
+        assert_eq!(
+            FaultOperationType::MetadataQueryPlan.as_str(),
+            "MetadataQueryPlan"
+        );
+        assert_eq!(
+            FaultOperationType::MetadataPartitionKeyRanges.as_str(),
+            "MetadataPartitionKeyRanges"
+        );
     }
 
     #[test]
-    fn from_str_unknown() {
-        assert!("UnknownOp".parse::<FaultOperationType>().is_err());
+    fn from_str_parses_each_variant() {
+        assert_eq!("ReadItem".parse(), Ok(FaultOperationType::ReadItem));
+        assert_eq!("QueryItem".parse(), Ok(FaultOperationType::QueryItem));
+        assert_eq!("CreateItem".parse(), Ok(FaultOperationType::CreateItem));
+        assert_eq!("UpsertItem".parse(), Ok(FaultOperationType::UpsertItem));
+        assert_eq!("ReplaceItem".parse(), Ok(FaultOperationType::ReplaceItem));
+        assert_eq!("DeleteItem".parse(), Ok(FaultOperationType::DeleteItem));
+        assert_eq!("PatchItem".parse(), Ok(FaultOperationType::PatchItem));
+        assert_eq!("BatchItem".parse(), Ok(FaultOperationType::BatchItem));
+        assert_eq!(
+            "ChangeFeedItem".parse(),
+            Ok(FaultOperationType::ChangeFeedItem)
+        );
+        assert_eq!(
+            "MetadataReadContainer".parse(),
+            Ok(FaultOperationType::MetadataReadContainer)
+        );
+        assert_eq!(
+            "MetadataReadDatabaseAccount".parse(),
+            Ok(FaultOperationType::MetadataReadDatabaseAccount)
+        );
+        assert_eq!(
+            "MetadataQueryPlan".parse(),
+            Ok(FaultOperationType::MetadataQueryPlan)
+        );
+        assert_eq!(
+            "MetadataPartitionKeyRanges".parse(),
+            Ok(FaultOperationType::MetadataPartitionKeyRanges)
+        );
+    }
+
+    #[test]
+    fn from_str_rejects_unknown() {
+        assert_eq!("UnknownOp".parse::<FaultOperationType>(), Err(()));
+    }
+
+    #[test]
+    fn display_formats_as_str() {
+        assert_eq!(format!("{}", FaultOperationType::ReadItem), "ReadItem");
+        assert_eq!(
+            format!("{}", FaultOperationType::MetadataPartitionKeyRanges),
+            "MetadataPartitionKeyRanges"
+        );
     }
 }

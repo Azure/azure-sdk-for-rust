@@ -139,8 +139,11 @@ impl FaultInjectionRuleBuilder {
 #[cfg(test)]
 mod tests {
     use super::FaultInjectionRuleBuilder;
-    use crate::driver::fault_injection::{FaultInjectionErrorType, FaultInjectionResultBuilder};
-    use std::time::Instant;
+    use crate::driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultOperationType,
+    };
+    use std::time::{Duration, Instant};
 
     fn create_test_error() -> crate::driver::fault_injection::FaultInjectionResult {
         FaultInjectionResultBuilder::new()
@@ -152,13 +155,66 @@ mod tests {
     fn builder_default_values() {
         let before = Instant::now();
         let rule = FaultInjectionRuleBuilder::new("test-rule", create_test_error()).build();
+        let after = Instant::now();
 
         assert_eq!(rule.id, "test-rule");
-        assert!(rule.start_time >= before);
-        assert!(rule.start_time <= Instant::now());
-        assert!(rule.end_time.is_none());
-        assert!(rule.hit_limit.is_none());
-        assert!(rule.condition.operation_type.is_none());
-        assert!(rule.is_enabled());
+        assert!(rule.start_time >= before && rule.start_time <= after);
+        assert_eq!(rule.end_time, None);
+        assert_eq!(rule.hit_limit, None);
+        assert_eq!(rule.condition.operation_type, None);
+        assert_eq!(rule.condition.region, None);
+        assert_eq!(rule.condition.container_id, None);
+        assert_eq!(
+            rule.result.error_type,
+            Some(FaultInjectionErrorType::Timeout)
+        );
+        assert_eq!(rule.is_enabled(), true);
+    }
+
+    #[test]
+    fn builder_with_all_fields() {
+        let start = Instant::now();
+        let end = start + Duration::from_secs(30);
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::ReadItem)
+            .build();
+        let result = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .with_delay(Duration::from_millis(100))
+            .build();
+
+        let rule = FaultInjectionRuleBuilder::new("full-rule", result)
+            .with_condition(condition)
+            .with_start_time(start)
+            .with_end_time(end)
+            .with_hit_limit(5)
+            .build();
+
+        assert_eq!(rule.id, "full-rule");
+        assert_eq!(rule.start_time, start);
+        assert_eq!(rule.end_time, Some(end));
+        assert_eq!(rule.hit_limit, Some(5));
+        assert_eq!(
+            rule.condition.operation_type,
+            Some(FaultOperationType::ReadItem)
+        );
+        assert_eq!(
+            rule.result.error_type,
+            Some(FaultInjectionErrorType::ServiceUnavailable)
+        );
+        assert_eq!(rule.result.delay, Duration::from_millis(100));
+        assert_eq!(rule.is_enabled(), true);
+    }
+
+    #[test]
+    fn enable_disable_toggles_state() {
+        let rule = FaultInjectionRuleBuilder::new("toggle", create_test_error()).build();
+        assert_eq!(rule.is_enabled(), true);
+
+        rule.disable();
+        assert_eq!(rule.is_enabled(), false);
+
+        rule.enable();
+        assert_eq!(rule.is_enabled(), true);
     }
 }
