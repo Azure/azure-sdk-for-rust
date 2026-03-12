@@ -125,21 +125,18 @@ fn parse_thin_client_locations(
             continue;
         }
 
-        match urls.entry(region.name.clone()) {
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(url);
-            }
-            std::collections::hash_map::Entry::Occupied(entry) => {
-                if entry.get() != &url {
+        urls.entry(region.name.clone())
+            .and_modify(|existing| {
+                if existing != &url {
                     warn!(
                         region = %region.name,
-                        existing_url = %entry.get(),
+                        existing_url = %existing,
                         new_url = %url,
                         "Duplicate thin-client region with conflicting URL; keeping first entry"
                     );
                 }
-            }
-        }
+            })
+            .or_insert(url);
     }
 
     urls
