@@ -21,7 +21,7 @@ safe-outputs:
   add-comment:
 
 tools:
-  bash:
+  bash: true
   web-fetch:
   github:
     toolsets: [issues, pull_requests]
