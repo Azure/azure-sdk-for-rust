@@ -3,7 +3,7 @@
 
 //! In-memory session token cache keyed by collection resource ID.
 
-use crate::models::vector_session_token::SessionTokenValue;
+use crate::models::{resource_id::ResourceId, vector_session_token::SessionTokenValue};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -25,9 +25,9 @@ pub(crate) struct SessionContainer {
 #[derive(Default)]
 struct SessionContainerInner {
     /// `collection_rid → (pk_range_id → SessionTokenValue)`
-    tokens: HashMap<String, HashMap<String, SessionTokenValue>>,
+    tokens: HashMap<ResourceId, HashMap<String, SessionTokenValue>>,
     /// `collection_name_path → collection_rid` (name path = `dbs/{db}/colls/{coll}`)
-    name_to_rid: HashMap<String, String>,
+    name_to_rid: HashMap<String, ResourceId>,
 }
 
 impl SessionContainer {
@@ -76,7 +76,10 @@ impl SessionContainer {
     #[allow(dead_code)] // Used by tests; primary callers use get_or_resolve_session_token
     pub(crate) fn resolve_rid(&self, collection_name_path: &str) -> Option<String> {
         let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
-        guard.name_to_rid.get(collection_name_path).cloned()
+        guard
+            .name_to_rid
+            .get(collection_name_path)
+            .map(|rid| rid.as_str().to_owned())
     }
 
     /// Attempts to resolve a session token using first the collection RID, then
@@ -96,7 +99,7 @@ impl SessionContainer {
 
         // Fall back to name → RID → token
         if let Some(resolved_rid) = guard.name_to_rid.get(collection_name_path) {
-            return Self::build_composite_token(&guard, resolved_rid);
+            return Self::build_composite_token(&guard, resolved_rid.as_str());
         }
 
         None
@@ -121,17 +124,21 @@ impl SessionContainer {
         // RID mismatch detection: if the name pointed at a different RID, clear old.
         if let Some(name_path) = collection_name_path {
             if let Some(old_rid) = guard.name_to_rid.get(name_path) {
-                if old_rid != collection_rid {
+                if old_rid.as_str() != collection_rid {
                     let old_rid = old_rid.clone();
                     guard.tokens.remove(&old_rid);
                 }
             }
-            guard
-                .name_to_rid
-                .insert(name_path.to_owned(), collection_rid.to_owned());
+            guard.name_to_rid.insert(
+                name_path.to_owned(),
+                ResourceId::new(collection_rid.to_owned()),
+            );
         }
 
-        let pk_map = guard.tokens.entry(collection_rid.to_owned()).or_default();
+        let pk_map = guard
+            .tokens
+            .entry(ResourceId::new(collection_rid.to_owned()))
+            .or_default();
 
         for segment in session_token_value.split(',') {
             let segment = segment.trim();
@@ -167,7 +174,9 @@ impl SessionContainer {
     pub(crate) fn clear_by_collection_rid(&self, collection_rid: &str) {
         let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
         guard.tokens.remove(collection_rid);
-        guard.name_to_rid.retain(|_, rid| rid != collection_rid);
+        guard
+            .name_to_rid
+            .retain(|_, rid| rid.as_str() != collection_rid);
     }
 }
 
