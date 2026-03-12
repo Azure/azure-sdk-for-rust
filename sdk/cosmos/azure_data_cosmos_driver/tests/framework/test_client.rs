@@ -5,7 +5,7 @@
 
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
-    driver::CosmosDriverRuntime,
+    driver::{fault_injection::FaultInjectionRule, CosmosDriverRuntime},
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
@@ -109,6 +109,104 @@ impl DriverTestClient {
             let db_ref = context.create_database(&db_name).await?;
 
             // Run the test
+            let result = f(context.clone(), db_ref.clone()).await;
+
+            // Cleanup (best effort)
+            let _ = context.delete_database(&db_ref).await;
+
+            result
+        })
+        .await
+    }
+
+    /// Creates a new test client from environment variables with fault injection rules wired in.
+    ///
+    /// Rules are passed to the runtime builder via `with_fault_injection_rule()`.
+    /// Typically rules start disabled and are enabled during the test.
+    async fn from_env_with_fault_injection(
+        rules: Vec<Arc<FaultInjectionRule>>,
+    ) -> Result<Option<Self>, Box<dyn Error>> {
+        let test_mode = get_test_mode();
+
+        if test_mode == CosmosTestMode::Skipped {
+            return Ok(None);
+        }
+
+        let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
+            Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
+            Ok(val) => val,
+            Err(_) => {
+                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                    panic!(
+                        "{} is not set but test mode is required",
+                        CONNECTION_STRING_ENV_VAR
+                    );
+                }
+                return Ok(None);
+            }
+        };
+
+        let conn_str: ConnectionString = connection_string.parse()?;
+        let endpoint = conn_str.account_endpoint().parse()?;
+        let key = conn_str.account_key().secret().to_string();
+        let account = AccountReference::with_master_key(endpoint, key);
+
+        let mut connection_pool_builder = ConnectionPoolOptions::builder();
+
+        if connection_string.to_lowercase() == EMULATOR_CONNECTION_STRING {
+            connection_pool_builder = connection_pool_builder.with_emulator_server_cert_validation(
+                EmulatorServerCertValidation::DangerousDisabled,
+            );
+        }
+
+        let connection_pool = connection_pool_builder.build()?;
+
+        let mut runtime_builder =
+            CosmosDriverRuntime::builder().with_connection_pool(connection_pool);
+
+        for rule in rules {
+            runtime_builder = runtime_builder.with_fault_injection_rule(rule);
+        }
+
+        let runtime = runtime_builder.build().await?;
+
+        Ok(Some(Self { runtime, account }))
+    }
+
+    /// Runs a test with fault injection rules wired into the runtime.
+    ///
+    /// Rules should typically start disabled (via [`FaultInjectionRuleBuilder::disabled()`])
+    /// and be enabled during the test after setup operations complete.
+    pub async fn run_with_fault_injection<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(client) = Self::from_env_with_fault_injection(rules).await? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let run_context = DriverTestRunContext::new(client);
+        f(run_context).await
+    }
+
+    /// Runs a fault injection test with a unique database that will be cleaned up.
+    pub async fn run_with_fault_injection_and_unique_db<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        Self::run_with_fault_injection(rules, async |context| {
+            let db_name = context.unique_database_name();
+            let db_ref = context.create_database(&db_name).await?;
+
             let result = f(context.clone(), db_ref.clone()).await;
 
             // Cleanup (best effort)

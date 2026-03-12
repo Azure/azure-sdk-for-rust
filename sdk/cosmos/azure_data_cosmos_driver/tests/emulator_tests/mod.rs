@@ -3,4 +3,5 @@
 
 //! Emulator test modules.
 
+mod driver_fault_injection;
 mod driver_item_operations;

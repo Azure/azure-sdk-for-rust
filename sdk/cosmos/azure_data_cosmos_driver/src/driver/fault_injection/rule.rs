@@ -75,6 +75,8 @@ pub struct FaultInjectionRuleBuilder {
     hit_limit: Option<u32>,
     /// Unique identifier for the fault injection scenario.
     id: String,
+    /// Whether the rule starts enabled.
+    enabled: bool,
 }
 
 impl FaultInjectionRuleBuilder {
@@ -89,6 +91,7 @@ impl FaultInjectionRuleBuilder {
             end_time: None,
             hit_limit: None,
             id: id.into(),
+            enabled: true,
         }
     }
 
@@ -122,6 +125,15 @@ impl FaultInjectionRuleBuilder {
         self
     }
 
+    /// Sets the rule to start in a disabled state.
+    ///
+    /// By default, rules start enabled. Call this to create a rule that must be
+    /// explicitly enabled via [`FaultInjectionRule::enable()`].
+    pub fn disabled(mut self) -> Self {
+        self.enabled = false;
+        self
+    }
+
     /// Builds the FaultInjectionRule.
     pub fn build(self) -> FaultInjectionRule {
         FaultInjectionRule {
@@ -131,7 +143,7 @@ impl FaultInjectionRuleBuilder {
             end_time: self.end_time,
             hit_limit: self.hit_limit,
             id: self.id,
-            enabled: AtomicBool::new(true),
+            enabled: AtomicBool::new(self.enabled),
         }
     }
 }
@@ -213,6 +225,18 @@ mod tests {
 
         rule.disable();
         assert_eq!(rule.is_enabled(), false);
+
+        rule.enable();
+        assert_eq!(rule.is_enabled(), true);
+    }
+
+    #[test]
+    fn disabled_builder_starts_rule_disabled() {
+        let rule = FaultInjectionRuleBuilder::new("disabled-rule", create_test_error())
+            .disabled()
+            .build();
+        assert_eq!(rule.is_enabled(), false);
+        assert_eq!(rule.id, "disabled-rule");
 
         rule.enable();
         assert_eq!(rule.is_enabled(), true);
