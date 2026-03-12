@@ -141,6 +141,18 @@ focused component types. Each pipeline stage operates on only the components it 
 /// Already exists as `CosmosOperation`.
 // (reuse existing CosmosOperation)
 
+/// Transport mode for a routed attempt.
+///
+/// Determines which HTTP transport (and protocol version) is used
+/// for a given request attempt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TransportMode {
+    /// Standard gateway (HTTP/1.1 or HTTP/2 via ALPN).
+    Gateway,
+    /// Gateway 2.0 (HTTP/2 with prior knowledge).
+    Gateway20,
+}
+
 /// COMPONENT: Routing decision for the current attempt.
 /// Produced by endpoint resolution, consumed by transport.
 /// Replaced (not mutated) on retry/failover.
