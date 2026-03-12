@@ -664,6 +664,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
+            None,
         )
         .expect("request should build");
 
@@ -693,6 +694,7 @@ mod tests {
             Some(&overrides),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
+            None,
             None,
         )
         .expect("request should build");
@@ -725,6 +727,7 @@ mod tests {
             Some(&overrides),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
+            None,
             None,
         )
         .expect("request should succeed by falling back to standard gateway URL");

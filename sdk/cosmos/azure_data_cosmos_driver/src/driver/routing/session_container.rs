@@ -139,7 +139,7 @@ impl SessionContainer {
                 continue;
             }
             if let Some((pk_range_id, token_str)) = segment.split_once(':') {
-                if let Some(new_token) = SessionTokenValue::parse(token_str) {
+                if let Ok(new_token) = SessionTokenValue::parse(token_str) {
                     pk_map
                         .entry(pk_range_id.to_owned())
                         .and_modify(|existing| {

@@ -10,7 +10,7 @@
 
 use std::{collections::HashMap, fmt};
 
-use azure_core::fmt::SafeDebug;
+use azure_core::{error::ErrorKind, fmt::SafeDebug};
 
 /// A parsed session-token version vector (the part after the `:`).
 ///
@@ -25,25 +25,58 @@ pub(crate) struct VectorSessionToken {
 impl VectorSessionToken {
     /// Parses the version-vector portion of a session token string.
     ///
-    /// Returns `None` if the string is malformed.
-    pub(crate) fn parse(s: &str) -> Option<Self> {
+    /// Returns an error if the string is malformed.
+    pub(crate) fn parse(s: &str) -> azure_core::Result<Self> {
         // Expected: version#globalLSN#region=lsn#region=lsn#...
         let mut parts = s.split('#');
-        let version: u64 = parts.next()?.parse().ok()?;
-        let global_lsn: u64 = parts.next()?.parse().ok()?;
+
+        let version_str = parts.next().ok_or_else(|| {
+            azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "invalid session token: empty input",
+            )
+        })?;
+        let version: u64 = version_str.parse().map_err(|_| {
+            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                format!("invalid session token: bad version '{version_str}'")
+            })
+        })?;
+
+        let global_str = parts.next().ok_or_else(|| {
+            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                format!("invalid session token: missing global LSN in '{s}'")
+            })
+        })?;
+        let global_lsn: u64 = global_str.parse().map_err(|_| {
+            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                format!("invalid session token: bad global LSN '{global_str}'")
+            })
+        })?;
 
         let mut region_progress = HashMap::new();
         for segment in parts {
             if segment.is_empty() {
                 continue;
             }
-            let (region_str, lsn_str) = segment.split_once('=')?;
-            let region_id: u64 = region_str.parse().ok()?;
-            let lsn: u64 = lsn_str.parse().ok()?;
+            let (region_str, lsn_str) = segment.split_once('=').ok_or_else(|| {
+                azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                    format!("invalid session token: malformed region segment '{segment}'")
+                })
+            })?;
+            let region_id: u64 = region_str.parse().map_err(|_| {
+                azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                    format!("invalid session token: bad region id '{region_str}'")
+                })
+            })?;
+            let lsn: u64 = lsn_str.parse().map_err(|_| {
+                azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                    format!("invalid session token: bad region LSN '{lsn_str}'")
+                })
+            })?;
             region_progress.insert(region_id, lsn);
         }
 
-        Some(Self {
+        Ok(Self {
             version,
             global_lsn,
             region_progress,
@@ -178,13 +211,17 @@ pub(crate) enum SessionTokenValue {
 
 impl SessionTokenValue {
     /// Parses a session token value string, trying V2 (vector) first, then V1 (simple).
-    pub(crate) fn parse(s: &str) -> Option<Self> {
-        if let Some(vector) = VectorSessionToken::parse(s) {
-            return Some(Self::Vector(vector));
+    pub(crate) fn parse(s: &str) -> azure_core::Result<Self> {
+        if let Ok(vector) = VectorSessionToken::parse(s) {
+            return Ok(Self::Vector(vector));
         }
         // V1 fallback: bare integer
-        let lsn: u64 = s.parse().ok()?;
-        Some(Self::Simple(lsn))
+        let lsn: u64 = s.parse().map_err(|_| {
+            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
+                format!("invalid session token value: '{s}' is not a valid V2 vector or V1 integer")
+            })
+        })?;
+        Ok(Self::Simple(lsn))
     }
 
     /// Merges `other` into `self`, returning `true` if `self` was modified.
@@ -244,38 +281,40 @@ impl fmt::Display for SessionTokenValue {
 mod tests {
     use super::*;
 
+    /// Helper to build a `VectorSessionToken` for assertions without parsing.
+    fn make_token(version: u64, global_lsn: u64, regions: &[(u64, u64)]) -> VectorSessionToken {
+        VectorSessionToken {
+            version,
+            global_lsn,
+            region_progress: regions.iter().copied().collect(),
+        }
+    }
+
     #[test]
     fn parse_simple_token() {
         let t = VectorSessionToken::parse("1#100#1=20#2=5#3=30").unwrap();
-        assert_eq!(t.version, 1);
-        assert_eq!(t.global_lsn, 100);
-        assert_eq!(t.region_progress.len(), 3);
-        assert_eq!(t.region_progress[&1], 20);
-        assert_eq!(t.region_progress[&2], 5);
-        assert_eq!(t.region_progress[&3], 30);
+        assert_eq!(t, make_token(1, 100, &[(1, 20), (2, 5), (3, 30)]));
     }
 
     #[test]
     fn parse_no_regions() {
         let t = VectorSessionToken::parse("2#50").unwrap();
-        assert_eq!(t.version, 2);
-        assert_eq!(t.global_lsn, 50);
-        assert!(t.region_progress.is_empty());
+        assert_eq!(t, make_token(2, 50, &[]));
     }
 
     #[test]
     fn parse_invalid_no_hash() {
-        assert!(VectorSessionToken::parse("nope").is_none());
+        assert!(VectorSessionToken::parse("nope").is_err());
     }
 
     #[test]
     fn parse_invalid_lsn() {
-        assert!(VectorSessionToken::parse("1#abc").is_none());
+        assert!(VectorSessionToken::parse("1#abc").is_err());
     }
 
     #[test]
     fn parse_invalid_region_format() {
-        assert!(VectorSessionToken::parse("1#100#bad").is_none());
+        assert!(VectorSessionToken::parse("1#100#bad").is_err());
     }
 
     #[test]
@@ -297,7 +336,7 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100#1=10").unwrap();
         let b = VectorSessionToken::parse("1#200#1=10").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.global_lsn, 200);
+        assert_eq!(a, make_token(1, 200, &[(1, 10)]));
     }
 
     #[test]
@@ -305,8 +344,7 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
         let b = VectorSessionToken::parse("1#100#1=30#2=5").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.region_progress[&1], 30);
-        assert_eq!(a.region_progress[&2], 20);
+        assert_eq!(a, make_token(1, 100, &[(1, 30), (2, 20)]));
     }
 
     #[test]
@@ -314,7 +352,7 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100#1=10").unwrap();
         let b = VectorSessionToken::parse("1#100#2=20").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.region_progress[&2], 20);
+        assert_eq!(a, make_token(1, 100, &[(1, 10), (2, 20)]));
     }
 
     #[test]
@@ -322,7 +360,7 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100").unwrap();
         let b = VectorSessionToken::parse("5#100").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.version, 5);
+        assert_eq!(a, make_token(5, 100, &[]));
     }
 
     #[test]
@@ -332,9 +370,9 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#500#1=100").unwrap();
         let b = VectorSessionToken::parse("2#200#1=50").unwrap();
         assert!(a.merge(&b));
-        // Higher version (2) wins — its globalLSN=200 is used, not max(500,200)
-        assert_eq!(a.version, 2);
-        assert_eq!(a.global_lsn, 200);
+        // Higher version (2) wins — its globalLSN=200 is used, not max(500,200).
+        // Region 1 exists in both: max(100, 50) = 100.
+        assert_eq!(a, make_token(2, 200, &[(1, 100)]));
     }
 
     #[test]
@@ -344,12 +382,8 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
         let b = VectorSessionToken::parse("2#50#1=5").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.version, 2);
-        assert_eq!(a.global_lsn, 50);
-        // Region 1 exists in both: max(10, 5) = 10
-        assert_eq!(a.region_progress[&1], 10);
-        // Region 2 was only in lower-version — dropped
-        assert!(!a.region_progress.contains_key(&2));
+        // Version 2 wins. Region 1: max(10, 5) = 10. Region 2: dropped.
+        assert_eq!(a, make_token(2, 50, &[(1, 10)]));
     }
 
     #[test]
@@ -358,10 +392,8 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100#1=50#2=30").unwrap();
         let b = VectorSessionToken::parse("2#80#1=10#2=40").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.version, 2);
-        assert_eq!(a.global_lsn, 80); // higher-version's globalLSN
-        assert_eq!(a.region_progress[&1], 50); // max(50, 10)
-        assert_eq!(a.region_progress[&2], 40); // max(30, 40)
+        // Version 2 wins for globalLSN. Region 1: max(50, 10). Region 2: max(30, 40).
+        assert_eq!(a, make_token(2, 80, &[(1, 50), (2, 40)]));
     }
 
     #[test]
@@ -370,10 +402,8 @@ mod tests {
         let mut a = VectorSessionToken::parse("1#100#1=10").unwrap();
         let b = VectorSessionToken::parse("2#80#1=5#3=25").unwrap();
         assert!(a.merge(&b));
-        assert_eq!(a.version, 2);
-        assert_eq!(a.region_progress[&1], 10); // max(10, 5)
-        assert_eq!(a.region_progress[&3], 25); // new region from higher version
-        assert_eq!(a.region_progress.len(), 2);
+        // Version 2 wins. Region 1: max(10, 5). Region 3: new from higher version.
+        assert_eq!(a, make_token(2, 80, &[(1, 10), (3, 25)]));
     }
 
     #[test]
@@ -433,9 +463,9 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_returns_none() {
-        assert!(SessionTokenValue::parse("not_a_token").is_none());
-        assert!(SessionTokenValue::parse("").is_none());
+    fn parse_invalid_returns_err() {
+        assert!(SessionTokenValue::parse("not_a_token").is_err());
+        assert!(SessionTokenValue::parse("").is_err());
     }
 
     #[test]
