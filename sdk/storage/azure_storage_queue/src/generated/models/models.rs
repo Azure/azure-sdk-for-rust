@@ -20,7 +20,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -33,7 +33,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub start: Option<OffsetDateTime>,
 }

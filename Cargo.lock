@@ -589,6 +589,7 @@ dependencies = [
  "opentelemetry_sdk",
  "rand 0.10.0",
  "serde",
+ "time",
  "tokio",
  "tracing-subscriber",
 ]
