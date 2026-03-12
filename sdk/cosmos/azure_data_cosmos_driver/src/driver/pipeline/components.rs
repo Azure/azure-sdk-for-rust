@@ -33,6 +33,10 @@ use crate::{
 pub(crate) struct RoutingDecision {
     /// The resolved endpoint for this attempt.
     pub endpoint: CosmosEndpoint,
+    /// The concrete URL selected for this attempt.
+    pub selected_url: Url,
+    /// Whether Gateway 2.0 transport should be used for this attempt.
+    pub use_gateway20: bool,
 }
 
 /// Operation-level retry state.

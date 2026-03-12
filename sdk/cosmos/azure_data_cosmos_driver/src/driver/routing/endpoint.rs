@@ -10,8 +10,8 @@ use url::Url;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct CosmosEndpoint {
     region: Option<Region>,
-    url: Url,
-    kind: EndpointKind,
+    gateway_url: Url,
+    gateway20_url: Option<Url>,
 }
 
 impl CosmosEndpoint {
@@ -19,8 +19,8 @@ impl CosmosEndpoint {
     pub fn global(url: Url) -> Self {
         Self {
             region: None,
-            url,
-            kind: EndpointKind::Global,
+            gateway_url: url,
+            gateway20_url: None,
         }
     }
 
@@ -28,8 +28,17 @@ impl CosmosEndpoint {
     pub fn regional(region: Region, url: Url) -> Self {
         Self {
             region: Some(region),
-            url,
-            kind: EndpointKind::Regional,
+            gateway_url: url,
+            gateway20_url: None,
+        }
+    }
+
+    /// Creates a regional endpoint with an optional Gateway 2.0 URL.
+    pub fn regional_with_gateway20(region: Region, gateway_url: Url, gateway20_url: Url) -> Self {
+        Self {
+            region: Some(region),
+            gateway_url,
+            gateway20_url: Some(gateway20_url),
         }
     }
 
@@ -38,21 +47,35 @@ impl CosmosEndpoint {
         self.region.as_ref()
     }
 
-    /// Returns the endpoint URL.
+    /// Returns the standard gateway URL for this endpoint.
     pub fn url(&self) -> &Url {
-        &self.url
+        &self.gateway_url
     }
-}
 
-/// Endpoint classification.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum EndpointKind {
-    /// Global endpoint (`{account}.documents.azure.com`).
-    Global,
-    /// Regional endpoint (`{account}-{region}.documents.azure.com`).
-    Regional,
-}
+    /// Returns the Gateway 2.0 URL for this endpoint, if available.
+    #[cfg(test)]
+    pub fn gateway20_url(&self) -> Option<&Url> {
+        self.gateway20_url.as_ref()
+    }
 
+    /// Returns `true` when Gateway 2.0 should be used for this attempt.
+    pub(crate) fn uses_gateway20(&self, prefer_gateway20: bool) -> bool {
+        prefer_gateway20 && self.gateway20_url.is_some()
+    }
+
+    /// Returns the concrete URL selected for this attempt.
+    pub(crate) fn selected_url(&self, prefer_gateway20: bool) -> &Url {
+        if self.uses_gateway20(prefer_gateway20) {
+            return self
+                .gateway20_url
+                .as_ref()
+                .expect("Gateway20 URL presence checked before selection");
+        }
+
+        &self.gateway_url
+    }
+
+}
 /// Type-safe index into preferred endpoint lists.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct LocationIndex {

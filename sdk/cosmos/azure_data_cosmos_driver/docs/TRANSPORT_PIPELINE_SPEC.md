@@ -145,8 +145,15 @@ focused component types. Each pipeline stage operates on only the components it 
 /// Produced by endpoint resolution, consumed by transport.
 /// Replaced (not mutated) on retry/failover.
 pub(crate) struct RoutingDecision {
-    /// The resolved Cosmos DB service endpoint.
+    /// The resolved Cosmos DB service endpoint for the chosen region.
     pub endpoint: CosmosEndpoint,
+    /// The concrete URL selected for this attempt.
+    ///
+    /// For dataplane operations this may be the Gateway 2.0 URL when the
+    /// endpoint exposes one and the runtime configuration allows it.
+    pub selected_url: Url,
+    /// Whether the selected URL requires Gateway 2.0 transport.
+    pub use_gateway20: bool,
     /// Whether partition-level override was applied.
     pub partition_override: Option<PartitionOverride>,
 }
@@ -301,6 +308,11 @@ pub(crate) struct SessionState {
 pub(crate) struct TransportRequest {
     /// The HTTP method.
     pub method: Method,
+    /// The regional endpoint selected for this attempt.
+    ///
+    /// This preserves region identity for diagnostics and retry evaluation
+    /// even when the concrete URL uses Gateway 2.0.
+    pub endpoint: CosmosEndpoint,
     /// The fully resolved URL for this attempt.
     pub url: Url,
     /// Headers to send (includes any attempt-specific headers).
@@ -383,6 +395,11 @@ Each stage is a function with an explicit, narrow signature:
 // match `location.account.generation`, the endpoint list has changed
 // since the LocationIndex was created. In that case, the function
 // resets the index to 0 and uses the fresh list from the snapshot.
+//
+// The returned `RoutingDecision` carries both the regional endpoint and the
+// concrete target chosen for the current attempt (`selected_url` plus
+// `use_gateway20`) so request construction and transport selection are driven
+// by one routing decision.
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
@@ -428,7 +445,7 @@ fn build_transport_request(
 async fn execute_transport_pipeline(
     request: TransportRequest,
     transport: &AdaptiveTransport,
-    auth_context: &AuthContext,
+    credential: &Credential,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult;
 
@@ -439,7 +456,7 @@ fn apply_cosmos_headers(request: &mut Request);
 // SYSTEM: Generate and attach the Authorization header.
 fn sign_request(
     request: &mut Request,
-    auth_context: &AuthContext,
+    credential: &Credential,
 ) -> Result<()>;
 ```
 
@@ -532,8 +549,7 @@ pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptions,
     location_store: &LocationStateStore,
-    transport: &AdaptiveTransport,
-    auth_context: &AuthContext,
+    transport: &CosmosTransport,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> Result<CosmosResponse> {
     let mut retry_state = OperationRetryState::initial(
@@ -565,9 +581,15 @@ pub(crate) async fn execute_operation_pipeline(
             deadline,
         );
 
+        let selected_transport = if uses_dataplane_pipeline(operation) {
+            transport.get_dataplane_transport(routing.use_gateway20)
+        } else {
+            transport.get_metadata_transport()
+        };
+
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
-            transport_request, transport, auth_context, diagnostics,
+            transport_request, &selected_transport, diagnostics,
         ).await;
 
         // ── STAGE 5: Evaluate result → action + location effects ───────
@@ -645,7 +667,6 @@ async fn execute_hedged(
     secondary_routing: &RoutingDecision,
     session: &SessionState,
     transport: &AdaptiveTransport,
-    auth_context: &AuthContext,
     diagnostics: &mut DiagnosticsContextBuilder,
     deadline: Option<Instant>,
 ) -> Result<CosmosResponse> {
@@ -657,7 +678,7 @@ async fn execute_hedged(
 
     // Start primary attempt
     let primary_fut = execute_transport_pipeline(
-        primary_req, transport, auth_context, diagnostics,
+        primary_req, transport, credential, diagnostics,
     );
 
     // Race: primary completes within threshold, or we start secondary
@@ -684,7 +705,7 @@ async fn execute_hedged(
             ).with_execution_context(ExecutionContext::Hedging);
 
             let secondary_fut = execute_transport_pipeline(
-                secondary_req, transport, auth_context, diagnostics,
+                secondary_req, transport, credential, diagnostics,
             );
 
             // Race primary vs secondary — first successful response wins
@@ -964,8 +985,6 @@ pub(crate) struct AccountEndpointState {
     pub unavailable_endpoints: HashMap<CosmosEndpoint, (Instant, UnavailableReason)>,
     /// Whether the account has multiple write regions enabled.
     pub multiple_write_locations_enabled: bool,
-    /// The raw account properties from the last metadata fetch.
-    pub account_properties: AccountProperties,
     /// Default (hub) endpoint — used as fallback when all regional
     /// endpoints are unavailable.
     pub default_endpoint: CosmosEndpoint,
@@ -976,34 +995,30 @@ pub(crate) struct AccountEndpointState {
 // defined in §4.6.  See that section for the epoch-guarded atomic
 // pointers, snapshot access, CAS-loop `apply`, and unconditional `swap`.
 
-/// A Cosmos DB service endpoint: region name, URL, and whether
-/// the endpoint is global or regional.
+/// A Cosmos DB service endpoint for one logical region.
 ///
 /// This is the canonical representation used throughout routing,
-/// failover tracking, and diagnostics.
+/// failover tracking, and diagnostics. A regional endpoint may expose
+/// both the standard gateway URL and an optional Gateway 2.0 URL.
 ///
 /// - **Global** endpoints usually use the pattern `{account}.documents.azure.com`.
 ///   DNS resolves them to the hub (default) region.
 /// - **Regional** endpoints usually use the pattern `{account}-{region}.documents.azure.com`
 ///   and resolve directly to that region.
+/// - **Gateway 2.0** endpoints are optional per-region dataplane endpoints,
+///   surfaced as `gateway20_url` instead of a separate endpoint object.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct CosmosEndpoint {
-    region: RegionName,
-    url: Url,
-    kind: EndpointKind,
-}
-
-/// Whether an endpoint targets a specific region or the global
-/// (hub) entry point.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum EndpointKind {
-    /// Global endpoint (`{account}.documents.azure.com`).
-    /// DNS resolves to the hub region.
-    Global,
-    /// Regional endpoint (`{account}-{region}.documents.azure.com`).
-    Regional,
+    region: Option<RegionName>,
+    gateway_url: Url,
+    gateway20_url: Option<Url>,
 }
 ```
+
+With this model, endpoint availability is tracked at the region level.
+If either the standard gateway path or the Gateway 2.0 path is found to be
+unavailable, the entire `CosmosEndpoint` is marked unavailable and routing
+skips that region until the unavailability expires.
 
 **Systems (pure functions) operating on `AccountEndpointState`**:
 
@@ -1016,9 +1031,9 @@ pub(crate) enum EndpointKind {
 // can detect stale references.
 fn build_account_endpoint_state(
     properties: &AccountProperties,
-    preferred_locations: &[RegionName],
     default_endpoint: CosmosEndpoint,
     previous_generation: Option<u64>,
+    gateway20_enabled: bool,
 ) -> AccountEndpointState;
 
 // SYSTEM: Produce a new state with an endpoint marked unavailable.
@@ -1357,7 +1372,7 @@ impl LocationStateStore {
 ### 5.1 Responsibilities
 
 The transport pipeline handles a **single attempt** to execute an operation against a **specific
-regional endpoint**. It is responsible for:
+selected target URL** derived from a regional endpoint. It is responsible for:
 
 1. Adding authorization header
 2. Adding common Cosmos headers
@@ -1376,6 +1391,7 @@ The transport pipeline does **NOT** handle:
 Following the same DOP pattern as the operation pipeline, the transport pipeline is a bare
 async function — not a struct with methods. Its dependencies (`AdaptiveTransport`,
 `AuthContext`) are passed as parameters. Header application and request signing are also bare
+`Credential`) are passed as parameters. Header application and request signing are also bare
 functions rather than policy objects.
 
 ```rust
@@ -1384,7 +1400,7 @@ functions rather than policy objects.
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     transport: &AdaptiveTransport,
-    auth_context: &AuthContext,
+    credential: &Credential,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new(
@@ -1406,7 +1422,7 @@ pub(crate) async fn execute_transport_pipeline(
         // Build HTTP request, apply standard headers, sign
         let mut http_request = build_http_request(&request);
         apply_cosmos_headers(&mut http_request);
-        sign_request(&mut http_request, auth_context)?;
+        sign_request(&mut http_request, credential)?;
 
         // Record transport start event
         let attempt_start = Instant::now();
@@ -2412,12 +2428,12 @@ with failback. Still HTTP/1.1, no hedging.
 Add protocol detection and the `AdaptiveTransport` enum, but without the sharded transport —
 HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 
-| Sub-step | Work Item                                                                                                                                     | Files                                     |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Sub-step | Work Item                                                                                                                                                                                                                 | Files                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 5.1      | **Gateway detection** — Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. HTTP/2 vs HTTP/1.1 selection via `is_http2_allowed` configuration flag (runtime ALPN probing deferred — see note below). | `driver/transport/adaptive_transport.rs`  |
-| 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                          | `driver/transport/adaptive_transport.rs`  |
-| 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                         | `driver/transport/http_client_factory.rs` |
-| 5.4      | **Tests** — Protocol detection, factory creates clients, adaptive dispatch.                                                                   | `tests/`                                  |
+| 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                                                                                                      | `driver/transport/adaptive_transport.rs`  |
+| 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                                                                                                     | `driver/transport/http_client_factory.rs` |
+| 5.4      | **Tests** — Protocol detection, factory creates clients, adaptive dispatch.                                                                                                                                               | `tests/`                                  |
 
 **What works after Step 5**: HTTP/2 requests work (via a single connection). Gateway 2.0
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.

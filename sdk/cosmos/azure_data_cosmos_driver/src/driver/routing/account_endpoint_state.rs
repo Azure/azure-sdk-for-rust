@@ -29,8 +29,8 @@ impl AccountEndpointState {
     pub fn single(default_endpoint: CosmosEndpoint) -> Self {
         Self {
             generation: 0,
-            preferred_read_endpoints: vec![default_endpoint.clone()],
-            preferred_write_endpoints: vec![default_endpoint.clone()],
+            preferred_read_endpoints: Vec::new(),
+            preferred_write_endpoints: Vec::new(),
             unavailable_endpoints: HashMap::new(),
             multiple_write_locations_enabled: false,
             default_endpoint,
