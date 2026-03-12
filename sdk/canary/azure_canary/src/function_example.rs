@@ -11,7 +11,6 @@ pub fn greet(name: &str, formal: bool, excited: bool) -> String {
         } else {
             format!("Good day to you, {}.", name)
         }
-
     } else {
         if (excited) {
             format!("Hello, {}!!!", name)

@@ -45,7 +45,6 @@ pub enum TemperatureUnit {
     Celsius,
     Fahrenheit,
     Kelvin,
-
 }
 
 impl Temperature {
