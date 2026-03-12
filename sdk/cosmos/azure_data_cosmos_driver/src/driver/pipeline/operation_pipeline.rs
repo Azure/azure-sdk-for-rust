@@ -229,10 +229,22 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
-                // Clear cached session tokens for this container on
-                // 404/1002 (ReadSessionNotAvailable). The container may
-                // have been recreated with a different RID.
-                if session_consistency_active {
+                // Keep existing session tokens and retry to a different
+                // region while preferred endpoints remain — the 404/1002
+                // is likely transient (a replica that hasn't caught up).
+                //
+                // Only clear tokens on the final session retry, after all
+                // preferred regions have been tried. At that point, the
+                // container may have been recreated with a new RID, and
+                // stale tokens would cause every attempt to fail. Clearing
+                // lets the last retry go out without a session token so
+                // any replica can respond; the successful response will
+                // repopulate the cache with the new RID via the mismatch
+                // detection in `set_session_token()`.
+                if session_consistency_active
+                    && retry_state.session_token_retry_count
+                        >= max_session_retries.saturating_sub(1)
+                {
                     session_manager.clear_session_token(operation);
                 }
 
