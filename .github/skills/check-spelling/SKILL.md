@@ -36,11 +36,13 @@ Example `sdk/keyvault/.cspell.json`:
 
 ```json
 {
-    "import": ["../../.vscode/cspell.json"],
-    "ignoreWords": [
-        "ciphertext",
-        "purgeable"
-    ]
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "ciphertext",
+    "purgeable"
+  ]
 }
 ```
 
