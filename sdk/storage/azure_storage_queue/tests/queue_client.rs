@@ -1225,6 +1225,12 @@ impl Policy for FailFirstPolicy {
                 "Simulated IO error for retry testing",
             ))
         } else {
+            if next.is_empty() {
+                return Err(azure_core::Error::new(
+                    ErrorKind::Other,
+                    "FailFirstPolicy: no next policy available in pipeline",
+                ));
+            }
             next[0].send(ctx, request, &next[1..]).await
         }
     }

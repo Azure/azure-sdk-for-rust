@@ -15,7 +15,7 @@ use azure_core::{
 use std::sync::Arc;
 
 impl QueueClient {
-    /// Creates a new QueueClient, using Entra ID authentication.
+    /// Creates a new `QueueClient`.
     ///
     /// # Arguments
     ///
@@ -41,7 +41,7 @@ impl QueueClient {
         Self::from_url(url, credential, options)
     }
 
-    /// Creates a new QueueClient from a queue URL.
+    /// Creates a new `QueueClient` from a queue URL.
     ///
     /// # Arguments
     ///

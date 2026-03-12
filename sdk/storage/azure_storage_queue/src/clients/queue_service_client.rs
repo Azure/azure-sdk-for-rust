@@ -15,7 +15,7 @@ use azure_core::{
 use std::sync::Arc;
 
 impl QueueServiceClient {
-    /// Creates a new QueueServiceClient, using Entra ID authentication.
+    /// Creates a new `QueueServiceClient`.
     ///
     /// # Arguments
     ///
