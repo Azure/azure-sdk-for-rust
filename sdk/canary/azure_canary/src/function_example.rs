@@ -6,17 +6,15 @@
 /// A function with multiple parameters and documentation
 pub fn greet(name: &str, formal: bool, excited: bool) -> String {
     if formal {
-        if (excited) {
+        if excited {
             format!("Good day to you, {}!!", name)
         } else {
             format!("Good day to you, {}.", name)
         }
+    } else if excited {
+        format!("Hello, {}!!!", name)
     } else {
-        if (excited) {
-            format!("Hello, {}!!!", name)
-        } else {
-            format!("Hello, {}!", name)
-        }
+        format!("Hello, {}!", name)
     }
 }
 
