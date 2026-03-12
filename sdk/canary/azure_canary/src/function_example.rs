@@ -4,11 +4,20 @@
 //! Examples of functions in Rust
 
 /// A function with multiple parameters and documentation
-pub fn greet(name: &str, formal: bool) -> String {
+pub fn greet(name: &str, formal: bool, excited: bool) -> String {
     if formal {
-        format!("Good day to you, {}.", name)
+        if (excited) {
+            format!("Good day to you, {}!!", name)
+        } else {
+            format!("Good day to you, {}.", name)
+        }
+
     } else {
-        format!("Hello, {}!", name)
+        if (excited) {
+            format!("Hello, {}!!!", name)
+        } else {
+            format!("Hello, {}!", name)
+        }
     }
 }
 
