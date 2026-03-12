@@ -65,16 +65,14 @@ impl CosmosEndpoint {
 
     /// Returns the concrete URL selected for this attempt.
     pub(crate) fn selected_url(&self, prefer_gateway20: bool) -> &Url {
-        if self.uses_gateway20(prefer_gateway20) {
-            return self
-                .gateway20_url
-                .as_ref()
-                .expect("Gateway20 URL presence checked before selection");
+        if prefer_gateway20 {
+            if let Some(url) = &self.gateway20_url {
+                return url;
+            }
         }
 
         &self.gateway_url
     }
-
 }
 /// Type-safe index into preferred endpoint lists.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
