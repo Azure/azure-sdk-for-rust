@@ -22,7 +22,7 @@ pub(crate) struct SessionContainer {
     inner: RwLock<SessionContainerInner>,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct SessionContainerInner {
     /// `collection_rid → (pk_range_id → SessionTokenValue)`
     tokens: HashMap<ResourceId, HashMap<String, SessionTokenValue>>,
