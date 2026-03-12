@@ -147,9 +147,17 @@ impl CosmosTransport {
     ///
     /// * `connection_pool` - Connection pool settings for HTTP clients
     pub(crate) fn new(connection_pool: ConnectionPoolOptions) -> azure_core::Result<Self> {
-        let http_client_factory: Arc<dyn HttpClientFactory> =
-            Arc::new(DefaultHttpClientFactory::new());
+        Self::new_with_factory(connection_pool, Arc::new(DefaultHttpClientFactory::new()))
+    }
 
+    /// Creates a new transport with a custom `HttpClientFactory`.
+    ///
+    /// This is used for fault injection: a `FaultInjectingHttpClientFactory` wraps the
+    /// default factory so that every `HttpClient` produced is intercepted.
+    pub(crate) fn new_with_factory(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+    ) -> azure_core::Result<Self> {
         let metadata_config = HttpClientConfig::metadata(&connection_pool);
         let metadata_transport = AdaptiveTransport::from_policy(
             metadata_config.version_policy,

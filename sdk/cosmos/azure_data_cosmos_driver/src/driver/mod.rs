@@ -13,6 +13,7 @@
 
 pub(crate) mod cache;
 mod cosmos_driver;
+pub mod fault_injection;
 pub(crate) mod jitter;
 pub(crate) mod pipeline;
 pub(crate) mod routing;

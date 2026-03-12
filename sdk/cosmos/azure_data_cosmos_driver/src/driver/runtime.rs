@@ -11,6 +11,9 @@ use std::{
 };
 
 use crate::{
+    driver::fault_injection::{
+        fault_injecting_factory::FaultInjectingHttpClientFactory, FaultInjectionRule,
+    },
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
@@ -352,6 +355,7 @@ pub struct CosmosDriverRuntimeBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
+    fault_injection_rules: Vec<Arc<FaultInjectionRule>>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -432,6 +436,21 @@ impl CosmosDriverRuntimeBuilder {
     /// Valid range: 1000–60000 ms (1–60 seconds).
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.cpu_refresh_interval = Some(interval);
+        self
+    }
+
+    /// Adds a fault injection rule to the runtime.
+    ///
+    /// Rules are evaluated in the order they are added; the first matching rule
+    /// is applied. The rule is wrapped in an [`Arc`] so it can be shared with
+    /// the caller, allowing runtime changes such as
+    /// [`FaultInjectionRule::enable`] and [`FaultInjectionRule::disable`].
+    ///
+    /// All HTTP clients produced by the transport layer will be wrapped with
+    /// fault injection, making faults visible to shard health tracking,
+    /// eviction logic, and retry/failover behavior.
+    pub fn with_fault_injection_rule(mut self, rule: Arc<FaultInjectionRule>) -> Self {
+        self.fault_injection_rules.push(rule);
         self
     }
 
@@ -516,7 +535,22 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(connection_pool.clone())?);
+        let transport = if self.fault_injection_rules.is_empty() {
+            Arc::new(CosmosTransport::new(connection_pool.clone())?)
+        } else {
+            use super::transport::http_client_factory::DefaultHttpClientFactory;
+
+            let default_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> =
+                Arc::new(DefaultHttpClientFactory::new());
+            let fault_factory = Arc::new(FaultInjectingHttpClientFactory::new(
+                default_factory,
+                self.fault_injection_rules,
+            ));
+            Arc::new(CosmosTransport::new_with_factory(
+                connection_pool.clone(),
+                fault_factory,
+            )?)
+        };
 
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
