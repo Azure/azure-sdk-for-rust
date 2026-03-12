@@ -318,16 +318,20 @@ mod tests {
     }
 
     #[test]
-    fn display_roundtrip() {
-        let t = VectorSessionToken::parse("1#100#1=20").unwrap();
-        let s = t.to_string();
-        let t2 = VectorSessionToken::parse(&s).unwrap();
-        assert_eq!(t, t2);
+    fn parse_produces_expected_structure() {
+        let t = VectorSessionToken::parse("1#100#1=20#2=5").unwrap();
+        assert_eq!(t, make_token(1, 100, &[(1, 20), (2, 5)]));
+    }
+
+    #[test]
+    fn display_formats_expected_string() {
+        let t = make_token(1, 100, &[(1, 20)]);
+        assert_eq!(t.to_string(), "1#100#1=20");
     }
 
     #[test]
     fn display_regions_sorted() {
-        let t = VectorSessionToken::parse("1#100#3=30#1=10#2=20").unwrap();
+        let t = make_token(1, 100, &[(3, 30), (1, 10), (2, 20)]);
         assert_eq!(t.to_string(), "1#100#1=10#2=20#3=30");
     }
 
@@ -457,9 +461,8 @@ mod tests {
     }
 
     #[test]
-    fn parse_v1_display_roundtrip() {
-        let t = SessionTokenValue::parse("12345").unwrap();
-        assert_eq!(t.to_string(), "12345");
+    fn v1_display_formats_expected_string() {
+        assert_eq!(SessionTokenValue::Simple(12345).to_string(), "12345");
     }
 
     #[test]
