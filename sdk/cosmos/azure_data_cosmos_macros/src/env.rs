@@ -42,14 +42,37 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
                     #field_name: env_var(#env_var)
                         .ok()
                         .map(|v| v.split(',')
-                            .filter_map(|s| s.trim().parse().ok())
+                            .filter_map(|s| {
+                                let trimmed = s.trim();
+                                match trimmed.parse() {
+                                    Ok(parsed) => Some(parsed),
+                                    Err(_) => {
+                                        ::tracing::warn!(
+                                            env_var = #env_var,
+                                            value = trimmed,
+                                            "failed to parse element from environment variable; skipping",
+                                        );
+                                        None
+                                    }
+                                }
+                            })
                             .collect())
                 }
             } else {
                 quote! {
                     #field_name: env_var(#env_var)
                         .ok()
-                        .and_then(|v| v.parse().ok())
+                        .and_then(|v| match v.parse() {
+                            Ok(parsed) => Some(parsed),
+                            Err(_) => {
+                                ::tracing::warn!(
+                                    env_var = #env_var,
+                                    value = %v,
+                                    "failed to parse environment variable; ignoring",
+                                );
+                                None
+                            }
+                        })
                 }
             }
         } else {
@@ -115,7 +138,17 @@ mod tests {
                     Self {
                         field_a: env_var("MY_VAR_A")
                             .ok()
-                            .and_then(|v| v.parse().ok()),
+                            .and_then(|v| match v.parse() {
+                                Ok(parsed) => Some(parsed),
+                                Err(_) => {
+                                    ::tracing::warn!(
+                                        env_var = "MY_VAR_A",
+                                        value = %v,
+                                        "failed to parse environment variable; ignoring",
+                                    );
+                                    None
+                                }
+                            }),
                         field_b: None
                     }
                 }

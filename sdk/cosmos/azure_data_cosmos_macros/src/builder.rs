@@ -65,6 +65,7 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
             #(#setters)*
 
             /// Consumes the builder and returns the constructed option group.
+            #[must_use]
             #vis fn build(self) -> #struct_name #ty_generics {
                 #struct_name {
                     #(#build_fields),*
@@ -123,6 +124,7 @@ mod tests {
                 }
 
                 /// Consumes the builder and returns the constructed option group.
+                #[must_use]
                 pub fn build(self) -> TestOptions {
                     TestOptions {
                         field_a: self.field_a,

@@ -60,6 +60,15 @@ impl Layer {
             )),
         }
     }
+
+    /// Returns the canonical ordering index for this layer.
+    fn order(&self) -> usize {
+        match self {
+            Layer::Runtime => 0,
+            Layer::Account => 1,
+            Layer::Operation => 2,
+        }
+    }
 }
 
 /// Parsed representation of a single field in the option struct.
@@ -143,6 +152,25 @@ fn parse_layers_attr(attrs: &[syn::Attribute]) -> Result<Vec<Layer>> {
                 Err(meta.error("expected `layers(...)`"))
             }
         })?;
+
+        // Validate canonical ordering and reject duplicates.
+        for i in 1..layers.len() {
+            if layers[i] == layers[i - 1] {
+                return Err(Error::new(
+                    Span::call_site(),
+                    format!("duplicate layer `{}`", layers[i].ident()),
+                ));
+            }
+            if layers[i].order() <= layers[i - 1].order() {
+                return Err(Error::new(
+                    Span::call_site(),
+                    format!(
+                        "layers must follow canonical ordering: {}",
+                        KNOWN_LAYERS.join(", "),
+                    ),
+                ));
+            }
+        }
 
         return Ok(layers);
     }
@@ -332,6 +360,37 @@ mod tests {
                 "unknown layer `global`, expected one of: runtime, account, operation",
                 e.to_string()
             ),
+            Ok(_) => panic!("expected error"),
+        }
+    }
+
+    #[test]
+    fn out_of_order_layers_errors() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[options(layers(operation, runtime))]
+            struct TestOptions {
+                pub field_a: Option<String>,
+            }
+        };
+        match OptionsInput::from_derive_input(&input) {
+            Err(e) => assert_eq!(
+                "layers must follow canonical ordering: runtime, account, operation",
+                e.to_string()
+            ),
+            Ok(_) => panic!("expected error"),
+        }
+    }
+
+    #[test]
+    fn duplicate_layer_errors() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, runtime))]
+            struct TestOptions {
+                pub field_a: Option<String>,
+            }
+        };
+        match OptionsInput::from_derive_input(&input) {
+            Err(e) => assert_eq!("duplicate layer `runtime`", e.to_string()),
             Ok(_) => panic!("expected error"),
         }
     }
