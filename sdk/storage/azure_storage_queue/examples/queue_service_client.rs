@@ -24,8 +24,9 @@
 //! cargo run --package azure_storage_queue --example queue_service_client
 //! ```
 
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, sync::Arc};
 
+use azure_core::credentials::TokenCredential;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{
@@ -57,6 +58,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
+    set_and_get_service_properties(&service_client).await?;
+    list_queues(&service_client, &queue_name).await?;
+    get_service_statistics(&account, credential).await?;
+
+    queue_client.delete(None).await?;
+    println!("Deleted queue '{queue_name}'");
+
+    Ok(())
+}
+
+/// Sets a CORS rule on the service, then reads back the properties to confirm.
+async fn set_and_get_service_properties(
+    service_client: &QueueServiceClient,
+) -> Result<(), Box<dyn std::error::Error>> {
     let properties = QueueServiceProperties {
         cors: Some(vec![CorsRule {
             allowed_origins: Some("https://example.com".to_string()),
@@ -72,19 +87,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     println!("Updated queue service properties");
 
-    let service_properties = service_client.get_properties(None).await?.into_model()?;
+    let retrieved = service_client.get_properties(None).await?.into_model()?;
     println!(
         "Service properties loaded. CORS rules configured: {}",
-        service_properties.cors.as_ref().map(Vec::len).unwrap_or(0)
+        retrieved.cors.as_ref().map(Vec::len).unwrap_or(0)
     );
 
-    let list_options = QueueServiceClientListQueuesOptions {
-        prefix: Some(queue_name.clone()),
+    Ok(())
+}
+
+/// Lists queues matching a prefix, printing name and metadata for each.
+async fn list_queues(
+    service_client: &QueueServiceClient,
+    prefix: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let options = QueueServiceClientListQueuesOptions {
+        prefix: Some(prefix.to_string()),
         include: Some(vec![ListQueuesIncludeType::Metadata]),
         ..Default::default()
     };
-    let mut pages = service_client.list_queues(Some(list_options))?.into_pages();
-    println!("Listing queues with prefix '{queue_name}'...");
+    let mut pages = service_client.list_queues(Some(options))?.into_pages();
+    println!("Listing queues with prefix '{prefix}'...");
     while let Some(page) = pages.next().await {
         let queue_list = page?.into_model()?;
         for queue in queue_list.queue_items {
@@ -95,7 +118,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let secondary_endpoint = format!("https://{}-secondary.queue.core.windows.net/", account);
+    Ok(())
+}
+
+/// Queries geo-replication statistics from the secondary endpoint.
+/// Prints a message and continues if the account has no readable secondary.
+async fn get_service_statistics(
+    account: &str,
+    credential: Arc<dyn TokenCredential>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let secondary_endpoint = format!("https://{account}-secondary.queue.core.windows.net/");
     let secondary_client = QueueServiceClient::new(&secondary_endpoint, Some(credential), None)?;
     match secondary_client.get_statistics(None).await {
         Ok(response) => {
@@ -113,9 +145,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
     }
-
-    queue_client.delete(None).await?;
-    println!("Deleted queue '{queue_name}'");
 
     Ok(())
 }
