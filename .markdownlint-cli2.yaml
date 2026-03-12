@@ -1,7 +1,5 @@
 $schema: https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/v0.21.0/schema/markdownlint-cli2-config-schema.json
 gitignore: true
-globs:
-  - "**/*.md"
 ignores:
   - eng/common/
 config:
