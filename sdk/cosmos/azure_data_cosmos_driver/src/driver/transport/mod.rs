@@ -213,6 +213,9 @@ impl CosmosTransport {
         }
 
         match transport_mode {
+            // Defense-in-depth: routing already checks is_gateway20_allowed() when
+            // building the endpoint, so this guard should always pass when
+            // transport_mode is Gateway20. We keep it as a safety net.
             TransportMode::Gateway20 if self.connection_pool.is_gateway20_allowed() => {
                 let transport = match self.dataplane_gateway20_transport.get() {
                     Some(t) => t.clone(),
