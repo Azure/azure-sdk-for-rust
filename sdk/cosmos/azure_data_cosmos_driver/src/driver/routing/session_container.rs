@@ -3,7 +3,9 @@
 
 //! In-memory session token cache keyed by collection resource ID.
 
-use crate::models::{resource_id::ResourceId, vector_session_token::SessionTokenValue};
+use crate::models::{
+    resource_id::ResourceId, vector_session_token::SessionTokenValue, SessionToken,
+};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -46,7 +48,7 @@ impl SessionContainer {
     // TODO(perf): This allocates on every resolve call. Consider caching the
     // composite string or using a `Cow` to avoid allocations on the hot path.
     #[allow(dead_code)] // Used by tests; primary callers use get_or_resolve_session_token
-    pub(crate) fn get_session_token(&self, collection_rid: &str) -> Option<String> {
+    pub(crate) fn get_session_token(&self, collection_rid: &str) -> Option<SessionToken> {
         let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
         Self::build_composite_token(&guard, collection_rid)
     }
@@ -57,7 +59,7 @@ impl SessionContainer {
     fn build_composite_token(
         inner: &SessionContainerInner,
         collection_rid: &str,
-    ) -> Option<String> {
+    ) -> Option<SessionToken> {
         let pk_map = inner.tokens.get(collection_rid)?;
         if pk_map.is_empty() {
             return None;
@@ -69,7 +71,7 @@ impl SessionContainer {
             .iter()
             .map(|(pk_range_id, vector)| format!("{pk_range_id}:{vector}"))
             .collect();
-        Some(composite.join(","))
+        Some(SessionToken::new(composite.join(",")))
     }
 
     /// Resolves a collection name path to its cached RID.
@@ -89,7 +91,7 @@ impl SessionContainer {
         &self,
         collection_rid: &str,
         collection_name_path: &str,
-    ) -> Option<String> {
+    ) -> Option<SessionToken> {
         let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
 
         // Try direct RID lookup
@@ -195,7 +197,7 @@ mod tests {
         let sc = SessionContainer::new();
         sc.set_session_token("rid1", Some("dbs/db1/colls/c1"), "0:1#100#1=10");
         let token = sc.get_session_token("rid1").unwrap();
-        assert_eq!(token, "0:1#100#1=10");
+        assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
     #[test]
@@ -204,7 +206,7 @@ mod tests {
         sc.set_session_token("rid1", None, "0:1#100#1=10");
         sc.set_session_token("rid1", None, "0:1#200#1=20");
         let token = sc.get_session_token("rid1").unwrap();
-        assert!(token.contains("200"));
+        assert!(token.as_str().contains("200"));
     }
 
     #[test]
@@ -212,7 +214,8 @@ mod tests {
         let sc = SessionContainer::new();
         sc.set_session_token("rid1", None, "0:1#100#1=10,1:1#200#1=20");
         let token = sc.get_session_token("rid1").unwrap();
-        assert!(token.contains("0:") && token.contains("1:"));
+        let s = token.as_str();
+        assert!(s.contains("0:") && s.contains("1:"));
     }
 
     #[test]

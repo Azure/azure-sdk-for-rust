@@ -87,9 +87,7 @@ impl SessionManager {
             container.name()
         );
 
-        self.container
-            .get_or_resolve_session_token(rid, &name_path)
-            .map(SessionToken::new)
+        self.container.get_or_resolve_session_token(rid, &name_path)
     }
 
     /// Captures the session token from a response into the cache.
