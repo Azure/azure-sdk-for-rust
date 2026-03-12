@@ -257,6 +257,7 @@ impl VmMetadataServiceInner {
         format!("{}{}", UUID_PREFIX, Uuid::new_v4())
     }
 
+    #[cfg(feature = "reqwest")]
     async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
         // Build a dedicated client with short timeouts so non-Azure hosts
         // fail fast instead of blocking callers for a full TCP timeout.
@@ -280,6 +281,14 @@ impl VmMetadataServiceInner {
 
         let metadata: AzureVmMetadata = serde_json::from_str(&body)?;
         Ok(metadata)
+    }
+
+    #[cfg(not(feature = "reqwest"))]
+    async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
+        Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "IMDS fetch requires the `reqwest` feature",
+        ))
     }
 }
 
