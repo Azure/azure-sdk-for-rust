@@ -1,15 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{cmp::min, collections::VecDeque, ops::Range, sync::Arc};
+use std::{
+    cmp::min,
+    collections::VecDeque,
+    ops::Range,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{self, TryRecvError},
+        Arc,
+    },
+};
 
 use async_trait::async_trait;
 use azure_core::{
+    async_runtime::get_async_runtime,
+    error::ErrorKind,
     http::{response::PinnedStream, AsyncRawResponse, StatusCode},
     stream::BytesStream,
+    Error,
 };
 use bytes::{Bytes, BytesMut};
-use futures::{stream::FuturesOrdered, StreamExt};
+use futures::TryStream;
 
 use crate::models::http_ranges::ContentRange;
 
@@ -39,6 +51,7 @@ where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
     let parallel = parallel.get();
+    let max_buffers = parallel * 2;
     let partition_size = partition_size.get();
 
     // Outer bound estimate of the resource range that will be downloaded. The actual download
@@ -60,35 +73,98 @@ where
     )
     .await?;
 
-    let mut ranges = match analyze_initial_response(
-        &initial_response,
-        partition_size,
-        max_download_range.end,
-    )? {
-        Some(stats) => stats.remaining_download_ranges,
-        None => Default::default(),
-    };
+    let stats =
+        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?
+            .unwrap(); // TODO
 
-    // the first operation has a different type from the others.
-    // fully type this variable out to specify dyn.
-    let fut: Pin<Box<dyn DownloadRangeFuture<Output = AzureResult<Bytes>>>> =
-        Box::pin(initial_response.into_body().collect());
-    let mut ops = FuturesOrdered::new();
-    ops.push_back(fut);
+    let mut remaining_ranges = stats.remaining_download_ranges;
+    let total_chunks = remaining_ranges.len() + 1;
+    if remaining_ranges.is_empty() {
+        return Ok(Box::pin(initial_response.into_body()));
+    }
 
-    let stream = futures::stream::poll_fn(move |cx| {
-        // fill to max parallel ops
-        while ops.len() < parallel {
-            match ranges.pop_front() {
-                Some(range) => {
-                    ops.push_back(Box::pin(download_range_to_bytes(client.clone(), range)))
+    let (tx, rx) = mpsc::channel();
+    // start with one task: init_download_task
+    let active_tasks_counter = Arc::new(AtomicUsize::new(1));
+
+    let tx_init = tx.clone();
+    let counter_init = active_tasks_counter.clone();
+    let init_download_task = get_async_runtime().spawn(Box::pin(async move {
+        let res = collect_into(
+            initial_response.into_body(),
+            BytesMut::with_capacity(partition_size),
+        )
+        .await
+        .map(|bytes| (0usize, bytes));
+        let _ = tx_init.send(res);
+        counter_init.fetch_sub(1, Ordering::Relaxed);
+    }));
+
+    let mut tasks = vec![init_download_task];
+    let mut drain = vec![None; max_buffers];
+    let drain_len = drain.len(); // store this to dodge some borrowing issues in try_stream
+
+    let mut drain_cursor = 0;
+
+    let mut tx_opt = Some(tx);
+    let stream = async_stream::try_stream! {
+        while drain_cursor < total_chunks {
+            // If room in the drain and not at max connections
+            while tasks.len() - drain_cursor < max_buffers && active_tasks_counter.load(Ordering::Relaxed) < parallel {
+                match remaining_ranges.pop_front() {
+                    Some(range) => {
+                        let i = tasks.len();
+                        active_tasks_counter.fetch_add(1, Ordering::Relaxed);
+
+                        let c = client.clone();
+                        let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
+                        let active_tasks = active_tasks_counter.clone();
+                        tasks.push(get_async_runtime().spawn(Box::pin(async move {
+                            let res = download_range_to_bytes(c, range).await.map(|bytes| (i, bytes));
+                            let _ = t.send(res);
+                            active_tasks.fetch_sub(1, Ordering::Relaxed);
+                        })));
+                    }
+                    None => {
+                        tx_opt = None;
+                        break;
+                    }
                 }
-                None => break,
+            }
+
+            // return readied bytes, sequentially
+            while let Some(bytes) = drain[drain_cursor % drain_len].take() {
+                drain_cursor += 1;
+                yield bytes;
+            }
+
+            // early break if finished
+            if drain_cursor >= total_chunks {
+                break;
+            }
+
+            match rx.try_recv() {
+                Ok(Ok((idx, bytes))) => drain[idx % drain_len] = Some(bytes),
+                Ok(Err(err)) => Err(err)?,
+                Err(TryRecvError::Empty) => {} //get_async_runtime().yield_now().await,
+                // Unexpected channel close
+                Err(TryRecvError::Disconnected) => {
+                    // if we yielded all the chunks, no harm no foul
+                    if drain_cursor == total_chunks {
+                        break;
+                    }
+                    // Did a task fail without notifying the channel?
+                    while !tasks.is_empty() {
+                        let result;
+                        (result, _, tasks) = future::select_all(tasks).await;
+                        result.map_err(|err| Error::with_message(ErrorKind::Other, format!("A download task failed: {err}")))?;
+                    }
+                    // No detectable error but we didn't get everything we needed.
+                    Err(Error::with_message(ErrorKind::Other, format!("Download incomplete: received {drain_cursor} of {total_chunks} chunks.")))?;
+                }
             }
         }
-
-        ops.poll_next_unpin(cx)
-    });
+    };
 
     Ok(Box::pin(stream))
 }
@@ -97,16 +173,19 @@ async fn download_range_to_bytes(
     client: Arc<impl PartitionedDownloadBehavior>,
     range: Range<usize>,
 ) -> AzureResult<Bytes> {
+    let dst = BytesMut::with_capacity(range.len());
     let response = client.transfer_range(Some(range)).await?;
-    let mut dst = match get_body_len(&response)? {
-        Some(content_length) => BytesMut::with_capacity(content_length),
-        None => BytesMut::new(),
-    };
-    let mut response_body = response.into_body();
-    while let Some(bytes) = response_body.try_next().await? {
-        dst.extend_from_slice(&bytes);
+    collect_into(response.into_body(), dst).await
+}
+
+async fn collect_into<S: TryStream<Ok = Bytes> + Unpin>(
+    mut stream: S,
+    mut destination: BytesMut,
+) -> Result<Bytes, S::Error> {
+    while let Some(bytes) = stream.try_next().await? {
+        destination.extend_from_slice(&bytes);
     }
-    Ok(dst.freeze())
+    Ok(destination.freeze())
 }
 
 /// Performs a `transfer_range()` call with the given range. If this results in a
@@ -385,7 +464,7 @@ mod tests {
             };
         let offset = (rand::random::<u64>() as usize % 500) + 500;
 
-        for parallel in [1, 4] {
+        for parallel in [4, 1] {
             for blob_range in [
                 (0, range_len),                   // start of blob
                 (offset, offset + range_len),     // middle of blob
