@@ -152,8 +152,8 @@ pub(crate) struct RoutingDecision {
     /// For dataplane operations this may be the Gateway 2.0 URL when the
     /// endpoint exposes one and the runtime configuration allows it.
     pub selected_url: Url,
-    /// Whether the selected URL requires Gateway 2.0 transport.
-    pub use_gateway20: bool,
+    /// The transport mode for this attempt.
+    pub transport_mode: TransportMode,
     /// Whether partition-level override was applied.
     pub partition_override: Option<PartitionOverride>,
 }
@@ -398,7 +398,7 @@ Each stage is a function with an explicit, narrow signature:
 //
 // The returned `RoutingDecision` carries both the regional endpoint and the
 // concrete target chosen for the current attempt (`selected_url` plus
-// `use_gateway20`) so request construction and transport selection are driven
+// `transport_mode`) so request construction and transport selection are driven
 // by one routing decision.
 fn resolve_endpoint(
     operation: &CosmosOperation,
@@ -582,7 +582,7 @@ pub(crate) async fn execute_operation_pipeline(
         );
 
         let selected_transport = if uses_dataplane_pipeline(operation) {
-            transport.get_dataplane_transport(routing.use_gateway20)
+            transport.get_dataplane_transport(routing.transport_mode)
         } else {
             transport.get_metadata_transport()
         };

@@ -28,8 +28,8 @@ use crate::{
 
 use super::{
     components::{
-        OperationAction, OperationRetryState, RoutingDecision, TransportOutcome, TransportRequest,
-        TransportResult,
+        OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
+        TransportRequest, TransportResult,
     },
     retry_evaluation::evaluate_transport_result,
 };
@@ -125,7 +125,7 @@ pub(crate) async fn execute_operation_pipeline(
 
         let selected_transport = match pipeline_type {
             PipelineType::DataPlane => {
-                transport.get_dataplane_transport(account_endpoint, routing.use_gateway20)?
+                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
             }
             PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
         };
@@ -276,11 +276,16 @@ fn resolve_endpoint(
 
     let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
     let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
+    let transport_mode = if use_gateway20 {
+        TransportMode::Gateway20
+    } else {
+        TransportMode::Gateway
+    };
 
     RoutingDecision {
         selected_url: selected.selected_url(use_gateway20).clone(),
         endpoint: selected,
-        use_gateway20,
+        transport_mode,
     }
 }
 
@@ -423,7 +428,7 @@ mod tests {
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
-            pipeline::components::RoutingDecision,
+            pipeline::components::{RoutingDecision, TransportMode},
             routing::{AccountEndpointState, CosmosEndpoint, LocationIndex, LocationSnapshot},
         },
         models::{
@@ -470,7 +475,7 @@ mod tests {
         RoutingDecision {
             selected_url: endpoint.url().clone(),
             endpoint,
-            use_gateway20: false,
+            transport_mode: TransportMode::Gateway,
         }
     }
 
@@ -561,7 +566,7 @@ mod tests {
                 Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
             ),
             selected_url: Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
-            use_gateway20: true,
+            transport_mode: TransportMode::Gateway20,
         };
 
         let request = build_transport_request(
@@ -588,7 +593,7 @@ mod tests {
                 Url::parse("https://test.documents.azure.com:443/").unwrap(),
             ),
             selected_url: Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            use_gateway20: false,
+            transport_mode: TransportMode::Gateway,
         };
 
         let request = build_transport_request(
@@ -850,7 +855,7 @@ mod tests {
 
         let routing = super::resolve_endpoint(&operation, &retry_state, &location, true, Duration::from_secs(60));
         assert_eq!(routing.endpoint, endpoint);
-        assert!(routing.use_gateway20);
+        assert_eq!(routing.transport_mode, TransportMode::Gateway20);
         assert_eq!(routing.selected_url.as_str(), "https://test-westus2-thin.documents.azure.com:444/");
     }
 
