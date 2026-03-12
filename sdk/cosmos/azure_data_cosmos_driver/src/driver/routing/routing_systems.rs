@@ -69,8 +69,17 @@ fn build_preferred_endpoints(
 
     let mut endpoints = Vec::with_capacity(standard_locations.len());
     for region in standard_locations {
-        let Ok(url) = url::Url::parse(&region.database_account_endpoint) else {
-            continue;
+        let url = match url::Url::parse(&region.database_account_endpoint) {
+            Ok(url) => url,
+            Err(err) => {
+                warn!(
+                    region = %region.name,
+                    endpoint = %region.database_account_endpoint,
+                    error = %err,
+                    "Ignoring malformed standard endpoint URL from AccountProperties"
+                );
+                continue;
+            }
         };
 
         let endpoint = thin_client_urls
