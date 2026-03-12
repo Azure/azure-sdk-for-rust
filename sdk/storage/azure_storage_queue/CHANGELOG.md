@@ -1,6 +1,16 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.5.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.4.0 (2026-03-11)
 
 ### Features Added
 
@@ -21,8 +31,6 @@
 ### Bugs Fixed
 
 - Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Queue Storage client.
-
-### Other Changes
 
 ## 0.3.0 (2026-02-11)
 

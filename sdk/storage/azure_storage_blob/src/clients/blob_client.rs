@@ -8,8 +8,8 @@ use crate::{
     logging::apply_storage_logging_defaults,
     models::{
         http_ranges::IntoRangeHeader, method_options::BlobClientManagedDownloadOptions,
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlockBlobClientUploadOptions,
-        BlockBlobClientUploadResult, StorageErrorCode,
+        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientUploadOptions,
+        BlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -22,8 +22,7 @@ use azure_core::{
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url,
-        UrlExt,
+        AsyncRawResponse, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -237,7 +236,6 @@ impl BlobClient {
         })
     }
 
-    // TODO: Partitioned upload will obsolete this wrapper.
     /// Downloads a blob from the service, including its metadata and properties.
     ///
     /// * `options` - Optional configuration for the request.
@@ -248,31 +246,21 @@ impl BlobClient {
         self.download_internal(options).await
     }
 
-    /// Creates a new blob from a data source.
+    /// Uploads content to a block blob, overwriting any existing blob by default.
+    ///
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// To perform a partial update of the content of a block blob, use [`BlockBlobClient::stage_block()`] and [`BlockBlobClient::commit_block_list()`] directly.
     ///
     /// # Arguments
     ///
-    /// * `data` - The blob data to upload.
-    /// * `overwrite` - Whether the blob to be uploaded should overwrite the current data. If True, `upload()` will overwrite the existing data.
-    ///   If False, the operation will fail with ResourceExistsError.
-    /// * `content_length` - Total length of the blob data to be uploaded.
-    /// * `options` - Optional configuration for the request.
+    /// * `content` - The content to upload.
+    /// * `options` - Optional parameters for the request.
     pub async fn upload(
         &self,
-        data: RequestContent<Bytes, NoFormat>,
-        overwrite: bool,
-        content_length: u64,
-        options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
-        let mut options = options.unwrap_or_default();
-
-        if !overwrite {
-            options.if_none_match = Some(Etag::from("*"));
-        }
-
-        self.block_blob_client()
-            .upload_internal(data, content_length, Some(options))
-            .await
+        content: RequestContent<Bytes, NoFormat>,
+        options: Option<BlobClientUploadOptions<'_>>,
+    ) -> Result<BlobClientUploadResult> {
+        self.block_blob_client().upload(content, options).await
     }
 
     /// Checks if the blob exists.

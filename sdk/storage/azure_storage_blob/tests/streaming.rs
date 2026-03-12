@@ -50,9 +50,7 @@ async fn stream_blob_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let content = request_content_from_bytes(data);
 
     // Upload via BlobClient using a seekable stream body
-    blob_client
-        .upload(content, true, data.len() as u64, None)
-        .await?;
+    blob_client.upload(content, None).await?;
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -218,9 +216,7 @@ async fn upload<const CONTENT_LENGTH: usize>(client: &BlobClient) -> azure_core:
     // but to avoid consuming a large amount of drive space generate content.
     let stream = GeneratedStream::<_, CONTENT_LENGTH>::default();
 
-    client
-        .upload(stream.into(), true, CONTENT_LENGTH as u64, None)
-        .await?;
+    client.upload(stream.into(), None).await?;
 
     Ok(())
 }
