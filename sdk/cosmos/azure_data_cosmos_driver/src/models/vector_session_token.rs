@@ -58,7 +58,7 @@ impl VectorSessionToken {
     ///
     /// Regions present in `other` but missing in `self` are treated as behind.
     #[allow(dead_code)] // Will be used by PKRange cache resolution
-    pub(crate) fn is_at_least_as_recent_as(&self, other: &Self) -> bool {
+    pub(crate) fn is_as_recent_as(&self, other: &Self) -> bool {
         if self.version > other.version {
             return true;
         }
@@ -220,9 +220,9 @@ impl SessionTokenValue {
 
     /// Returns `true` if this token is at least as recent as `other`.
     #[allow(dead_code)] // Will be used by PKRange cache resolution
-    pub(crate) fn is_at_least_as_recent_as(&self, other: &Self) -> bool {
+    pub(crate) fn is_as_recent_as(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Vector(a), Self::Vector(b)) => a.is_at_least_as_recent_as(b),
+            (Self::Vector(a), Self::Vector(b)) => a.is_as_recent_as(b),
             (Self::Simple(a), Self::Simple(b)) => a >= b,
             // V2 is always more recent than V1
             (Self::Vector(_), Self::Simple(_)) => true,
@@ -377,39 +377,39 @@ mod tests {
     }
 
     #[test]
-    fn is_at_least_as_recent_same() {
+    fn is_as_recent_as_same() {
         let a = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
-        assert!(a.is_at_least_as_recent_as(&a));
+        assert!(a.is_as_recent_as(&a));
     }
 
     #[test]
-    fn is_at_least_as_recent_higher() {
+    fn is_as_recent_as_higher() {
         let a = VectorSessionToken::parse("1#200#1=30#2=25").unwrap();
         let b = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
-        assert!(a.is_at_least_as_recent_as(&b));
+        assert!(a.is_as_recent_as(&b));
     }
 
     #[test]
-    fn is_at_least_as_recent_lower() {
+    fn is_as_recent_as_lower() {
         let a = VectorSessionToken::parse("1#50#1=10").unwrap();
         let b = VectorSessionToken::parse("1#100#1=10").unwrap();
-        assert!(!a.is_at_least_as_recent_as(&b));
+        assert!(!a.is_as_recent_as(&b));
     }
 
     #[test]
-    fn is_at_least_as_recent_missing_region() {
+    fn is_as_recent_as_missing_region() {
         let a = VectorSessionToken::parse("1#100#1=10").unwrap();
         let b = VectorSessionToken::parse("1#100#1=10#2=20").unwrap();
-        assert!(!a.is_at_least_as_recent_as(&b));
+        assert!(!a.is_as_recent_as(&b));
     }
 
     #[test]
-    fn is_at_least_as_recent_higher_version() {
+    fn is_as_recent_as_higher_version() {
         // A higher version token is always more recent, even with lower LSNs
         let a = VectorSessionToken::parse("2#50#1=5").unwrap();
         let b = VectorSessionToken::parse("1#100#1=10").unwrap();
-        assert!(a.is_at_least_as_recent_as(&b));
-        assert!(!b.is_at_least_as_recent_as(&a));
+        assert!(a.is_as_recent_as(&b));
+        assert!(!b.is_as_recent_as(&a));
     }
 
     // === SessionTokenValue tests ===
@@ -471,18 +471,18 @@ mod tests {
     }
 
     #[test]
-    fn v1_is_at_least_as_recent() {
+    fn v1_is_as_recent_as() {
         let a = SessionTokenValue::parse("200").unwrap();
         let b = SessionTokenValue::parse("100").unwrap();
-        assert!(a.is_at_least_as_recent_as(&b));
-        assert!(!b.is_at_least_as_recent_as(&a));
+        assert!(a.is_as_recent_as(&b));
+        assert!(!b.is_as_recent_as(&a));
     }
 
     #[test]
     fn v2_always_more_recent_than_v1() {
         let v2 = SessionTokenValue::parse("1#50#1=5").unwrap();
         let v1 = SessionTokenValue::parse("99999").unwrap();
-        assert!(v2.is_at_least_as_recent_as(&v1));
-        assert!(!v1.is_at_least_as_recent_as(&v2));
+        assert!(v2.is_as_recent_as(&v1));
+        assert!(!v1.is_as_recent_as(&v2));
     }
 }
