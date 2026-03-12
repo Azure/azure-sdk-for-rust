@@ -344,10 +344,8 @@ mod tests {
     }
 
     #[test]
-    fn capture_with_owner_full_name_fallback() {
+    fn capture_maps_rid_from_owner_id() {
         let mgr = SessionManager::new();
-        // Use an operation without a container reference (e.g., read_database
-        // doesn't have one, but let's simulate with a container-based op)
         let container = test_container();
         let op = CosmosOperation::read_item(ItemReference::from_name(
             &container,
@@ -362,9 +360,8 @@ mod tests {
         );
         mgr.capture_session_token(&op, &headers);
 
-        // The name_path comes from the container, matching the RID "some_rid"
+        // Name path derived from the container reference, RID from owner_id header.
         let resolved_rid = mgr.container.resolve_rid("dbs/db1/colls/coll1");
-        // Name was set from the container reference first (db1/coll1)
         assert!(resolved_rid.is_some());
     }
 
