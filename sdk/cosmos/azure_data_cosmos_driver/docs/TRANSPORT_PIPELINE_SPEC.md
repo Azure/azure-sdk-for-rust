@@ -637,7 +637,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // See §4.2 Hedging
                 return execute_hedged(
                     operation, options, &routing, &secondary_routing,
-                    &session_state, transport, auth_context, diagnostics, deadline,
+                    &session_state, transport, credential, diagnostics, deadline,
                 ).await;
             }
             OperationAction::Abort(error) => {
@@ -667,6 +667,7 @@ async fn execute_hedged(
     secondary_routing: &RoutingDecision,
     session: &SessionState,
     transport: &AdaptiveTransport,
+    credential: &Credential,
     diagnostics: &mut DiagnosticsContextBuilder,
     deadline: Option<Instant>,
 ) -> Result<CosmosResponse> {
@@ -1390,7 +1391,6 @@ The transport pipeline does **NOT** handle:
 
 Following the same DOP pattern as the operation pipeline, the transport pipeline is a bare
 async function — not a struct with methods. Its dependencies (`AdaptiveTransport`,
-`AuthContext`) are passed as parameters. Header application and request signing are also bare
 `Credential`) are passed as parameters. Header application and request signing are also bare
 functions rather than policy objects.
 
