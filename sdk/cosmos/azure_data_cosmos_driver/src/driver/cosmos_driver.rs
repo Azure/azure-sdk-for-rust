@@ -297,6 +297,46 @@ impl CosmosDriver {
         &self.options
     }
 
+    /// Eagerly primes the account metadata cache.
+    ///
+    /// Fetches account properties from the service and caches them so that
+    /// regional endpoint information is available before the first
+    /// [`execute_operation`](Self::execute_operation) call. This avoids
+    /// cold-start latency on the first data-plane operation.
+    ///
+    /// This method is called automatically by
+    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
+    /// on a best-effort basis. Callers may invoke it again to retry if the
+    /// initial attempt failed (the result is idempotent).
+    ///
+    /// Returns an error if the account is unreachable.
+    pub async fn initialize(&self) -> azure_core::Result<()> {
+        let account = self.options.account();
+        let account_endpoint = AccountEndpoint::from(account);
+        self.runtime
+            .account_metadata_cache()
+            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
+            .await?;
+        Ok(())
+    }
+
+    /// Eagerly primes the container metadata cache.
+    ///
+    /// Resolves container properties (partition key definition, resource ID)
+    /// and caches them so that subsequent operations targeting this container
+    /// can skip the metadata lookup round-trip.
+    ///
+    /// Returns an error if the container does not exist or is unreachable.
+    pub async fn prime_container(
+        &self,
+        db_name: &str,
+        container_name: &str,
+    ) -> azure_core::Result<()> {
+        self.resolve_container_by_name(db_name, container_name)
+            .await?;
+        Ok(())
+    }
+
     /// Computes the effective runtime options by merging operation, driver, and runtime options.
     ///
     /// The merge order is (highest to lowest priority):
