@@ -27,9 +27,7 @@ use crate::{
     models::{AccountEndpoint, OperationType, ResourceType},
     options::ConnectionPoolOptions,
 };
-use std::{
-    sync::{Arc, OnceLock},
-};
+use std::sync::{Arc, OnceLock};
 
 use self::{
     adaptive_transport::AdaptiveTransport,
@@ -115,7 +113,6 @@ pub(crate) struct CosmosTransport {
     /// The emulator does not support Gateway 2.0, so this always uses
     /// the standard gateway configuration.
     insecure_emulator_dataplane_transport: OnceLock<AdaptiveTransport>,
-
 }
 
 impl CosmosTransport {
@@ -295,10 +292,7 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport
-                .get_metadata_transport(&endpoint)
-                .unwrap()
-                ,
+            transport.get_metadata_transport(&endpoint).unwrap(),
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -314,10 +308,7 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport
-                .get_metadata_transport(&endpoint)
-                .unwrap()
-                ,
+            transport.get_metadata_transport(&endpoint).unwrap(),
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -332,7 +323,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, TransportMode::Gateway).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway)
+            .unwrap();
         assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
@@ -347,7 +340,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, TransportMode::Gateway20).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
+            .unwrap();
         assert!(matches!(ctx, AdaptiveTransport::Gateway20(_)));
     }
 
@@ -362,7 +357,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, TransportMode::Gateway).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway)
+            .unwrap();
         assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
@@ -377,7 +374,9 @@ pub(crate) mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
-        let ctx = transport.get_dataplane_transport(&endpoint, TransportMode::Gateway20).unwrap();
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
+            .unwrap();
         assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 

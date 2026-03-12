@@ -20,8 +20,7 @@ use crate::{
     },
     models::{
         AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
-        Credential,
-        SubStatusCode,
+        Credential, SubStatusCode,
     },
     options::{OperationOptions, RuntimeOptions},
 };
@@ -34,7 +33,9 @@ use super::{
     retry_evaluation::evaluate_transport_result,
 };
 
-use crate::driver::transport::{transport_pipeline::execute_transport_pipeline, AuthorizationContext};
+use crate::driver::transport::{
+    transport_pipeline::execute_transport_pipeline, AuthorizationContext,
+};
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
 ///
@@ -268,7 +269,13 @@ fn resolve_endpoint(
             continue;
         }
 
-        if endpoint_is_available(operation, candidate, account, now, endpoint_unavailability_ttl) {
+        if endpoint_is_available(
+            operation,
+            candidate,
+            account,
+            now,
+            endpoint_unavailability_ttl,
+        ) {
             selected = Some(candidate.clone());
             break;
         }
@@ -313,7 +320,10 @@ fn endpoint_is_available(
         .get(endpoint)
         .is_some_and(|(marked_at, reason)| {
             if operation.is_read_only()
-                && matches!(reason, crate::driver::routing::UnavailableReason::WriteForbidden)
+                && matches!(
+                    reason,
+                    crate::driver::routing::UnavailableReason::WriteForbidden
+                )
             {
                 return false;
             }
@@ -469,9 +479,8 @@ mod tests {
     }
 
     fn test_routing() -> RoutingDecision {
-        let endpoint = CosmosEndpoint::global(
-            Url::parse("https://test.documents.azure.com:443/").unwrap(),
-        );
+        let endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         RoutingDecision {
             selected_url: endpoint.url().clone(),
             endpoint,
@@ -644,14 +653,13 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
         };
 
-        let routing =
-            super::resolve_endpoint(
-                &operation,
-                &retry_state,
-                &location,
-                false,
-                Duration::from_secs(60),
-            );
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, write_endpoint);
     }
 
@@ -695,14 +703,13 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
         };
 
-        let routing =
-            super::resolve_endpoint(
-                &operation,
-                &retry_state,
-                &location,
-                false,
-                Duration::from_secs(60),
-            );
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, default_endpoint);
     }
 
@@ -744,14 +751,13 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
         };
 
-        let routing =
-            super::resolve_endpoint(
-                &operation,
-                &retry_state,
-                &location,
-                false,
-                Duration::from_secs(60),
-            );
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, read_endpoint);
     }
 
@@ -853,10 +859,19 @@ mod tests {
             2,
         );
 
-        let routing = super::resolve_endpoint(&operation, &retry_state, &location, true, Duration::from_secs(60));
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, endpoint);
         assert_eq!(routing.transport_mode, TransportMode::Gateway20);
-        assert_eq!(routing.selected_url.as_str(), "https://test-westus2-thin.documents.azure.com:444/");
+        assert_eq!(
+            routing.selected_url.as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/"
+        );
     }
 
     #[test]
@@ -887,10 +902,7 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![
-                endpoint.clone(),
-                fallback_endpoint.clone(),
-            ],
+            preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()],
             preferred_write_endpoints: vec![endpoint],
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
@@ -905,7 +917,13 @@ mod tests {
             3,
         );
 
-        let routing = super::resolve_endpoint(&operation, &retry_state, &location, true, Duration::from_secs(60));
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, fallback_endpoint);
     }
 }

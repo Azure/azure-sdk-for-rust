@@ -3,7 +3,10 @@
 
 //! Pure routing systems for account endpoint state.
 
-use std::{collections::HashMap, time::{Duration, Instant}};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use tracing::warn;
 
@@ -86,7 +89,11 @@ fn build_preferred_endpoints(
             .get(&region.name)
             .cloned()
             .map(|gateway20_url| {
-                CosmosEndpoint::regional_with_gateway20(region.name.clone(), url.clone(), gateway20_url)
+                CosmosEndpoint::regional_with_gateway20(
+                    region.name.clone(),
+                    url.clone(),
+                    gateway20_url,
+                )
             })
             .unwrap_or_else(|| CosmosEndpoint::regional(region.name.clone(), url));
 
@@ -209,7 +216,8 @@ mod tests {
 
     #[test]
     fn build_state_uses_metadata_locations() {
-        let state = build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
+        let state =
+            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
         assert_eq!(state.generation, 0);
         assert_eq!(state.preferred_write_endpoints.len(), 1);
         assert_eq!(state.preferred_read_endpoints.len(), 1);
@@ -273,7 +281,8 @@ mod tests {
 
     #[test]
     fn mark_and_expire_unavailable_endpoint() {
-        let state = build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
+        let state =
+            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
         let endpoint = state.preferred_read_endpoints[0].clone();
         let marked =
             mark_endpoint_unavailable(&state, &endpoint, UnavailableReason::TransportError);

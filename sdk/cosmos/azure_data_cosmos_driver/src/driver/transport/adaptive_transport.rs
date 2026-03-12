@@ -71,4 +71,3 @@ impl fmt::Debug for AdaptiveTransport {
             .finish_non_exhaustive()
     }
 }
-
