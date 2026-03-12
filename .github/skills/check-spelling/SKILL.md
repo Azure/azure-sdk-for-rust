@@ -21,15 +21,14 @@ Each service directory (e.g., `sdk/{service-directory}`) or crate directory (e.g
 
 ## Fix spelling
 
-Show a summary of the misspellings to the user. Prompt the user for which words should be replaced and which should be ignored.
+Show a summary of the misspellings to the user. Prompt the user for which words should be replaced in the file and which should be ignored.
 
 If you cannot confidently determine the correct spelling, ask the user.
 
-For each flagged word, consider one of the following:
+When ignoring a word, consider whether the word is domain-specific or spans multiple services:
 
-1. **It's a real error** — fix the misspelling directly in the source file.
-2. **It's a domain-specific term** (e.g., "RNTBD" in CosmosDB) unlikely to appear in other services — add it to the `ignoreWords` list in `sdk/{service}/.cspell.json`. Keep that list sorted alphabetically.
-3. **It's a term that applies to multiple services** (e.g., "upsert") — add it to the `words` list in `.vscode/cspell.json`. Keep that list sorted alphabetically.
+1. **It's a domain-specific term** (e.g., "RNTBD" in CosmosDB) unlikely to appear in other services — add it to the `ignoreWords` list in `sdk/{service}/.cspell.json`. Keep that list sorted alphabetically.
+2. **It's a term that applies to multiple services** (e.g., "upsert") — add it to the `words` list in `.vscode/cspell.json`. Keep that list sorted alphabetically.
 
 cSpell is case-insensitive, so you don't need to worry about the casing of ignored or added words.
 
