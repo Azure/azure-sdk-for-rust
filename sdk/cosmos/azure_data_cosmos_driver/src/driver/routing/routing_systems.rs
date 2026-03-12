@@ -27,17 +27,24 @@ pub(crate) fn build_account_endpoint_state(
 ) -> AccountEndpointState {
     let generation = previous_generation.map_or(0, |g| g.saturating_add(1));
 
-    let preferred_read_endpoints = build_preferred_endpoints(
+    let mut preferred_read_endpoints = build_preferred_endpoints(
         &properties.readable_locations,
         &properties.thin_client_readable_locations,
         gateway20_enabled,
     );
 
-    let preferred_write_endpoints = build_preferred_endpoints(
+    let mut preferred_write_endpoints = build_preferred_endpoints(
         &properties.writable_locations,
         &properties.thin_client_writable_locations,
         gateway20_enabled,
     );
+
+    if preferred_read_endpoints.is_empty() {
+        preferred_read_endpoints.push(default_endpoint.clone());
+    }
+    if preferred_write_endpoints.is_empty() {
+        preferred_write_endpoints.push(default_endpoint.clone());
+    }
 
     AccountEndpointState {
         generation,
