@@ -47,7 +47,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Tests the deletion of a queue in Azure Storage Queue service.
+/// Deletes an existing queue.
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -76,7 +76,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Retrieves the properties of a storage account's Queue service.
+/// Gets the properties of the Queue service.
 #[recorded::test]
 async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -96,7 +96,7 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Retrieves the properties of a storage account's Queue service.
+/// Sets Queue service properties.
 #[recorded::test]
 async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -132,7 +132,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     let queue_service_client = get_queue_service_client(recording).await?;
     let queue_name = get_queue_name(recording);
 
-    // Arrange — create a queue to ensure we have at least one to list
+    // Arrange — create a queue so the listing is guaranteed to contain at least one entry
     queue_service_client
         .queue_client(&queue_name)?
         .create(None)
@@ -149,12 +149,12 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         .into_pages();
     let mut all_queue_names = Vec::new();
 
-    // Iterate through all pages
+    // Act — iterate through all pages
     while let Some(page) = page_iterator.next().await {
         let response = page?;
         let queue_list = response.into_model()?;
 
-        //Collect queue names from this page
+        // Collect queue names from this page.
         for queue_item in &queue_list.queue_items {
             if let Some(queue_name_found) = &queue_item.name {
                 all_queue_names.push(queue_name_found.clone());
@@ -162,7 +162,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         }
     }
 
-    // Assert that our test queue is in the list
+    // Assert — the test queue appears in the list
     assert!(
         all_queue_names.contains(&queue_name),
         "Expected queue '{}' to be found in the list of queues: {:?}",
@@ -179,7 +179,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Lists queues filtered by a prefix and verifies that all returned queues start with that prefix.
+/// Lists queues filtered by a prefix and checks that all returned queues share the prefix.
 #[recorded::test]
 pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -265,7 +265,7 @@ pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Lists queues with metadata included and verifies the metadata is populated on matching queues.
+/// Lists queues with metadata included and checks the metadata on the matching queue.
 #[recorded::test]
 pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -341,7 +341,7 @@ pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Gets statistics for the Queue service, ensuring that the service is available and returns a successful response.
+/// Gets Queue service statistics.
 #[recorded::test]
 pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -363,7 +363,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
         geo_replication.status.as_ref().unwrap() == &GeoReplicationStatus::Live,
         "Geo-replication status should be Live"
     );
-    // assert that last_sync_time is greater than Fri, 1 Jun 2025 00:00:00 GMT
+    // Assert — `last_sync_time` is greater than Fri, 1 Jun 2025 00:00:00 GMT.
     assert!(
         geo_replication.last_sync_time.unwrap()
             > OffsetDateTime::from_unix_timestamp(1748728800).unwrap(),

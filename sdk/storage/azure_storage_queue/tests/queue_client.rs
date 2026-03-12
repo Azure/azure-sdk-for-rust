@@ -3,13 +3,20 @@
 
 mod common;
 
-use azure_core::{http::StatusCode, Result};
+use azure_core::{
+    error::ErrorKind,
+    http::{
+        policies::{Policy, PolicyResult},
+        Context, FixedRetryOptions, RetryOptions, StatusCode,
+    },
+    Result,
+};
 use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
     models::{
         AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesResultHeaders,
         QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientSendMessageOptions, QueueClientUpdateMessageOptions, QueueMessage,
+        QueueClientSendMessageOptions, QueueClientUpdateMessageOptions, QueueMessage, SentMessage,
         SignedIdentifier, SignedIdentifiers,
     },
     QueueClient, QueueClientOptions,
@@ -17,6 +24,10 @@ use azure_storage_queue::{
 use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 
 use std::collections::HashMap;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 
 /// Creates a new queue under the given account.
 #[recorded::test]
@@ -38,11 +49,190 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await.unwrap();
 
     test_result?;
-
     Ok(())
 }
 
-/// Sends a message to the specified queue.
+/// Creates a queue with metadata and reads the metadata back with `get_properties`.
+#[recorded::test]
+async fn test_create_queue_with_metadata(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    let options = Some(QueueClientCreateOptions {
+        metadata: Some(HashMap::from([
+            ("env".to_string(), "test".to_string()),
+            ("owner".to_string(), "rust-sdk".to_string()),
+        ])),
+        ..Default::default()
+    });
+
+    // Act
+    queue_client.create(options).await?;
+
+    let test_result = async {
+        // Assert
+        let props = queue_client.get_properties(None).await?;
+        let stored = props.metadata()?;
+        assert_eq!(
+            stored.get("env").map(String::as_str),
+            Some("test"),
+            "Expected metadata key 'env' = 'test'"
+        );
+        assert_eq!(
+            stored.get("owner").map(String::as_str),
+            Some("rust-sdk"),
+            "Expected metadata key 'owner' = 'rust-sdk'"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Deletes an existing queue.
+#[recorded::test]
+async fn test_delete_queue(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    // Act
+    let response = queue_client.delete(None).await?;
+
+    // Assert
+    assert!(
+        response.status() == StatusCode::NoContent,
+        "Expected status code 204, got {}",
+        response.status(),
+    );
+    Ok(())
+}
+
+/// Checks whether a queue exists before and after deletion.
+#[recorded::test]
+async fn test_queue_exists(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Act
+        let exists_response = queue_client.exists().await?;
+
+        // Assert
+        assert!(exists_response, "Queue should exist");
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await?;
+
+    // Act
+    let non_existent_exists_response = queue_client.exists().await?;
+
+    // Assert
+    assert!(!non_existent_exists_response, "Queue should not exist");
+
+    test_result?;
+    Ok(())
+}
+
+/// Sets queue metadata and reads it back with `get_properties`.
+#[recorded::test]
+async fn test_set_metadata(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Arrange
+        let metadata = HashMap::from([
+            ("key1".to_string(), "value1".to_string()),
+            ("key2".to_string(), "value2".to_string()),
+        ]);
+
+        // Act
+        let response = queue_client.set_metadata(&metadata, None).await?;
+
+        // Assert
+        assert_successful_response(&response);
+
+        let props = queue_client.get_properties(None).await?;
+        let stored = props.metadata()?;
+        assert_eq!(
+            stored.get("key1").map(String::as_str),
+            Some("value1"),
+            "Expected key1=value1 in metadata"
+        );
+        assert_eq!(
+            stored.get("key2").map(String::as_str),
+            Some("value2"),
+            "Expected key2=value2 in metadata"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await?;
+
+    test_result?;
+    Ok(())
+}
+
+/// Gets queue properties for a newly created queue and confirms the message count is zero.
+#[recorded::test]
+async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Act
+        let props = queue_client.get_properties(None).await?;
+
+        // Assert
+        assert_eq!(
+            props.approximate_messages_count()?,
+            Some(0),
+            "Expected approximate_messages_count to be 0 for empty queue"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Sends a message to the queue.
 #[recorded::test]
 async fn test_send_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -75,12 +265,10 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await.unwrap();
 
     test_result?;
-
     Ok(())
 }
 
-/// Verifies that `send_message` with `visibility_timeout` enqueues a message that is
-/// initially hidden and therefore not yet visible in peek results.
+/// Sends a message with `visibility_timeout` and confirms it is initially hidden.
 #[recorded::test]
 async fn test_send_message_with_visibility_timeout(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -91,9 +279,10 @@ async fn test_send_message_with_visibility_timeout(ctx: TestContext) -> Result<(
     queue_client.create(None).await?;
 
     let test_result = async {
+        // Arrange
         let options = Some(QueueClientSendMessageOptions {
-            visibility_timeout: Some(30),    // hidden for 30 seconds after enqueue
-            message_time_to_live: Some(300), // expires after 5 minutes
+            visibility_timeout: Some(30),
+            message_time_to_live: Some(300),
             ..Default::default()
         });
 
@@ -108,14 +297,13 @@ async fn test_send_message_with_visibility_timeout(ctx: TestContext) -> Result<(
             )
             .await?;
 
-        // Assert — message was enqueued successfully
+        // Assert
         assert!(
             response.status() == StatusCode::Created,
             "Expected status code 201, got {}",
             response.status(),
         );
 
-        // Assert — message is not yet visible due to visibility_timeout=30
         let peek_response = queue_client.peek_messages(None).await?;
         let peek_result = peek_response.into_model()?;
         assert!(
@@ -131,14 +319,12 @@ async fn test_send_message_with_visibility_timeout(ctx: TestContext) -> Result<(
     queue_client.delete(None).await.unwrap();
 
     test_result?;
-
     Ok(())
 }
 
-/// Verifies that `receive_messages` with `visibility_timeout` and `number_of_messages`
-/// options correctly receives messages using both options.
+/// Sends a message with `message_time_to_live` and checks the returned expiration metadata.
 #[recorded::test]
-async fn test_receive_messages_with_options(ctx: TestContext) -> Result<()> {
+async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
@@ -147,257 +333,43 @@ async fn test_receive_messages_with_options(ctx: TestContext) -> Result<()> {
     queue_client.create(None).await?;
 
     let test_result = async {
-        // Arrange — send a message
-        queue_client
-            .send_message(
-                QueueMessage {
-                    message_text: Some("Receive with options".to_string()),
-                }
-                .try_into()?,
-                None,
-            )
-            .await?;
-
-        let options = Some(QueueClientReceiveMessagesOptions {
-            number_of_messages: Some(1),
-            visibility_timeout: Some(60), // hide for 60 seconds after receive
+        // Arrange
+        let options = Some(QueueClientSendMessageOptions {
+            message_time_to_live: Some(300),
             ..Default::default()
         });
 
         // Act
-        let response = queue_client.receive_messages(options).await?;
-        assert_successful_response(&response);
-
-        let messages = response.into_model()?.items.expect("Expected messages");
-
-        // Assert — received the expected message with correct text
-        assert_eq!(messages.len(), 1, "Expected exactly one message");
-        assert_eq!(
-            messages[0].message_text.as_deref(),
-            Some("Receive with options"),
-            "Message text did not match"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result?;
-
-    Ok(())
-}
-
-/// Tests the deletion of a queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_delete_queue(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    // Act
-    let response = queue_client.delete(None).await?;
-
-    // Assert
-    assert!(
-        response.status() == StatusCode::NoContent,
-        "Expected status code 204, got {}",
-        response.status(),
-    );
-    Ok(())
-}
-
-/// Checks if a queue exists in the Azure Storage Queue service.
-#[recorded::test]
-async fn test_queue_exists(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        // Check if the queue exists
-        let exists_response = queue_client.exists().await?;
-        assert!(exists_response, "Queue should exist");
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    queue_client.delete(None).await?;
-
-    // Check a non-existent queue
-    let non_existent_exists_response = queue_client.exists().await?;
-    assert!(!non_existent_exists_response, "Queue should not exist");
-
-    // Return the test result
-    test_result?;
-
-    Ok(())
-}
-
-/// Sets metadata for a queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_set_metadata(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        // Act
-        let metadata = HashMap::from([
-            ("key1".to_string(), "value1".to_string()),
-            ("key2".to_string(), "value2".to_string()),
-        ]);
-        let response = queue_client.set_metadata(&metadata, None).await?;
-
-        // Assert — set succeeded
-        assert_successful_response(&response);
-
-        // Assert — read back and verify metadata was stored
-        let props = queue_client.get_properties(None).await?;
-        let stored = props.metadata()?;
-        assert_eq!(
-            stored.get("key1").map(String::as_str),
-            Some("value1"),
-            "Expected key1=value1 in metadata"
-        );
-        assert_eq!(
-            stored.get("key2").map(String::as_str),
-            Some("value2"),
-            "Expected key2=value2 in metadata"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    queue_client.delete(None).await?;
-
-    // Return the test result
-    test_result?;
-    Ok(())
-}
-
-/// Verifies that `get_properties` returns queue properties including an accurate message count.
-#[recorded::test]
-async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        // Act
-        let props = queue_client.get_properties(None).await?;
-
-        // Assert — a freshly created queue has zero messages
-        assert_eq!(
-            props.approximate_messages_count()?,
-            Some(0),
-            "Expected approximate_messages_count to be 0 for empty queue"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result?;
-    Ok(())
-}
-
-/// Verifies that `create` with metadata stores and returns the metadata in `get_properties`.
-#[recorded::test]
-async fn test_create_queue_with_metadata(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    let options = Some(QueueClientCreateOptions {
-        metadata: Some(HashMap::from([
-            ("env".to_string(), "test".to_string()),
-            ("owner".to_string(), "rust-sdk".to_string()),
-        ])),
-        ..Default::default()
-    });
-
-    // Act
-    queue_client.create(options).await?;
-
-    let test_result = async {
-        // Assert — metadata is readable back via get_properties
-        let props = queue_client.get_properties(None).await?;
-        let stored = props.metadata()?;
-        assert_eq!(
-            stored.get("env").map(String::as_str),
-            Some("test"),
-            "Expected metadata key 'env' = 'test'"
-        );
-        assert_eq!(
-            stored.get("owner").map(String::as_str),
-            Some("rust-sdk"),
-            "Expected metadata key 'owner' = 'rust-sdk'"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result?;
-    Ok(())
-}
-
-/// Verifies that `get_properties` returns an `approximate_messages_count` of at least 1
-/// after a message has been sent.
-#[recorded::test]
-async fn test_message_count_after_send(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        // Arrange — send a message
-        queue_client
+        let response = queue_client
             .send_message(
                 QueueMessage {
-                    message_text: Some("hello".to_string()),
+                    message_text: Some("TTL test message".to_string()),
                 }
                 .try_into()?,
-                None,
+                options,
             )
             .await?;
 
-        // Act
-        let props = queue_client.get_properties(None).await?;
-
-        // Assert — at least one message is known to be in the queue
-        let count = props.approximate_messages_count()?.unwrap_or(0);
-        assert!(
-            count >= 1,
-            "Expected approximate_messages_count >= 1 after sending a message, got {count}"
+        // Assert
+        assert_eq!(
+            response.status(),
+            StatusCode::Created,
+            "Expected 201 Created, got {}",
+            response.status()
         );
+
+        let sent: SentMessage = response.into_model()?;
+        assert!(
+            sent.expiration_time.is_some(),
+            "Expected expiration_time to be set for a message sent with message_time_to_live"
+        );
+
+        if let (Some(exp), Some(ins)) = (sent.expiration_time, sent.insertion_time) {
+            assert!(
+                exp > ins,
+                "Expected expiration_time ({exp}) to be after insertion_time ({ins})"
+            );
+        }
 
         Ok::<(), azure_core::Error>(())
     }
@@ -410,7 +382,7 @@ async fn test_message_count_after_send(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Verifies that Unicode text in a message body round-trips correctly through send and receive.
+/// Sends and receives a Unicode message to confirm the content round-trips correctly.
 #[recorded::test]
 async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -421,9 +393,8 @@ async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
     queue_client.create(None).await?;
 
     let test_result = async {
+        // Arrange
         let unicode_text = "こんにちは Azure 🦀 — Ünïcödé";
-
-        // Act — send
         queue_client
             .send_message(
                 QueueMessage {
@@ -434,11 +405,11 @@ async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        // Act — receive
+        // Act
         let received = queue_client.receive_messages(None).await?;
         let messages = received.into_model()?.items.expect("Expected a message");
 
-        // Assert — text is preserved exactly
+        // Assert
         assert_eq!(messages.len(), 1, "Expected exactly one message");
         assert_eq!(
             messages[0].message_text.as_deref(),
@@ -457,42 +428,57 @@ async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Clears all messages from a queue in Azure Storage Queue service.
+/// Sends and peeks a message body near the 64 KiB limit.
 #[recorded::test]
-async fn test_clear_messages(ctx: TestContext) -> Result<()> {
+async fn test_send_near_64kb_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
 
-    // Arrange — create a queue and send messages so we have something to clear
+    // Arrange
     queue_client.create(None).await?;
 
     let test_result = async {
-        // Arrange — populate the queue
-        for msg in ["message1", "message2", "message3"] {
-            queue_client
-                .send_message(
-                    QueueMessage {
-                        message_text: Some(msg.to_string()),
-                    }
-                    .try_into()?,
-                    None,
-                )
-                .await?;
-        }
+        // Arrange
+        const PAYLOAD_LEN: usize = 60 * 1024;
+        let large_text = "a".repeat(PAYLOAD_LEN);
 
         // Act
-        let response = queue_client.clear(None).await?;
+        let response = queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some(large_text.clone()),
+                }
+                .try_into()?,
+                None,
+            )
+            .await?;
 
-        // Assert — clear succeeded
-        assert_successful_response(&response);
+        // Assert
+        assert_eq!(
+            response.status(),
+            StatusCode::Created,
+            "Expected 201 Created for large message send, got {}",
+            response.status()
+        );
 
-        // Assert — queue is now empty
         let peek_response = queue_client.peek_messages(None).await?;
-        let peeked = peek_response.into_model()?;
-        assert!(
-            peeked.items.is_none(),
-            "Expected queue to be empty after clear, but found messages"
+        assert_successful_response(&peek_response);
+
+        let peeked = peek_response
+            .into_model()?
+            .items
+            .expect("Expected peeked messages");
+        assert_eq!(peeked.len(), 1, "Expected exactly one peeked message");
+
+        let recovered_len = peeked[0]
+            .message_text
+            .as_ref()
+            .map(String::len)
+            .unwrap_or(0);
+        assert_eq!(
+            recovered_len, PAYLOAD_LEN,
+            "Expected recovered message length {PAYLOAD_LEN}, got {recovered_len}"
         );
 
         Ok::<(), azure_core::Error>(())
@@ -502,11 +488,346 @@ async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     // Cleanup
     queue_client.delete(None).await.unwrap();
 
-    // Return the test result
     test_result?;
     Ok(())
 }
 
+/// Receives messages using `visibility_timeout` and `number_of_messages` options.
+#[recorded::test]
+async fn test_receive_messages_with_options(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Arrange
+        queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some("Receive with options".to_string()),
+                }
+                .try_into()?,
+                None,
+            )
+            .await?;
+
+        let options = Some(QueueClientReceiveMessagesOptions {
+            number_of_messages: Some(1),
+            visibility_timeout: Some(60),
+            ..Default::default()
+        });
+
+        // Act
+        let response = queue_client.receive_messages(options).await?;
+        assert_successful_response(&response);
+
+        let messages = response.into_model()?.items.expect("Expected messages");
+
+        // Assert
+        assert_eq!(messages.len(), 1, "Expected exactly one message");
+        assert_eq!(
+            messages[0].message_text.as_deref(),
+            Some("Receive with options"),
+            "Message text did not match"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Receives messages with the service maximum `number_of_messages` value.
+#[recorded::test]
+async fn test_receive_messages_max_count(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Arrange
+        for i in 0..5 {
+            queue_client
+                .send_message(
+                    QueueMessage {
+                        message_text: Some(format!("msg-{i}")),
+                    }
+                    .try_into()?,
+                    None,
+                )
+                .await?;
+        }
+
+        let options = Some(QueueClientReceiveMessagesOptions {
+            number_of_messages: Some(32),
+            ..Default::default()
+        });
+
+        // Act
+        let response = queue_client.receive_messages(options).await?;
+        assert_successful_response(&response);
+
+        let messages = response.into_model()?.items.expect("Expected messages");
+
+        // Assert
+        assert_eq!(
+            messages.len(),
+            5,
+            "Expected 5 messages when requesting up to 32, got {}",
+            messages.len()
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Attempts to peek messages from an empty queue.
+#[recorded::test]
+async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Act
+        let response = queue_client.peek_messages(None).await?;
+        assert_successful_response(&response);
+
+        let messages = response.into_model()?;
+
+        // Assert
+        assert!(
+            messages.items.is_none(),
+            "Expected to receive no messages, but got Some"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Peeks messages without dequeuing them.
+#[recorded::test]
+async fn test_peek_messages(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    let test_messages = ["Message 1", "Message 2"];
+
+    // Arrange
+    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
+
+    let test_result = async {
+        let options = Some(QueueClientPeekMessagesOptions {
+            number_of_messages: Some(10),
+            ..Default::default()
+        });
+
+        // Act
+        peek_and_assert(
+            &queue_client,
+            &test_messages,
+            test_messages.len(),
+            options.clone(),
+        )
+        .await?;
+        peek_and_assert(
+            &queue_client,
+            &test_messages,
+            test_messages.len(),
+            options.clone(),
+        )
+        .await?;
+
+        Ok(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Attempts to receive messages from an empty queue.
+#[recorded::test]
+async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Act
+        let response = queue_client.receive_messages(None).await?;
+        assert_successful_response(&response);
+
+        let messages = response.into_model()?;
+
+        // Assert
+        assert!(
+            messages.items.is_none(),
+            "Expected to dequeue no messages, but got Some"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Receives messages from the queue in order.
+#[recorded::test]
+async fn test_receive_messages(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    let test_messages = ["Message 1", "Message 2"];
+
+    // Arrange
+    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
+
+    let test_result = async {
+        let options = Some(QueueClientReceiveMessagesOptions {
+            number_of_messages: Some(10),
+            ..Default::default()
+        });
+
+        // Act
+        let response = queue_client.receive_messages(options).await?;
+        assert_successful_response(&response);
+
+        let messages = response.into_model()?.items.unwrap();
+
+        // Assert
+        assert_eq!(
+            messages.len(),
+            test_messages.len(),
+            "Expected to dequeue {} messages, got {}",
+            test_messages.len(),
+            messages.len()
+        );
+
+        for (i, message) in messages.iter().enumerate() {
+            assert_message_text(message.message_text.clone(), test_messages[i], i);
+        }
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Updates a message and then receives the updated content.
+#[recorded::test]
+async fn test_update_message(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Arrange
+        let send_message_response = queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some(
+                        "Example message created from Rust, ready for update".to_string(),
+                    ),
+                }
+                .try_into()?,
+                None,
+            )
+            .await?;
+
+        let sent_message = send_message_response.into_model()?;
+
+        let option = Some(QueueClientUpdateMessageOptions {
+            queue_message: Some(
+                QueueMessage {
+                    message_text: Some("Updated message text from Rust".to_string()),
+                }
+                .try_into()?,
+            ),
+            ..Default::default()
+        });
+
+        // Act
+        let update_response = queue_client
+            .update_message(
+                &sent_message.message_id.clone().unwrap(),
+                &sent_message.pop_receipt.clone().unwrap(),
+                0,
+                option,
+            )
+            .await?;
+
+        // Assert
+        assert!(
+            update_response.status().is_success(),
+            "Expected successful status code, got {}",
+            update_response.status(),
+        );
+
+        let received = queue_client.receive_messages(None).await?;
+        let messages = received.into_model()?.items.expect("Expected one message");
+        assert_eq!(messages.len(), 1, "Expected exactly one message");
+        assert_eq!(
+            messages[0].message_text.as_deref(),
+            Some("Updated message text from Rust"),
+            "Message text was not updated"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Deletes a previously enqueued message.
 #[recorded::test]
 async fn test_delete_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -517,8 +838,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
     queue_client.create(None).await?;
 
     let test_result = async {
-        // Arrange — send a message to capture pop receipt
-        // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
+        // Arrange
         let sent_message_response = queue_client
             .send_message(
                 QueueMessage {
@@ -542,10 +862,9 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        // Assert — delete succeeded
+        // Assert
         assert_successful_response(&delete_response);
 
-        // Assert — queue is now empty (no messages remain)
         let received = queue_client.receive_messages(None).await?;
         let remaining = received.into_model()?;
         assert!(
@@ -563,8 +882,9 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+/// Clears all messages from the queue.
 #[recorded::test]
-async fn test_update_message(ctx: TestContext) -> Result<()> {
+async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
@@ -573,57 +893,73 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
     queue_client.create(None).await?;
 
     let test_result = async {
-        // Arrange — send a message to capture pop receipt
-        let send_message_response = queue_client
+        // Arrange
+        for msg in ["message1", "message2", "message3"] {
+            queue_client
+                .send_message(
+                    QueueMessage {
+                        message_text: Some(msg.to_string()),
+                    }
+                    .try_into()?,
+                    None,
+                )
+                .await?;
+        }
+
+        // Act
+        let response = queue_client.clear(None).await?;
+
+        // Assert
+        assert_successful_response(&response);
+
+        let peek_response = queue_client.peek_messages(None).await?;
+        let peeked = peek_response.into_model()?;
+        assert!(
+            peeked.items.is_none(),
+            "Expected queue to be empty after clear, but found messages"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Gets queue properties after sending a message and checks the message count.
+#[recorded::test]
+async fn test_message_count_after_send(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Arrange
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // Arrange
+        queue_client
             .send_message(
                 QueueMessage {
-                    message_text: Some(
-                        "Example message created from Rust, ready for update".to_string(),
-                    ),
+                    message_text: Some("hello".to_string()),
                 }
                 .try_into()?,
                 None,
             )
             .await?;
 
-        let sent_message = send_message_response.into_model()?;
+        // Act
+        let props = queue_client.get_properties(None).await?;
 
-        // Update the message in the queue
-        let option = Some(QueueClientUpdateMessageOptions {
-            queue_message: Some(
-                QueueMessage {
-                    message_text: Some("Updated message text from Rust".to_string()),
-                }
-                .try_into()?,
-            ),
-            ..Default::default()
-        });
-
-        // Act — update with visibility_timeout=0 so message is immediately receivable
-        let update_response = queue_client
-            .update_message(
-                &sent_message.message_id.clone().unwrap(),
-                &sent_message.pop_receipt.clone().unwrap(),
-                0,
-                option,
-            )
-            .await?;
-
-        // Assert — update succeeded
+        // Assert
+        let count = props.approximate_messages_count()?.unwrap_or(0);
         assert!(
-            update_response.status().is_success(),
-            "Expected successful status code, got {}",
-            update_response.status(),
-        );
-
-        // Assert — receive and verify the updated text
-        let received = queue_client.receive_messages(None).await?;
-        let messages = received.into_model()?.items.expect("Expected one message");
-        assert_eq!(messages.len(), 1, "Expected exactly one message");
-        assert_eq!(
-            messages[0].message_text.as_deref(),
-            Some("Updated message text from Rust"),
-            "Message text was not updated"
+            count >= 1,
+            "Expected approximate_messages_count >= 1 after sending a message, got {count}"
         );
 
         Ok::<(), azure_core::Error>(())
@@ -633,167 +969,11 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
     // Cleanup
     queue_client.delete(None).await.unwrap();
 
-    // Return the test result
     test_result?;
     Ok(())
 }
 
-/// Attempts to peek messages from an empty queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        let response = queue_client.peek_messages(None).await?;
-        assert_successful_response(&response);
-
-        let messages = response.into_model()?;
-
-        assert!(
-            messages.items.is_none(),
-            "Expected to receive no messages, but got Some"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Receives all messages from a queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_peek_messages(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-    let test_messages = ["Message 1", "Message 2"];
-
-    // Arrange
-    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
-
-    // Act & Assert
-    let test_result = async {
-        let options = Some(QueueClientPeekMessagesOptions {
-            number_of_messages: Some(10),
-            ..Default::default()
-        });
-
-        peek_and_assert(
-            &queue_client,
-            &test_messages,
-            test_messages.len(),
-            options.clone(),
-        )
-        .await?;
-
-        // The messages should not have been dequeued, so we can peek again
-        // and expect to receive both messages this time.
-        peek_and_assert(
-            &queue_client,
-            &test_messages,
-            test_messages.len(),
-            options.clone(),
-        )
-        .await?;
-
-        Ok(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Attempts to receive messages from an empty queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        let response = queue_client.receive_messages(None).await?;
-        assert_successful_response(&response);
-
-        let messages = response.into_model()?;
-
-        assert!(
-            messages.items.is_none(),
-            "Expected to dequeue no messages, but got Some"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Dequeues all messages from a queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_receive_messages(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-    let test_messages = ["Message 1", "Message 2"];
-
-    // Arrange
-    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
-
-    // Act & Assert
-    let test_result = async {
-        let options = Some(QueueClientReceiveMessagesOptions {
-            number_of_messages: Some(10),
-            ..Default::default()
-        });
-
-        let response = queue_client.receive_messages(options).await?;
-        assert_successful_response(&response);
-
-        let messages = response.into_model()?;
-        let messages = messages.items.unwrap();
-
-        assert_eq!(
-            messages.len(),
-            test_messages.len(),
-            "Expected to dequeue {} messages, got {}",
-            test_messages.len(),
-            messages.len()
-        );
-
-        // Verify messages are received in order
-        for (i, message) in messages.iter().enumerate() {
-            assert_message_text(message.message_text.clone(), test_messages[i], i);
-        }
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Sets an access policy on a queue and then gets it to verify.
+/// Sets an access policy on a queue and then gets it to verify the round-trip.
 #[recorded::test]
 async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -804,11 +984,13 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     queue_client.create(None).await?;
 
     let test_result = async {
-        // Assert — queue starts with no access policy
+        // Act
         let response = queue_client.get_access_policy(None).await?;
         assert_successful_response(&response);
 
         let acl = response.into_model()?;
+
+        // Assert
         assert!(
             acl.items.is_none(),
             "Expected no signed identifiers, got {:?}",
@@ -831,7 +1013,6 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
 
         assert_successful_response(&set_response);
 
-        // Sleep in live mode to allow access policies to take effect.
         if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         }
@@ -857,11 +1038,10 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await.unwrap();
 
     test_result?;
-
     Ok(())
 }
 
-/// Verifies that `get_properties` returns 404 Not Found for a queue that does not exist.
+/// Gets properties for a queue that does not exist.
 #[recorded::test]
 async fn test_get_properties_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -881,7 +1061,7 @@ async fn test_get_properties_queue_not_found(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Verifies that `set_metadata` returns 404 Not Found for a queue that does not exist.
+/// Sets metadata on a queue that does not exist.
 #[recorded::test]
 async fn test_set_metadata_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -908,7 +1088,7 @@ async fn test_set_metadata_queue_not_found(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Verifies that `receive_messages` returns 404 Not Found for a queue that does not exist.
+/// Receives messages from a queue that does not exist.
 #[recorded::test]
 async fn test_receive_messages_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -928,7 +1108,7 @@ async fn test_receive_messages_queue_not_found(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Verifies that `peek_messages` returns 404 Not Found for a queue that does not exist.
+/// Peeks messages from a queue that does not exist.
 #[recorded::test]
 async fn test_peek_messages_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -948,7 +1128,7 @@ async fn test_peek_messages_queue_not_found(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Verifies that `delete` returns 404 Not Found for a queue that does not exist.
+/// Deletes a queue that does not exist.
 #[recorded::test]
 async fn test_delete_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -968,7 +1148,7 @@ async fn test_delete_queue_not_found(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Verifies that `get_access_policy` returns 404 Not Found for a queue that does not exist.
+/// Gets the access policy for a queue that does not exist.
 #[recorded::test]
 async fn test_get_access_policy_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -988,7 +1168,7 @@ async fn test_get_access_policy_queue_not_found(ctx: TestContext) -> Result<()> 
     Ok(())
 }
 
-/// Verifies that `set_access_policy` returns 404 Not Found for a queue that does not exist.
+/// Sets the access policy for a queue that does not exist.
 #[recorded::test]
 async fn test_set_access_policy_queue_not_found(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -1012,12 +1192,86 @@ async fn test_set_access_policy_queue_not_found(ctx: TestContext) -> Result<()> 
     Ok(())
 }
 
-/// Returns an instance of a QueueClient.
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<QueueClient> {
+/// Retries an initial IO error before surfacing the service error.
+#[recorded::test]
+async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (base_options, endpoint, _) = recorded_test_setup(recording);
+
+    // Arrange
+    let invocations = Arc::new(AtomicUsize::new(0));
+    let fail_first: Arc<dyn Policy> = Arc::new(FailFirstPolicy {
+        invocations: invocations.clone(),
+    });
+
+    let mut queue_client_options = QueueClientOptions {
+        client_options: base_options,
+        ..Default::default()
+    };
+    queue_client_options.client_options.retry = RetryOptions::fixed(FixedRetryOptions {
+        delay: azure_core::time::Duration::ZERO,
+        max_retries: 1,
+        max_total_elapsed: azure_core::time::Duration::seconds(5),
+    });
+    queue_client_options
+        .client_options
+        .per_try_policies
+        .push(fail_first);
+
+    let queue_name = get_queue_name(recording);
+    let queue_client = QueueClient::new(
+        &endpoint,
+        &queue_name,
+        Some(recording.credential()),
+        Some(queue_client_options),
+    )?;
+
+    // Act
+    let err = queue_client.get_properties(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 from the retried attempt, got {:?}",
+        err.http_status()
+    );
+    assert_eq!(
+        invocations.load(Ordering::Relaxed),
+        2,
+        "Expected FailFirstPolicy to be invoked exactly 2 times (1 initial + 1 retry)"
+    );
+
+    Ok(())
+}
+
+#[derive(Debug)]
+struct FailFirstPolicy {
+    invocations: Arc<AtomicUsize>,
+}
+
+#[async_trait::async_trait]
+impl Policy for FailFirstPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut azure_core::http::Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let n = self.invocations.fetch_add(1, Ordering::Relaxed);
+        if n == 0 {
+            Err(azure_core::Error::new(
+                ErrorKind::Io,
+                "Simulated IO error for retry testing",
+            ))
+        } else {
+            next[0].send(ctx, request, &next[1..]).await
+        }
+    }
+}
+
+async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<QueueClient> {
     let (options, endpoint, _) = recorded_test_setup(recording);
     let queue_client_options = QueueClientOptions {
         client_options: options.clone(),
@@ -1028,11 +1282,10 @@ pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result
         &endpoint,
         queue_name,
         Some(recording.credential()),
-        Option::Some(queue_client_options),
+        Some(queue_client_options),
     )
 }
 
-/// Helper function to set up a test queue with messages
 async fn setup_test_queue_with_messages(
     queue_client: &QueueClient,
     messages: &[&str],
@@ -1049,7 +1302,6 @@ async fn setup_test_queue_with_messages(
     Ok(())
 }
 
-/// Helper function to verify message contents
 fn assert_message_text(actual: Option<String>, expected: &str, message_index: usize) {
     let actual = actual.unwrap();
     assert!(
@@ -1067,13 +1319,14 @@ async fn peek_and_assert(
     count: usize,
     options: Option<QueueClientPeekMessagesOptions<'_>>,
 ) -> Result<()> {
-    // Peek the messages in the queue
+    // Act
     let response = queue_client.peek_messages(options).await?;
     assert_successful_response(&response);
 
     let messages = response.into_model()?;
     let messages = messages.items.unwrap();
 
+    // Assert
     assert_eq!(
         messages.len(),
         count,
@@ -1082,7 +1335,6 @@ async fn peek_and_assert(
         messages.len()
     );
 
-    // Assert each message matches the expected text
     for (i, message) in messages.iter().enumerate() {
         assert_message_text(message.message_text.clone(), expected_messages[i], i);
     }
