@@ -1157,7 +1157,7 @@ async fn test_block_blob_client_conditional_headers(
         StatusCode::PreconditionFailed,
         err.unwrap_err().http_status().unwrap()
     );
-    // if_tags Failure - Upload With Tag First
+    // if_tags Failure
     let err = blob_client
         .upload(
             RequestContent::from(b"new-content".to_vec()),
@@ -2218,7 +2218,7 @@ async fn test_blob_container_client_conditional_headers(
         .await?;
 
     // Change Lease - Failure
-    let proposed_id = "dddddddd-dddd-dddd-dddd-dddddddddddd".to_string();
+    let proposed_id = "00000000-1111-2222-3333-444444444444".to_string();
     let err = container_client
         .change_lease(
             lease_id_1.clone(),
@@ -2275,7 +2275,7 @@ async fn test_blob_container_client_conditional_headers(
     container_client.acquire_lease(-1, None).await?;
     let err = container_client
         .break_lease(Some(BlobContainerClientBreakLeaseOptions {
-            if_modified_since: Some(after),
+            if_unmodified_since: Some(before),
             ..Default::default()
         }))
         .await;
