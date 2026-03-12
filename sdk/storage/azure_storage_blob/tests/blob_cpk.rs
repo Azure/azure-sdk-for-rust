@@ -43,8 +43,6 @@ mod blob_client {
         let result = key_only_blob
             .upload(
                 RequestContent::from(b"key-only".to_vec()),
-                false,
-                8,
                 Some(BlockBlobClientUploadOptions {
                     encryption_key: Some(encryption_key.clone()),
                     ..Default::default()
@@ -61,8 +59,6 @@ mod blob_client {
         let result = key_plus_algorithm_blob
             .upload(
                 RequestContent::from(b"key-plus-algorithm".to_vec()),
-                false,
-                18,
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(encryption_algorithm),
                     encryption_key: Some(encryption_key),
@@ -91,8 +87,6 @@ mod blob_client {
         blob_client
             .upload(
                 RequestContent::from(content.to_vec()),
-                false,
-                u64::try_from(content.len())?,
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -210,8 +204,6 @@ mod blob_client {
         blob_client
             .upload(
                 RequestContent::from(v2.to_vec()),
-                true,
-                u64::try_from(v2.len())?,
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -253,8 +245,6 @@ mod blob_client {
         blob_client
             .upload(
                 RequestContent::from(content.to_vec()),
-                false,
-                u64::try_from(content.len())?,
                 Some(BlockBlobClientUploadOptions {
                     encryption_scope: Some(scope.clone()),
                     ..Default::default()
@@ -275,8 +265,6 @@ mod blob_client {
         let err = invalid_blob
             .upload(
                 RequestContent::from(b"bad scope".to_vec()),
-                false,
-                9,
                 Some(BlockBlobClientUploadOptions {
                     encryption_scope: Some(get_invalid_encryption_scope()),
                     ..Default::default()
@@ -466,8 +454,6 @@ mod block_blob_client {
         cpk_source_blob
             .upload(
                 RequestContent::from(cpk_source_content.to_vec()),
-                false,
-                u64::try_from(cpk_source_content.len())?,
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -599,8 +585,6 @@ mod block_blob_client {
         cpk_source_blob
             .upload(
                 RequestContent::from(cpk_source_content.to_vec()),
-                false,
-                u64::try_from(cpk_source_content.len())?,
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -756,8 +740,6 @@ mod append_blob_client {
         cpk_source_blob
             .upload(
                 RequestContent::from(cpk_source_content.to_vec()),
-                false,
-                u64::try_from(cpk_source_content.len())?,
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),

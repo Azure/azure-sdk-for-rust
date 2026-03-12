@@ -88,7 +88,7 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
-version = "0.10.0"
+version = "0.11.0"
 
 [workspace.dependencies]
 async-lock = "3.4"
@@ -150,7 +150,7 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3"
 url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
-zip = { version = "7.4.0", default-features = false, features = ["deflate"] }
+zip = { version = "8.2", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
