@@ -247,6 +247,34 @@ mod tests {
     }
 
     #[test]
+    fn build_state_adds_gateway20_for_write_endpoints_when_present() {
+        let properties: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "thinClientReadableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap();
+
+        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true);
+
+        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
+        assert!(state.preferred_write_endpoints[0].gateway20_url().is_some());
+    }
+
+    #[test]
     fn mark_and_expire_unavailable_endpoint() {
         let state = build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
         let endpoint = state.preferred_read_endpoints[0].clone();
