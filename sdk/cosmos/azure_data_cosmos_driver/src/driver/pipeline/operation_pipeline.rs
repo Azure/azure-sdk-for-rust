@@ -155,35 +155,32 @@ pub(crate) async fn execute_operation_pipeline(
         )
         .await;
 
-        // ── STAGE 5: Evaluate result → action ──────────────────────────
-        let (action, effects) =
-            evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
-
-        // ── STAGE 5b: Capture session token ────────────────────────────
+        // ── STAGE 4b: Capture session token ─────────────────────────────
         // Capture session tokens from both successful and certain error
         // responses (409 Conflict, 412 Precondition Failed, 404 non-1002).
         // The server advances the session token even on these errors, so
         // not capturing would break read-your-writes guarantees.
+        //
+        // This runs BEFORE evaluate_transport_result so that tokens are
+        // captured regardless of whether the response maps to Complete,
+        // Abort, or a retry action. 409/412 map to Abort, and the Abort
+        // variant does not carry headers — capturing after evaluation
+        // would silently drop tokens from those responses.
         if session_consistency_active {
-            match &action {
-                OperationAction::Complete(ref tr) => {
-                    if let TransportOutcome::Success { ref headers, .. }
-                    | TransportOutcome::HttpError { ref headers, .. } = tr.outcome
-                    {
-                        let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
-                        if should_capture_session_token_from_status(
-                            cosmos_headers.substatus.as_ref(),
-                            &tr.outcome,
-                        ) {
-                            session_manager.capture_session_token(operation, &cosmos_headers);
-                        }
-                    }
+            if let Some(headers) = result.response_headers() {
+                let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
+                if should_capture_session_token_from_status(
+                    cosmos_headers.substatus.as_ref(),
+                    &result.outcome,
+                ) {
+                    session_manager.capture_session_token(operation, &cosmos_headers);
                 }
-                OperationAction::SessionRetry { .. }
-                | OperationAction::FailoverRetry { .. }
-                | OperationAction::Abort { .. } => {}
             }
         }
+
+        // ── STAGE 5: Evaluate result → action ──────────────────────────
+        let (action, effects) =
+            evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         location_state_store.apply(&effects).await;
