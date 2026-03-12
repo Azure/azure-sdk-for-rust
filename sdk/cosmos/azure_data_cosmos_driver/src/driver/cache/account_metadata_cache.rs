@@ -13,6 +13,7 @@ use crate::models::AccountEndpoint;
 use crate::options::Region;
 use serde::Deserialize;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 // =============================================================================
 // Supporting types for the account JSON contract
@@ -209,12 +210,29 @@ impl AccountProperties {
     }
 }
 
+/// Default minimum interval between metadata refreshes (10 minutes).
+///
+/// Matches the SDK's `GlobalEndpointManager` TTL and background refresh interval.
+const DEFAULT_STALENESS_THRESHOLD: Duration = Duration::from_secs(600);
+
 /// Cache for Cosmos DB account metadata.
 ///
 /// Stores account properties keyed by account endpoint.
 #[derive(Debug)]
 pub(crate) struct AccountMetadataCache {
     cache: AsyncCache<AccountEndpoint, AccountProperties>,
+
+    /// Tracks the last time each endpoint's metadata was refreshed.
+    last_refresh: async_lock::RwLock<std::collections::HashMap<AccountEndpoint, Instant>>,
+
+    /// Minimum interval between refresh attempts to rate-limit requests.
+    #[allow(dead_code)] // Used by refresh_if_stale, consumer coming once Driver is used
+    staleness_threshold: Duration,
+
+    /// Serializes refresh attempts so that concurrent callers share a single
+    /// network fetch instead of each issuing redundant requests.
+    #[allow(dead_code)] // Used by refresh_if_stale, consumer coming once Driver is used
+    refresh_mutex: async_lock::Mutex<()>,
 }
 
 impl AccountMetadataCache {
@@ -222,6 +240,9 @@ impl AccountMetadataCache {
     pub(crate) fn new() -> Self {
         Self {
             cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: DEFAULT_STALENESS_THRESHOLD,
+            refresh_mutex: async_lock::Mutex::new(()),
         }
     }
 
@@ -247,10 +268,103 @@ impl AccountMetadataCache {
         let properties = fetch_fn().await?;
 
         // Cache the successfully fetched properties.
-        Ok(self
+        let result = self
             .cache
-            .get_or_insert_with(endpoint, || async { properties })
-            .await)
+            .get_or_insert_with(endpoint.clone(), || async { properties })
+            .await;
+
+        // Record the fetch time after caching, so a concurrent thread
+        // that loses the race does not reset the staleness clock with
+        // a discarded fetch.
+        {
+            let mut timestamps = self.last_refresh.write().await;
+            timestamps.insert(endpoint, Instant::now());
+        }
+
+        Ok(result)
+    }
+
+    /// Refreshes account properties if they are stale.
+    ///
+    /// "Stale" means the last refresh was more than the staleness threshold
+    /// ago (default 10 minutes, matching the SDK's background refresh interval),
+    /// or there is no cached value for the endpoint.
+    ///
+    /// Uses double-checked locking to ensure that concurrent callers share a
+    /// single network fetch: the first caller to acquire the refresh mutex
+    /// performs the fetch while subsequent callers wait and re-check staleness,
+    /// finding the entry already refreshed.
+    ///
+    /// When the entry is considered stale, this method attempts to refresh it
+    /// using `fetch_fn`. If the fetch fails, the existing cached value (if any)
+    /// is preserved and returned. Returns `None` only when there is no cached
+    /// value and the entry is not considered stale.
+    #[allow(dead_code)] // Consumer coming in cutover
+    pub(crate) async fn refresh_if_stale<F, Fut>(
+        &self,
+        endpoint: AccountEndpoint,
+        fetch_fn: F,
+    ) -> azure_core::Result<Option<Arc<AccountProperties>>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = azure_core::Result<AccountProperties>>,
+    {
+        // First check: fast path without exclusive locking.
+        if !self.is_stale(&endpoint).await {
+            return Ok(self.cache.get(&endpoint).await);
+        }
+
+        // Acquire refresh mutex to serialize concurrent refresh attempts.
+        let _guard = self.refresh_mutex.lock().await;
+
+        // Second check: another caller may have refreshed while we waited.
+        if !self.is_stale(&endpoint).await {
+            return Ok(self.cache.get(&endpoint).await);
+        }
+
+        // We are the sole refresher — fetch from the service.
+        let cached = self.cache.get(&endpoint).await;
+        let properties = match fetch_fn().await {
+            Ok(props) => props,
+            Err(e) => {
+                // On fetch failure, return the existing cached value (if any)
+                // so stale data is preferred over no data.
+                if cached.is_some() {
+                    return Ok(cached);
+                }
+                return Err(e);
+            }
+        };
+
+        let endpoint_for_timestamp = endpoint.clone();
+
+        let result = self
+            .cache
+            .get_or_refresh_with(
+                endpoint,
+                |_existing| true, // We already determined staleness above
+                || async { properties },
+            )
+            .await;
+
+        // Update the refresh timestamp.
+        if result.is_some() {
+            let mut timestamps = self.last_refresh.write().await;
+            timestamps.insert(endpoint_for_timestamp, Instant::now());
+        }
+
+        Ok(result)
+    }
+
+    /// Returns `true` if the cached metadata for `endpoint` is stale or absent.
+    #[allow(dead_code)] // Used by refresh_if_stale
+    async fn is_stale(&self, endpoint: &AccountEndpoint) -> bool {
+        let cached = self.cache.get(endpoint).await;
+        let timestamps = self.last_refresh.read().await;
+        match timestamps.get(endpoint) {
+            Some(last) => cached.is_none() || last.elapsed() > self.staleness_threshold,
+            None => true,
+        }
     }
 
     /// Invalidates cached account properties for an endpoint.
@@ -468,5 +582,120 @@ mod tests {
 
         assert!(props.write_region().is_none());
         assert!(props.readable_regions().is_empty());
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_returns_cached_value_when_fresh() {
+        // A fresh cache entry (within the default 10-minute staleness threshold)
+        // should be returned without calling the factory.
+        let cache = AccountMetadataCache::new();
+        let endpoint = test_endpoint("myaccount");
+
+        // Populate the cache
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
+            .await
+            .unwrap();
+
+        // Immediately calling refresh_if_stale should NOT refresh (not stale yet)
+        let counter = Arc::new(AtomicUsize::new(0));
+        let counter_clone = counter.clone();
+        let result = cache
+            .refresh_if_stale(endpoint, || async move {
+                counter_clone.fetch_add(1, Ordering::SeqCst);
+                Ok(test_properties("eastus"))
+            })
+            .await
+            .unwrap();
+
+        // Should return the cached value without calling the factory
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "westus");
+        assert_eq!(counter.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_refreshes_when_threshold_exceeded() {
+        // Create cache with zero staleness threshold so everything is immediately stale
+        let cache = AccountMetadataCache {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: Duration::from_secs(0),
+            refresh_mutex: async_lock::Mutex::new(()),
+        };
+        let endpoint = test_endpoint("myaccount");
+
+        // Populate with initial data
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
+            .await
+            .unwrap();
+
+        // With zero threshold, the data should be considered stale immediately
+        let result = cache
+            .refresh_if_stale(endpoint, || async { Ok(test_properties("eastus")) })
+            .await
+            .unwrap();
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "eastus");
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_returns_cached_on_fetch_failure() {
+        // When the fetch fails but a cached value exists, the stale cached
+        // value should be returned instead of propagating the error.
+        let cache = AccountMetadataCache {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: Duration::from_secs(0),
+            refresh_mutex: async_lock::Mutex::new(()),
+        };
+        let endpoint = test_endpoint("myaccount");
+
+        // Populate with initial data
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(test_properties("westus")) })
+            .await
+            .unwrap();
+
+        // Fetch fails — should return the stale cached value
+        let result = cache
+            .refresh_if_stale(endpoint, || async {
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "network failure",
+                ))
+            })
+            .await
+            .unwrap();
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "westus");
+    }
+
+    #[tokio::test]
+    async fn refresh_if_stale_propagates_error_when_no_cached_value() {
+        // When the fetch fails and there is no cached value, the error
+        // should be propagated to the caller.
+        let cache = AccountMetadataCache {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: Duration::from_secs(0),
+            refresh_mutex: async_lock::Mutex::new(()),
+        };
+        let endpoint = test_endpoint("myaccount");
+
+        // No prior cached data — fetch fails
+        let result = cache
+            .refresh_if_stale(endpoint, || async {
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "network failure",
+                ))
+            })
+            .await;
+
+        assert!(result.is_err());
     }
 }
