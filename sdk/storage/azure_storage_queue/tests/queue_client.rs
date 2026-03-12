@@ -52,7 +52,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Creates a queue with metadata and reads the metadata back with `get_properties`.
+/// Creates a queue with metadata.
 #[recorded::test]
 async fn test_create_queue_with_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -97,12 +97,23 @@ async fn test_create_queue_with_metadata(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Deletes an existing queue.
+/// Deletes a queue.
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Act
+    let err = queue_client.delete(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for delete on non-existent queue, got {:?}",
+        err.http_status()
+    );
 
     // Arrange
     queue_client.create(None).await?;
@@ -119,7 +130,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Checks whether a queue exists before and after deletion.
+/// Checks whether a queue exists.
 #[recorded::test]
 async fn test_queue_exists(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -153,12 +164,30 @@ async fn test_queue_exists(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Sets queue metadata and reads it back with `get_properties`.
+/// Sets queue metadata.
 #[recorded::test]
 async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Act
+    let err = queue_client
+        .set_metadata(
+            &HashMap::from([("key".to_string(), "value".to_string())]),
+            None,
+        )
+        .await
+        .err()
+        .unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for set_metadata on non-existent queue, got {:?}",
+        err.http_status()
+    );
 
     // Arrange
     queue_client.create(None).await?;
@@ -200,12 +229,23 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Gets queue properties for a newly created queue and confirms the message count is zero.
+/// Gets queue properties.
 #[recorded::test]
 async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Act
+    let err = queue_client.get_properties(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for get_properties on non-existent queue, got {:?}",
+        err.http_status()
+    );
 
     // Arrange
     queue_client.create(None).await?;
@@ -219,6 +259,23 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
             props.approximate_messages_count()?,
             Some(0),
             "Expected approximate_messages_count to be 0 for empty queue"
+        );
+
+        queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some("hello".to_string()),
+                }
+                .try_into()?,
+                None,
+            )
+            .await?;
+
+        let props = queue_client.get_properties(None).await?;
+        let count = props.approximate_messages_count()?.unwrap_or(0);
+        assert!(
+            count >= 1,
+            "Expected approximate_messages_count >= 1 after sending a message, got {count}"
         );
 
         Ok::<(), azure_core::Error>(())
@@ -599,12 +656,24 @@ async fn test_receive_messages_max_count(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Attempts to peek messages from an empty queue.
+/// Peeks messages across missing, empty, and populated queue states.
 #[recorded::test]
-async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
+async fn test_peek_messages(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    let test_messages = ["Message 1", "Message 2"];
+
+    // Act
+    let err = queue_client.peek_messages(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for peek_messages on non-existent queue, got {:?}",
+        err.http_status()
+    );
 
     // Arrange
     queue_client.create(None).await?;
@@ -619,37 +688,16 @@ async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
         // Assert
         assert!(
             messages.items.is_none(),
-            "Expected to receive no messages, but got Some"
+            "Expected to receive no messages from an empty queue, but got Some"
         );
 
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
+        setup_test_queue_with_messages(&queue_client, &test_messages).await?;
 
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Peeks messages without dequeuing them.
-#[recorded::test]
-async fn test_peek_messages(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-    let test_messages = ["Message 1", "Message 2"];
-
-    // Arrange
-    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
-
-    let test_result = async {
         let options = Some(QueueClientPeekMessagesOptions {
             number_of_messages: Some(10),
             ..Default::default()
         });
 
-        // Act
         peek_and_assert(
             &queue_client,
             &test_messages,
@@ -675,12 +723,24 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
     test_result
 }
 
-/// Attempts to receive messages from an empty queue.
+/// Receives messages across missing, empty, and populated queue states.
 #[recorded::test]
-async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
+async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    let test_messages = ["Message 1", "Message 2"];
+
+    // Act
+    let err = queue_client.receive_messages(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for receive_messages on non-existent queue, got {:?}",
+        err.http_status()
+    );
 
     // Arrange
     queue_client.create(None).await?;
@@ -695,31 +755,11 @@ async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
         // Assert
         assert!(
             messages.items.is_none(),
-            "Expected to dequeue no messages, but got Some"
+            "Expected to dequeue no messages from an empty queue, but got Some"
         );
 
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
+        setup_test_queue_with_messages(&queue_client, &test_messages).await?;
 
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Receives messages from the queue in order.
-#[recorded::test]
-async fn test_receive_messages(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-    let test_messages = ["Message 1", "Message 2"];
-
-    // Arrange
-    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
-
-    let test_result = async {
         let options = Some(QueueClientReceiveMessagesOptions {
             number_of_messages: Some(10),
             ..Default::default()
@@ -930,55 +970,37 @@ async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Gets queue properties after sending a message and checks the message count.
-#[recorded::test]
-async fn test_message_count_after_send(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Arrange
-    queue_client.create(None).await?;
-
-    let test_result = async {
-        // Arrange
-        queue_client
-            .send_message(
-                QueueMessage {
-                    message_text: Some("hello".to_string()),
-                }
-                .try_into()?,
-                None,
-            )
-            .await?;
-
-        // Act
-        let props = queue_client.get_properties(None).await?;
-
-        // Assert
-        let count = props.approximate_messages_count()?.unwrap_or(0);
-        assert!(
-            count >= 1,
-            "Expected approximate_messages_count >= 1 after sending a message, got {count}"
-        );
-
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Cleanup
-    queue_client.delete(None).await.unwrap();
-
-    test_result?;
-    Ok(())
-}
-
-/// Sets an access policy on a queue and then gets it to verify the round-trip.
+/// Sets an access policy on a queue.
 #[recorded::test]
 async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+
+    // Act
+    let err = queue_client.get_access_policy(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for get_access_policy on non-existent queue, got {:?}",
+        err.http_status()
+    );
+
+    let err = queue_client
+        .set_access_policy(SignedIdentifiers { items: None }.try_into()?, None)
+        .await
+        .err()
+        .unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "Expected 404 Not Found for set_access_policy on non-existent queue, got {:?}",
+        err.http_status()
+    );
 
     // Arrange
     queue_client.create(None).await?;
@@ -1038,157 +1060,6 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await.unwrap();
 
     test_result?;
-    Ok(())
-}
-
-/// Gets properties for a queue that does not exist.
-#[recorded::test]
-async fn test_get_properties_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client.get_properties(None).await.err().unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for get_properties on non-existent queue, got {:?}",
-        err.http_status()
-    );
-    Ok(())
-}
-
-/// Sets metadata on a queue that does not exist.
-#[recorded::test]
-async fn test_set_metadata_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client
-        .set_metadata(
-            &HashMap::from([("key".to_string(), "value".to_string())]),
-            None,
-        )
-        .await
-        .err()
-        .unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for set_metadata on non-existent queue, got {:?}",
-        err.http_status()
-    );
-    Ok(())
-}
-
-/// Receives messages from a queue that does not exist.
-#[recorded::test]
-async fn test_receive_messages_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client.receive_messages(None).await.err().unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for receive_messages on non-existent queue, got {:?}",
-        err.http_status()
-    );
-    Ok(())
-}
-
-/// Peeks messages from a queue that does not exist.
-#[recorded::test]
-async fn test_peek_messages_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client.peek_messages(None).await.err().unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for peek_messages on non-existent queue, got {:?}",
-        err.http_status()
-    );
-    Ok(())
-}
-
-/// Deletes a queue that does not exist.
-#[recorded::test]
-async fn test_delete_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client.delete(None).await.err().unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for delete on non-existent queue, got {:?}",
-        err.http_status()
-    );
-    Ok(())
-}
-
-/// Gets the access policy for a queue that does not exist.
-#[recorded::test]
-async fn test_get_access_policy_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client.get_access_policy(None).await.err().unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for get_access_policy on non-existent queue, got {:?}",
-        err.http_status()
-    );
-    Ok(())
-}
-
-/// Sets the access policy for a queue that does not exist.
-#[recorded::test]
-async fn test_set_access_policy_queue_not_found(ctx: TestContext) -> Result<()> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
-
-    // Act
-    let err = queue_client
-        .set_access_policy(SignedIdentifiers { items: None }.try_into()?, None)
-        .await
-        .err()
-        .unwrap();
-
-    // Assert
-    assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
-        "Expected 404 Not Found for set_access_policy on non-existent queue, got {:?}",
-        err.http_status()
-    );
     Ok(())
 }
 
@@ -1290,7 +1161,6 @@ async fn setup_test_queue_with_messages(
     queue_client: &QueueClient,
     messages: &[&str],
 ) -> Result<()> {
-    queue_client.create(None).await?;
     for message in messages {
         let queue_message = QueueMessage {
             message_text: Some(message.to_string()),
