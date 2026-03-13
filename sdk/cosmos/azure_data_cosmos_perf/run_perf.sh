@@ -111,7 +111,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --endpoint URL                  Cosmos DB account endpoint"
             echo "  --auth key|aad                  Authentication method"
             echo "  --key KEY                       Account key (when --auth=key)"
-            echo "  --preferred-regions R1,R2       Comma-separated preferred regions"
+            echo "  --application-region REGION      Azure region for proximity-based routing"
             echo "  --excluded-regions R1,R2        Comma-separated regions to exclude"
             echo "  --exclude-regions-for TYPE      reads, writes, or both (default: both)"
             echo "  --results-endpoint URL          Separate endpoint for results storage"

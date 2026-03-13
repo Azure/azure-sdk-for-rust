@@ -250,7 +250,7 @@ async fn upsert_results(
     for s in summaries {
         let result = PerfResult {
             id: Uuid::new_v4().to_string(),
-            partition_key: s.name.clone(),
+            partition_key: Uuid::new_v4().to_string(),
             workload_id: workload_id.to_string(),
             commit_sha: commit_sha.to_string(),
             timestamp: now.clone(),
@@ -296,7 +296,7 @@ async fn upsert_error(
 
     let doc = ErrorResult {
         id: id.clone(),
-        partition_key: operation.to_string(),
+        partition_key: Uuid::new_v4().to_string(),
         workload_id: workload_id.to_string(),
         commit_sha: commit_sha.to_string(),
         timestamp: now,

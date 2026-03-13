@@ -47,15 +47,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let preferred_region: azure_data_cosmos::regions::RegionName = config
-        .preferred_regions
-        .first()
-        .cloned()
-        .unwrap_or_else(|| "East US".to_string())
-        .into();
-    let strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
+    let application_region: Option<azure_data_cosmos::regions::RegionName> =
+        config.application_region.clone().map(|r| r.into());
 
-    let builder = CosmosClientBuilder::new();
+    let mut builder = CosmosClientBuilder::new();
+    if let Some(region) = application_region.clone() {
+        builder = builder.with_application_region(region);
+    }
 
     let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
@@ -68,8 +66,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
+            // Try WorkloadIdentityCredential first (AKS), fall back to ManagedIdentityCredential (VMs)
             let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-                azure_identity::ManagedIdentityCredential::new(None)?;
+                azure_identity::WorkloadIdentityCredential::new(None)
+                    .map(|c| c as Arc<dyn azure_core::credentials::TokenCredential>)
+                    .unwrap_or_else(|_| {
+                        azure_identity::ManagedIdentityCredential::new(None)
+                            .expect("Failed to create ManagedIdentityCredential")
+                    });
             let account = CosmosAccountReference::with_credential(endpoint, credential);
             builder.build(account, strategy).await?
         }
@@ -125,8 +129,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
-        let results_builder = CosmosClientBuilder::new();
-        let results_strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
+        let mut results_builder = CosmosClientBuilder::new();
+        if let Some(region) = application_region {
+            results_builder = results_builder.with_application_region(region);
+        }
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
@@ -140,7 +146,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             AuthMethod::Aad => {
                 let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-                    azure_identity::ManagedIdentityCredential::new(None)?;
+                    azure_identity::WorkloadIdentityCredential::new(None)
+                        .map(|c| c as Arc<dyn azure_core::credentials::TokenCredential>)
+                        .unwrap_or_else(|_| {
+                            azure_identity::ManagedIdentityCredential::new(None)
+                                .expect("Failed to create ManagedIdentityCredential")
+                        });
                 let account = CosmosAccountReference::with_credential(results_ep, credential);
                 results_builder.build(account, results_strategy).await?
             }

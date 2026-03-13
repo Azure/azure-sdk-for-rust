@@ -2,7 +2,10 @@
 # Licensed under the MIT License.
 
 # Multi-stage build for the Cosmos DB performance testing tool.
-# Build from the repo root: docker build -f sdk/cosmos/azure_data_cosmos_perf/Dockerfile .
+#
+# The deploy-aks.sh script creates a minimal build context via rsync
+# (excluding target/, .git/, tests/, etc.), so COPY . . is safe and
+# avoids fragile per-crate COPY/stub logic.
 
 FROM rust:1.88-bookworm AS builder
 WORKDIR /src
