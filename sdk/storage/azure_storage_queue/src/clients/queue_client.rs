@@ -3,12 +3,12 @@
 
 pub use crate::generated::clients::{QueueClient, QueueClientOptions};
 
-use crate::{generated::models::*, logging::apply_storage_logging_defaults};
+use crate::logging::apply_storage_logging_defaults;
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, Response, StatusCode, Url,
+        Pipeline, StatusCode, Url,
     },
     tracing, Result,
 };
@@ -93,29 +93,10 @@ impl QueueClient {
     ///
     /// Returns `true` if the queue exists, `false` if the queue does not exist, and propagates all other errors.
     pub async fn exists(&self) -> Result<bool> {
-        match self.get_metadata(None).await {
+        match self.get_properties(None).await {
             Ok(_) => Ok(true),
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => Ok(false),
             Err(e) => Err(e),
         }
-    }
-
-    /// Updates the visibility timeout and optionally the content of a queued message.
-    ///
-    /// # Arguments
-    ///
-    /// * `message_id` - The ID of the message to update.
-    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved.
-    /// * `visibility_timeout` - The new visibility timeout for the message, in seconds.
-    /// * `options` - Optional configuration for the request.
-    pub async fn update_message(
-        &self,
-        message_id: &str,
-        pop_receipt: &str,
-        visibility_timeout: i32,
-        options: Option<QueueClientUpdateOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.update(message_id, pop_receipt, visibility_timeout, options)
-            .await
     }
 }

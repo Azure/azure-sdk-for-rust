@@ -137,12 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Upload the file
     println!("\nUploading blob '{}'...", blob_name);
     blob_client
-        .upload(
-            RequestContent::from(content.to_vec()),
-            true, // overwrite if exists
-            content.len() as u64,
-            None,
-        )
+        .upload(RequestContent::from(content.to_vec()), None)
         .await?;
     println!("Blob uploaded successfully");
 

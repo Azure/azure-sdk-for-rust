@@ -1087,6 +1087,9 @@ impl<'a> From<&'a StorageErrorCode> for &'a str {
             StorageErrorCode::EmptyMetadataKey => "EmptyMetadataKey",
             StorageErrorCode::FeatureVersionMismatch => "FeatureVersionMismatch",
             StorageErrorCode::IncrementalCopyBlobMismatch => "IncrementalCopyBlobMismatch",
+            StorageErrorCode::IncrementalCopyOfEarlierSnapshotNotAllowed => {
+                "IncrementalCopyOfEarlierSnapshotNotAllowed"
+            }
             StorageErrorCode::IncrementalCopyOfEarlierVersionSnapshotNotAllowed => {
                 "IncrementalCopyOfEarlierVersionSnapshotNotAllowed"
             }
@@ -1112,6 +1115,7 @@ impl<'a> From<&'a StorageErrorCode> for &'a str {
             StorageErrorCode::InvalidQueryParameterValue => "InvalidQueryParameterValue",
             StorageErrorCode::InvalidRange => "InvalidRange",
             StorageErrorCode::InvalidRequestUrl => "InvalidRequestUrl",
+            StorageErrorCode::InvalidResourceName => "InvalidResourceName",
             StorageErrorCode::InvalidSourceBlobType => "InvalidSourceBlobType",
             StorageErrorCode::InvalidSourceBlobUrl => "InvalidSourceBlobUrl",
             StorageErrorCode::InvalidUri => "InvalidUri",
@@ -1159,6 +1163,7 @@ impl<'a> From<&'a StorageErrorCode> for &'a str {
             StorageErrorCode::MultipleConditionHeadersNotSupported => {
                 "MultipleConditionHeadersNotSupported"
             }
+            StorageErrorCode::NoAuthenticationInformation => "NoAuthenticationInformation",
             StorageErrorCode::NoPendingCopyOperation => "NoPendingCopyOperation",
             StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob => {
                 "OperationNotAllowedOnIncrementalCopyBlob"
@@ -1247,6 +1252,9 @@ impl FromStr for StorageErrorCode {
             "EmptyMetadataKey" => StorageErrorCode::EmptyMetadataKey,
             "FeatureVersionMismatch" => StorageErrorCode::FeatureVersionMismatch,
             "IncrementalCopyBlobMismatch" => StorageErrorCode::IncrementalCopyBlobMismatch,
+            "IncrementalCopyOfEarlierSnapshotNotAllowed" => {
+                StorageErrorCode::IncrementalCopyOfEarlierSnapshotNotAllowed
+            }
             "IncrementalCopyOfEarlierVersionSnapshotNotAllowed" => {
                 StorageErrorCode::IncrementalCopyOfEarlierVersionSnapshotNotAllowed
             }
@@ -1272,6 +1280,7 @@ impl FromStr for StorageErrorCode {
             "InvalidQueryParameterValue" => StorageErrorCode::InvalidQueryParameterValue,
             "InvalidRange" => StorageErrorCode::InvalidRange,
             "InvalidRequestUrl" => StorageErrorCode::InvalidRequestUrl,
+            "InvalidResourceName" => StorageErrorCode::InvalidResourceName,
             "InvalidSourceBlobType" => StorageErrorCode::InvalidSourceBlobType,
             "InvalidSourceBlobUrl" => StorageErrorCode::InvalidSourceBlobUrl,
             "InvalidUri" => StorageErrorCode::InvalidUri,
@@ -1319,6 +1328,7 @@ impl FromStr for StorageErrorCode {
             "MultipleConditionHeadersNotSupported" => {
                 StorageErrorCode::MultipleConditionHeadersNotSupported
             }
+            "NoAuthenticationInformation" => StorageErrorCode::NoAuthenticationInformation,
             "NoPendingCopyOperation" => StorageErrorCode::NoPendingCopyOperation,
             "OperationNotAllowedOnIncrementalCopyBlob" => {
                 StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob
@@ -1406,6 +1416,9 @@ impl AsRef<str> for StorageErrorCode {
             StorageErrorCode::EmptyMetadataKey => "EmptyMetadataKey",
             StorageErrorCode::FeatureVersionMismatch => "FeatureVersionMismatch",
             StorageErrorCode::IncrementalCopyBlobMismatch => "IncrementalCopyBlobMismatch",
+            StorageErrorCode::IncrementalCopyOfEarlierSnapshotNotAllowed => {
+                "IncrementalCopyOfEarlierSnapshotNotAllowed"
+            }
             StorageErrorCode::IncrementalCopyOfEarlierVersionSnapshotNotAllowed => {
                 "IncrementalCopyOfEarlierVersionSnapshotNotAllowed"
             }
@@ -1431,6 +1444,7 @@ impl AsRef<str> for StorageErrorCode {
             StorageErrorCode::InvalidQueryParameterValue => "InvalidQueryParameterValue",
             StorageErrorCode::InvalidRange => "InvalidRange",
             StorageErrorCode::InvalidRequestUrl => "InvalidRequestUrl",
+            StorageErrorCode::InvalidResourceName => "InvalidResourceName",
             StorageErrorCode::InvalidSourceBlobType => "InvalidSourceBlobType",
             StorageErrorCode::InvalidSourceBlobUrl => "InvalidSourceBlobUrl",
             StorageErrorCode::InvalidUri => "InvalidUri",
@@ -1478,6 +1492,7 @@ impl AsRef<str> for StorageErrorCode {
             StorageErrorCode::MultipleConditionHeadersNotSupported => {
                 "MultipleConditionHeadersNotSupported"
             }
+            StorageErrorCode::NoAuthenticationInformation => "NoAuthenticationInformation",
             StorageErrorCode::NoPendingCopyOperation => "NoPendingCopyOperation",
             StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob => {
                 "OperationNotAllowedOnIncrementalCopyBlob"
@@ -1581,6 +1596,9 @@ impl Display for StorageErrorCode {
             StorageErrorCode::IncrementalCopyBlobMismatch => {
                 f.write_str("IncrementalCopyBlobMismatch")
             }
+            StorageErrorCode::IncrementalCopyOfEarlierSnapshotNotAllowed => {
+                f.write_str("IncrementalCopyOfEarlierSnapshotNotAllowed")
+            }
             StorageErrorCode::IncrementalCopyOfEarlierVersionSnapshotNotAllowed => {
                 f.write_str("IncrementalCopyOfEarlierVersionSnapshotNotAllowed")
             }
@@ -1612,6 +1630,7 @@ impl Display for StorageErrorCode {
             }
             StorageErrorCode::InvalidRange => f.write_str("InvalidRange"),
             StorageErrorCode::InvalidRequestUrl => f.write_str("InvalidRequestUrl"),
+            StorageErrorCode::InvalidResourceName => f.write_str("InvalidResourceName"),
             StorageErrorCode::InvalidSourceBlobType => f.write_str("InvalidSourceBlobType"),
             StorageErrorCode::InvalidSourceBlobUrl => f.write_str("InvalidSourceBlobUrl"),
             StorageErrorCode::InvalidUri => f.write_str("InvalidUri"),
@@ -1666,6 +1685,9 @@ impl Display for StorageErrorCode {
             StorageErrorCode::MissingRequiredXmlNode => f.write_str("MissingRequiredXmlNode"),
             StorageErrorCode::MultipleConditionHeadersNotSupported => {
                 f.write_str("MultipleConditionHeadersNotSupported")
+            }
+            StorageErrorCode::NoAuthenticationInformation => {
+                f.write_str("NoAuthenticationInformation")
             }
             StorageErrorCode::NoPendingCopyOperation => f.write_str("NoPendingCopyOperation"),
             StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob => {

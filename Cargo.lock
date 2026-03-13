@@ -214,13 +214,13 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "0.33.0"
+version = "0.34.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core_macros 0.7.0",
+ "azure_core_macros 0.8.0",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_security_keyvault_certificates",
  "azure_security_keyvault_secrets",
  "bytes",
@@ -241,17 +241,17 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.13.0",
- "typespec_client_core 0.12.0",
+ "typespec 0.14.0",
+ "typespec_client_core 0.13.0",
  "ureq",
 ]
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "fe2o3-amqp",
  "fe2o3-amqp-cbs",
  "fe2o3-amqp-ext",
@@ -264,8 +264,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.13.0",
- "typespec_macros 0.12.0",
+ "typespec 0.14.0",
+ "typespec_macros 0.13.0",
 ]
 
 [[package]]
@@ -282,7 +282,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_macros"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -294,12 +294,12 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
  "azure_core_test_macros",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "opentelemetry",
  "opentelemetry_sdk",
  "tokio",
@@ -312,9 +312,9 @@ name = "azure_core_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test_macros",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_security_keyvault_secrets",
  "clap",
  "dotenvy",
@@ -337,7 +337,7 @@ dependencies = [
 name = "azure_core_test_macros"
 version = "0.1.0"
 dependencies = [
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
  "proc-macro2",
  "quote",
@@ -373,8 +373,8 @@ version = "0.1.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.33.0",
- "azure_identity 0.33.0",
+ "azure_core 0.34.0",
+ "azure_identity 0.34.0",
  "base64 0.22.1",
  "crossbeam-epoch",
  "futures",
@@ -452,11 +452,11 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.33.0"
+version = "0.34.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
  "azure_security_keyvault_secrets",
  "clap",
@@ -477,15 +477,15 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_amqp",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_messaging_eventhubs",
  "criterion",
  "fe2o3-amqp",
@@ -500,13 +500,13 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_opentelemetry",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_messaging_eventhubs",
  "azure_storage_blob",
  "futures",
@@ -529,10 +529,10 @@ dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_amqp",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_messaging_servicebus",
  "futures",
  "rand 0.10.0",
@@ -547,13 +547,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -569,13 +569,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_security_keyvault_test",
  "criterion",
  "futures",
@@ -592,13 +592,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_security_keyvault_test",
  "futures",
  "include-file",
@@ -620,13 +620,13 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_opentelemetry",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "azure_storage_blob_test",
  "bytes",
  "futures",
@@ -649,7 +649,7 @@ name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_test",
  "azure_storage_blob",
  "bytes",
@@ -663,13 +663,13 @@ version = "0.1.0"
 
 [[package]]
 name = "azure_storage_queue"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
- "azure_core 0.33.0",
+ "azure_core 0.34.0",
  "azure_core_opentelemetry",
  "azure_core_test",
- "azure_identity 0.33.0",
+ "azure_identity 0.34.0",
  "futures",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
@@ -3570,7 +3570,7 @@ dependencies = [
 
 [[package]]
 name = "typespec"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -3609,7 +3609,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -3626,8 +3626,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.13.0",
- "typespec_macros 0.12.0",
+ "typespec 0.14.0",
+ "typespec_macros 0.13.0",
  "url",
  "uuid",
 ]
@@ -3646,7 +3646,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
@@ -3656,7 +3656,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.116",
  "tokio",
- "typespec_client_core 0.12.0",
+ "typespec_client_core 0.13.0",
 ]
 
 [[package]]
@@ -4532,9 +4532,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "7.4.0"
+version = "8.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc12baa6db2b15a140161ce53d72209dacea594230798c24774139b54ecaa980"
+checksum = "b680f2a0cd479b4cff6e1233c483fdead418106eae419dc60200ae9850f6d004"
 dependencies = [
  "crc32fast",
  "flate2",
