@@ -3,7 +3,7 @@
 
 use azure_core::{
     error::ErrorKind,
-    http::{ClientOptions, RequestContent, StatusCode, Url},
+    http::{headers::CONTENT_TYPE, ClientOptions, RequestContent, StatusCode, Url},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
@@ -1020,5 +1020,134 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     // 1 op with a range, 1 op without after the first one fails
     assert_eq!(request_count.load(Ordering::Relaxed), 2);
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let content = b"upload-content-headers";
+
+    // Upload with Content Headers
+    // Note: blob_content_md5 is validated against actual content on Put Blob and is excluded
+    // here; it is tested as stored metadata via set_properties in test_set_properties_content_headers.
+    blob_client
+        .upload(
+            RequestContent::from(content.to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                blob_cache_control: Some("no-cache".to_string()),
+                blob_content_disposition: Some("inline".to_string()),
+                blob_content_encoding: Some("identity".to_string()),
+                blob_content_language: Some("en-US".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert Content Headers Roundtrip via get_properties
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("no-cache".to_string()), props.cache_control()?);
+    assert_eq!(Some("inline".to_string()), props.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("en-US".to_string()), props.content_language()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+
+    // Assert Content Headers Also Present on Download Response
+    let response = blob_client.download(None).await?;
+    assert_eq!(Some("no-cache".to_string()), response.cache_control()?);
+    assert_eq!(Some("inline".to_string()), response.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), response.content_encoding()?);
+    assert_eq!(Some("en-US".to_string()), response.content_language()?);
+    let content_type: Option<String> = response.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+
+    // Overwrite with Different Content Headers — new headers replace old ones
+    blob_client
+        .upload(
+            RequestContent::from(b"overwrite-content-headers".to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                blob_cache_control: Some("max-age=3600".to_string()),
+                blob_content_type: Some("image/png".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("max-age=3600".to_string()), props.cache_control()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("image/png".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let content = b"set-properties-content-headers";
+    let md5: Vec<u8> = (0u8..16).collect();
+
+    // Upload with Default Content Headers
+    blob_client
+        .upload(RequestContent::from(content.to_vec()), None)
+        .await?;
+
+    // Set All Content Headers via Set Properties
+    // Note: set_properties does not validate blob_content_md5 against actual content,
+    // so an arbitrary value can be used to verify storage and roundtrip behavior.
+    blob_client
+        .set_properties(Some(BlobClientSetPropertiesOptions {
+            blob_cache_control: Some("no-store".to_string()),
+            blob_content_disposition: Some("attachment; filename=\"file.txt\"".to_string()),
+            blob_content_encoding: Some("identity".to_string()),
+            blob_content_language: Some("fr-FR".to_string()),
+            blob_content_md5: Some(md5.clone()),
+            blob_content_type: Some("application/octet-stream".to_string()),
+            ..Default::default()
+        }))
+        .await?;
+
+    // Assert Content Headers Roundtrip
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("no-store".to_string()), props.cache_control()?);
+    assert_eq!(
+        Some("attachment; filename=\"file.txt\"".to_string()),
+        props.content_disposition()?
+    );
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("fr-FR".to_string()), props.content_language()?);
+    assert_eq!(Some(md5), props.content_md5()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+
+    // Set only Content-Type — omitted headers are cleared by the service
+    blob_client
+        .set_properties(Some(BlobClientSetPropertiesOptions {
+            blob_content_type: Some("image/png".to_string()),
+            ..Default::default()
+        }))
+        .await?;
+
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(None, props.cache_control()?);
+    assert_eq!(None, props.content_disposition()?);
+    assert_eq!(None, props.content_encoding()?);
+    assert_eq!(None, props.content_language()?);
+    assert_eq!(None, props.content_md5()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("image/png".to_string()), content_type);
+
+    container_client.delete(None).await?;
     Ok(())
 }
