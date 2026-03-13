@@ -296,11 +296,8 @@ impl PageBlobClient {
                 immutability_policy_mode.to_string(),
             );
         }
-        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
-            request.insert_header(
-                "x-ms-immutability-policy-until-date",
-                to_rfc7231(&immutability_policy_expiry),
-            );
+        if let Some(expiry) = options.expiry {
+            request.insert_header("x-ms-immutability-policy-until-date", to_rfc7231(&expiry));
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);

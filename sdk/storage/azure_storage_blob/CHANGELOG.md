@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Renamed `immutability_policy_expiry` to `expiry` on `BlockBlobClientUploadInternalOptions` and `BlockBlobClientCommitBlockListOptions`.
+
 ### Bugs Fixed
 
 ### Other Changes
