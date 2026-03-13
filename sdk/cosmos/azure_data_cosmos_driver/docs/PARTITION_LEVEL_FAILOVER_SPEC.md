@@ -144,7 +144,7 @@ same lock-free pattern.
 │  └─ sync_account_properties() → also updates PPAF/PPCB flags               │
 │                                                                             │
 │  Background:                                                                │
-│  └─ Spawned failback task (Weak reference, periodic sweep)                  │
+│  └─ Failback task spawned via BackgroundTaskManager (Weak ref, periodic sweep)│
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -858,28 +858,59 @@ with a fresh snapshot that has both updates.
 
 ### 9.1 Loop Structure
 
-The background failback loop is spawned as a `tokio::spawn` task during
-`LocationStateStore` construction (or on first PPAF/PPCB enablement). It holds a
-`Weak` reference to `LocationStateStore` to avoid preventing the store from being
-dropped when the driver is dropped.
+The background failback loop is spawned via the driver's
+`BackgroundTaskManager` (from `driver::transport::background_task_manager`)
+during `LocationStateStore` construction (or on first PPAF/PPCB enablement).
+The spawned future holds a `Weak` reference to `LocationStateStore` to avoid
+preventing the store from being dropped when the driver is dropped.
 
+Using `BackgroundTaskManager` provides:
+- **Abort-on-drop** — when the manager is dropped, the failback task is
+  automatically aborted, preventing orphaned background work.
+- **Panic safety** — if the failback future panics, `BackgroundTaskManager`
+  catches the panic and logs it instead of propagating to the runtime.
+- **Graceful shutdown** — `BackgroundTaskManager::shutdown()` can be called
+  to abort and await all background tasks before driver teardown.
+
+```rust
+// In LocationStateStore construction:
+let weak_store: Weak<LocationStateStore> = Arc::downgrade(&store);
+let config = partition_config.clone();
+
+background_task_manager.spawn(async move {
+    failback_loop(weak_store, config).await;
+});
+
+// The failback loop itself:
+async fn failback_loop(
+    weak_store: Weak<LocationStateStore>,
+    config: PartitionFailoverConfig,
+) {
+    loop {
+        tokio::time::sleep(config.failback_sweep_interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store.apply_partition(|current_partitions| {
+            expire_partition_overrides(
+                current_partitions,
+                Instant::now(),
+                config.partition_unavailability_duration,
+            )
+        });
+    }
+}
 ```
-failback_loop(weak_store, config)
-  │
-  loop:
-  │
-  ├─ tokio::time::sleep(config.failback_sweep_interval)  // default: 300s
-  │
-  ├─ upgrade weak_store → strong (exit loop if None)
-  │
-  └─ store.apply_partition(|current_partitions| {
-          expire_partition_overrides(
-              current_partitions,
-              Instant::now(),
-              config.partition_unavailability_duration,
-          )
-      })
-```
+
+**Lifecycle**: The `BackgroundTaskManager` instance is owned by
+`LocationStateStore` (or its parent `CosmosDriverRuntime`). When the store is
+dropped, the manager's `Drop` impl aborts all spawned tasks — including the
+failback loop — ensuring no leaked background work. The `Weak` reference
+provides an additional safety layer: even if abort delivery is delayed, the
+loop will exit on the next iteration when `Weak::upgrade()` returns `None`.
 
 ### 9.2 `expire_partition_overrides` (Pure Routing System Function)
 
@@ -1117,17 +1148,24 @@ either:
 This is generally acceptable because region topology changes are rare, but it means
 the override may point to a less-optimal region after a topology change.
 
-### 13.6 No `BackgroundTaskManager` — Using `tokio::spawn` Instead
+### 13.6 Background Task Lifecycle via `BackgroundTaskManager`
 
-The SDK uses a custom `BackgroundTaskManager` to manage spawned tasks. The driver
-does not have this abstraction. Instead, the failback loop is spawned via
-`tokio::spawn` with a `Weak` reference to `LocationStateStore`. When the store is
-dropped, the `Weak::upgrade()` returns `None` and the loop exits. The
-`JoinHandle` is stored on `LocationStateStore` to allow explicit cancellation on
-drop if needed.
+The failback loop (and any future background tasks in the driver) is spawned
+through the driver's `BackgroundTaskManager`
+(`driver::transport::background_task_manager`). This provides:
 
-This is generally acceptable because region topology changes are rare, but it means
-the override may point to a less-optimal region after a topology change.
+- **Abort-on-drop**: When the `BackgroundTaskManager` is dropped, all stored
+  `JoinHandle`s are aborted, cancelling background tasks immediately.
+- **Panic safety**: Spawned futures are wrapped in `catch_unwind`, so a panic
+  in the failback loop is logged rather than crashing the runtime.
+- **Graceful shutdown**: `BackgroundTaskManager::shutdown()` aborts and
+  *awaits* all tasks, providing deterministic cleanup on driver teardown.
+- **Handle pruning**: Completed task handles are pruned on each `spawn()`
+  call, preventing unbounded accumulation.
+
+The `Weak` reference inside the failback future provides a secondary exit
+condition: if the `LocationStateStore` is dropped before the manager aborts
+the task, the loop self-terminates on the next iteration.
 
 ---
 
@@ -1276,7 +1314,7 @@ self.apply_partition(|current| {
 |------|--------|---------|
 | `src/driver/routing/partition_endpoint_state.rs` | **Create** | `PartitionEndpointState`, `PartitionFailoverEntry`, `PartitionFailoverConfig` |
 | `src/driver/routing/routing_systems.rs` | **Modify** | Add `mark_partition_unavailable()`, `expire_partition_overrides()` pure functions |
-| `src/driver/routing/location_state_store.rs` | **Modify** | Replace empty `PartitionEndpointState`; add `apply_partition()` CAS method; spawn failback loop; update `sync_account_properties()` |
+| `src/driver/routing/location_state_store.rs` | **Modify** | Replace empty `PartitionEndpointState`; add `apply_partition()` CAS method; spawn failback loop via `BackgroundTaskManager`; update `sync_account_properties()` |
 | `src/driver/routing/location_effects.rs` | **Modify** | Remove `#[allow(dead_code)]` from `MarkPartitionUnavailable` and `UnavailablePartition` |
 | `src/driver/routing/mod.rs` | **Modify** | Export new `partition_endpoint_state` module |
 | `src/driver/pipeline/components.rs` | **Modify** | Add `partition_key_range_id: Option<String>` to `OperationRetryState` |
