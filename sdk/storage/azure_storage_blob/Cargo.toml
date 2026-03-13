@@ -32,6 +32,7 @@ time.workspace = true
 workspace = true
 
 [dev-dependencies]
+azure_core = { workspace = true, features = ["xml", "tokio"] }
 azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = [
   "tracing",
