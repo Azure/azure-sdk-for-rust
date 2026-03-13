@@ -19,10 +19,10 @@ use crate::{
         LocationStateStore,
     },
     models::{
-        request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
-        Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
+        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
+        CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{OperationOptions, ReadConsistencyStrategy, Region, RuntimeOptions},
+    options::{OperationOptions, ReadConsistencyStrategy, RuntimeOptions},
 };
 
 use super::{
@@ -34,7 +34,7 @@ use super::{
 };
 
 use crate::driver::transport::{
-    transport_pipeline::execute_transport_pipeline, AuthorizationContext,
+    transport_pipeline::execute_transport_pipeline, AuthorizationContext, CosmosTransport,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
