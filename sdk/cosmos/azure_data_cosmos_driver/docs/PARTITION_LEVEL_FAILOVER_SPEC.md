@@ -97,7 +97,7 @@ same lock-free pattern.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                  execute_operation_pipeline (7-stage loop)                   │
+│                  execute_operation_pipeline (7-stage loop)                  │
 │                                                                             │
 │  STAGE 1: Acquire LocationSnapshot (account + partition state)              │
 │  STAGE 2: resolve_endpoint()                                                │
@@ -106,8 +106,8 @@ same lock-free pattern.
 │  STAGE 3: Build TransportRequest                                            │
 │  STAGE 4: Execute via transport pipeline → TransportResult                  │
 │  STAGE 5: evaluate_transport_result() → (OperationAction, Vec<Effect>)      │
-│           ├─ 403/3 → FailoverRetry + MarkPartitionUnavailable (PPAF/PPCB)  │
-│           ├─ 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavail.  │
+│           ├─ 403/3 → FailoverRetry + MarkPartitionUnavailable (PPAF/PPCB)   │
+│           ├─ 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavailable|
 │           └─ Eligibility encoded in OperationRetryState + snapshot flags    │
 │  STAGE 6: location_state_store.apply(effects)                               │
 │           ├─ MarkEndpointUnavailable → CAS on AccountEndpointState          │
@@ -513,13 +513,13 @@ When `evaluate_transport_result()` emits `LocationEffect::MarkPartitionUnavailab
 ```
 apply(effects):
   │
-  ├─ for each MarkPartitionUnavailable(unavail_partition):
+  ├─ for each MarkPartitionUnavailable(unavailable_partition):
   │   │
   │   └─ apply_partition(|current_state, account_state| {
   │         mark_partition_unavailable(
   │             current_state,
   │             account_state,
-  │             &unavail_partition,
+  │             &unavailable_partition,
   │         )
   │       })
   │
@@ -532,7 +532,7 @@ A pure function in `routing_systems.rs` that produces a new `PartitionEndpointSt
 
 ```
 mark_partition_unavailable(
-    current_state, account_state, unavail_partition)
+    current_state, account_state, unavailable_partition)
   │
   ├─ Determine mechanism and target map:
   │   ├─ if eligible for PPCB → use ppcb_overrides
