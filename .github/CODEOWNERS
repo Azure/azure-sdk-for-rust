@@ -58,7 +58,6 @@
 /sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
 
 # ServiceLabel: %Cosmos
-# AzureSDKOwners: @analogrelay
 # ServiceOwners: @Pilchie
 
 # PRLabel: %KeyVault
@@ -81,7 +80,8 @@
 /sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @j7nw4r @jalauzon-msft @vincenttran-msft
 
 # ServiceLabel: %Event Hubs
-# AzureSDKOwners: @j7nw4r
+# AzureSDKOwners: @LarryOsterman
+# ServiceOwners: @j7nw4r
 
 ####################
 # Management Libraries

@@ -25,6 +25,18 @@ use crate::{
 
 // ── Operation-Level Components ─────────────────────────────────────────
 
+/// Transport mode for a routed attempt.
+///
+/// Determines which HTTP transport (and protocol version) is used
+/// for a given request attempt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TransportMode {
+    /// Standard gateway (HTTP/1.1 or HTTP/2 via ALPN).
+    Gateway,
+    /// Gateway 2.0 (HTTP/2 with prior knowledge).
+    Gateway20,
+}
+
 /// Routing decision for the current attempt.
 ///
 /// Wraps a `CosmosEndpoint` that carries the resolved URL and optional
@@ -33,6 +45,10 @@ use crate::{
 pub(crate) struct RoutingDecision {
     /// The resolved endpoint for this attempt.
     pub endpoint: CosmosEndpoint,
+    /// The concrete URL selected for this attempt.
+    pub selected_url: Url,
+    /// The transport mode for this attempt.
+    pub transport_mode: TransportMode,
 }
 
 /// Operation-level retry state.

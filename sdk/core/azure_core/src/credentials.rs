@@ -215,7 +215,10 @@ pub struct TokenRequestOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Represents a credential capable of providing an OAuth token.
+/// Represents a credential that can acquire an Entra ID access token.
+///
+/// See the [azure_identity](https://docs.rs/azure_identity/latest/azure_identity/)
+/// crate for implementations.
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync + fmt::Debug {
     /// Gets an [`AccessToken`] for the specified scopes

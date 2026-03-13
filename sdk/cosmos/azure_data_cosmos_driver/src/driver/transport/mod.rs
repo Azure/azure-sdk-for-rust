@@ -25,19 +25,14 @@ mod tracked_transport;
 pub(crate) mod transport_pipeline;
 
 use crate::{
-    driver::cache::AccountProperties,
+    driver::pipeline::components::TransportMode,
     models::{AccountEndpoint, OperationType, ResourceType},
-    options::{ConnectionPoolOptions, Region},
+    options::ConnectionPoolOptions,
 };
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex, OnceLock},
-};
-use tracing::warn;
-use url::Url;
+use std::sync::{Arc, OnceLock};
 
 use self::{
-    adaptive_transport::{thin_client_endpoint_overrides, AdaptiveTransport, TransportContext},
+    adaptive_transport::AdaptiveTransport,
     http_client_factory::{DefaultHttpClientFactory, HttpClientConfig, HttpClientFactory},
 };
 
@@ -72,21 +67,6 @@ pub(crate) fn uses_dataplane_pipeline(
         ResourceType::Document => true,
         ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
         _ => false,
-    }
-}
-
-/// Cached thin-client endpoint overrides, keyed by account properties etag.
-struct CachedOverrides {
-    etag: String,
-    overrides: Arc<HashMap<Region, Url>>,
-}
-
-impl std::fmt::Debug for CachedOverrides {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CachedOverrides")
-            .field("etag", &self.etag)
-            .field("regions", &self.overrides.len())
-            .finish()
     }
 }
 
@@ -135,11 +115,6 @@ pub(crate) struct CosmosTransport {
     /// The emulator does not support Gateway 2.0, so this always uses
     /// the standard gateway configuration.
     insecure_emulator_dataplane_transport: OnceLock<AdaptiveTransport>,
-
-    /// Cached thin-client endpoint overrides, keyed by the account properties
-    /// etag. Avoids re-parsing URLs and re-allocating the HashMap on every
-    /// operation when the account properties haven't changed.
-    cached_thin_client_overrides: Mutex<Option<CachedOverrides>>,
 }
 
 impl CosmosTransport {
@@ -172,7 +147,6 @@ impl CosmosTransport {
             dataplane_gateway20_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
-            cached_thin_client_overrides: Mutex::new(None),
         })
     }
 
@@ -186,11 +160,11 @@ impl CosmosTransport {
             && is_emulator_host(endpoint)
     }
 
-    /// Returns a [`TransportContext`] for metadata operations.
+    /// Returns the transport for metadata operations.
     pub(crate) fn get_metadata_transport(
         &self,
         endpoint: &AccountEndpoint,
-    ) -> azure_core::Result<TransportContext> {
+    ) -> azure_core::Result<AdaptiveTransport> {
         let transport = if self.should_use_insecure_emulator_transport(endpoint) {
             match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
@@ -208,48 +182,15 @@ impl CosmosTransport {
         } else {
             self.metadata_transport.clone()
         };
-        Ok(TransportContext {
-            transport,
-            thin_client_overrides: None,
-        })
+        Ok(transport)
     }
 
-    /// Returns cached thin-client overrides if the account properties etag
-    /// matches, otherwise recomputes and caches the result.
-    fn get_or_refresh_thin_client_overrides(
-        &self,
-        account_properties: &AccountProperties,
-    ) -> Arc<HashMap<Region, Url>> {
-        let mut guard = self
-            .cached_thin_client_overrides
-            .lock()
-            .expect("thin-client overrides cache lock poisoned");
-
-        if let Some(cached) = guard.as_ref() {
-            if cached.etag == account_properties.etag {
-                return Arc::clone(&cached.overrides);
-            }
-        }
-
-        let overrides = Arc::new(thin_client_endpoint_overrides(account_properties));
-        *guard = Some(CachedOverrides {
-            etag: account_properties.etag.clone(),
-            overrides: Arc::clone(&overrides),
-        });
-        overrides
-    }
-
-    /// Returns a [`TransportContext`] for dataplane operations.
-    ///
-    /// Selects Gateway 2.0 when allowed and thin-client endpoints are
-    /// available.
-    /// Computes thin-client endpoint overrides (merged read + write) when
-    /// Gateway 2.0 is selected. The emulator does not support Gateway 2.0.
+    /// Returns the transport for a dataplane attempt based on the routed endpoint kind.
     pub(crate) fn get_dataplane_transport(
         &self,
         endpoint: &AccountEndpoint,
-        account_properties: &AccountProperties,
-    ) -> azure_core::Result<TransportContext> {
+        transport_mode: TransportMode,
+    ) -> azure_core::Result<AdaptiveTransport> {
         if self.should_use_insecure_emulator_transport(endpoint) {
             // The Cosmos emulator does not support Gateway 2.0 — always
             // use the standard gateway transport with insecure TLS.
@@ -267,42 +208,28 @@ impl CosmosTransport {
                         .clone()
                 }
             };
-            Ok(TransportContext {
-                transport,
-                thin_client_overrides: None,
-            })
-        } else if self.connection_pool.is_gateway20_allowed()
-            && account_properties.has_thin_client_endpoints()
-        {
-            let overrides = self.get_or_refresh_thin_client_overrides(account_properties);
-            if overrides.is_empty() {
-                warn!("Gateway 2.0 enabled but all thin-client endpoint URLs are malformed; falling back to standard gateway transport");
-                return Ok(TransportContext {
-                    transport: self.dataplane_gateway_transport.clone(),
-                    thin_client_overrides: None,
-                });
-            }
+            return Ok(transport);
+        }
 
-            let transport = match self.dataplane_gateway20_transport.get() {
-                Some(t) => t.clone(),
-                None => {
-                    let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
-                    let client = self
-                        .http_client_factory
-                        .build(&self.connection_pool, config)?;
-                    let t = AdaptiveTransport::from_policy(config.version_policy, client);
-                    self.dataplane_gateway20_transport.get_or_init(|| t).clone()
-                }
-            };
-            Ok(TransportContext {
-                transport,
-                thin_client_overrides: Some(overrides),
-            })
-        } else {
-            Ok(TransportContext {
-                transport: self.dataplane_gateway_transport.clone(),
-                thin_client_overrides: None,
-            })
+        match transport_mode {
+            // Defense-in-depth: routing already checks is_gateway20_allowed() when
+            // building the endpoint, so this guard should always pass when
+            // transport_mode is Gateway20. We keep it as a safety net.
+            TransportMode::Gateway20 if self.connection_pool.is_gateway20_allowed() => {
+                let transport = match self.dataplane_gateway20_transport.get() {
+                    Some(t) => t.clone(),
+                    None => {
+                        let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
+                        let client = self
+                            .http_client_factory
+                            .build(&self.connection_pool, config)?;
+                        let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                        self.dataplane_gateway20_transport.get_or_init(|| t).clone()
+                    }
+                };
+                Ok(transport)
+            }
+            _ => Ok(self.dataplane_gateway_transport.clone()),
         }
     }
 }
@@ -310,226 +237,8 @@ impl CosmosTransport {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use crate::driver::pipeline::components::TransportMode;
     use crate::options::{ConnectionPoolOptionsBuilder, EmulatorServerCertValidation};
-
-    /// Shared test fixture: `AccountProperties` with thin-client endpoints.
-    pub(crate) fn account_properties_with_thin_client() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}",
-            "thinClientReadableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
-                }
-            ],
-            "thinClientWritableLocations": [
-                {
-                    "name": "eastus",
-                    "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/"
-                }
-            ]
-        }))
-        .unwrap()
-    }
-
-    /// Shared test fixture: one malformed thin-client endpoint and one valid endpoint.
-    pub(crate) fn account_properties_with_partially_malformed_thin_client() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}",
-            "thinClientReadableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "not-a-url"
-                }
-            ],
-            "thinClientWritableLocations": [
-                {
-                    "name": "eastus",
-                    "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/"
-                }
-            ]
-        }))
-        .unwrap()
-    }
-
-    /// Shared test fixture: all thin-client endpoints are malformed.
-    pub(crate) fn account_properties_with_only_malformed_thin_client() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}",
-            "thinClientReadableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "not-a-url"
-                }
-            ],
-            "thinClientWritableLocations": [
-                {
-                    "name": "eastus",
-                    "databaseAccountEndpoint": "still-not-a-url"
-                }
-            ]
-        }))
-        .unwrap()
-    }
-
-    /// Shared test fixture: `AccountProperties` without thin-client endpoints.
-    pub(crate) fn account_properties_without_thin_client() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}"
-        }))
-        .unwrap()
-    }
-
-    /// Shared test fixture: same region in both readable and writable thin-client lists with the same URL.
-    pub(crate) fn account_properties_with_duplicate_region_same_url() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}",
-            "thinClientReadableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
-                }
-            ],
-            "thinClientWritableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
-                }
-            ]
-        }))
-        .unwrap()
-    }
-
-    /// Shared test fixture: same region in both readable and writable thin-client lists with different URLs.
-    pub(crate) fn account_properties_with_duplicate_region_conflicting_url() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}",
-            "thinClientReadableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "https://test-westus2-read-thin.documents.azure.com:444/"
-                }
-            ],
-            "thinClientWritableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "https://test-westus2-write-thin.documents.azure.com:444/"
-                }
-            ]
-        }))
-        .unwrap()
-    }
-
-    /// Shared test fixture: one non-HTTPS thin-client endpoint and one valid HTTPS endpoint.
-    pub(crate) fn account_properties_with_non_https_thin_client() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [],
-            "readableLocations": [],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}",
-            "thinClientReadableLocations": [
-                {
-                    "name": "westus2",
-                    "databaseAccountEndpoint": "http://test-westus2-thin.documents.azure.com:444/"
-                }
-            ],
-            "thinClientWritableLocations": [
-                {
-                    "name": "eastus",
-                    "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/"
-                }
-            ]
-        }))
-        .unwrap()
-    }
 
     #[test]
     fn transport_creates_with_default_options() {
@@ -585,10 +294,7 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport
-                .get_metadata_transport(&endpoint)
-                .unwrap()
-                .transport,
+            transport.get_metadata_transport(&endpoint).unwrap(),
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -604,10 +310,7 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         assert!(matches!(
-            transport
-                .get_metadata_transport(&endpoint)
-                .unwrap()
-                .transport,
+            transport.get_metadata_transport(&endpoint).unwrap(),
             AdaptiveTransport::Gateway(_)
         ));
     }
@@ -623,14 +326,13 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
-            .get_dataplane_transport(&endpoint, &account_properties_without_thin_client())
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway)
             .unwrap();
-        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(ctx.thin_client_overrides.is_none());
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
     #[test]
-    fn dataplane_transport_uses_gateway20_when_allowed_and_available() {
+    fn dataplane_transport_uses_gateway20_when_selected() {
         let pool = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(true)
             .with_is_gateway20_allowed(true)
@@ -641,14 +343,13 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
-            .get_dataplane_transport(&endpoint, &account_properties_with_thin_client())
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
             .unwrap();
-        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway20(_)));
-        assert!(ctx.thin_client_overrides.is_some());
+        assert!(matches!(ctx, AdaptiveTransport::Gateway20(_)));
     }
 
     #[test]
-    fn dataplane_transport_falls_back_to_gateway_when_thin_client_missing() {
+    fn dataplane_transport_falls_back_to_gateway_when_endpoint_is_standard() {
         let pool = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(true)
             .with_is_gateway20_allowed(true)
@@ -659,14 +360,13 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
-            .get_dataplane_transport(&endpoint, &account_properties_without_thin_client())
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway)
             .unwrap();
-        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(ctx.thin_client_overrides.is_none());
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
     #[test]
-    fn dataplane_transport_ignores_thin_client_when_gateway20_disabled() {
+    fn dataplane_transport_ignores_gateway20_when_gateway20_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(true)
             .with_is_gateway20_allowed(false)
@@ -677,32 +377,9 @@ pub(crate) mod tests {
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
-            .get_dataplane_transport(&endpoint, &account_properties_with_thin_client())
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
             .unwrap();
-        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(ctx.thin_client_overrides.is_none());
-    }
-
-    #[test]
-    fn dataplane_transport_falls_back_to_gateway_when_all_thin_client_urls_are_malformed() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(true)
-            .with_is_gateway20_allowed(true)
-            .build()
-            .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
-        let endpoint =
-            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
-
-        let ctx = transport
-            .get_dataplane_transport(
-                &endpoint,
-                &account_properties_with_only_malformed_thin_client(),
-            )
-            .unwrap();
-
-        assert!(matches!(ctx.transport, AdaptiveTransport::Gateway(_)));
-        assert!(ctx.thin_client_overrides.is_none());
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
     #[test]
