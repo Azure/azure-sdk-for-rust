@@ -6,7 +6,7 @@
 use super::{
     models_serde,
     xml_helpers::{CorsCorsRule, Queue_itemsQueue},
-    GeoReplicationStatusType,
+    GeoReplicationStatus,
 };
 use azure_core::{fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
@@ -80,37 +80,7 @@ pub struct GeoReplication {
 
     /// The status of the secondary location
     #[serde(rename = "Status", skip_serializing_if = "Option::is_none")]
-    pub status: Option<GeoReplicationStatusType>,
-}
-
-/// List wrapper for PeekedMessageItem array
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "QueueMessagesList")]
-pub struct ListOfPeekedMessage {
-    /// The list of peeked messages.
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<PeekedMessage>>,
-}
-
-/// List wrapper for DequeuedMessageItem array
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "QueueMessagesList")]
-pub struct ListOfReceivedMessage {
-    /// The list of dequeued messages.
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<ReceivedMessage>>,
-}
-
-/// List wrapper for EnqueuedMessage array
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "QueueMessagesList")]
-pub struct ListOfSentMessage {
-    /// The list of enqueued messages.
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<SentMessage>>,
+    pub status: Option<GeoReplicationStatus>,
 }
 
 /// The list queue segment response
@@ -228,9 +198,19 @@ pub struct PeekedMessage {
     pub message_text: Option<String>,
 }
 
-/// Contains results for `QueueClient::get_metadata()`
+/// List wrapper for PeekedMessageItem array
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct PeekedMessages {
+    /// The list of peeked messages.
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<PeekedMessage>>,
+}
+
+/// Contains results for `QueueClient::get_properties()`
 #[derive(SafeDebug)]
-pub struct QueueClientGetMetadataResult;
+pub struct QueueClientGetPropertiesResult;
 
 /// An Azure Storage Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -340,6 +320,16 @@ pub struct ReceivedMessage {
     pub time_next_visible: Option<OffsetDateTime>,
 }
 
+/// List wrapper for DequeuedMessageItem array
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct ReceivedMessages {
+    /// The list of dequeued messages.
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<ReceivedMessage>>,
+}
+
 /// The retention policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RetentionPolicy {
@@ -356,7 +346,7 @@ pub struct RetentionPolicy {
 /// Queue
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-pub struct SentMessage {
+pub struct SentMessageInternal {
     /// The time that the Message will expire and be automatically deleted.
     #[serde(
         default,

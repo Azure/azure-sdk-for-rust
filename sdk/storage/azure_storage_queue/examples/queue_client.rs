@@ -10,8 +10,9 @@ use azure_core::{
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{
-        QueueClientGetMetadataResultHeaders, QueueClientPeekMessagesOptions,
-        QueueClientReceiveMessagesOptions, QueueClientUpdateOptions, QueueMessage, SentMessage,
+        QueueClientGetPropertiesResultHeaders, QueueClientPeekMessagesOptions,
+        QueueClientReceiveMessagesOptions, QueueClientUpdateMessageOptions, QueueMessage,
+        SentMessage,
     },
     QueueClient,
 };
@@ -38,7 +39,9 @@ async fn send_and_delete_message(
     if let Ok(response) = result {
         let message = response.into_model()?;
 
-        if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
+        if let (Some(message_id), Some(pop_receipt)) =
+            (message.message_id.clone(), message.pop_receipt.clone())
+        {
             println!(
                 "Deleting message with ID: {} and pop receipt: {}",
                 message_id, pop_receipt
@@ -62,7 +65,9 @@ async fn send_and_update_message(
     if let Ok(response) = result {
         let message = response.into_model()?;
 
-        if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
+        if let (Some(message_id), Some(pop_receipt)) =
+            (message.message_id.clone(), message.pop_receipt.clone())
+        {
             println!(
                 "Updating message with ID: {} and pop receipt: {}",
                 message_id, pop_receipt
@@ -70,7 +75,7 @@ async fn send_and_update_message(
             let queue_message = QueueMessage {
                 message_text: Some("Updated message text from Rust".to_string()),
             };
-            let update_option = QueueClientUpdateOptions {
+            let update_option = QueueClientUpdateMessageOptions {
                 // Serialize the message text as bytes for the update
                 queue_message: Some(queue_message.try_into()?),
                 ..Default::default()
@@ -99,8 +104,8 @@ async fn set_and_get_metadata(
         .await;
     log_operation_result(&result, "set_metadata");
 
-    let result = queue_client.get_metadata(None).await;
-    log_operation_result(&result, "get_metadata");
+    let result = queue_client.get_properties(None).await;
+    log_operation_result(&result, "get_properties");
 
     let metadata = result.unwrap().metadata().unwrap_or_default();
     for (key, value) in metadata {
@@ -110,8 +115,8 @@ async fn set_and_get_metadata(
     let result = queue_client.set_metadata(&HashMap::new(), None).await;
     log_operation_result(&result, "set_metadata_empty");
 
-    let result = queue_client.get_metadata(None).await;
-    log_operation_result(&result, "get_metadata_empty");
+    let result = queue_client.get_properties(None).await;
+    log_operation_result(&result, "get_properties_empty");
 
     let metadata = result.unwrap().metadata().unwrap_or_default();
     for (key, value) in metadata {

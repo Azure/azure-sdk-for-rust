@@ -1,22 +1,36 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.5.0 (Unreleased)
 
 ### Features Added
 
-- Default Azure Storage logging configuration (allowed headers and query parameters) is now automatically applied to all Queue clients.
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.4.0 (2026-03-11)
+
+### Features Added
+
+- Added default Azure Storage logging configuration (allowed headers and query parameters) to all Queue clients.
 - Added support for `set_access_policy` and `get_access_policy` to `QueueClient`.
 
 ### Breaking Changes
 
+- Removed `QueueServiceClient::create_queue()` and `QueueServiceClient::delete_queue()`; use `QueueServiceClient::queue_client()` to obtain a `QueueClient` and call `create()` or `delete()` directly.
+- Renamed `QueueClient::get_metadata()` to `get_properties()`; renamed related types `QueueClientGetMetadataOptions` to `QueueClientGetPropertiesOptions`, `QueueClientGetMetadataResult` to `QueueClientGetPropertiesResult`, and `QueueClientGetMetadataResultHeaders` to `QueueClientGetPropertiesResultHeaders`.
+- Renamed `QueueClient::update()` to `update_message()`; renamed `QueueClientUpdateOptions` to `QueueClientUpdateMessageOptions`.
+- Renamed `ListOfPeekedMessage` to `PeekedMessages` and `ListOfReceivedMessage` to `ReceivedMessages`.
+- Renamed `GeoReplicationStatusType` to `GeoReplicationStatus`.
 - Changed `QueueClient::set_metadata()` `metadata` parameter from owned `HashMap<String, String>` to `&HashMap<String, String>`.
-- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- Removed support for `wasm32-unknown-unknown` ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377)).
+- Changed `SentMessage` ownership semantics; code that previously moved fields like `message_id`/`pop_receipt` may require `.clone()` or borrowing instead.
 
 ### Bugs Fixed
 
 - Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Queue Storage client.
-
-### Other Changes
 
 ## 0.3.0 (2026-02-11)
 

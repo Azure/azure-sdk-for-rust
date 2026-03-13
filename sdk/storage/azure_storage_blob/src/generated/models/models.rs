@@ -13,7 +13,7 @@ use super::{
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     RehydratePriority,
 };
-use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
+use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -138,7 +138,7 @@ pub struct BlobFlatListSegment {
 #[serde(rename = "Blob")]
 pub struct BlobItem {
     /// The tags of the blob.
-    #[serde(rename = "BlobTags", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub blob_tags: Option<BlobTags>,
 
     /// Whether the blob is deleted.
@@ -159,7 +159,7 @@ pub struct BlobItem {
 
     /// The name of the blob.
     #[serde(
-        deserialize_with = "crate::models::deserialize_blob_name",
+        deserialize_with = "crate::models::blob_name::option::deserialize",
         rename = "Name",
         skip_serializing_if = "Option::is_none"
     )]
@@ -350,7 +350,7 @@ pub struct BlobProperties {
 
     /// The blob ETag.
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    pub etag: Option<Etag>,
 
     /// The expire time of the blob.
     #[serde(
@@ -632,7 +632,7 @@ pub struct ClearRange {
 pub struct ContainerItem {
     /// Whether the container is deleted.
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
-    pub delete: Option<bool>,
+    pub deleted: Option<bool>,
 
     /// The metadata of the container.
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]
@@ -672,8 +672,8 @@ pub struct ContainerProperties {
     pub deleted_time: Option<OffsetDateTime>,
 
     /// The ETag of the container.
-    #[serde(rename = "ETag", skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
+    pub etag: Option<Etag>,
 
     /// Whether it has an immutability policy.
     #[serde(
@@ -777,7 +777,7 @@ pub struct FilterBlobItem {
     pub name: Option<String>,
 
     /// The metadata of the blob.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
 
     /// The version ID of the blob.

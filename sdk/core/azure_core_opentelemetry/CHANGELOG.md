@@ -1,16 +1,20 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.8.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
-
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.7.0 (2026-03-05)
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
 
 ## 0.6.0 (2026-02-10)
 
