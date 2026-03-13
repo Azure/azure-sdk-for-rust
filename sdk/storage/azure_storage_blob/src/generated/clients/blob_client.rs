@@ -462,7 +462,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
@@ -538,7 +538,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
@@ -647,7 +647,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
@@ -881,7 +881,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Head);
@@ -954,7 +954,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
@@ -1197,7 +1197,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
@@ -1252,7 +1252,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
@@ -1443,7 +1443,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
@@ -1525,7 +1525,7 @@ impl BlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         if let Some(version_id) = options.version_id.as_ref() {
-            query_builder.set_pair("versionid", version_id);
+            query_builder.set_pair("versionId", version_id);
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
