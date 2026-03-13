@@ -136,22 +136,6 @@ impl SessionManager {
         self.container
             .set_session_token(owner_id, name_path.as_deref(), session_token);
     }
-
-    /// Clears cached session tokens for an operation's container.
-    ///
-    /// Called on 404/1002 (`ReadSessionNotAvailable`) during session retry.
-    /// Uses name-based clearing so that stale tokens from a potentially
-    /// recreated container are removed.
-    pub(crate) fn clear_session_token(&self, operation: &CosmosOperation) {
-        if let Some(container) = operation.container() {
-            let name_path = format!(
-                "dbs/{}/colls/{}",
-                container.database_name(),
-                container.name()
-            );
-            self.container.clear_by_collection_name(&name_path);
-        }
-    }
 }
 
 #[cfg(test)]
@@ -265,28 +249,6 @@ mod tests {
 
         let headers = make_response_headers(Some("0:1#100"), None, None);
         mgr.capture_session_token(&op, &headers);
-        assert!(mgr.resolve_session_token(&op, None).is_none());
-    }
-
-    #[test]
-    fn clear_removes_cached_tokens() {
-        let mgr = SessionManager::new();
-        let container = test_container();
-        let op = CosmosOperation::read_item(ItemReference::from_name(
-            &container,
-            PartitionKey::from("pk1"),
-            "doc1",
-        ));
-
-        let headers = make_response_headers(
-            Some("0:1#100"),
-            Some("coll_rid1"),
-            Some("dbs/db1/colls/coll1"),
-        );
-        mgr.capture_session_token(&op, &headers);
-        assert!(mgr.resolve_session_token(&op, None).is_some());
-
-        mgr.clear_session_token(&op);
         assert!(mgr.resolve_session_token(&op, None).is_none());
     }
 

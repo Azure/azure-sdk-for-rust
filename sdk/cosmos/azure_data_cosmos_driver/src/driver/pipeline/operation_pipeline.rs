@@ -229,24 +229,12 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
-                // Keep existing session tokens and retry to a different
-                // region while preferred endpoints remain — the 404/1002
-                // is likely transient (a replica that hasn't caught up).
-                //
-                // Only clear tokens on the final session retry, after all
-                // preferred regions have been tried. At that point, the
-                // container may have been recreated with a new RID, and
-                // stale tokens would cause every attempt to fail. Clearing
-                // lets the last retry go out without a session token so
-                // any replica can respond; the successful response will
-                // repopulate the cache with the new RID via the mismatch
-                // detection in `set_session_token()`.
-                if session_consistency_active
-                    && retry_state.session_token_retry_count
-                        >= max_session_retries.saturating_sub(1)
-                {
-                    session_manager.clear_session_token(operation);
-                }
+                // Retry to a different region — the 404/1002 is likely a
+                // transient replica lag. Session tokens are intentionally
+                // preserved; clearing them would break read-your-writes
+                // guarantees. Container-recreation (RID change) handling
+                // will be addressed via deterministic RID comparison in
+                // a future change.
 
                 let next_location = location_state_store.snapshot();
                 let endpoints_len = preferred_endpoints_for_attempt(

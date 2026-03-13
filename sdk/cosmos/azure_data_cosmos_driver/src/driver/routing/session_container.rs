@@ -159,27 +159,6 @@ impl SessionContainer {
             }
         }
     }
-
-    /// Clears all tokens for a given collection name path (name-based clearing).
-    ///
-    /// Used on 404/1002 (ReadSessionNotAvailable) when the request used a
-    /// name-based resource link — the container may have been recreated.
-    pub(crate) fn clear_by_collection_name(&self, collection_name_path: &str) {
-        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
-        if let Some(rid) = guard.name_to_rid.remove(collection_name_path) {
-            guard.tokens.remove(&rid);
-        }
-    }
-
-    /// Clears all tokens for a given collection RID.
-    #[allow(dead_code)] // Kept for future use (RID-based clearing).
-    pub(crate) fn clear_by_collection_rid(&self, collection_rid: &str) {
-        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
-        guard.tokens.remove(collection_rid);
-        guard
-            .name_to_rid
-            .retain(|_, rid| rid.as_str() != collection_rid);
-    }
 }
 
 #[cfg(test)]
@@ -233,23 +212,5 @@ mod tests {
         sc.set_session_token("rid_new", Some("dbs/db1/colls/c1"), "0:1#50#1=5");
         assert!(sc.get_session_token("rid_old").is_none());
         assert!(sc.get_session_token("rid_new").is_some());
-    }
-
-    #[test]
-    fn clear_by_name() {
-        let sc = SessionContainer::new();
-        sc.set_session_token("rid1", Some("dbs/db1/colls/c1"), "0:1#100");
-        sc.clear_by_collection_name("dbs/db1/colls/c1");
-        assert!(sc.get_session_token("rid1").is_none());
-        assert!(sc.resolve_rid("dbs/db1/colls/c1").is_none());
-    }
-
-    #[test]
-    fn clear_by_rid() {
-        let sc = SessionContainer::new();
-        sc.set_session_token("rid1", Some("dbs/db1/colls/c1"), "0:1#100");
-        sc.clear_by_collection_rid("rid1");
-        assert!(sc.get_session_token("rid1").is_none());
-        assert!(sc.resolve_rid("dbs/db1/colls/c1").is_none());
     }
 }
