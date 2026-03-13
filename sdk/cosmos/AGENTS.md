@@ -455,8 +455,24 @@ pwsh eng/common/scripts/check-spelling-in-changed-files.ps1 -TargetCommittish "u
 To fix spelling errors, either correct typos in source code or add legitimate terms to dictionary files:
 
 - **Crate names**: `eng/dict/crates.txt`
-- **Service-specific terms**: `sdk/<service>/.dict.txt` (e.g., `sdk/cosmos/.dict.txt`)
+- **Service-specific terms**: `sdk/<service>/.cspell.json` (e.g., `sdk/cosmos/.cspell.json`)
 - **Global dictionary**: `.vscode/cspell.json`
+
+### Markdown Linting
+
+Run `markdownlint` on any new or modified `.md` files to catch formatting issues
+(missing blank lines around lists, fenced code blocks, etc.):
+
+```bash
+# Lint a specific markdown file
+markdownlint --disable MD013 MD060 -- path/to/file.md
+```
+
+- **MD013** (line-length) and **MD060** (table column style) are disabled because
+  spec documents and tables routinely exceed 80 characters.
+- Fix all remaining warnings (MD031 blanks around fences, MD032 blanks around lists)
+  before considering the task complete.
+- Install with `npm install -g markdownlint-cli` if not available.
 
 ### Pre-Completion Validation Checklist
 
@@ -471,6 +487,8 @@ Before considering any task complete, run the following checks **in order** on a
    - All documentation warnings must be resolved before completing the task
 5. **Test check** (if tests exist): `cargo test -p <crate-name> --all-features`
    - For emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate-name> --tests`
+6. **Markdown lint check** (if `.md` files changed): `markdownlint --disable MD013 MD060 -- path/to/file.md`
+   - Fix all warnings before completing the task
 
 **Common documentation link errors to avoid**:
 
