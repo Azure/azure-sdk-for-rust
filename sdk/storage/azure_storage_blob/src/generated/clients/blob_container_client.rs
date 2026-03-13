@@ -22,7 +22,7 @@ use azure_core::{
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
         ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, Response, Url, UrlExt, XmlFormat,
+        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -937,10 +937,12 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `container_acl` - The access control list for the container.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobContainerClient.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
+        container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -955,6 +957,7 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
+        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -968,10 +971,7 @@ impl BlobContainerClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        if let Some(container_acl) = options.container_acl.clone() {
-            request.insert_header("content-type", "application/xml");
-            request.set_body(container_acl);
-        }
+        request.set_body(container_acl);
         let rsp = self
             .pipeline
             .send(

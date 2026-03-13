@@ -7,11 +7,11 @@ use super::{
     AccessTier, BlobCopySourceTags, BlobDeleteType, DeleteSnapshotsOptionType,
     EncryptionAlgorithmType, FileShareTokenIntent, FilterBlobsIncludeItem, ImmutabilityPolicyMode,
     ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
-    RehydratePriority, SignedIdentifiers,
+    RehydratePriority,
 };
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, ClientMethodOptions, Etag, RequestContent, XmlFormat},
+    http::{pager::PagerOptions, ClientMethodOptions, Etag},
     time::OffsetDateTime,
 };
 use std::collections::HashMap;
@@ -1163,9 +1163,6 @@ pub struct BlobContainerClientRenewLeaseOptions<'a> {
 pub struct BlobContainerClientSetAccessPolicyOptions<'a> {
     /// The public access setting for the container.
     pub access: Option<PublicAccessType>,
-
-    /// The access control list for the container.
-    pub container_acl: Option<RequestContent<SignedIdentifiers, XmlFormat>>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
