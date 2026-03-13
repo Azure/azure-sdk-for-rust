@@ -519,6 +519,10 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
                 )
                 .await?;
 
+            run_context
+                .wait_for_fault_client_readiness(&db_client.id(), &container_id)
+                .await?;
+
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
@@ -819,6 +823,10 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
                 )
                 .await?;
 
+            run_context
+                .wait_for_fault_client_readiness(&db_client.id(), &container_id)
+                .await?;
+
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
@@ -905,6 +913,10 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let item_id = format!("Item-{}", unique_id);
 
             container_client.create_item(&pk, &item, None).await?;
+
+            run_context
+                .wait_for_fault_client_readiness(&db_client.id(), &container_id)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -1010,6 +1022,10 @@ pub async fn fault_injection_custom_response_403_3_transitions_to_single_write(
                     ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
                 )
+                .await?;
+
+            run_context
+                .wait_for_fault_client_readiness(&db_client.id(), &container_id)
                 .await?;
 
             let fault_client = run_context

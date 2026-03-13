@@ -536,6 +536,51 @@ impl TestRunContext {
             .map(|c| c.database_client(get_shared_database_id()))
     }
 
+    /// Waits until the fault client can successfully read the container.
+    ///
+    /// The fault client is a separate `CosmosClient` instance that may not have
+    /// synced container metadata yet. This polls with a 1-second interval until
+    /// the read succeeds or the retry limit is reached.
+    pub async fn wait_for_fault_client_readiness(
+        &self,
+        db_id: &str,
+        container_id: &str,
+    ) -> azure_core::Result<()> {
+        const MAX_RETRIES: usize = 60;
+        let fault_client = self
+            .fault_client()
+            .expect("wait_for_fault_client_readiness requires a fault client");
+
+        for attempt in 0..MAX_RETRIES {
+            match fault_client
+                .database_client(db_id)
+                .container_client(container_id)
+                .await
+                .read(None)
+                .await
+            {
+                Ok(_) => return Ok(()),
+                Err(e) => {
+                    println!(
+                        "waiting for fault client container readiness (attempt {}/{}): {}",
+                        attempt + 1,
+                        MAX_RETRIES,
+                        e
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+
+        Err(azure_core::Error::message(
+            azure_core::error::ErrorKind::Other,
+            format!(
+                "fault client container readiness timed out after {} retries",
+                MAX_RETRIES
+            ),
+        ))
+    }
+
     /// Creates a new, empty, database for this test run with default throughput options.
     pub async fn create_db(&self) -> azure_core::Result<DatabaseClient> {
         // The TestAccount has a unique context_id that includes the test name.
