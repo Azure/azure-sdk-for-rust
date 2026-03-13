@@ -57,6 +57,7 @@ pub(crate) struct LocationStateStore {
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
+    gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
@@ -112,6 +113,7 @@ impl LocationStateStore {
         account_endpoint: AccountEndpoint,
         default_endpoint: CosmosEndpoint,
         account_refresh_fn: AccountRefreshFn,
+        gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
@@ -128,6 +130,7 @@ impl LocationStateStore {
             account_endpoint,
             account_refresh_fn,
             default_endpoint,
+            gateway20_enabled,
             endpoint_unavailability_ttl,
             // TODO(refresh-config): Make refresh interval configurable.
             refresh_interval: Duration::from_secs(5),
@@ -313,6 +316,7 @@ impl LocationStateStore {
                 properties,
                 default_endpoint.clone(),
                 Some(current.generation),
+                self.gateway20_enabled,
             );
             // Carry forward unavailability marks from the current state,
             // filtering out entries that have expired past the configured TTL.
@@ -405,6 +409,7 @@ mod tests {
             test_endpoint(),
             default_endpoint.clone(),
             refresh,
+            false,
             Duration::from_secs(60),
         );
 
@@ -440,6 +445,7 @@ mod tests {
             test_endpoint(),
             default_endpoint,
             refresh,
+            false,
             Duration::from_secs(60),
         );
 
@@ -469,6 +475,7 @@ mod tests {
             test_endpoint(),
             default_endpoint.clone(),
             refresh,
+            false,
             Duration::from_secs(60),
         );
 

@@ -11,7 +11,7 @@ use super::{
 };
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, ClientMethodOptions},
+    http::{pager::PagerOptions, ClientMethodOptions, Etag},
     time::OffsetDateTime,
 };
 use std::collections::HashMap;
@@ -42,13 +42,13 @@ pub struct AppendBlobClientAppendBlockOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -117,13 +117,13 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
     pub file_request_intent: Option<FileShareTokenIntent>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -159,13 +159,13 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
     pub source_encryption_key_sha256: Option<String>,
 
     /// Specify an ETag value to operate only on blobs with a matching value.
-    pub source_if_match: Option<String>,
+    pub source_if_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
     pub source_if_modified_since: Option<OffsetDateTime>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
-    pub source_if_none_match: Option<String>,
+    pub source_if_none_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
     pub source_if_unmodified_since: Option<OffsetDateTime>,
@@ -228,13 +228,13 @@ pub struct AppendBlobClientCreateOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -273,13 +273,13 @@ pub struct AppendBlobClientSealOptions<'a> {
     pub append_position: Option<i64>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
@@ -298,13 +298,13 @@ pub struct AppendBlobClientSealOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientAcquireLeaseOptions<'a> {
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -333,13 +333,13 @@ pub struct BlobClientBreakLeaseOptions<'a> {
     pub break_period: Option<i32>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -358,13 +358,13 @@ pub struct BlobClientBreakLeaseOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientChangeLeaseOptions<'a> {
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -400,13 +400,13 @@ pub struct BlobClientCreateSnapshotOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -444,13 +444,13 @@ pub struct BlobClientDeleteOptions<'a> {
     pub delete_snapshots: Option<DeleteSnapshotsOptionType>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -585,13 +585,13 @@ pub struct BlobClientGetPropertiesOptions<'a> {
     pub encryption_key_sha256: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -621,13 +621,13 @@ pub struct BlobClientGetPropertiesOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientGetTagsOptions<'a> {
     /// Specify an ETag value to operate only on blobs with a matching value.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// Specify an ETag value to operate only on blobs without a matching value.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -657,13 +657,13 @@ pub struct BlobClientGetTagsOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientReleaseLeaseOptions<'a> {
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -682,13 +682,13 @@ pub struct BlobClientReleaseLeaseOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientRenewLeaseOptions<'a> {
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -766,13 +766,13 @@ pub struct BlobClientSetMetadataOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -817,13 +817,13 @@ pub struct BlobClientSetPropertiesOptions<'a> {
     pub blob_content_type: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -845,13 +845,13 @@ pub struct BlobClientSetPropertiesOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetTagsOptions<'a> {
     /// Specify an ETag value to operate only on blobs with a matching value.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// Specify an ETag value to operate only on blobs without a matching value.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1349,13 +1349,13 @@ pub struct BlockBlobClientCommitBlockListOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1508,13 +1508,13 @@ pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
     pub source_encryption_key_sha256: Option<String>,
 
     /// Specify an ETag value to operate only on blobs with a matching value.
-    pub source_if_match: Option<String>,
+    pub source_if_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
     pub source_if_modified_since: Option<OffsetDateTime>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
-    pub source_if_none_match: Option<String>,
+    pub source_if_none_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
     pub source_if_unmodified_since: Option<OffsetDateTime>,
@@ -1585,13 +1585,13 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
     pub file_request_intent: Option<FileShareTokenIntent>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1622,13 +1622,13 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
     pub source_encryption_key_sha256: Option<String>,
 
     /// Specify an ETag value to operate only on blobs with a matching value.
-    pub source_if_match: Option<String>,
+    pub source_if_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
     pub source_if_modified_since: Option<OffsetDateTime>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
-    pub source_if_none_match: Option<String>,
+    pub source_if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub source_if_tags: Option<String>,
@@ -1694,13 +1694,13 @@ pub struct BlockBlobClientUploadInternalOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1768,13 +1768,13 @@ pub struct PageBlobClientClearPagesOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has the specified sequence number.
     pub if_sequence_number_equal_to: Option<i64>,
@@ -1852,13 +1852,13 @@ pub struct PageBlobClientCreateOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1895,13 +1895,13 @@ pub struct PageBlobClientCreateOptions<'a> {
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientGetPageRangesOptions<'a> {
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1957,13 +1957,13 @@ pub struct PageBlobClientResizeOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -1989,13 +1989,13 @@ pub struct PageBlobClientSetSequenceNumberOptions<'a> {
     pub blob_sequence_number: Option<i64>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -2034,13 +2034,13 @@ pub struct PageBlobClientUploadPagesOptions<'a> {
     pub encryption_scope: Option<String>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has the specified sequence number.
     pub if_sequence_number_equal_to: Option<i64>,
@@ -2108,13 +2108,13 @@ pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
     pub file_request_intent: Option<FileShareTokenIntent>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has the specified sequence number.
     pub if_sequence_number_equal_to: Option<i64>,
@@ -2154,13 +2154,13 @@ pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
     pub source_encryption_key_sha256: Option<String>,
 
     /// Specify an ETag value to operate only on blobs with a matching value.
-    pub source_if_match: Option<String>,
+    pub source_if_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
     pub source_if_modified_since: Option<OffsetDateTime>,
 
     /// Specify this header value to operate only on a blob if it has been modified since the specified date/time.
-    pub source_if_none_match: Option<String>,
+    pub source_if_none_match: Option<Etag>,
 
     /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
     pub source_if_unmodified_since: Option<OffsetDateTime>,

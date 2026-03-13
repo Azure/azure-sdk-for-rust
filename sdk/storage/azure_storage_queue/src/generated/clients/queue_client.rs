@@ -5,13 +5,13 @@
 
 use crate::{
     generated::models::{
-        ListOfPeekedMessage, ListOfReceivedMessage, QueueClientClearOptions,
-        QueueClientCreateOptions, QueueClientDeleteMessageOptions, QueueClientDeleteOptions,
-        QueueClientGetAccessPolicyOptions, QueueClientGetMetadataOptions,
-        QueueClientGetMetadataResult, QueueClientPeekMessagesOptions,
+        PeekedMessages, QueueClientClearOptions, QueueClientCreateOptions,
+        QueueClientDeleteMessageOptions, QueueClientDeleteOptions,
+        QueueClientGetAccessPolicyOptions, QueueClientGetPropertiesOptions,
+        QueueClientGetPropertiesResult, QueueClientPeekMessagesOptions,
         QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions,
-        QueueClientSetAccessPolicyOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
-        QueueMessage, SignedIdentifiers,
+        QueueClientSetAccessPolicyOptions, QueueClientSetMetadataOptions,
+        QueueClientUpdateMessageOptions, QueueMessage, ReceivedMessages, SignedIdentifiers,
     },
     models::SentMessage,
 };
@@ -259,14 +259,14 @@ impl QueueClient {
     ///
     /// ## Response Headers
     ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`QueueClientGetMetadataResultHeaders`] trait, which provides
+    /// The returned [`Response`](azure_core::http::Response) implements the [`QueueClientGetPropertiesResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_queue::models::{QueueClientGetMetadataResult, QueueClientGetMetadataResultHeaders};
+    /// use azure_storage_queue::models::{QueueClientGetPropertiesResult, QueueClientGetPropertiesResultHeaders};
     /// async fn example() -> Result<()> {
-    ///     let response: Response<QueueClientGetMetadataResult, NoFormat> = unimplemented!();
+    ///     let response: Response<QueueClientGetPropertiesResult, NoFormat> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(approximate_messages_count) = response.approximate_messages_count()? {
     ///         println!("x-ms-approximate-messages-count: {:?}", approximate_messages_count);
@@ -277,15 +277,15 @@ impl QueueClient {
     /// ```
     ///
     /// ### Available headers
-    /// * [`approximate_messages_count`()](crate::generated::models::QueueClientGetMetadataResultHeaders::approximate_messages_count) - x-ms-approximate-messages-count
-    /// * [`metadata`()](crate::generated::models::QueueClientGetMetadataResultHeaders::metadata) - x-ms-meta
+    /// * [`approximate_messages_count`()](crate::generated::models::QueueClientGetPropertiesResultHeaders::approximate_messages_count) - x-ms-approximate-messages-count
+    /// * [`metadata`()](crate::generated::models::QueueClientGetPropertiesResultHeaders::metadata) - x-ms-meta
     ///
-    /// [`QueueClientGetMetadataResultHeaders`]: crate::generated::models::QueueClientGetMetadataResultHeaders
-    #[tracing::function("Storage.Queues.QueueClient.getMetadata")]
-    pub async fn get_metadata(
+    /// [`QueueClientGetPropertiesResultHeaders`]: crate::generated::models::QueueClientGetPropertiesResultHeaders
+    #[tracing::function("Storage.Queues.QueueClient.getProperties")]
+    pub async fn get_properties(
         &self,
-        options: Option<QueueClientGetMetadataOptions<'_>>,
-    ) -> Result<Response<QueueClientGetMetadataResult, NoFormat>> {
+        options: Option<QueueClientGetPropertiesOptions<'_>>,
+    ) -> Result<Response<QueueClientGetPropertiesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -323,7 +323,7 @@ impl QueueClient {
     pub async fn peek_messages(
         &self,
         options: Option<QueueClientPeekMessagesOptions<'_>>,
-    ) -> Result<Response<ListOfPeekedMessage, XmlFormat>> {
+    ) -> Result<Response<PeekedMessages, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -366,7 +366,7 @@ impl QueueClient {
     pub async fn receive_messages(
         &self,
         options: Option<QueueClientReceiveMessagesOptions<'_>>,
-    ) -> Result<Response<ListOfReceivedMessage, XmlFormat>> {
+    ) -> Result<Response<ReceivedMessages, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -553,13 +553,13 @@ impl QueueClient {
     ///   larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be
     ///   set to a value later than the expiry time.
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Queues.QueueClient.update")]
-    pub async fn update(
+    #[tracing::function("Storage.Queues.QueueClient.updateMessage")]
+    pub async fn update_message(
         &self,
         message_id: &str,
         pop_receipt: &str,
         visibility_timeout: i32,
-        options: Option<QueueClientUpdateOptions<'_>>,
+        options: Option<QueueClientUpdateMessageOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         if message_id.is_empty() {
             return Err(azure_core::Error::with_message(
