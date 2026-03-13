@@ -74,10 +74,11 @@ where
     .await?;
 
     let stats =
-        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?
-            .unwrap(); // TODO
+        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
 
-    let mut remaining_ranges = stats.remaining_download_ranges;
+    let mut remaining_ranges = stats
+        .map(|s| s.remaining_download_ranges)
+        .unwrap_or_default();
     let total_chunks = remaining_ranges.len() + 1;
     if remaining_ranges.is_empty() {
         return Ok(Box::pin(initial_response.into_body()));
@@ -146,7 +147,7 @@ where
             match rx.try_recv() {
                 Ok(Ok((idx, bytes))) => drain[idx % drain_len] = Some(bytes),
                 Ok(Err(err)) => Err(err)?,
-                Err(TryRecvError::Empty) => {} //get_async_runtime().yield_now().await,
+                Err(TryRecvError::Empty) => get_async_runtime().yield_now().await,
                 // Unexpected channel close
                 Err(TryRecvError::Disconnected) => {
                     // if we yielded all the chunks, no harm no foul
