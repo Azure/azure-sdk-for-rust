@@ -2092,6 +2092,7 @@ pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
@@ -2116,6 +2117,13 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// This response header is returned so that the client can check for the integrity of the copied content.
+    fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
         })
     }
 

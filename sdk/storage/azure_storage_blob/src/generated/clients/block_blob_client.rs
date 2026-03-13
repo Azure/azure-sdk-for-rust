@@ -386,15 +386,6 @@ impl BlockBlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
@@ -610,6 +601,7 @@ impl BlockBlobClient {
     /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_md5) - content-md5
     /// * [`etag`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::last_modified) - last-modified
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
@@ -923,15 +915,6 @@ impl BlockBlobClient {
             for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
-        }
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
         }
         if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);

@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Added `content_crc64()` to `BlockBlobClientUploadBlobFromUrlResultHeaders`.
+
 ### Breaking Changes
+
+- Removed `structured_body_type` and `structured_content_length` fields from `AppendBlobClientAppendBlockOptions`, `BlockBlobClientStageBlockOptions`, `BlockBlobClientUploadOptions`, and `PageBlobClientUploadPagesOptions`.
 
 ### Bugs Fixed
 
