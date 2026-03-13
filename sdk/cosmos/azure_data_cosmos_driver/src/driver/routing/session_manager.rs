@@ -4,7 +4,7 @@
 //! High-level session token management for the operation pipeline.
 //!
 //! [`SessionManager`] wraps [`SessionContainer`] and provides consistency-gated
-//! resolve / capture / clear operations that the pipeline calls directly.
+//! resolve / capture operations that the pipeline calls directly.
 
 use crate::models::{
     CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
@@ -60,9 +60,10 @@ impl SessionManager {
     /// Resolution order:
     /// 1. If the user explicitly provided a session token via
     ///    [`OperationOptions`](crate::options::OperationOptions), use that.
-    /// 2. Otherwise, look up the cached token by the operation's container RID.
+    /// 2. Otherwise, look up the cached token by the operation's
+    ///    [`ContainerReference`].
     ///
-    /// Returns `None` if no token is available.
+    /// Returns `None` if no token is available or the operation has no container.
     pub(crate) fn resolve_session_token(
         &self,
         operation: &CosmosOperation,
@@ -78,25 +79,16 @@ impl SessionManager {
         // only the direct RID is looked up. Java uses PartitionKeyRangeCache to
         // map child ranges back to their parent session tokens.
 
-        // Look up from cache using the container RID, with name fallback
         let container = operation.container()?;
-        let rid = container.rid();
-        let name_path = format!(
-            "dbs/{}/colls/{}",
-            container.database_name(),
-            container.name()
-        );
-
-        self.container.get_or_resolve_session_token(rid, &name_path)
+        self.container.resolve_session_token(container)
     }
 
     /// Captures the session token from a response into the cache.
     ///
     /// Only captures if:
     /// - The operation is NOT a master/metadata resource operation.
-    /// - The operation targets a container (has a `ContainerReference`).
+    /// - The operation targets a container (has a [`ContainerReference`]).
     /// - The response headers contain a session token.
-    /// - The response headers contain an owner ID (collection RID).
     pub(crate) fn capture_session_token(
         &self,
         operation: &CosmosOperation,
@@ -115,26 +107,15 @@ impl SessionManager {
             None => return,
         };
 
-        let owner_id = match &headers.owner_id {
-            Some(id) if !id.is_empty() => id.as_str(),
-            _ => return,
+        // Require a resolved ContainerReference for capture. Operations without
+        // a container (database-level, account-level) are already filtered by
+        // the is_reading_from_master check above.
+        let container = match operation.container() {
+            Some(c) => c,
+            None => return,
         };
 
-        // Build the name path from the operation's container if available,
-        // or from the owner_full_name header.
-        let name_path: Option<String> = operation
-            .container()
-            .map(|c| format!("dbs/{}/colls/{}", c.database_name(), c.name()))
-            .or_else(|| {
-                headers
-                    .owner_full_name
-                    .as_ref()
-                    .filter(|n| !n.is_empty())
-                    .cloned()
-            });
-
-        self.container
-            .set_session_token(owner_id, name_path.as_deref(), session_token);
+        self.container.set_session_token(container, session_token);
     }
 }
 
@@ -238,21 +219,6 @@ mod tests {
     }
 
     #[test]
-    fn capture_skips_missing_owner_id() {
-        let mgr = SessionManager::new();
-        let container = test_container();
-        let op = CosmosOperation::read_item(ItemReference::from_name(
-            &container,
-            PartitionKey::from("pk1"),
-            "doc1",
-        ));
-
-        let headers = make_response_headers(Some("0:1#100"), None, None);
-        mgr.capture_session_token(&op, &headers);
-        assert!(mgr.resolve_session_token(&op, None).is_none());
-    }
-
-    #[test]
     fn merge_on_capture() {
         let mgr = SessionManager::new();
         let container = test_container();
@@ -283,6 +249,61 @@ mod tests {
     #[test]
     fn resolve_via_name_fallback() {
         let mgr = SessionManager::new();
+
+        // Capture a token for a container with a specific RID
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: "coll1".into(),
+            partition_key: pk_def.clone(),
+            system_properties: SystemProperties::default(),
+        };
+        let c_capture = ContainerReference::new(
+            account.clone(),
+            "db1",
+            "db_rid1",
+            "coll1",
+            "original_rid",
+            &props,
+        );
+        let op_capture = CosmosOperation::read_item(ItemReference::from_name(
+            &c_capture,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+
+        let headers = make_response_headers(
+            Some("0:1#100"),
+            Some("original_rid"),
+            Some("dbs/db1/colls/coll1"),
+        );
+        mgr.capture_session_token(&op_capture, &headers);
+
+        // Resolve with a different container reference that has the same
+        // name but a different RID — should fall back via name→RID index
+        let props2 = ContainerProperties {
+            id: "coll1".into(),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        let c_resolve =
+            ContainerReference::new(account, "db1", "db_rid1", "coll1", "different_rid", &props2);
+        let op_resolve = CosmosOperation::read_item(ItemReference::from_name(
+            &c_resolve,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+
+        let token = mgr.resolve_session_token(&op_resolve, None).unwrap();
+        assert_eq!(token.as_str(), "0:1#100");
+    }
+
+    #[test]
+    fn capture_uses_container_reference_rid() {
+        let mgr = SessionManager::new();
         let container = test_container();
         let op = CosmosOperation::read_item(ItemReference::from_name(
             &container,
@@ -290,21 +311,21 @@ mod tests {
             "doc1",
         ));
 
-        // Capture using a different RID but same name path
         let headers = make_response_headers(
             Some("0:1#100"),
-            Some("different_rid"),
+            Some("some_other_rid"),
             Some("dbs/db1/colls/coll1"),
         );
         mgr.capture_session_token(&op, &headers);
 
-        // Should still resolve via name→RID index
+        // Token is stored under the ContainerReference's RID (coll_rid1),
+        // not the owner_id header value.
         let token = mgr.resolve_session_token(&op, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100");
     }
 
     #[test]
-    fn capture_maps_rid_from_owner_id() {
+    fn capture_succeeds_without_owner_id() {
         let mgr = SessionManager::new();
         let container = test_container();
         let op = CosmosOperation::read_item(ItemReference::from_name(
@@ -313,31 +334,11 @@ mod tests {
             "doc1",
         ));
 
-        let headers = make_response_headers(
-            Some("0:1#100"),
-            Some("some_rid"),
-            Some("dbs/db1/colls/coll1"),
-        );
+        // No owner_id header — capture still works because the RID comes
+        // from the ContainerReference, not from response headers.
+        let headers = make_response_headers(Some("0:1#100"), None, None);
         mgr.capture_session_token(&op, &headers);
-
-        // Name path derived from the container reference, RID from owner_id header.
-        let resolved_rid = mgr.container.resolve_rid("dbs/db1/colls/coll1");
-        assert!(resolved_rid.is_some());
-    }
-
-    #[test]
-    fn empty_owner_id_skips_capture() {
-        let mgr = SessionManager::new();
-        let container = test_container();
-        let op = CosmosOperation::read_item(ItemReference::from_name(
-            &container,
-            PartitionKey::from("pk1"),
-            "doc1",
-        ));
-
-        let headers = make_response_headers(Some("0:1#100"), Some(""), None);
-        mgr.capture_session_token(&op, &headers);
-        assert!(mgr.resolve_session_token(&op, None).is_none());
+        assert!(mgr.resolve_session_token(&op, None).is_some());
     }
 
     #[test]
@@ -503,14 +504,15 @@ mod tests {
     }
 
     #[test]
-    fn capture_allowed_for_container_create() {
-        // Container Create targets data partitions, so we should capture.
+    fn capture_skips_container_create_without_reference() {
+        // Container Create targets data partitions (NOT master), but the
+        // operation has no ContainerReference so capture is skipped.
         let mgr = SessionManager::new();
         let account = AccountReference::with_master_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
-        let db = DatabaseReference::from_name(account, "db1");
+        let db = DatabaseReference::from_name(account.clone(), "db1");
         let op = CosmosOperation::create_container(db);
 
         // create_container has resource_type=DocumentCollection, operation_type=Create
@@ -526,9 +528,28 @@ mod tests {
         );
         mgr.capture_session_token(&op, &headers);
 
-        // The token should have been captured (name-based resolve)
-        let resolved = mgr.container.resolve_rid("dbs/db1/colls/new_coll");
-        assert!(resolved.is_some());
+        // Verify nothing was captured: build a ContainerReference matching the
+        // response headers' RID and confirm the cache is still empty.
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: "new_coll".into(),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        let probe = ContainerReference::new(
+            account,
+            "db1",
+            "db_rid1",
+            "new_coll",
+            "coll_rid_new",
+            &props,
+        );
+        let probe_op = CosmosOperation::read_item(ItemReference::from_name(
+            &probe,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        assert!(mgr.resolve_session_token(&probe_op, None).is_none());
     }
 
     #[test]
@@ -539,7 +560,7 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
-        let db = DatabaseReference::from_name(account, "db1");
+        let db = DatabaseReference::from_name(account.clone(), "db1");
         let op = CosmosOperation::read_all_containers(db);
 
         // read_all_containers has resource_type=DocumentCollection, operation_type=ReadFeed
@@ -555,8 +576,19 @@ mod tests {
         );
         mgr.capture_session_token(&op, &headers);
 
-        // Should NOT have captured
-        let resolved = mgr.container.resolve_rid("dbs/db1/colls/coll1");
-        assert!(resolved.is_none());
+        // Verify nothing was captured
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: "coll1".into(),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        let probe = ContainerReference::new(account, "db1", "db_rid1", "coll1", "coll_rid", &props);
+        let probe_op = CosmosOperation::read_item(ItemReference::from_name(
+            &probe,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        assert!(mgr.resolve_session_token(&probe_op, None).is_none());
     }
 }

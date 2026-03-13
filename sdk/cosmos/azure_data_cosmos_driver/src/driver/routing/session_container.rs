@@ -4,7 +4,8 @@
 //! In-memory session token cache keyed by collection resource ID.
 
 use crate::models::{
-    resource_id::ResourceId, vector_session_token::SessionTokenValue, SessionToken,
+    resource_id::ResourceId, vector_session_token::SessionTokenValue, ContainerReference,
+    SessionToken,
 };
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -32,25 +33,21 @@ struct SessionContainerInner {
     name_to_rid: HashMap<String, ResourceId>,
 }
 
+/// Builds a `dbs/{db}/colls/{coll}` name path from a [`ContainerReference`].
+fn name_path(container: &ContainerReference) -> String {
+    format!(
+        "dbs/{}/colls/{}",
+        container.database_name(),
+        container.name()
+    )
+}
+
 impl SessionContainer {
     /// Creates a new, empty session container.
     pub(crate) fn new() -> Self {
         Self {
             inner: RwLock::new(SessionContainerInner::default()),
         }
-    }
-
-    /// Returns the composite session token string for the collection identified
-    /// by `collection_rid`. Each partition-key-range contributes a
-    /// `<pkRangeId>:<vector>` segment, separated by commas.
-    ///
-    /// Returns `None` if no tokens are cached for the given RID.
-    // TODO(perf): This allocates on every resolve call. Consider caching the
-    // composite string or using a `Cow` to avoid allocations on the hot path.
-    #[allow(dead_code)] // Used by tests; primary callers use get_or_resolve_session_token
-    pub(crate) fn get_session_token(&self, collection_rid: &str) -> Option<SessionToken> {
-        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
-        Self::build_composite_token(&guard, collection_rid)
     }
 
     /// Builds a composite session token string from the cached inner state.
@@ -74,68 +71,56 @@ impl SessionContainer {
         Some(SessionToken::new(composite.join(",")))
     }
 
-    /// Resolves a collection name path to its cached RID.
-    #[allow(dead_code)] // Used by tests; primary callers use get_or_resolve_session_token
-    pub(crate) fn resolve_rid(&self, collection_name_path: &str) -> Option<String> {
-        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
-        guard
-            .name_to_rid
-            .get(collection_name_path)
-            .map(|rid| rid.as_str().to_owned())
-    }
-
-    /// Attempts to resolve a session token using first the collection RID, then
-    /// falling back to name-based resolution. This avoids acquiring the read
-    /// lock multiple times for the common resolve path.
-    pub(crate) fn get_or_resolve_session_token(
+    /// Resolves a session token for the given container, trying first by RID
+    /// then falling back to name-based resolution.
+    pub(crate) fn resolve_session_token(
         &self,
-        collection_rid: &str,
-        collection_name_path: &str,
+        container: &ContainerReference,
     ) -> Option<SessionToken> {
         let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        let rid = container.rid();
 
         // Try direct RID lookup
-        if let Some(token) = Self::build_composite_token(&guard, collection_rid) {
+        if let Some(token) = Self::build_composite_token(&guard, rid) {
             return Some(token);
         }
 
         // Fall back to name → RID → token
-        if let Some(resolved_rid) = guard.name_to_rid.get(collection_name_path) {
+        let np = name_path(container);
+        if let Some(resolved_rid) = guard.name_to_rid.get(&np) {
             return Self::build_composite_token(&guard, resolved_rid.as_str());
         }
 
         None
     }
 
-    /// Stores (or merges) a session token for a given collection.
+    /// Stores (or merges) a session token for a given container.
     ///
     /// The `session_token_value` is the raw `x-ms-session-token` header value
     /// which may contain multiple comma-separated `<pkRangeId>:<vector>` segments.
     ///
-    /// If `collection_name_path` is provided, the name→RID index is also updated.
+    /// The name→RID index is always updated from the container reference.
     /// **RID mismatch detection**: If the name was previously mapped to a different
     /// RID, the old RID's tokens are cleared (the container was likely recreated).
     pub(crate) fn set_session_token(
         &self,
-        collection_rid: &str,
-        collection_name_path: Option<&str>,
+        container: &ContainerReference,
         session_token_value: &str,
     ) {
+        let collection_rid = container.rid();
+        let np = name_path(container);
         let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
 
         // RID mismatch detection: if the name pointed at a different RID, clear old.
-        if let Some(name_path) = collection_name_path {
-            if let Some(old_rid) = guard.name_to_rid.get(name_path) {
-                if old_rid.as_str() != collection_rid {
-                    let old_rid = old_rid.clone();
-                    guard.tokens.remove(&old_rid);
-                }
+        if let Some(old_rid) = guard.name_to_rid.get(&np) {
+            if old_rid.as_str() != collection_rid {
+                let old_rid = old_rid.clone();
+                guard.tokens.remove(&old_rid);
             }
-            guard.name_to_rid.insert(
-                name_path.to_owned(),
-                ResourceId::new(collection_rid.to_owned()),
-            );
         }
+        guard
+            .name_to_rid
+            .insert(np, ResourceId::new(collection_rid.to_owned()));
 
         let pk_map = guard
             .tokens
@@ -164,53 +149,94 @@ impl SessionContainer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{
+        AccountReference, ContainerProperties, PartitionKeyDefinition, SystemProperties,
+    };
+    use std::borrow::Cow;
+    use url::Url;
+
+    fn test_container(db_name: &str, coll_name: &str, coll_rid: &str) -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: Cow::Owned(coll_name.to_owned()),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(
+            account,
+            db_name.to_owned(),
+            "db_rid1".to_owned(),
+            coll_name.to_owned(),
+            coll_rid.to_owned(),
+            &props,
+        )
+    }
 
     #[test]
     fn empty_container_returns_none() {
         let sc = SessionContainer::new();
-        assert!(sc.get_session_token("rid1").is_none());
+        let c = test_container("db1", "c1", "rid1");
+        assert!(sc.resolve_session_token(&c).is_none());
     }
 
     #[test]
     fn set_and_get_single_token() {
         let sc = SessionContainer::new();
-        sc.set_session_token("rid1", Some("dbs/db1/colls/c1"), "0:1#100#1=10");
-        let token = sc.get_session_token("rid1").unwrap();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10");
+        let token = sc.resolve_session_token(&c).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
     #[test]
     fn merge_updates_existing() {
         let sc = SessionContainer::new();
-        sc.set_session_token("rid1", None, "0:1#100#1=10");
-        sc.set_session_token("rid1", None, "0:1#200#1=20");
-        let token = sc.get_session_token("rid1").unwrap();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10");
+        sc.set_session_token(&c, "0:1#200#1=20");
+        let token = sc.resolve_session_token(&c).unwrap();
         assert!(token.as_str().contains("200"));
     }
 
     #[test]
     fn compound_token_multiple_pk_ranges() {
         let sc = SessionContainer::new();
-        sc.set_session_token("rid1", None, "0:1#100#1=10,1:1#200#1=20");
-        let token = sc.get_session_token("rid1").unwrap();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10,1:1#200#1=20");
+        let token = sc.resolve_session_token(&c).unwrap();
         let s = token.as_str();
         assert!(s.contains("0:") && s.contains("1:"));
     }
 
     #[test]
-    fn name_to_rid_resolution() {
+    fn name_based_resolution_fallback() {
         let sc = SessionContainer::new();
-        sc.set_session_token("rid1", Some("dbs/db1/colls/c1"), "0:1#100");
-        assert_eq!(sc.resolve_rid("dbs/db1/colls/c1"), Some("rid1".to_owned()));
+        // Set token with container having rid "rid_actual"
+        let c_actual = test_container("db1", "c1", "rid_actual");
+        sc.set_session_token(&c_actual, "0:1#100");
+
+        // Resolve with a container having a different rid but same name
+        // should fall back through name→RID index
+        let c_lookup = test_container("db1", "c1", "rid_different");
+        let token = sc.resolve_session_token(&c_lookup).unwrap();
+        assert_eq!(token.as_str(), "0:1#100");
     }
 
     #[test]
     fn rid_mismatch_clears_old_tokens() {
         let sc = SessionContainer::new();
-        sc.set_session_token("rid_old", Some("dbs/db1/colls/c1"), "0:1#100#1=10");
+        let c_old = test_container("db1", "c1", "rid_old");
+        sc.set_session_token(&c_old, "0:1#100#1=10");
+
         // Same name, different RID → container recreated
-        sc.set_session_token("rid_new", Some("dbs/db1/colls/c1"), "0:1#50#1=5");
-        assert!(sc.get_session_token("rid_old").is_none());
-        assert!(sc.get_session_token("rid_new").is_some());
+        let c_new = test_container("db1", "c1", "rid_new");
+        sc.set_session_token(&c_new, "0:1#50#1=5");
+
+        assert!(sc.resolve_session_token(&c_old).is_none());
+        assert!(sc.resolve_session_token(&c_new).is_some());
     }
 }
