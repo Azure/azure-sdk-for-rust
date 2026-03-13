@@ -1,20 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Cosmos DB consistency level model.
+//! Cosmos DB default consistency level model.
 
 use serde::{Deserialize, Serialize};
 
-/// The five consistency levels supported by Azure Cosmos DB.
+/// The account-level default consistency level configured for a Cosmos DB account.
 ///
-/// Every Cosmos DB account is configured with one of these as its default.
-/// Individual operations can relax (but not strengthen) the consistency level.
+/// This type represents the *default* consistency of the account and should
+/// **only** be used in account metadata (`AccountProperties`). For per-request
+/// consistency overrides use [`ReadConsistencyStrategy`](crate::options::ReadConsistencyStrategy).
 ///
 /// See [Cosmos DB consistency levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
 /// for detailed semantics.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[non_exhaustive]
-pub enum ConsistencyLevel {
+pub(crate) enum DefaultConsistencyLevel {
     /// Reads are guaranteed to return the most recent committed version.
     Strong,
 
@@ -31,14 +32,14 @@ pub enum ConsistencyLevel {
     Eventual,
 }
 
-impl ConsistencyLevel {
+impl DefaultConsistencyLevel {
     /// Returns `true` if this consistency level is [`Session`](Self::Session).
-    pub fn is_session(&self) -> bool {
+    pub(crate) fn is_session(&self) -> bool {
         matches!(self, Self::Session)
     }
 }
 
-impl std::fmt::Display for ConsistencyLevel {
+impl std::fmt::Display for DefaultConsistencyLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Strong => f.write_str("Strong"),
@@ -50,7 +51,7 @@ impl std::fmt::Display for ConsistencyLevel {
     }
 }
 
-impl std::str::FromStr for ConsistencyLevel {
+impl std::str::FromStr for DefaultConsistencyLevel {
     type Err = azure_core::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -90,59 +91,66 @@ mod tests {
     #[test]
     fn parse_all_levels() {
         assert_eq!(
-            "Strong".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::Strong
+            "Strong".parse::<DefaultConsistencyLevel>().unwrap(),
+            DefaultConsistencyLevel::Strong
         );
         assert_eq!(
-            "BoundedStaleness".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::BoundedStaleness
+            "BoundedStaleness"
+                .parse::<DefaultConsistencyLevel>()
+                .unwrap(),
+            DefaultConsistencyLevel::BoundedStaleness
         );
         assert_eq!(
-            "Session".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::Session
+            "Session".parse::<DefaultConsistencyLevel>().unwrap(),
+            DefaultConsistencyLevel::Session
         );
         assert_eq!(
-            "ConsistentPrefix".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::ConsistentPrefix
+            "ConsistentPrefix"
+                .parse::<DefaultConsistencyLevel>()
+                .unwrap(),
+            DefaultConsistencyLevel::ConsistentPrefix
         );
         assert_eq!(
-            "Eventual".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::Eventual
+            "Eventual".parse::<DefaultConsistencyLevel>().unwrap(),
+            DefaultConsistencyLevel::Eventual
         );
     }
 
     #[test]
     fn parse_case_insensitive() {
         assert_eq!(
-            "session".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::Session
+            "session".parse::<DefaultConsistencyLevel>().unwrap(),
+            DefaultConsistencyLevel::Session
         );
         assert_eq!(
-            "STRONG".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::Strong
+            "STRONG".parse::<DefaultConsistencyLevel>().unwrap(),
+            DefaultConsistencyLevel::Strong
         );
         assert_eq!(
-            "eventual".parse::<ConsistencyLevel>().unwrap(),
-            ConsistencyLevel::Eventual
+            "eventual".parse::<DefaultConsistencyLevel>().unwrap(),
+            DefaultConsistencyLevel::Eventual
         );
     }
 
     #[test]
     fn parse_unknown_fails() {
-        assert!("Unknown".parse::<ConsistencyLevel>().is_err());
+        assert!("Unknown".parse::<DefaultConsistencyLevel>().is_err());
     }
 
     #[test]
     fn display_roundtrip() {
         for level in &[
-            ConsistencyLevel::Strong,
-            ConsistencyLevel::BoundedStaleness,
-            ConsistencyLevel::Session,
-            ConsistencyLevel::ConsistentPrefix,
-            ConsistencyLevel::Eventual,
+            DefaultConsistencyLevel::Strong,
+            DefaultConsistencyLevel::BoundedStaleness,
+            DefaultConsistencyLevel::Session,
+            DefaultConsistencyLevel::ConsistentPrefix,
+            DefaultConsistencyLevel::Eventual,
         ] {
             assert_eq!(
-                level.to_string().parse::<ConsistencyLevel>().unwrap(),
+                level
+                    .to_string()
+                    .parse::<DefaultConsistencyLevel>()
+                    .unwrap(),
                 *level
             );
         }
@@ -150,17 +158,17 @@ mod tests {
 
     #[test]
     fn is_session() {
-        assert!(ConsistencyLevel::Session.is_session());
-        assert!(!ConsistencyLevel::Strong.is_session());
-        assert!(!ConsistencyLevel::Eventual.is_session());
+        assert!(DefaultConsistencyLevel::Session.is_session());
+        assert!(!DefaultConsistencyLevel::Strong.is_session());
+        assert!(!DefaultConsistencyLevel::Eventual.is_session());
     }
 
     #[test]
     fn serde_roundtrip() {
-        let level = ConsistencyLevel::Session;
+        let level = DefaultConsistencyLevel::Session;
         let json = serde_json::to_string(&level).unwrap();
         assert_eq!(json, "\"Session\"");
-        let parsed: ConsistencyLevel = serde_json::from_str(&json).unwrap();
+        let parsed: DefaultConsistencyLevel = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, level);
     }
 }

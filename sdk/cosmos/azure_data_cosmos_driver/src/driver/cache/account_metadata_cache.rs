@@ -9,7 +9,7 @@
 //! feature work.
 
 use super::AsyncCache;
-use crate::models::{AccountEndpoint, ConsistencyLevel};
+use crate::models::{AccountEndpoint, DefaultConsistencyLevel};
 use crate::options::Region;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -55,7 +55,7 @@ pub(crate) struct ReplicationPolicy {
 // are kept intentionally even when not yet consumed by driver logic.
 #[allow(dead_code)]
 pub(crate) struct ConsistencyPolicy {
-    pub default_consistency_level: ConsistencyLevel,
+    pub default_consistency_level: DefaultConsistencyLevel,
 }
 
 /// Read preference coefficients used by the service when selecting regions.
@@ -441,7 +441,7 @@ mod tests {
         assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
         assert_eq!(
             props.user_consistency_policy.default_consistency_level,
-            ConsistencyLevel::Session
+            DefaultConsistencyLevel::Session
         );
         assert!(!props.enable_multiple_write_locations);
     }

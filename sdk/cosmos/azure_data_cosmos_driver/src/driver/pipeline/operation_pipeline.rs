@@ -21,8 +21,8 @@ use crate::{
         LocationStateStore,
     },
     models::{
-        request_header_names, ActivityId, ConsistencyLevel, CosmosOperation, CosmosResponse,
-        CosmosResponseHeaders, Credential, SessionToken, SubStatusCode,
+        request_header_names, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
+        Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
     options::{OperationOptions, ReadConsistencyStrategy, Region, RuntimeOptions},
 };
@@ -58,7 +58,7 @@ pub(crate) async fn execute_operation_pipeline(
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
-    account_default_consistency: ConsistencyLevel,
+    account_default_consistency: DefaultConsistencyLevel,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -997,38 +997,36 @@ mod tests {
     }
 
     mod effective_consistency_tests {
-        use crate::{models::ConsistencyLevel, options::ReadConsistencyStrategy};
+        use crate::{models::DefaultConsistencyLevel, options::ReadConsistencyStrategy};
 
         #[test]
         fn default_strategy_with_session_account() {
-            assert!(
-                ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Session)
-            );
+            assert!(ReadConsistencyStrategy::Default
+                .is_session_effective(DefaultConsistencyLevel::Session));
         }
 
         #[test]
         fn default_strategy_with_strong_account() {
-            assert!(
-                !ReadConsistencyStrategy::Default.is_session_effective(ConsistencyLevel::Strong)
-            );
+            assert!(!ReadConsistencyStrategy::Default
+                .is_session_effective(DefaultConsistencyLevel::Strong));
         }
 
         #[test]
         fn session_strategy_overrides_account() {
-            assert!(ReadConsistencyStrategy::Session.is_session_effective(ConsistencyLevel::Strong));
+            assert!(ReadConsistencyStrategy::Session
+                .is_session_effective(DefaultConsistencyLevel::Strong));
         }
 
         #[test]
         fn eventual_strategy_never_session() {
-            assert!(
-                !ReadConsistencyStrategy::Eventual.is_session_effective(ConsistencyLevel::Session)
-            );
+            assert!(!ReadConsistencyStrategy::Eventual
+                .is_session_effective(DefaultConsistencyLevel::Session));
         }
 
         #[test]
         fn consistent_prefix_not_session() {
             assert!(!ReadConsistencyStrategy::Default
-                .is_session_effective(ConsistencyLevel::ConsistentPrefix));
+                .is_session_effective(DefaultConsistencyLevel::ConsistentPrefix));
         }
     }
 }
