@@ -305,18 +305,32 @@ impl CosmosDriverRuntime {
         }
 
         // Create new driver (write lock)
-        let mut registry = self.driver_registry.write().unwrap();
+        let driver = {
+            let mut registry = self.driver_registry.write().unwrap();
 
-        // Double-check after acquiring write lock
-        if let Some(driver) = registry.get(&key) {
-            return Ok(driver.clone());
+            // Double-check after acquiring write lock
+            if let Some(driver) = registry.get(&key) {
+                return Ok(driver.clone());
+            }
+
+            // Build driver options if not provided
+            let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+
+            let driver = Arc::new(CosmosDriver::new(self.clone(), options));
+            registry.insert(key.clone(), driver.clone());
+            driver
+        };
+
+        // Best-effort initialization: prime the account metadata cache.
+        // On failure, log a warning and return the driver with cold caches
+        // so that a transient error doesn't block driver creation.
+        if let Err(e) = driver.initialize().await {
+            tracing::warn!(
+                endpoint = %key,
+                error = %e,
+                "Driver initialization failed; caches will be populated lazily on first operation"
+            );
         }
-
-        // Build driver options if not provided
-        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
-
-        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-        registry.insert(key, driver.clone());
 
         Ok(driver)
     }
@@ -516,10 +530,7 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(
-            connection_pool.clone(),
-            user_agent.as_str(),
-        )?);
+        let transport = Arc::new(CosmosTransport::new(connection_pool.clone())?);
 
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;

@@ -2,6 +2,9 @@
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
+  "files.associations": {
+    "CODEOWNERS": "ignore"
+  },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".github/instructions/git-commit.instructions.md"

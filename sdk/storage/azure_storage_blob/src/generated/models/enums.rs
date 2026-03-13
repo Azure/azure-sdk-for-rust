@@ -527,6 +527,9 @@ pub enum StorageErrorCode {
     /// Incremental copy blob mismatch.
     IncrementalCopyBlobMismatch,
 
+    /// Incremental copy of an earlier snapshot is not allowed.
+    IncrementalCopyOfEarlierSnapshotNotAllowed,
+
     /// Incremental copy of earlier version snapshot not allowed.
     IncrementalCopyOfEarlierVersionSnapshotNotAllowed,
 
@@ -589,6 +592,9 @@ pub enum StorageErrorCode {
 
     /// Invalid request URL.
     InvalidRequestUrl,
+
+    /// Invalid resource name.
+    InvalidResourceName,
 
     /// Invalid source blob type.
     InvalidSourceBlobType,
@@ -670,6 +676,9 @@ pub enum StorageErrorCode {
 
     /// Multiple condition headers not supported.
     MultipleConditionHeadersNotSupported,
+
+    /// No authentication information.
+    NoAuthenticationInformation,
 
     /// No pending copy operation.
     NoPendingCopyOperation,
