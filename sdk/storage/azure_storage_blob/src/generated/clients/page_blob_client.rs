@@ -765,15 +765,6 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-page-write", "update");
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
