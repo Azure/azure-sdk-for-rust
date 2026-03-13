@@ -67,29 +67,29 @@ request-triggered refresh would leave long gaps without health information.
 ## 2. Architecture Overview
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    CosmosDriverRuntime                       │
-│                                                             │
-│  ┌─────────────────┐  ┌──────────────────────────────────┐  │
-│  │ AccountMetadata  │  │ EndpointHealthMonitor            │  │
-│  │ Cache            │  │                                  │  │
-│  │ (account props)  │  │  • owns background task          │  │
-│  └─────────────────┘  │  • schedules probes              │  │
-│                        │  • emits LocationEffects          │  │
-│                        │                                  │  │
-│                        │  ┌────────────────────────────┐  │  │
-│                        │  │ HealthProbe (enum)          │  │  │
-│                        │  │  • GetAccountMetadata       │  │  │
-│                        │  │  • (future: HealthEndpoint) │  │  │
-│                        │  └────────────────────────────┘  │  │
-│                        └──────────────────────────────────┘  │
-│                                     │                        │
-│                                     ▼                        │
-│                        ┌──────────────────────────────────┐  │
-│                        │ LocationStateStore                │  │
-│                        │   apply(LocationEffect)           │  │
-│                        └──────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
++---------------------------------------------------------------+
+|                      CosmosDriverRuntime                      |
+|                                                               |
+|  +-------------------+ +--------------------------------+     |
+|  | AccountMetadata   | | EndpointHealthMonitor          |     |
+|  | Cache             | |                                |     |
+|  | (account props)   | |  * owns background task        |     |
+|  +-------------------+ |  * schedules probes            |     |
+|                        |  * emits LocationEffects       |     |
+|                        |                                |     |
+|                        |  +--------------------------+  |     |
+|                        |  | HealthProbe (enum)       |  |     |
+|                        |  |  * GetAccountMetadata    |  |     |
+|                        |  |  * (future variant)      |  |     |
+|                        |  +--------------------------+  |     |
+|                        +--------------------------------+     |
+|                                         |                     |
+|                                         v                     |
+|                        +--------------------------------+     |
+|                        | LocationStateStore             |     |
+|                        |   apply(LocationEffect)        |     |
+|                        +--------------------------------+     |
++---------------------------------------------------------------+
 ```
 
 ### Relationship to Transport Pipeline Spec
