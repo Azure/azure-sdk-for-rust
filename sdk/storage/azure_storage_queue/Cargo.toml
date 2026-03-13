@@ -20,6 +20,7 @@ default = ["azure_core/default"]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 serde = { workspace = true }
+time.workspace = true
 
 [lints]
 workspace = true
