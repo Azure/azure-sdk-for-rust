@@ -815,7 +815,6 @@ impl BlockBlobClient {
     /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::content_md5) - content-md5
     /// * [`etag`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::last_modified) - last-modified
-    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::encryption_scope) - x-ms-encryption-scope
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientUploadInternalResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
