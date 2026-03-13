@@ -6,8 +6,8 @@
 use std::time::Duration;
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::clients::DatabaseClient;
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::{clients::DatabaseClient, models::TimeToLive};
 use azure_data_cosmos::{CosmosClient, CreateContainerOptions};
 
 const MAX_RETRIES: u32 = 10;
@@ -24,7 +24,7 @@ pub async fn ensure_container(
     db_client: &DatabaseClient,
     container_name: &str,
     throughput: usize,
-    default_ttl: Option<Duration>,
+    default_ttl: Option<TimeToLive>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let container_client = db_client.container_client(container_name).await;
 

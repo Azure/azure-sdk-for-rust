@@ -75,7 +75,7 @@ static inline int test_context_create_client(test_context *ctx) {
         options.danger_allow_invalid_certificates = true;
     }
     
-    cosmos_error_code code = cosmos_client_create_with_connection_string(&ctx->call_ctx, connection_string, &options, &ctx->client);
+    cosmos_error_code code = cosmos_client_create_with_connection_string(&ctx->call_ctx, connection_string, "East US", &options, &ctx->client);
     if (code != COSMOS_ERROR_CODE_SUCCESS) {
         printf("Failed to create client from connection string\n");
         return TEST_FAIL;

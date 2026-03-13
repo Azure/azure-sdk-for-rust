@@ -3,14 +3,14 @@
 
 pub use crate::generated::clients::{QueueClient, QueueClientOptions};
 
-use crate::{generated::models::*, logging::apply_storage_logging_defaults};
+use crate::logging::apply_storage_logging_defaults;
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat,
+        Pipeline, StatusCode, Url,
     },
-    tracing, xml, Result,
+    tracing, Result,
 };
 use std::sync::Arc;
 
@@ -93,69 +93,10 @@ impl QueueClient {
     ///
     /// Returns `true` if the queue exists, `false` if the queue does not exist, and propagates all other errors.
     pub async fn exists(&self) -> Result<bool> {
-        match self.get_metadata(None).await {
+        match self.get_properties(None).await {
             Ok(_) => Ok(true),
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => Ok(false),
             Err(e) => Err(e),
         }
-    }
-
-    /// Enqueues a message and returns the single [`SentMessage`] from the response.
-    ///
-    /// TODO: Need to figure out what to do to finalize this design.
-    /// The underlying operation returns a list; this method unwraps that list
-    /// and returns `Response<SentMessage>` directly.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_message` - The message to enqueue.
-    /// * `options` - Optional configuration for the request.
-    pub async fn send_message(
-        &self,
-        queue_message: RequestContent<QueueMessage, XmlFormat>,
-        options: Option<QueueClientSendMessageInternalOptions<'_>>,
-    ) -> Result<Response<SentMessage, XmlFormat>> {
-        let response = self.send_message_internal(queue_message, options).await?;
-        Self::extract_first_sent_message(response).await
-    }
-
-    /// Updates the visibility timeout and optionally the content of a queued message.
-    ///
-    /// # Arguments
-    ///
-    /// * `message_id` - The ID of the message to update.
-    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved.
-    /// * `visibility_timeout` - The new visibility timeout for the message, in seconds.
-    /// * `options` - Optional configuration for the request.
-    pub async fn update_message(
-        &self,
-        message_id: &str,
-        pop_receipt: &str,
-        visibility_timeout: i32,
-        options: Option<QueueClientUpdateOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.update(message_id, pop_receipt, visibility_timeout, options)
-            .await
-    }
-
-    async fn extract_first_sent_message(
-        response: Response<ListOfSentMessage, XmlFormat>,
-    ) -> Result<Response<SentMessage, XmlFormat>> {
-        let status = response.status();
-        let headers = response.headers().clone();
-        let list = response.into_model()?;
-        let first = list
-            .items
-            .unwrap_or_default()
-            .into_iter()
-            .next()
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "No messages found in the response.",
-                )
-            })?;
-        let xml_body = xml::to_xml(&first)?;
-        Ok(RawResponse::from_bytes(status, headers, xml_body).into())
     }
 }

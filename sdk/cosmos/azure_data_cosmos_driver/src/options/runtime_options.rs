@@ -8,7 +8,10 @@
 // configuration merging). The lock is held only briefly for reads/writes of option values,
 // so contention is minimal. Using `std::sync::RwLock` also avoids coupling the crate to a
 // specific async runtime (tokio), which is important for runtime-agnostic design.
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 use crate::{
     models::ThroughputControlGroupName,
@@ -39,6 +42,12 @@ pub struct RuntimeOptions {
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
     /// Content response on write setting.
     pub content_response_on_write: Option<ContentResponseOnWrite>,
+    /// Maximum operation-level failover retries.
+    pub max_failover_retry_count: Option<u32>,
+    /// Maximum operation-level session retries.
+    pub max_session_retry_count: Option<u32>,
+    /// Endpoint unavailability TTL used by routing state.
+    pub endpoint_unavailability_ttl: Option<Duration>,
 }
 
 impl RuntimeOptions {
@@ -91,6 +100,15 @@ impl RuntimeOptions {
             content_response_on_write: self
                 .content_response_on_write
                 .or(base.content_response_on_write),
+            max_failover_retry_count: self
+                .max_failover_retry_count
+                .or(base.max_failover_retry_count),
+            max_session_retry_count: self
+                .max_session_retry_count
+                .or(base.max_session_retry_count),
+            endpoint_unavailability_ttl: self
+                .endpoint_unavailability_ttl
+                .or(base.endpoint_unavailability_ttl),
         }
     }
 }
@@ -173,6 +191,24 @@ impl RuntimeOptionsBuilder {
         self
     }
 
+    /// Sets max operation-level failover retries.
+    pub fn with_max_failover_retry_count(mut self, value: u32) -> Self {
+        self.options.max_failover_retry_count = Some(value);
+        self
+    }
+
+    /// Sets max operation-level session retries.
+    pub fn with_max_session_retry_count(mut self, value: u32) -> Self {
+        self.options.max_session_retry_count = Some(value);
+        self
+    }
+
+    /// Sets endpoint unavailability TTL.
+    pub fn with_endpoint_unavailability_ttl(mut self, value: Duration) -> Self {
+        self.options.endpoint_unavailability_ttl = Some(value);
+        self
+    }
+
     /// Builds the [`RuntimeOptions`].
     pub fn build(self) -> RuntimeOptions {
         self.options
@@ -250,6 +286,21 @@ impl SharedRuntimeOptions {
     /// Sets the content response on write setting.
     pub fn set_content_response_on_write(&self, value: Option<ContentResponseOnWrite>) {
         self.write_guard().content_response_on_write = value;
+    }
+
+    /// Sets maximum failover retries.
+    pub fn set_max_failover_retry_count(&self, value: Option<u32>) {
+        self.write_guard().max_failover_retry_count = value;
+    }
+
+    /// Sets maximum session retries.
+    pub fn set_max_session_retry_count(&self, value: Option<u32>) {
+        self.write_guard().max_session_retry_count = value;
+    }
+
+    /// Sets endpoint unavailability TTL.
+    pub fn set_endpoint_unavailability_ttl(&self, value: Option<Duration>) {
+        self.write_guard().endpoint_unavailability_ttl = value;
     }
 }
 

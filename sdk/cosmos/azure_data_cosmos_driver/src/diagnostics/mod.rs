@@ -23,5 +23,5 @@ mod diagnostics_context;
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, PipelineType, RequestDiagnostics, RequestEvent,
-    RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
+    RequestEventType, RequestHandle, RequestSentStatus, TransportKind, TransportSecurity,
 };

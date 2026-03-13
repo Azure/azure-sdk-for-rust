@@ -16,8 +16,7 @@ use azure_core::{
     Result,
 };
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl Page for ListDeletedKeyPropertiesResult {
     type Item = DeletedKeyProperties;
     type IntoIter = <Vec<DeletedKeyProperties> as IntoIterator>::IntoIter;
@@ -26,8 +25,7 @@ impl Page for ListDeletedKeyPropertiesResult {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl Page for ListKeyPropertiesResult {
     type Item = KeyProperties;
     type IntoIter = <Vec<KeyProperties> as IntoIterator>::IntoIter;

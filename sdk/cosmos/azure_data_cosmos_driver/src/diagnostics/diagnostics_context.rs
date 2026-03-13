@@ -8,6 +8,7 @@
 //! serialization helpers, and the diagnostics context itself.
 
 use crate::{
+    driver::routing::CosmosEndpoint,
     models::{ActivityId, CosmosStatus, RequestCharge, SubStatusCode},
     options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
@@ -149,6 +150,54 @@ pub enum TransportSecurity {
     EmulatorWithInsecureCertificates,
 }
 
+/// The concrete transport kind used for a request.
+///
+/// This distinguishes the standard gateway path from Gateway 2.0 thin-client
+/// routing while keeping TLS/emulator concerns in [`TransportSecurity`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum TransportKind {
+    /// Standard gateway transport.
+    #[default]
+    Gateway,
+
+    /// Gateway 2.0 thin-client transport.
+    Gateway20,
+}
+
+impl TransportKind {
+    /// Returns the string representation of this transport kind.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TransportKind::Gateway => "gateway",
+            TransportKind::Gateway20 => "gateway20",
+        }
+    }
+
+    /// Returns true if this request used the standard gateway transport.
+    pub fn is_gateway(self) -> bool {
+        matches!(self, TransportKind::Gateway)
+    }
+
+    /// Returns true if this request used the Gateway 2.0 transport.
+    pub fn is_gateway20(self) -> bool {
+        matches!(self, TransportKind::Gateway20)
+    }
+}
+
+impl std::fmt::Display for TransportKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for TransportKind {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl TransportSecurity {
     /// Returns the string representation of this transport security mode.
     pub fn as_str(self) -> &'static str {
@@ -277,6 +326,9 @@ pub struct RequestDiagnostics {
     /// The transport security mode used for this request.
     transport_security: TransportSecurity,
 
+    /// The concrete transport kind used for this request.
+    transport_kind: TransportKind,
+
     /// Region this request was sent to.
     region: Option<Region>,
 
@@ -331,15 +383,16 @@ impl RequestDiagnostics {
         execution_context: ExecutionContext,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
-        region: Option<Region>,
-        endpoint: String,
+        transport_kind: TransportKind,
+        endpoint: &CosmosEndpoint,
     ) -> Self {
         Self {
             execution_context,
             pipeline_type,
             transport_security,
-            region,
-            endpoint,
+            transport_kind,
+            region: endpoint.region().cloned(),
+            endpoint: endpoint.url().as_str().to_owned(),
             // Status is set when the request completes via `complete()`.
             // Using 0 as sentinel value for "not yet completed".
             status: CosmosStatus::new(StatusCode::from(0)),
@@ -378,6 +431,9 @@ impl RequestDiagnostics {
     /// Sets the status to 408 (Request Timeout) with sub-status
     /// [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
     /// operation timeout from the client side.
+    // TODO(Step 2): remove this allow once operation/transport deadline wiring
+    // uses the builder timeout path directly again.
+    #[allow(dead_code)]
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
@@ -465,6 +521,11 @@ impl RequestDiagnostics {
     /// Returns the transport security mode used for this request.
     pub fn transport_security(&self) -> TransportSecurity {
         self.transport_security
+    }
+
+    /// Returns the concrete transport kind used for this request.
+    pub fn transport_kind(&self) -> TransportKind {
+        self.transport_kind
     }
 
     /// Returns the region this request was sent to.
@@ -915,11 +976,17 @@ impl DiagnosticsContextBuilder {
     }
 
     /// Returns the operation-level activity ID.
+    // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
+    // added in integration tests for operation pipeline retries/failover.
+    #[allow(dead_code)]
     pub(crate) fn activity_id(&self) -> &ActivityId {
         &self.activity_id
     }
 
     /// Returns the number of tracked requests for this operation.
+    // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
+    // added in integration tests for operation pipeline retries/failover.
+    #[allow(dead_code)]
     pub(crate) fn request_count(&self) -> usize {
         self.requests.len()
     }
@@ -945,14 +1012,14 @@ impl DiagnosticsContextBuilder {
         execution_context: ExecutionContext,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
-        region: Option<Region>,
-        endpoint: String,
+        transport_kind: TransportKind,
+        endpoint: &CosmosEndpoint,
     ) -> RequestHandle {
         let request = RequestDiagnostics::new(
             execution_context,
             pipeline_type,
             transport_security,
-            region,
+            transport_kind,
             endpoint,
         );
         let handle = RequestHandle(self.requests.len());
@@ -982,6 +1049,9 @@ impl DiagnosticsContextBuilder {
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
     /// [`fail_request`](Self::fail_request) instead with the appropriate error.
+    // TODO(Step 2): remove this allow once timeout handling is unified across
+    // operation and transport pipelines.
+    #[allow(dead_code)]
     pub(crate) fn timeout_request(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.timeout();
@@ -1474,7 +1544,7 @@ mod tests {
             &mut self,
             execution_context: ExecutionContext,
             region: Option<Region>,
-            endpoint: String,
+            endpoint: &str,
         ) -> RequestHandle;
     }
 
@@ -1483,14 +1553,18 @@ mod tests {
             &mut self,
             execution_context: ExecutionContext,
             region: Option<Region>,
-            endpoint: String,
+            endpoint: &str,
         ) -> RequestHandle {
+            let cosmos_endpoint = match region {
+                Some(r) => CosmosEndpoint::regional(r, url::Url::parse(endpoint).unwrap()),
+                None => CosmosEndpoint::global(url::Url::parse(endpoint).unwrap()),
+            };
             self.start_request(
                 execution_context,
                 PipelineType::DataPlane,
                 TransportSecurity::Secure,
-                region,
-                endpoint,
+                TransportKind::Gateway,
+                &cosmos_endpoint,
             )
         }
     }
@@ -1579,7 +1653,7 @@ mod tests {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
 
             std::thread::sleep(std::time::Duration::from_millis(10));
@@ -1599,7 +1673,7 @@ mod tests {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
             builder.timeout_request(handle);
         });
@@ -1614,7 +1688,7 @@ mod tests {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
             builder.update_request(handle, |req| {
                 req.request_charge = RequestCharge::new(5.5);
@@ -1630,14 +1704,14 @@ mod tests {
             let h1 = builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
             builder.update_request(h1, |req| req.request_charge = RequestCharge::new(3.0));
 
             let h2 = builder.start_test_request(
                 ExecutionContext::Retry,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
             builder.update_request(h2, |req| req.request_charge = RequestCharge::new(2.5));
         });
@@ -1651,17 +1725,17 @@ mod tests {
             builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com".to_string(),
+                "https://test.westus2.documents.azure.com",
             );
             builder.start_test_request(
                 ExecutionContext::Retry,
                 Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com".to_string(),
+                "https://test.westus2.documents.azure.com",
             );
             builder.start_test_request(
                 ExecutionContext::RegionFailover,
                 Some(Region::EAST_US_2),
-                "https://test.eastus2.documents.azure.com".to_string(),
+                "https://test.eastus2.documents.azure.com",
             );
         });
 
@@ -1675,7 +1749,7 @@ mod tests {
             let handle = builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
             builder.update_request(handle, |req| req.request_charge = RequestCharge::new(1.0));
             builder.complete_request(handle, StatusCode::Ok, None);
@@ -1692,8 +1766,9 @@ mod tests {
                 "execution_context": "initial",
                 "pipeline_type": "data_plane",
                 "transport_security": "secure",
+                "transport_kind": "gateway",
                 "region": "westus2",
-                "endpoint": "https://test.documents.azure.com",
+                "endpoint": "https://test.documents.azure.com/",
                 "status": "200",
                 "request_charge": 1.0,
                 "activity_id": null,
@@ -1716,7 +1791,7 @@ mod tests {
                 let handle = builder.start_test_request(
                     ExecutionContext::Retry,
                     Some(Region::WEST_US_2),
-                    "https://test.documents.azure.com".to_string(),
+                    "https://test.documents.azure.com",
                 );
                 builder.update_request(handle, |req| {
                     req.request_charge = RequestCharge::new(i as f64)
@@ -1738,7 +1813,7 @@ mod tests {
                 "total_request_charge": 10.0,
                 "first": {
                     "execution_context": "retry",
-                    "endpoint": "https://test.documents.azure.com",
+                    "endpoint": "https://test.documents.azure.com/",
                     "status": "429",
                     "request_charge": 0.0,
                     "duration_ms": 0,
@@ -1746,14 +1821,14 @@ mod tests {
                 },
                 "last": {
                     "execution_context": "retry",
-                    "endpoint": "https://test.documents.azure.com",
+                    "endpoint": "https://test.documents.azure.com/",
                     "status": "429",
                     "request_charge": 4.0,
                     "duration_ms": 0,
                     "timed_out": false
                 },
                 "deduplicated_groups": [{
-                    "endpoint": "https://test.documents.azure.com",
+                    "endpoint": "https://test.documents.azure.com/",
                     "status": "429",
                     "execution_context": "retry",
                     "count": 3,
@@ -1775,7 +1850,7 @@ mod tests {
                 let handle = builder.start_test_request(
                     ExecutionContext::Initial,
                     Some(Region::WEST_US_2),
-                    "https://test.documents.azure.com".to_string(),
+                    "https://test.documents.azure.com",
                 );
                 builder.complete_request(handle, StatusCode::Ok, None);
             },
@@ -1797,7 +1872,7 @@ mod tests {
             builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
         });
 
@@ -1815,7 +1890,7 @@ mod tests {
             builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::WEST_US_2),
-                "https://test.documents.azure.com".to_string(),
+                "https://test.documents.azure.com",
             );
         });
 
@@ -1851,7 +1926,7 @@ mod tests {
         let handle = builder.start_test_request(
             ExecutionContext::Initial,
             Some(Region::WEST_US_2),
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com",
         );
 
         // Update before complete - should work
@@ -1873,7 +1948,7 @@ mod tests {
         let handle = builder.start_test_request(
             ExecutionContext::Initial,
             Some(Region::WEST_US_2),
-            "https://test.documents.azure.com".to_string(),
+            "https://test.documents.azure.com",
         );
 
         // Update with initial value
@@ -1939,8 +2014,21 @@ mod tests {
     }
 
     #[test]
+    fn transport_kind_classification() {
+        assert!(TransportKind::Gateway.is_gateway());
+        assert!(!TransportKind::Gateway.is_gateway20());
+        assert!(TransportKind::Gateway20.is_gateway20());
+        assert!(!TransportKind::Gateway20.is_gateway());
+    }
+
+    #[test]
     fn transport_security_default() {
         assert_eq!(TransportSecurity::default(), TransportSecurity::Secure);
+    }
+
+    #[test]
+    fn transport_kind_default() {
+        assert_eq!(TransportKind::default(), TransportKind::Gateway);
     }
 
     #[test]
@@ -1964,6 +2052,18 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&TransportSecurity::EmulatorWithInsecureCertificates).unwrap(),
             "\"emulator_with_insecure_certificates\""
+        );
+    }
+
+    #[test]
+    fn transport_kind_serialization() {
+        assert_eq!(
+            serde_json::to_string(&TransportKind::Gateway).unwrap(),
+            "\"gateway\""
+        );
+        assert_eq!(
+            serde_json::to_string(&TransportKind::Gateway20).unwrap(),
+            "\"gateway20\""
         );
     }
 

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_data_cosmos::models::TimeToLive;
+
 mod config;
 mod operations;
 mod runner;
@@ -14,7 +16,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Duration;
 
     use azure_core::credentials::Secret;
-    use azure_data_cosmos::{CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder};
+    use azure_data_cosmos::{
+        CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder, RoutingStrategy,
+    };
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};
@@ -43,13 +47,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let preferred_region: Option<azure_data_cosmos::regions::RegionName> =
-        config.preferred_regions.first().map(|r| r.clone().into());
+    let preferred_region: azure_data_cosmos::regions::RegionName = config
+        .preferred_regions
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "East US".to_string())
+        .into();
+    let strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
 
-    let mut builder = CosmosClientBuilder::new();
-    if let Some(region) = preferred_region.clone() {
-        builder = builder.with_application_region(region);
-    }
+    let builder = CosmosClientBuilder::new();
 
     let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
@@ -59,13 +65,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?;
             let account =
                 CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
-            builder.build(account).await?
+            builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
             let credential: Arc<dyn azure_core::credentials::TokenCredential> =
                 azure_identity::ManagedIdentityCredential::new(None)?;
             let account = CosmosAccountReference::with_credential(endpoint, credential);
-            builder.build(account).await?
+            builder.build(account, strategy).await?
         }
     };
 
@@ -79,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let default_ttl = if config.default_ttl == 0 {
         None
     } else {
-        Some(Duration::from_secs(config.default_ttl))
+        Some(TimeToLive::Seconds(config.default_ttl as u32))
     };
 
     // Ensure the container exists (with retry logic for multi-region setups)
@@ -119,10 +125,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
-        let mut results_builder = CosmosClientBuilder::new();
-        if let Some(region) = preferred_region {
-            results_builder = results_builder.with_application_region(region);
-        }
+        let results_builder = CosmosClientBuilder::new();
+        let results_strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
@@ -132,31 +136,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     results_ep,
                     Secret::from(key.to_string()),
                 );
-                results_builder.build(account).await?
+                results_builder.build(account, results_strategy).await?
             }
             AuthMethod::Aad => {
                 let credential: Arc<dyn azure_core::credentials::TokenCredential> =
                     azure_identity::ManagedIdentityCredential::new(None)?;
                 let account = CosmosAccountReference::with_credential(results_ep, credential);
-                results_builder.build(account).await?
+                results_builder.build(account, results_strategy).await?
             }
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
         let results_db = results_client.database_client(&config.results_database);
-        setup::ensure_container(&results_db, &config.results_container, 400, None).await?;
+        setup::ensure_container(
+            &results_db,
+            &config.results_container,
+            10000,
+            Some(TimeToLive::Seconds(86400)),
+        )
+        .await?;
         println!(
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
         results_db.container_client(&config.results_container).await
     } else {
-        setup::ensure_container(&db_client, &config.results_container, 400, None).await?;
+        setup::ensure_container(
+            &db_client,
+            &config.results_container,
+            10000,
+            Some(TimeToLive::Seconds(86400)),
+        )
+        .await?;
         println!(
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
         );
         db_client.container_client(&config.results_container).await
     };
+
+    // Resolve commit SHA: use CLI arg or auto-detect from git
+    let commit_sha = config.commit_sha.unwrap_or_else(|| {
+        std::process::Command::new("git")
+            .args(["rev-parse", "--short", "HEAD"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    });
 
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
@@ -170,6 +198,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         report_interval: Duration::from_secs(config.report_interval),
         results_container,
         workload_id: config.workload_id,
+        commit_sha,
     })
     .await;
 
