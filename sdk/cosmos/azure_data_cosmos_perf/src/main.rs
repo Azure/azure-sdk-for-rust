@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_data_cosmos::models::TimeToLive;
+
 mod config;
 mod operations;
 mod runner;
@@ -83,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let default_ttl = if config.default_ttl == 0 {
         None
     } else {
-        Some(Duration::from_secs(config.default_ttl))
+        Some(TimeToLive::Seconds(config.default_ttl as u32))
     };
 
     // Ensure the container exists (with retry logic for multi-region setups)
@@ -149,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &results_db,
             &config.results_container,
             10000,
-            Some(Duration::from_secs(86400)),
+            Some(TimeToLive::Seconds(86400)),
         )
         .await?;
         println!(
@@ -162,7 +164,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &db_client,
             &config.results_container,
             10000,
-            Some(Duration::from_secs(86400)),
+            Some(TimeToLive::Seconds(86400)),
         )
         .await?;
         println!(
