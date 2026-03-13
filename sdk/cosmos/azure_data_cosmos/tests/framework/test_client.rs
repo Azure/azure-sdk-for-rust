@@ -572,7 +572,7 @@ impl TestRunContext {
             }
         }
 
-        Err(azure_core::Error::message(
+        Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             format!(
                 "fault client container readiness timed out after {} retries",
