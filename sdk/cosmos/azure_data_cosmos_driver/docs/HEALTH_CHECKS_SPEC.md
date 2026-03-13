@@ -53,6 +53,7 @@ the `AccountEndpointState` (§4.4 of the Transport Pipeline Spec).
 ### Differences from Python SDK
 
 The Python SDK does **not** have an independent background health sweep. Instead:
+
 - `_refresh_endpoint_list_private()` is triggered every 5 minutes on the request path
 - Health checks are piggybacked on metadata refresh, not run independently
 
@@ -94,12 +95,14 @@ request-triggered refresh would leave long gaps without health information.
 ### Relationship to Transport Pipeline Spec
 
 This spec extends the Transport Pipeline Spec (§4.4) by adding:
+
 1. **Proactive probing** — a background task that calls a health probe on each endpoint
 2. **Availability recovery** — marking endpoints available again after successful probes
 3. **Startup probing** — verifying endpoint reachability in the background during client
    initialization
 
 This spec requires amendments to the Transport Pipeline Spec:
+
 - **New `LocationEffect` variants**: `LocationEffect::MarkEndpointAvailable` and
   `LocationEffect::MarkEndpointUnavailable` (routed through `LocationStateStore::apply()`
   for consistency with the single-writer model)
@@ -314,6 +317,7 @@ Health probes use a two-layer retry approach:
    `MAX_PROBE_ATTEMPTS` times with exponential backoff.
 
 Retry parameters (matching Python SDK):
+
 - **Max attempts**: 3 (total, not additional)
 - **Initial delay**: 500ms
 - **Backoff factor**: 2x exponential
@@ -555,6 +559,7 @@ effects through the same `LocationStateStore`:
 | Health sweep (proactive) | Yes — on probe failure | Yes — on probe success |
 
 This means:
+
 - Reactive failures are detected instantly (no waiting for next sweep).
 - Proactive sweeps detect recovery — this is the **only** recovery mechanism.
   Expiration-based recovery (`expire_unavailable_endpoints`) is not used; endpoint
@@ -570,6 +575,7 @@ Health probe activity is recorded in the `DiagnosticsContext` system using a ded
 PPCB), since health checks and PPCB are independent features.
 
 Logging levels:
+
 - **Failed probes**: `warn!` with endpoint, status code, sub-status, consecutive failure
   count, and latency.
 - **First successful probe after failure (recovery)**: `info!` with endpoint and latency.
@@ -614,6 +620,7 @@ sdk/cosmos/azure_data_cosmos_driver/src/
 When the dedicated gateway health endpoint ships, the migration is:
 
 1. Add a `HealthEndpoint` variant to the `HealthProbe` enum:
+
    ```rust
    pub(crate) enum HealthProbe {
        GetAccountMetadata { /* ... */ },
