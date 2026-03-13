@@ -205,3 +205,5 @@ usnatwest
 swedensouth
 ussecwestcentral
 RAII
+deprioritize
+bursty
