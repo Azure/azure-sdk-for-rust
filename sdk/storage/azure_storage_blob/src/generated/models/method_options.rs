@@ -227,9 +227,6 @@ pub struct AppendBlobClientCreateOptions<'a> {
     /// If not specified, the request will be encrypted with the root account key.
     pub encryption_scope: Option<String>,
 
-    /// Specifies the date time when the blobs immutability policy is set to expire.
-    pub expiry: Option<OffsetDateTime>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<Etag>,
 
@@ -244,6 +241,9 @@ pub struct AppendBlobClientCreateOptions<'a> {
 
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Specifies the date time when the blobs immutability policy is set to expire.
+    pub immutability_policy_expiry: Option<OffsetDateTime>,
 
     /// Specifies the immutability policy mode to set on the blob.
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
@@ -1348,9 +1348,6 @@ pub struct BlockBlobClientCommitBlockListOptions<'a> {
     /// If not specified, the request will be encrypted with the root account key.
     pub encryption_scope: Option<String>,
 
-    /// Specifies the date time when the blobs immutability policy is set to expire.
-    pub expiry: Option<OffsetDateTime>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<Etag>,
 
@@ -1365,6 +1362,9 @@ pub struct BlockBlobClientCommitBlockListOptions<'a> {
 
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Specifies the date time when the blobs immutability policy is set to expire.
+    pub immutability_policy_expiry: Option<OffsetDateTime>,
 
     /// Specifies the immutability policy mode to set on the blob.
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
@@ -1693,9 +1693,6 @@ pub struct BlockBlobClientUploadInternalOptions<'a> {
     /// If not specified, the request will be encrypted with the root account key.
     pub encryption_scope: Option<String>,
 
-    /// Specifies the date time when the blobs immutability policy is set to expire.
-    pub expiry: Option<OffsetDateTime>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<Etag>,
 
@@ -1710,6 +1707,9 @@ pub struct BlockBlobClientUploadInternalOptions<'a> {
 
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Specifies the date time when the blobs immutability policy is set to expire.
+    pub immutability_policy_expiry: Option<OffsetDateTime>,
 
     /// Specifies the immutability policy mode to set on the blob.
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
@@ -1851,9 +1851,6 @@ pub struct PageBlobClientCreateOptions<'a> {
     /// If not specified, the request will be encrypted with the root account key.
     pub encryption_scope: Option<String>,
 
-    /// Specifies the date time when the blobs immutability policy is set to expire.
-    pub expiry: Option<OffsetDateTime>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<Etag>,
 
@@ -1868,6 +1865,9 @@ pub struct PageBlobClientCreateOptions<'a> {
 
     /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
     pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Specifies the date time when the blobs immutability policy is set to expire.
+    pub immutability_policy_expiry: Option<OffsetDateTime>,
 
     /// Specifies the immutability policy mode to set on the blob.
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,

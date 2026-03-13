@@ -60,7 +60,6 @@ impl BlobServiceClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "blobs");
-        query_builder.set_pair("filterExpression", filter_expression);
         if let Some(include) = options.include.as_ref() {
             query_builder.set_pair(
                 "include",
@@ -80,6 +79,7 @@ impl BlobServiceClient {
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
+        query_builder.set_pair("where", filter_expression);
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");

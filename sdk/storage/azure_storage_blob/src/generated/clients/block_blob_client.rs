@@ -175,8 +175,11 @@ impl BlockBlobClient {
                 immutability_policy_mode.to_string(),
             );
         }
-        if let Some(expiry) = options.expiry {
-            request.insert_header("x-ms-immutability-policy-until-date", to_rfc7231(&expiry));
+        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
+            request.insert_header(
+                "x-ms-immutability-policy-until-date",
+                to_rfc7231(&immutability_policy_expiry),
+            );
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
@@ -348,7 +351,7 @@ impl BlockBlobClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "block");
-        query_builder.set_pair("blockId", base64::encode(block_id));
+        query_builder.set_pair("blockid", base64::encode(block_id));
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -467,7 +470,7 @@ impl BlockBlobClient {
         let mut url = self.endpoint.clone();
         let mut query_builder = url.query_builder();
         query_builder.append_pair("comp", "block");
-        query_builder.set_pair("blockId", base64::encode(block_id));
+        query_builder.set_pair("blockid", base64::encode(block_id));
         if let Some(timeout) = options.timeout {
             query_builder.set_pair("timeout", timeout.to_string());
         }
@@ -904,8 +907,11 @@ impl BlockBlobClient {
                 immutability_policy_mode.to_string(),
             );
         }
-        if let Some(expiry) = options.expiry {
-            request.insert_header("x-ms-immutability-policy-until-date", to_rfc7231(&expiry));
+        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
+            request.insert_header(
+                "x-ms-immutability-policy-until-date",
+                to_rfc7231(&immutability_policy_expiry),
+            );
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
