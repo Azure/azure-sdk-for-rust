@@ -311,6 +311,7 @@ impl CosmosDriver {
     /// initial attempt failed (the result is idempotent).
     ///
     /// Returns an error if the account is unreachable.
+    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, err)]
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -446,11 +447,18 @@ impl CosmosDriver {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(level = tracing::Level::DEBUG, name = "operation", skip_all, fields(
+        runtime = self.runtime.id(),
+        operation_type = ?operation.operation_type(),
+        resource = %operation.resource_reference(),
+    ), err)]
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
+        tracing::debug!("operation started");
+
         // Step 1: Derive effective runtime options
         let mut effective_options = self.effective_runtime_options(&options);
 

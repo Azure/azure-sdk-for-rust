@@ -55,6 +55,7 @@ use std::borrow::Cow;
 /// Returned by database read/query operations and used when creating databases.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct DatabaseProperties {
     /// Unique identifier for the database within the account.
     pub id: Cow<'static, str>,
@@ -71,6 +72,7 @@ impl DatabaseProperties {}
 /// Returned by container read/query operations and used when creating/updating containers.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct ContainerProperties {
     /// Unique identifier for the container within the database.
     pub id: Cow<'static, str>,
@@ -88,6 +90,7 @@ pub(crate) struct ContainerProperties {
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// List of partition key paths (e.g., `["/tenantId"]` for single partition key).
     paths: Vec<Cow<'static, str>>,

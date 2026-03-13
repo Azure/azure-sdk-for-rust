@@ -100,6 +100,14 @@ if ($IsWindows) {
         LogGroupEnd
     }
 
+    # The emulator in Docker reports its container-internal IP in account metadata,
+    # so the driver needs to know that IP is also an emulator host.
+    $containerIp = docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' cosmosdb-emulator-test
+    if ($containerIp) {
+        $env:AZURE_COSMOS_EMULATOR_HOST = $containerIp
+        Write-Host "AZURE_COSMOS_EMULATOR_HOST set to: $containerIp"
+    }
+
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""

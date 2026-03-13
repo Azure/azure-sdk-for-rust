@@ -401,9 +401,11 @@ impl CosmosOperation {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item(item: ItemReference) -> Self {
-        let partition_key = item.partition_key().clone();
-        Self::new(OperationType::Create, item).with_partition_key(partition_key)
+    pub fn create_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::Create, resource_ref).with_partition_key(partition_key)
     }
 
     /// Reads an item (document) from a container.

@@ -141,6 +141,12 @@ pub(crate) fn evaluate_transport_retry(
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
+#[tracing::instrument(level = tracing::Level::DEBUG, name = "transport", skip_all, fields(
+    method = ?request.method,
+    region = request.endpoint.region().map(|e| e.as_str()).unwrap_or("<global>"),
+    url = %request.url,
+    outcome = tracing::field::Empty,
+))]
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     transport: &AdaptiveTransport,
@@ -152,7 +158,15 @@ pub(crate) async fn execute_transport_pipeline(
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
 
+    let mut attempt = 0;
     loop {
+        attempt += 1;
+        let attempt_span = tracing::span!(
+            tracing::Level::DEBUG,
+            "transport_attempt",
+            attempt = attempt,
+            outcome = tracing::field::Empty
+        );
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
@@ -226,6 +240,10 @@ pub(crate) async fn execute_transport_pipeline(
             diagnostics,
         )
         .await;
+        if !tracing::span::Span::current().is_disabled() {
+            tracing::span::Span::current().record("outcome", format!("{}", result.outcome));
+        }
+        tracing::debug!("transport request complete");
 
         // Check for 429 throttling → transport-level retry
         let action = evaluate_transport_retry(&result, &throttle_state);

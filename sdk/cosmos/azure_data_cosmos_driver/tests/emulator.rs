@@ -6,7 +6,9 @@
 //! These tests require a running Cosmos DB emulator and are gated by
 //! the `test_category = "emulator"` configuration.
 
-#![cfg(test_category = "emulator")]
+// We also want to enable this code when in rust-analyzer.
+
+#![cfg(any(test_category = "emulator", rust_analyzer))]
 
 mod emulator_tests;
 mod framework;

@@ -383,6 +383,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "url",
  "uuid",
  "windows 0.62.2",
