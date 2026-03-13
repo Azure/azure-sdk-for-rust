@@ -8,7 +8,7 @@ use crate::models::DefaultConsistencyLevel;
 /// The requested read consistency strategy can be chosen independent of the consistency level
 /// provisioned for the database account.
 ///
-/// The `ReadConsistencyStrategy` setting will override whatever [`DefaultConsistencyLevel`] is chosen
+/// The `ReadConsistencyStrategy` setting will override whatever default consistency level is chosen
 /// in request options, client options, or the default consistency level for an account unless
 /// `ReadConsistencyStrategy::Default` is used.
 ///
