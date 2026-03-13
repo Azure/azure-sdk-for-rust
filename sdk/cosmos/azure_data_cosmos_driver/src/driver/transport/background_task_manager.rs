@@ -40,19 +40,13 @@ impl std::fmt::Debug for BackgroundTaskManager {
     }
 }
 
-impl Default for BackgroundTaskManager {
-    fn default() -> Self {
-        Self {
-            tasks: Mutex::new(Vec::new()),
-        }
-    }
-}
-
 #[allow(dead_code)]
 impl BackgroundTaskManager {
     /// Creates a new [`BackgroundTaskManager`] with no active tasks.
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            tasks: Mutex::new(Vec::new()),
+        }
     }
 
     /// Spawns a background task on the tokio runtime and stores the handle.
@@ -84,7 +78,7 @@ impl BackgroundTaskManager {
         let mut tasks = self
             .tasks
             .lock()
-            .expect("BackgroundTaskManager mutex poisoned");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         tasks.retain(|h| !h.is_finished());
         tasks.push(handle);
     }
@@ -98,7 +92,7 @@ impl BackgroundTaskManager {
         let tasks: Vec<_> = self
             .tasks
             .lock()
-            .expect("BackgroundTaskManager mutex poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .drain(..)
             .collect();
         let count = tasks.len();
@@ -141,9 +135,10 @@ mod tests {
     }
 
     #[test]
-    fn default_creates_empty_manager() {
-        let manager = BackgroundTaskManager::default();
-        assert_eq!(manager.tasks.lock().unwrap().len(), 0);
+    fn debug_shows_task_count() {
+        let manager = BackgroundTaskManager::new();
+        let debug_str = format!("{:?}", manager);
+        assert!(debug_str.contains("tasks_count"));
     }
 
     #[tokio::test]
