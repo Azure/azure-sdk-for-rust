@@ -1178,10 +1178,6 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `expiry` - Specifies the date time when the blobs immutability policy is set to expire.
-    ///
-    /// Note: this property is intentionally named `expiry` (rather than `immutabilityPolicyExpiry`
-    /// like the optional sibling alias below) so that it surfaces simply as `expiry` in emitted
-    /// languages without requiring a `@clientName` override.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobClient.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
