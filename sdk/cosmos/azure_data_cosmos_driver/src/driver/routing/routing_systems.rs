@@ -3,7 +3,12 @@
 
 //! Pure routing systems for account endpoint state.
 
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
+
+use tracing::warn;
 
 use crate::driver::cache::AccountProperties;
 
@@ -21,22 +26,21 @@ pub(crate) fn build_account_endpoint_state(
     properties: &AccountProperties,
     default_endpoint: CosmosEndpoint,
     previous_generation: Option<u64>,
+    gateway20_enabled: bool,
 ) -> AccountEndpointState {
     let generation = previous_generation.map_or(0, |g| g.saturating_add(1));
 
-    let mut preferred_read_endpoints = Vec::with_capacity(properties.readable_locations.len() + 1);
-    for region in &properties.readable_locations {
-        if let Ok(url) = url::Url::parse(&region.database_account_endpoint) {
-            preferred_read_endpoints.push(CosmosEndpoint::regional(region.name.clone(), url));
-        }
-    }
+    let mut preferred_read_endpoints = build_preferred_endpoints(
+        &properties.readable_locations,
+        &properties.thin_client_readable_locations,
+        gateway20_enabled,
+    );
 
-    let mut preferred_write_endpoints = Vec::with_capacity(properties.writable_locations.len() + 1);
-    for region in &properties.writable_locations {
-        if let Ok(url) = url::Url::parse(&region.database_account_endpoint) {
-            preferred_write_endpoints.push(CosmosEndpoint::regional(region.name.clone(), url));
-        }
-    }
+    let mut preferred_write_endpoints = build_preferred_endpoints(
+        &properties.writable_locations,
+        &properties.thin_client_writable_locations,
+        gateway20_enabled,
+    );
 
     if preferred_read_endpoints.is_empty() {
         preferred_read_endpoints.push(default_endpoint.clone());
@@ -53,6 +57,96 @@ pub(crate) fn build_account_endpoint_state(
         multiple_write_locations_enabled: properties.enable_multiple_write_locations,
         default_endpoint,
     }
+}
+
+fn build_preferred_endpoints(
+    standard_locations: &[crate::driver::cache::AccountRegion],
+    thin_client_locations: &[crate::driver::cache::AccountRegion],
+    gateway20_enabled: bool,
+) -> Vec<CosmosEndpoint> {
+    let thin_client_urls = if gateway20_enabled {
+        parse_thin_client_locations(thin_client_locations)
+    } else {
+        HashMap::new()
+    };
+
+    let mut endpoints = Vec::with_capacity(standard_locations.len());
+    for region in standard_locations {
+        let url = match url::Url::parse(&region.database_account_endpoint) {
+            Ok(url) => url,
+            Err(err) => {
+                warn!(
+                    region = %region.name,
+                    endpoint = %region.database_account_endpoint,
+                    error = %err,
+                    "Ignoring malformed standard endpoint URL from AccountProperties"
+                );
+                continue;
+            }
+        };
+
+        let endpoint = thin_client_urls
+            .get(&region.name)
+            .cloned()
+            .map(|gateway20_url| {
+                CosmosEndpoint::regional_with_gateway20(
+                    region.name.clone(),
+                    url.clone(),
+                    gateway20_url,
+                )
+            })
+            .unwrap_or_else(|| CosmosEndpoint::regional(region.name.clone(), url));
+
+        endpoints.push(endpoint);
+    }
+
+    endpoints
+}
+
+fn parse_thin_client_locations(
+    thin_client_locations: &[crate::driver::cache::AccountRegion],
+) -> HashMap<crate::options::Region, url::Url> {
+    let mut urls = HashMap::new();
+
+    for region in thin_client_locations {
+        let url = match url::Url::parse(&region.database_account_endpoint) {
+            Ok(url) => url,
+            Err(err) => {
+                warn!(
+                    region = %region.name,
+                    endpoint = %region.database_account_endpoint,
+                    error = %err,
+                    "Ignoring malformed thin-client endpoint URL from AccountProperties"
+                );
+                continue;
+            }
+        };
+
+        if url.scheme() != "https" {
+            warn!(
+                region = %region.name,
+                endpoint = %region.database_account_endpoint,
+                scheme = url.scheme(),
+                "Ignoring non-HTTPS thin-client endpoint URL"
+            );
+            continue;
+        }
+
+        urls.entry(region.name.clone())
+            .and_modify(|existing| {
+                if existing != &url {
+                    warn!(
+                        region = %region.name,
+                        existing_url = %existing,
+                        new_url = %url,
+                        "Duplicate thin-client region with conflicting URL; keeping first entry"
+                    );
+                }
+            })
+            .or_insert(url);
+    }
+
+    urls
 }
 
 /// Returns a new state with an endpoint marked unavailable.
@@ -122,7 +216,8 @@ mod tests {
 
     #[test]
     fn build_state_uses_metadata_locations() {
-        let state = build_account_endpoint_state(&test_properties(), default_endpoint(), None);
+        let state =
+            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
         assert_eq!(state.generation, 0);
         assert_eq!(state.preferred_write_endpoints.len(), 1);
         assert_eq!(state.preferred_read_endpoints.len(), 1);
@@ -130,8 +225,64 @@ mod tests {
     }
 
     #[test]
+    fn build_state_adds_gateway20_endpoint_when_enabled() {
+        let properties: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "thinClientReadableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap();
+
+        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true);
+
+        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
+        assert!(state.preferred_write_endpoints[0].gateway20_url().is_none());
+    }
+
+    #[test]
+    fn build_state_adds_gateway20_for_write_endpoints_when_present() {
+        let properties: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "thinClientReadableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap();
+
+        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true);
+
+        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
+        assert!(state.preferred_write_endpoints[0].gateway20_url().is_some());
+    }
+
+    #[test]
     fn mark_and_expire_unavailable_endpoint() {
-        let state = build_account_endpoint_state(&test_properties(), default_endpoint(), None);
+        let state =
+            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
         let endpoint = state.preferred_read_endpoints[0].clone();
         let marked =
             mark_endpoint_unavailable(&state, &endpoint, UnavailableReason::TransportError);

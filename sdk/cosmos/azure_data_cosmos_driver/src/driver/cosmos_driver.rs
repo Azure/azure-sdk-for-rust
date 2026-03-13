@@ -59,7 +59,7 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.transport();
-        let http_client = transport.get_metadata_http_client(&endpoint);
+        let metadata_transport = transport.get_metadata_transport(&endpoint)?;
         let user_agent = runtime.user_agent().as_str();
 
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
@@ -78,7 +78,7 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = http_client.execute_request(&request).await?;
+        let response = metadata_transport.send(&request).await?;
         let raw = response.try_into_raw_response().await?;
         Self::parse_account_properties_payload(raw.body())
     }
@@ -249,6 +249,7 @@ impl CosmosDriver {
             account_endpoint,
             default_endpoint,
             refresh_callback,
+            runtime.connection_pool().is_gateway20_allowed(),
             endpoint_unavailability_ttl,
         ));
 
@@ -295,6 +296,46 @@ impl CosmosDriver {
     /// Returns the driver options.
     pub fn options(&self) -> &DriverOptions {
         &self.options
+    }
+
+    /// Eagerly primes the account metadata cache.
+    ///
+    /// Fetches account properties from the service and caches them so that
+    /// regional endpoint information is available before the first
+    /// [`execute_operation`](Self::execute_operation) call. This avoids
+    /// cold-start latency on the first data-plane operation.
+    ///
+    /// This method is called automatically by
+    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
+    /// on a best-effort basis. Callers may invoke it again to retry if the
+    /// initial attempt failed (the result is idempotent).
+    ///
+    /// Returns an error if the account is unreachable.
+    pub async fn initialize(&self) -> azure_core::Result<()> {
+        let account = self.options.account();
+        let account_endpoint = AccountEndpoint::from(account);
+        self.runtime
+            .account_metadata_cache()
+            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
+            .await?;
+        Ok(())
+    }
+
+    /// Eagerly primes the container metadata cache.
+    ///
+    /// Resolves container properties (partition key definition, resource ID)
+    /// and caches them so that subsequent operations targeting this container
+    /// can skip the metadata lookup round-trip.
+    ///
+    /// Returns an error if the container does not exist or is unreachable.
+    pub async fn prime_container(
+        &self,
+        db_name: &str,
+        container_name: &str,
+    ) -> azure_core::Result<()> {
+        self.resolve_container_by_name(db_name, container_name)
+            .await?;
+        Ok(())
     }
 
     /// Computes the effective runtime options by merging operation, driver, and runtime options.
@@ -454,17 +495,11 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        // Step 5: Select appropriate HttpClient based on pipeline type
+        // Step 5: Select the adaptive transport context for the chosen pipeline
         let transport = self.runtime.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        let http_client = if is_dataplane {
-            transport.get_dataplane_http_client(&endpoint)
-        } else {
-            transport.get_metadata_http_client(&endpoint)
-        };
-
         // Step 6: Initialize diagnostics
         let mut diagnostics_builder = DiagnosticsContextBuilder::new(
             activity_id.clone(),
@@ -499,7 +534,8 @@ impl CosmosDriver {
             &options,
             &effective_options,
             self.location_state_store.as_ref(),
-            http_client,
+            transport,
+            &endpoint,
             auth,
             &user_agent,
             &activity_id,

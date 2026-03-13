@@ -11,22 +11,24 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::HttpClient;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore},
+    driver::{
+        routing::{AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore},
+        transport::CosmosTransport,
+    },
     models::{
-        ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders, Credential,
-        SubStatusCode,
+        AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
+        Credential, SubStatusCode,
     },
     options::{OperationOptions, RuntimeOptions},
 };
 
 use super::{
     components::{
-        OperationAction, OperationRetryState, RoutingDecision, TransportOutcome, TransportRequest,
-        TransportResult,
+        OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
+        TransportRequest, TransportResult,
     },
     retry_evaluation::evaluate_transport_result,
 };
@@ -45,7 +47,8 @@ pub(crate) async fn execute_operation_pipeline(
     _options: &OperationOptions,
     effective_options: &RuntimeOptions,
     location_state_store: &LocationStateStore,
-    http_client: Arc<dyn HttpClient>,
+    transport: &CosmosTransport,
+    account_endpoint: &AccountEndpoint,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
@@ -98,6 +101,7 @@ pub(crate) async fn execute_operation_pipeline(
             operation,
             &retry_state,
             &location,
+            pipeline_type == PipelineType::DataPlane,
             location_state_store.endpoint_unavailability_ttl(),
         );
 
@@ -120,10 +124,17 @@ pub(crate) async fn execute_operation_pipeline(
             deadline,
         )?;
 
+        let selected_transport = match pipeline_type {
+            PipelineType::DataPlane => {
+                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
+            }
+            PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
+        };
+
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
             transport_request,
-            http_client.as_ref(),
+            &selected_transport,
             credential,
             user_agent,
             pipeline_type,
@@ -234,6 +245,7 @@ fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
     location: &LocationSnapshot,
+    prefer_gateway20: bool,
     endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
@@ -253,31 +265,35 @@ fn resolve_endpoint(
         let excluded = candidate
             .region()
             .is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
-        let unavailable =
-            account
-                .unavailable_endpoints
-                .get(candidate)
-                .is_some_and(|(marked_at, reason)| {
-                    if operation.is_read_only()
-                        && matches!(
-                            reason,
-                            crate::driver::routing::UnavailableReason::WriteForbidden
-                        )
-                    {
-                        return false;
-                    }
+        if excluded {
+            continue;
+        }
 
-                    now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
-                });
-        if !excluded && !unavailable {
+        if endpoint_is_available(
+            operation,
+            candidate,
+            account,
+            now,
+            endpoint_unavailability_ttl,
+        ) {
             selected = Some(candidate.clone());
             break;
         }
     }
 
     let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
+    let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
+    let transport_mode = if use_gateway20 {
+        TransportMode::Gateway20
+    } else {
+        TransportMode::Gateway
+    };
 
-    RoutingDecision { endpoint: selected }
+    RoutingDecision {
+        selected_url: selected.selected_url(use_gateway20).clone(),
+        endpoint: selected,
+        transport_mode,
+    }
 }
 
 fn preferred_endpoints_for_attempt<'a>(
@@ -292,6 +308,30 @@ fn preferred_endpoints_for_attempt<'a>(
     }
 }
 
+fn endpoint_is_available(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    account: &AccountEndpointState,
+    now: Instant,
+    endpoint_unavailability_ttl: Duration,
+) -> bool {
+    !account
+        .unavailable_endpoints
+        .get(endpoint)
+        .is_some_and(|(marked_at, reason)| {
+            if operation.is_read_only()
+                && matches!(
+                    reason,
+                    crate::driver::routing::UnavailableReason::WriteForbidden
+                )
+            {
+                return false;
+            }
+
+            now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
+        })
+}
+
 /// Builds a `TransportRequest` from the operation and routing decision.
 fn build_transport_request(
     operation: &CosmosOperation,
@@ -303,7 +343,7 @@ fn build_transport_request(
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
     let url = {
-        let mut base = routing.endpoint.url().clone();
+        let mut base = routing.selected_url.clone();
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -398,7 +438,7 @@ mod tests {
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
-            pipeline::components::RoutingDecision,
+            pipeline::components::{RoutingDecision, TransportMode},
             routing::{AccountEndpointState, CosmosEndpoint, LocationIndex, LocationSnapshot},
         },
         models::{
@@ -439,10 +479,12 @@ mod tests {
     }
 
     fn test_routing() -> RoutingDecision {
+        let endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         RoutingDecision {
-            endpoint: CosmosEndpoint::global(
-                Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            ),
+            selected_url: endpoint.url().clone(),
+            endpoint,
+            transport_mode: TransportMode::Gateway,
         }
     }
 
@@ -523,6 +565,62 @@ mod tests {
     }
 
     #[test]
+    fn build_transport_request_uses_routed_endpoint_url_directly() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::regional_with_gateway20(
+                "westus2".into(),
+                Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+                Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+            ),
+            selected_url: Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+            transport_mode: TransportMode::Gateway20,
+        };
+
+        let request = build_transport_request(
+            &operation,
+            &routing,
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        assert_eq!(
+            request.url.as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/dbs/mydb"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_uses_default_url_for_global_endpoint() {
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let routing = RoutingDecision {
+            endpoint: CosmosEndpoint::global(
+                Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            ),
+            selected_url: Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            transport_mode: TransportMode::Gateway,
+        };
+
+        let request = build_transport_request(
+            &operation,
+            &routing,
+            &ActivityId::from_string("default-activity".to_string()),
+            ExecutionContext::Initial,
+            None,
+        )
+        .expect("request should build");
+
+        assert_eq!(
+            request.url.as_str(),
+            "https://test.documents.azure.com/dbs/mydb"
+        );
+    }
+
+    #[test]
     fn resolve_endpoint_uses_write_region_for_single_write_session_retry() {
         let operation = CosmosOperation::read_all_databases(test_account());
         let write_endpoint = CosmosEndpoint::regional(
@@ -555,8 +653,13 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
         };
 
-        let routing =
-            super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, write_endpoint);
     }
 
@@ -600,8 +703,13 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
         };
 
-        let routing =
-            super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, default_endpoint);
     }
 
@@ -643,8 +751,13 @@ mod tests {
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
         };
 
-        let routing =
-            super::resolve_endpoint(&operation, &retry_state, &location, Duration::from_secs(60));
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
         assert_eq!(routing.endpoint, read_endpoint);
     }
 
@@ -697,6 +810,7 @@ mod tests {
             &operation,
             &stale_retry_state,
             &location,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(first_routing.endpoint, endpoint_a);
@@ -709,8 +823,107 @@ mod tests {
             &operation,
             &advanced_state,
             &location,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(second_routing.endpoint, endpoint_b);
+    }
+
+    #[test]
+    fn resolve_endpoint_prefers_gateway20_for_dataplane_reads() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let endpoint = CosmosEndpoint::regional_with_gateway20(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()],
+            preferred_write_endpoints: vec![endpoint.clone()],
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, endpoint);
+        assert_eq!(routing.transport_mode, TransportMode::Gateway20);
+        assert_eq!(
+            routing.selected_url.as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_skips_unavailable_region_when_gateway20_is_present() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let endpoint = CosmosEndpoint::regional_with_gateway20(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+        let fallback_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            endpoint.clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::TransportError,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()],
+            preferred_write_endpoints: vec![endpoint],
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: true,
+            default_endpoint: fallback_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            Vec::new(),
+            3,
+            3,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, fallback_endpoint);
     }
 }

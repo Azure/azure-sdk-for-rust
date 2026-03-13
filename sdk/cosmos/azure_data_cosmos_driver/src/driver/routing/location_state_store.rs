@@ -57,6 +57,7 @@ pub(crate) struct LocationStateStore {
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
+    gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
@@ -87,17 +88,19 @@ impl std::fmt::Debug for LocationStateStore {
 
 impl Drop for LocationStateStore {
     fn drop(&mut self) {
-        // SAFETY: We have `&mut self`, so no concurrent access is possible.
-        // `epoch::unprotected()` is safe here because we are the sole owner.
+        // crossbeam_epoch::Atomic<T> intentionally has no destructor.
+        // Detach each field and convert to Owned for immediate deallocation.
+        // Safety: &mut self in Drop guarantees exclusive access.
+        let account = std::mem::replace(&mut self.account, Atomic::null());
+        let partitions = std::mem::replace(&mut self.partitions, Atomic::null());
+
         unsafe {
-            let guard = epoch::unprotected();
-            let acct = self.account.load(Ordering::Relaxed, guard);
-            if !acct.is_null() {
-                drop(acct.into_owned());
+            if let Some(account) = account.try_into_owned() {
+                drop(account);
             }
-            let part = self.partitions.load(Ordering::Relaxed, guard);
-            if !part.is_null() {
-                drop(part.into_owned());
+
+            if let Some(partitions) = partitions.try_into_owned() {
+                drop(partitions);
             }
         }
     }
@@ -110,6 +113,7 @@ impl LocationStateStore {
         account_endpoint: AccountEndpoint,
         default_endpoint: CosmosEndpoint,
         account_refresh_fn: AccountRefreshFn,
+        gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
@@ -126,6 +130,7 @@ impl LocationStateStore {
             account_endpoint,
             account_refresh_fn,
             default_endpoint,
+            gateway20_enabled,
             endpoint_unavailability_ttl,
             // TODO(refresh-config): Make refresh interval configurable.
             refresh_interval: Duration::from_secs(5),
@@ -143,13 +148,14 @@ impl LocationStateStore {
 
     /// Returns a snapshot of account and partition state.
     ///
-    /// On the fast path (no state changes since last call), this returns
-    /// `Arc::clone()` of the cached snapshot (refcount increment only).
-    /// A full clone is only performed when the version counter has advanced.
+    /// Uses a fast path when the version hasn't changed since the last
+    /// snapshot: the cached `Arc` is cloned without touching the
+    /// epoch-protected pointers. On a version mismatch (slow path),
+    /// the current state is loaded under an epoch guard, cloned into
+    /// fresh `Arc`s, and cached for subsequent callers.
     pub fn snapshot(&self) -> LocationSnapshot {
         let current_version = self.account_version.load(Ordering::Acquire);
 
-        // Fast path: return cached snapshot if version hasn't changed.
         {
             let cached = self.cached_snapshot.lock().unwrap();
             if cached.0 == current_version {
@@ -157,7 +163,6 @@ impl LocationStateStore {
             }
         }
 
-        // Slow path: state changed, take a new snapshot.
         let guard = epoch::pin();
 
         let account = {
@@ -177,9 +182,7 @@ impl LocationStateStore {
             partitions,
         };
 
-        // Cache the new snapshot.
         let mut cached = self.cached_snapshot.lock().unwrap();
-        // Re-check: another thread may have updated the cache while we cloned.
         if cached.0 < current_version {
             *cached = (current_version, snapshot.clone());
         }
@@ -238,9 +241,9 @@ impl LocationStateStore {
                 Ordering::Acquire,
                 &guard,
             ) {
-                Ok(old) => {
-                    // SAFETY: old pointer is detached after successful exchange.
-                    unsafe { guard.defer_destroy(old) };
+                Ok(_) => {
+                    // `current` is the old value that was just replaced.
+                    unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
                 }
@@ -313,6 +316,7 @@ impl LocationStateStore {
                 properties,
                 default_endpoint.clone(),
                 Some(current.generation),
+                self.gateway20_enabled,
             );
             // Carry forward unavailability marks from the current state,
             // filtering out entries that have expired past the configured TTL.
@@ -405,6 +409,7 @@ mod tests {
             test_endpoint(),
             default_endpoint.clone(),
             refresh,
+            false,
             Duration::from_secs(60),
         );
 
@@ -440,6 +445,7 @@ mod tests {
             test_endpoint(),
             default_endpoint,
             refresh,
+            false,
             Duration::from_secs(60),
         );
 
@@ -469,6 +475,7 @@ mod tests {
             test_endpoint(),
             default_endpoint.clone(),
             refresh,
+            false,
             Duration::from_secs(60),
         );
 

@@ -15,7 +15,6 @@ use azure_core::{
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
-        Response,
     },
     Bytes, Result,
 };
@@ -212,21 +211,12 @@ pub async fn create_test_blob(
     blob_client: &BlobClient,
     data: Option<RequestContent<Bytes, NoFormat>>,
     options: Option<BlockBlobClientUploadOptions<'_>>,
-) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
+) -> Result<BlockBlobClientUploadResult> {
     match data {
-        Some(content) => {
-            blob_client
-                .upload(content.clone(), true, content.body().len() as u64, options)
-                .await
-        }
+        Some(content) => blob_client.upload(content, options).await,
         None => {
             blob_client
-                .upload(
-                    RequestContent::from(b"hello rusty world".to_vec()),
-                    true,
-                    17,
-                    options,
-                )
+                .upload(RequestContent::from(b"hello rusty world".to_vec()), options)
                 .await
         }
     }
