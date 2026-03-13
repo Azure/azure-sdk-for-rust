@@ -1025,6 +1025,7 @@ mod tests {
             assert!(!ReadConsistencyStrategy::Default
                 .is_session_effective(DefaultConsistencyLevel::ConsistentPrefix));
         }
+    }
 
     #[test]
     fn resolve_endpoint_prefers_gateway20_for_dataplane_reads() {
