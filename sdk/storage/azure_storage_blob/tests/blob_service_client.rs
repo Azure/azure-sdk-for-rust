@@ -60,6 +60,12 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         for container in container_list {
             let container_name = container.name.unwrap();
             if container_names.contains_key(&container_name) {
+                let etag = container
+                    .properties
+                    .expect("properties should be present")
+                    .etag
+                    .expect("etag should be present in list containers response");
+                assert!(!etag.as_ref().is_empty());
                 container_names
                     .entry(container_name)
                     .and_modify(|val| *val = 1);

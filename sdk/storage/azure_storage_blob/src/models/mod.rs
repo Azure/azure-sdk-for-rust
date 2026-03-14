@@ -7,8 +7,13 @@ pub mod error;
 mod extensions;
 pub(crate) mod http_ranges;
 pub mod method_options;
+mod upload_result;
 
 pub use crate::generated::models::*;
+pub use method_options::BlockBlobClientUploadOptions;
+pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use upload_result::BlockBlobClientUploadResult;
+pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 
 /// Serde deserialization helpers for [`BlobName`] XML elements.
 ///
@@ -116,9 +121,6 @@ pub use crate::generated::models::{
     BlobClientDownloadInternalOptions as BlobClientDownloadOptions,
     BlobClientDownloadInternalResult as BlobClientDownloadResult,
     BlobClientDownloadInternalResultHeaders as BlobClientDownloadResultHeaders,
-    BlockBlobClientUploadInternalOptions as BlockBlobClientUploadOptions,
-    BlockBlobClientUploadInternalResult as BlockBlobClientUploadResult,
-    BlockBlobClientUploadInternalResultHeaders as BlockBlobClientUploadResultHeaders,
 };
 
 #[cfg(test)]

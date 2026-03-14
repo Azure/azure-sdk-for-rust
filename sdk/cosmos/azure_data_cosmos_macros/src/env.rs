@@ -1,0 +1,173 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::parse::OptionsInput;
+use crate::Result;
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::{PathArguments, Type};
+
+/// Returns true if `ty` is a `Vec<T>` type (checking the last path segment).
+fn is_vec_type(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) if type_path.qself.is_none() => {
+            type_path.path.segments.last().is_some_and(|seg| {
+                seg.ident == "Vec" && matches!(seg.arguments, PathArguments::AngleBracketed(_))
+            })
+        }
+        _ => false,
+    }
+}
+
+/// Generates `from_env()` and `from_env_vars()` methods on the original struct.
+///
+/// `from_env_vars` accepts a function `Fn(&str) -> Result<String, VarError>` used
+/// to read a single variable, making it testable without touching the real environment.
+/// `from_env` delegates to `from_env_vars` with `std::env::var`.
+pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
+    if !input.has_env_fields() {
+        return Ok(TokenStream::new());
+    }
+
+    let struct_name = &input.name;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+
+    let field_inits = input.fields.iter().map(|field| {
+        let field_name = &field.ident;
+        if let Some(ref env_var) = field.env_var {
+            // Check if inner type is Vec<T> to do comma splitting
+            let inner_type = &field.inner_type;
+            if is_vec_type(inner_type) {
+                quote! {
+                    #field_name: env_var(#env_var)
+                        .ok()
+                        .map(|v| v.split(',')
+                            .filter_map(|s| {
+                                let trimmed = s.trim();
+                                match trimmed.parse() {
+                                    Ok(parsed) => Some(parsed),
+                                    Err(_) => {
+                                        ::tracing::warn!(
+                                            env_var = #env_var,
+                                            value = trimmed,
+                                            "failed to parse element from environment variable; skipping",
+                                        );
+                                        None
+                                    }
+                                }
+                            })
+                            .collect())
+                }
+            } else {
+                quote! {
+                    #field_name: env_var(#env_var)
+                        .ok()
+                        .and_then(|v| match v.parse() {
+                            Ok(parsed) => Some(parsed),
+                            Err(_) => {
+                                ::tracing::warn!(
+                                    env_var = #env_var,
+                                    value = %v,
+                                    "failed to parse environment variable; ignoring",
+                                );
+                                None
+                            }
+                        })
+                }
+            }
+        } else {
+            quote! { #field_name: None }
+        }
+    });
+
+    Ok(quote! {
+        #[automatically_derived]
+        impl #impl_generics #struct_name #ty_generics #where_clause {
+            /// Creates an instance by reading environment variables.
+            ///
+            /// Fields with `#[option(env = "...")]` are populated from the
+            /// corresponding environment variable. All other fields are `None`.
+            pub fn from_env() -> Self {
+                Self::from_env_vars(|key| ::std::env::var(key))
+            }
+
+            /// Creates an instance using the provided function to read environment variables.
+            #[doc(hidden)]
+            pub fn from_env_vars(env_var: impl Fn(&str) -> ::std::result::Result<String, ::std::env::VarError>) -> Self {
+                Self {
+                    #(#field_inits),*
+                }
+            }
+        }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse::OptionsInput;
+    use quote::quote;
+
+    #[test]
+    fn from_env_generated_when_env_fields_present() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account))]
+            pub struct TestOptions {
+                #[option(env = "MY_VAR_A")]
+                pub field_a: Option<String>,
+                pub field_b: Option<u32>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        let tokens = generate_from_env(&parsed).unwrap();
+
+        let expected = quote! {
+            #[automatically_derived]
+            impl TestOptions {
+                /// Creates an instance by reading environment variables.
+                ///
+                /// Fields with `#[option(env = "...")]` are populated from the
+                /// corresponding environment variable. All other fields are `None`.
+                pub fn from_env() -> Self {
+                    Self::from_env_vars(|key| ::std::env::var(key))
+                }
+
+                /// Creates an instance using the provided function to read environment variables.
+                #[doc(hidden)]
+                pub fn from_env_vars(env_var: impl Fn(&str) -> ::std::result::Result<String, ::std::env::VarError>) -> Self {
+                    Self {
+                        field_a: env_var("MY_VAR_A")
+                            .ok()
+                            .and_then(|v| match v.parse() {
+                                Ok(parsed) => Some(parsed),
+                                Err(_) => {
+                                    ::tracing::warn!(
+                                        env_var = "MY_VAR_A",
+                                        value = %v,
+                                        "failed to parse environment variable; ignoring",
+                                    );
+                                    None
+                                }
+                            }),
+                        field_b: None
+                    }
+                }
+            }
+        };
+
+        assert_eq!(expected.to_string(), tokens.to_string());
+    }
+
+    #[test]
+    fn no_output_when_no_env_fields() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account))]
+            pub struct TestOptions {
+                pub field_a: Option<String>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        let tokens = generate_from_env(&parsed).unwrap();
+        assert!(tokens.is_empty());
+    }
+}
