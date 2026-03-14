@@ -8,7 +8,7 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::BlobClientGetPropertiesResultHeaders,
-    BlobContainerClientOptions,
+    BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, ClientOptionsExt, FailFirstPolicy,
@@ -162,7 +162,7 @@ async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box
 
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // Act — should succeed after 1 retry
+    // Act
     create_test_blob(
         &blob_client,
         Some(RequestContent::from(b"retry transient test".to_vec())),
@@ -170,7 +170,7 @@ async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box
     )
     .await?;
 
-    // Assert: policy was invoked at least twice (1 failure + 1 success)
+    // Assert
     assert!(
         call_count.load(Ordering::SeqCst) >= 2,
         "expected at least 2 invocations (1 failure + retry), got {}",
@@ -188,8 +188,6 @@ async fn test_retry_exhaustion() -> Result<(), Box<dyn std::error::Error>> {
     let call_count = Arc::new(AtomicUsize::new(0));
     // fail_count > max_retries+1 so every attempt fails
     let fail_policy = Arc::new(FailFirstPolicy::new(10, call_count.clone()));
-
-    use azure_storage_blob::BlobContainerClient;
 
     let container_client = BlobContainerClient::new(
         "https://fake.blob.core.windows.net/",

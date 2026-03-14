@@ -20,8 +20,8 @@ use azure_storage_blob_test::{
     ClientOptionsExt, StorageAccount, TestPolicy, KB, MB,
 };
 use bytes::{BufMut, BytesMut};
-use std::collections::HashMap;
 use std::{
+    collections::HashMap,
     error::Error,
     io::Write,
     num::NonZero,

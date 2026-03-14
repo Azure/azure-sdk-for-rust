@@ -11,8 +11,7 @@ use azure_storage_blob::models::{
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
 };
-use std::collections::HashMap;
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
 async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -404,7 +403,7 @@ async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), B
 
     // Assert
     assert_eq!(
-        azure_core::http::StatusCode::Conflict,
+        StatusCode::Conflict,
         result.unwrap_err().http_status().unwrap()
     );
 

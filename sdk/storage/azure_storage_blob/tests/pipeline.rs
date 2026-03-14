@@ -6,6 +6,7 @@ use azure_core::http::{
     RequestContent,
 };
 use azure_core_test::{recorded, TestContext};
+use std::sync::Arc;
 use azure_storage_blob::{
     models::BlobClientGetPropertiesResultHeaders, BlobContainerClientOptions,
 };
@@ -18,8 +19,8 @@ use std::error::Error;
 #[recorded::test]
 async fn test_storage_headers_present(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Arrange: capture outgoing request headers via a per-call policy
-    let check_policy = std::sync::Arc::new(TestPolicy::new(
-        Some(std::sync::Arc::new(
+    let check_policy = Arc::new(TestPolicy::new(
+        Some(Arc::new(
             |request: &azure_core::http::Request| {
                 let headers = request.headers();
                 assert!(
@@ -66,8 +67,8 @@ async fn test_version_header_matches_options(ctx: TestContext) -> Result<(), Box
     let api_version = "2024-11-04";
 
     // Capture what x-ms-version is sent
-    let check_policy = std::sync::Arc::new(TestPolicy::new(
-        Some(std::sync::Arc::new(
+    let check_policy = Arc::new(TestPolicy::new(
+        Some(Arc::new(
             move |request: &azure_core::http::Request| {
                 let sent_version = request
                     .headers()
@@ -110,7 +111,7 @@ async fn test_version_header_matches_options(ctx: TestContext) -> Result<(), Box
     )
     .await?;
 
-    // Assert content_length round-trips correctly too
+    // Assert
     let props = blob_client.get_properties(None).await?;
     assert_eq!(Some(19), props.content_length()?);
 
