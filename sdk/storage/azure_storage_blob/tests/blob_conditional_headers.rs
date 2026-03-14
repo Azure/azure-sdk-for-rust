@@ -184,7 +184,7 @@ mod blob_client {
         let err = blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
-                blob_content_type: Some("text/plain".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await;
@@ -195,7 +195,7 @@ mod blob_client {
         blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_match: Some(etag.clone().into()),
-                blob_content_type: Some("text/plain".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await?;
@@ -543,7 +543,7 @@ mod blob_client {
         let err = blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_modified_since: Some(after),
-                blob_content_type: Some("text/plain".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await;
@@ -554,7 +554,7 @@ mod blob_client {
         blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_unmodified_since: Some(after),
-                blob_content_type: Some("text/plain".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await?;
@@ -860,7 +860,7 @@ mod blob_client {
         let err = blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_tags: Some(non_matching_expr.to_string()),
-                blob_content_type: Some("text/plain".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await;
@@ -871,7 +871,7 @@ mod blob_client {
         blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_tags: Some(matching_expr.to_string()),
-                blob_content_type: Some("text/plain".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await?;
