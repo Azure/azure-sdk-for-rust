@@ -304,12 +304,18 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Create Source Blob with Multiple Versions
     let data_v1 = b"source version 1";
     source_blob_client
-        .upload(RequestContent::from(data_v1.to_vec()), None)
+        .upload(
+            RequestContent::from(data_v1.to_vec()),
+            None,
+        )
         .await?;
 
     let data_v2 = b"source version 2";
     source_blob_client
-        .upload(RequestContent::from(data_v2.to_vec()), None)
+        .upload(
+            RequestContent::from(data_v2.to_vec()),
+            None,
+        )
         .await?;
 
     // Test: Lease on Current Version
@@ -340,7 +346,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Test: Conditional Operation with Version
     let etag = props.etag()?.unwrap();
     let get_options = BlobClientGetPropertiesOptions {
-        if_match: Some(etag),
+        if_match: Some(etag.into()),
         version_id: Some(lease_version_1.clone()),
         ..Default::default()
     };

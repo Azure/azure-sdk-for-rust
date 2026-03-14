@@ -59,3 +59,44 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
 
     Ok(format_expression.join(" and "))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::ErrorKind;
+
+    #[test]
+    fn format_page_range_unaligned_offset() {
+        let result = format_page_range(1, 512);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().kind(), ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn format_page_range_unaligned_length() {
+        let result = format_page_range(0, 100);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().kind(), ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn format_page_range_valid() {
+        let result = format_page_range(512, 1024);
+        assert_eq!(result.unwrap(), "bytes=512-1535");
+    }
+
+    #[test]
+    fn format_filter_expression_empty_map() {
+        let result = format_filter_expression(&HashMap::new());
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().kind(), ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn format_filter_expression_valid() {
+        let mut tags = HashMap::new();
+        tags.insert("env".to_string(), "prod".to_string());
+        let result = format_filter_expression(&tags);
+        assert_eq!(result.unwrap(), "\"env\"='prod'");
+    }
+}
