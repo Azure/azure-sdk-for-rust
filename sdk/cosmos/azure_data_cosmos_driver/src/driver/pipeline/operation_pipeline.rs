@@ -135,6 +135,7 @@ pub(crate) async fn execute_operation_pipeline(
         let result = execute_transport_pipeline(
             transport_request,
             &selected_transport,
+            operation.is_read_only() || operation.is_idempotent(),
             credential,
             user_agent,
             pipeline_type,

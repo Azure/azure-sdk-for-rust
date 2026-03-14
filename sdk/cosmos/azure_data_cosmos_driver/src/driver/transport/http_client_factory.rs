@@ -25,6 +25,7 @@ pub(crate) struct HttpClientConfig {
     pub(crate) version_policy: HttpVersionPolicy,
     pub(crate) request_timeout: std::time::Duration,
     pub(crate) for_emulator: bool,
+    pub(crate) http2_keep_alive_while_idle: bool,
 }
 
 impl HttpClientConfig {
@@ -37,6 +38,7 @@ impl HttpClientConfig {
             },
             request_timeout: connection_pool.max_metadata_request_timeout(),
             for_emulator: false,
+            http2_keep_alive_while_idle: false,
         }
     }
 
@@ -49,6 +51,7 @@ impl HttpClientConfig {
             },
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
+            http2_keep_alive_while_idle: false,
         }
     }
 
@@ -57,6 +60,7 @@ impl HttpClientConfig {
             version_policy: HttpVersionPolicy::Http2Only,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
+            http2_keep_alive_while_idle: false,
         }
     }
 
@@ -191,6 +195,15 @@ impl HttpClientFactory for DefaultHttpClientFactory {
 
         builder = builder.connect_timeout(connection_pool.max_connect_timeout());
         builder = builder.timeout(config.request_timeout);
+        builder = builder.tcp_keepalive(connection_pool.tcp_keepalive_time());
+
+        if let Some(interval) = connection_pool.tcp_keepalive_interval() {
+            builder = builder.tcp_keepalive_interval(interval);
+        }
+
+        if let Some(retries) = connection_pool.tcp_keepalive_retries() {
+            builder = builder.tcp_keepalive_retries(retries);
+        }
 
         if !connection_pool.is_proxy_allowed() {
             builder = builder.no_proxy();
@@ -206,8 +219,15 @@ impl HttpClientFactory for DefaultHttpClientFactory {
 
         builder = match config.version_policy {
             HttpVersionPolicy::Http11Only => builder.http1_only(),
-            HttpVersionPolicy::Http2Preferred => builder,
-            HttpVersionPolicy::Http2Only => builder.http2_prior_knowledge(),
+            HttpVersionPolicy::Http2Preferred => builder
+                .http2_keep_alive_interval(connection_pool.http2_keep_alive_interval())
+                .http2_keep_alive_timeout(connection_pool.http2_keep_alive_timeout())
+                .http2_keep_alive_while_idle(config.http2_keep_alive_while_idle),
+            HttpVersionPolicy::Http2Only => builder
+                .http2_keep_alive_interval(connection_pool.http2_keep_alive_interval())
+                .http2_keep_alive_timeout(connection_pool.http2_keep_alive_timeout())
+                .http2_keep_alive_while_idle(config.http2_keep_alive_while_idle)
+                .http2_prior_knowledge(),
         };
 
         let client = builder.build().map_err(|error| {

@@ -362,6 +362,18 @@ pub struct RequestDiagnostics {
     /// Pipeline events during this request.
     events: Vec<RequestEvent>,
 
+    /// Transport shard state captured for sharded HTTP/2 requests.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    transport_shard: Option<TransportShardDiagnostics>,
+
+    /// Prior shard-local transport failures before the final attempt outcome.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    failed_transport_shards: Vec<FailedTransportShardDiagnostics>,
+
+    /// Number of transport-local shard retries performed for this request.
+    #[serde(skip_serializing_if = "is_zero_u32")]
+    local_shard_retry_count: u32,
+
     /// Whether this request timed out.
     pub(crate) timed_out: bool,
 
@@ -403,6 +415,9 @@ impl RequestDiagnostics {
             completed_at: None,
             duration_ms: 0,
             events: Vec::new(),
+            transport_shard: None,
+            failed_transport_shards: Vec::new(),
+            local_shard_retry_count: 0,
             timed_out: false,
             request_sent: RequestSentStatus::Unknown,
             error: None,
@@ -418,6 +433,8 @@ impl RequestDiagnostics {
         if let Some(sub_status) = sub_status {
             self.with_sub_status(sub_status);
         }
+        self.error = None;
+        self.timed_out = false;
         self.request_sent = RequestSentStatus::Sent;
         self.duration_ms = self
             .completed_at
@@ -471,6 +488,26 @@ impl RequestDiagnostics {
             .as_millis() as u64;
     }
 
+    /// Records a transport-level failure using the synthetic Cosmos status
+    /// used across SDKs for client-generated gateway transport errors.
+    pub(crate) fn fail_transport(
+        &mut self,
+        error: impl Into<String>,
+        request_sent: RequestSentStatus,
+        status: CosmosStatus,
+    ) {
+        self.completed_at = Some(Instant::now());
+        self.status = status;
+        self.with_error(error);
+        self.request_sent = request_sent;
+        self.timed_out = false;
+        self.duration_ms = self
+            .completed_at
+            .unwrap()
+            .duration_since(self.started_at)
+            .as_millis() as u64;
+    }
+
     /// Records an error for this request.
     pub(crate) fn with_error(&mut self, error: impl Into<String>) {
         self.error = Some(error.into());
@@ -499,6 +536,21 @@ impl RequestDiagnostics {
     /// Adds a pipeline event.
     pub(crate) fn add_event(&mut self, event: RequestEvent) {
         self.events.push(event);
+    }
+
+    pub(crate) fn set_transport_shard(&mut self, transport_shard: TransportShardDiagnostics) {
+        self.transport_shard = Some(transport_shard);
+    }
+
+    pub(crate) fn add_failed_transport_shard(
+        &mut self,
+        failed_transport_shard: FailedTransportShardDiagnostics,
+    ) {
+        self.failed_transport_shards.push(failed_transport_shard);
+    }
+
+    pub(crate) fn increment_local_shard_retry_count(&mut self) {
+        self.local_shard_retry_count = self.local_shard_retry_count.saturating_add(1);
     }
 
     /// Returns whether this request has been completed.
@@ -576,6 +628,21 @@ impl RequestDiagnostics {
     /// Returns the pipeline events during this request.
     pub fn events(&self) -> &[RequestEvent] {
         &self.events
+    }
+
+    /// Returns the sharded transport state for the shard used by this request, if present.
+    pub fn transport_shard(&self) -> Option<&TransportShardDiagnostics> {
+        self.transport_shard.as_ref()
+    }
+
+    /// Returns prior shard-local failures recorded before the final attempt outcome.
+    pub fn failed_transport_shards(&self) -> &[FailedTransportShardDiagnostics] {
+        &self.failed_transport_shards
+    }
+
+    /// Returns how many shard-local transport retries were performed.
+    pub fn local_shard_retry_count(&self) -> u32 {
+        self.local_shard_retry_count
     }
 
     /// Returns whether this request timed out.
@@ -716,6 +783,102 @@ pub struct RequestEvent {
 
     /// Additional context for this event.
     details: Option<String>,
+}
+
+/// Captured state for the HTTP/2 shard used by a request.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct TransportShardDiagnostics {
+    shard_id: u64,
+    inflight: u32,
+    consecutive_failures: u32,
+    total_requests: u64,
+    total_failures: u64,
+    marked_for_eviction: bool,
+}
+
+impl TransportShardDiagnostics {
+    pub(crate) fn new(
+        shard_id: u64,
+        inflight: u32,
+        consecutive_failures: u32,
+        total_requests: u64,
+        total_failures: u64,
+        marked_for_eviction: bool,
+    ) -> Self {
+        Self {
+            shard_id,
+            inflight,
+            consecutive_failures,
+            total_requests,
+            total_failures,
+            marked_for_eviction,
+        }
+    }
+
+    pub fn shard_id(&self) -> u64 {
+        self.shard_id
+    }
+
+    pub fn inflight(&self) -> u32 {
+        self.inflight
+    }
+
+    pub fn consecutive_failures(&self) -> u32 {
+        self.consecutive_failures
+    }
+
+    pub fn total_requests(&self) -> u64 {
+        self.total_requests
+    }
+
+    pub fn total_failures(&self) -> u64 {
+        self.total_failures
+    }
+
+    pub fn marked_for_eviction(&self) -> bool {
+        self.marked_for_eviction
+    }
+}
+
+/// Captured diagnostics for a shard that failed before a local shard retry.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct FailedTransportShardDiagnostics {
+    #[serde(flatten)]
+    transport_shard: TransportShardDiagnostics,
+    request_sent: RequestSentStatus,
+    error: String,
+}
+
+impl FailedTransportShardDiagnostics {
+    pub(crate) fn new(
+        transport_shard: TransportShardDiagnostics,
+        request_sent: RequestSentStatus,
+        error: impl Into<String>,
+    ) -> Self {
+        Self {
+            transport_shard,
+            request_sent,
+            error: error.into(),
+        }
+    }
+
+    pub fn transport_shard(&self) -> &TransportShardDiagnostics {
+        &self.transport_shard
+    }
+
+    pub fn request_sent(&self) -> RequestSentStatus {
+        self.request_sent
+    }
+
+    pub fn error(&self) -> &str {
+        &self.error
+    }
+}
+
+fn is_zero_u32(value: &u32) -> bool {
+    *value == 0
 }
 
 impl RequestEvent {
@@ -1080,6 +1243,19 @@ impl DiagnosticsContextBuilder {
         }
     }
 
+    /// Records a transport-level failure for a request that received no Cosmos response.
+    pub(crate) fn fail_transport_request(
+        &mut self,
+        handle: RequestHandle,
+        error: impl Into<String>,
+        request_sent: RequestSentStatus,
+        status: CosmosStatus,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.fail_transport(error, request_sent, status);
+        }
+    }
+
     /// Updates a request's diagnostics with additional data.
     ///
     /// Use this to add response headers data (charge, activity ID, etc.).
@@ -1108,6 +1284,32 @@ impl DiagnosticsContextBuilder {
     pub(crate) fn add_event(&mut self, handle: RequestHandle, event: RequestEvent) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.add_event(event);
+        }
+    }
+
+    pub(crate) fn set_transport_shard(
+        &mut self,
+        handle: RequestHandle,
+        transport_shard: TransportShardDiagnostics,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.set_transport_shard(transport_shard);
+        }
+    }
+
+    pub(crate) fn add_failed_transport_shard(
+        &mut self,
+        handle: RequestHandle,
+        failed_transport_shard: FailedTransportShardDiagnostics,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.add_failed_transport_shard(failed_transport_shard);
+        }
+    }
+
+    pub(crate) fn increment_local_shard_retry_count(&mut self, handle: RequestHandle) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.increment_local_shard_retry_count();
         }
     }
 
@@ -1909,6 +2111,52 @@ mod tests {
         let status = ctx.status().unwrap();
         assert_eq!(status.status_code(), StatusCode::NotFound);
         assert!(status.is_read_session_not_available());
+    }
+
+    #[test]
+    fn transport_failure_request_uses_transport_generated_503() {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+
+        builder.fail_transport_request(
+            handle,
+            "connection refused",
+            RequestSentStatus::Unknown,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        );
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        let status = requests[0].status();
+        assert_eq!(status, &CosmosStatus::TRANSPORT_GENERATED_503);
+        assert_eq!(requests[0].error(), Some("connection refused"));
+    }
+
+    #[test]
+    fn transport_failure_request_can_record_channel_closed_status() {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+
+        builder.fail_transport_request(
+            handle,
+            "channel is closed",
+            RequestSentStatus::Unknown,
+            CosmosStatus::CHANNEL_CLOSED,
+        );
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        let status = requests[0].status();
+        assert_eq!(status, &CosmosStatus::CHANNEL_CLOSED);
+        assert_eq!(requests[0].error(), Some("channel is closed"));
     }
 
     #[test]

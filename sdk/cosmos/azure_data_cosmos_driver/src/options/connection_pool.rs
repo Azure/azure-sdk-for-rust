@@ -5,7 +5,7 @@ use std::{net::IpAddr, time::Duration};
 
 use super::env_parsing::{
     parse_duration_millis_from_env, parse_from_env, parse_optional_duration_millis_from_env,
-    ValidationBounds,
+    parse_optional_from_env, ValidationBounds,
 };
 use crate::options::EmulatorServerCertValidation;
 
@@ -47,6 +47,20 @@ pub struct ConnectionPoolOptions {
     max_idle_connections_per_endpoint: usize,
 
     idle_connection_timeout: Option<Duration>,
+
+    max_http2_streams_per_client: u32,
+    max_http2_connections_per_endpoint: usize,
+    min_http2_connections_per_endpoint: usize,
+    idle_http2_client_timeout: Duration,
+    http2_health_check_interval: Duration,
+    http2_consecutive_failure_threshold: u32,
+    http2_eviction_grace_period: Duration,
+    http2_keep_alive_interval: Duration,
+    http2_keep_alive_timeout: Duration,
+    http2_keep_alive_idle_client_count: usize,
+    tcp_keepalive_time: Option<Duration>,
+    tcp_keepalive_interval: Option<Duration>,
+    tcp_keepalive_retries: Option<u32>,
 
     is_http2_allowed: bool,
 
@@ -119,6 +133,71 @@ impl ConnectionPoolOptions {
         self.idle_connection_timeout
     }
 
+    /// Returns the per-shard HTTP/2 stream budget before another shard is used.
+    pub fn max_http2_streams_per_client(&self) -> u32 {
+        self.max_http2_streams_per_client
+    }
+
+    /// Returns the maximum number of HTTP/2 shard clients per endpoint.
+    pub fn max_http2_connections_per_endpoint(&self) -> usize {
+        self.max_http2_connections_per_endpoint
+    }
+
+    /// Returns the minimum number of HTTP/2 shard clients per endpoint.
+    pub fn min_http2_connections_per_endpoint(&self) -> usize {
+        self.min_http2_connections_per_endpoint
+    }
+
+    /// Returns how long an overflow HTTP/2 shard must stay idle before reclaim.
+    pub fn idle_http2_client_timeout(&self) -> Duration {
+        self.idle_http2_client_timeout
+    }
+
+    /// Returns how often the HTTP/2 background health sweep runs.
+    pub fn http2_health_check_interval(&self) -> Duration {
+        self.http2_health_check_interval
+    }
+
+    /// Returns the consecutive failure threshold that marks a shard unhealthy.
+    pub fn http2_consecutive_failure_threshold(&self) -> u32 {
+        self.http2_consecutive_failure_threshold
+    }
+
+    /// Returns the grace period after the last success before an unhealthy shard can be evicted.
+    pub fn http2_eviction_grace_period(&self) -> Duration {
+        self.http2_eviction_grace_period
+    }
+
+    /// Returns the HTTP/2 keep-alive ping interval.
+    pub fn http2_keep_alive_interval(&self) -> Duration {
+        self.http2_keep_alive_interval
+    }
+
+    /// Returns the HTTP/2 keep-alive ping timeout.
+    pub fn http2_keep_alive_timeout(&self) -> Duration {
+        self.http2_keep_alive_timeout
+    }
+
+    /// Returns how many shard clients per endpoint should keep sending idle HTTP/2 pings.
+    pub fn http2_keep_alive_idle_client_count(&self) -> usize {
+        self.http2_keep_alive_idle_client_count
+    }
+
+    /// Returns the TCP keepalive time, if enabled.
+    pub fn tcp_keepalive_time(&self) -> Option<Duration> {
+        self.tcp_keepalive_time
+    }
+
+    /// Returns the TCP keepalive probe interval, if enabled.
+    pub fn tcp_keepalive_interval(&self) -> Option<Duration> {
+        self.tcp_keepalive_interval
+    }
+
+    /// Returns the TCP keepalive probe retry count, if enabled.
+    pub fn tcp_keepalive_retries(&self) -> Option<u32> {
+        self.tcp_keepalive_retries
+    }
+
     /// Returns whether HTTP/2 is allowed for gateway mode connections.
     pub fn is_http2_allowed(&self) -> bool {
         self.is_http2_allowed
@@ -162,6 +241,19 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_METADATA_REQUEST_TIMEOUT_MS`: Maximum metadata request timeout in milliseconds (default: `65_000`, min: `100`, max: `65_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT`: Maximum idle connections per endpoint (default: `1_000` if HTTP/2 is allowed, `10_000` otherwise, min: `10`, max: `64_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS`: Idle connection timeout in milliseconds (default: none, min: `300_000` when set)
+/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`: Maximum concurrent streams per HTTP/2 shard client (default: `16`, min: `1`, max: `20`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `available_parallelism * 2`, fallback: `32`, min: `1`, max: `256`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT`: Minimum number of HTTP/2 shard clients per endpoint (default: `1`, min: `1`, max: `256`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`: Idle timeout for overflow HTTP/2 shard clients in milliseconds (default: `60_000`, min: `1_000`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_HEALTH_CHECK_INTERVAL_MS`: Background HTTP/2 health-sweep interval in milliseconds (default: `10_000`, min: `100`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_CONSECUTIVE_FAILURE_THRESHOLD`: Consecutive failure count before a shard becomes unhealthy (default: `5`, min: `1`, max: `255`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_EVICTION_GRACE_PERIOD_MS`: Minimum time since the last successful request before an unhealthy shard can be evicted (default: `2_000`, min: `100`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS`: HTTP/2 keep-alive ping interval in milliseconds (default: `1_000`, min: `100`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS`: HTTP/2 keep-alive ping timeout in milliseconds (default: `2_000`, min: `100`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT`: Number of shard clients per endpoint that keep sending idle HTTP/2 pings (default: `10`, min: `0`, max: `256`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`: TCP keepalive time in milliseconds (default: none, min: `1_000` when set)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: none, min: `1_000` when set)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
 /// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`EmulatorServerCertValidation::DangerousDisabled`], `false` to [`EmulatorServerCertValidation::Enabled`] (default: `false`)
@@ -189,6 +281,19 @@ pub struct ConnectionPoolOptionsBuilder {
     max_metadata_request_timeout: Option<Duration>,
     max_idle_connections_per_endpoint: Option<usize>,
     idle_connection_timeout: Option<Duration>,
+    max_http2_streams_per_client: Option<u32>,
+    max_http2_connections_per_endpoint: Option<usize>,
+    min_http2_connections_per_endpoint: Option<usize>,
+    idle_http2_client_timeout: Option<Duration>,
+    http2_health_check_interval: Option<Duration>,
+    http2_consecutive_failure_threshold: Option<u32>,
+    http2_eviction_grace_period: Option<Duration>,
+    http2_keep_alive_interval: Option<Duration>,
+    http2_keep_alive_timeout: Option<Duration>,
+    http2_keep_alive_idle_client_count: Option<usize>,
+    tcp_keepalive_time: Option<Duration>,
+    tcp_keepalive_interval: Option<Duration>,
+    tcp_keepalive_retries: Option<u32>,
     is_http2_allowed: Option<bool>,
     is_gateway20_allowed: Option<bool>,
     emulator_server_cert_validation: Option<EmulatorServerCertValidation>,
@@ -278,6 +383,112 @@ impl ConnectionPoolOptionsBuilder {
     /// Default: none (connections are never closed due to idleness).
     pub fn with_idle_connection_timeout(mut self, timeout: Duration) -> Self {
         self.idle_connection_timeout = Some(timeout);
+        self
+    }
+
+    /// Sets the maximum concurrent streams per HTTP/2 shard client.
+    ///
+    /// Must be between 1 and 20 inclusive.
+    /// Default: 16.
+    pub fn with_max_http2_streams_per_client(mut self, value: u32) -> Self {
+        self.max_http2_streams_per_client = Some(value);
+        self
+    }
+
+    /// Sets the maximum number of HTTP/2 shard clients per endpoint.
+    ///
+    /// Must be between 1 and 256 inclusive.
+    pub fn with_max_http2_connections_per_endpoint(mut self, value: usize) -> Self {
+        self.max_http2_connections_per_endpoint = Some(value);
+        self
+    }
+
+    /// Sets the minimum number of HTTP/2 shard clients per endpoint.
+    ///
+    /// Must be between 1 and 256 inclusive and less than or equal to the maximum.
+    pub fn with_min_http2_connections_per_endpoint(mut self, value: usize) -> Self {
+        self.min_http2_connections_per_endpoint = Some(value);
+        self
+    }
+
+    /// Sets the idle timeout for overflow HTTP/2 shard clients.
+    ///
+    /// Must be at least 1 second.
+    /// Default: 60 seconds.
+    pub fn with_idle_http2_client_timeout(mut self, timeout: Duration) -> Self {
+        self.idle_http2_client_timeout = Some(timeout);
+        self
+    }
+
+    /// Sets the background HTTP/2 health-sweep interval.
+    ///
+    /// Must be at least 100 milliseconds.
+    /// Default: 10 seconds.
+    pub fn with_http2_health_check_interval(mut self, timeout: Duration) -> Self {
+        self.http2_health_check_interval = Some(timeout);
+        self
+    }
+
+    /// Sets the consecutive failure threshold for unhealthy HTTP/2 shards.
+    ///
+    /// Must be between 1 and 255 inclusive.
+    /// Default: 5.
+    pub fn with_http2_consecutive_failure_threshold(mut self, value: u32) -> Self {
+        self.http2_consecutive_failure_threshold = Some(value);
+        self
+    }
+
+    /// Sets the grace period before an unhealthy HTTP/2 shard can be evicted.
+    ///
+    /// Must be at least 100 milliseconds.
+    /// Default: 2 seconds.
+    pub fn with_http2_eviction_grace_period(mut self, timeout: Duration) -> Self {
+        self.http2_eviction_grace_period = Some(timeout);
+        self
+    }
+
+    /// Sets the HTTP/2 keep-alive ping interval.
+    ///
+    /// Must be at least 100 milliseconds.
+    /// Default: 1 second.
+    pub fn with_http2_keep_alive_interval(mut self, timeout: Duration) -> Self {
+        self.http2_keep_alive_interval = Some(timeout);
+        self
+    }
+
+    /// Sets the HTTP/2 keep-alive ping timeout.
+    ///
+    /// Must be at least 100 milliseconds.
+    /// Default: 2 seconds.
+    pub fn with_http2_keep_alive_timeout(mut self, timeout: Duration) -> Self {
+        self.http2_keep_alive_timeout = Some(timeout);
+        self
+    }
+
+    /// Sets how many shard clients per endpoint should keep sending idle HTTP/2 pings.
+    ///
+    /// Must be between 0 and 256 inclusive.
+    /// Default: 10.
+    pub fn with_http2_keep_alive_idle_client_count(mut self, value: usize) -> Self {
+        self.http2_keep_alive_idle_client_count = Some(value);
+        self
+    }
+
+    /// Enables TCP keepalive with the given initial probe delay.
+    pub fn with_tcp_keepalive_time(mut self, timeout: Duration) -> Self {
+        self.tcp_keepalive_time = Some(timeout);
+        self
+    }
+
+    /// Sets the TCP keepalive probe interval.
+    pub fn with_tcp_keepalive_interval(mut self, timeout: Duration) -> Self {
+        self.tcp_keepalive_interval = Some(timeout);
+        self
+    }
+
+    /// Sets the TCP keepalive retry count.
+    pub fn with_tcp_keepalive_retries(mut self, value: u32) -> Self {
+        self.tcp_keepalive_retries = Some(value);
         self
     }
 
@@ -417,6 +628,118 @@ impl ConnectionPoolOptionsBuilder {
             u64::MAX,
         )?;
 
+        let max_http2_streams_per_client = parse_from_env(
+            self.max_http2_streams_per_client,
+            "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT",
+            16_u32,
+            ValidationBounds::range(1, 20),
+        )?;
+
+        let cpu_based_http2_max = std::thread::available_parallelism()
+            .map(|count| count.get().saturating_mul(2))
+            .unwrap_or(32)
+            .clamp(1, 256);
+
+        let max_http2_connections_per_endpoint = parse_from_env(
+            self.max_http2_connections_per_endpoint,
+            "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT",
+            cpu_based_http2_max,
+            ValidationBounds::range(1, 256),
+        )?;
+
+        let min_http2_connections_per_endpoint = parse_from_env(
+            self.min_http2_connections_per_endpoint,
+            "AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT",
+            1_usize,
+            ValidationBounds::range(1, 256),
+        )?;
+
+        if min_http2_connections_per_endpoint > max_http2_connections_per_endpoint {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "min_http2_connections_per_endpoint must be less than or equal to max_http2_connections_per_endpoint, got {} > {}",
+                    min_http2_connections_per_endpoint,
+                    max_http2_connections_per_endpoint
+                ),
+            ));
+        }
+
+        let idle_http2_client_timeout = parse_duration_millis_from_env(
+            self.idle_http2_client_timeout,
+            "AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS",
+            60_000,
+            1_000,
+            u64::MAX,
+        )?;
+
+        let http2_health_check_interval = parse_duration_millis_from_env(
+            self.http2_health_check_interval,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_HEALTH_CHECK_INTERVAL_MS",
+            10_000,
+            100,
+            u64::MAX,
+        )?;
+
+        let http2_consecutive_failure_threshold = parse_from_env(
+            self.http2_consecutive_failure_threshold,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_CONSECUTIVE_FAILURE_THRESHOLD",
+            5_u32,
+            ValidationBounds::range(1_u32, 255_u32),
+        )?;
+
+        let http2_eviction_grace_period = parse_duration_millis_from_env(
+            self.http2_eviction_grace_period,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_EVICTION_GRACE_PERIOD_MS",
+            2_000,
+            100,
+            u64::MAX,
+        )?;
+
+        let http2_keep_alive_interval = parse_duration_millis_from_env(
+            self.http2_keep_alive_interval,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS",
+            1_000,
+            100,
+            u64::MAX,
+        )?;
+
+        let http2_keep_alive_timeout = parse_duration_millis_from_env(
+            self.http2_keep_alive_timeout,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS",
+            2_000,
+            100,
+            u64::MAX,
+        )?;
+
+        let http2_keep_alive_idle_client_count = parse_from_env(
+            self.http2_keep_alive_idle_client_count,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT",
+            10_usize,
+            ValidationBounds::range(0, 256),
+        )?
+        .min(max_http2_connections_per_endpoint);
+
+        let tcp_keepalive_time = parse_optional_duration_millis_from_env(
+            self.tcp_keepalive_time,
+            "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS",
+            1_000,
+            u64::MAX,
+        )?;
+
+        let tcp_keepalive_interval = parse_optional_duration_millis_from_env(
+            self.tcp_keepalive_interval,
+            "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS",
+            1_000,
+            u64::MAX,
+        )?;
+
+        let tcp_keepalive_retries = parse_optional_from_env(
+            self.tcp_keepalive_retries,
+            "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES",
+            ValidationBounds::range(1_u32, 255_u32),
+        )?;
+
         Ok(ConnectionPoolOptions {
             is_proxy_allowed: parse_from_env(
                 self.is_proxy_allowed,
@@ -432,6 +755,19 @@ impl ConnectionPoolOptionsBuilder {
             max_metadata_request_timeout,
             max_idle_connections_per_endpoint,
             idle_connection_timeout,
+            max_http2_streams_per_client,
+            max_http2_connections_per_endpoint,
+            min_http2_connections_per_endpoint,
+            idle_http2_client_timeout,
+            http2_health_check_interval,
+            http2_consecutive_failure_threshold,
+            http2_eviction_grace_period,
+            http2_keep_alive_interval,
+            http2_keep_alive_timeout,
+            http2_keep_alive_idle_client_count,
+            tcp_keepalive_time,
+            tcp_keepalive_interval,
+            tcp_keepalive_retries,
             is_http2_allowed: effective_is_http2_allowed,
             is_gateway20_allowed: effective_is_gateway20_allowed,
             emulator_server_cert_validation: match self.emulator_server_cert_validation {
@@ -496,6 +832,25 @@ mod tests {
             EmulatorServerCertValidation::Enabled
         );
         assert_eq!(options.idle_connection_timeout(), None);
+        assert_eq!(options.max_http2_streams_per_client(), 16);
+        assert!(options.max_http2_connections_per_endpoint() >= 1);
+        assert_eq!(options.min_http2_connections_per_endpoint(), 1);
+        assert_eq!(options.idle_http2_client_timeout(), Duration::from_secs(60));
+        assert_eq!(
+            options.http2_health_check_interval(),
+            Duration::from_secs(10)
+        );
+        assert_eq!(options.http2_consecutive_failure_threshold(), 5);
+        assert_eq!(
+            options.http2_eviction_grace_period(),
+            Duration::from_secs(2)
+        );
+        assert_eq!(options.http2_keep_alive_interval(), Duration::from_secs(1));
+        assert_eq!(options.http2_keep_alive_timeout(), Duration::from_secs(2));
+        assert_eq!(options.http2_keep_alive_idle_client_count(), 10);
+        assert_eq!(options.tcp_keepalive_time(), None);
+        assert_eq!(options.tcp_keepalive_interval(), None);
+        assert_eq!(options.tcp_keepalive_retries(), None);
         assert_eq!(options.local_address(), None);
         // Default is 1_000 when HTTP/2 is allowed (which is true by default)
         assert_eq!(options.max_idle_connections_per_endpoint(), 1_000);
@@ -513,6 +868,19 @@ mod tests {
             .with_max_metadata_request_timeout(Duration::from_millis(30_000))
             .with_max_idle_connections_per_endpoint(5_000)
             .with_idle_connection_timeout(Duration::from_millis(600_000))
+            .with_max_http2_streams_per_client(12)
+            .with_max_http2_connections_per_endpoint(24)
+            .with_min_http2_connections_per_endpoint(3)
+            .with_idle_http2_client_timeout(Duration::from_millis(90_000))
+            .with_http2_health_check_interval(Duration::from_millis(15_000))
+            .with_http2_consecutive_failure_threshold(8)
+            .with_http2_eviction_grace_period(Duration::from_millis(4_000))
+            .with_http2_keep_alive_interval(Duration::from_millis(1_500))
+            .with_http2_keep_alive_timeout(Duration::from_millis(2_500))
+            .with_http2_keep_alive_idle_client_count(7)
+            .with_tcp_keepalive_time(Duration::from_millis(30_000))
+            .with_tcp_keepalive_interval(Duration::from_millis(5_000))
+            .with_tcp_keepalive_retries(4)
             .with_is_http2_allowed(false)
             .with_is_gateway20_allowed(true)
             .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
@@ -543,6 +911,40 @@ mod tests {
             options.idle_connection_timeout(),
             Some(Duration::from_millis(600_000))
         );
+        assert_eq!(options.max_http2_streams_per_client(), 12);
+        assert_eq!(options.max_http2_connections_per_endpoint(), 24);
+        assert_eq!(options.min_http2_connections_per_endpoint(), 3);
+        assert_eq!(
+            options.idle_http2_client_timeout(),
+            Duration::from_millis(90_000)
+        );
+        assert_eq!(
+            options.http2_health_check_interval(),
+            Duration::from_millis(15_000)
+        );
+        assert_eq!(options.http2_consecutive_failure_threshold(), 8);
+        assert_eq!(
+            options.http2_eviction_grace_period(),
+            Duration::from_millis(4_000)
+        );
+        assert_eq!(
+            options.http2_keep_alive_interval(),
+            Duration::from_millis(1_500)
+        );
+        assert_eq!(
+            options.http2_keep_alive_timeout(),
+            Duration::from_millis(2_500)
+        );
+        assert_eq!(options.http2_keep_alive_idle_client_count(), 7);
+        assert_eq!(
+            options.tcp_keepalive_time(),
+            Some(Duration::from_millis(30_000))
+        );
+        assert_eq!(
+            options.tcp_keepalive_interval(),
+            Some(Duration::from_millis(5_000))
+        );
+        assert_eq!(options.tcp_keepalive_retries(), Some(4));
         assert!(!options.is_http2_allowed());
         // gateway20 is set to true but HTTP/2 is false, so it should be false
         assert!(!options.is_gateway20_allowed());
@@ -732,6 +1134,96 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("idle_connection_timeout_ms must be at least 300000ms"));
+    }
+
+    #[test]
+    fn max_http2_streams_per_client_too_large() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_max_http2_streams_per_client(21)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("max_http2_streams_per_client must be at most 20"));
+    }
+
+    #[test]
+    fn min_http2_connections_cannot_exceed_max() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_min_http2_connections_per_endpoint(4)
+            .with_max_http2_connections_per_endpoint(3)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("min_http2_connections_per_endpoint must be less than or equal to max_http2_connections_per_endpoint"));
+    }
+
+    #[test]
+    fn idle_http2_client_timeout_too_small() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_idle_http2_client_timeout(Duration::from_millis(500))
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("idle_http2_client_timeout_ms must be at least 1000ms"));
+    }
+
+    #[test]
+    fn http2_health_check_interval_too_small() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_http2_health_check_interval(Duration::from_millis(50))
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("http2_health_check_interval_ms must be at least 100ms"));
+    }
+
+    #[test]
+    fn http2_consecutive_failure_threshold_too_small() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_http2_consecutive_failure_threshold(0)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("http2_consecutive_failure_threshold must be at least 1"));
+    }
+
+    #[test]
+    fn http2_keep_alive_idle_client_count_is_capped_at_max_connections() {
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_max_http2_connections_per_endpoint(4)
+            .with_http2_keep_alive_idle_client_count(10)
+            .build()
+            .unwrap();
+
+        assert_eq!(options.http2_keep_alive_idle_client_count(), 4);
+    }
+
+    #[test]
+    fn tcp_keepalive_retries_too_small() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_tcp_keepalive_retries(0)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("tcp_keepalive_retries must be at least 1"));
     }
 
     #[test]

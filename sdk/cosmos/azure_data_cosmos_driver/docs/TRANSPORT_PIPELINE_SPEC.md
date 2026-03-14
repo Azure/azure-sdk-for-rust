@@ -91,6 +91,7 @@ eventually live in `azure_data_cosmos_driver`. The goal is:
 │  │                                                                       │  │
 │  │  Responsibilities (per-attempt, single region/endpoint):              │  │
 │  │  ┌─ Transport-level retry (429 with backoff)                          │  │
+│  │  ├─ One shard-local connectivity retry before endpoint failover       │  │
 │  │  ├─ Authorization header generation                                   │  │
 │  │  ├─ Common headers (x-ms-version, User-Agent, Content-Type)           │  │
 │  │  ├─ Request/response diagnostics capture (per-attempt events)         │  │
@@ -347,14 +348,15 @@ pub(crate) struct TransportRequest {
     pub deadline: Option<Instant>,
 }
 
-/// COMPONENT: Transport-level retry state (for 429 throttling and
-/// connectivity errors that can be retried locally by switching to a
-/// different HttpClient shard).
+/// COMPONENT: Transport-level retry state (for 429 throttling).
 ///
 /// Scoped to a single attempt (including any regional failover within
 /// that attempt from `ClientRetryPolicy`). When hedging is active,
 /// each hedged request maintains its own independent `ThrottleRetryState`
-/// to avoid one attempt's throttling causing the other to fail.
+/// to avoid one attempt's throttling causing the other to fail. Local
+/// connectivity retry on a different shard is tracked separately inside
+/// `execute_transport_pipeline` because it is capped to a single replay and
+/// needs the failed shard ID from the just-finished dispatch.
 pub(crate) struct ThrottleRetryState {
     pub attempt_count: u32,
     pub max_attempts: u32,
@@ -457,6 +459,7 @@ fn build_transport_request(
 async fn execute_transport_pipeline(
     request: TransportRequest,
     transport: &AdaptiveTransport,
+    allow_sent_transport_retry: bool,
     credential: &Credential,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult;
@@ -1580,9 +1583,20 @@ more connections when the stream limit is reached. This causes:
 ### 6.2 Design: `ShardedHttpTransport`
 
 A layer above `Arc<dyn HttpClient>` that manages multiple client instances per endpoint and
-load-balances requests based on inflight count and health. The sharded transport uses the
+load-balances requests based on inflight count and shard health. The sharded transport uses the
 `azure_core::http::HttpClient` trait exclusively — it never references a concrete HTTP library.
 All concrete client creation is delegated to a pluggable factory.
+
+The current implementation intentionally uses simple synchronization primitives on the hot data
+structures:
+
+- `Mutex<HashMap<EndpointKey, Arc<EndpointShardPool>>>` for endpoint pool lookup/creation
+- `RwLock<Vec<Arc<ClientShard>>>` for per-endpoint shard membership
+- `Mutex<ClientShardState>` plus an atomic inflight counter per shard
+
+That keeps the first implementation straightforward while still isolating shard state cleanly.
+Background cleanup and health evaluation run via `BackgroundTaskManager` when a Tokio runtime is
+available. Synchronous test contexts skip spawning the sweep loop.
 
 ```rust
 /// Factory trait for creating new HttpClient instances.
@@ -1611,142 +1625,59 @@ pub(crate) struct HttpClientConfig {
 
 /// Manages a pool of HttpClient instances per target endpoint.
 /// Distributes requests to avoid exceeding HTTP/2 stream limits.
-///
-/// `pools` uses `crossbeam::epoch::Atomic` for lock-free reads (§11.1).
-/// The map is read on every HTTP request and mutated only when a new
-/// endpoint is first seen or during health-sweep eviction.
 pub(crate) struct ShardedHttpTransport {
-    /// Configuration for the sharding behavior.
-    config: ShardingConfig,
     /// Per-endpoint shard pools. Key = endpoint authority (host:port).
-    /// Lock-free reads via epoch; writers clone-and-swap the HashMap.
-    pools: crossbeam::epoch::Atomic<HashMap<EndpointKey, Arc<EndpointShardPool>>>,
+    pools: Arc<Mutex<HashMap<EndpointKey, Arc<EndpointShardPool>>>>,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
+    /// Resolved connection-pool configuration including HTTP/2 sharding knobs.
+    connection_pool: ConnectionPoolOptions,
+    /// Base HttpClient configuration used when building shards.
+    client_config: HttpClientConfig,
+    /// Owns the periodic health sweep task when Tokio is active.
+    #[cfg(feature = "tokio")]
+    background_tasks: Arc<BackgroundTaskManager>,
 }
 
-/// Configuration for HTTP/2 connection sharding.
-///
-/// This is a driver-internal resolved snapshot built from the sharding
-/// fields on `ConnectionPoolOptions` (§9.1) after layered option resolution.
-/// All fields are concrete (non-`Option`) with defaults applied.
-#[non_exhaustive]
-pub struct ShardingConfig {
-    /// Maximum concurrent streams per HttpClient per endpoint before
-    /// load-balancing to another client. Should be <= 20 (H2 server limit).
-    /// Default: 16 (leave headroom below the 20-stream limit).
-    pub max_streams_per_client: u32,
-
-    /// Maximum number of HttpClient instances per endpoint.
-    /// Limits total connection fan-out.
-    /// Default: `num_cpus * 2` (dynamically determined at runtime).
-    /// A static fallback of 32 is used if CPU count cannot be detected.
-    /// The value should be large enough to sustain thousands of point
-    /// reads per second (`num_cpus * 2 * max_streams_per_client` concurrent requests).
-    pub max_clients_per_endpoint: u32,
-
-    /// Minimum number of HttpClient instances per endpoint.
-    /// Maintained even under low load for quick ramp-up. Default: 1.
-    pub min_clients_per_endpoint: u32,
-
-    /// Target inflight utilization ratio for load spreading (0.0 - 1.0).
-    /// Controls how aggressively load is concentrated on fewer shards to
-    /// allow idle shards to drain and be reclaimed. Default: 0.5.
-    /// See §6.4 for details.
-    pub load_spread_ratio: f64,
-
-    /// Number of consecutive failures on a client before considering
-    /// it for eviction. Default: 5.
-    pub consecutive_failure_threshold: u32,
-
-    /// Grace period after last successful request before a client can
-    /// be evicted due to consecutive failures. Prevents premature eviction
-    /// during transient issues. Default: 2 seconds.
-    pub eviction_grace_period: Duration,
-
-    /// Idle timeout for HttpClient instances above min_clients_per_endpoint.
-    /// Clients with no inflight requests for this duration are closed.
-    /// Default: 60 seconds.
-    /// **TODO @fabianm**: Align with the idle connection timeout used by the Cosmos DB
-    /// Gateway. Follow up with the Gateway team for the recommended value.
-    pub idle_client_timeout: Duration,
-
-    /// How often to run the background health check/eviction sweep.
-    /// Default: 10 seconds.
-    pub health_check_interval: Duration,
-
-    /// Scale-up threshold: when the average inflight across all shards
-    /// exceeds `max_streams_per_client * scale_up_threshold_ratio`, a new
-    /// shard is proactively created (up to max_clients_per_endpoint).
-    /// Default: 0.75 (at 75% capacity, start scaling up).
-    pub scale_up_threshold_ratio: f64,
-}
+// Shard tuning currently comes directly from `ConnectionPoolOptions`
+// rather than from a separate internal `ShardingConfig` snapshot.
 ```
 
 ### 6.3 Per-Endpoint Shard Pool
 
 ```rust
 /// A pool of HttpClient instances for a single endpoint.
-///
-/// The shard list is stored in a `crossbeam::epoch::Atomic` and swapped
-/// atomically on writes (clone-on-write).  The read path (`select_shard`)
-/// is fully lock-free — pin the epoch, load the pointer, iterate.
-/// Mutations (add/remove shard) build a new `Vec` and `swap` +
-/// `defer_destroy` the old one.
 struct EndpointShardPool {
     endpoint: EndpointKey,
-    config: ShardingConfig,
-    /// The shards. Epoch-guarded for lock-free reads (§11.1).
-    /// Replaced atomically on shard add/remove.
-    shards: crossbeam::epoch::Atomic<Vec<Arc<ClientShard>>>,
+    connection_pool: ConnectionPoolOptions,
     /// Factory for creating new HttpClient instances.
     client_factory: Arc<dyn HttpClientFactory>,
-    /// HttpClient configuration for this pool.
-    client_config: HttpClientConfig,
+    /// Base HttpClient configuration for this pool.
+    base_client_config: HttpClientConfig,
+    /// The current shards for this endpoint.
+    shards: RwLock<Vec<Arc<ClientShard>>>,
+    /// Deterministic shard ID generator for diagnostics and shard-local retry.
+    next_shard_id: AtomicU64,
 }
 
 /// A single HttpClient with per-endpoint health/inflight tracking.
 struct ClientShard {
+    id: u64,
     /// The HTTP client behind the azure_core abstraction.
     client: Arc<dyn HttpClient>,
-    /// Per-endpoint inflight tracking. Key = endpoint authority.
-    endpoint_stats: RwLock<HashMap<EndpointKey, EndpointStats>>,
-    /// Shard-level health state.
-    health: ShardHealth,
-    /// When this shard was created.
-    created_at: Instant,
-    /// Shard ID for diagnostics.
-    id: u64,
+    /// Current inflight request count on this shard.
+    inflight: AtomicU32,
+    /// Shard health and request counters.
+    state: Mutex<ClientShardState>,
 }
 
-/// Per-endpoint statistics on a single shard.
-/// Uses atomics for lock-free updates on the hot path.
-/// Each field is wrapped in `CachePadded` to prevent false sharing
-/// between cores updating adjacent counters concurrently (§11.3).
-struct EndpointStats {
-    /// Currently inflight requests to this endpoint on this shard.
-    inflight: CachePadded<AtomicU32>,
-    /// Timestamp of last successful response (nanos since epoch).
-    last_success_nanos: CachePadded<AtomicU64>,
-    /// Timestamp of last request (success or failure).
-    last_request_nanos: CachePadded<AtomicU64>,
-    /// Consecutive failure count (reset on success).
-    consecutive_failures: CachePadded<AtomicU32>,
-    /// Total requests sent.
-    total_requests: CachePadded<AtomicU64>,
-    /// Total failures.
-    total_failures: CachePadded<AtomicU64>,
-}
-
-/// Shard-level health tracking (across all endpoints on this shard).
-/// Fields are `CachePadded` to avoid false sharing (§11.3).
-struct ShardHealth {
-    /// Total inflight across all endpoints.
-    total_inflight: CachePadded<AtomicU32>,
-    /// Last successful response on any endpoint.
-    last_success_nanos: CachePadded<AtomicU64>,
-    /// Whether this shard is marked for eviction.
-    marked_for_eviction: CachePadded<AtomicBool>,
+struct ClientShardState {
+    last_request_at: Instant,
+    last_success_at: Option<Instant>,
+    consecutive_failures: u32,
+    total_requests: u64,
+    total_failures: u64,
+    marked_for_eviction: bool,
 }
 ```
 
@@ -1756,16 +1687,19 @@ The shard selection algorithm serves two goals simultaneously:
 
 1. **Avoid exceeding the H2 stream limit** (scale up under load)
 2. **Consolidate load to allow idle shards to drain and close** (scale down after spikes)
+3. **Avoid immediately replaying onto a shard that just failed** when a local connectivity retry is attempted
 
-The key mechanism is `load_spread_ratio` (default: 0.5). When the pool has `N` shards, only the
-top `ceil(N * load_spread_ratio)` shards are considered for new requests (the "active set").
-The remaining shards receive no new work, allowing their inflight counts to drain to zero and
-eventually hit the `idle_client_timeout`, at which point they are reclaimed by the health sweep.
+The current active-set calculation is demand-based. For a snapshot of selectable shards, the pool
+computes how many shards are needed to absorb `total_inflight + 1` at the configured
+`max_http2_streams_per_client`, clamps that between the configured min and the number of currently
+selectable shards, then only considers that prefix of least-cost shards for normal request routing.
+If transport-local retry is replaying after a connectivity failure, the failed shard ID is excluded
+from the selectable set for that one replay.
 
-**Example**: After a traffic spike, the pool has scaled up to 10 shards. With
-`load_spread_ratio = 0.5`, only 5 shards are in the active set. The other 5 receive no new
-requests. Once their inflight drains to 0 and `idle_client_timeout` (60s default) elapses,
-the health sweep closes them. The pool shrinks back toward `min_clients_per_endpoint`.
+**Example**: After a traffic spike, the pool has scaled up to 4 shards. As load drops, the
+computed active shard count also drops, so only the earliest shards needed for the current inflight
+level keep receiving new work. The overflow shards drain naturally and are later reclaimed by the
+background sweep once they remain idle longer than `idle_http2_client_timeout`.
 
 ```text
 Traffic spike scaling:
@@ -1773,7 +1707,7 @@ Traffic spike scaling:
   Time T1 (spike starts):
     Shard 1: [||||||||||||||||]  16/16 → at capacity
     Shard 2: [||||||||||||||||]  16/16 → at capacity
-    → scale_up_threshold_ratio (0.75) exceeded → create Shard 3
+    → all active shards saturated → create Shard 3
 
   Time T2 (spike grows):
     Shard 1: [||||||||||||||||]  16/16
@@ -1782,164 +1716,66 @@ Traffic spike scaling:
     Shard 4: [||||||||]           8/16 → absorbing overflow
 
   Time T3 (spike subsides):
-    load_spread_ratio kicks in → active set = ceil(4 * 0.5) = 2 shards
+    demand-based active set drops to 2 shards
     Shard 1: [||||||||||]        10/16  ← active (receives new requests)
     Shard 2: [|||||||||]          9/16  ← active (receives new requests)
     Shard 3: [||]                 2/16  ← draining (no new requests)
     Shard 4: []                   0/16  ← draining, idle timer started
-
-  Time T4 (after idle_client_timeout):
-    Shard 1: [||||]               4/16  ← active
-    Shard 2: [|||]                3/16  ← active
-    Shard 3: (closed by health sweep — idle_client_timeout exceeded)
-    Shard 4: (closed by health sweep — idle_client_timeout exceeded)
-```
-
-**Proactive scale-up signal**: Rather than only scaling up reactively when a request finds all
-shards at `max_streams_per_client`, the health sweep also monitors the **average inflight ratio**
-across active shards. When `avg_inflight / max_streams_per_client > scale_up_threshold_ratio`
-(default: 0.75), a new shard is created proactively. This avoids the latency spike of creating
-a new shard + TCP handshake + TLS negotiation on the critical path of a request.
-
-```rust
-impl ShardedHttpTransport {
-    pub async fn send(&self, request: &Request) -> Result<AsyncRawResponse> {
-        let endpoint_key = EndpointKey::from_url(request.url());
-        let pool = self.get_or_create_pool(&endpoint_key);
-        let shard = pool.select_shard(&endpoint_key);
-
-        // Increment inflight counter
-        shard.endpoint_stats(&endpoint_key).inflight.fetch_add(1, Ordering::Relaxed);
-        shard.health.total_inflight.fetch_add(1, Ordering::Relaxed);
-
-        let result = shard.client.execute_request(request).await;
-
-        // Decrement inflight counter
-        shard.endpoint_stats(&endpoint_key).inflight.fetch_sub(1, Ordering::Relaxed);
-        shard.health.total_inflight.fetch_sub(1, Ordering::Relaxed);
-
-        // Update health stats
-        match &result {
-            Ok(_) => shard.record_success(&endpoint_key),
-            Err(_) => shard.record_failure(&endpoint_key),
-        }
-
-        result
-    }
-}
-
-impl EndpointShardPool {
-    /// Select the best shard for a new request to the given endpoint.
-    ///
-    /// Algorithm:
-    /// 1. Filter out shards marked for eviction **and** shards already at
-    ///    `max_streams_per_client` — both are ineligible for new requests.
-    /// 2. Compute the "active set" size: `ceil(eligible * load_spread_ratio)`.
-    ///    Only shards in the active set are preferred for new requests.
-    /// 3. Among the active set, pick the shard with the lowest inflight
-    ///    count for this endpoint (least-loaded first).  If found, return it.
-    /// 4. If no active-set shard has capacity, check the **remaining**
-    ///    (draining) eligible shards — they still have room below
-    ///    `max_streams_per_client`.  Pick least-loaded.  This avoids
-    ///    creating a new shard when an existing one can absorb the request.
-    /// 5. If *all* eligible shards are at capacity, create a new shard
-    ///    (if under `max_clients_per_endpoint`).
-    /// 6. If at max clients, fall back to the least-loaded shard across
-    ///    the full pool (including saturated ones) to bound queue depth.
-    // NOTE: This pseudocode uses `.read()` / `.write()` shorthand for
-    // readability. The actual implementation should use epoch-pinned loads
-    // and clone-on-write swaps via `crossbeam::epoch::Atomic` (see §11.1).
-    fn select_shard(&self, endpoint: &EndpointKey) -> Arc<ClientShard> {
         let fallback = {
             let shards = self.shards.read();
 
-            // Eligible shards: healthy AND below the stream limit.
-            let max = self.config.max_streams_per_client;
-            let mut eligible: Vec<_> = shards.iter()
-                .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
-                .map(|s| {
-                    let inflight = s.endpoint_inflight(endpoint);
-                    (s.clone(), inflight)
-                })
-                .filter(|(_, inflight)| *inflight < max)
-                .collect();
-
-            eligible.sort_by_key(|(_, inflight)| *inflight);
-
-            // Active set: only the top N eligible shards are preferred.
-            // Remaining eligible shards are left to drain (scale-down path)
-            // but can still absorb overflow before we create a new shard.
-            let active_count = (eligible.len() as f64 * self.config.load_spread_ratio)
-                .ceil()
-                .max(1.0) as usize;
-
-            // Step 3: try active set first (least-loaded).
-            let active_set = &eligible[..active_count.min(eligible.len())];
-            if let Some((best, _)) = active_set.first() {
-                return best.clone();
-            }
-
-            // Step 4: active set empty (all active shards saturated) —
-            // check remaining eligible (draining) shards before scaling up.
-            if let Some((best, _)) = eligible.first() {
-                return best.clone();
-            }
-
-            // No eligible shard has capacity.  Build a fallback from the
-            // full (unfiltered, including saturated) pool for step 6.
-            let mut all: Vec<_> = shards.iter()
-                .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
-                .map(|s| {
-                    let inflight = s.endpoint_inflight(endpoint);
-                    (s.clone(), inflight)
-                })
-                .collect();
-            all.sort_by_key(|(_, inflight)| *inflight);
-            all
-        }; // read lock released here
-
-        // Step 5: all eligible shards at capacity → try to create a new one.
-        if let Some(new_shard) = self.try_create_shard() {
-            return new_shard;
-        }
-
-        // Step 6: at max clients → fall back to least-loaded across ALL
-        // shards (including saturated / draining ones) to bound queue depth.
-        fallback.first()
-            .map(|(s, _)| s.clone())
-            .unwrap_or_else(|| self.create_emergency_shard())
-    }
-
-    /// Proactively create a shard if average utilization is above threshold.
-    /// Called by the background health sweep (off the request hot path).
-    fn maybe_proactive_scale_up(&self, endpoint: &EndpointKey) {
-        let shards = self.shards.read();
-        if shards.len() >= self.config.max_clients_per_endpoint as usize {
-            return;
-        }
-
-        let active_shards: Vec<_> = shards.iter()
-            .filter(|s| !s.health.marked_for_eviction.load(Ordering::Relaxed))
-            .collect();
-
-        if active_shards.is_empty() {
-            return;
-        }
-
-        let total_inflight: u32 = active_shards.iter()
-            .map(|s| s.endpoint_inflight(endpoint))
-            .sum();
-        let avg_inflight = total_inflight as f64 / active_shards.len() as f64;
-        let threshold = self.config.max_streams_per_client as f64
-            * self.config.scale_up_threshold_ratio;
-
-        if avg_inflight > threshold {
-            drop(shards);
-            let _ = self.try_create_shard();
-        }
+            // `select_shard` reads the current shard snapshot, filters out
+            // eviction-marked and excluded shards, computes the active shard
+            // count from current total inflight demand, then prefers the
+            // least-loaded shard in that active prefix that still has room.
+            // If none fit and the pool is under its max size, it creates a
+            // new shard; otherwise it falls back to the least-loaded
+            // selectable shard.
+    ///    excluded by a just-failed local connectivity retry.
+    /// 3. Compute the active shard count from current total inflight demand.
+    /// 4. Pick the least-loaded shard within that active set that still has
+    ///    room under `max_http2_streams_per_client`.
+    /// 5. If needed and still under the configured max, create a new shard.
+    /// 6. Otherwise fall back to the least-loaded selectable shard.
+    fn select_shard(&self, excluded_shard_id: Option<u64>) -> Arc<ClientShard> {
+        // 1. Snapshot current shards.
+        // 2. Filter out eviction-marked shards and an optionally excluded
+        //    failed shard ID from a local connectivity retry.
+        // 3. Compute `active_shard_count` from total inflight demand and the
+        //    configured `max_http2_streams_per_client`.
+        // 4. Prefer the least-loaded selectable shard inside that active set
+        //    while it still has room under the stream budget.
+        // 5. If no active shard has room and the pool is still below
+        //    `max_http2_connections_per_endpoint`, create a new shard.
+        // 6. Otherwise fall back to the least-loaded selectable shard.
     }
 }
 ```
+
+### 6.5 Background Health Sweep
+
+The periodic sweep is endpoint-local and shard-local. It does not make account-wide or
+partition-wide routing decisions. Its job is only to keep each endpoint's HTTP/2 shard pool in a
+good state.
+
+On each sweep for an endpoint pool:
+
+1. Ensure the pool is backfilled to `min_http2_connections_per_endpoint` if it is empty or undersized.
+2. Snapshot per-shard health: inflight, last request time, last success time, consecutive failures,
+    total requests, total failures, and `marked_for_eviction`.
+3. If at least one healthy peer exists, mark shards with failure counts at or above
+    `http2_consecutive_failure_threshold` and without a recent success inside
+    `http2_eviction_grace_period` for eviction.
+4. If all shards are failing, choose exactly one "probe candidate" shard, mark only that shard, and
+    create at most one replacement shard immediately. This keeps recovery paced instead of opening
+    floodgates by replacing everything at once.
+5. Remove shards already marked for eviction once their inflight count reaches zero.
+6. Reclaim idle overflow shards from the tail of the shard list when they have been idle longer than
+    `idle_http2_client_timeout`, while never going below the configured minimum.
+
+This means local shard healing is careful by design: one replacement probe when the whole local pool
+looks bad, aggressive eviction only when a healthy peer already exists, and scale-down only for idle
+overflow shards.
 
 ### 6.5 Health Checking, Eviction & Scale-Down (Inspired by Java's `RntbdClientChannelHealthChecker`)
 
@@ -1971,90 +1807,11 @@ enum EvictionReason {
     IdleTimeout,
 }
 
-fn check_shard_health(
-    shard: &ClientShard,
-    endpoint: &EndpointKey,
-    peer_shards: &[Arc<ClientShard>],
-    config: &ShardingConfig,
-    /// `true` when the caller (health sweep) has designated *this* shard
-    /// as the probe candidate for the current sweep iteration.
-    /// See the "all-shards-failing" protocol below.
-    is_probe_candidate: bool,
-) -> ShardHealthStatus {
-    let stats = shard.endpoint_stats(endpoint);
-    let now_nanos = now_as_nanos();
-
-    // 1. Recent success → Healthy (fast path)
-    let last_success = stats.last_success_nanos.load(Ordering::Relaxed);
-    if now_nanos - last_success < RECENT_SUCCESS_WINDOW_NANOS {
-        return ShardHealthStatus::Healthy;
-    }
-
-    // 2. Read hang: inflight > 0 but no success for a long time
-    let inflight = stats.inflight.load(Ordering::Relaxed);
-    if inflight > 0 && (now_nanos - last_success) > READ_HANG_THRESHOLD_NANOS {
-        return ShardHealthStatus::Unhealthy {
-            reason: EvictionReason::ReadHang,
-        };
-    }
-
-    // 3. Consecutive failures — two sub-cases:
-    let consecutive = stats.consecutive_failures.load(Ordering::Relaxed);
-    if consecutive >= config.consecutive_failure_threshold {
-        // 3a. At least one peer is healthier → connection-level problem
-        //     on *this* shard.  Evict it (subject to grace period).
-        let peers_healthy = peer_shards.iter().any(|peer| {
-            let peer_stats = peer.endpoint_stats(endpoint);
-            let peer_consecutive = peer_stats.consecutive_failures.load(Ordering::Relaxed);
-            let peer_last_success = peer_stats.last_success_nanos.load(Ordering::Relaxed);
-            peer_consecutive < consecutive && peer_last_success > last_success
-        });
-
-        if peers_healthy {
-            let grace_ok = (now_nanos - last_success)
-                > config.eviction_grace_period.as_nanos() as u64;
-            if grace_ok {
-                return ShardHealthStatus::Unhealthy {
-                    reason: EvictionReason::ConsecutiveFailuresWithHealthyPeers,
-                };
-            }
-        }
-
-        // 3b. NO peer is healthier — every shard is failing equally.
-        //     This happens when an external event (network component
-        //     upgrade, firewall rule change, NAT timeout) corrupts ALL
-        //     existing TCP connections simultaneously.
-        //
-        //     We must NOT evict all shards at once (that would drop all
-        //     inflight traffic).  Instead, the health sweep designates
-        //     exactly ONE shard — the one with the most consecutive
-        //     failures — as the "probe candidate".  Only that shard is
-        //     evicted and immediately replaced with a fresh connection.
-        //
-        //     On the NEXT sweep iteration, one of two things has happened:
-        //       • The fresh shard is succeeding → it becomes a "healthy
-        //         peer", and subsequent sweeps evict the remaining bad
-        //         shards one-by-one via the normal 3a path.
-        //       • The fresh shard is also failing → it's a service-level
-        //         outage, not a connection-level problem.  No further
-        //         evictions are triggered (the probe candidate rotates
-        //         to the worst shard again, but the pool isn't drained).
-        //
-        //     This limits churn to at most one eviction + replacement per
-        //     sweep interval when the entire pool is unhealthy.
-        if is_probe_candidate {
-            return ShardHealthStatus::UnhealthyProbeCandidate;
-        }
-    }
-
-    // 4. Idle timeout (only for shards above minimum count)
-    let last_request = stats.last_request_nanos.load(Ordering::Relaxed);
-    if inflight == 0 && (now_nanos - last_request) > config.idle_client_timeout.as_nanos() as u64 {
-        return ShardHealthStatus::Idle;
-    }
-
-    ShardHealthStatus::Healthy
-}
+// Health evaluation is currently implemented directly in
+// `EndpointShardPool::run_health_sweep()` against per-shard snapshots rather
+// than through a separate `check_shard_health` module. The sweep uses
+// `http2_consecutive_failure_threshold`, `http2_eviction_grace_period`, and
+// `idle_http2_client_timeout` from `ConnectionPoolOptions`.
 ```
 
 **Probe-candidate selection** (in the health sweep loop):
@@ -2070,36 +1827,15 @@ has a recent success, the sweep designates the shard with the **highest** `conse
 /// Returns `Some(shard_id)` if — and only if — all shards exceed the
 /// failure threshold with no healthy peer among them.
 fn pick_probe_candidate(
-    shards: &[Arc<ClientShard>],
-    endpoint: &EndpointKey,
-    config: &ShardingConfig,
+    snapshots: &[ClientShardHealthSnapshot],
+    threshold: u32,
+    grace_period: Duration,
+    now: Instant,
 ) -> Option<u64> {
-    let mut all_failing = true;
-    let mut worst: Option<(u64, u32, u64)> = None; // (id, consecutive, last_success)
-
-    for shard in shards {
-        if shard.health.marked_for_eviction.load(Ordering::Relaxed) {
-            continue;
-        }
-        let stats = shard.endpoint_stats(endpoint);
-        let consecutive = stats.consecutive_failures.load(Ordering::Relaxed);
-        let last_success = stats.last_success_nanos.load(Ordering::Relaxed);
-
-        if consecutive < config.consecutive_failure_threshold {
-            all_failing = false;
-            break;
-        }
-
-        // Track the worst shard (most failures, then oldest success).
-        let dominated = worst.map_or(true, |(_, wc, ws)| {
-            consecutive > wc || (consecutive == wc && last_success < ws)
-        });
-        if dominated {
-            worst = Some((shard.id, consecutive, last_success));
-        }
-    }
-
-    if all_failing { worst.map(|(id, _, _)| id) } else { None }
+    // Returns a shard ID only when every non-eviction-marked shard is already
+    // failing beyond the threshold and none have a recent success inside the
+    // grace window. The chosen candidate is the worst shard, so the sweep can
+    // replace exactly one shard per interval.
 }
 ```
 
@@ -2118,19 +1854,13 @@ fn pick_probe_candidate(
    - If the replacement is also failing → it's a service-level outage; the sweep picks a
      new probe candidate (the current worst), limiting churn to one replacement per sweep.
 
-**Scale-down flow**: The `load_spread_ratio` and `idle_client_timeout` work together:
+**Scale-down flow**: demand-based routing and `idle_http2_client_timeout` work together:
 
-1. As load decreases, `select_shard` concentrates requests on the active set
-   (`ceil(N * load_spread_ratio)` shards).
-2. Shards outside the active set receive no new requests; their inflight drains to 0.
-3. Once `idle_client_timeout` elapses with 0 inflight, the health sweep marks them `Idle`.
-4. The sweep runs in two phases: **Phase 1** evicts unhealthy shards and back-fills to
-   `min_clients_per_endpoint`. **Phase 2** removes idle shards only down to the minimum —
-   using the *post-eviction* pool size.  Because idle shards are already-warm connections,
-   the sweep keeps them around to absorb the loss from Phase 1 instead of creating new
-   shards (which are expensive: TLS handshake + TCP setup + H2 negotiation).
-5. The active set shrinks proportionally (`ceil(smaller_N * load_spread_ratio)`).
-6. The process continues until the pool stabilizes at `min_clients_per_endpoint`.
+1. As load decreases, the computed active shard count drops.
+2. Overflow shards stop receiving new requests; their inflight drains to 0.
+3. Once `idle_http2_client_timeout` elapses with 0 inflight, the health sweep removes those tail
+    shards, but only while staying at or above `min_http2_connections_per_endpoint`.
+4. The process continues until the pool stabilizes at the configured minimum.
 
 This provides smooth, gradual scale-down without abrupt connection drops that could
 cause latency spikes.
@@ -2143,14 +1873,14 @@ cause latency spikes.
 - Java has transit-timeout counting; we use consecutive-failure counting as a proxy since the
   `HttpClient` trait doesn't expose per-stream timeout events separately
 
-**TCP keepalive consideration**: Proactive shard eviction is most valuable when it is driven
-by actual connectivity signals. The `reqwest` client supports TCP keepalive configuration
-(`tcp_keepalive`). When TCP keepalive probes detect a dead connection, the resulting I/O error
-feeds into the consecutive-failure counter, which then triggers eviction. Without keepalive,
-idle connections may silently go stale (e.g., due to NAT/firewall timeouts) and only fail on
-the next real request. **Recommended**: enable TCP keepalive on all `HttpClient` instances
-created by the `HttpClientFactory` (e.g., 30-second interval). Research is needed on the
-specific `reqwest` / `hyper` APIs for configuring keepalive intervals and probes.
+**TCP keepalive consideration**: TCP keepalive remains configurable on `ConnectionPoolOptions`,
+but is **disabled by default**. For HTTP/2 transports the primary liveness signal comes from the
+protocol-level keepalive ping configuration (`http2_keep_alive_interval`,
+`http2_keep_alive_timeout`, and `http2_keep_alive_while_idle`). The reqwest builder applies TCP
+keepalive before any ALPN negotiation happens, so it cannot be enabled only for HTTP/1.1
+connections after protocol selection. If callers need TCP keepalive for specific network
+environments, they must opt in explicitly by setting `tcp_keepalive_time` (and optionally the
+interval and retry count) on `ConnectionPoolOptions`.
 
 ### 6.6 Background Health Sweep
 
@@ -2462,29 +2192,32 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 ### Step 6: HTTP/2 connection sharding
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                     | Files                                                    |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| 6.1      | **`ShardedHttpTransport`** — Core shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking via `CachePadded` atomics. Epoch-guarded (`crossbeam::epoch::Atomic`) snapshot-swap for lock-free shard reads (§11.1).                                | `driver/transport/sharded_transport.rs`, `shard_pool.rs` |
-| 6.2      | **Shard selection algorithm** — `select_shard` with `load_spread_ratio`, active set, least-loaded routing, scale-up on capacity.                                                                                                                              | `driver/transport/shard_pool.rs`                         |
-| 6.3      | **`ShardingConfig`** — All knobs (`max_streams_per_client`, `max_clients_per_endpoint = num_cpus * 2`, `min_clients_per_endpoint`, `load_spread_ratio`, `idle_client_timeout`). Resolved from `ConnectionPoolOptions` (§9.1). Environment variable overrides. | `options/connection_pool.rs`                             |
-| 6.4      | **Wire into `AdaptiveTransport`** — When HTTP/2 is detected, use `ShardedHttpTransport` instead of plain.                                                                                                                                                     | `driver/transport/adaptive_transport.rs`                 |
-| 6.5      | **Tests** — Shard selection under load, scale-up, inflight tracking, multi-endpoint pools.                                                                                                                                                                    | `tests/`                                                 |
+| Sub-step | Work Item                                                                                                                                                                                                                                                                                   | Files                                             |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 6.1      | **`ShardedHttpTransport`** — Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. The current implementation uses `Mutex`/`RwLock` guarded snapshots.                                         | `driver/transport/sharded_transport.rs`           |
+| 6.2      | **Shard selection algorithm** — `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. | `driver/transport/sharded_transport.rs`           |
+| 6.3      | **Connection-pool knobs** — Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and opt-in TCP keepalive.                  | `options/connection_pool.rs`                      |
+| 6.4      | **Wire into `AdaptiveTransport`** — `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry.                                                         | `driver/transport/adaptive_transport.rs`          |
+| 6.5      | **Background sweep and tests** — `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior.                                                  | `driver/transport/sharded_transport.rs`, `tests/` |
 
-**What works after Step 6**: HTTP/2 with connection sharding and elastic scale-up. No health
-checks or eviction yet — shards accumulate but do not get reclaimed.
+**What works after Step 6**: HTTP/2 with per-endpoint connection sharding, elastic scale-up,
+background shard health sweeping, paced unhealthy-shard replacement/eviction, HTTP/2 protocol
+keepalive defaults (1 s interval / 2 s timeout), and idle overflow reclaim down to the configured
+minimum shard count.
 
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
-| Sub-step | Work Item                                                                                                                                                          | Files                                     |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| 7.1      | **Shard health checks** — `check_shard_health` (read-hang, consecutive failures with healthy peers, idle timeout). CPU-aware eviction guard (90% threshold).       | `driver/transport/shard_health.rs`        |
-| 7.2      | **Background health sweep** — `health_sweep_loop` (evict unhealthy, reclaim idle, proactive scale-up). Scale-down via `load_spread_ratio` + `idle_client_timeout`. | `driver/transport/shard_health.rs`        |
-| 7.3      | **TCP keepalive** — Enable TCP keepalive on all `HttpClient` instances (30s interval). Research reqwest/hyper APIs.                                                | `driver/transport/http_client_factory.rs` |
-| 7.4      | **Connectivity retry in transport** — Expand `evaluate_transport_retry` to retry I/O errors and timeouts on a different shard (for idempotent/not-sent requests).  | `driver/transport/transport_pipeline.rs`  |
-| 7.5      | **Tests** — Shard eviction, idle reclaim, scale-down flow, keepalive config, connectivity retry on different shard.                                                | `tests/`                                  |
+| Sub-step | Work Item                                                                                                                                                              | Files                                     |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 7.1      | **Shard health checks** — Keep shard-local health state in `ClientShardState` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. | `driver/transport/sharded_transport.rs`   |
+| 7.2      | **Background health sweep** — Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement.   | `driver/transport/sharded_transport.rs`   |
+| 7.3      | **Connectivity retry in transport** — Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover.          | `driver/transport/transport_pipeline.rs`  |
+| 7.4      | **Optional TCP keepalive** — Preserve the opt-in TCP keepalive knobs in the reqwest factory, but keep the default disabled unless explicitly configured.               | `driver/transport/http_client_factory.rs` |
+| 7.5      | **Tests** — Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards.                                                          | `tests/`                                  |
 
 **What works after Step 7**: Full HTTP/2 sharding with health monitoring, automatic eviction
-& scale-down, TCP keepalive, and connectivity-level retry via shard rotation.
+& scale-down, optional TCP keepalive for callers that need it, and connectivity-level retry via
+shard rotation.
 
 ### Step 8: Fault injection
 
@@ -2568,49 +2301,47 @@ pub struct ConnectionPoolOptions {
 
     /// Maximum concurrent HTTP/2 streams per `HttpClient` shard per endpoint
     /// before a new shard is created. Default: 16 (leaves headroom below the
-    /// Cosmos gateway's 20-stream H2 limit; see `ShardingConfig` §6.2).
-    pub max_streams_per_client: Option<usize>,
-    /// Maximum number of `HttpClient` shards per endpoint. Default: `num_cpus * 2`.
-    pub max_clients_per_endpoint: Option<usize>,
+    /// Cosmos gateway's 20-stream H2 limit).
+    pub max_http2_streams_per_client: Option<u32>,
+    /// Maximum number of `HttpClient` shards per endpoint.
+    /// Default: `available_parallelism() * 2`, fallback 32.
+    pub max_http2_connections_per_endpoint: Option<usize>,
     /// Minimum number of `HttpClient` shards per endpoint. The pool never
     /// scales below this count. Default: 1.
-    pub min_clients_per_endpoint: Option<usize>,
-    /// Fraction of shards in the "active set" that receive new requests.
-    /// Shards outside the active set drain and are eventually reclaimed.
-    /// Default: 0.5.
-    pub load_spread_ratio: Option<f64>,
-    /// Consecutive failures on a shard (with healthy peers) before eviction.
-    /// Default: 5.
-    pub consecutive_failure_threshold: Option<u32>,
-    /// Grace period after last successful request before a shard can be
-    /// evicted due to consecutive failures. Prevents premature eviction
-    /// during transient issues. Default: 2 s (see `ShardingConfig` §6.2).
-    pub eviction_grace_period: Option<Duration>,
-    /// Time a shard must be idle (0 inflight, 0 new requests) before
-    /// the health sweep reclaims it. Default: 60 s.
-    pub idle_client_timeout: Option<Duration>,
-    /// Interval between background health-sweep iterations. Default: 5 s.
-    pub health_check_interval: Option<Duration>,
-    /// When average inflight / `max_streams_per_client` across active shards
-    /// exceeds this ratio, a new shard is created proactively (off the
-    /// request hot path). Default: 0.75.
-    pub scale_up_threshold_ratio: Option<f64>,
+    pub min_http2_connections_per_endpoint: Option<usize>,
+    /// Time an overflow shard must stay idle before request-path reclaim can
+    /// remove it. Default: 60 s.
+    pub idle_http2_client_timeout: Option<Duration>,
+    /// HTTP/2 keepalive ping interval. Default: 1 s.
+    pub http2_keep_alive_interval: Option<Duration>,
+    /// HTTP/2 keepalive ping timeout. Default: 2 s.
+    pub http2_keep_alive_timeout: Option<Duration>,
+    /// Number of shard clients per endpoint that keep sending idle HTTP/2
+    /// pings. Overflow shard clients keep idle pings disabled. Default: 10.
+    pub http2_keep_alive_idle_client_count: Option<usize>,
+    /// Optional TCP keepalive time. Disabled by default.
+    pub tcp_keepalive_time: Option<Duration>,
+    /// Optional TCP keepalive probe interval. Disabled by default.
+    pub tcp_keepalive_interval: Option<Duration>,
+    /// Optional TCP keepalive probe retry count. Disabled by default.
+    pub tcp_keepalive_retries: Option<u32>,
 }
 ```
 
-| Option                          | Type               | Env Var                                           | Notes                                        |
-| ------------------------------- | ------------------ | ------------------------------------------------- | -------------------------------------------- |
-| `idle_timeout`                  | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                  | *(existing)*                                 |
-| `max_connections`               | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`               | *(existing)*                                 |
-| `max_streams_per_client`        | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_STREAMS_PER_CLIENT`        | **New.** H2 stream limit per shard.          |
-| `max_clients_per_endpoint`      | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CLIENTS_PER_ENDPOINT`      | **New.** Upper bound on shards per endpoint. |
-| `min_clients_per_endpoint`      | `Option<usize>`    | `AZURE_COSMOS_POOL_MIN_CLIENTS_PER_ENDPOINT`      | **New.** Lower bound on shards per endpoint. |
-| `load_spread_ratio`             | `Option<f64>`      | `AZURE_COSMOS_POOL_LOAD_SPREAD_RATIO`             | **New.** Active-set fraction for scale-down. |
-| `consecutive_failure_threshold` | `Option<u32>`      | `AZURE_COSMOS_POOL_CONSECUTIVE_FAILURE_THRESHOLD` | **New.** Eviction trigger.                   |
-| `eviction_grace_period`         | `Option<Duration>` | `AZURE_COSMOS_POOL_EVICTION_GRACE_PERIOD`         | **New.**                                     |
-| `idle_client_timeout`           | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_CLIENT_TIMEOUT`           | **New.** Per-shard idle reclaim.             |
-| `health_check_interval`         | `Option<Duration>` | `AZURE_COSMOS_POOL_HEALTH_CHECK_INTERVAL`         | **New.** Sweep cadence.                      |
-| `scale_up_threshold_ratio`      | `Option<f64>`      | `AZURE_COSMOS_POOL_SCALE_UP_THRESHOLD_RATIO`      | **New.** Proactive scale-up trigger.         |
+| Option                               | Type               | Env Var                                                           | Notes                                        |
+| ------------------------------------ | ------------------ | ----------------------------------------------------------------- | -------------------------------------------- |
+| `idle_timeout`                       | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                                  | *(existing)*                                 |
+| `max_connections`                    | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`                               | *(existing)*                                 |
+| `max_http2_streams_per_client`       | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`       | **New.** H2 stream limit per shard.          |
+| `max_http2_connections_per_endpoint` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT` | **New.** Upper bound on shards per endpoint. |
+| `min_http2_connections_per_endpoint` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT` | **New.** Lower bound on shards per endpoint. |
+| `idle_http2_client_timeout`          | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`       | **New.** Request-path idle reclaim.          |
+| `http2_keep_alive_interval`          | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS`       | **New.** Default 1 s.                        |
+| `http2_keep_alive_timeout`           | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS`        | **New.** Default 2 s.                        |
+| `http2_keep_alive_idle_client_count` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT` | **New.** Idle ping fan-out.                  |
+| `tcp_keepalive_time`                 | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`              | **New.** Disabled by default.                |
+| `tcp_keepalive_interval`             | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`          | **New.** Disabled by default.                |
+| `tcp_keepalive_retries`              | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`              | **New.** Disabled by default.                |
 
 ### 9.2 Additions to `RetryOptions`
 
@@ -2786,21 +2517,21 @@ at the Runtime and Account layers only (not Operation), the effective walk is
    sharding. If HTTP/1.1 only (RoutingGateway), it uses plain transport. Different timeout
    configs are passed via `HttpClientConfig`.
 
-8. ~~**`HttpClient` reuse across endpoints**~~: **Resolved** — Share `HttpClient` instances across
-   endpoints. This is important for multi-tenant applications using separate Cosmos DB accounts
-   per tenant, where per-endpoint clients would waste resources. Note: .NET and Java use the
-   DNS hostname as the connection pool key (not the resolved IP). Research is needed on whether
-   Rust's reqwest/hyper uses the same approach — if it resolves IPs for the pool key, sharing
-   clients across endpoints would better utilize connection pools for multi-tenant scenarios.
+8. ~~**`HttpClient` reuse across endpoints**~~: **Resolved** — Start with **per-endpoint shard
+    pools**. Each endpoint authority owns its own `EndpointShardPool`, which keeps the first-pass
+    implementation simpler and makes shard diagnostics, keepalive policy, and idle reclaim easier
+    to reason about. Cross-endpoint client sharing can be revisited later if multi-tenant resource
+    usage becomes a demonstrated problem.
 
 9. ~~**`HttpClientFactory` abstraction level**~~: **Resolved** — The HTTP version preference is
    determined externally by the gateway probing logic (ALPN negotiation + `AccountProperties`
    Gateway 2.0 detection). The `HttpClientFactory` does not need HTTP version knobs. The
    default should come from the probing logic, with overrides available as proposed in §9.
 
-10. ~~**`load_spread_ratio` tuning**~~: **Resolved** — Make `load_spread_ratio` **adaptive based
-    on observed behavior** (request rate variance). Start with the default of 0.5 and adjust
-    dynamically.
+10. ~~**`load_spread_ratio` tuning**~~: **Resolved** — The implementation concentrates new requests
+    on the earliest shards needed for the current inflight demand and leaves overflow shards to
+    drain and be reclaimed. More adaptive load-spread tuning can be revisited later if the simpler
+    demand-based policy proves insufficient.
 
 ---
 
@@ -3055,9 +2786,7 @@ sdk/cosmos/azure_data_cosmos_driver/src/
 │   │   ├── request_signing.rs    # sign_request bare fn
 │   │   ├── tracked_transport.rs
 │   │   ├── emulator.rs
-│   │   ├── sharded_transport.rs  # NEW: ShardedHttpTransport (H2 only)
-│   │   ├── shard_pool.rs         # NEW: EndpointShardPool + elasticity
-│   │   └── shard_health.rs       # NEW: Health checking & eviction
+│   │   └── sharded_transport.rs  # NEW: ShardedHttpTransport + shard pool + health sweep
 │   └── fault_injection/          # NEW (moved from azure_data_cosmos)
 │       ├── mod.rs
 │       ├── rule.rs

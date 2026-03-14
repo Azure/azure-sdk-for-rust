@@ -21,6 +21,7 @@ pub(crate) mod cosmos_headers;
 mod emulator;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
+mod sharded_transport;
 mod tracked_transport;
 pub(crate) mod transport_pipeline;
 
@@ -128,22 +129,24 @@ impl CosmosTransport {
             Arc::new(DefaultHttpClientFactory::new());
 
         let metadata_config = HttpClientConfig::metadata(&connection_pool);
-        let metadata_transport = AdaptiveTransport::from_policy(
-            metadata_config.version_policy,
-            http_client_factory.build(&connection_pool, metadata_config)?,
+        let metadata_transport = AdaptiveTransport::from_config(
+            &connection_pool,
+            http_client_factory.clone(),
+            metadata_config,
         );
 
         let gateway_config = HttpClientConfig::dataplane_gateway(&connection_pool);
-        let dataplane_gateway_transport = AdaptiveTransport::from_policy(
-            gateway_config.version_policy,
-            http_client_factory.build(&connection_pool, gateway_config)?,
+        let dataplane_gateway_transport = AdaptiveTransport::from_config(
+            &connection_pool,
+            http_client_factory.clone(),
+            gateway_config,
         );
 
         Ok(Self {
             connection_pool,
             http_client_factory,
-            metadata_transport,
-            dataplane_gateway_transport,
+            metadata_transport: metadata_transport?,
+            dataplane_gateway_transport: dataplane_gateway_transport?,
             dataplane_gateway20_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
@@ -170,10 +173,11 @@ impl CosmosTransport {
                 Some(t) => t.clone(),
                 None => {
                     let config = HttpClientConfig::metadata(&self.connection_pool).for_emulator();
-                    let client = self
-                        .http_client_factory
-                        .build(&self.connection_pool, config)?;
-                    let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                    let t = AdaptiveTransport::from_config(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    )?;
                     self.insecure_emulator_metadata_transport
                         .get_or_init(|| t)
                         .clone()
@@ -199,10 +203,11 @@ impl CosmosTransport {
                 None => {
                     let config =
                         HttpClientConfig::dataplane_gateway(&self.connection_pool).for_emulator();
-                    let client = self
-                        .http_client_factory
-                        .build(&self.connection_pool, config)?;
-                    let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                    let t = AdaptiveTransport::from_config(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    )?;
                     self.insecure_emulator_dataplane_transport
                         .get_or_init(|| t)
                         .clone()
@@ -220,10 +225,11 @@ impl CosmosTransport {
                     Some(t) => t.clone(),
                     None => {
                         let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
-                        let client = self
-                            .http_client_factory
-                            .build(&self.connection_pool, config)?;
-                        let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                        let t = AdaptiveTransport::from_config(
+                            &self.connection_pool,
+                            self.http_client_factory.clone(),
+                            config,
+                        )?;
                         self.dataplane_gateway20_transport.get_or_init(|| t).clone()
                     }
                 };
@@ -295,7 +301,7 @@ pub(crate) mod tests {
 
         assert!(matches!(
             transport.get_metadata_transport(&endpoint).unwrap(),
-            AdaptiveTransport::Gateway(_)
+            AdaptiveTransport::ShardedGateway(_)
         ));
     }
 
@@ -345,7 +351,7 @@ pub(crate) mod tests {
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::Gateway20(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway20(_)));
     }
 
     #[test]
@@ -362,7 +368,7 @@ pub(crate) mod tests {
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::Gateway)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
     }
 
     #[test]
@@ -379,7 +385,7 @@ pub(crate) mod tests {
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
     }
 
     #[test]

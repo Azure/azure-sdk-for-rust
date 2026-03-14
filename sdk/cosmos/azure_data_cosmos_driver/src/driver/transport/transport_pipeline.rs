@@ -11,16 +11,19 @@
 //! request-sent-status tracking, per-attempt diagnostics, and deadline
 //! enforcement.
 
+use std::error::Error as _;
 use std::time::{Duration, Instant};
 
+use azure_core::error::ErrorKind;
 use azure_core::http::Request;
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestEvent, RequestEventType,
-        RequestHandle, RequestSentStatus, TransportSecurity,
+        DiagnosticsContextBuilder, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
+        RequestEvent, RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
+        TransportShardDiagnostics,
     },
     models::{CosmosResponseHeaders, CosmosStatus, Credential},
 };
@@ -45,6 +48,7 @@ const DEADLINE_RETRY_SAFETY_MARGIN: Duration = Duration::from_millis(100);
 // This is intentionally lower than public option validation to avoid
 // collapsing near-deadline retries to an entire second.
 const MIN_REMAINING_REQUEST_TIMEOUT: Duration = Duration::from_millis(1);
+const MAX_LOCAL_CONNECTIVITY_RETRIES: u32 = 1;
 
 fn deadline_capped_delay(requested_delay: Duration, remaining: Duration) -> Duration {
     let budget_for_delay = remaining.saturating_sub(DEADLINE_RETRY_SAFETY_MARGIN);
@@ -144,6 +148,7 @@ pub(crate) fn evaluate_transport_retry(
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     transport: &AdaptiveTransport,
+    allow_sent_transport_retry: bool,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
     pipeline_type: PipelineType,
@@ -151,6 +156,8 @@ pub(crate) async fn execute_transport_pipeline(
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
+    let mut local_connectivity_retry_count = 0_u32;
+    let mut excluded_shard_id = None;
 
     loop {
         // Check deadline before each attempt
@@ -206,6 +213,7 @@ pub(crate) async fn execute_transport_pipeline(
             diagnostics.fail_request(request_handle, e.to_string(), RequestSentStatus::NotSent);
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
+                    status: CosmosStatus::TRANSPORT_GENERATED_503,
                     error: e,
                     request_sent: RequestSentStatus::NotSent,
                 },
@@ -224,8 +232,25 @@ pub(crate) async fn execute_transport_pipeline(
             per_request_timeout,
             request_handle,
             diagnostics,
+            excluded_shard_id.take(),
         )
         .await;
+
+        if result.shard_id.is_some_and(|failed_shard_id| {
+            local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
+                && should_retry_connectivity_failure(&result.result, allow_sent_transport_retry)
+                && transport.can_retry_on_different_shard(&http_request, failed_shard_id)
+        }) {
+            if let Some(failed_transport_shard) = failed_transport_shard(&result.result, &result) {
+                diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
+            }
+            local_connectivity_retry_count += 1;
+            diagnostics.increment_local_shard_retry_count(request_handle);
+            excluded_shard_id = result.shard_id;
+            continue;
+        }
+
+        let result = result.result;
 
         // Check for 429 throttling → transport-level retry
         let action = evaluate_transport_retry(&result, &throttle_state);
@@ -299,9 +324,11 @@ async fn execute_http_attempt(
     per_request_timeout: Option<Duration>,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> TransportResult {
+    excluded_shard_id: Option<u64>,
+) -> ExecutedTransportAttempt {
     if let Some(timeout_duration) = per_request_timeout {
-        let transport_future = execute_http_attempt_future(http_request, transport);
+        let transport_future =
+            execute_http_attempt_future(http_request, transport, excluded_shard_id);
         let timeout_future = async {
             azure_core::sleep(
                 azure_core::time::Duration::try_from(timeout_duration)
@@ -324,20 +351,30 @@ async fn execute_http_attempt(
                         .with_details("end-to-end operation timeout exceeded"),
                 );
                 diagnostics.timeout_request(request_handle);
-                deadline_exceeded_result(RequestSentStatus::Unknown)
+                ExecutedTransportAttempt {
+                    result: deadline_exceeded_result(RequestSentStatus::Unknown),
+                    shard_id: excluded_shard_id,
+                    shard_diagnostics: None,
+                }
             }
         };
     }
 
-    let attempt_result = execute_http_attempt_future(http_request, transport).await;
+    let attempt_result =
+        execute_http_attempt_future(http_request, transport, excluded_shard_id).await;
     finalize_http_attempt(attempt_result, request_handle, diagnostics)
 }
 
 async fn execute_http_attempt_future(
     http_request: &Request,
     transport: &AdaptiveTransport,
+    excluded_shard_id: Option<u64>,
 ) -> HttpAttemptResult {
-    match transport.send(http_request).await {
+    let dispatch = transport
+        .send_with_dispatch(http_request, excluded_shard_id)
+        .await;
+
+    match dispatch.result {
         Ok(response) => {
             let status_code = response.status();
             let headers = response.headers().clone();
@@ -346,16 +383,22 @@ async fn execute_http_attempt_future(
                     status_code,
                     headers,
                     body: raw.body().to_vec(),
+                    shard_id: dispatch.shard_id,
+                    shard_diagnostics: dispatch.shard_diagnostics,
                 },
                 Err(error) => HttpAttemptResult::Error {
                     error,
                     headers_received: true,
+                    shard_id: dispatch.shard_id,
+                    shard_diagnostics: dispatch.shard_diagnostics,
                 },
             }
         }
         Err(error) => HttpAttemptResult::Error {
             error,
             headers_received: false,
+            shard_id: dispatch.shard_id,
+            shard_diagnostics: dispatch.shard_diagnostics,
         },
     }
 }
@@ -364,24 +407,92 @@ fn finalize_http_attempt(
     attempt_result: HttpAttemptResult,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> TransportResult {
+) -> ExecutedTransportAttempt {
     match attempt_result {
         HttpAttemptResult::Response {
             status_code,
             headers,
             body,
+            shard_id,
+            shard_diagnostics,
         } => {
             diagnostics.add_event(
                 request_handle,
                 RequestEvent::new(RequestEventType::ResponseHeadersReceived),
             );
-            map_http_response_payload(status_code, headers, body, request_handle, diagnostics)
+            if let Some(shard_diagnostics) = shard_diagnostics.clone() {
+                diagnostics.set_transport_shard(request_handle, shard_diagnostics);
+            }
+            ExecutedTransportAttempt {
+                result: map_http_response_payload(
+                    status_code,
+                    headers,
+                    body,
+                    request_handle,
+                    diagnostics,
+                ),
+                shard_id,
+                shard_diagnostics,
+            }
         }
         HttpAttemptResult::Error {
             error,
             headers_received,
-        } => transport_error_result(error, headers_received, request_handle, diagnostics),
+            shard_id,
+            shard_diagnostics,
+        } => {
+            if let Some(shard_diagnostics) = shard_diagnostics.clone() {
+                diagnostics.set_transport_shard(request_handle, shard_diagnostics);
+            }
+            ExecutedTransportAttempt {
+                result: transport_error_result(
+                    error,
+                    headers_received,
+                    request_handle,
+                    diagnostics,
+                ),
+                shard_id,
+                shard_diagnostics,
+            }
+        }
     }
+}
+
+fn should_retry_connectivity_failure(
+    result: &TransportResult,
+    allow_sent_transport_retry: bool,
+) -> bool {
+    match &result.outcome {
+        TransportOutcome::TransportError {
+            error,
+            request_sent,
+            ..
+        } => {
+            is_connectivity_error(error)
+                && (request_sent.definitely_not_sent()
+                    || (allow_sent_transport_retry && !request_sent.definitely_not_sent()))
+        }
+        _ => false,
+    }
+}
+
+fn is_connectivity_error(error: &azure_core::Error) -> bool {
+    matches!(error.kind(), ErrorKind::Connection | ErrorKind::Io)
+}
+
+fn format_transport_error_details(error: &azure_core::Error) -> String {
+    let mut parts = vec![error.to_string()];
+    let mut source = error.source();
+
+    while let Some(cause) = source {
+        let cause_str = cause.to_string();
+        if parts.last() != Some(&cause_str) {
+            parts.push(cause_str);
+        }
+        source = cause.source();
+    }
+
+    parts.join(": ")
 }
 
 fn transport_error_result(
@@ -395,6 +506,8 @@ fn transport_error_result(
     } else {
         infer_request_sent_status(&error)
     };
+    let status = CosmosStatus::TRANSPORT_GENERATED_503;
+    let error_details = format_transport_error_details(&error);
 
     if headers_received {
         diagnostics.add_event(
@@ -405,12 +518,13 @@ fn transport_error_result(
 
     diagnostics.add_event(
         request_handle,
-        RequestEvent::new(RequestEventType::TransportFailed).with_details(error.to_string()),
+        RequestEvent::new(RequestEventType::TransportFailed).with_details(error_details.clone()),
     );
-    diagnostics.fail_request(request_handle, error.to_string(), sent_status);
+    diagnostics.fail_transport_request(request_handle, error_details, sent_status, status);
 
     TransportResult {
         outcome: TransportOutcome::TransportError {
+            status,
             error,
             request_sent: sent_status,
         },
@@ -422,11 +536,40 @@ enum HttpAttemptResult {
         status_code: azure_core::http::StatusCode,
         headers: azure_core::http::headers::Headers,
         body: Vec<u8>,
+        shard_id: Option<u64>,
+        shard_diagnostics: Option<TransportShardDiagnostics>,
     },
     Error {
         error: azure_core::Error,
         headers_received: bool,
+        shard_id: Option<u64>,
+        shard_diagnostics: Option<TransportShardDiagnostics>,
     },
+}
+
+struct ExecutedTransportAttempt {
+    result: TransportResult,
+    shard_id: Option<u64>,
+    shard_diagnostics: Option<TransportShardDiagnostics>,
+}
+
+fn failed_transport_shard(
+    result: &TransportResult,
+    attempt: &ExecutedTransportAttempt,
+) -> Option<FailedTransportShardDiagnostics> {
+    let transport_shard = attempt.shard_diagnostics.clone()?;
+    match &result.outcome {
+        TransportOutcome::TransportError {
+            error,
+            request_sent,
+            ..
+        } => Some(FailedTransportShardDiagnostics::new(
+            transport_shard,
+            *request_sent,
+            error.to_string(),
+        )),
+        _ => None,
+    }
 }
 
 /// Maps an HTTP response payload to a `TransportResult`.
@@ -461,7 +604,10 @@ fn map_http_response_payload(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{sync::Arc, time::Duration};
+    use std::{
+        sync::{Arc, Mutex},
+        time::Duration,
+    };
 
     use async_trait::async_trait;
     use azure_core::http::{AsyncRawResponse, Request};
@@ -696,6 +842,7 @@ mod tests {
         let result = execute_transport_pipeline(
             request,
             &client,
+            false,
             &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             &azure_core::http::headers::HeaderValue::from_static("test-agent"),
             PipelineType::Metadata,
@@ -713,5 +860,219 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    #[derive(Debug)]
+    struct ScriptedHttpClient {
+        error_kind: azure_core::error::ErrorKind,
+        message: &'static str,
+    }
+
+    #[async_trait]
+    impl azure_core::http::HttpClient for ScriptedHttpClient {
+        async fn execute_request(
+            &self,
+            _request: &Request,
+        ) -> azure_core::Result<AsyncRawResponse> {
+            let error_kind = match &self.error_kind {
+                ErrorKind::Connection => ErrorKind::Connection,
+                ErrorKind::Io => ErrorKind::Io,
+                ErrorKind::Other => ErrorKind::Other,
+                _ => ErrorKind::Other,
+            };
+            Err(azure_core::Error::with_message(error_kind, self.message))
+        }
+    }
+
+    #[derive(Debug)]
+    struct ScriptedFactory {
+        clients: Mutex<Vec<Arc<dyn azure_core::http::HttpClient>>>,
+    }
+
+    impl ScriptedFactory {
+        fn new(clients: Vec<Arc<dyn azure_core::http::HttpClient>>) -> Self {
+            Self {
+                clients: Mutex::new(clients.into_iter().rev().collect()),
+            }
+        }
+    }
+
+    impl super::super::http_client_factory::HttpClientFactory for ScriptedFactory {
+        fn build(
+            &self,
+            _connection_pool: &crate::options::ConnectionPoolOptions,
+            _config: super::super::http_client_factory::HttpClientConfig,
+        ) -> azure_core::Result<Arc<dyn azure_core::http::HttpClient>> {
+            self.clients.lock().unwrap().pop().ok_or_else(|| {
+                azure_core::Error::with_message(ErrorKind::Other, "no scripted client available")
+            })
+        }
+    }
+
+    fn scripted_transport(
+        error_kind_a: azure_core::error::ErrorKind,
+        message_a: &'static str,
+        error_kind_b: azure_core::error::ErrorKind,
+        message_b: &'static str,
+    ) -> AdaptiveTransport {
+        let pool = crate::options::ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(1)
+            .with_min_http2_connections_per_endpoint(2)
+            .with_max_http2_connections_per_endpoint(2)
+            .build()
+            .unwrap();
+        let factory = Arc::new(ScriptedFactory::new(vec![
+            Arc::new(ScriptedHttpClient {
+                error_kind: error_kind_a,
+                message: message_a,
+            }),
+            Arc::new(ScriptedHttpClient {
+                error_kind: error_kind_b,
+                message: message_b,
+            }),
+        ]));
+
+        AdaptiveTransport::from_config(
+            &pool,
+            factory,
+            super::super::http_client_factory::HttpClientConfig::dataplane_gateway(&pool),
+        )
+        .unwrap()
+    }
+
+    fn test_request(deadline: Option<Instant>) -> TransportRequest {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        TransportRequest {
+            method: azure_core::http::Method::Get,
+            endpoint: endpoint.clone(),
+            url: endpoint.url().clone(),
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            auth_context: super::super::AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                ResourceType::Database,
+                "",
+            ),
+            execution_context: ExecutionContext::Initial,
+            deadline,
+        }
+    }
+
+    #[tokio::test]
+    async fn execute_transport_pipeline_retries_not_sent_connectivity_error_on_different_shard() {
+        let client = scripted_transport(
+            ErrorKind::Connection,
+            "first shard failed",
+            ErrorKind::Connection,
+            "second shard failed",
+        );
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("transport-retry-not-sent".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            test_request(Some(Instant::now() + Duration::from_secs(2))),
+            &client,
+            false,
+            &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+            &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::TransportError { error, .. } => {
+                assert!(error.to_string().contains("second shard failed"));
+            }
+            other => panic!("expected transport error, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn execute_transport_pipeline_only_retries_unknown_connectivity_error_when_allowed() {
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+
+        let client_without_retry = scripted_transport(
+            ErrorKind::Io,
+            "first io shard failed",
+            ErrorKind::Io,
+            "second io shard failed",
+        );
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("transport-retry-io-disabled".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        let result_without_retry = execute_transport_pipeline(
+            test_request(Some(Instant::now() + Duration::from_secs(2))),
+            &client_without_retry,
+            false,
+            &credential,
+            &user_agent,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            &mut diagnostics,
+        )
+        .await;
+
+        match result_without_retry.outcome {
+            TransportOutcome::TransportError {
+                error,
+                request_sent,
+                ..
+            } => {
+                assert!(error.to_string().contains("first io shard failed"));
+                assert_eq!(request_sent, RequestSentStatus::Unknown);
+            }
+            other => panic!("expected transport error, got {other:?}"),
+        }
+
+        let client_with_retry = scripted_transport(
+            ErrorKind::Io,
+            "first io shard failed",
+            ErrorKind::Io,
+            "second io shard failed",
+        );
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("transport-retry-io-enabled".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        let result_with_retry = execute_transport_pipeline(
+            test_request(Some(Instant::now() + Duration::from_secs(2))),
+            &client_with_retry,
+            true,
+            &credential,
+            &user_agent,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            &mut diagnostics,
+        )
+        .await;
+
+        match result_with_retry.outcome {
+            TransportOutcome::TransportError { error, .. } => {
+                assert!(error.to_string().contains("second io shard failed"));
+            }
+            other => panic!("expected transport error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn format_transport_error_details_includes_error_chain() {
+        let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
+        let error = azure_core::Error::with_error(
+            ErrorKind::Io,
+            inner,
+            "failed to execute `reqwest` request",
+        );
+
+        let details = format_transport_error_details(&error);
+        assert!(details.contains("failed to execute `reqwest` request"));
+        assert!(details.contains("socket reset"));
     }
 }

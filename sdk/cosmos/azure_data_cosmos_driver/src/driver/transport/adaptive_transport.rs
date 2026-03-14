@@ -9,7 +9,11 @@ use azure_core::http::{AsyncRawResponse, HttpClient, Request};
 
 use crate::diagnostics::TransportKind;
 
-use super::http_client_factory::HttpVersionPolicy;
+use super::{
+    http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
+    sharded_transport::{ShardedHttpTransport, TransportDispatch},
+};
+use crate::options::ConnectionPoolOptions;
 
 /// Transport strategy selected for a request pipeline.
 ///
@@ -26,40 +30,71 @@ use super::http_client_factory::HttpVersionPolicy;
 pub(crate) enum AdaptiveTransport {
     /// Standard gateway transport for metadata and non-Gateway-2.0 dataplane requests.
     Gateway(Arc<dyn HttpClient>),
-    /// Gateway 2.0 transport for thin-client dataplane requests.
-    Gateway20(Arc<dyn HttpClient>),
+    /// Standard gateway transport with per-endpoint HTTP/2 sharding.
+    ShardedGateway(Arc<ShardedHttpTransport>),
+    /// Gateway 2.0 transport with per-endpoint HTTP/2 sharding.
+    ShardedGateway20(Arc<ShardedHttpTransport>),
 }
 
 impl AdaptiveTransport {
-    pub(crate) fn from_policy(policy: HttpVersionPolicy, client: Arc<dyn HttpClient>) -> Self {
-        match policy {
-            HttpVersionPolicy::Http11Only | HttpVersionPolicy::Http2Preferred => {
-                Self::Gateway(client)
+    pub(crate) fn from_config(
+        connection_pool: &ConnectionPoolOptions,
+        client_factory: Arc<dyn HttpClientFactory>,
+        config: HttpClientConfig,
+    ) -> azure_core::Result<Self> {
+        Ok(match config.version_policy {
+            HttpVersionPolicy::Http11Only => {
+                Self::Gateway(client_factory.build(connection_pool, config)?)
             }
-            HttpVersionPolicy::Http2Only => Self::Gateway20(client),
-        }
+            HttpVersionPolicy::Http2Preferred => Self::ShardedGateway(Arc::new(
+                ShardedHttpTransport::new(connection_pool.clone(), client_factory, config),
+            )),
+            HttpVersionPolicy::Http2Only => Self::ShardedGateway20(Arc::new(
+                ShardedHttpTransport::new(connection_pool.clone(), client_factory, config),
+            )),
+        })
     }
 
     /// Returns the [`TransportKind`] for diagnostics reporting.
     pub(crate) fn diagnostics_kind(&self) -> TransportKind {
         match self {
-            Self::Gateway(_) => TransportKind::Gateway,
-            Self::Gateway20(_) => TransportKind::Gateway20,
+            Self::Gateway(_) | Self::ShardedGateway(_) => TransportKind::Gateway,
+            Self::ShardedGateway20(_) => TransportKind::Gateway20,
         }
     }
 
     /// Sends an HTTP request through the underlying transport.
-    ///
-    // TODO(Step 6): When sharding is added, `Gateway` and `Gateway20`
-    // variants will dispatch through `ShardedHttpTransport` instead of
-    // delegating directly to the `HttpClient`.
     pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
-        self.client().execute_request(request).await
+        self.send_with_dispatch(request, None).await.result
     }
 
-    fn client(&self) -> &Arc<dyn HttpClient> {
+    pub(crate) async fn send_with_dispatch(
+        &self,
+        request: &Request,
+        excluded_shard_id: Option<u64>,
+    ) -> TransportDispatch {
         match self {
-            Self::Gateway(client) | Self::Gateway20(client) => client,
+            Self::Gateway(client) => TransportDispatch {
+                result: client.execute_request(request).await,
+                shard_id: None,
+                shard_diagnostics: None,
+            },
+            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+                transport.send(request, excluded_shard_id).await
+            }
+        }
+    }
+
+    pub(crate) fn can_retry_on_different_shard(
+        &self,
+        request: &Request,
+        excluded_shard_id: u64,
+    ) -> bool {
+        match self {
+            Self::Gateway(_) => false,
+            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+                transport.can_retry_on_different_shard(request, excluded_shard_id)
+            }
         }
     }
 }
