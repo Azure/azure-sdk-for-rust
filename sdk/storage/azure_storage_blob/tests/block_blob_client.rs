@@ -621,9 +621,7 @@ async fn test_get_block_list_types(ctx: TestContext) -> Result<(), Box<dyn Error
 }
 
 #[recorded::test]
-async fn test_stage_block_transactional_checksums(
-    ctx: TestContext,
-) -> Result<(), Box<dyn Error>> {
+async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
