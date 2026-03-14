@@ -8,7 +8,7 @@
 
 // We also want to enable this code when in rust-analyzer.
 
-#![cfg(any(test_category = "emulator", rust_analyzer))]
+#![cfg(test_category = "emulator")]
 
 mod emulator_tests;
 mod framework;

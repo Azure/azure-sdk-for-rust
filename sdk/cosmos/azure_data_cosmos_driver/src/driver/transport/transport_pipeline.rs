@@ -240,8 +240,8 @@ pub(crate) async fn execute_transport_pipeline(
             diagnostics,
         )
         .await;
-        if !tracing::span::Span::current().is_disabled() {
-            tracing::span::Span::current().record("outcome", format!("{}", result.outcome));
+        if !attempt_span.is_disabled() {
+            attempt_span.record("outcome", format!("{}", result.outcome));
         }
         tracing::debug!("transport request complete");
 
