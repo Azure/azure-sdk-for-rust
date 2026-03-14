@@ -103,4 +103,3 @@ impl PageBlobClient {
         &self.endpoint
     }
 }
-

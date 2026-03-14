@@ -6,7 +6,6 @@ use azure_core::http::{
     RequestContent,
 };
 use azure_core_test::{recorded, TestContext};
-use std::sync::Arc;
 use azure_storage_blob::{
     models::BlobClientGetPropertiesResultHeaders, BlobContainerClientOptions,
 };
@@ -15,25 +14,24 @@ use azure_storage_blob_test::{
     TestPolicy,
 };
 use std::error::Error;
+use std::sync::Arc;
 
 #[recorded::test]
 async fn test_storage_headers_present(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Arrange: capture outgoing request headers via a per-call policy
     let check_policy = Arc::new(TestPolicy::new(
-        Some(Arc::new(
-            |request: &azure_core::http::Request| {
-                let headers = request.headers();
-                assert!(
-                    headers.get_optional_str(&VERSION).is_some(),
-                    "x-ms-version header must be present on outgoing requests"
-                );
-                assert!(
-                    headers.get_optional_str(&CLIENT_REQUEST_ID).is_some(),
-                    "x-ms-client-request-id header must be present on outgoing requests"
-                );
-                Ok(())
-            },
-        )),
+        Some(Arc::new(|request: &azure_core::http::Request| {
+            let headers = request.headers();
+            assert!(
+                headers.get_optional_str(&VERSION).is_some(),
+                "x-ms-version header must be present on outgoing requests"
+            );
+            assert!(
+                headers.get_optional_str(&CLIENT_REQUEST_ID).is_some(),
+                "x-ms-client-request-id header must be present on outgoing requests"
+            );
+            Ok(())
+        })),
         None,
     ));
 
@@ -68,20 +66,18 @@ async fn test_version_header_matches_options(ctx: TestContext) -> Result<(), Box
 
     // Capture what x-ms-version is sent
     let check_policy = Arc::new(TestPolicy::new(
-        Some(Arc::new(
-            move |request: &azure_core::http::Request| {
-                let sent_version = request
-                    .headers()
-                    .get_optional_str(&VERSION)
-                    .unwrap_or_default()
-                    .to_string();
-                assert_eq!(
-                    api_version, sent_version,
-                    "x-ms-version header should match configured api version"
-                );
-                Ok(())
-            },
-        )),
+        Some(Arc::new(move |request: &azure_core::http::Request| {
+            let sent_version = request
+                .headers()
+                .get_optional_str(&VERSION)
+                .unwrap_or_default()
+                .to_string();
+            assert_eq!(
+                api_version, sent_version,
+                "x-ms-version header should match configured api version"
+            );
+            Ok(())
+        })),
         None,
     ));
 

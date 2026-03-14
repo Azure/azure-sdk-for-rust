@@ -277,9 +277,7 @@ async fn test_append_block_max_size_condition(ctx: TestContext) -> Result<(), Bo
 }
 
 #[recorded::test]
-async fn test_append_block_transactional_checksums(
-    ctx: TestContext,
-) -> Result<(), Box<dyn Error>> {
+async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =

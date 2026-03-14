@@ -2,13 +2,14 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{ClientOptions, ExponentialRetryOptions, FixedRetryOptions, RequestContent, RetryOptions},
+    http::{
+        ClientOptions, ExponentialRetryOptions, FixedRetryOptions, RequestContent, RetryOptions,
+    },
     time::Duration,
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    models::BlobClientGetPropertiesResultHeaders,
-    BlobContainerClient, BlobContainerClientOptions,
+    models::BlobClientGetPropertiesResultHeaders, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, ClientOptionsExt, FailFirstPolicy,

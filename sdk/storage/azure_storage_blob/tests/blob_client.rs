@@ -123,10 +123,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // No Overwrite Scenario
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), None)
         .await?;
 
     // Assert
@@ -158,16 +155,16 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Working Case (overwrite=true)
     let overwrite_response = blob_client
-        .upload(
-            RequestContent::from(new_data.to_vec()),
-            None,
-        )
+        .upload(RequestContent::from(new_data.to_vec()), None)
         .await?;
     let response = blob_client.download(None).await?;
     let content_length = response.content_length()?;
 
     // Assert
-    assert_eq!(overwrite_response.raw_response.status(), StatusCode::Created);
+    assert_eq!(
+        overwrite_response.raw_response.status(),
+        StatusCode::Created
+    );
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(29, content_length.unwrap());
@@ -242,10 +239,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), None)
         .await?;
     let response = blob_client.download(None).await?;
 
@@ -456,10 +450,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            Some(upload_options),
-        )
+        .upload(RequestContent::from(data.to_vec()), Some(upload_options))
         .await?;
 
     // Assert
@@ -609,10 +600,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         // Upload Blob
         blob_client_new
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                None,
-            )
+            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
             .await?;
 
         // Get Properties
@@ -635,10 +623,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         // Upload Blob
         blob_client_from_url
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                None,
-            )
+            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
             .await?;
 
         // Get Properties
@@ -650,10 +635,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         // Upload Blob
         blob_client_from_cc
-            .upload(
-                RequestContent::from(b"hello rusty world".to_vec()),
-                None,
-            )
+            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
             .await?;
 
         // Get Properties
@@ -955,10 +937,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data: [u8; DATA_LEN] = recording.random();
 
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), None)
         .await?;
 
     for (parallel, partition_len, download_range, expected_gets) in [
@@ -1098,10 +1077,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
 
     // Upload with Default Content Headers
     blob_client
-        .upload(
-            RequestContent::from(content.to_vec()),
-            None,
-        )
+        .upload(RequestContent::from(content.to_vec()), None)
         .await?;
 
     // Set All Content Headers via Set Properties
