@@ -138,8 +138,7 @@ impl CosmosTransport {
         http_client_factory: Arc<dyn HttpClientFactory>,
         negotiated_version: NegotiatedHttpVersion,
     ) -> azure_core::Result<Self> {
-        let metadata_config =
-            HttpClientConfig::metadata(&connection_pool, negotiated_version);
+        let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
         let metadata_transport = AdaptiveTransport::from_config(
             &connection_pool,
             http_client_factory.clone(),
@@ -191,11 +190,9 @@ impl CosmosTransport {
             match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
                 None => {
-                    let config = HttpClientConfig::metadata(
-                        &self.connection_pool,
-                        self.negotiated_version,
-                    )
-                    .for_emulator();
+                    let config =
+                        HttpClientConfig::metadata(&self.connection_pool, self.negotiated_version)
+                            .for_emulator();
                     let t = AdaptiveTransport::from_config(
                         &self.connection_pool,
                         self.http_client_factory.clone(),

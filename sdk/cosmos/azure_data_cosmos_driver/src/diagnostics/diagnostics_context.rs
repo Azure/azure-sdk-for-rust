@@ -2217,7 +2217,10 @@ mod tests {
     fn execution_context_display() {
         assert_eq!(ExecutionContext::Initial.to_string(), "initial");
         assert_eq!(ExecutionContext::Retry.to_string(), "retry");
-        assert_eq!(ExecutionContext::TransportRetry.to_string(), "transport_retry");
+        assert_eq!(
+            ExecutionContext::TransportRetry.to_string(),
+            "transport_retry"
+        );
         assert_eq!(ExecutionContext::Hedging.to_string(), "hedging");
         assert_eq!(
             ExecutionContext::RegionFailover.to_string(),

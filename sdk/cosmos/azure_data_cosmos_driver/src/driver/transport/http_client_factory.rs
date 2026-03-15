@@ -146,8 +146,7 @@ mod tests {
     fn dataplane_gateway_http2_version() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::dataplane_gateway(&pool, NegotiatedHttpVersion::Http2)
-                .version_policy,
+            HttpClientConfig::dataplane_gateway(&pool, NegotiatedHttpVersion::Http2).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }

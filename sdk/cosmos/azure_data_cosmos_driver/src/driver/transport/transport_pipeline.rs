@@ -216,7 +216,8 @@ pub(crate) async fn execute_transport_pipeline(
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
 
         // Sign the request
-        if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await {
+        if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
+        {
             diagnostics.fail_request(request_handle, e.to_string(), RequestSentStatus::NotSent);
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
@@ -246,7 +247,9 @@ pub(crate) async fn execute_transport_pipeline(
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
                 && should_retry_connectivity_failure(&result.result, ctx.allow_sent_transport_retry)
-                && ctx.transport.can_retry_on_different_shard(&http_request, failed_shard_id)
+                && ctx
+                    .transport
+                    .can_retry_on_different_shard(&http_request, failed_shard_id)
         }) {
             if let Some(failed_transport_shard) = failed_transport_shard(&result) {
                 diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);

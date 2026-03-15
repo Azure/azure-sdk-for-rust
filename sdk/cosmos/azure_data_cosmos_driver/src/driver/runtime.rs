@@ -552,13 +552,11 @@ impl CosmosDriverRuntimeBuilder {
         } else {
             http_client_factory::NegotiatedHttpVersion::Http11
         };
-        let bootstrap_transport = Arc::new(
-            CosmosTransport::with_factory(
-                connection_pool.clone(),
-                http_client_factory.clone(),
-                bootstrap_version,
-            )?,
-        );
+        let bootstrap_transport = Arc::new(CosmosTransport::with_factory(
+            connection_pool.clone(),
+            http_client_factory.clone(),
+            bootstrap_version,
+        )?);
 
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
