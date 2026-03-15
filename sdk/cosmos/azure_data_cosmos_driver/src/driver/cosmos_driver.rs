@@ -17,6 +17,7 @@ use crate::{
 };
 use azure_core::http::Request;
 use futures::future::BoxFuture;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
@@ -56,6 +57,11 @@ pub struct CosmosDriver {
     default_max_failover_retries: u32,
     /// Resolved default for max session retries (from env or None = compute at operation time).
     default_max_session_retries: Option<u32>,
+    /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
+    /// Operations check this flag to fail fast if the driver is used before
+    /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
+    /// before returning, so this guard only catches misuse.
+    initialized: AtomicBool,
 }
 
 impl CosmosDriver {
@@ -69,7 +75,11 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.bootstrap_transport();
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
-        Self::fetch_account_properties_with_transport(&metadata_transport, account).await
+        let user_agent = azure_core::http::headers::HeaderValue::from(
+            runtime.user_agent().as_str().to_owned(),
+        );
+        Self::fetch_account_properties_with_transport(&metadata_transport, account, &user_agent)
+            .await
     }
 
     /// Probes the gateway's HTTP version and returns the negotiated version.
@@ -117,8 +127,9 @@ impl CosmosDriver {
                 let fallback_transport =
                     super::transport::adaptive_transport::AdaptiveTransport::Gateway(fallback_client);
 
+                let user_agent = Self::user_agent_header(runtime);
                 let props =
-                    Self::fetch_account_properties_with_transport(&fallback_transport, account)
+                    Self::fetch_account_properties_with_transport(&fallback_transport, account, &user_agent)
                         .await?;
                 Ok((NegotiatedHttpVersion::Http11, props))
             }
@@ -129,12 +140,13 @@ impl CosmosDriver {
     async fn fetch_account_properties_with_transport(
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
+        user_agent: &azure_core::http::headers::HeaderValue,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
         cosmos_headers::apply_cosmos_headers(
             &mut request,
-            &azure_core::http::headers::HeaderValue::from("probe".to_owned()),
+            user_agent,
         );
         request_signing::sign_request(
             &mut request,
@@ -157,6 +169,14 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         serde_json::from_slice(payload)
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
+    }
+
+    fn user_agent_header(
+        runtime: &CosmosDriverRuntime,
+    ) -> azure_core::http::headers::HeaderValue {
+        azure_core::http::headers::HeaderValue::from(
+            runtime.user_agent().as_str().to_owned(),
+        )
     }
 
     fn endpoint_for_write_region(
@@ -200,7 +220,7 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
 
-        match Self::fetch_account_properties_with_transport(&metadata_transport, account).await {
+        match Self::fetch_account_properties_with_transport(&metadata_transport, account, &Self::user_agent_header(runtime)).await {
             Ok(props) => Ok(props),
             Err(e) => {
                 let is_protocol_failure = matches!(
@@ -240,14 +260,21 @@ impl CosmosDriver {
                 let props = Self::fetch_account_properties_with_transport(
                     &fallback_metadata,
                     account,
+                    &Self::user_agent_header(runtime),
                 )
                 .await?;
 
                 // The fallback succeeded — swap the transport.
+                // The old transport Arc is kept alive by any in-flight operations
+                // that cloned it before the swap. Its background health sweep will
+                // stop when the BackgroundTaskManager is dropped (on last Arc release).
+                // In-flight requests will complete on the old shards and then the
+                // old connections will close when the last Arc reference is released.
                 tracing::info!(
                     endpoint = %endpoint,
                     new_version = ?fallback_version,
-                    "Switching to alternate HTTP version after successful re-probe"
+                    "Switching to alternate HTTP version after successful re-probe; \
+                     old transport will drain in-flight requests before closing"
                 );
                 *transport_lock.write().expect("transport lock poisoned") =
                     Arc::new(fallback_transport);
@@ -431,6 +458,7 @@ impl CosmosDriver {
             location_state_store,
             default_max_failover_retries,
             default_max_session_retries,
+            initialized: AtomicBool::new(false),
         }
     }
 
@@ -492,6 +520,7 @@ impl CosmosDriver {
         )?);
 
         *self.transport.write().expect("transport lock poisoned") = new_transport;
+        self.initialized.store(true, Ordering::Release);
         Ok(())
     }
 
@@ -625,6 +654,13 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
+        if !self.initialized.load(Ordering::Acquire) {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "CosmosDriver has not been initialized; call initialize() or use \
+                 CosmosDriverRuntime::get_or_create_driver() which initializes automatically",
+            ));
+        }
         // Step 1: Derive effective runtime options
         let mut effective_options = self.effective_runtime_options(&options);
 

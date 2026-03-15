@@ -131,6 +131,22 @@ impl ShardedHttpTransport {
             .is_some_and(|pool| pool.can_select_different_shard(excluded_shard_id))
     }
 
+    /// Returns the ID of the shard that would be selected for the given request,
+    /// without dispatching the request. Returns `None` if the pool does not exist
+    /// or shard selection fails.
+    pub(crate) fn pre_select_shard_id(
+        &self,
+        request: &Request,
+        excluded_shard_id: Option<u64>,
+    ) -> Option<u64> {
+        let endpoint_key = EndpointKey::from_url(request.url()).ok()?;
+        let pools = self.pools.lock().expect("endpoint pool lock poisoned");
+        pools
+            .get(&endpoint_key)
+            .and_then(|pool| pool.select_shard(excluded_shard_id).ok())
+            .map(|shard| shard.id)
+    }
+
     fn get_or_create_pool(
         &self,
         endpoint_key: EndpointKey,
@@ -395,8 +411,7 @@ impl EndpointShardPool {
                 });
 
                 let mut needs_probe_replacement = false;
-                for shard in shards.iter() {
-                    let snapshot = shard.snapshot();
+                for snapshot in &snapshots {
                     let should_mark = match probe_candidate {
                         Some(probe_id) => snapshot.id == probe_id,
                         None => {
@@ -411,11 +426,18 @@ impl EndpointShardPool {
                         if probe_candidate == Some(snapshot.id) {
                             needs_probe_replacement = true;
                         }
-                        shard.mark_for_eviction();
+                        if let Some(shard) = shards.iter().find(|s| s.id == snapshot.id) {
+                            shard.mark_for_eviction();
+                        }
                     }
                 }
 
                 shards.retain(|shard| !(shard.is_marked_for_eviction() && shard.inflight() == 0));
+
+                // TODO: Implement ReadHang eviction — detect shards with
+                // inflight > 0 but no success for a configurable duration
+                // (stuck TCP connections). The snapshot already contains
+                // `last_success_at` and `inflight` needed for this check.
 
                 // Reclaim idle overflow shards
                 while shards.len() > min_clients {
@@ -447,9 +469,9 @@ impl EndpointShardPool {
         // expensive part (TCP connect, TLS handshake) and must not block
         // concurrent `select_shard` readers.
         let mut new_shards = Vec::with_capacity(shards_needed);
-        for _ in 0..shards_needed {
-            // Use 0 as ordinal placeholder — the actual ordinal is set when inserting.
-            let shard = self.build_shard(0)?;
+        let current_len = self.shards.read().expect("shard lock poisoned").len();
+        for i in 0..shards_needed {
+            let shard = self.build_shard(current_len + i)?;
             new_shards.push(Arc::new(shard));
         }
 
@@ -697,8 +719,8 @@ fn pick_probe_candidate(
         .max_by_key(|snapshot| {
             (
                 snapshot.consecutive_failures,
-                snapshot.total_failures,
                 std::cmp::Reverse(snapshot.last_success_at.unwrap_or(snapshot.last_request_at)),
+                snapshot.total_failures,
                 std::cmp::Reverse(snapshot.total_requests),
                 snapshot.inflight,
             )

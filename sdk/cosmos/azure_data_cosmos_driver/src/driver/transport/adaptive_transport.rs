@@ -103,6 +103,23 @@ impl AdaptiveTransport {
             }
         }
     }
+
+    /// Returns the shard ID that would be selected for the given request,
+    /// without actually dispatching the request. Used to capture shard identity
+    /// before a timeout race so that diagnostics can report which shard was
+    /// targeted even when the transport future is cancelled.
+    pub(crate) fn pre_select_shard(
+        &self,
+        request: &Request,
+        excluded_shard_id: Option<u64>,
+    ) -> Option<u64> {
+        match self {
+            Self::Gateway(_) => None,
+            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+                transport.pre_select_shard_id(request, excluded_shard_id)
+            }
+        }
+    }
 }
 
 impl fmt::Debug for AdaptiveTransport {

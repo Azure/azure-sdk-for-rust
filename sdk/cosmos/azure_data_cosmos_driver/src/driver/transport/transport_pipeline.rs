@@ -334,6 +334,10 @@ async fn execute_http_attempt(
     excluded_shard_id: Option<u64>,
 ) -> ExecutedTransportAttempt {
     if let Some(timeout_duration) = per_request_timeout {
+        // Pre-select the shard so we know which shard the request was dispatched
+        // to even if the transport future is cancelled by the timeout race.
+        let dispatched_shard = transport.pre_select_shard(http_request, excluded_shard_id);
+
         let transport_future =
             execute_http_attempt_future(http_request, transport, excluded_shard_id);
         let timeout_future = async {
@@ -360,7 +364,7 @@ async fn execute_http_attempt(
                 diagnostics.timeout_request(request_handle);
                 ExecutedTransportAttempt {
                     result: deadline_exceeded_result(RequestSentStatus::Unknown),
-                    shard_id: None,
+                    shard_id: dispatched_shard,
                     shard_diagnostics: None,
                 }
             }

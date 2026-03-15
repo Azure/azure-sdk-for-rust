@@ -797,7 +797,10 @@ pub struct RequestEvent {
 #[non_exhaustive]
 pub struct TransportShardDiagnostics {
     shard_id: u64,
-    inflight: u32,
+    /// Approximate inflight count at the time of capture. This is read from an
+    /// atomic counter outside the shard's state mutex, so it may be slightly
+    /// inconsistent with other fields.
+    estimated_inflight: u32,
     consecutive_failures: u32,
     total_requests: u64,
     total_failures: u64,
@@ -807,7 +810,7 @@ pub struct TransportShardDiagnostics {
 impl TransportShardDiagnostics {
     pub(crate) fn new(
         shard_id: u64,
-        inflight: u32,
+        estimated_inflight: u32,
         consecutive_failures: u32,
         total_requests: u64,
         total_failures: u64,
@@ -815,7 +818,7 @@ impl TransportShardDiagnostics {
     ) -> Self {
         Self {
             shard_id,
-            inflight,
+            estimated_inflight,
             consecutive_failures,
             total_requests,
             total_failures,
@@ -827,8 +830,8 @@ impl TransportShardDiagnostics {
         self.shard_id
     }
 
-    pub fn inflight(&self) -> u32 {
-        self.inflight
+    pub fn estimated_inflight(&self) -> u32 {
+        self.estimated_inflight
     }
 
     pub fn consecutive_failures(&self) -> u32 {
@@ -2142,8 +2145,6 @@ mod tests {
         assert_eq!(status, &CosmosStatus::TRANSPORT_GENERATED_503);
         assert_eq!(requests[0].error(), Some("connection refused"));
     }
-
-
 
     #[test]
     fn percentile_calculation() {
