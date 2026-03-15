@@ -148,9 +148,9 @@ focused component types. Each pipeline stage operates on only the components it 
 /// for a given request attempt.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum TransportMode {
-    /// Standard gateway (HTTP/1.1 or HTTP/2 via ALPN).
+    /// Standard gateway (HTTP/1.1 or HTTP/2, determined by per-account probe).
     Gateway,
-    /// Gateway 2.0 (HTTP/2 with prior knowledge).
+    /// Gateway 2.0 (always HTTP/2 with prior knowledge).
     Gateway20,
 }
 
@@ -1528,15 +1528,53 @@ Cosmos DB exposes **three gateway flavors** that differ in HTTP version support:
 | **ComputeGateway** | Metadata + Dataplane | HTTP/2 via ALPN                | Preferred for metadata |
 | **Gateway 2.0**    | Dataplane only       | HTTP/2 forced (different port) | No HTTP/1.1 fallback   |
 
-At `CosmosClient` initialization, when fetching account properties via the metadata transport,
-the driver **probes the gateway's protocol support** using ALPN negotiation. ALPN is sufficient
-to decide between HTTP/1.1 and HTTP/2 (adaptive). This determines the transport strategy for
-the lifetime of the client:
+#### Per-Account HTTP/2 Probe
 
-- **HTTP/2 detected** (ComputeGateway or Gateway 2.0): Use `ShardedHttpTransport` (§6.1+)
-- **HTTP/1.1 only** (RoutingGateway): Use a plain `Arc<dyn HttpClient>` — no sharding needed
-  since HTTP/1.1 uses one-request-per-connection and the underlying client already manages a
-  connection pool via `pool_max_idle_per_host`.
+During `CosmosDriver::initialize()`, the driver **probes the gateway's HTTP/2 support**
+by attempting the first metadata fetch (account properties) using an HTTP/2-only client
+(`http2_prior_knowledge`). The probe result determines the transport strategy:
+
+- **HTTP/2 succeeds**: Use `ShardedHttpTransport` (§6.1+) with HTTP/2 PING keepalive.
+  TCP keepalive is **not** configured — HTTP/2 PING frames serve the liveness detection role.
+- **HTTP/2 fails** (connection/protocol error): Fall back to a plain `Arc<dyn HttpClient>`
+  with HTTP/1.1 only. TCP keepalive is configured. No sharding — HTTP/1.1 uses
+  one-request-per-connection and the underlying client manages a connection pool via
+  `pool_max_idle_per_host`.
+- **User disabled HTTP/2** (`is_http2_allowed() == false`): Skip the probe entirely.
+  Use HTTP/1.1 with TCP keepalive.
+
+The negotiated version (`NegotiatedHttpVersion::Http2` or `NegotiatedHttpVersion::Http11`)
+is stored on the per-account `CosmosTransport` instance.
+
+#### Per-Account Transport Ownership
+
+Each `CosmosDriver` (one per Cosmos DB account) owns its own `CosmosTransport` via
+`Arc<RwLock<Arc<CosmosTransport>>>`. The `RwLock` allows the transport to be swapped
+if the HTTP version changes during a metadata refresh (see below). Operations acquire
+a read lock (nanoseconds — clone the `Arc` and release) so there is no contention on
+the hot path. The write lock is only taken when the transport is actually replaced.
+
+#### Re-Probe on Metadata Refresh
+
+During periodic metadata refreshes (every ~5 minutes), the driver fetches account
+properties using the current transport. If the fetch fails with a connection/protocol
+error, the driver tries the alternate HTTP version:
+
+- If currently HTTP/2 and the fetch fails → try HTTP/1.1
+- If currently HTTP/1.1 and the fetch fails → try HTTP/2
+
+If the fallback succeeds, the transport is swapped to the new version. This handles
+the edge case where a gateway's HTTP/2 support changes after initialization.
+
+#### Keepalive Separation
+
+| HTTP Version | Keepalive Mechanism                                                                     | Sharding                     | Config Source           |
+| ------------ | --------------------------------------------------------------------------------------- | ---------------------------- | ----------------------- |
+| HTTP/2       | HTTP/2 PING frames (`http2_keep_alive_interval`, `http2_keep_alive_timeout`)            | Yes (`ShardedHttpTransport`) | `ConnectionPoolOptions` |
+| HTTP/1.1     | TCP keepalive (`tcp_keepalive_time`, `tcp_keepalive_interval`, `tcp_keepalive_retries`) | No (plain `HttpClient`)      | `ConnectionPoolOptions` |
+
+TCP keepalive and HTTP/2 PING keepalive are **never mixed** on the same client.
+The `HttpClientFactory::build()` method configures exactly one based on `HttpVersionPolicy`.
 
 **Gateway 2.0 detection**: The `AccountProperties` response from the metadata endpoint contains
 `thinClientWritableLocations` and `thinClientReadableLocations` properties with regional
@@ -1544,27 +1582,26 @@ Gateway 2.0 endpoints. Their presence indicates that Gateway 2.0 should be used 
 dataplane transport (see Java reference:
 `sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/DatabaseAccount.java`).
 
-Both metadata and dataplane pipelines independently determine their transport strategy based on
-their respective gateway endpoint. When deploying to a region that uses ComputeGateway, both
-pipelines would use `ShardedHttpTransport` (with different timeout configurations). When
-deploying to a region with only RoutingGateway, both would use the plain transport.
+Both metadata and dataplane pipelines use the same negotiated HTTP version for standard
+gateway requests (since they go through the same gateway endpoint). Gateway 2.0 always
+uses HTTP/2 regardless of the probe result.
 
 ```rust
-/// Transport strategy, determined at client initialization based on gateway probing.
-pub(crate) enum AdaptiveTransport {
-    /// HTTP/2 gateway — use sharded transport to manage stream limits.
-    Sharded(ShardedHttpTransport),
-    /// HTTP/1.1 gateway — single HttpClient, connection-per-request model.
-    Plain(Arc<dyn HttpClient>),
+/// The negotiated HTTP version for an account's gateway.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum NegotiatedHttpVersion {
+    Http2,
+    Http11,
 }
 
-impl AdaptiveTransport {
-    pub async fn send(&self, request: &Request) -> Result<AsyncRawResponse> {
-        match self {
-            Self::Sharded(sharded) => sharded.send(request).await,
-            Self::Plain(client) => client.execute_request(request).await,
-        }
-    }
+/// Transport strategy, determined at client initialization based on gateway probing.
+pub(crate) enum AdaptiveTransport {
+    /// HTTP/1.1 gateway — unsharded, TCP keepalive.
+    Gateway(Arc<dyn HttpClient>),
+    /// HTTP/2 gateway — sharded transport, HTTP/2 PING keepalive.
+    ShardedGateway(Arc<ShardedHttpTransport>),
+    /// Gateway 2.0 — always HTTP/2, sharded.
+    ShardedGateway20(Arc<ShardedHttpTransport>),
 }
 ```
 
@@ -1873,14 +1910,13 @@ cause latency spikes.
 - Java has transit-timeout counting; we use consecutive-failure counting as a proxy since the
   `HttpClient` trait doesn't expose per-stream timeout events separately
 
-**TCP keepalive consideration**: TCP keepalive remains configurable on `ConnectionPoolOptions`,
-but is **disabled by default**. For HTTP/2 transports the primary liveness signal comes from the
-protocol-level keepalive ping configuration (`http2_keep_alive_interval`,
-`http2_keep_alive_timeout`, and `http2_keep_alive_while_idle`). The reqwest builder applies TCP
-keepalive before any ALPN negotiation happens, so it cannot be enabled only for HTTP/1.1
-connections after protocol selection. If callers need TCP keepalive for specific network
-environments, they must opt in explicitly by setting `tcp_keepalive_time` (and optionally the
-interval and retry count) on `ConnectionPoolOptions`.
+**Keepalive design**: TCP keepalive is configured **only** on HTTP/1.1 transports for
+connection liveness detection. HTTP/2 transports use protocol-level PING frames instead
+(`http2_keep_alive_interval`, `http2_keep_alive_timeout`, `http2_keep_alive_while_idle`).
+The two mechanisms are never mixed on the same client — the `HttpClientFactory::build()`
+method configures exactly one based on `HttpVersionPolicy::Http11Only` vs
+`HttpVersionPolicy::Http2Only`. The former ALPN-based `Http2Preferred` mode has been
+removed in favor of the explicit per-account HTTP/2 probe.
 
 ### 6.6 Background Health Sweep
 

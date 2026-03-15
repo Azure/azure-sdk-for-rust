@@ -17,14 +17,16 @@ use crate::{
 };
 use azure_core::http::Request;
 use futures::future::BoxFuture;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use super::{
     cache::AccountRegion,
     transport::{
-        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
-        AuthorizationContext,
+        cosmos_headers,
+        http_client_factory::NegotiatedHttpVersion,
+        is_emulator_host, request_signing, uses_dataplane_pipeline, AuthorizationContext,
+        CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -44,6 +46,10 @@ pub struct CosmosDriver {
     runtime: CosmosDriverRuntime,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    /// Per-account transport (created after HTTP/2 probe during initialization).
+    /// Wrapped in `Arc<RwLock<...>>` so the metadata refresh callback can
+    /// re-probe the HTTP version and swap the transport if needed.
+    transport: Arc<RwLock<Arc<CosmosTransport>>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
     /// Resolved default for max failover retries (from env or hardcoded default).
@@ -53,19 +59,82 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    /// Fetches account properties using the bootstrap transport.
+    ///
+    /// This is used during initialization (before the per-account transport exists).
     async fn fetch_account_properties_with_runtime(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let transport = runtime.transport();
+        let transport = runtime.bootstrap_transport();
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
-        let user_agent = runtime.user_agent().as_str();
+        Self::fetch_account_properties_with_transport(&metadata_transport, account).await
+    }
 
+    /// Probes the gateway's HTTP version and returns the negotiated version.
+    ///
+    /// Tries HTTP/2-only first. If that fails with a connection/protocol error,
+    /// falls back to HTTP/1.1. The returned version is used to create the
+    /// per-account `CosmosTransport`.
+    async fn probe_http_version(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<(NegotiatedHttpVersion, super::cache::AccountProperties)> {
+        if !runtime.connection_pool().is_http2_allowed() {
+            // User explicitly disabled HTTP/2 — skip the probe.
+            let props =
+                Self::fetch_account_properties_with_runtime(runtime, account).await?;
+            return Ok((NegotiatedHttpVersion::Http11, props));
+        }
+
+        // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
+        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+            Ok(props) => Ok((NegotiatedHttpVersion::Http2, props)),
+            Err(e) => {
+                // If the failure is a connection or protocol error, fall back to HTTP/1.1.
+                let is_protocol_failure = matches!(
+                    e.kind(),
+                    azure_core::error::ErrorKind::Connection | azure_core::error::ErrorKind::Io
+                );
+                if !is_protocol_failure {
+                    // Non-transport error (auth, 4xx, etc.) — propagate as-is.
+                    return Err(e);
+                }
+
+                tracing::info!(
+                    endpoint = %AccountEndpoint::from(account),
+                    error = %e,
+                    "HTTP/2 probe failed; falling back to HTTP/1.1"
+                );
+
+                // Build a temporary HTTP/1.1 transport for the fallback fetch.
+                let pool = runtime.connection_pool();
+                let factory = runtime.http_client_factory();
+                let fallback_config =
+                    super::transport::http_client_factory::HttpClientConfig::bootstrap_http11_fallback(pool);
+                let fallback_client = factory.build(pool, fallback_config)?;
+                let fallback_transport =
+                    super::transport::adaptive_transport::AdaptiveTransport::Gateway(fallback_client);
+
+                let props =
+                    Self::fetch_account_properties_with_transport(&fallback_transport, account)
+                        .await?;
+                Ok((NegotiatedHttpVersion::Http11, props))
+            }
+        }
+    }
+
+    /// Fetches account properties using a specific adaptive transport.
+    async fn fetch_account_properties_with_transport(
+        transport: &super::transport::adaptive_transport::AdaptiveTransport,
+        account: &AccountReference,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let endpoint = AccountEndpoint::from(account);
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
         cosmos_headers::apply_cosmos_headers(
             &mut request,
-            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
+            &azure_core::http::headers::HeaderValue::from("probe".to_owned()),
         );
         request_signing::sign_request(
             &mut request,
@@ -78,7 +147,7 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = metadata_transport.send(&request).await?;
+        let response = transport.send(&request).await?;
         let raw = response.try_into_raw_response().await?;
         Self::parse_account_properties_payload(raw.body())
     }
@@ -111,7 +180,81 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        Self::fetch_account_properties_with_runtime(&self.runtime, account).await
+        Self::refresh_account_properties(&self.runtime, account, &self.transport).await
+    }
+
+    /// Fetches account properties using the current per-account transport.
+    ///
+    /// If the fetch fails with a protocol/connection error, re-probes the HTTP
+    /// version and swaps the transport if it has changed (e.g., HTTP/2 was
+    /// disabled on the gateway since the last probe).
+    async fn refresh_account_properties(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_lock: &Arc<RwLock<Arc<CosmosTransport>>>,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let current_transport = transport_lock
+            .read()
+            .expect("transport lock poisoned")
+            .clone();
+        let endpoint = AccountEndpoint::from(account);
+        let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
+
+        match Self::fetch_account_properties_with_transport(&metadata_transport, account).await {
+            Ok(props) => Ok(props),
+            Err(e) => {
+                let is_protocol_failure = matches!(
+                    e.kind(),
+                    azure_core::error::ErrorKind::Connection | azure_core::error::ErrorKind::Io
+                );
+
+                if !is_protocol_failure || !runtime.connection_pool().is_http2_allowed() {
+                    return Err(e);
+                }
+
+                // The current transport failed with a protocol error.
+                // Re-probe to detect if the HTTP version changed.
+                let current_version = current_transport.negotiated_version();
+                let fallback_version = match current_version {
+                    NegotiatedHttpVersion::Http2 => NegotiatedHttpVersion::Http11,
+                    NegotiatedHttpVersion::Http11 => NegotiatedHttpVersion::Http2,
+                };
+
+                tracing::info!(
+                    endpoint = %endpoint,
+                    current = ?current_version,
+                    fallback = ?fallback_version,
+                    error = %e,
+                    "Metadata refresh failed; trying alternate HTTP version"
+                );
+
+                // Build a temporary transport with the alternate version.
+                let fallback_transport = CosmosTransport::with_factory(
+                    runtime.connection_pool().clone(),
+                    Arc::clone(runtime.http_client_factory()),
+                    fallback_version,
+                )?;
+                let fallback_metadata =
+                    fallback_transport.get_metadata_transport(&endpoint)?;
+
+                let props = Self::fetch_account_properties_with_transport(
+                    &fallback_metadata,
+                    account,
+                )
+                .await?;
+
+                // The fallback succeeded — swap the transport.
+                tracing::info!(
+                    endpoint = %endpoint,
+                    new_version = ?fallback_version,
+                    "Switching to alternate HTTP version after successful re-probe"
+                );
+                *transport_lock.write().expect("transport lock poisoned") =
+                    Arc::new(fallback_transport);
+
+                Ok(props)
+            }
+        }
     }
 
     async fn fetch_container_by_name(
@@ -220,14 +363,21 @@ impl CosmosDriver {
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
-        let runtime_clone = runtime.clone();
-        let account_clone = account.clone();
+        // Shared transport lock — used by both the driver and the refresh callback.
+        let transport: Arc<RwLock<Arc<CosmosTransport>>> =
+            Arc::new(RwLock::new(Arc::clone(runtime.bootstrap_transport())));
+
+        let runtime_for_callback = runtime.clone();
+        let account_for_callback = account.clone();
+        let transport_for_callback = Arc::clone(&transport);
         let refresh_callback = Arc::new(move || {
-            let runtime = runtime_clone.clone();
-            let account = account_clone.clone();
+            let runtime = runtime_for_callback.clone();
+            let account = account_for_callback.clone();
+            let transport_lock = Arc::clone(&transport_for_callback);
             let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
                 Box::pin(async move {
-                    CosmosDriver::fetch_account_properties_with_runtime(&runtime, &account).await
+                    CosmosDriver::refresh_account_properties(&runtime, &account, &transport_lock)
+                        .await
                 });
             fut
         });
@@ -275,8 +425,9 @@ impl CosmosDriver {
             });
 
         Self {
-            runtime,
+            runtime: runtime.clone(),
             options,
+            transport,
             location_state_store,
             default_max_failover_retries,
             default_max_session_retries,
@@ -298,26 +449,49 @@ impl CosmosDriver {
         &self.options
     }
 
-    /// Eagerly primes the account metadata cache.
+    /// Returns the current per-account transport.
+    fn transport(&self) -> Arc<CosmosTransport> {
+        self.transport.read().expect("transport lock poisoned").clone()
+    }
+
+    /// Eagerly primes the account metadata cache and creates the per-account transport.
     ///
-    /// Fetches account properties from the service and caches them so that
-    /// regional endpoint information is available before the first
-    /// [`execute_operation`](Self::execute_operation) call. This avoids
-    /// cold-start latency on the first data-plane operation.
+    /// Performs an HTTP/2 probe to detect protocol support, then creates the
+    /// appropriate transport (sharded HTTP/2 or unsharded HTTP/1.1). Also caches
+    /// the account properties for regional endpoint resolution.
     ///
     /// This method is called automatically by
     /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
     /// on a best-effort basis. Callers may invoke it again to retry if the
     /// initial attempt failed (the result is idempotent).
-    ///
-    /// Returns an error if the account is unreachable.
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
+
+        // Probe HTTP version and fetch account properties in one step.
+        let (negotiated_version, properties) =
+            Self::probe_http_version(&self.runtime, account).await?;
+
+        tracing::info!(
+            endpoint = %account_endpoint,
+            version = ?negotiated_version,
+            "HTTP version negotiated for account"
+        );
+
+        // Cache the properties.
         self.runtime
             .account_metadata_cache()
-            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
+            .get_or_fetch(account_endpoint, || async { Ok(properties) })
             .await?;
+
+        // Create the per-account transport with the negotiated version.
+        let new_transport = Arc::new(CosmosTransport::with_factory(
+            self.runtime.connection_pool().clone(),
+            Arc::clone(self.runtime.http_client_factory()),
+            negotiated_version,
+        )?);
+
+        *self.transport.write().expect("transport lock poisoned") = new_transport;
         Ok(())
     }
 
@@ -496,7 +670,7 @@ impl CosmosDriver {
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
         // Step 5: Select the adaptive transport context for the chosen pipeline
-        let transport = self.runtime.transport();
+        let transport = self.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
@@ -534,7 +708,7 @@ impl CosmosDriver {
             &options,
             &effective_options,
             self.location_state_store.as_ref(),
-            transport,
+            &transport,
             &endpoint,
             auth,
             &user_agent,

@@ -778,7 +778,10 @@ mod tests {
     }
 
     fn client_config() -> HttpClientConfig {
-        HttpClientConfig::dataplane_gateway(&connection_pool())
+        HttpClientConfig::dataplane_gateway(
+            &connection_pool(),
+            crate::driver::transport::http_client_factory::NegotiatedHttpVersion::Http2,
+        )
     }
 
     #[test]

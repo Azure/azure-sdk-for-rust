@@ -17,20 +17,16 @@ use crate::options::ConnectionPoolOptions;
 
 /// Transport strategy selected for a request pipeline.
 ///
-/// `Gateway` covers the standard metadata and dataplane gateway path. The
-/// underlying reqwest client may be configured as HTTP/1.1-only or
-/// HTTP/2-preferred depending on `ConnectionPoolOptions::is_http2_allowed()`.
-/// `Gateway20` is reserved for thin-client Gateway 2.0 requests and always
-/// uses HTTP/2 prior knowledge.
-///
-/// In Step 6, both variants will transition to wrapping
-/// `ShardedHttpTransport` instead of a plain `Arc<dyn HttpClient>` —
-/// see spec §6 "HTTP/2 connection sharding".
+/// `Gateway` is an unsharded HTTP/1.1 transport used when the gateway does not
+/// support HTTP/2. `ShardedGateway` is a per-endpoint sharded HTTP/2 transport
+/// used when HTTP/2 has been confirmed via the initialization probe.
+/// `ShardedGateway20` is reserved for Gateway 2.0 thin-client requests and
+/// always uses HTTP/2 prior knowledge.
 #[derive(Clone)]
 pub(crate) enum AdaptiveTransport {
-    /// Standard gateway transport for metadata and non-Gateway-2.0 dataplane requests.
+    /// Unsharded HTTP/1.1 gateway transport (TCP keepalive, no HTTP/2 sharding).
     Gateway(Arc<dyn HttpClient>),
-    /// Standard gateway transport with per-endpoint HTTP/2 sharding.
+    /// Per-endpoint HTTP/2 sharded gateway transport (HTTP/2 keepalive, no TCP keepalive).
     ShardedGateway(Arc<ShardedHttpTransport>),
     /// Gateway 2.0 transport with per-endpoint HTTP/2 sharding.
     ShardedGateway20(Arc<ShardedHttpTransport>),
@@ -46,13 +42,23 @@ impl AdaptiveTransport {
             HttpVersionPolicy::Http11Only => {
                 Self::Gateway(client_factory.build(connection_pool, config)?)
             }
-            HttpVersionPolicy::Http2Preferred => Self::ShardedGateway(Arc::new(
-                ShardedHttpTransport::new(connection_pool.clone(), client_factory, config),
-            )),
-            HttpVersionPolicy::Http2Only => Self::ShardedGateway20(Arc::new(
+            HttpVersionPolicy::Http2Only => Self::ShardedGateway(Arc::new(
                 ShardedHttpTransport::new(connection_pool.clone(), client_factory, config),
             )),
         })
+    }
+
+    /// Creates a Gateway 2.0 transport (always HTTP/2 sharded).
+    pub(crate) fn gateway20(
+        connection_pool: &ConnectionPoolOptions,
+        client_factory: Arc<dyn HttpClientFactory>,
+        config: HttpClientConfig,
+    ) -> Self {
+        Self::ShardedGateway20(Arc::new(ShardedHttpTransport::new(
+            connection_pool.clone(),
+            client_factory,
+            config,
+        )))
     }
 
     /// Returns the [`TransportKind`] for diagnostics reporting.

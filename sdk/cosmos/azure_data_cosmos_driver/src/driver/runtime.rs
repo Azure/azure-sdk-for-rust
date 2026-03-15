@@ -22,7 +22,13 @@ use crate::{
 };
 
 use super::cache::{AccountMetadataCache, ContainerCache};
-use super::{transport::CosmosTransport, CosmosDriver};
+use super::{
+    transport::{
+        http_client_factory::{self, DefaultHttpClientFactory, HttpClientFactory},
+        CosmosTransport,
+    },
+    CosmosDriver,
+};
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -77,11 +83,15 @@ pub struct CosmosDriverRuntime {
     /// Connection pool configuration for managing TCP connections.
     connection_pool: ConnectionPoolOptions,
 
-    /// HTTP transport manager with connection pools.
+    /// Bootstrap HTTP transport for initial metadata probes.
     ///
-    /// Manages separate pools for metadata and data plane operations,
-    /// with lazy initialization of emulator-specific pools.
-    transport: Arc<CosmosTransport>,
+    /// Uses HTTP/2-only to detect protocol support. Individual drivers
+    /// create their own `CosmosTransport` after the probe with the
+    /// negotiated HTTP version.
+    bootstrap_transport: Arc<CosmosTransport>,
+
+    /// Factory for creating HTTP clients, shared across per-account transports.
+    http_client_factory: Arc<dyn HttpClientFactory>,
 
     /// Thread-safe runtime options for operation options.
     runtime_options: SharedRuntimeOptions,
@@ -148,12 +158,14 @@ impl CosmosDriverRuntime {
         &self.connection_pool
     }
 
-    /// Returns the HTTP transport manager.
-    ///
-    /// The transport provides access to connection pools configured for
-    /// metadata and data plane operations, with automatic emulator detection.
-    pub(crate) fn transport(&self) -> &Arc<CosmosTransport> {
-        &self.transport
+    /// Returns the bootstrap transport for initial metadata probes.
+    pub(crate) fn bootstrap_transport(&self) -> &Arc<CosmosTransport> {
+        &self.bootstrap_transport
+    }
+
+    /// Returns the shared HTTP client factory for creating per-account transports.
+    pub(crate) fn http_client_factory(&self) -> &Arc<dyn HttpClientFactory> {
+        &self.http_client_factory
     }
 
     /// Returns the shared container cache.
@@ -530,7 +542,23 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(connection_pool.clone())?);
+        let http_client_factory: Arc<dyn HttpClientFactory> =
+            Arc::new(DefaultHttpClientFactory::new());
+
+        // Bootstrap transport: HTTP/2-only for the initial protocol probe.
+        // If HTTP/2 is disabled by the user, fall back to HTTP/1.1.
+        let bootstrap_version = if connection_pool.is_http2_allowed() {
+            http_client_factory::NegotiatedHttpVersion::Http2
+        } else {
+            http_client_factory::NegotiatedHttpVersion::Http11
+        };
+        let bootstrap_transport = Arc::new(
+            CosmosTransport::with_factory(
+                connection_pool.clone(),
+                http_client_factory.clone(),
+                bootstrap_version,
+            )?,
+        );
 
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
@@ -549,7 +577,8 @@ impl CosmosDriverRuntimeBuilder {
         Ok(CosmosDriverRuntime {
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
-            transport,
+            bootstrap_transport,
+            http_client_factory,
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
