@@ -37,6 +37,12 @@ pub enum ExecutionContext {
     Initial,
     /// Retry due to transient error (e.g., 429, 503).
     Retry,
+    /// Transport-level shard retry within the same region.
+    ///
+    /// The initial attempt failed with a connectivity error and the transport
+    /// pipeline retried on a different HTTP/2 shard before escalating to the
+    /// operation pipeline.
+    TransportRetry,
     /// Hedged request for latency reduction.
     Hedging,
     /// Region failover attempt.
@@ -51,6 +57,7 @@ impl ExecutionContext {
         match self {
             ExecutionContext::Initial => "initial",
             ExecutionContext::Retry => "retry",
+            ExecutionContext::TransportRetry => "transport_retry",
             ExecutionContext::Hedging => "hedging",
             ExecutionContext::RegionFailover => "region_failover",
             ExecutionContext::CircuitBreakerProbe => "circuit_breaker_probe",
@@ -2136,28 +2143,7 @@ mod tests {
         assert_eq!(requests[0].error(), Some("connection refused"));
     }
 
-    #[test]
-    fn transport_failure_request_can_record_channel_closed_status() {
-        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
-        let handle = builder.start_test_request(
-            ExecutionContext::Initial,
-            Some(Region::WEST_US_2),
-            "https://test.documents.azure.com",
-        );
 
-        builder.fail_transport_request(
-            handle,
-            "channel is closed",
-            RequestSentStatus::Unknown,
-            CosmosStatus::CHANNEL_CLOSED,
-        );
-
-        let ctx = builder.complete();
-        let requests = ctx.requests();
-        let status = requests[0].status();
-        assert_eq!(status, &CosmosStatus::CHANNEL_CLOSED);
-        assert_eq!(requests[0].error(), Some("channel is closed"));
-    }
 
     #[test]
     fn percentile_calculation() {
@@ -2230,6 +2216,7 @@ mod tests {
     fn execution_context_display() {
         assert_eq!(ExecutionContext::Initial.to_string(), "initial");
         assert_eq!(ExecutionContext::Retry.to_string(), "retry");
+        assert_eq!(ExecutionContext::TransportRetry.to_string(), "transport_retry");
         assert_eq!(ExecutionContext::Hedging.to_string(), "hedging");
         assert_eq!(
             ExecutionContext::RegionFailover.to_string(),

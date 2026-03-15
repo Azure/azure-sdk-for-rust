@@ -15,7 +15,6 @@
 //! - Other HTTP errors → Abort
 
 use azure_core::http::headers::Headers;
-use std::error::Error as _;
 
 use crate::{
     driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
@@ -267,17 +266,7 @@ fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azu
         None => String::new(),
     };
 
-    let mut detail_parts = vec![error.to_string()];
-    let mut source = error.source();
-    while let Some(cause) = source {
-        let cause_str = cause.to_string();
-        if detail_parts.last() != Some(&cause_str) {
-            detail_parts.push(cause_str);
-        }
-        source = cause.source();
-    }
-
-    let detail_summary = detail_parts.join(": ");
+    let detail_summary = crate::driver::error_chain_summary(&error);
     let message = format!(
         "Cosmos DB transport failure HTTP {}{}: {} (kind: {}). Details: {}",
         u16::from(status_code),

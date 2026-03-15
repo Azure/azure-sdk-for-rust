@@ -104,9 +104,9 @@ impl ShardedHttpTransport {
         };
 
         let shard_id = shard.id;
-        shard.record_request_start();
+        let guard = shard.start_request();
         let result = shard.client.execute_request(request).await;
-        shard.record_request_finish(&result);
+        guard.finish(&result);
         let shard_diagnostics = Some(shard.transport_diagnostics());
 
         TransportDispatch {
@@ -258,16 +258,42 @@ impl EndpointShardPool {
     }
 
     fn select_shard(&self, excluded_shard_id: Option<u64>) -> azure_core::Result<Arc<ClientShard>> {
-        let snapshot = self
-            .shards
-            .read()
-            .expect("shard lock poisoned")
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>();
+        let max_streams = self.connection_pool.max_http2_streams_per_client();
 
-        if snapshot.is_empty() {
-            return self.try_create_shard()?.ok_or_else(|| {
+        // Fast path: select in-place under read lock, clone only the winner.
+        {
+            let shards = self.shards.read().expect("shard lock poisoned");
+
+            if !shards.is_empty() {
+                let active_count = self.active_shard_count_from_slice(&shards, excluded_shard_id);
+
+                // Try least-loaded with capacity among active shards
+                if let Some(shard) = shards
+                    .iter()
+                    .filter(|s| s.is_selectable(excluded_shard_id))
+                    .take(active_count)
+                    .filter(|s| s.inflight() < max_streams)
+                    .min_by_key(|s| s.inflight())
+                {
+                    return Ok(Arc::clone(shard));
+                }
+            }
+            // Read lock dropped here before potential write lock in try_create_shard.
+        }
+
+        // All active shards at capacity (or pool is empty) — try creating a new one.
+        if let Some(shard) = self.try_create_shard()? {
+            return Ok(shard);
+        }
+
+        // Fallback: least-loaded of all selectable shards (over-capacity).
+        let shards = self.shards.read().expect("shard lock poisoned");
+        shards
+            .iter()
+            .filter(|s| s.is_selectable(excluded_shard_id))
+            .min_by_key(|s| s.inflight())
+            .cloned()
+            .ok_or_else(|| {
                 azure_core::Error::with_message(
                     ErrorKind::Other,
                     format!(
@@ -275,77 +301,34 @@ impl EndpointShardPool {
                         self.endpoint.0
                     ),
                 )
-            });
-        }
-
-        let active_count = self.active_shard_count(&snapshot, excluded_shard_id);
-        if let Some(shard) = Self::least_loaded_with_capacity(
-            snapshot
-                .iter()
-                .filter(|shard| shard.is_selectable(excluded_shard_id))
-                .take(active_count)
-                .cloned(),
-            self.connection_pool.max_http2_streams_per_client(),
-        ) {
-            return Ok(shard);
-        }
-
-        if let Some(shard) = self.try_create_shard()? {
-            return Ok(shard);
-        }
-
-        Self::least_loaded(
-            snapshot
-                .into_iter()
-                .filter(|shard| shard.is_selectable(excluded_shard_id)),
-        )
-        .ok_or_else(|| {
-            azure_core::Error::with_message(
-                ErrorKind::Other,
-                format!(
-                    "endpoint shard pool {} has no available shards",
-                    self.endpoint.0
-                ),
-            )
-        })
+            })
     }
 
-    fn active_shard_count(
+    fn active_shard_count_from_slice(
         &self,
-        snapshot: &[Arc<ClientShard>],
+        shards: &[Arc<ClientShard>],
         excluded_shard_id: Option<u64>,
     ) -> usize {
-        let selectable = snapshot
-            .iter()
-            .filter(|shard| shard.is_selectable(excluded_shard_id))
-            .collect::<Vec<_>>();
-        if selectable.is_empty() {
+        let mut selectable_count = 0usize;
+        let mut total_inflight = 0u32;
+
+        for shard in shards {
+            if shard.is_selectable(excluded_shard_id) {
+                selectable_count += 1;
+                total_inflight += shard.inflight();
+            }
+        }
+
+        if selectable_count == 0 {
             return 0;
         }
 
-        let total_inflight = selectable.iter().map(|shard| shard.inflight()).sum::<u32>() as usize;
         let max_streams = self.connection_pool.max_http2_streams_per_client() as usize;
-        let needed = (total_inflight + 1).div_ceil(max_streams);
+        let needed = (total_inflight as usize + 1).div_ceil(max_streams);
         needed
             .max(self.connection_pool.min_http2_connections_per_endpoint())
-            .min(selectable.len())
+            .min(selectable_count)
             .max(1)
-    }
-
-    fn least_loaded_with_capacity(
-        shards: impl IntoIterator<Item = Arc<ClientShard>>,
-        max_streams_per_client: u32,
-    ) -> Option<Arc<ClientShard>> {
-        shards
-            .into_iter()
-            .filter(|shard| shard.inflight() < max_streams_per_client)
-            .min_by_key(|shard| shard.inflight())
-    }
-
-    fn least_loaded(
-        shards: impl IntoIterator<Item = Arc<ClientShard>>,
-    ) -> Option<Arc<ClientShard>> {
-        shards.into_iter().min_by_key(|shard| shard.inflight())
     }
 
     fn can_select_different_shard(&self, excluded_shard_id: u64) -> bool {
@@ -390,68 +373,94 @@ impl EndpointShardPool {
         let min_clients = self.connection_pool.min_http2_connections_per_endpoint();
         let max_clients = self.connection_pool.max_http2_connections_per_endpoint();
 
-        let mut shards = self.shards.write().expect("shard lock poisoned");
+        // Phase 1: evaluate, mark, and remove under write lock.
+        // Determine how many replacement shards are needed but do NOT build
+        // them here — `build_shard` performs TCP/TLS which would block
+        // concurrent `select_shard` readers.
+        let shards_needed = {
+            let mut shards = self.shards.write().expect("shard lock poisoned");
 
-        if shards.is_empty() {
-            while shards.len() < min_clients {
-                let shard = self.build_shard(shards.len())?;
-                shards.push(Arc::new(shard));
+            if shards.is_empty() {
+                min_clients.saturating_sub(shards.len())
+            } else {
+                let snapshots = shards
+                    .iter()
+                    .map(|shard| shard.snapshot())
+                    .collect::<Vec<_>>();
+                let probe_candidate = pick_probe_candidate(&snapshots, threshold, grace, now);
+                let has_healthy_peer = snapshots.iter().any(|snapshot| {
+                    !snapshot.marked_for_eviction
+                        && (snapshot.consecutive_failures < threshold
+                            || snapshot.has_recent_success(now, grace))
+                });
+
+                let mut needs_probe_replacement = false;
+                for shard in shards.iter() {
+                    let snapshot = shard.snapshot();
+                    let should_mark = match probe_candidate {
+                        Some(probe_id) => snapshot.id == probe_id,
+                        None => {
+                            has_healthy_peer
+                                && snapshot.consecutive_failures >= threshold
+                                && !snapshot.marked_for_eviction
+                                && !snapshot.has_recent_success(now, grace)
+                        }
+                    };
+
+                    if should_mark {
+                        if probe_candidate == Some(snapshot.id) {
+                            needs_probe_replacement = true;
+                        }
+                        shard.mark_for_eviction();
+                    }
+                }
+
+                shards.retain(|shard| !(shard.is_marked_for_eviction() && shard.inflight() == 0));
+
+                // Reclaim idle overflow shards
+                while shards.len() > min_clients {
+                    let should_remove = shards.last().is_some_and(|shard| {
+                        !shard.is_marked_for_eviction() && shard.is_idle_for(now, idle_timeout)
+                    });
+                    if !should_remove {
+                        break;
+                    }
+                    shards.pop();
+                }
+
+                // Calculate how many shards we need to build outside the lock.
+                let mut needed = 0;
+                if needs_probe_replacement && shards.len() < max_clients {
+                    needed += 1;
+                }
+                needed += min_clients.saturating_sub(shards.len() + needed);
+                needed
             }
+            // Write lock dropped here.
+        };
+
+        if shards_needed == 0 {
             return Ok(());
         }
 
-        let snapshots = shards
-            .iter()
-            .map(|shard| shard.snapshot())
-            .collect::<Vec<_>>();
-        let probe_candidate = pick_probe_candidate(&snapshots, threshold, grace, now);
-        let has_healthy_peer = snapshots.iter().any(|snapshot| {
-            !snapshot.marked_for_eviction
-                && (snapshot.consecutive_failures < threshold
-                    || snapshot.has_recent_success(now, grace))
-        });
+        // Phase 2: build replacement shards outside the lock. This is the
+        // expensive part (TCP connect, TLS handshake) and must not block
+        // concurrent `select_shard` readers.
+        let mut new_shards = Vec::with_capacity(shards_needed);
+        for _ in 0..shards_needed {
+            // Use 0 as ordinal placeholder — the actual ordinal is set when inserting.
+            let shard = self.build_shard(0)?;
+            new_shards.push(Arc::new(shard));
+        }
 
-        let mut needs_probe_replacement = false;
-        for shard in shards.iter() {
-            let snapshot = shard.snapshot();
-            let should_mark = match probe_candidate {
-                Some(probe_id) => snapshot.id == probe_id,
-                None => {
-                    has_healthy_peer
-                        && snapshot.consecutive_failures >= threshold
-                        && !snapshot.marked_for_eviction
-                        && !snapshot.has_recent_success(now, grace)
+        // Phase 3: re-acquire write lock and insert the new shards.
+        {
+            let mut shards = self.shards.write().expect("shard lock poisoned");
+            for new_shard in new_shards {
+                if shards.len() < max_clients {
+                    shards.push(new_shard);
                 }
-            };
-
-            if should_mark {
-                if probe_candidate == Some(snapshot.id) {
-                    needs_probe_replacement = true;
-                }
-                shard.mark_for_eviction();
             }
-        }
-
-        shards.retain(|shard| !(shard.is_marked_for_eviction() && shard.inflight() == 0));
-
-        if needs_probe_replacement && shards.len() < max_clients {
-            let shard = self.build_shard(shards.len())?;
-            shards.push(Arc::new(shard));
-        }
-
-        while shards.len() > min_clients {
-            let should_remove = shards.last().is_some_and(|shard| {
-                !shard.is_marked_for_eviction() && shard.is_idle_for(now, idle_timeout)
-            });
-            if !should_remove {
-                break;
-            }
-            shards.pop();
-        }
-
-        while shards.len() < min_clients {
-            let shard = self.build_shard(shards.len())?;
-            shards.push(Arc::new(shard));
         }
 
         Ok(())
@@ -496,14 +505,27 @@ impl ClientShard {
         self.inflight.load(Ordering::Relaxed)
     }
 
-    fn record_request_start(&self) {
+    /// Begins tracking an inflight request and returns an RAII guard.
+    ///
+    /// The guard ensures the inflight counter is always decremented, even if
+    /// the async transport future is cancelled (e.g., by a timeout race in
+    /// `execute_http_attempt`). Call [`InflightGuard::finish`] with the result
+    /// to record success/failure state. If the guard is dropped without
+    /// `finish`, only the inflight counter is decremented.
+    fn start_request(&self) -> InflightGuard<'_> {
         self.inflight.fetch_add(1, Ordering::Relaxed);
-        let mut state = self.state.lock().expect("shard state lock poisoned");
-        state.last_request_at = Instant::now();
-        state.total_requests = state.total_requests.saturating_add(1);
+        {
+            let mut state = self.state.lock().expect("shard state lock poisoned");
+            state.last_request_at = Instant::now();
+            state.total_requests = state.total_requests.saturating_add(1);
+        }
+        InflightGuard {
+            shard: self,
+            finished: false,
+        }
     }
 
-    fn record_request_finish(&self, result: &azure_core::Result<AsyncRawResponse>) {
+    fn record_request_outcome(&self, result: &azure_core::Result<AsyncRawResponse>) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
         let mut state = self.state.lock().expect("shard state lock poisoned");
         state.last_request_at = Instant::now();
@@ -516,6 +538,42 @@ impl ClientShard {
         }
     }
 
+    fn decrement_inflight(&self) {
+        self.inflight.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+/// RAII guard that ensures the inflight counter on a [`ClientShard`] is always
+/// decremented, even when an async future is cancelled mid-flight.
+///
+/// Call [`finish`](Self::finish) to record the request outcome (success/failure
+/// state). If the guard is dropped without calling `finish` (e.g., the future
+/// was cancelled by a timeout race), only the inflight counter is decremented —
+/// no success/failure state change is recorded, which is the safest default.
+struct InflightGuard<'a> {
+    shard: &'a ClientShard,
+    finished: bool,
+}
+
+impl<'a> InflightGuard<'a> {
+    /// Records the request outcome and consumes the guard.
+    ///
+    /// This decrements the inflight counter and updates success/failure state.
+    fn finish(mut self, result: &azure_core::Result<AsyncRawResponse>) {
+        self.finished = true;
+        self.shard.record_request_outcome(result);
+    }
+}
+
+impl Drop for InflightGuard<'_> {
+    fn drop(&mut self) {
+        if !self.finished {
+            self.shard.decrement_inflight();
+        }
+    }
+}
+
+impl ClientShard {
     fn snapshot(&self) -> ClientShardHealthSnapshot {
         let state = self.state.lock().expect("shard state lock poisoned");
         ClientShardHealthSnapshot {
@@ -567,6 +625,21 @@ impl ClientShard {
             state.total_failures,
             state.marked_for_eviction,
         )
+    }
+
+    /// Bumps inflight for test setup (not cancellation-safe; use `start_request` in production).
+    #[cfg(test)]
+    fn record_request_start(&self) {
+        self.inflight.fetch_add(1, Ordering::Relaxed);
+        let mut state = self.state.lock().expect("shard state lock poisoned");
+        state.last_request_at = Instant::now();
+        state.total_requests = state.total_requests.saturating_add(1);
+    }
+
+    /// Records outcome for test setup (not cancellation-safe; use `InflightGuard::finish` in production).
+    #[cfg(test)]
+    fn record_request_finish(&self, result: &azure_core::Result<AsyncRawResponse>) {
+        self.record_request_outcome(result);
     }
 }
 

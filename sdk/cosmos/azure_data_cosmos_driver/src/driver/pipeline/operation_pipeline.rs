@@ -34,7 +34,8 @@ use super::{
 };
 
 use crate::driver::transport::{
-    transport_pipeline::execute_transport_pipeline, AuthorizationContext,
+    transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
+    AuthorizationContext,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
@@ -134,12 +135,14 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
             transport_request,
-            &selected_transport,
-            operation.is_read_only() || operation.is_idempotent(),
-            credential,
-            user_agent,
-            pipeline_type,
-            transport_security,
+            &TransportPipelineContext {
+                transport: &selected_transport,
+                allow_sent_transport_retry: operation.is_read_only() || operation.is_idempotent(),
+                credential,
+                user_agent,
+                pipeline_type,
+                transport_security,
+            },
             &mut diagnostics,
         )
         .await;

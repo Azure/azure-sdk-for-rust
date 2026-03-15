@@ -11,7 +11,6 @@
 //! request-sent-status tracking, per-attempt diagnostics, and deadline
 //! enforcement.
 
-use std::error::Error as _;
 use std::time::{Duration, Instant};
 
 use azure_core::error::ErrorKind;
@@ -138,6 +137,17 @@ pub(crate) fn evaluate_transport_retry(
     }
 }
 
+/// Context parameters for the transport pipeline that remain constant
+/// across retries within a single operation attempt.
+pub(crate) struct TransportPipelineContext<'a> {
+    pub transport: &'a AdaptiveTransport,
+    pub allow_sent_transport_retry: bool,
+    pub credential: &'a Credential,
+    pub user_agent: &'a azure_core::http::headers::HeaderValue,
+    pub pipeline_type: PipelineType,
+    pub transport_security: TransportSecurity,
+}
+
 /// Executes a single transport attempt.
 ///
 /// Applies headers, signs the request, sends it via the selected transport, and
@@ -147,12 +157,7 @@ pub(crate) fn evaluate_transport_retry(
 /// This is the core transport loop described in §5.2 of the spec.
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
-    transport: &AdaptiveTransport,
-    allow_sent_transport_retry: bool,
-    credential: &Credential,
-    user_agent: &azure_core::http::headers::HeaderValue,
-    pipeline_type: PipelineType,
-    transport_security: TransportSecurity,
+    ctx: &TransportPipelineContext<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
@@ -169,7 +174,9 @@ pub(crate) async fn execute_transport_pipeline(
         }
 
         // Record this attempt in diagnostics
-        let execution_context = if throttle_state.attempt_count == 0 {
+        let execution_context = if local_connectivity_retry_count > 0 {
+            ExecutionContext::TransportRetry
+        } else if throttle_state.attempt_count == 0 {
             request.execution_context
         } else {
             ExecutionContext::Retry
@@ -177,9 +184,9 @@ pub(crate) async fn execute_transport_pipeline(
 
         let request_handle = diagnostics.start_request(
             execution_context,
-            pipeline_type,
-            transport_security,
-            transport.diagnostics_kind(),
+            ctx.pipeline_type,
+            ctx.transport_security,
+            ctx.transport.diagnostics_kind(),
             &request.endpoint,
         );
 
@@ -206,10 +213,10 @@ pub(crate) async fn execute_transport_pipeline(
         );
 
         // Apply standard Cosmos headers
-        apply_cosmos_headers(&mut http_request, user_agent);
+        apply_cosmos_headers(&mut http_request, ctx.user_agent);
 
         // Sign the request
-        if let Err(e) = sign_request(&mut http_request, credential, &request.auth_context).await {
+        if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await {
             diagnostics.fail_request(request_handle, e.to_string(), RequestSentStatus::NotSent);
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
@@ -228,7 +235,7 @@ pub(crate) async fn execute_transport_pipeline(
 
         let result = execute_http_attempt(
             &http_request,
-            transport,
+            ctx.transport,
             per_request_timeout,
             request_handle,
             diagnostics,
@@ -238,10 +245,10 @@ pub(crate) async fn execute_transport_pipeline(
 
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
-                && should_retry_connectivity_failure(&result.result, allow_sent_transport_retry)
-                && transport.can_retry_on_different_shard(&http_request, failed_shard_id)
+                && should_retry_connectivity_failure(&result.result, ctx.allow_sent_transport_retry)
+                && ctx.transport.can_retry_on_different_shard(&http_request, failed_shard_id)
         }) {
-            if let Some(failed_transport_shard) = failed_transport_shard(&result.result, &result) {
+            if let Some(failed_transport_shard) = failed_transport_shard(&result) {
                 diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
             }
             local_connectivity_retry_count += 1;
@@ -353,7 +360,7 @@ async fn execute_http_attempt(
                 diagnostics.timeout_request(request_handle);
                 ExecutedTransportAttempt {
                     result: deadline_exceeded_result(RequestSentStatus::Unknown),
-                    shard_id: excluded_shard_id,
+                    shard_id: None,
                     shard_diagnostics: None,
                 }
             }
@@ -469,8 +476,7 @@ fn should_retry_connectivity_failure(
             ..
         } => {
             is_connectivity_error(error)
-                && (request_sent.definitely_not_sent()
-                    || (allow_sent_transport_retry && !request_sent.definitely_not_sent()))
+                && (request_sent.definitely_not_sent() || allow_sent_transport_retry)
         }
         _ => false,
     }
@@ -481,18 +487,7 @@ fn is_connectivity_error(error: &azure_core::Error) -> bool {
 }
 
 fn format_transport_error_details(error: &azure_core::Error) -> String {
-    let mut parts = vec![error.to_string()];
-    let mut source = error.source();
-
-    while let Some(cause) = source {
-        let cause_str = cause.to_string();
-        if parts.last() != Some(&cause_str) {
-            parts.push(cause_str);
-        }
-        source = cause.source();
-    }
-
-    parts.join(": ")
+    crate::driver::error_chain_summary(error)
 }
 
 fn transport_error_result(
@@ -554,11 +549,10 @@ struct ExecutedTransportAttempt {
 }
 
 fn failed_transport_shard(
-    result: &TransportResult,
     attempt: &ExecutedTransportAttempt,
 ) -> Option<FailedTransportShardDiagnostics> {
     let transport_shard = attempt.shard_diagnostics.clone()?;
-    match &result.outcome {
+    match &attempt.result.outcome {
         TransportOutcome::TransportError {
             error,
             request_sent,
@@ -841,12 +835,14 @@ mod tests {
 
         let result = execute_transport_pipeline(
             request,
-            &client,
-            false,
-            &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
-            &azure_core::http::headers::HeaderValue::from_static("test-agent"),
-            PipelineType::Metadata,
-            TransportSecurity::Secure,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                pipeline_type: PipelineType::Metadata,
+                transport_security: TransportSecurity::Secure,
+            },
             &mut diagnostics,
         )
         .await;
@@ -975,12 +971,14 @@ mod tests {
 
         let result = execute_transport_pipeline(
             test_request(Some(Instant::now() + Duration::from_secs(2))),
-            &client,
-            false,
-            &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
-            &azure_core::http::headers::HeaderValue::from_static("test-agent"),
-            PipelineType::DataPlane,
-            TransportSecurity::Secure,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+            },
             &mut diagnostics,
         )
         .await;
@@ -1010,12 +1008,14 @@ mod tests {
         );
         let result_without_retry = execute_transport_pipeline(
             test_request(Some(Instant::now() + Duration::from_secs(2))),
-            &client_without_retry,
-            false,
-            &credential,
-            &user_agent,
-            PipelineType::DataPlane,
-            TransportSecurity::Secure,
+            &TransportPipelineContext {
+                transport: &client_without_retry,
+                allow_sent_transport_retry: false,
+                credential: &credential,
+                user_agent: &user_agent,
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+            },
             &mut diagnostics,
         )
         .await;
@@ -1044,12 +1044,14 @@ mod tests {
         );
         let result_with_retry = execute_transport_pipeline(
             test_request(Some(Instant::now() + Duration::from_secs(2))),
-            &client_with_retry,
-            true,
-            &credential,
-            &user_agent,
-            PipelineType::DataPlane,
-            TransportSecurity::Secure,
+            &TransportPipelineContext {
+                transport: &client_with_retry,
+                allow_sent_transport_retry: true,
+                credential: &credential,
+                user_agent: &user_agent,
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+            },
             &mut diagnostics,
         )
         .await;
