@@ -111,6 +111,8 @@ impl SessionContainer {
         let np = name_path(container);
         let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
 
+        let rid = ResourceId::new(collection_rid.to_owned());
+
         // RID mismatch detection: if the name pointed at a different RID, clear old.
         if let Some(old_rid) = guard.name_to_rid.get(&np) {
             if old_rid.as_str() != collection_rid {
@@ -118,14 +120,9 @@ impl SessionContainer {
                 guard.tokens.remove(&old_rid);
             }
         }
-        guard
-            .name_to_rid
-            .insert(np, ResourceId::new(collection_rid.to_owned()));
+        guard.name_to_rid.insert(np, rid.clone());
 
-        let pk_map = guard
-            .tokens
-            .entry(ResourceId::new(collection_rid.to_owned()))
-            .or_default();
+        let pk_map = guard.tokens.entry(rid).or_default();
 
         for segment in session_token_value.split(',') {
             let segment = segment.trim();

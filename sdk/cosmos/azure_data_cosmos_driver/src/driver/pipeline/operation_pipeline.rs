@@ -63,13 +63,13 @@ pub(crate) async fn execute_operation_pipeline(
     let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
-    let session_capturing_enabled = !effective_options
+    let session_capturing_disabled = effective_options
         .session_capturing_disabled
         .unwrap_or(false);
     let read_consistency_strategy = effective_options
         .read_consistency_strategy
         .unwrap_or(ReadConsistencyStrategy::Default);
-    let session_consistency_active = session_capturing_enabled
+    let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
     let max_session_retries = effective_options
         .max_session_retry_count

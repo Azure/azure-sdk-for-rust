@@ -50,7 +50,7 @@ pub struct RuntimeOptions {
     pub endpoint_unavailability_ttl: Option<Duration>,
     /// Whether session token capturing is disabled.
     ///
-    /// When `None` or `Some(false)`, session tokens are captured, resolved, and cleared
+    /// When `None` or `Some(false)`, session tokens are captured and resolved
     /// from response headers for session consistency (the default behavior).
     /// Set to `Some(true)` to disable session token management for scenarios where
     /// session consistency is not needed.
@@ -221,7 +221,7 @@ impl RuntimeOptionsBuilder {
 
     /// Disables session token capturing.
     ///
-    /// When `true`, the driver will not capture, resolve, or clear session tokens.
+    /// When `true`, the driver will not capture or resolve session tokens.
     /// Defaults to `false` (session capturing is enabled).
     pub fn with_session_capturing_disabled(mut self, value: bool) -> Self {
         self.options.session_capturing_disabled = Some(value);

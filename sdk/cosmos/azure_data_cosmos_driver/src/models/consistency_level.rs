@@ -138,22 +138,66 @@ mod tests {
     }
 
     #[test]
-    fn display_roundtrip() {
-        for level in &[
-            DefaultConsistencyLevel::Strong,
-            DefaultConsistencyLevel::BoundedStaleness,
-            DefaultConsistencyLevel::Session,
-            DefaultConsistencyLevel::ConsistentPrefix,
-            DefaultConsistencyLevel::Eventual,
-        ] {
-            assert_eq!(
-                level
-                    .to_string()
-                    .parse::<DefaultConsistencyLevel>()
-                    .unwrap(),
-                *level
-            );
-        }
+    fn display_formats_correctly() {
+        assert_eq!(DefaultConsistencyLevel::Strong.to_string(), "Strong");
+        assert_eq!(
+            DefaultConsistencyLevel::BoundedStaleness.to_string(),
+            "BoundedStaleness"
+        );
+        assert_eq!(DefaultConsistencyLevel::Session.to_string(), "Session");
+        assert_eq!(
+            DefaultConsistencyLevel::ConsistentPrefix.to_string(),
+            "ConsistentPrefix"
+        );
+        assert_eq!(DefaultConsistencyLevel::Eventual.to_string(), "Eventual");
+    }
+
+    #[test]
+    fn serde_serializes_correctly() {
+        assert_eq!(
+            serde_json::to_string(&DefaultConsistencyLevel::Strong).unwrap(),
+            "\"Strong\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DefaultConsistencyLevel::BoundedStaleness).unwrap(),
+            "\"BoundedStaleness\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DefaultConsistencyLevel::Session).unwrap(),
+            "\"Session\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DefaultConsistencyLevel::ConsistentPrefix).unwrap(),
+            "\"ConsistentPrefix\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DefaultConsistencyLevel::Eventual).unwrap(),
+            "\"Eventual\""
+        );
+    }
+
+    #[test]
+    fn serde_deserializes_correctly() {
+        assert_eq!(
+            serde_json::from_str::<DefaultConsistencyLevel>("\"Strong\"").unwrap(),
+            DefaultConsistencyLevel::Strong
+        );
+        assert_eq!(
+            serde_json::from_str::<DefaultConsistencyLevel>("\"BoundedStaleness\"").unwrap(),
+            DefaultConsistencyLevel::BoundedStaleness
+        );
+        assert_eq!(
+            serde_json::from_str::<DefaultConsistencyLevel>("\"Session\"").unwrap(),
+            DefaultConsistencyLevel::Session
+        );
+        assert_eq!(
+            serde_json::from_str::<DefaultConsistencyLevel>("\"ConsistentPrefix\"").unwrap(),
+            DefaultConsistencyLevel::ConsistentPrefix
+        );
+        assert_eq!(
+            serde_json::from_str::<DefaultConsistencyLevel>("\"Eventual\"").unwrap(),
+            DefaultConsistencyLevel::Eventual
+        );
     }
 
     #[test]
@@ -161,14 +205,5 @@ mod tests {
         assert!(DefaultConsistencyLevel::Session.is_session());
         assert!(!DefaultConsistencyLevel::Strong.is_session());
         assert!(!DefaultConsistencyLevel::Eventual.is_session());
-    }
-
-    #[test]
-    fn serde_roundtrip() {
-        let level = DefaultConsistencyLevel::Session;
-        let json = serde_json::to_string(&level).unwrap();
-        assert_eq!(json, "\"Session\"");
-        let parsed: DefaultConsistencyLevel = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, level);
     }
 }
