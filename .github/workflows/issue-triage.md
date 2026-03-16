@@ -13,7 +13,20 @@ on:
 
 permissions: read-all
 
-network: defaults
+network:
+  allowed:
+    - api.business.githubcopilot.com
+    - api.enterprise.githubcopilot.com
+    - api.github.com
+    - api.githubcopilot.com
+    - api.individual.githubcopilot.com
+    - host.docker.internal
+    - raw.githubusercontent.com
+    - release-assets.githubusercontent.com
+    - telemetry.enterprise.githubcopilot.com
+  blocked:
+    - github.com
+    - registry.npmjs.org
 
 safe-outputs:
   add-labels:
