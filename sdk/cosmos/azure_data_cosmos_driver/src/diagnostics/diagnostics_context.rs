@@ -205,6 +205,53 @@ impl AsRef<str> for TransportKind {
     }
 }
 
+/// The HTTP protocol version used by the selected transport.
+///
+/// This makes the negotiated standard gateway protocol visible in diagnostics,
+/// which is especially important after a sticky fallback from HTTP/2 to HTTP/1.1.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum TransportHttpVersion {
+    /// HTTP/1.1 transport.
+    Http11,
+
+    /// HTTP/2 transport.
+    Http2,
+}
+
+impl TransportHttpVersion {
+    /// Returns the string representation of this transport HTTP version.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TransportHttpVersion::Http11 => "http11",
+            TransportHttpVersion::Http2 => "http2",
+        }
+    }
+
+    /// Returns true if this request used HTTP/1.1.
+    pub fn is_http11(self) -> bool {
+        matches!(self, TransportHttpVersion::Http11)
+    }
+
+    /// Returns true if this request used HTTP/2.
+    pub fn is_http2(self) -> bool {
+        matches!(self, TransportHttpVersion::Http2)
+    }
+}
+
+impl std::fmt::Display for TransportHttpVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for TransportHttpVersion {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl TransportSecurity {
     /// Returns the string representation of this transport security mode.
     pub fn as_str(self) -> &'static str {
@@ -336,6 +383,9 @@ pub struct RequestDiagnostics {
     /// The concrete transport kind used for this request.
     transport_kind: TransportKind,
 
+    /// The HTTP protocol version used by the selected transport.
+    transport_http_version: TransportHttpVersion,
+
     /// Region this request was sent to.
     region: Option<Region>,
 
@@ -403,6 +453,7 @@ impl RequestDiagnostics {
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
+        transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
     ) -> Self {
         Self {
@@ -410,6 +461,7 @@ impl RequestDiagnostics {
             pipeline_type,
             transport_security,
             transport_kind,
+            transport_http_version,
             region: endpoint.region().cloned(),
             endpoint: endpoint.url().as_str().to_owned(),
             // Status is set when the request completes via `complete()`.
@@ -467,29 +519,6 @@ impl RequestDiagnostics {
             StatusCode::RequestTimeout,
             Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
         );
-        self.duration_ms = self
-            .completed_at
-            .unwrap()
-            .duration_since(self.started_at)
-            .as_millis() as u64;
-    }
-
-    /// Records failure of this request with an error message.
-    ///
-    /// Use this for transport-level failures (connection errors, DNS failures, etc.)
-    /// where no HTTP response was received.
-    ///
-    /// # Note on retry safety
-    ///
-    /// The `request_sent` parameter indicates whether the request bytes were
-    /// written to the network. This is critical for determining retry safety:
-    /// - `NotSent`: Safe to retry any operation
-    /// - `Sent`: Only safe to retry idempotent operations
-    /// - `Unknown`: Treat as potentially sent (conservative)
-    pub(crate) fn fail(&mut self, error: impl Into<String>, request_sent: RequestSentStatus) {
-        self.completed_at = Some(Instant::now());
-        self.with_error(error);
-        self.request_sent = request_sent;
         self.duration_ms = self
             .completed_at
             .unwrap()
@@ -587,6 +616,11 @@ impl RequestDiagnostics {
     /// Returns the concrete transport kind used for this request.
     pub fn transport_kind(&self) -> TransportKind {
         self.transport_kind
+    }
+
+    /// Returns the HTTP protocol version used by the selected transport.
+    pub fn transport_http_version(&self) -> TransportHttpVersion {
+        self.transport_http_version
     }
 
     /// Returns the region this request was sent to.
@@ -1188,6 +1222,7 @@ impl DiagnosticsContextBuilder {
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
+        transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
     ) -> RequestHandle {
         let request = RequestDiagnostics::new(
@@ -1195,6 +1230,7 @@ impl DiagnosticsContextBuilder {
             pipeline_type,
             transport_security,
             transport_kind,
+            transport_http_version,
             endpoint,
         );
         let handle = RequestHandle(self.requests.len());
@@ -1223,32 +1259,11 @@ impl DiagnosticsContextBuilder {
     /// 408 (Request Timeout) with sub-status [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`].
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
-    /// [`fail_request`](Self::fail_request) instead with the appropriate error.
+    /// [`fail_transport_request`](Self::fail_transport_request) with the
+    /// appropriate synthetic Cosmos status.
     pub(crate) fn timeout_request(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.timeout();
-        }
-    }
-
-    /// Records failure of a request with an error message.
-    ///
-    /// Should be called when a transport-level error occurs (connection failure,
-    /// DNS error, TLS error, etc.) and no HTTP response was received.
-    ///
-    /// # Parameters
-    ///
-    /// - `handle`: The request handle from [`start_request`](Self::start_request)
-    /// - `error`: The error message describing the failure
-    /// - `request_sent`: Whether the request was sent on the wire before failure.
-    ///   This is critical for retry safety - see [`RequestDiagnostics::fail`].
-    pub(crate) fn fail_request(
-        &mut self,
-        handle: RequestHandle,
-        error: impl Into<String>,
-        request_sent: RequestSentStatus,
-    ) {
-        if let Some(request) = self.requests.get_mut(handle.0) {
-            request.fail(error, request_sent);
         }
     }
 
@@ -1775,6 +1790,7 @@ mod tests {
                 PipelineType::DataPlane,
                 TransportSecurity::Secure,
                 TransportKind::Gateway,
+                TransportHttpVersion::Http11,
                 &cosmos_endpoint,
             )
         }
@@ -1978,6 +1994,7 @@ mod tests {
                 "pipeline_type": "data_plane",
                 "transport_security": "secure",
                 "transport_kind": "gateway",
+                "transport_http_version": "http11",
                 "region": "westus2",
                 "endpoint": "https://test.documents.azure.com/",
                 "status": "200",
@@ -2260,6 +2277,14 @@ mod tests {
     }
 
     #[test]
+    fn transport_http_version_classification() {
+        assert!(TransportHttpVersion::Http11.is_http11());
+        assert!(!TransportHttpVersion::Http11.is_http2());
+        assert!(TransportHttpVersion::Http2.is_http2());
+        assert!(!TransportHttpVersion::Http2.is_http11());
+    }
+
+    #[test]
     fn transport_security_default() {
         assert_eq!(TransportSecurity::default(), TransportSecurity::Secure);
     }
@@ -2302,6 +2327,18 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&TransportKind::Gateway20).unwrap(),
             "\"gateway20\""
+        );
+    }
+
+    #[test]
+    fn transport_http_version_serialization() {
+        assert_eq!(
+            serde_json::to_string(&TransportHttpVersion::Http11).unwrap(),
+            "\"http11\""
+        );
+        assert_eq!(
+            serde_json::to_string(&TransportHttpVersion::Http2).unwrap(),
+            "\"http2\""
         );
     }
 

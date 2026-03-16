@@ -446,10 +446,9 @@ impl EndpointShardPool {
 
                 shards.retain(|shard| !(shard.is_marked_for_eviction() && shard.inflight() == 0));
 
-                // TODO: Implement ReadHang eviction — detect shards with
-                // inflight > 0 but no success for a configurable duration
-                // (stuck TCP connections). The snapshot already contains
-                // `last_success_at` and `inflight` needed for this check.
+                // HTTP/2 keep-alive and ping timeouts are responsible for
+                // surfacing hung connections so eviction continues to key off
+                // transport failures rather than a separate ReadHang detector.
 
                 // Reclaim idle overflow shards
                 while shards.len() > min_clients {

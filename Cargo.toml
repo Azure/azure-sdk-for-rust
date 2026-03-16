@@ -113,6 +113,7 @@ flate2 = "1.1.9"
 futures = "0.3"
 getrandom = { version = "0.4" }
 gloo-timers = { version = "0.3" }
+h2 = "0.4.13"
 hdrhistogram = "7.5"
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }

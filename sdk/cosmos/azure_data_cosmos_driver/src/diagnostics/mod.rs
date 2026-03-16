@@ -24,5 +24,5 @@ pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
-    TransportKind, TransportSecurity, TransportShardDiagnostics,
+    TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };

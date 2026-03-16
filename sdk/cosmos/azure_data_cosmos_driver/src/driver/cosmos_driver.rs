@@ -17,6 +17,7 @@ use crate::{
 };
 use azure_core::http::Request;
 use futures::future::BoxFuture;
+use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
@@ -63,6 +64,40 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    #[cfg(feature = "reqwest")]
+    fn has_explicit_http2_incompatibility(error: &azure_core::Error) -> bool {
+        let mut source = error.source();
+        while let Some(cause) = source {
+            if let Some(h2_error) = cause.downcast_ref::<h2::Error>() {
+                return matches!(
+                    h2_error.reason(),
+                    Some(
+                        h2::Reason::HTTP_1_1_REQUIRED
+                            | h2::Reason::PROTOCOL_ERROR
+                            | h2::Reason::FRAME_SIZE_ERROR
+                    )
+                );
+            }
+            source = cause.source();
+        }
+        false
+    }
+
+    #[cfg(not(feature = "reqwest"))]
+    fn has_explicit_http2_incompatibility(_error: &azure_core::Error) -> bool {
+        false
+    }
+
+    fn should_downgrade_http2(
+        current_version: NegotiatedHttpVersion,
+        error: &azure_core::Error,
+        http2_allowed: bool,
+    ) -> bool {
+        http2_allowed
+            && matches!(current_version, NegotiatedHttpVersion::Http2)
+            && Self::has_explicit_http2_incompatibility(error)
+    }
+
     /// Fetches account properties using the bootstrap transport.
     ///
     /// This is used during initialization (before the per-account transport exists).
@@ -81,9 +116,12 @@ impl CosmosDriver {
 
     /// Probes the gateway's HTTP version and returns the negotiated version.
     ///
-    /// Tries HTTP/2-only first. If that fails with a connection/protocol error,
-    /// falls back to HTTP/1.1. The returned version is used to create the
-    /// per-account `CosmosTransport`.
+    /// Tries HTTP/2-only first. If that fails with an explicit HTTP/2
+    /// incompatibility signal, falls back to HTTP/1.1.
+    ///
+    /// Callers that need to force HTTP/1.1 can disable HTTP/2 in
+    /// [`crate::options::ConnectionPoolOptionsBuilder::with_is_http2_allowed`].
+    /// The returned version is used to create the per-account `CosmosTransport`.
     async fn probe_http_version(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
@@ -97,24 +135,18 @@ impl CosmosDriver {
         // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
         match Self::fetch_account_properties_with_runtime(runtime, account).await {
             Ok(props) => Ok((NegotiatedHttpVersion::Http2, props)),
-            Err(e) => {
-                // If the failure is a connection or protocol error, fall back to HTTP/1.1.
-                let is_protocol_failure = matches!(
-                    e.kind(),
-                    azure_core::error::ErrorKind::Connection | azure_core::error::ErrorKind::Io
-                );
-                if !is_protocol_failure {
-                    // Non-transport error (auth, 4xx, etc.) — propagate as-is.
-                    return Err(e);
-                }
-
+            Err(error)
+                if Self::should_downgrade_http2(
+                    NegotiatedHttpVersion::Http2,
+                    &error,
+                    runtime.connection_pool().is_http2_allowed(),
+                ) => {
                 tracing::info!(
                     endpoint = %AccountEndpoint::from(account),
-                    error = %e,
-                    "HTTP/2 probe failed; falling back to HTTP/1.1"
+                    error = %error,
+                    "HTTP/2 probe failed with protocol incompatibility; falling back to HTTP/1.1"
                 );
 
-                // Build a temporary HTTP/1.1 transport for the fallback fetch.
                 let pool = runtime.connection_pool();
                 let factory = runtime.http_client_factory();
                 let fallback_config =
@@ -134,6 +166,7 @@ impl CosmosDriver {
                 .await?;
                 Ok((NegotiatedHttpVersion::Http11, props))
             }
+            Err(error) => Err(error),
         }
     }
 
@@ -199,9 +232,9 @@ impl CosmosDriver {
 
     /// Fetches account properties using the current per-account transport.
     ///
-    /// If the fetch fails with a protocol/connection error, re-probes the HTTP
-    /// version and swaps the transport if it has changed (e.g., HTTP/2 was
-    /// disabled on the gateway since the last probe).
+    /// If the fetch fails with an explicit HTTP/2 incompatibility signal while
+    /// using HTTP/2, re-probes with HTTP/1.1 and swaps the transport if the
+    /// fallback succeeds.
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
@@ -222,33 +255,22 @@ impl CosmosDriver {
         .await
         {
             Ok(props) => Ok(props),
-            Err(e) => {
-                let is_protocol_failure = matches!(
-                    e.kind(),
-                    azure_core::error::ErrorKind::Connection | azure_core::error::ErrorKind::Io
-                );
-
-                if !is_protocol_failure || !runtime.connection_pool().is_http2_allowed() {
-                    return Err(e);
-                }
-
-                // The current transport failed with a protocol error.
-                // Re-probe to detect if the HTTP version changed.
-                let current_version = current_transport.negotiated_version();
-                let fallback_version = match current_version {
-                    NegotiatedHttpVersion::Http2 => NegotiatedHttpVersion::Http11,
-                    NegotiatedHttpVersion::Http11 => NegotiatedHttpVersion::Http2,
-                };
+            Err(error)
+                if Self::should_downgrade_http2(
+                    current_transport.negotiated_version(),
+                    &error,
+                    runtime.connection_pool().is_http2_allowed(),
+                ) => {
+                let fallback_version = NegotiatedHttpVersion::Http11;
 
                 tracing::info!(
                     endpoint = %endpoint,
-                    current = ?current_version,
+                    current = ?current_transport.negotiated_version(),
                     fallback = ?fallback_version,
-                    error = %e,
-                    "Metadata refresh failed; trying alternate HTTP version"
+                    error = %error,
+                    "Metadata refresh failed with protocol incompatibility; trying HTTP/1.1 fallback"
                 );
 
-                // Build a temporary transport with the alternate version.
                 let fallback_transport = CosmosTransport::with_factory(
                     runtime.connection_pool().clone(),
                     Arc::clone(runtime.http_client_factory()),
@@ -263,23 +285,12 @@ impl CosmosDriver {
                 )
                 .await?;
 
-                // The fallback succeeded — swap the transport.
-                // The old transport Arc is kept alive by any in-flight operations
-                // that cloned it before the swap. Its background health sweep will
-                // stop when the BackgroundTaskManager is dropped (on last Arc release).
-                // In-flight requests will complete on the old shards and then the
-                // old connections will close when the last Arc reference is released.
-                tracing::info!(
-                    endpoint = %endpoint,
-                    new_version = ?fallback_version,
-                    "Switching to alternate HTTP version after successful re-probe; \
-                     old transport will drain in-flight requests before closing"
-                );
                 *transport_lock.write().expect("transport lock poisoned") =
                     Arc::new(fallback_transport);
 
                 Ok(props)
             }
+            Err(error) => Err(error),
         }
     }
 
@@ -491,9 +502,9 @@ impl CosmosDriver {
     /// the account properties for regional endpoint resolution.
     ///
     /// This method is called automatically by
-    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
-    /// on a best-effort basis. Callers may invoke it again to retry if the
-    /// initial attempt failed (the result is idempotent).
+    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
+    /// Callers may invoke it again to retry if the initial attempt failed
+    /// (the result is idempotent).
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -864,6 +875,8 @@ impl CosmosDriver {
 #[cfg(test)]
 mod tests {
     use url::Url;
+
+    use azure_core::error::ErrorKind;
 
     use crate::{
         driver::CosmosDriverRuntimeBuilder,
@@ -1248,4 +1261,65 @@ mod tests {
         assert!(properties.write_region().is_none());
         assert!(properties.readable_regions().is_empty());
     }
+
+    #[test]
+    #[cfg(feature = "reqwest")]
+    fn http2_reason_http11_required_triggers_http11_downgrade() {
+        let error = azure_core::Error::with_error(
+            ErrorKind::Io,
+            h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+            "http2 not supported",
+        );
+
+        assert!(CosmosDriver::should_downgrade_http2(
+            NegotiatedHttpVersion::Http2,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn connection_error_without_http2_signal_does_not_trigger_downgrade() {
+        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            NegotiatedHttpVersion::Http2,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn io_error_without_http2_signal_does_not_trigger_downgrade() {
+        let error = azure_core::Error::with_message(ErrorKind::Io, "socket reset");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            NegotiatedHttpVersion::Http2,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn http11_errors_do_not_trigger_probe_back_to_http2() {
+        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            NegotiatedHttpVersion::Http11,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn downgrade_requires_http2_to_be_enabled() {
+        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            NegotiatedHttpVersion::Http2,
+            &error,
+            false,
+        ));
+    }
+
 }

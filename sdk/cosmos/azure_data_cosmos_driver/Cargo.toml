@@ -23,6 +23,7 @@ azure_core = { workspace = true, default-features = false, features = [
 base64.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
+h2 = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -52,6 +53,7 @@ workspace = true
 default = ["tokio", "reqwest_native_tls"]
 tokio = ["dep:tokio"]
 reqwest = [
+  "dep:h2",
   "dep:reqwest",
   "reqwest/http2",
   "azure_core/reqwest",

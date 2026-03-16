@@ -333,15 +333,17 @@ impl CosmosDriverRuntime {
             driver
         };
 
-        // Best-effort initialization: prime the account metadata cache.
-        // On failure, log a warning and return the driver with cold caches
-        // so that a transient error doesn't block driver creation.
-        if let Err(e) = driver.initialize().await {
-            tracing::warn!(
-                endpoint = %key,
-                error = %e,
-                "Driver initialization failed; caches will be populated lazily on first operation"
-            );
+        // Eager initialization is required because operation execution assumes
+        // account metadata and the negotiated transport are ready before first use.
+        if let Err(error) = driver.initialize().await {
+            let mut registry = self.driver_registry.write().unwrap();
+            if registry
+                .get(&key)
+                .is_some_and(|existing| Arc::ptr_eq(existing, &driver))
+            {
+                registry.remove(&key);
+            }
+            return Err(error);
         }
 
         Ok(driver)
@@ -591,5 +593,34 @@ impl CosmosDriverRuntimeBuilder {
             cpu_monitor,
             machine_id,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use url::Url;
+
+    #[tokio::test]
+    async fn get_or_create_driver_removes_failed_initialization_from_registry() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "***not-base64***",
+        );
+
+        let error = runtime
+            .get_or_create_driver(account.clone(), None)
+            .await
+            .expect_err("invalid signing key should fail initialization");
+        assert!(!error.to_string().is_empty());
+        assert!(runtime.driver_registry.read().unwrap().is_empty());
+
+        let second_error = runtime
+            .get_or_create_driver(account, None)
+            .await
+            .expect_err("failed initialization should not poison the driver registry");
+        assert!(!second_error.to_string().is_empty());
+        assert!(runtime.driver_registry.read().unwrap().is_empty());
     }
 }

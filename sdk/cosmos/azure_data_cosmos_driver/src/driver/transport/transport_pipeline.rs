@@ -203,6 +203,7 @@ pub(crate) async fn execute_transport_pipeline(
             ctx.pipeline_type,
             ctx.transport_security,
             ctx.transport.diagnostics_kind(),
+            ctx.transport.diagnostics_http_version(),
             &request.endpoint,
         );
 
@@ -234,7 +235,12 @@ pub(crate) async fn execute_transport_pipeline(
         // Sign the request
         if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
         {
-            diagnostics.fail_request(request_handle, e.to_string(), RequestSentStatus::NotSent);
+            diagnostics.fail_transport_request(
+                request_handle,
+                e.to_string(),
+                RequestSentStatus::NotSent,
+                CosmosStatus::CLIENT_GENERATED_401,
+            );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
                     status: CosmosStatus::CLIENT_GENERATED_401,
@@ -1111,6 +1117,51 @@ mod tests {
             }
             other => panic!("expected transport error, got {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn execute_transport_pipeline_preserves_client_generated_401_in_diagnostics() {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
+            delay: Duration::from_secs(1),
+        }));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("transport-signing-failure".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            test_request(Some(Instant::now() + Duration::from_secs(1))),
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new(
+                    "***not-base64***",
+                )),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::TransportError {
+                status,
+                request_sent,
+                ..
+            } => {
+                assert_eq!(status, CosmosStatus::CLIENT_GENERATED_401);
+                assert_eq!(request_sent, RequestSentStatus::NotSent);
+            }
+            other => panic!("expected transport error, got {other:?}"),
+        }
+
+        let completed = diagnostics.complete();
+        let requests = completed.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].status(), &CosmosStatus::CLIENT_GENERATED_401);
+        assert_eq!(requests[0].request_sent(), RequestSentStatus::NotSent);
     }
 
     #[test]

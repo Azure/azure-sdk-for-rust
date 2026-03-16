@@ -7,7 +7,7 @@ use std::{fmt, sync::Arc};
 
 use azure_core::http::{AsyncRawResponse, HttpClient, Request};
 
-use crate::diagnostics::TransportKind;
+use crate::diagnostics::{TransportHttpVersion, TransportKind};
 
 use super::{
     http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
@@ -66,6 +66,14 @@ impl AdaptiveTransport {
         match self {
             Self::Gateway(_) | Self::ShardedGateway(_) => TransportKind::Gateway,
             Self::ShardedGateway20(_) => TransportKind::Gateway20,
+        }
+    }
+
+    /// Returns the HTTP protocol version used by this transport.
+    pub(crate) fn diagnostics_http_version(&self) -> TransportHttpVersion {
+        match self {
+            Self::Gateway(_) => TransportHttpVersion::Http11,
+            Self::ShardedGateway(_) | Self::ShardedGateway20(_) => TransportHttpVersion::Http2,
         }
     }
 
@@ -139,6 +147,7 @@ impl fmt::Debug for AdaptiveTransport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AdaptiveTransport")
             .field("kind", &self.diagnostics_kind().as_ref())
+            .field("http_version", &self.diagnostics_http_version().as_ref())
             .finish_non_exhaustive()
     }
 }

@@ -378,6 +378,7 @@ dependencies = [
  "base64 0.22.1",
  "crossbeam-epoch",
  "futures",
+ "h2",
  "reqwest",
  "serde",
  "serde_json",
