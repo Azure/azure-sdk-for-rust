@@ -141,6 +141,7 @@ impl LocationIndex {
 pub(crate) enum UnavailableReason {
     WriteForbidden,
     ServiceUnavailable,
+    RequestTimeout,
     InternalServerError,
     TransportError,
 }

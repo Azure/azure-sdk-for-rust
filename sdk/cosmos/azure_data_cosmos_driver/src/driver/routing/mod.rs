@@ -18,5 +18,5 @@ pub(crate) use location_state_store::{LocationSnapshot, LocationStateStore};
 pub(crate) use routing_systems::{
     build_account_endpoint_state, can_circuit_breaker_trigger_failover, expire_partition_overrides,
     expire_unavailable_endpoints, is_eligible_for_ppaf, is_eligible_for_ppcb,
-    mark_endpoint_unavailable, mark_partition_unavailable,
+    mark_endpoint_unavailable, mark_partition_unavailable, remove_probe_succeeded_entry,
 };

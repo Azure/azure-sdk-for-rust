@@ -16,9 +16,10 @@ use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     driver::routing::{
         can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-        AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore,
+        partition_endpoint_state::HealthStatus, remove_probe_succeeded_entry, AccountEndpointState,
+        CosmosEndpoint, LocationSnapshot, LocationStateStore,
     },
-    transport::CosmosTransport,
+    driver::transport::CosmosTransport,
     models::{
         AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
         Credential, SubStatusCode,
@@ -165,6 +166,21 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
             OperationAction::Complete(result) => {
+                // If a probe request succeeded, remove the ProbeCandidate entry.
+                if let Some(pk_range_id) = &retry_state.partition_key_range_id {
+                    let snapshot = location_state_store.snapshot();
+                    let partitions = snapshot.partitions.as_ref();
+                    let has_probe = partitions
+                        .circuit_breaker_overrides
+                        .get(pk_range_id.as_str())
+                        .or_else(|| partitions.failover_overrides.get(pk_range_id.as_str()))
+                        .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
+                    if has_probe {
+                        location_state_store.apply_partition(|current| {
+                            remove_probe_succeeded_entry(current, pk_range_id)
+                        });
+                    }
+                }
                 return build_cosmos_response(result, diagnostics);
             }
             OperationAction::FailoverRetry { new_state, delay } => {
@@ -307,19 +323,36 @@ fn resolve_endpoint(
         let is_read = operation.is_read_only();
         let is_partitioned = operation.resource_type().is_partitioned();
 
+        // Helper: build a RoutingDecision from a partition override endpoint.
+        let make_partition_routing = |ep: CosmosEndpoint| -> RoutingDecision {
+            let ep_use_gw20 = ep.uses_gateway20(prefer_gateway20);
+            RoutingDecision {
+                selected_url: ep.selected_url(ep_use_gw20).clone(),
+                transport_mode: if ep_use_gw20 {
+                    TransportMode::Gateway20
+                } else {
+                    TransportMode::Gateway
+                },
+                endpoint: ep,
+            }
+        };
+
         if is_eligible_for_ppcb(partitions, account, is_read, is_partitioned) {
-            if let Some(entry) = partitions.ppcb_overrides.get(pk_range_id) {
+            if let Some(entry) = partitions.circuit_breaker_overrides.get(pk_range_id) {
+                if entry.health_status == HealthStatus::ProbeCandidate {
+                    // Route probe request to the original (first failed) endpoint.
+                    return make_partition_routing(entry.first_failed_endpoint.clone());
+                }
                 if can_circuit_breaker_trigger_failover(entry, is_read, &partitions.config) {
-                    return RoutingDecision {
-                        endpoint: entry.current_endpoint.clone(),
-                    };
+                    return make_partition_routing(entry.current_endpoint.clone());
                 }
             }
         } else if is_eligible_for_ppaf(partitions, account, is_read, is_partitioned) {
-            if let Some(entry) = partitions.ppaf_overrides.get(pk_range_id) {
-                return RoutingDecision {
-                    endpoint: entry.current_endpoint.clone(),
-                };
+            if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
+                if entry.health_status == HealthStatus::ProbeCandidate {
+                    return make_partition_routing(entry.first_failed_endpoint.clone());
+                }
+                return make_partition_routing(entry.current_endpoint.clone());
             }
         }
     }

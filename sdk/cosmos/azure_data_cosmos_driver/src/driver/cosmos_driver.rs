@@ -253,6 +253,9 @@ impl CosmosDriver {
             endpoint_unavailability_ttl,
         ));
 
+        // Spawn the background failback loop for partition-level overrides.
+        location_state_store.start_failback_loop();
+
         let default_max_failover_retries = runtime
             .runtime_options()
             .snapshot()

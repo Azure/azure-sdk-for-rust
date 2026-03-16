@@ -14,7 +14,7 @@ use crate::driver::cache::AccountProperties;
 
 use super::{
     partition_endpoint_state::{
-        PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+        HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
     },
     AccountEndpointState, CosmosEndpoint, UnavailablePartition, UnavailableReason,
 };
@@ -201,7 +201,7 @@ pub(crate) fn is_eligible_for_ppaf(
     is_read_only: bool,
     is_partitioned_resource: bool,
 ) -> bool {
-    partition_state.ppaf_enabled
+    partition_state.per_partition_automatic_failover_enabled
         && is_partitioned_resource
         && !is_read_only
         && !account_state.multiple_write_locations_enabled
@@ -218,7 +218,7 @@ pub(crate) fn is_eligible_for_ppcb(
     is_read_only: bool,
     is_partitioned_resource: bool,
 ) -> bool {
-    partition_state.ppcb_enabled
+    partition_state.per_partition_circuit_breaker_enabled
         && is_partitioned_resource
         && (is_read_only || account_state.multiple_write_locations_enabled)
         && account_state.preferred_read_endpoints.len() > 1
@@ -231,9 +231,9 @@ pub(crate) fn can_circuit_breaker_trigger_failover(
     config: &PartitionFailoverConfig,
 ) -> bool {
     if is_read_only {
-        entry.consecutive_read_failures > config.read_failure_threshold
+        entry.read_failure_count > config.read_failure_threshold
     } else {
-        entry.consecutive_write_failures > config.write_failure_threshold
+        entry.write_failure_count > config.write_failure_threshold
     }
 }
 
@@ -278,31 +278,40 @@ pub(crate) fn mark_partition_unavailable(
         is_partitioned_resource,
     ) {
         let entry = new_state
-            .ppcb_overrides
+            .circuit_breaker_overrides
             .entry(unavail.partition_key_range_id.clone())
             .or_insert_with(|| PartitionFailoverEntry {
                 current_endpoint: failed_endpoint.clone(),
                 first_failed_endpoint: failed_endpoint.clone(),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: now,
                 last_failure_time: now,
+                health_status: HealthStatus::Unhealthy,
             });
+
+        // If probe failed, transition back to Unhealthy and reset timer.
+        if entry.health_status == HealthStatus::ProbeCandidate {
+            entry.health_status = HealthStatus::Unhealthy;
+            entry.first_failure_time = now;
+            entry.last_failure_time = now;
+            return new_state;
+        }
 
         // Reset counters if the counter reset window has elapsed.
         if now.saturating_duration_since(entry.last_failure_time)
             > current_state.config.counter_reset_window
         {
-            entry.consecutive_read_failures = 0;
-            entry.consecutive_write_failures = 0;
+            entry.read_failure_count = 0;
+            entry.write_failure_count = 0;
         }
 
         // Increment appropriate counter.
         if is_read {
-            entry.consecutive_read_failures += 1;
+            entry.read_failure_count += 1;
         } else {
-            entry.consecutive_write_failures += 1;
+            entry.write_failure_count += 1;
         }
         entry.last_failure_time = now;
 
@@ -315,7 +324,7 @@ pub(crate) fn mark_partition_unavailable(
         if !try_move_next_endpoint(entry, next_endpoints, &failed_endpoint) {
             // All endpoints exhausted — remove entry to restore default routing.
             new_state
-                .ppcb_overrides
+                .circuit_breaker_overrides
                 .remove(&unavail.partition_key_range_id);
         }
     } else if is_eligible_for_ppaf(
@@ -325,24 +334,33 @@ pub(crate) fn mark_partition_unavailable(
         is_partitioned_resource,
     ) {
         let entry = new_state
-            .ppaf_overrides
+            .failover_overrides
             .entry(unavail.partition_key_range_id.clone())
             .or_insert_with(|| PartitionFailoverEntry {
                 current_endpoint: failed_endpoint.clone(),
                 first_failed_endpoint: failed_endpoint.clone(),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: now,
                 last_failure_time: now,
+                health_status: HealthStatus::Unhealthy,
             });
+
+        // If probe failed, transition back to Unhealthy and reset timer.
+        if entry.health_status == HealthStatus::ProbeCandidate {
+            entry.health_status = HealthStatus::Unhealthy;
+            entry.first_failure_time = now;
+            entry.last_failure_time = now;
+            return new_state;
+        }
 
         entry.last_failure_time = now;
 
         // PPAF unconditionally moves to the next endpoint.
         if !try_move_next_endpoint(entry, next_endpoints, &failed_endpoint) {
             new_state
-                .ppaf_overrides
+                .failover_overrides
                 .remove(&unavail.partition_key_range_id);
         }
     }
@@ -379,9 +397,11 @@ fn try_move_next_endpoint(
     false
 }
 
-/// Removes expired partition override entries, producing a new `PartitionEndpointState`.
+/// Transitions expired partition entries from `Unhealthy` to `ProbeCandidate`,
+/// producing a new `PartitionEndpointState`.
 ///
-/// This is a pure function for the background failback loop.
+/// Entries already in `ProbeCandidate` state are not re-transitioned.
+/// This is a pure function called by the failback sweep.
 pub(crate) fn expire_partition_overrides(
     state: &PartitionEndpointState,
     now: Instant,
@@ -389,14 +409,38 @@ pub(crate) fn expire_partition_overrides(
 ) -> PartitionEndpointState {
     let mut new_state = state.clone();
 
-    new_state.ppcb_overrides.retain(|_, entry| {
-        now.saturating_duration_since(entry.first_failure_time) < unavailability_duration
-    });
+    for entry in new_state.circuit_breaker_overrides.values_mut() {
+        if entry.health_status == HealthStatus::Unhealthy
+            && now.saturating_duration_since(entry.first_failure_time) >= unavailability_duration
+        {
+            entry.health_status = HealthStatus::ProbeCandidate;
+        }
+    }
 
-    new_state.ppaf_overrides.retain(|_, entry| {
-        now.saturating_duration_since(entry.first_failure_time) < unavailability_duration
-    });
+    for entry in new_state.failover_overrides.values_mut() {
+        if entry.health_status == HealthStatus::Unhealthy
+            && now.saturating_duration_since(entry.first_failure_time) >= unavailability_duration
+        {
+            entry.health_status = HealthStatus::ProbeCandidate;
+        }
+    }
 
+    new_state
+}
+
+/// Removes a probe-successful entry from the partition state.
+///
+/// Called when a probe request succeeds (the request completed without errors).
+/// This causes the partition to return to default routing.
+pub(crate) fn remove_probe_succeeded_entry(
+    state: &PartitionEndpointState,
+    partition_key_range_id: &str,
+) -> PartitionEndpointState {
+    let mut new_state = state.clone();
+    new_state
+        .circuit_breaker_overrides
+        .remove(partition_key_range_id);
+    new_state.failover_overrides.remove(partition_key_range_id);
     new_state
 }
 
@@ -555,10 +599,10 @@ mod tests {
         }
     }
 
-    fn partition_state_ppaf_ppcb_enabled() -> PartitionEndpointState {
+    fn partition_state_with_ppaf_ppcb_enabled() -> PartitionEndpointState {
         PartitionEndpointState {
-            ppaf_enabled: true,
-            ppcb_enabled: true,
+            per_partition_automatic_failover_enabled: true,
+            per_partition_circuit_breaker_enabled: true,
             ..PartitionEndpointState::default()
         }
     }
@@ -580,21 +624,21 @@ mod tests {
 
     #[test]
     fn ppaf_eligible_for_write_on_single_master() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         assert!(is_eligible_for_ppaf(&ps, &account, false, true));
     }
 
     #[test]
     fn ppaf_not_eligible_for_read() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         assert!(!is_eligible_for_ppaf(&ps, &account, true, true));
     }
 
     #[test]
     fn ppaf_not_eligible_for_multi_master() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = multi_master_account();
         assert!(!is_eligible_for_ppaf(&ps, &account, false, true));
     }
@@ -602,7 +646,7 @@ mod tests {
     #[test]
     fn ppaf_not_eligible_when_disabled() {
         let ps = PartitionEndpointState {
-            ppaf_enabled: false,
+            per_partition_automatic_failover_enabled: false,
             ..PartitionEndpointState::default()
         };
         let account = single_master_account();
@@ -611,14 +655,14 @@ mod tests {
 
     #[test]
     fn ppaf_not_eligible_for_non_partitioned_resource() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         assert!(!is_eligible_for_ppaf(&ps, &account, false, false));
     }
 
     #[test]
     fn ppaf_not_eligible_with_single_read_endpoint() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = AccountEndpointState {
             preferred_read_endpoints: vec![regional_endpoint("eastus")],
             ..single_master_account()
@@ -630,21 +674,21 @@ mod tests {
 
     #[test]
     fn ppcb_eligible_for_read_on_single_master() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         assert!(is_eligible_for_ppcb(&ps, &account, true, true));
     }
 
     #[test]
     fn ppcb_eligible_for_write_on_multi_master() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = multi_master_account();
         assert!(is_eligible_for_ppcb(&ps, &account, false, true));
     }
 
     #[test]
     fn ppcb_not_eligible_for_write_on_single_master() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         // Writes on single-master go through PPAF, not PPCB
         assert!(!is_eligible_for_ppcb(&ps, &account, false, true));
@@ -653,7 +697,7 @@ mod tests {
     #[test]
     fn ppcb_not_eligible_when_disabled() {
         let ps = PartitionEndpointState {
-            ppcb_enabled: false,
+            per_partition_circuit_breaker_enabled: false,
             ..PartitionEndpointState::default()
         };
         let account = single_master_account();
@@ -662,7 +706,7 @@ mod tests {
 
     #[test]
     fn ppcb_not_eligible_for_non_partitioned_resource() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         assert!(!is_eligible_for_ppcb(&ps, &account, true, false));
     }
@@ -676,10 +720,11 @@ mod tests {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
-            consecutive_read_failures: 1, // below threshold of 2
-            consecutive_write_failures: 0,
+            read_failure_count: 1, // below threshold of 2
+            write_failure_count: 0,
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
         };
         assert!(!can_circuit_breaker_trigger_failover(&entry, true, &config));
     }
@@ -691,10 +736,11 @@ mod tests {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
-            consecutive_read_failures: 3, // above threshold of 2
-            consecutive_write_failures: 0,
+            read_failure_count: 3, // above threshold of 2
+            write_failure_count: 0,
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
         };
         assert!(can_circuit_breaker_trigger_failover(&entry, true, &config));
     }
@@ -706,10 +752,11 @@ mod tests {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
-            consecutive_read_failures: 0,
-            consecutive_write_failures: 6, // above threshold of 5
+            read_failure_count: 0,
+            write_failure_count: 6, // above threshold of 5
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
         };
         assert!(can_circuit_breaker_trigger_failover(&entry, false, &config));
     }
@@ -719,16 +766,16 @@ mod tests {
     #[test]
     fn mark_partition_unavailable_ppaf_creates_entry() {
         // PPAF: write on single-master with ppaf enabled
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "eastus", false);
 
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
         // PPAF should have an entry; PPCB should not
-        assert_eq!(result.ppaf_overrides.len(), 1);
-        assert!(result.ppcb_overrides.is_empty());
-        let entry = &result.ppaf_overrides["pk-1"];
+        assert_eq!(result.failover_overrides.len(), 1);
+        assert!(result.circuit_breaker_overrides.is_empty());
+        let entry = &result.failover_overrides["pk-1"];
         // Should have moved to westus (the other read endpoint)
         assert_eq!(entry.current_endpoint, regional_endpoint("westus"));
         assert!(entry
@@ -739,65 +786,67 @@ mod tests {
     #[test]
     fn mark_partition_unavailable_ppcb_increments_counter() {
         // PPCB: read on single-master with ppcb enabled
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
         // PPCB entry should exist
-        assert_eq!(result.ppcb_overrides.len(), 1);
-        assert!(result.ppaf_overrides.is_empty());
-        let entry = &result.ppcb_overrides["pk-1"];
+        assert_eq!(result.circuit_breaker_overrides.len(), 1);
+        assert!(result.failover_overrides.is_empty());
+        let entry = &result.circuit_breaker_overrides["pk-1"];
         // Below threshold (1 failure, threshold is 2) so endpoint should NOT have moved
-        assert_eq!(entry.consecutive_read_failures, 1);
+        assert_eq!(entry.read_failure_count, 1);
         assert_eq!(entry.current_endpoint, regional_endpoint("eastus"));
     }
 
     #[test]
     fn mark_partition_unavailable_ppcb_exceeds_threshold_moves_endpoint() {
         // Start with an existing PPCB entry that has 2 consecutive read failures
-        let mut ps = partition_state_ppaf_ppcb_enabled();
+        let mut ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
-        ps.ppcb_overrides.insert(
+        ps.circuit_breaker_overrides.insert(
             "pk-1".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("eastus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 2,
-                consecutive_write_failures: 0,
+                read_failure_count: 2,
+                write_failure_count: 0,
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
-        let entry = &result.ppcb_overrides["pk-1"];
+        let entry = &result.circuit_breaker_overrides["pk-1"];
         // 3 failures > threshold of 2, so endpoint should have moved to westus
-        assert_eq!(entry.consecutive_read_failures, 3);
+        assert_eq!(entry.read_failure_count, 3);
         assert_eq!(entry.current_endpoint, regional_endpoint("westus"));
     }
 
     #[test]
     fn mark_partition_unavailable_all_endpoints_exhausted_removes_entry() {
         // PPAF with all read endpoints already failed
-        let mut ps = partition_state_ppaf_ppcb_enabled();
+        let mut ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         let mut failed = HashSet::new();
         failed.insert(regional_endpoint("westus"));
-        ps.ppaf_overrides.insert(
+        ps.failover_overrides.insert(
             "pk-1".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("eastus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: failed,
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", false);
@@ -805,121 +854,211 @@ mod tests {
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
         // Entry removed because all endpoints exhausted
-        assert!(result.ppaf_overrides.is_empty());
+        assert!(result.failover_overrides.is_empty());
     }
 
     #[test]
     fn mark_partition_unavailable_unknown_region_returns_unchanged() {
-        let ps = partition_state_ppaf_ppcb_enabled();
+        let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "nonexistent", false);
 
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
-        assert!(result.ppaf_overrides.is_empty());
-        assert!(result.ppcb_overrides.is_empty());
+        assert!(result.failover_overrides.is_empty());
+        assert!(result.circuit_breaker_overrides.is_empty());
     }
 
     #[test]
     fn mark_partition_unavailable_ppcb_counter_reset_after_window() {
         // Entry with stale last_failure_time beyond counter_reset_window
         let stale_time = Instant::now() - Duration::from_secs(10 * 60);
-        let mut ps = partition_state_ppaf_ppcb_enabled();
+        let mut ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
-        ps.ppcb_overrides.insert(
+        ps.circuit_breaker_overrides.insert(
             "pk-1".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("eastus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 100,
-                consecutive_write_failures: 100,
+                read_failure_count: 100,
+                write_failure_count: 100,
                 first_failure_time: stale_time,
                 last_failure_time: stale_time,
+                health_status: HealthStatus::Unhealthy,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
-        let entry = &result.ppcb_overrides["pk-1"];
+        let entry = &result.circuit_breaker_overrides["pk-1"];
         // Counters should have been reset, then incremented by 1
-        assert_eq!(entry.consecutive_read_failures, 1);
-        assert_eq!(entry.consecutive_write_failures, 0);
+        assert_eq!(entry.read_failure_count, 1);
+        assert_eq!(entry.write_failure_count, 0);
     }
 
     // ── expire_partition_overrides tests ──────────────────────────────
 
     #[test]
-    fn expire_partition_overrides_removes_old_entries() {
+    fn expire_partition_overrides_transitions_old_entries_to_probe_candidate() {
         let old_time = Instant::now() - Duration::from_secs(60);
         let recent_time = Instant::now();
 
-        let mut state = partition_state_ppaf_ppcb_enabled();
-        state.ppaf_overrides.insert(
+        let mut state = partition_state_with_ppaf_ppcb_enabled();
+        state.failover_overrides.insert(
             "old-pk".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("westus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: old_time,
                 last_failure_time: old_time,
+                health_status: HealthStatus::Unhealthy,
             },
         );
-        state.ppaf_overrides.insert(
+        state.failover_overrides.insert(
             "recent-pk".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("westus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: recent_time,
                 last_failure_time: recent_time,
+                health_status: HealthStatus::Unhealthy,
             },
         );
-        state.ppcb_overrides.insert(
+        state.circuit_breaker_overrides.insert(
             "old-ppcb".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("westus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: old_time,
                 last_failure_time: old_time,
+                health_status: HealthStatus::Unhealthy,
             },
         );
 
         let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
 
-        // Old entries removed, recent entry retained
-        assert_eq!(expired.ppaf_overrides.len(), 1);
-        assert!(expired.ppaf_overrides.contains_key("recent-pk"));
-        assert!(expired.ppcb_overrides.is_empty());
+        // Old entries transitioned to ProbeCandidate, recent entry stays Unhealthy
+        assert_eq!(expired.failover_overrides.len(), 2);
+        assert_eq!(
+            expired.failover_overrides["old-pk"].health_status,
+            HealthStatus::ProbeCandidate
+        );
+        assert_eq!(
+            expired.failover_overrides["recent-pk"].health_status,
+            HealthStatus::Unhealthy
+        );
+        assert_eq!(expired.circuit_breaker_overrides.len(), 1);
+        assert_eq!(
+            expired.circuit_breaker_overrides["old-ppcb"].health_status,
+            HealthStatus::ProbeCandidate
+        );
     }
 
     #[test]
     fn expire_partition_overrides_keeps_all_when_none_expired() {
         let recent = Instant::now();
-        let mut state = partition_state_ppaf_ppcb_enabled();
-        state.ppaf_overrides.insert(
+        let mut state = partition_state_with_ppaf_ppcb_enabled();
+        state.failover_overrides.insert(
             "pk-1".to_string(),
             PartitionFailoverEntry {
                 current_endpoint: regional_endpoint("westus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                consecutive_read_failures: 0,
-                consecutive_write_failures: 0,
+                read_failure_count: 0,
+                write_failure_count: 0,
                 first_failure_time: recent,
                 last_failure_time: recent,
+                health_status: HealthStatus::Unhealthy,
             },
         );
 
         let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(60));
 
-        assert_eq!(expired.ppaf_overrides.len(), 1);
+        assert_eq!(expired.failover_overrides.len(), 1);
+    }
+
+    #[test]
+    fn expire_partition_overrides_does_not_retransition_probe_candidate() {
+        let old_time = Instant::now() - Duration::from_secs(60);
+        let mut state = partition_state_with_ppaf_ppcb_enabled();
+        state.circuit_breaker_overrides.insert(
+            "pk-1".to_string(),
+            PartitionFailoverEntry {
+                current_endpoint: regional_endpoint("westus"),
+                first_failed_endpoint: regional_endpoint("eastus"),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: old_time,
+                last_failure_time: old_time,
+                health_status: HealthStatus::ProbeCandidate,
+            },
+        );
+
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
+
+        // Already ProbeCandidate, should remain ProbeCandidate (not re-transitioned)
+        assert_eq!(
+            expired.circuit_breaker_overrides["pk-1"].health_status,
+            HealthStatus::ProbeCandidate
+        );
+    }
+
+    #[test]
+    fn probe_failure_transitions_back_to_unhealthy() {
+        let mut ps = partition_state_with_ppaf_ppcb_enabled();
+        let account = single_master_account();
+        ps.circuit_breaker_overrides.insert(
+            "pk-1".to_string(),
+            PartitionFailoverEntry {
+                current_endpoint: regional_endpoint("westus"),
+                first_failed_endpoint: regional_endpoint("eastus"),
+                failed_endpoints: Default::default(),
+                read_failure_count: 3,
+                write_failure_count: 0,
+                first_failure_time: Instant::now() - Duration::from_secs(10),
+                last_failure_time: Instant::now() - Duration::from_secs(10),
+                health_status: HealthStatus::ProbeCandidate,
+            },
+        );
+        let unavail = unavailable_partition("pk-1", "eastus", true);
+
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+
+        let entry = &result.circuit_breaker_overrides["pk-1"];
+        assert_eq!(entry.health_status, HealthStatus::Unhealthy);
+    }
+
+    #[test]
+    fn remove_probe_succeeded_entry_removes_from_both_maps() {
+        let mut state = partition_state_with_ppaf_ppcb_enabled();
+        state.circuit_breaker_overrides.insert(
+            "pk-1".to_string(),
+            PartitionFailoverEntry {
+                current_endpoint: regional_endpoint("westus"),
+                first_failed_endpoint: regional_endpoint("eastus"),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::ProbeCandidate,
+            },
+        );
+
+        let result = remove_probe_succeeded_entry(&state, "pk-1");
+
+        assert!(result.circuit_breaker_overrides.is_empty());
     }
 }

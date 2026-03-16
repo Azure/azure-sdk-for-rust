@@ -6,7 +6,7 @@
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc,
+        Arc, Weak,
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -15,15 +15,18 @@ use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
 
 use crate::{
-    driver::cache::{AccountMetadataCache, AccountProperties},
+    driver::{
+        cache::{AccountMetadataCache, AccountProperties},
+        transport::background_task_manager::BackgroundTaskManager,
+    },
     models::AccountEndpoint,
 };
 
 use super::{
     build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
     mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::PartitionEndpointState, AccountEndpointState, CosmosEndpoint,
-    LocationEffect,
+    partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
+    AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -68,8 +71,9 @@ pub(crate) struct LocationStateStore {
     /// `account_version`, `snapshot()` returns `Arc::clone()` of the cached
     /// arcs (refcount increment only) instead of a full clone.
     cached_snapshot: std::sync::Mutex<(u64, LocationSnapshot)>,
-    /// Epoch-millis timestamp of the last partition failback sweep.
-    last_partition_sweep_epoch_ms: AtomicU64,
+    /// Manages the background failback loop task.
+    /// Dropping this manager aborts the failback task.
+    background_task_manager: BackgroundTaskManager,
 }
 
 impl std::fmt::Debug for LocationStateStore {
@@ -139,7 +143,7 @@ impl LocationStateStore {
             last_synced_etag: std::sync::Mutex::new(String::new()),
             account_version: AtomicU64::new(0),
             cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
-            last_partition_sweep_epoch_ms: AtomicU64::new(0),
+            background_task_manager: BackgroundTaskManager::new(),
         }
     }
 
@@ -208,9 +212,6 @@ impl LocationStateStore {
 
     /// Applies location effects (endpoint unavailability and account refresh).
     pub async fn apply(&self, effects: &[LocationEffect]) {
-        // Piggyback partition failback sweep on effect application.
-        self.sweep_expired_partition_overrides_if_due();
-
         for effect in effects {
             match effect {
                 LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
@@ -383,11 +384,14 @@ impl LocationStateStore {
         }
 
         // Update partition-level PPAF/PPCB flags from account properties.
-        let ppaf_enabled = properties.enable_per_partition_failover_behavior;
+        let per_partition_automatic_failover_enabled =
+            properties.enable_per_partition_failover_behavior;
         self.apply_partition(|current| {
             let mut next = current.clone();
-            next.ppaf_enabled = ppaf_enabled;
-            next.ppcb_enabled = ppaf_enabled || current.ppcb_env_enabled;
+            next.per_partition_automatic_failover_enabled =
+                per_partition_automatic_failover_enabled;
+            next.per_partition_circuit_breaker_enabled =
+                per_partition_automatic_failover_enabled || current.circuit_breaker_option_enabled;
             next
         });
     }
@@ -409,37 +413,39 @@ impl LocationStateStore {
         self.apply_account(|current| expire_unavailable_endpoints(current, now, ttl));
     }
 
-    /// Sweeps expired partition override entries if the sweep interval has elapsed.
+    /// Starts the background failback loop that periodically sweeps expired
+    /// partition override entries.
     ///
-    /// Called lazily during `apply()` to avoid needing a background task.
-    fn sweep_expired_partition_overrides_if_due(&self) {
-        let now_ms = epoch_millis();
-        let snapshot = self.snapshot();
-        let sweep_interval_ms = snapshot
-            .partitions
-            .config
-            .failback_sweep_interval
-            .as_millis() as u64;
-        let last = self.last_partition_sweep_epoch_ms.load(Ordering::Acquire);
+    /// The loop holds a `Weak` reference to `self` so it self-terminates when
+    /// the store is dropped. The `BackgroundTaskManager` provides abort-on-drop
+    /// as an additional safety layer.
+    pub fn start_failback_loop(self: &Arc<Self>) {
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        let config = self.snapshot().partitions.config.clone();
+        self.background_task_manager.spawn(async move {
+            failback_loop(weak_store, config).await;
+        });
+    }
+}
 
-        if now_ms.saturating_sub(last) < sweep_interval_ms {
-            return;
-        }
+/// Background failback loop that periodically sweeps expired partition overrides.
+///
+/// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
+async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
+    loop {
+        tokio::time::sleep(config.failback_sweep_interval).await;
 
-        // CAS to claim this sweep (prevent concurrent sweeps).
-        if self
-            .last_partition_sweep_epoch_ms
-            .compare_exchange(last, now_ms, Ordering::AcqRel, Ordering::Acquire)
-            .is_err()
-        {
-            return;
-        }
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
 
-        let unavailability_duration = snapshot.partitions.config.partition_unavailability_duration;
-        let now = Instant::now();
-
-        self.apply_partition(|current| {
-            expire_partition_overrides(current, now, unavailability_duration)
+        store.apply_partition(|current_partitions| {
+            expire_partition_overrides(
+                current_partitions,
+                Instant::now(),
+                config.partition_unavailability_duration,
+            )
         });
     }
 }
