@@ -436,8 +436,8 @@ pub struct FailFirstPolicy {
 impl FailFirstPolicy {
     /// Creates a new `FailFirstPolicy`.
     ///
-    /// * `fail_count` — number of initial invocations that will return an error.
-    /// * `call_count` — shared counter incremented on every invocation (total, including failures).
+    /// * `fail_count` - number of initial invocations that will return an error.
+    /// * `call_count` - shared counter incremented on every invocation (total, including failures).
     pub fn new(fail_count: usize, call_count: Arc<AtomicUsize>) -> Self {
         Self {
             fail_count,

@@ -134,7 +134,7 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
 #[recorded::test]
 async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let call_count = Arc::new(AtomicUsize::new(0));
-    // Fail one time, then succeed — requires at least 1 retry
+    // Fail one time, then succeed - requires at least 1 retry
     let fail_policy = Arc::new(FailFirstPolicy::new(1, call_count.clone()));
 
     // Recording Setup
@@ -210,7 +210,7 @@ async fn test_retry_exhaustion() -> Result<(), Box<dyn std::error::Error>> {
         ),
     )?;
 
-    // Act — should fail after all retry attempts are exhausted
+    // Act - should fail after all retry attempts are exhausted
     let result = container_client.get_properties(None).await;
     assert!(result.is_err(), "expected exhausted retries to return Err");
 

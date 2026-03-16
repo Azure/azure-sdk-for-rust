@@ -47,7 +47,7 @@ async fn test_storage_headers_present(ctx: TestContext) -> Result<(), Box<dyn Er
 
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // Act — the check_policy fires and asserts on every request
+    // Act - the check_policy fires and asserts on every request
     let _scope = check_policy.check_request_scope();
     create_test_blob(
         &blob_client,

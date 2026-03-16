@@ -63,28 +63,18 @@ You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID
 
 ## Examples
 
-### Create `BlobClient`
+You can find executable examples for all major SDK functions in:
 
-```rust no_run
-use azure_storage_blob::{BlobClient, BlobClientOptions};
-use azure_identity::DeveloperToolsCredential;
+* [hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/hello_world.rs) - Getting started: create a container, upload and download a blob
+* [blob_container_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_container_client.rs) - Container-level operations: metadata, list blobs with continuation, access policies
+* [blob_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_service_client.rs) - Service-level operations: list containers, service properties, statistics
+* [block_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/block_blob_client.rs) - Block blob operations: staged block upload, copy from URL
+* [append_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/append_blob_client.rs) - Append blob operations: create, append blocks, seal
+* [page_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/page_blob_client.rs) - Page blob operations: create, upload/clear pages, list page ranges, resize
+* [blob_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
+* [storage_error.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/storage_error.rs) - Structured error handling with `StorageError`
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a BlobClient that will authenticate through Microsoft Entra ID
-    let credential = DeveloperToolsCredential::new(None)?;
-    let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "container_name",                                        // container name
-        "blob_name",                                             // blob name
-        Some(credential),                                        // credential
-        Some(BlobClientOptions::default()),                      // BlobClient options
-    )?;
-    Ok(())
-}
-```
-
-### Upload Blob
+### Upload a blob
 
 ```rust no_run
 use azure_core::http::RequestContent;
@@ -113,7 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Get Blob Properties
+### Download a blob
 
 ```rust no_run
 use azure_storage_blob::{BlobClient, BlobClientOptions};
@@ -121,7 +111,6 @@ use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/",
@@ -130,10 +119,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(credential),
         Some(BlobClientOptions::default()),
     )?;
-    let blob_properties = blob_client.get_properties(
-        None // get properties options
-        )
-        .await?;
+    let response = blob_client.download(None).await?;
+    let (_, _, body) = response.deconstruct();
+    let data = body.collect().await?;
+    println!("Downloaded: {}", String::from_utf8_lossy(&data));
     Ok(())
 }
 ```

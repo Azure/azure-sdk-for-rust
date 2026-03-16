@@ -54,13 +54,13 @@ mod blob_client {
         // Download
         blob_client
             .download(Some(BlobClientDownloadOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
-                if_none_match: Some(etag.clone().into()),
+                if_none_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await;
@@ -72,7 +72,7 @@ mod blob_client {
         // Download if_match Failure
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
-                if_match: Some(BAD_ETAG.to_string().into()),
+                if_match: Some(BAD_ETAG.to_string()),
                 ..Default::default()
             }))
             .await;

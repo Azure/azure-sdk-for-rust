@@ -452,7 +452,7 @@ async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
 
     let test_result = async {
         // Arrange
-        let unicode_text = "こんにちは Azure 🦀 — Ünïcödé";
+        let unicode_text = "こんにちは Azure 🦀 - Ünïcödé";
         queue_client
             .send_message(
                 QueueMessage {
@@ -1125,7 +1125,7 @@ async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
             .as_ref()
             .expect("Expected access policy");
 
-        // Assert — both dates survive the round-trip
+        // Assert - both dates survive the round-trip
         assert_eq!(ap.permission.as_deref(), Some("r"));
         assert!(ap.start.is_some(), "Expected start to round-trip");
         assert!(ap.expiry.is_some(), "Expected expiry to round-trip");

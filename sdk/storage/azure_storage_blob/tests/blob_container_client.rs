@@ -801,7 +801,7 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     container_client.create(None).await?;
 
-    // Stage a block without committing — creates an uncommitted blob entry
+    // Stage a block without committing - creates an uncommitted blob entry
     let blob_name = get_blob_name(recording);
     let block_blob_client = container_client.blob_client(&blob_name).block_blob_client();
     let block_id: Vec<u8> = b"block1".to_vec();
@@ -996,7 +996,7 @@ async fn test_container_error_codes(ctx: TestContext) -> Result<(), Box<dyn Erro
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
 
-    // ContainerNotFound — get_properties before the container exists
+    // ContainerNotFound - get_properties before the container exists
     let err = container_client.get_properties(None).await.unwrap_err();
     let storage_error: StorageError = err.try_into()?;
     assert_eq!(
@@ -1008,7 +1008,7 @@ async fn test_container_error_codes(ctx: TestContext) -> Result<(), Box<dyn Erro
     // Create the container so it now exists
     container_client.create(None).await?;
 
-    // ContainerAlreadyExists — create it a second time
+    // ContainerAlreadyExists - create it a second time
     let err = container_client.create(None).await.unwrap_err();
     let storage_error: StorageError = err.try_into()?;
     assert_eq!(
@@ -1032,7 +1032,7 @@ async fn test_lease_already_present_error_code(ctx: TestContext) -> Result<(), B
     let acquire = container_client.acquire_lease(-1, None).await?;
     let lease_id = acquire.lease_id()?.expect("lease_id must be present");
 
-    // Attempt a second acquire — should fail with LeaseAlreadyPresent
+    // Attempt a second acquire - should fail with LeaseAlreadyPresent
     let err = container_client.acquire_lease(-1, None).await.unwrap_err();
     let storage_error: StorageError = err.try_into()?;
 

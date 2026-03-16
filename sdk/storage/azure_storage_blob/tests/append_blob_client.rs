@@ -287,7 +287,7 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
     append_blob_client.create(None).await?;
 
     let content = b"hello".to_vec();
-    // MD5("hello") — well-known test vector
+    // MD5("hello") - well-known test vector
     let correct_md5: Vec<u8> = vec![
         0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
         0x92,

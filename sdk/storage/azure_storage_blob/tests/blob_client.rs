@@ -1106,7 +1106,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
 
-    // Overwrite with Only Content-Type — all other headers absent, so service clears them
+    // Overwrite with Only Content-Type - all other headers absent, so service clears them
     // Note: set_properties does not validate blob_content_md5 against actual content,
     // so we can use an arbitrary value to test storage and clearing behavior.
     blob_client
@@ -1213,7 +1213,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // BlobNotFound — get_properties on a blob that doesn't exist
+    // BlobNotFound - get_properties on a blob that doesn't exist
     let err = blob_client.get_properties(None).await.unwrap_err();
     let storage_error: StorageError = err.try_into()?;
     assert_eq!(
@@ -1225,7 +1225,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Upload once so the blob exists
     create_test_blob(&blob_client, None, None).await?;
 
-    // BlobAlreadyExists — upload again with overwrite=false
+    // BlobAlreadyExists - upload again with overwrite=false
     let err = blob_client
         .upload(
             RequestContent::from(b"duplicate".to_vec()),
