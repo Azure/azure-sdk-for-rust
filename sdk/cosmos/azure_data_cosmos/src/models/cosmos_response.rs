@@ -87,6 +87,32 @@ impl<T> CosmosResponse<T> {
         self.get_optional_header_str(&azure_core::http::headers::ETAG)
     }
 
+    /// Returns the activity ID for request correlation, if available.
+    pub fn activity_id(&self) -> Option<&str> {
+        self.get_optional_header_str(&crate::constants::ACTIVITY_ID)
+    }
+
+    /// Returns the index utilization metrics as a JSON string, if available.
+    ///
+    /// Only populated when the request included the `x-ms-cosmos-populateindexmetrics` header.
+    pub fn index_metrics(&self) -> Option<&str> {
+        self.get_optional_header_str(&crate::constants::INDEX_METRICS)
+    }
+
+    /// Returns the query execution metrics, if available.
+    ///
+    /// The value is a semicolon-delimited string of key=value pairs.
+    /// Only populated when the request included the `x-ms-documentdb-populatequerymetrics` header.
+    pub fn query_metrics(&self) -> Option<&str> {
+        self.get_optional_header_str(&crate::constants::QUERY_METRICS)
+    }
+
+    /// Returns the server-side request processing duration in milliseconds, if available.
+    pub fn server_duration_ms(&self) -> Option<f64> {
+        self.get_optional_header_str(&crate::constants::REQUEST_DURATION_MS)
+            .and_then(|s| s.parse::<f64>().ok())
+    }
+
     /// Deserializes the response body without consuming the response.
     ///
     /// This is used internally to extract a copy of the response model (e.g.,
