@@ -293,7 +293,11 @@ impl EndpointShardPool {
             if !shards.is_empty() {
                 // If a preferred shard was pre-selected (e.g. for timeout
                 // diagnostics accuracy), reuse it when still selectable and
-                // under the stream limit.
+                // under the stream limit. This may keep traffic on a shard
+                // that would otherwise fall just outside the current active
+                // set boundary, which is an accepted trade-off to preserve
+                // timeout-race shard affinity and avoid reporting a different
+                // shard than the one the caller was racing.
                 if let Some(preferred_id) = preferred_shard_id {
                     if let Some(shard) = shards
                         .iter()
@@ -838,7 +842,7 @@ mod tests {
     fn client_config() -> HttpClientConfig {
         HttpClientConfig::dataplane_gateway(
             &connection_pool(),
-            crate::driver::transport::http_client_factory::NegotiatedHttpVersion::Http2,
+            crate::diagnostics::TransportHttpVersion::Http2,
         )
     }
 
@@ -1067,7 +1071,7 @@ mod tests {
 
         let config = HttpClientConfig::dataplane_gateway(
             &pool_opts,
-            crate::driver::transport::http_client_factory::NegotiatedHttpVersion::Http2,
+            crate::diagnostics::TransportHttpVersion::Http2,
         );
         let factory = Arc::new(TrackingFactory::default());
 

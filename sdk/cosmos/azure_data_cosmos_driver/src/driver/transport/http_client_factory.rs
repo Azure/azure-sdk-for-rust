@@ -7,6 +7,7 @@ use std::{fmt, sync::Arc};
 
 use azure_core::http::HttpClient;
 
+use crate::diagnostics::TransportHttpVersion;
 use crate::options::ConnectionPoolOptions;
 
 /// HTTP protocol policy required by a transport.
@@ -17,18 +18,6 @@ pub(crate) enum HttpVersionPolicy {
     /// HTTP/2 only (`http2_prior_knowledge`), no HTTP/1.1 fallback.
     /// HTTP/2 keepalive is configured; TCP keepalive is not.
     Http2Only,
-}
-
-/// The negotiated HTTP version for an account's gateway.
-///
-/// Determined by probing the gateway during the first metadata fetch.
-/// Controls whether sharded HTTP/2 or plain HTTP/1.1 transports are used.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum NegotiatedHttpVersion {
-    /// HTTP/2 was confirmed. Use sharded transport with HTTP/2 keepalive.
-    Http2,
-    /// HTTP/1.1 fallback. Use unsharded transport with TCP keepalive.
-    Http11,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -43,32 +32,32 @@ impl HttpClientConfig {
     /// Config for metadata requests using the negotiated HTTP version.
     pub(crate) fn metadata(
         connection_pool: &ConnectionPoolOptions,
-        version: NegotiatedHttpVersion,
+        negotiated_version: TransportHttpVersion,
     ) -> Self {
         Self {
-            version_policy: match version {
-                NegotiatedHttpVersion::Http2 => HttpVersionPolicy::Http2Only,
-                NegotiatedHttpVersion::Http11 => HttpVersionPolicy::Http11Only,
+            version_policy: match negotiated_version {
+                TransportHttpVersion::Http2 => HttpVersionPolicy::Http2Only,
+                TransportHttpVersion::Http11 => HttpVersionPolicy::Http11Only,
             },
             request_timeout: connection_pool.max_metadata_request_timeout(),
             for_emulator: false,
-            http2_keep_alive_while_idle: matches!(version, NegotiatedHttpVersion::Http2),
+            http2_keep_alive_while_idle: negotiated_version.is_http2(),
         }
     }
 
     /// Config for dataplane gateway requests using the negotiated HTTP version.
     pub(crate) fn dataplane_gateway(
         connection_pool: &ConnectionPoolOptions,
-        version: NegotiatedHttpVersion,
+        negotiated_version: TransportHttpVersion,
     ) -> Self {
         Self {
-            version_policy: match version {
-                NegotiatedHttpVersion::Http2 => HttpVersionPolicy::Http2Only,
-                NegotiatedHttpVersion::Http11 => HttpVersionPolicy::Http11Only,
+            version_policy: match negotiated_version {
+                TransportHttpVersion::Http2 => HttpVersionPolicy::Http2Only,
+                TransportHttpVersion::Http11 => HttpVersionPolicy::Http11Only,
             },
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
-            http2_keep_alive_while_idle: matches!(version, NegotiatedHttpVersion::Http2),
+            http2_keep_alive_while_idle: negotiated_version.is_http2(),
         }
     }
 
@@ -79,16 +68,6 @@ impl HttpClientConfig {
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
             http2_keep_alive_while_idle: true,
-        }
-    }
-
-    /// Config for the bootstrap HTTP/1.1 fallback during initialization.
-    pub(crate) fn bootstrap_http11_fallback(connection_pool: &ConnectionPoolOptions) -> Self {
-        Self {
-            version_policy: HttpVersionPolicy::Http11Only,
-            request_timeout: connection_pool.max_metadata_request_timeout(),
-            for_emulator: false,
-            http2_keep_alive_while_idle: false,
         }
     }
 
@@ -107,7 +86,7 @@ mod tests {
     fn metadata_http11_version() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::metadata(&pool, NegotiatedHttpVersion::Http11).version_policy,
+            HttpClientConfig::metadata(&pool, TransportHttpVersion::Http11).version_policy,
             HttpVersionPolicy::Http11Only
         );
     }
@@ -116,7 +95,7 @@ mod tests {
     fn metadata_http2_version() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::metadata(&pool, NegotiatedHttpVersion::Http2).version_policy,
+            HttpClientConfig::metadata(&pool, TransportHttpVersion::Http2).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }
@@ -125,8 +104,7 @@ mod tests {
     fn dataplane_gateway_http11_version() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::dataplane_gateway(&pool, NegotiatedHttpVersion::Http11)
-                .version_policy,
+            HttpClientConfig::dataplane_gateway(&pool, TransportHttpVersion::Http11).version_policy,
             HttpVersionPolicy::Http11Only
         );
     }
@@ -135,7 +113,7 @@ mod tests {
     fn dataplane_gateway_http2_version() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::dataplane_gateway(&pool, NegotiatedHttpVersion::Http2).version_policy,
+            HttpClientConfig::dataplane_gateway(&pool, TransportHttpVersion::Http2).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }
@@ -150,18 +128,9 @@ mod tests {
     }
 
     #[test]
-    fn bootstrap_http11_fallback_uses_http11_only() {
-        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        assert_eq!(
-            HttpClientConfig::bootstrap_http11_fallback(&pool).version_policy,
-            HttpVersionPolicy::Http11Only
-        );
-    }
-
-    #[test]
     fn for_emulator_sets_emulator_flag() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let config = HttpClientConfig::metadata(&pool, NegotiatedHttpVersion::Http2);
+        let config = HttpClientConfig::metadata(&pool, TransportHttpVersion::Http2);
         assert!(!config.for_emulator);
         assert!(config.for_emulator().for_emulator);
     }

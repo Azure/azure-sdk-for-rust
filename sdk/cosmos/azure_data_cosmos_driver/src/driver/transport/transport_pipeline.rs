@@ -992,7 +992,7 @@ mod tests {
             factory,
             super::super::http_client_factory::HttpClientConfig::dataplane_gateway(
                 &pool,
-                super::super::http_client_factory::NegotiatedHttpVersion::Http2,
+                crate::diagnostics::TransportHttpVersion::Http2,
             ),
         )
         .unwrap()

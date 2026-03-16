@@ -34,8 +34,9 @@ use std::sync::{Arc, OnceLock};
 
 use self::{
     adaptive_transport::AdaptiveTransport,
-    http_client_factory::{HttpClientConfig, HttpClientFactory, NegotiatedHttpVersion},
+    http_client_factory::{HttpClientConfig, HttpClientFactory},
 };
+use crate::diagnostics::TransportHttpVersion;
 
 #[cfg(test)]
 use self::http_client_factory::DefaultHttpClientFactory;
@@ -98,7 +99,7 @@ pub(crate) struct CosmosTransport {
     http_client_factory: Arc<dyn HttpClientFactory>,
 
     /// The detected HTTP version for this account's gateway.
-    negotiated_version: NegotiatedHttpVersion,
+    negotiated_version: TransportHttpVersion,
 
     /// Transport for metadata operations.
     metadata_transport: AdaptiveTransport,
@@ -124,7 +125,7 @@ impl CosmosTransport {
     #[cfg(test)]
     pub(crate) fn new(
         connection_pool: ConnectionPoolOptions,
-        negotiated_version: NegotiatedHttpVersion,
+        negotiated_version: TransportHttpVersion,
     ) -> azure_core::Result<Self> {
         let http_client_factory: Arc<dyn HttpClientFactory> =
             Arc::new(DefaultHttpClientFactory::new());
@@ -136,7 +137,7 @@ impl CosmosTransport {
     pub(crate) fn with_factory(
         connection_pool: ConnectionPoolOptions,
         http_client_factory: Arc<dyn HttpClientFactory>,
-        negotiated_version: NegotiatedHttpVersion,
+        negotiated_version: TransportHttpVersion,
     ) -> azure_core::Result<Self> {
         let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
         let metadata_transport = AdaptiveTransport::from_config(
@@ -174,7 +175,7 @@ impl CosmosTransport {
     pub(crate) fn bootstrap_metadata_only(
         connection_pool: ConnectionPoolOptions,
         http_client_factory: Arc<dyn HttpClientFactory>,
-        negotiated_version: NegotiatedHttpVersion,
+        negotiated_version: TransportHttpVersion,
     ) -> azure_core::Result<Self> {
         let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
         let metadata_transport = AdaptiveTransport::unsharded(
@@ -207,7 +208,7 @@ impl CosmosTransport {
     }
 
     /// Returns the negotiated HTTP version for this account.
-    pub(crate) fn negotiated_version(&self) -> NegotiatedHttpVersion {
+    pub(crate) fn negotiated_version(&self) -> TransportHttpVersion {
         self.negotiated_version
     }
 
@@ -301,14 +302,14 @@ impl CosmosTransport {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use crate::diagnostics::TransportHttpVersion;
     use crate::driver::pipeline::components::TransportMode;
     use crate::options::{ConnectionPoolOptionsBuilder, EmulatorServerCertValidation};
-    use http_client_factory::NegotiatedHttpVersion;
 
     #[test]
     fn transport_creates_with_http2() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
 
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
@@ -321,7 +322,7 @@ pub(crate) mod tests {
             .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
 
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
         assert!(transport.should_use_insecure_emulator_transport(&endpoint));
@@ -337,7 +338,7 @@ pub(crate) mod tests {
     #[test]
     fn transport_ignores_emulator_hosts_when_validation_enabled() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
 
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
         assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
@@ -346,7 +347,7 @@ pub(crate) mod tests {
     #[test]
     fn metadata_transport_is_sharded_when_http2_negotiated() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -359,7 +360,7 @@ pub(crate) mod tests {
     #[test]
     fn metadata_transport_is_unsharded_when_http11_negotiated() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http11).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -372,7 +373,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_is_unsharded_when_http11_negotiated() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http11).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -388,7 +389,7 @@ pub(crate) mod tests {
             .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -404,7 +405,7 @@ pub(crate) mod tests {
             .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -420,7 +421,7 @@ pub(crate) mod tests {
             .with_is_gateway20_allowed(false)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, NegotiatedHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 

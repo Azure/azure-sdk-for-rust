@@ -24,7 +24,7 @@ use crate::{
 use super::cache::{AccountMetadataCache, ContainerCache};
 use super::{
     transport::{
-        http_client_factory::{self, DefaultHttpClientFactory, HttpClientFactory},
+        http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
         CosmosTransport,
     },
     CosmosDriver,
@@ -552,9 +552,9 @@ impl CosmosDriverRuntimeBuilder {
         // shard pools, no background health sweep) since it only performs
         // one-shot metadata requests during driver initialization.
         let bootstrap_version = if connection_pool.is_http2_allowed() {
-            http_client_factory::NegotiatedHttpVersion::Http2
+            crate::diagnostics::TransportHttpVersion::Http2
         } else {
-            http_client_factory::NegotiatedHttpVersion::Http11
+            crate::diagnostics::TransportHttpVersion::Http11
         };
         let bootstrap_transport = Arc::new(CosmosTransport::bootstrap_metadata_only(
             connection_pool.clone(),
