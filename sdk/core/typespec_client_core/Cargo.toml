@@ -48,6 +48,7 @@ default = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_native_tls",
+  "tokio",
 ]
 debug = ["typespec_macros?/debug"]
 decimal = ["dep:rust_decimal"]

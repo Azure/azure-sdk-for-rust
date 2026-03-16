@@ -57,7 +57,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
-- `tokio`: enables and sets `tokio` as the default async runtime.
+- `tokio` (default): enables and sets `tokio` as the default async runtime.
 - `xml`: enables XML support.
 
 ### Enabling dependencies' features
