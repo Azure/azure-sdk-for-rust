@@ -420,9 +420,11 @@ fn build_transport_request(
 request.set_timeout(transport_request.request_timeout);
 ```
 
-4. **Future integration with `ShardedHttpTransport`**: When the sharded transport is implemented
-   (see `TRANSPORT_PIPELINE_SPEC.md` §6), it will read the `request_timeout` from the
-   `TransportRequest` and pass it to the `HttpClientConfig` when selecting or configuring a shard.
+4. **Integration with `ShardedHttpTransport`**: The sharded transport
+   (`sharded_transport.rs`) sends requests via per-endpoint shard pools. The transport pipeline
+   already applies `per_request_timeout` via `azure_core::sleep()` racing the HTTP future
+   (see `transport_pipeline.rs`). The `request_timeout` from the escalation ladder feeds into
+   this existing per-request timeout mechanism.
 
 ### Data Structures
 
@@ -521,8 +523,9 @@ Normal state: connect_timeout = 1s
 
 ### Implementation in `ShardedHttpTransport`
 
-The `ShardedHttpTransport` (see `TRANSPORT_PIPELINE_SPEC.md` §6) manages a pool of `HttpClient`
-shards per endpoint. It already tracks per-shard health metrics and performs health sweeps.
+The `ShardedHttpTransport` (`sharded_transport.rs`) manages a pool of `HttpClient` shards per
+endpoint. It tracks per-shard health metrics (consecutive failures, inflight count, last success
+time) and runs a periodic background health sweep that evicts unhealthy or idle shards.
 
 Connection timeout adaptation fits naturally into this model:
 
@@ -542,8 +545,10 @@ Connection timeout adaptation fits naturally into this model:
    than waiting for natural drain. This ensures inflight requests on old shards do not continue
    failing at 1s while new shards are available with 5s.
 4. **No `azure_core` changes needed**: This is entirely internal to the `ShardedHttpTransport`.
-   The `HttpClientFactory::create()` already accepts `HttpClientConfig` which includes
-   `connect_timeout`.
+   The `HttpClientFactory::build()` method reads `connect_timeout` from `ConnectionPoolOptions`
+   (via `max_connect_timeout()`). To support adaptive connection timeouts, the factory accepts
+   an overridden connect timeout or the `ShardedHttpTransport` updates its `base_client_config`
+   before creating new shards.
 
 ```rust
 // In ShardedHttpTransport, per-endpoint health tracking:
