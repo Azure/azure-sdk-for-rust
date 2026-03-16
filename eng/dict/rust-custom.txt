@@ -13,7 +13,6 @@ rustls
 rustsec
 turbofish
 uninit
-unsharded
 dylib
 cdylib
 staticlib
