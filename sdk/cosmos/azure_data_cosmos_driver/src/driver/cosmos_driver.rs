@@ -140,7 +140,8 @@ impl CosmosDriver {
                     NegotiatedHttpVersion::Http2,
                     &error,
                     runtime.connection_pool().is_http2_allowed(),
-                ) => {
+                ) =>
+            {
                 tracing::info!(
                     endpoint = %AccountEndpoint::from(account),
                     error = %error,
@@ -260,7 +261,8 @@ impl CosmosDriver {
                     current_transport.negotiated_version(),
                     &error,
                     runtime.connection_pool().is_http2_allowed(),
-                ) => {
+                ) =>
+            {
                 let fallback_version = NegotiatedHttpVersion::Http11;
 
                 tracing::info!(
@@ -1321,5 +1323,4 @@ mod tests {
             false,
         ));
     }
-
 }
