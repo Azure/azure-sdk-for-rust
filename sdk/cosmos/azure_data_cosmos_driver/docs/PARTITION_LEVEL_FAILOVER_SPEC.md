@@ -108,7 +108,7 @@ same lock-free pattern.
 │  STAGE 4: Execute via transport pipeline → TransportResult                  │
 │  STAGE 5: evaluate_transport_result() → (OperationAction, Vec<Effect>)      │
 │           ├─ 403/3 → FailoverRetry + MarkPartitionUnavailable (PPAF/PPCB)   │
-│           ├─ 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavail.   │
+│           ├─ 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavailable│
 │           └─ Eligibility encoded in OperationRetryState + snapshot flags    │
 │  STAGE 6: location_state_store.apply(effects)                               │
 │           ├─ MarkEndpointUnavailable → CAS on AccountEndpointState          │
@@ -135,7 +135,7 @@ same lock-free pattern.
 │  │  failover_overrides: HashMap<PartitionKeyRangeId, ...>               │   │
 │  │  circuit_breaker_overrides: HashMap<PartitionKeyRangeId, ...>        │   │
 │  │  per_partition_automatic_failover_enabled: bool (AccountProperties)  │   │
-│  │  per_partition_circuit_breaker_enabled: bool (env + AccountProps)    │   │
+│  │  per_partition_circuit_breaker_enabled: bool (options + AccountProps)│   │
 │  └──────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  Methods:                                                                   │
@@ -189,14 +189,14 @@ same lock-free pattern.
 
 | Flag | Source | Default | Description |
 |---|---|---|---|
-| `per_partition_circuit_breaker_enabled` | Options / Env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. The effective PPCB value is `server_flag \|\| option_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
+| `per_partition_circuit_breaker_enabled` | `DriverOptions` → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. Read from `DriverOptions` at construction (currently backed by the env var). The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
 | `per_partition_automatic_failover_enabled` | Server-side `AccountProperties.enable_per_partition_failover_behavior` | `false` | PPAF is enabled when the Cosmos DB account has this flag set. Updated dynamically on each account properties refresh. |
 
-> **Configuration resolution**: When the [Hierarchical Configuration Model](HierarchicalConfigModel.md)
-> lands, `per_partition_circuit_breaker_enabled` will be read from the layered
-> options system (Environment → Runtime → Account → Request) rather than directly
-> from the environment variable. Until then, direct `env::var` reading is an
-> acceptable interim implementation.
+> **Configuration resolution**: The PPCB option is read from `DriverOptions` at
+> construction time and stored in `PartitionFailoverConfig`. When the
+> [Hierarchical Configuration Model](HierarchicalConfigModel.md) lands, this will
+> be read from the layered options system (Environment → Runtime → Account →
+> Request). Until then, the `DriverOptions` value is backed by `env::var`.
 
 ### Dynamic Reconfiguration
 
@@ -220,13 +220,11 @@ via the CAS loop when account properties are refreshed:
 ```rust
 // In CosmosDriver construction:
 
-// 1. Read option value (defaults to true)
-//    TODO: Read from HierarchicalConfigModel options once landed.
-let circuit_breaker_option_enabled =
-    env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
-        .ok()
-        .and_then(|v| v.parse::<bool>().ok())
-        .unwrap_or(true);
+// 1. Build PartitionFailoverConfig from DriverOptions.
+//    The circuit_breaker_option_enabled value comes from DriverOptions
+//    (currently backed by env var AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED,
+//     will use Hierarchical Configuration Model once landed).
+let config = PartitionFailoverConfig::from_options(&driver_options);
 
 // 2. Initial PartitionEndpointState (PPAF starts disabled — updated on
 //    first account properties refresh)
@@ -234,9 +232,8 @@ let initial_partition_state = PartitionEndpointState {
     failover_overrides: HashMap::new(),
     circuit_breaker_overrides: HashMap::new(),
     per_partition_automatic_failover_enabled: false,
-    per_partition_circuit_breaker_enabled: circuit_breaker_option_enabled,
-    per_partition_circuit_breaker_option_enabled: circuit_breaker_option_enabled,
-    ..Default::default()
+    per_partition_circuit_breaker_enabled: config.circuit_breaker_option_enabled,
+    config,
 };
 
 // 3. LocationStateStore is initialized with this partition state
@@ -249,7 +246,7 @@ let initial_partition_state = PartitionEndpointState {
 //            account_props.enable_per_partition_failover_behavior
 //        per_partition_circuit_breaker_enabled =
 //            account_props.enable_per_partition_failover_behavior
-//            || per_partition_circuit_breaker_option_enabled
+//            || current.config.circuit_breaker_option_enabled
 ```
 
 ---
@@ -366,10 +363,8 @@ pub(crate) struct PartitionEndpointState {
     /// PPCB enabled (from options + account property).
     pub per_partition_circuit_breaker_enabled: bool,
 
-    /// Retained option value for recomputation on account refresh.
-    pub per_partition_circuit_breaker_option_enabled: bool,
-
-    /// Configuration read from env vars / options at construction time.
+    /// Configuration read from DriverOptions at construction time.
+    /// Includes `circuit_breaker_option_enabled` for recomputation on account refresh.
     pub config: PartitionFailoverConfig,
 }
 ```
@@ -423,12 +418,19 @@ incremented/updated fields.
 
 ### 5.3 `PartitionFailoverConfig`
 
-Configuration values read from environment variables at driver construction time.
+Configuration values read from `DriverOptions` at driver construction time.
 
 ```rust
 /// Configuration for partition-level failover, read once at construction.
 #[derive(Clone, Debug)]
 pub(crate) struct PartitionFailoverConfig {
+    /// PPCB option value from DriverOptions (default: true).
+    /// Retained for recomputation on account refresh:
+    ///   effective_ppcb = server_flag || circuit_breaker_option_enabled
+    /// Source: DriverOptions (currently backed by env var
+    ///   AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED).
+    pub circuit_breaker_option_enabled: bool,
+
     /// Read failures before circuit trips (default: 2).
     /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS
     pub read_failure_threshold: i32,
@@ -693,7 +695,7 @@ the counter fresh.
   ┌──────────────────┐  failback │  all locs  │                     ┌───────────┴──────────┐
   │   COUNTING       │  removes  │  exhausted │                     │  PROBE_CANDIDATE     │
   │ (entry exists,   │  entry    │  → entry   │          (5)        │  (single request     │
-  │  threshold NOT   │────────── ┘  removed   │     unavail. dur    │   probes original    │
+  │  threshold NOT   │────────── ┘  removed   │     unavailable. dur│   probes original    │
   │  exceeded)       │                        │     exceeded        │   region)            │
   │  counter++       │                        │                     └──────────▲───────────┘
   └────────┬─────────┘                        │                                │
@@ -1437,7 +1439,7 @@ self.apply_partition(|current| {
     let mut next = current.clone();
     next.per_partition_automatic_failover_enabled = properties.enable_per_partition_failover_behavior;
     next.per_partition_circuit_breaker_enabled = properties.enable_per_partition_failover_behavior
-        || current.per_partition_circuit_breaker_option_enabled;
+        || current.config.circuit_breaker_option_enabled;
     next
 });
 ```
