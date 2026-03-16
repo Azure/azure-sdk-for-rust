@@ -13,8 +13,8 @@ that the pull request CI pipeline performs. Use this script before pushing to
 gain high confidence that CI will pass.
 
 The script determines which packages have changed relative to a target branch
-(default: main) and runs checks against those packages. You can also specify
-packages explicitly.
+(default: main) and runs checks against those packages. You can also use the
+-PackageNames parameter to restrict checks to a subset of these detected packages.
 
 All check steps run to completion even when earlier steps fail, so you can
 discover every issue in a single invocation.
@@ -178,10 +178,10 @@ Pre-push verification
 "@
 
 # Try to fetch the target branch ref for diffing. If this fails (e.g., no
-# credentials or network access), warn and continue with the local ref.
+# credentials or network access), warn and continue with the existing local origin ref.
 Invoke-LoggedCommand "git fetch origin $TargetBranch --quiet" -GroupOutput -DoNotExitOnFailedExitCode
 if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
-  LogWarning "Could not fetch origin/$TargetBranch (exit code $LASTEXITCODE). Falling back to local ref."
+  LogWarning "Could not fetch origin/$TargetBranch (exit code $LASTEXITCODE). Continuing with the existing local origin/$TargetBranch ref, which may be missing or out of date."
 }
 
 # ---------------------------------------------------------------------------
@@ -260,7 +260,7 @@ else {
   }
 }
 
-# If the caller specified explicit package names, filter the PackageInfo files.
+# If the caller specified explicit package names, filter the detected changed packages to that subset.
 if ($PackageNames) {
   if (Test-Path $PackageInfoDirectory) {
     foreach ($file in $packageInfoFiles) {
@@ -272,7 +272,7 @@ if ($PackageNames) {
     # Refresh the list after filtering
     $packageInfoFiles = @(Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse -ErrorAction SilentlyContinue)
     if ($packageInfoFiles.Count -eq 0) {
-      LogWarning "None of the specified packages ($($PackageNames -join ', ')) matched changed packages. Checks may be limited."
+      LogWarning "None of the specified packages ($($PackageNames -join ', ')) matched the detected changed packages. Checks may be limited."
     }
   }
 }
@@ -281,7 +281,9 @@ if ($PackageNames) {
 # Run check steps (continue on failure)
 # ---------------------------------------------------------------------------
 
-$stepResults = @()
+$stepResults = @(
+  @{ name = 'setup'; status = 'passed' }
+)
 
 # Step 2: Analyze code
 if ($SkipAnalysis) {
@@ -340,7 +342,13 @@ if ($SkipLinkVerification) {
   $stepResults += @{ name = 'linkcheck'; status = 'skipped' }
 }
 else {
-  $changedMarkdownFiles = git -c core.quotepath=off diff "origin/$TargetBranch...HEAD" --name-only --diff-filter=d -- '*.md'
+  $gitDiffCommand = "git -c core.quotepath=off diff origin/$TargetBranch...HEAD --name-only --diff-filter=d -- '*.md'"
+  $changedMarkdownFiles = Invoke-LoggedCommand $gitDiffCommand -DoNotExitOnFailedExitCode
+
+  if ($LASTEXITCODE -ne 0) {
+    LogError "Failed to determine changed markdown files. Command '$gitDiffCommand' exited with code $LASTEXITCODE."
+    exit 1
+  }
 
   if (!$changedMarkdownFiles) {
     Write-Host "`n`n=== Skipping link verification (no changed markdown files) ===`n"
@@ -361,11 +369,13 @@ else {
     }
     else {
       $verifyLinksScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'common', 'scripts', 'Verify-Links.ps1'))
+      $repoRootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+      $repoRootUri = [System.Uri]::new($repoRootFullPath).AbsoluteUri
 
       $stepResults += Invoke-Step 'linkcheck' 'Running link verification on changed markdown files' {
         & $verifyLinksScript `
           -urls $resolvedMdFiles `
-          -rootUrl "file://$RepoRoot" `
+          -rootUrl $repoRootUri `
           -checkLinkGuidance $true `
           -localBuildRepoPath $RepoRoot
       }

@@ -33,6 +33,8 @@ if ($cargoAuditCmd) {
   $versionOutput = cargo audit --version 2>$null
   if ($versionOutput -match '(\d+\.\d+\.\d+)') {
     $installedVersion = $Matches[1]
+  } else {
+    LogWarning "Unable to parse cargo-audit version from output: '$versionOutput'. Will reinstall cargo-audit $requiredVersion."
   }
 }
 if ($installedVersion -ne $requiredVersion) {
