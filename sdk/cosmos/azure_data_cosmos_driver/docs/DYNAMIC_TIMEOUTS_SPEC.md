@@ -55,7 +55,6 @@ add latency to the common case.
   attempt like request timeouts are. Instead, connection timeouts use an adaptive model described
   in [§10](#10-adaptive-connection-timeout).
 - **Query plan timeout escalation**: Deferred until query plan execution is implemented.
-- **Address refresh timeout escalation**: Deferred until direct mode is implemented.
 
 ---
 
@@ -515,8 +514,8 @@ Normal state: connect_timeout = 1s
   client is on a slow or unreliable network. >1s is essentially only needed for developers on
   poor connections — production workloads running in Azure should never hit this.
 - **Exactly-once transition**: This is not a per-attempt ladder. Once the `ShardedHttpTransport`
-  decides to increase the connection timeout, it creates new `HttpClient` instances with the higher
-  timeout. The old clients drain naturally and are reclaimed by the health sweep.
+  decides to increase the connection timeout for an endpoint, it creates new `HttpClient` instances
+  with the higher timeout and marks old shards as unhealthy for immediate reclamation.
 - **No fallback to 1s**: Once elevated to 5s, the connection timeout stays at 5s for the lifetime
   of the driver. A restart resets to 1s. This keeps the logic simple and avoids oscillation.
 
@@ -527,23 +526,32 @@ shards per endpoint. It already tracks per-shard health metrics and performs hea
 
 Connection timeout adaptation fits naturally into this model:
 
-1. **Track connection failure rate**: The `ShardedHttpTransport` monitors connection failures
-   (errors where `is_connect()` returns `true`) across all shards for an endpoint.
-2. **Threshold check**: When the connection failure rate exceeds a configurable threshold (e.g.,
-   >50% of recent connection attempts fail), the transport transitions to the elevated timeout.
-3. **Create new clients**: New `HttpClient` instances are created with `connect_timeout = 5s`
-   via the `HttpClientFactory`. Existing shards with the old timeout continue serving inflight
-   requests and are eventually reclaimed when idle.
+1. **Track connection failures per endpoint**: The `ShardedHttpTransport` monitors connection
+   failures (errors where `is_connect()` returns `true`) for each endpoint independently. Since
+   the sharded transport already manages shard pools per endpoint, per-endpoint tracking is the
+   natural granularity — a connectivity issue in one region does not penalize healthy regions.
+2. **Consecutive failure threshold**: When an endpoint accumulates **>3 consecutive connection
+   failures**, the transport transitions that endpoint to the elevated timeout. Consecutive
+   failures (rather than a failure rate) avoid false positives from transient blips during pool
+   expansion or momentary network hiccups. The counter resets on any successful connection. A
+   threshold of 3 provides enough signal that the issue is persistent while reacting before the
+   application sees widespread failures.
+3. **Create new clients and replace old shards**: New `HttpClient` instances are created with
+   `connect_timeout = 5s` via the `HttpClientFactory`. Existing shards with the 1s timeout are
+   **immediately marked unhealthy** so the health sweep reclaims them on its next pass, rather
+   than waiting for natural drain. This ensures inflight requests on old shards do not continue
+   failing at 1s while new shards are available with 5s.
 4. **No `azure_core` changes needed**: This is entirely internal to the `ShardedHttpTransport`.
    The `HttpClientFactory::create()` already accepts `HttpClientConfig` which includes
    `connect_timeout`.
 
 ```rust
-// In ShardedHttpTransport, on health sweep or after connection failure:
-if connection_failure_rate > CONNECT_TIMEOUT_ESCALATION_THRESHOLD {
-    self.effective_connect_timeout = Duration::from_secs(5);
+// In ShardedHttpTransport, per-endpoint health tracking:
+if endpoint_state.consecutive_connect_failures > 3 {
+    endpoint_state.effective_connect_timeout = Duration::from_secs(5);
+    // Mark existing shards as unhealthy for immediate reclamation.
+    endpoint_state.mark_old_shards_unhealthy();
     // New shards will be created with the elevated timeout.
-    // Existing shards drain and are reclaimed by the health sweep.
 }
 ```
 
@@ -591,12 +599,3 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
    metadata operations uniformly, or should specific metadata operations (e.g., database account
    reads) have their own ladders? For now, a single metadata ladder is proposed. Query plan and
    address refresh are deferred.
-
-2. **Connection failure rate threshold**: What failure rate should trigger the connection timeout
-   escalation from 1s to 5s? Candidates: >50% of recent attempts, or >N consecutive failures.
-   The threshold should be high enough to avoid false positives from transient blips but low enough
-   to react before the application sees widespread failures.
-
-3. **Connection failure rate window**: Over what time window or sample size should the failure rate
-   be measured? A sliding window of recent connection attempts (e.g., last 20 attempts) vs. a
-   time-based window (e.g., last 30 seconds).
