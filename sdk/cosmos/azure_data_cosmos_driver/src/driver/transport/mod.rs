@@ -166,7 +166,6 @@ impl CosmosTransport {
     }
 
     /// Returns the negotiated HTTP version for this account.
-    #[allow(dead_code)] // Will be used by metadata refresh re-probe
     pub(crate) fn negotiated_version(&self) -> NegotiatedHttpVersion {
         self.negotiated_version
     }

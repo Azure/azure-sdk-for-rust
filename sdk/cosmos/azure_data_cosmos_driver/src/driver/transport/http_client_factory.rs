@@ -82,17 +82,6 @@ impl HttpClientConfig {
         }
     }
 
-    /// Config for the bootstrap HTTP/2 probe during initialization.
-    #[allow(dead_code)] // Used by tests; runtime bootstrap uses metadata() with Http2
-    pub(crate) fn bootstrap_http2_probe(connection_pool: &ConnectionPoolOptions) -> Self {
-        Self {
-            version_policy: HttpVersionPolicy::Http2Only,
-            request_timeout: connection_pool.max_metadata_request_timeout(),
-            for_emulator: false,
-            http2_keep_alive_while_idle: false,
-        }
-    }
-
     /// Config for the bootstrap HTTP/1.1 fallback during initialization.
     pub(crate) fn bootstrap_http11_fallback(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
@@ -156,15 +145,6 @@ mod tests {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
             HttpClientConfig::dataplane_gateway20(&pool).version_policy,
-            HttpVersionPolicy::Http2Only
-        );
-    }
-
-    #[test]
-    fn bootstrap_http2_probe_uses_http2_only() {
-        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        assert_eq!(
-            HttpClientConfig::bootstrap_http2_probe(&pool).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }
