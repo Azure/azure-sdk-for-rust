@@ -432,11 +432,11 @@ pub(crate) struct PartitionFailoverConfig {
     pub circuit_breaker_option_enabled: bool,
 
     /// Read failures before circuit trips (default: 2).
-    /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS
+    /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS
     pub read_failure_threshold: i32,
 
     /// Write failures before circuit trips (default: 5).
-    /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES
+    /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES
     pub write_failure_threshold: i32,
 
     /// Window after which failure counters reset (default: 5 minutes).
@@ -627,13 +627,11 @@ mark_partition_unavailable(
 The circuit breaker maintains per-partition failure counters. The counters
 are incremented on each failure and checked against configurable thresholds.
 
-> **Note on naming**: The environment variables use the term "consecutive" (e.g.,
-> `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS`) for
-> cross-SDK compatibility with Java. However, these are not strictly consecutive:
-> in the CAS model, a lost CAS can cause a counter increment to be dropped
-> (see §13.2), and successful requests between failures do not reset the counter.
-> Only the timeout window (§7.3) resets counters. Internal Rust field names use
-> `read_failure_count` / `write_failure_count` to avoid this misleading label.
+> **Note on naming**: The environment variables use the term "failure count" (e.g.,
+> `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS`).
+> These are not strictly consecutive: in the CAS model, a lost CAS can cause a
+> counter increment to be dropped (see §13.2), and successful requests between
+> failures do not reset the counter. Only the timeout window (§7.3) resets counters.
 
 ```
 increment_request_failure_counter_and_check_if_partition_can_failover(request)
@@ -665,8 +663,8 @@ increment_request_failure_counter_and_check_if_partition_can_failover(request)
 
 | Parameter | Default | Environment Variable |
 |---|---|---|
-| Read failure threshold | 2 | `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS` |
-| Write failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES` |
+| Read failure threshold | 2 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
+| Write failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` |
 | Counter reset window | 5 minutes | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` |
 
 **Why reads = 2, writes = 5?** Reads are idempotent and safe to fail over
@@ -1143,8 +1141,8 @@ routing for all requests to that region.
 | `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `bool` | `true` | Master switch for per-partition circuit breaker |
 | `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` | `i64` | `5` | Minimum time a partition must be unavailable before failback sweep considers it |
 | `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` | `i64` | `300` | Interval between background failback sweep iterations |
-| `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_READS` | `i32` | `2` | Read failure threshold before circuit trips |
-| `AZURE_COSMOS_CIRCUIT_BREAKER_CONSECUTIVE_FAILURE_COUNT_FOR_WRITES` | `i32` | `5` | Write failure threshold before circuit trips |
+| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `2` | Read failure threshold before circuit trips |
+| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` | `i32` | `5` | Write failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` | `i64` | `5` | Window (in minutes) after which failure counters reset |
 
 ### 11.2 Server-Side Configuration
@@ -1482,15 +1480,15 @@ CosmosDriver        execute_operation_pipeline       LocationStateStore         
   │                           │ STAGE 3: build_transport_request                   │
   │                           │                           │                        │
   │                           │ STAGE 4: execute          │                        │
-  │                           │ ────────────────────────────────────────────────►   │
+  │                           │ ────────────────────────────────────────────────►  │
   │                           │                           │   HTTP request         │
   │                           │                           │                        │
   │                           │   TransportResult (503)   │   HTTP response        │
-  │                           │ ◄────────────────────────────────────────────────   │
+  │                           │ ◄────────────────────────────────────────────────  │
   │                           │                           │                        │
-  │                           │ [capture pk_range_id from response headers]         │
+  │                           │ [capture pk_range_id from response headers]        │
   │                           │                           │                        │
-  │                           │ STAGE 5: evaluate_transport_result()                │
+  │                           │ STAGE 5: evaluate_transport_result()               │
   │                           │──┐ → FailoverRetry        │                        │
   │                           │  │   + [MarkPartitionUnavailable,                  │
   │                           │  │      MarkEndpointUnavailable]                   │
@@ -1526,9 +1524,9 @@ CosmosDriver        execute_operation_pipeline       LocationStateStore         
   │                           │◄─┘                        │                        │
   │                           │                           │                        │
   │                           │ STAGE 3-4: retry to alternate region               │
-  │                           │ ────────────────────────────────────────────────►   │
+  │                           │ ────────────────────────────────────────────────►  │
   │                           │                           │                        │
   │  CosmosResponse           │   TransportResult (200)   │                        │
-  │ ◄─────────────────────    │ ◄────────────────────────────────────────────────   │
+  │ ◄─────────────────────    │ ◄────────────────────────────────────────────────  │
   │                           │                           │                        │
 ```
