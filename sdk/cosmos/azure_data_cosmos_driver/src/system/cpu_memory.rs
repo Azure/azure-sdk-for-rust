@@ -57,30 +57,40 @@ mod mach_ffi {
 
     /// 64-bit virtual-memory statistics returned by `HOST_VM_INFO64`.
     ///
-    /// Only the fields we need (`free_count`, `inactive_count`,
-    /// `purgeable_count`) are named; the rest are padding. The full
-    /// struct is 172 bytes on arm64 / 168 on x86_64; we declare it at
-    /// the maximum size to be safe.
+    /// Layout mirrors `vm_statistics64_data_t` from `<mach/vm_statistics.h>`.
+    /// All fields are present so that `HOST_VM_INFO64_COUNT` is computed
+    /// correctly and every `u64` field lands on an 8-byte boundary, avoiding
+    /// SIGBUS on arm64.
     #[repr(C)]
     #[derive(Debug, Clone, Copy)]
     pub struct VmStatistics64 {
-        pub free_count: NaturalT,
-        pub active_count: NaturalT,
-        pub inactive_count: NaturalT,
-        pub wire_count: NaturalT,
-        pub zero_fill_count: u64,
-        pub reactivations: u64,
-        pub pageins: u64,
-        pub pageouts: u64,
-        pub faults: u64,
-        pub cow_faults: u64,
-        pub lookups: u64,
-        pub hits: u64,
-        pub purges: u64,
-        pub purgeable_count: NaturalT,
-        // Remaining fields are unused; the struct is sized correctly by
-        // HOST_VM_INFO64_COUNT so the kernel writes the right amount.
-        _pad: [u8; 100],
+        pub free_count: NaturalT,                        // offset  0
+        pub active_count: NaturalT,                      // offset  4
+        pub inactive_count: NaturalT,                    // offset  8
+        pub wire_count: NaturalT,                        // offset 12
+        pub zero_fill_count: u64,                        // offset 16
+        pub reactivations: u64,                          // offset 24
+        pub pageins: u64,                                // offset 32
+        pub pageouts: u64,                               // offset 40
+        pub faults: u64,                                 // offset 48
+        pub cow_faults: u64,                             // offset 56
+        pub lookups: u64,                                // offset 64
+        pub hits: u64,                                   // offset 72
+        pub purges: u64,                                 // offset 80
+        pub purgeable_count: NaturalT,                   // offset 88
+        _pad0: NaturalT,                                 // offset 92 (alignment padding before u64)
+        pub decompressions: u64,                         // offset 96
+        pub compressions: u64,                           // offset 104
+        pub swapins: u64,                                // offset 112
+        pub swapouts: u64,                               // offset 120
+        pub compressor_page_count: NaturalT,             // offset 128
+        pub throttled_count: NaturalT,                   // offset 132
+        pub external_page_count: NaturalT,               // offset 136
+        pub internal_page_count: NaturalT,               // offset 140
+        pub total_uncompressed_pages_in_compressor: u64, // offset 144
+        // speculative_count added in macOS 10.11; present on all supported CI runners
+        pub speculative_count: NaturalT, // offset 152
+        _pad1: NaturalT, // offset 156 (struct size → 160, HOST_VM_INFO64_COUNT = 40)
     }
 
     impl Default for VmStatistics64 {
