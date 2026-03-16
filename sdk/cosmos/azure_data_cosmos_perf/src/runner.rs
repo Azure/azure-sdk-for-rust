@@ -39,6 +39,7 @@ struct PerfResult {
     partition_key: String,
     workload_id: String,
     commit_sha: String,
+    hostname: String,
     #[serde(rename = "TIMESTAMP")]
     timestamp: String,
     operation: String,
@@ -64,6 +65,7 @@ struct ErrorResult {
     partition_key: String,
     workload_id: String,
     commit_sha: String,
+    hostname: String,
     #[serde(rename = "TIMESTAMP")]
     timestamp: String,
     operation: String,
@@ -82,6 +84,7 @@ pub struct RunConfig {
     pub results_container: ContainerClient,
     pub workload_id: String,
     pub commit_sha: String,
+    pub hostname: String,
 }
 
 /// Runs operations concurrently until cancelled or duration expires.
@@ -101,6 +104,7 @@ pub async fn run(config: RunConfig) {
         results_container,
         workload_id,
         commit_sha,
+        hostname,
     } = config;
     let cancelled = Arc::new(AtomicBool::new(false));
 
@@ -130,6 +134,7 @@ pub async fn run(config: RunConfig) {
     let report_results_container = results_container.clone();
     let report_workload_id = workload_id.clone();
     let report_commit_sha = commit_sha.clone();
+    let report_hostname = hostname.clone();
     let reporter = tokio::spawn(async move {
         let mut sys = System::new();
         let mut interval = tokio::time::interval(report_interval);
@@ -152,6 +157,7 @@ pub async fn run(config: RunConfig) {
                 metrics.as_ref(),
                 &report_workload_id,
                 &report_commit_sha,
+                &report_hostname,
             )
             .await;
         }
@@ -169,6 +175,7 @@ pub async fn run(config: RunConfig) {
         let err_container = results_container.clone();
         let err_workload_id = workload_id.clone();
         let err_commit_sha = commit_sha.clone();
+        let err_hostname = hostname.clone();
 
         workers.spawn(async move {
             while !cancelled.load(Ordering::Relaxed) {
@@ -188,6 +195,7 @@ pub async fn run(config: RunConfig) {
                             &e,
                             &err_workload_id,
                             &err_commit_sha,
+                            &err_hostname,
                         )
                         .await;
                     }
@@ -218,6 +226,7 @@ pub async fn run(config: RunConfig) {
         metrics.as_ref(),
         &workload_id,
         &commit_sha,
+        &hostname,
     )
     .await;
 
@@ -231,6 +240,7 @@ async fn upsert_results(
     metrics: Option<&stats::ProcessMetrics>,
     workload_id: &str,
     commit_sha: &str,
+    hostname: &str,
 ) {
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
@@ -253,6 +263,7 @@ async fn upsert_results(
             partition_key: Uuid::new_v4().to_string(),
             workload_id: workload_id.to_string(),
             commit_sha: commit_sha.to_string(),
+            hostname: hostname.to_string(),
             timestamp: now.clone(),
             operation: s.name.clone(),
             count: s.count,
@@ -288,6 +299,7 @@ async fn upsert_error(
     error: &azure_core::Error,
     workload_id: &str,
     commit_sha: &str,
+    hostname: &str,
 ) {
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
@@ -299,6 +311,7 @@ async fn upsert_error(
         partition_key: Uuid::new_v4().to_string(),
         workload_id: workload_id.to_string(),
         commit_sha: commit_sha.to_string(),
+        hostname: hostname.to_string(),
         timestamp: now,
         operation: operation.to_string(),
         error_message: format!("{error}"),

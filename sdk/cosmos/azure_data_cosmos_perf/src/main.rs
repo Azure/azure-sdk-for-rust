@@ -193,6 +193,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or_else(|| "unknown".to_string())
     });
 
+    // Resolve hostname for machine identification in results
+    let hostname = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown".to_string());
+
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
     let stats = Arc::new(Stats::new(&op_names));
@@ -206,6 +211,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         results_container,
         workload_id: config.workload_id,
         commit_sha,
+        hostname,
     })
     .await;
 
