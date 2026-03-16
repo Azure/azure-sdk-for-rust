@@ -67,10 +67,30 @@ foreach ($jsonFile in $jsonFiles) {
   $junitFile = ([System.IO.Path]::Combine($OutputDirectory, "$baseName.xml"))
 
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
-  Get-Content $jsonFile.FullName | cargo2junit > $junitFile
-  if ($LASTEXITCODE) {
-    LogError "Failure during conversion of $($jsonFile.Name) to JUnit XML."
-    $succeeded = $false
+  $output = Get-Content $jsonFile.FullName | cargo2junit 2>&1
+  $exitCode = $LASTEXITCODE
+
+  # Separate stdout from stderr (native command stderr lines are ErrorRecord objects)
+  $stdout = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
+  $stderr = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+
+  # Write converted output to the JUnit file
+  $stdout | Set-Content $junitFile
+
+  # Always print stderr so it appears in CI logs for debugging
+  foreach ($line in $stderr) {
+    Write-Host "  stderr: $line"
+  }
+
+  if ($exitCode -ne 0) {
+    # cargo2junit exits non-zero when tests fail, not just on conversion errors.
+    # Filter out the known "One or more tests failed." message and only treat
+    # remaining stderr lines as actual conversion failures.
+    $otherErrors = @($stderr | Where-Object { "$_" -notmatch 'One or more tests failed\.' })
+    if ($otherErrors.Count -gt 0) {
+      LogError "Failure during conversion of $($jsonFile.Name) to JUnit XML."
+      $succeeded = $false
+    }
   }
 }
 
