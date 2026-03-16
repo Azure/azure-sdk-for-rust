@@ -57,7 +57,6 @@ pub struct ConnectionPoolOptions {
     http2_eviction_grace_period: Duration,
     http2_keep_alive_interval: Duration,
     http2_keep_alive_timeout: Duration,
-    http2_keep_alive_idle_client_count: usize,
     tcp_keepalive_time: Option<Duration>,
     tcp_keepalive_interval: Option<Duration>,
     tcp_keepalive_retries: Option<u32>,
@@ -178,11 +177,6 @@ impl ConnectionPoolOptions {
         self.http2_keep_alive_timeout
     }
 
-    /// Returns how many shard clients per endpoint should keep sending idle HTTP/2 pings.
-    pub fn http2_keep_alive_idle_client_count(&self) -> usize {
-        self.http2_keep_alive_idle_client_count
-    }
-
     /// Returns the TCP keepalive time. Defaults to 1 second.
     pub fn tcp_keepalive_time(&self) -> Option<Duration> {
         self.tcp_keepalive_time
@@ -250,7 +244,6 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_EVICTION_GRACE_PERIOD_MS`: Minimum time since the last successful request before an unhealthy shard can be evicted (default: `2_000`, min: `100`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS`: HTTP/2 keep-alive ping interval in milliseconds (default: `1_000`, min: `100`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS`: HTTP/2 keep-alive ping timeout in milliseconds (default: `2_000`, min: `100`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT`: Number of shard clients per endpoint that keep sending idle HTTP/2 pings (default: `10`, min: `0`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`: TCP keepalive time in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
@@ -290,7 +283,6 @@ pub struct ConnectionPoolOptionsBuilder {
     http2_eviction_grace_period: Option<Duration>,
     http2_keep_alive_interval: Option<Duration>,
     http2_keep_alive_timeout: Option<Duration>,
-    http2_keep_alive_idle_client_count: Option<usize>,
     tcp_keepalive_time: Option<Duration>,
     tcp_keepalive_interval: Option<Duration>,
     tcp_keepalive_retries: Option<u32>,
@@ -462,15 +454,6 @@ impl ConnectionPoolOptionsBuilder {
     /// Default: 2 seconds.
     pub fn with_http2_keep_alive_timeout(mut self, timeout: Duration) -> Self {
         self.http2_keep_alive_timeout = Some(timeout);
-        self
-    }
-
-    /// Sets how many shard clients per endpoint should keep sending idle HTTP/2 pings.
-    ///
-    /// Must be between 0 and 256 inclusive.
-    /// Default: 10.
-    pub fn with_http2_keep_alive_idle_client_count(mut self, value: usize) -> Self {
-        self.http2_keep_alive_idle_client_count = Some(value);
         self
     }
 
@@ -717,14 +700,6 @@ impl ConnectionPoolOptionsBuilder {
             u64::MAX,
         )?;
 
-        let http2_keep_alive_idle_client_count = parse_from_env(
-            self.http2_keep_alive_idle_client_count,
-            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT",
-            10_usize,
-            ValidationBounds::range(0, 256),
-        )?
-        .min(max_http2_connections_per_endpoint);
-
         let tcp_keepalive_time = parse_optional_duration_millis_from_env(
             self.tcp_keepalive_time,
             "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS",
@@ -775,7 +750,6 @@ impl ConnectionPoolOptionsBuilder {
             http2_eviction_grace_period,
             http2_keep_alive_interval,
             http2_keep_alive_timeout,
-            http2_keep_alive_idle_client_count,
             tcp_keepalive_time,
             tcp_keepalive_interval,
             tcp_keepalive_retries,
@@ -858,7 +832,6 @@ mod tests {
         );
         assert_eq!(options.http2_keep_alive_interval(), Duration::from_secs(1));
         assert_eq!(options.http2_keep_alive_timeout(), Duration::from_secs(2));
-        assert_eq!(options.http2_keep_alive_idle_client_count(), 10);
         assert_eq!(options.tcp_keepalive_time(), Some(Duration::from_secs(1)));
         assert_eq!(
             options.tcp_keepalive_interval(),
@@ -891,7 +864,6 @@ mod tests {
             .with_http2_eviction_grace_period(Duration::from_millis(4_000))
             .with_http2_keep_alive_interval(Duration::from_millis(1_500))
             .with_http2_keep_alive_timeout(Duration::from_millis(2_500))
-            .with_http2_keep_alive_idle_client_count(7)
             .with_tcp_keepalive_time(Duration::from_millis(30_000))
             .with_tcp_keepalive_interval(Duration::from_millis(5_000))
             .with_tcp_keepalive_retries(4)
@@ -949,7 +921,6 @@ mod tests {
             options.http2_keep_alive_timeout(),
             Duration::from_millis(2_500)
         );
-        assert_eq!(options.http2_keep_alive_idle_client_count(), 7);
         assert_eq!(
             options.tcp_keepalive_time(),
             Some(Duration::from_millis(30_000))
@@ -1214,17 +1185,6 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("http2_consecutive_failure_threshold must be at least 1"));
-    }
-
-    #[test]
-    fn http2_keep_alive_idle_client_count_is_capped_at_max_connections() {
-        let options = ConnectionPoolOptionsBuilder::new()
-            .with_max_http2_connections_per_endpoint(4)
-            .with_http2_keep_alive_idle_client_count(10)
-            .build()
-            .unwrap();
-
-        assert_eq!(options.http2_keep_alive_idle_client_count(), 4);
     }
 
     #[test]

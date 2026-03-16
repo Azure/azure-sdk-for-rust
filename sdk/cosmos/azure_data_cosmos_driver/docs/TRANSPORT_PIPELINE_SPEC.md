@@ -1557,14 +1557,13 @@ the hot path. The write lock is only taken when the transport is actually replac
 #### Re-Probe on Metadata Refresh
 
 During periodic metadata refreshes (every ~5 minutes), the driver fetches account
-properties using the current transport. If the fetch fails with a connection/protocol
-error, the driver tries the alternate HTTP version:
+properties using the current transport. If the fetch fails with an explicit HTTP/2
+incompatibility signal while currently using HTTP/2, the driver retries the fetch
+with HTTP/1.1 and swaps the transport on success.
 
-- If currently HTTP/2 and the fetch fails → try HTTP/1.1
-- If currently HTTP/1.1 and the fetch fails → try HTTP/2
-
-If the fallback succeeds, the transport is swapped to the new version. This handles
-the edge case where a gateway's HTTP/2 support changes after initialization.
+The refresh path does not automatically probe back from HTTP/1.1 to HTTP/2. That
+keeps the negotiated protocol stable for a driver instance unless a future explicit
+re-upgrade policy is introduced.
 
 #### Keepalive Separation
 
@@ -2232,7 +2231,7 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | 6.1      | **`ShardedHttpTransport`** — Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. The current implementation uses `Mutex`/`RwLock` guarded snapshots.                                         | `driver/transport/sharded_transport.rs`           |
 | 6.2      | **Shard selection algorithm** — `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. | `driver/transport/sharded_transport.rs`           |
-| 6.3      | **Connection-pool knobs** — Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and opt-in TCP keepalive.                  | `options/connection_pool.rs`                      |
+| 6.3      | **Connection-pool knobs** — Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. | `options/connection_pool.rs`                      |
 | 6.4      | **Wire into `AdaptiveTransport`** — `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry.                                                         | `driver/transport/adaptive_transport.rs`          |
 | 6.5      | **Background sweep and tests** — `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior.                                                  | `driver/transport/sharded_transport.rs`, `tests/` |
 
@@ -2243,16 +2242,16 @@ minimum shard count.
 
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
-| Sub-step | Work Item                                                                                                                                                              | Files                                     |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Sub-step | Work Item                                                                                                                                                            | Files                                     |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 7.1      | **Shard health checks** — Keep shard-local health state in `ClientShardState` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. | `driver/transport/sharded_transport.rs`   |
-| 7.2      | **Background health sweep** — Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement.   | `driver/transport/sharded_transport.rs`   |
-| 7.3      | **Connectivity retry in transport** — Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover.          | `driver/transport/transport_pipeline.rs`  |
-| 7.4      | **Optional TCP keepalive** — Preserve the opt-in TCP keepalive knobs in the reqwest factory, but keep the default disabled unless explicitly configured.               | `driver/transport/http_client_factory.rs` |
-| 7.5      | **Tests** — Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards.                                                          | `tests/`                                  |
+| 7.2      | **Background health sweep** — Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. | `driver/transport/sharded_transport.rs`   |
+| 7.3      | **Connectivity retry in transport** — Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover.        | `driver/transport/transport_pipeline.rs`  |
+| 7.4      | **TCP keepalive defaults** — Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob.   | `driver/transport/http_client_factory.rs` |
+| 7.5      | **Tests** — Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards.                                                        | `tests/`                                  |
 
 **What works after Step 7**: Full HTTP/2 sharding with health monitoring, automatic eviction
-& scale-down, optional TCP keepalive for callers that need it, and connectivity-level retry via
+& scale-down, default TCP keepalive on HTTP/1.1 transports, and connectivity-level retry via
 shard rotation.
 
 ### Step 8: Fault injection
@@ -2352,12 +2351,9 @@ pub struct ConnectionPoolOptions {
     pub http2_keep_alive_interval: Option<Duration>,
     /// HTTP/2 keepalive ping timeout. Default: 2 s.
     pub http2_keep_alive_timeout: Option<Duration>,
-    /// Number of shard clients per endpoint that keep sending idle HTTP/2
-    /// pings. Overflow shard clients keep idle pings disabled. Default: 10.
-    pub http2_keep_alive_idle_client_count: Option<usize>,
-    /// Optional TCP keepalive time. Disabled by default.
+    /// TCP keepalive time. Default: 1 s.
     pub tcp_keepalive_time: Option<Duration>,
-    /// Optional TCP keepalive probe interval. Disabled by default.
+    /// TCP keepalive probe interval. Default: 1 s.
     pub tcp_keepalive_interval: Option<Duration>,
     /// Optional TCP keepalive probe retry count. Disabled by default.
     pub tcp_keepalive_retries: Option<u32>,
@@ -2374,9 +2370,8 @@ pub struct ConnectionPoolOptions {
 | `idle_http2_client_timeout`          | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`       | **New.** Request-path idle reclaim.          |
 | `http2_keep_alive_interval`          | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS`       | **New.** Default 1 s.                        |
 | `http2_keep_alive_timeout`           | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS`        | **New.** Default 2 s.                        |
-| `http2_keep_alive_idle_client_count` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT` | **New.** Idle ping fan-out.                  |
-| `tcp_keepalive_time`                 | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`              | **New.** Disabled by default.                |
-| `tcp_keepalive_interval`             | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`          | **New.** Disabled by default.                |
+| `tcp_keepalive_time`                 | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`              | **New.** Default 1 s.                        |
+| `tcp_keepalive_interval`             | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`          | **New.** Default 1 s.                        |
 | `tcp_keepalive_retries`              | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`              | **New.** Disabled by default.                |
 
 ### 9.2 Additions to `RetryOptions`

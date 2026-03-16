@@ -162,6 +162,7 @@ pub(crate) async fn execute_transport_pipeline(
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
     let mut local_connectivity_retry_count = 0_u32;
+    let mut prior_failed_transport_shards = Vec::<FailedTransportShardDiagnostics>::new();
     let mut excluded_shard_id = None;
 
     // Compute the endpoint key once for the entire transport pipeline.
@@ -206,6 +207,13 @@ pub(crate) async fn execute_transport_pipeline(
             ctx.transport.diagnostics_http_version(),
             &request.endpoint,
         );
+
+        for failed_transport_shard in prior_failed_transport_shards.iter().cloned() {
+            diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
+        }
+        for _ in 0..local_connectivity_retry_count {
+            diagnostics.increment_local_shard_retry_count(request_handle);
+        }
 
         // Build HTTP request from TransportRequest
         let mut http_request = Request::new(request.url.clone(), request.method);
@@ -275,10 +283,9 @@ pub(crate) async fn execute_transport_pipeline(
                     .can_retry_on_different_shard(failed_shard_id, &endpoint_key)
         }) {
             if let Some(failed_transport_shard) = failed_transport_shard(&result) {
-                diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
+                prior_failed_transport_shards.push(failed_transport_shard);
             }
             local_connectivity_retry_count += 1;
-            diagnostics.increment_local_shard_retry_count(request_handle);
             excluded_shard_id = result.shard_id;
             continue;
         }
@@ -1044,6 +1051,13 @@ mod tests {
             }
             other => panic!("expected transport error, got {other:?}"),
         }
+
+        let diagnostics = diagnostics.complete();
+        let requests = diagnostics.requests();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[1].local_shard_retry_count(), 1);
+        assert_eq!(requests[1].failed_transport_shards().len(), 1);
+        assert_eq!(requests[1].failed_transport_shards()[0].error(), "first shard failed");
     }
 
     #[tokio::test]

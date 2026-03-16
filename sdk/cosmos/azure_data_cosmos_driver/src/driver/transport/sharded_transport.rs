@@ -251,7 +251,7 @@ impl EndpointShardPool {
         {
             let mut shards = pool.shards.write().expect("shard lock poisoned");
             while shards.len() < pool.connection_pool.min_http2_connections_per_endpoint() {
-                let shard = pool.build_shard(shards.len())?;
+                    let shard = pool.build_shard()?;
                 shards.push(Arc::new(shard));
             }
         }
@@ -365,23 +365,14 @@ impl EndpointShardPool {
             return Ok(None);
         }
 
-        let shard = Arc::new(self.build_shard(shards.len())?);
+        let shard = Arc::new(self.build_shard()?);
         shards.push(shard.clone());
         Ok(Some(shard))
     }
 
-    fn build_shard(&self, shard_ordinal: usize) -> azure_core::Result<ClientShard> {
-        self.build_shard_with_idle_ping(
-            shard_ordinal < self.connection_pool.http2_keep_alive_idle_client_count(),
-        )
-    }
-
-    fn build_shard_with_idle_ping(
-        &self,
-        http2_keep_alive_while_idle: bool,
-    ) -> azure_core::Result<ClientShard> {
+    fn build_shard(&self) -> azure_core::Result<ClientShard> {
         let mut client_config = self.base_client_config;
-        client_config.http2_keep_alive_while_idle = http2_keep_alive_while_idle;
+        client_config.http2_keep_alive_while_idle = true;
 
         let client = self
             .client_factory
@@ -480,13 +471,11 @@ impl EndpointShardPool {
         // expensive part (TCP connect, TLS handshake) and must not block
         // concurrent `select_shard` readers.
         //
-        // Replacement and backfill shards are built with idle HTTP/2 pings
-        // disabled. Only the initial shards created in `new()` and
-        // `try_create_shard()` use the ordinal-based policy because those
-        // paths run under the write lock with an accurate shard count.
+        // All HTTP/2 shards keep idle pings enabled. This keeps liveness
+        // detection uniform across initial creation, scale-up, and replacement.
         let mut new_shards = Vec::with_capacity(shards_needed);
         for _ in 0..shards_needed {
-            let shard = self.build_shard_with_idle_ping(false)?;
+            let shard = self.build_shard()?;
             new_shards.push(Arc::new(shard));
         }
 
@@ -809,7 +798,6 @@ mod tests {
             .with_max_http2_connections_per_endpoint(4)
             .with_http2_consecutive_failure_threshold(2)
             .with_http2_eviction_grace_period(Duration::from_millis(100))
-            .with_http2_keep_alive_idle_client_count(2)
             .with_idle_http2_client_timeout(Duration::from_millis(1_000))
             .build()
             .unwrap()
@@ -893,7 +881,7 @@ mod tests {
     }
 
     #[test]
-    fn first_idle_ping_clients_keep_http2_idle_pings_enabled() {
+    fn all_http2_shards_keep_idle_pings_enabled() {
         let factory = Arc::new(TrackingFactory::default());
         let pool = EndpointShardPool::new(
             EndpointKey("test.documents.azure.com:443".to_owned()),
@@ -913,7 +901,7 @@ mod tests {
 
         assert_ne!(first.id, second.id);
         assert_ne!(second.id, third.id);
-        assert_eq!(factory.idle_ping_flags(), vec![true, true, false]);
+        assert_eq!(factory.idle_ping_flags(), vec![true, true, true]);
     }
 
     #[test]
@@ -983,7 +971,7 @@ mod tests {
         let pool = EndpointShardPool::new(
             EndpointKey("test.documents.azure.com:443".to_owned()),
             connection_pool(),
-            factory,
+            factory.clone(),
             client_config(),
         )
         .unwrap();
@@ -1026,5 +1014,6 @@ mod tests {
             .iter()
             .any(|id| *id == first.id || *id == second.id));
         assert!(shard_ids.iter().any(|id| *id > second.id));
+        assert_eq!(factory.idle_ping_flags(), vec![true, true, true]);
     }
 }
