@@ -33,3 +33,13 @@ if ($IsWindows) {
 } else {
     Write-Host "Docker is not available. No Cosmos DB Emulator container to clean up."
 }
+
+# Clear env vars set by Test-Setup.ps1 so that subsequent packages in the same
+# pipeline run get a clean environment and are not skipped by their own setup.
+Write-Host "Clearing emulator environment variables."
+$env:AZURE_COSMOS_CONNECTION_STRING = $null
+$env:AZURE_COSMOS_TEST_MODE = $null
+$env:AZURE_COSMOS_EMULATOR_HOST = $null
+# Remove the --cfg=test_category="emulator" flag added by Test-Setup.ps1.
+$env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="emulator"', ''
+Write-Host "RUSTFLAGS after cleanup: $env:RUSTFLAGS"
