@@ -1,0 +1,10 @@
+target/
+.git/
+.github/
+.devcontainer/
+.vscode/
+doc/
+eng/
+profile.json
+*.profraw
+*.profdata

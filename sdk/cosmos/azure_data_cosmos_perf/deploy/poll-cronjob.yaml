@@ -1,0 +1,69 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# CronJob that polls a remote branch for new commits, rebuilds the Docker image,
+# and restarts the perf Job. Deployed by deploy-aks.sh when --poll-branch is set.
+#
+# The updater script is mounted from a ConfigMap created separately.
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cosmos-perf-updater
+  namespace: cosmos-perf
+spec:
+  schedule: "0 */12 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cosmos-perf-updater
+            azure.workload.identity/use: "true"
+        spec:
+          serviceAccountName: cosmos-perf-sa
+          imagePullSecrets:
+          - name: acr-secret
+          containers:
+          - name: updater
+            image: mcr.microsoft.com/azure-cli:latest
+            command: ["/bin/bash", "-c", "apt-get update -qq && apt-get install -y -qq rsync git >/dev/null 2>&1 && /scripts/updater.sh"]
+            env:
+            - name: POLL_BRANCH
+              value: "${POLL_BRANCH}"
+            - name: REPO_URL
+              value: "https://github.com/Azure/azure-sdk-for-rust.git"
+            - name: ACR_NAME
+              value: "${ACR_NAME}"
+            - name: IMAGE_TAG
+              value: "${IMAGE_TAG}"
+            - name: RESOURCE_GROUP
+              value: "${RG}"
+            - name: PERF_NAMESPACE
+              value: "cosmos-perf"
+            - name: COSMOS_ENDPOINT
+              value: "${COSMOS_ENDPOINT}"
+            - name: RESULTS_ENDPOINT
+              value: "${RESULTS_ENDPOINT}"
+            - name: RESULTS_AUTH
+              value: "${RESULTS_AUTH}"
+            - name: APPLICATION_REGION
+              value: "${APPLICATION_REGION}"
+            - name: CONCURRENCY
+              value: "${CONCURRENCY}"
+            - name: PARALLELISM
+              value: "${PARALLELISM}"
+            - name: IDENTITY_CLIENT_ID
+              value: "${IDENTITY_CLIENT_ID}"
+            volumeMounts:
+            - name: updater-script
+              mountPath: /scripts
+          volumes:
+          - name: updater-script
+            configMap:
+              name: perf-updater-script
+              defaultMode: 0755
+          restartPolicy: Never
