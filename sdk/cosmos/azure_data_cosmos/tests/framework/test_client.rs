@@ -17,7 +17,6 @@ use azure_data_cosmos::{
     Query,
 };
 use futures::TryStreamExt;
-use serde::Serialize;
 use std::time::Duration;
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
@@ -771,76 +770,6 @@ impl TestRunContext {
                 }
             }
         }
-
-        // Ensure data-plane readiness: create a warm-up item and read it from both regions.
-        // Container metadata reads (.read(None)) only validate control plane replication.
-        // Data-plane operations (create_item/read_item) require partition key range resolution
-        // and may fail with 404 "Collection is not yet available" until fully replicated.
-        #[derive(Serialize)]
-        struct WarmupItem {
-            id: &'static str,
-            partition_key: &'static str,
-        }
-
-        let warmup_pk = "__warmup__";
-        let warmup_item = WarmupItem {
-            id: "__warmup__",
-            partition_key: warmup_pk,
-        };
-
-        let hub_container = hub_client
-            .database_client(db_client.id())
-            .container_client(container_id)
-            .await;
-
-        // Create the warm-up item via the hub client, retrying 404s
-        loop {
-            match hub_container
-                .create_item(warmup_pk, &warmup_item, None)
-                .await
-            {
-                Ok(_) => break,
-                Err(e) if e.http_status() == Some(StatusCode::Conflict) => break,
-                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
-                    println!(
-                        "waiting for data-plane readiness in hub ({}): {}",
-                        HUB_REGION.as_str(),
-                        e
-                    );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
-                Err(e) => return Err(e),
-            }
-        }
-
-        // Read the warm-up item from the satellite, retrying 404s
-        let satellite_container = satellite_client
-            .database_client(db_client.id())
-            .container_client(container_id)
-            .await;
-
-        loop {
-            match satellite_container
-                .read_item::<serde_json::Value>(warmup_pk, "__warmup__", None)
-                .await
-            {
-                Ok(_) => break,
-                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
-                    println!(
-                        "waiting for data-plane readiness in satellite ({}): {}",
-                        SATELLITE_REGION.as_str(),
-                        e
-                    );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
-                Err(e) => return Err(e),
-            }
-        }
-
-        // Clean up the warm-up item
-        let _ = hub_container
-            .delete_item(warmup_pk, "__warmup__", None)
-            .await;
 
         Ok(db_client.container_client(container_id).await)
     }
