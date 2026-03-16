@@ -194,7 +194,7 @@ same lock-free pattern.
 
 > **Configuration resolution**: The PPCB option is read from `DriverOptions` at
 > construction time and stored in `PartitionFailoverConfig`. When the
-> [Hierarchical Configuration Model](HierarchicalConfigModel.md) lands, this will
+> [Hierarchical Configuration Model](../../azure_data_cosmos/docs/HierarchicalConfigModel.md) lands, this will
 > be read from the layered options system (Environment → Runtime → Account →
 > Request). Until then, the `DriverOptions` value is backed by `env::var`.
 
