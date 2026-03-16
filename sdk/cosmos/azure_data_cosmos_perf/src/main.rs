@@ -47,13 +47,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let application_region: Option<azure_data_cosmos::regions::RegionName> =
-        config.application_region.clone().map(|r| r.into());
+    let application_region: azure_data_cosmos::regions::RegionName =
+        config.application_region.clone().into();
+    let strategy = RoutingStrategy::ProximityTo(application_region.clone());
 
-    let mut builder = CosmosClientBuilder::new();
-    if let Some(region) = application_region.clone() {
-        builder = builder.with_application_region(region);
-    }
+    let builder = CosmosClientBuilder::new();
 
     let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
@@ -129,10 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
-        let mut results_builder = CosmosClientBuilder::new();
-        if let Some(region) = application_region {
-            results_builder = results_builder.with_application_region(region);
-        }
+        let results_builder = CosmosClientBuilder::new();
+        let results_strategy = RoutingStrategy::ProximityTo(application_region.clone());
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(

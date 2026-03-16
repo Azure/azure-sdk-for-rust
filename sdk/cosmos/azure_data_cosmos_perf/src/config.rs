@@ -31,9 +31,9 @@ pub struct Config {
 
     /// Azure region where the application is running (e.g., "East US 2").
     ///
-    /// The SDK uses this to sort regions by geographic proximity for optimal latency.
+    /// Required. The SDK uses this to sort regions by geographic proximity for optimal latency.
     #[arg(long)]
-    pub application_region: Option<String>,
+    pub application_region: String,
 
     /// Comma-separated list of regions to exclude from routing.
     ///
