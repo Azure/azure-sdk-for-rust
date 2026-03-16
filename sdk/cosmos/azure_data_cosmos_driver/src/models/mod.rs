@@ -274,6 +274,14 @@ impl ResourceType {
         )
     }
 
+    /// Returns true if this resource type supports partition-level failover.
+    ///
+    /// Only documents and stored procedures (with execute) are routed to
+    /// physical partitions and thus eligible for PPAF/PPCB.
+    pub fn is_partitioned(self) -> bool {
+        matches!(self, ResourceType::Document | ResourceType::StoredProcedure)
+    }
+
     /// Returns true if this resource type requires a database reference.
     pub fn requires_database(self) -> bool {
         matches!(

@@ -4,8 +4,8 @@
 //! Operation pipeline: the core loop for executing Cosmos DB operations.
 //!
 //! Implements the 7-stage operation loop with multi-region failover,
-//! session retry, endpoint unavailability tracking, and deadline
-//! enforcement. No hedging or circuit breaker yet (planned for later steps).
+//! session retry, endpoint unavailability tracking, partition-level failover
+//! (PPAF/PPCB), and deadline enforcement.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -14,10 +14,11 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::{
-        routing::{AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore},
-        transport::CosmosTransport,
+    driver::routing::{
+        can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
+        AccountEndpointState, CosmosEndpoint, LocationSnapshot, LocationStateStore,
     },
+    transport::CosmosTransport,
     models::{
         AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
         Credential, SubStatusCode,
@@ -142,6 +143,17 @@ pub(crate) async fn execute_operation_pipeline(
             &mut diagnostics,
         )
         .await;
+
+        // Capture partition key range ID from response headers (first time only).
+        if retry_state.partition_key_range_id.is_none() {
+            if let Some(headers) = result.response_headers() {
+                if let Some(pk_range_id) = headers.get_optional_string(&HeaderName::from_static(
+                    "x-ms-documentdb-partitionkeyrangeid",
+                )) {
+                    retry_state.partition_key_range_id = Some(pk_range_id.to_owned());
+                }
+            }
+        }
 
         // ── STAGE 5: Evaluate result → action ──────────────────────────
         let (action, effects) =
@@ -288,6 +300,29 @@ fn resolve_endpoint(
     } else {
         TransportMode::Gateway
     };
+
+    // Check for partition-level override (PPAF/PPCB).
+    if let Some(pk_range_id) = &retry_state.partition_key_range_id {
+        let partitions = location.partitions.as_ref();
+        let is_read = operation.is_read_only();
+        let is_partitioned = operation.resource_type().is_partitioned();
+
+        if is_eligible_for_ppcb(partitions, account, is_read, is_partitioned) {
+            if let Some(entry) = partitions.ppcb_overrides.get(pk_range_id) {
+                if can_circuit_breaker_trigger_failover(entry, is_read, &partitions.config) {
+                    return RoutingDecision {
+                        endpoint: entry.current_endpoint.clone(),
+                    };
+                }
+            }
+        } else if is_eligible_for_ppaf(partitions, account, is_read, is_partitioned) {
+            if let Some(entry) = partitions.ppaf_overrides.get(pk_range_id) {
+                return RoutingDecision {
+                    endpoint: entry.current_endpoint.clone(),
+                };
+            }
+        }
+    }
 
     RoutingDecision {
         selected_url: selected.selected_url(use_gateway20).clone(),
@@ -651,6 +686,7 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+            partition_key_range_id: None,
         };
 
         let routing = super::resolve_endpoint(
@@ -701,6 +737,7 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
         };
 
         let routing = super::resolve_endpoint(
@@ -749,6 +786,7 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
         };
 
         let routing = super::resolve_endpoint(
@@ -804,6 +842,7 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
         };
 
         let first_routing = super::resolve_endpoint(

@@ -61,6 +61,15 @@ pub(crate) fn evaluate_transport_result(
                             endpoint: endpoint.clone(),
                             reason: UnavailableReason::WriteForbidden,
                         },
+                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                            partition_key_range_id: retry_state
+                                .partition_key_range_id
+                                .clone()
+                                .unwrap_or_default(),
+                            region: endpoint.region().cloned(),
+                            is_read: false, // WriteForbidden is always a write
+                            is_partitioned_resource: operation.resource_type().is_partitioned(),
+                        }),
                     ],
                 );
             }
@@ -122,12 +131,13 @@ pub(crate) fn evaluate_transport_result(
                     },
                     vec![
                         LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
-                            // TODO(partition-routing): Wire the actual partition key range ID from
-                            // TransportResult or CosmosOperation once partition-level
-                            // routing is implemented.
-                            partition_key_range_id: String::new(),
+                            partition_key_range_id: retry_state
+                                .partition_key_range_id
+                                .clone()
+                                .unwrap_or_default(),
                             region: endpoint.region().cloned(),
                             is_read: operation.is_read_only(),
+                            is_partitioned_resource: operation.resource_type().is_partitioned(),
                         }),
                         LocationEffect::MarkEndpointUnavailable {
                             endpoint: endpoint.clone(),
@@ -384,6 +394,7 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
         };
 
         let endpoint = CosmosEndpoint::global(

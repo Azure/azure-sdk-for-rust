@@ -73,6 +73,9 @@ pub(crate) struct OperationRetryState {
     pub excluded_regions: Vec<Region>,
     /// Session-retry routing override for read operations.
     pub session_retry_routing: SessionRetryRouting,
+    /// Partition key range ID resolved from the first response headers.
+    /// `None` until the first transport attempt returns headers.
+    pub partition_key_range_id: Option<String>,
 }
 
 /// How a session retry should resolve endpoints for a read operation.
@@ -102,6 +105,7 @@ impl OperationRetryState {
             can_use_multiple_write_locations,
             excluded_regions,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
         }
     }
 
