@@ -112,10 +112,11 @@ impl ShardedHttpTransport {
         excluded_shard_id: u64,
         endpoint_key: &EndpointKey,
     ) -> bool {
-        let pools = self.pools.lock().expect("endpoint pool lock poisoned");
-        pools
-            .get(endpoint_key)
-            .is_some_and(|pool| pool.can_select_different_shard(excluded_shard_id))
+        let pool = {
+            let pools = self.pools.lock().expect("endpoint pool lock poisoned");
+            pools.get(endpoint_key).cloned()
+        };
+        pool.is_some_and(|pool| pool.can_select_different_shard(excluded_shard_id))
     }
 
     /// Returns the ID of the shard that would be selected for the given request,
@@ -126,10 +127,14 @@ impl ShardedHttpTransport {
         excluded_shard_id: Option<u64>,
         endpoint_key: &EndpointKey,
     ) -> Option<u64> {
-        let pools = self.pools.lock().expect("endpoint pool lock poisoned");
-        pools
-            .get(endpoint_key)
-            .and_then(|pool| pool.select_shard(excluded_shard_id, None).ok())
+        let pool = {
+            let pools = self.pools.lock().expect("endpoint pool lock poisoned");
+            pools.get(endpoint_key).cloned()
+        };
+        // The outer pools mutex is released before calling select_shard,
+        // which acquires the inner shards RwLock. This avoids blocking
+        // get_or_create_pool for other endpoints during shard selection.
+        pool.and_then(|pool| pool.select_shard(excluded_shard_id, None).ok())
             .map(|shard| shard.id)
     }
 
@@ -248,11 +253,26 @@ impl EndpointShardPool {
             next_shard_id: AtomicU64::new(1),
         };
 
+        // Best-effort eager shard creation. If a transient TLS/DNS issue
+        // prevents building the initial shard(s), the pool starts empty and
+        // `select_shard` → `try_create_shard` will retry on the next request.
+        // The background health sweep also backfills to min_clients.
         {
             let mut shards = pool.shards.write().expect("shard lock poisoned");
             while shards.len() < pool.connection_pool.min_http2_connections_per_endpoint() {
-                let shard = pool.build_shard()?;
-                shards.push(Arc::new(shard));
+                match pool.build_shard() {
+                    Ok(shard) => shards.push(Arc::new(shard)),
+                    Err(error) => {
+                        tracing::debug!(
+                            endpoint = %pool.endpoint.0,
+                            error = %error,
+                            created = shards.len(),
+                            target = pool.connection_pool.min_http2_connections_per_endpoint(),
+                            "Initial shard creation failed; pool will backfill lazily"
+                        );
+                        break;
+                    }
+                }
             }
         }
 
@@ -371,8 +391,7 @@ impl EndpointShardPool {
     }
 
     fn build_shard(&self) -> azure_core::Result<ClientShard> {
-        let mut client_config = self.base_client_config;
-        client_config.http2_keep_alive_while_idle = true;
+        let client_config = self.base_client_config;
 
         let client = self
             .client_factory
@@ -441,7 +460,14 @@ impl EndpointShardPool {
                 // surfacing hung connections so eviction continues to key off
                 // transport failures rather than a separate ReadHang detector.
 
-                // Reclaim idle overflow shards
+                // Reclaim idle overflow shards from the tail. Shards in the
+                // middle of the vector that become idle after eviction-and-
+                // replacement cycles are not reclaimed here — this is an
+                // accepted trade-off because those slots will eventually be
+                // freed when they end up at the tail (or replaced by a future
+                // eviction sweep). Compacting mid-vector would invalidate
+                // inflight shard references and add complexity with minimal
+                // benefit since the vector is bounded by max_clients.
                 while shards.len() > min_clients {
                     let should_remove = shards.last().is_some_and(|shard| {
                         !shard.is_marked_for_eviction() && shard.is_idle_for(now, idle_timeout)
@@ -526,6 +552,7 @@ impl ClientShard {
                 consecutive_failures: 0,
                 total_requests: 0,
                 total_failures: 0,
+                total_cancellations: 0,
             }),
         }
     }
@@ -569,6 +596,8 @@ impl ClientShard {
 
     fn decrement_inflight(&self) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
+        let mut state = self.state.lock().expect("shard state lock poisoned");
+        state.total_cancellations = state.total_cancellations.saturating_add(1);
     }
 }
 
@@ -651,6 +680,7 @@ impl ClientShard {
             state.consecutive_failures,
             state.total_requests,
             state.total_failures,
+            state.total_cancellations,
             self.is_marked_for_eviction(),
         )
     }
@@ -677,6 +707,8 @@ struct ClientShardState {
     consecutive_failures: u32,
     total_requests: u64,
     total_failures: u64,
+    /// Requests started but never finished (e.g., cancelled by a timeout race).
+    total_cancellations: u64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1015,5 +1047,87 @@ mod tests {
             .any(|id| *id == first.id || *id == second.id));
         assert!(shard_ids.iter().any(|id| *id > second.id));
         assert_eq!(factory.idle_ping_flags(), vec![true, true, true]);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn background_health_sweep_fires_and_evicts_failed_shards() {
+        // Create a transport with a short health check interval so the
+        // background sweep fires quickly in paused-time mode.
+        let health_interval = Duration::from_millis(100);
+        let pool_opts = ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(2)
+            .with_min_http2_connections_per_endpoint(1)
+            .with_max_http2_connections_per_endpoint(4)
+            .with_http2_consecutive_failure_threshold(2)
+            .with_http2_eviction_grace_period(Duration::from_millis(100))
+            .with_idle_http2_client_timeout(Duration::from_millis(1_000))
+            .with_http2_health_check_interval(health_interval)
+            .build()
+            .unwrap();
+
+        let config = HttpClientConfig::dataplane_gateway(
+            &pool_opts,
+            crate::driver::transport::http_client_factory::NegotiatedHttpVersion::Http2,
+        );
+        let factory = Arc::new(TrackingFactory::default());
+
+        let transport = ShardedHttpTransport::new(pool_opts.clone(), factory.clone(), config);
+
+        // Create a pool and force a shard above the failure threshold.
+        let endpoint_key = EndpointKey("sweep-test.documents.azure.com:443".to_owned());
+        let pool = transport.get_or_create_pool(endpoint_key.clone()).unwrap();
+
+        // Fill the first shard so a second shard is created.
+        let first = pool.select_shard(None, None).unwrap();
+        first.record_request_start();
+        first.record_request_start();
+        let second = pool.select_shard(None, None).unwrap();
+
+        // Mark the second shard with consecutive failures above threshold.
+        for _ in 0..3 {
+            second.record_request_start();
+            second.record_request_finish(&Err(azure_core::Error::with_message(
+                ErrorKind::Other,
+                "synthetic",
+            )));
+        }
+
+        // Make second's last success old enough that it passes the grace period.
+        {
+            let mut state = second.state.lock().unwrap();
+            state.last_success_at = None;
+            state.last_request_at = Instant::now() - Duration::from_secs(5);
+        }
+
+        // Ensure the first shard is healthy so eviction can proceed.
+        first.record_request_finish(&Ok(azure_core::http::AsyncRawResponse::from_bytes(
+            azure_core::http::StatusCode::Ok,
+            azure_core::http::headers::Headers::new(),
+            Vec::<u8>::new(),
+        )));
+        first.record_request_finish(&Ok(azure_core::http::AsyncRawResponse::from_bytes(
+            azure_core::http::StatusCode::Ok,
+            azure_core::http::headers::Headers::new(),
+            Vec::<u8>::new(),
+        )));
+
+        let second_id = second.id;
+
+        // Advance time past the health check interval so the background
+        // sweep fires and evicts the failed shard.
+        tokio::time::advance(health_interval * 3).await;
+        tokio::task::yield_now().await;
+
+        // Give the spawned task a chance to run.
+        tokio::time::advance(health_interval).await;
+        tokio::task::yield_now().await;
+
+        let shard_ids: Vec<u64> = pool.shards.read().unwrap().iter().map(|s| s.id).collect();
+
+        // The failed shard should have been evicted and replaced.
+        assert!(
+            !shard_ids.contains(&second_id),
+            "failed shard {second_id} should have been evicted by background sweep, remaining: {shard_ids:?}"
+        );
     }
 }

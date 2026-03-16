@@ -52,7 +52,7 @@ impl HttpClientConfig {
             },
             request_timeout: connection_pool.max_metadata_request_timeout(),
             for_emulator: false,
-            http2_keep_alive_while_idle: false,
+            http2_keep_alive_while_idle: matches!(version, NegotiatedHttpVersion::Http2),
         }
     }
 
@@ -68,7 +68,7 @@ impl HttpClientConfig {
             },
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
-            http2_keep_alive_while_idle: false,
+            http2_keep_alive_while_idle: matches!(version, NegotiatedHttpVersion::Http2),
         }
     }
 
@@ -78,7 +78,7 @@ impl HttpClientConfig {
             version_policy: HttpVersionPolicy::Http2Only,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             for_emulator: false,
-            http2_keep_alive_while_idle: false,
+            http2_keep_alive_while_idle: true,
         }
     }
 

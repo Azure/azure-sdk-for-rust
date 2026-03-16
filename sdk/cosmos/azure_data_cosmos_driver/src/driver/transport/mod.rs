@@ -165,6 +165,47 @@ impl CosmosTransport {
         })
     }
 
+    /// Creates a lightweight bootstrap transport for one-shot metadata probes.
+    ///
+    /// Uses a single unsharded HTTP client for metadata (no per-endpoint shard
+    /// pools, no background health sweep). The dataplane gateway transport is
+    /// created lazily only if somehow needed, keeping the bootstrap footprint
+    /// minimal.
+    pub(crate) fn bootstrap_metadata_only(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+        negotiated_version: NegotiatedHttpVersion,
+    ) -> azure_core::Result<Self> {
+        let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
+        let metadata_transport = AdaptiveTransport::unsharded(
+            &connection_pool,
+            http_client_factory.clone(),
+            metadata_config,
+        )?;
+
+        // Dataplane transport is unused for bootstrap probes. Create a
+        // minimal unsharded instance to satisfy the struct layout; the
+        // overhead is a single HTTP client with no background tasks.
+        let gateway_config =
+            HttpClientConfig::dataplane_gateway(&connection_pool, negotiated_version);
+        let dataplane_gateway_transport = AdaptiveTransport::unsharded(
+            &connection_pool,
+            http_client_factory.clone(),
+            gateway_config,
+        )?;
+
+        Ok(Self {
+            connection_pool,
+            http_client_factory,
+            negotiated_version,
+            metadata_transport,
+            dataplane_gateway_transport,
+            dataplane_gateway20_transport: OnceLock::new(),
+            insecure_emulator_metadata_transport: OnceLock::new(),
+            insecure_emulator_dataplane_transport: OnceLock::new(),
+        })
+    }
+
     /// Returns the negotiated HTTP version for this account.
     pub(crate) fn negotiated_version(&self) -> NegotiatedHttpVersion {
         self.negotiated_version

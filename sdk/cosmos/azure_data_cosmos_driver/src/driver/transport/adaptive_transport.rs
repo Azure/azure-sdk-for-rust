@@ -48,6 +48,21 @@ impl AdaptiveTransport {
         })
     }
 
+    /// Creates an unsharded transport wrapping a single HTTP client.
+    ///
+    /// Used for lightweight one-shot transports (e.g., the bootstrap probe)
+    /// where the overhead of sharding and background health sweeps is
+    /// unnecessary.
+    pub(crate) fn unsharded(
+        connection_pool: &ConnectionPoolOptions,
+        client_factory: Arc<dyn HttpClientFactory>,
+        config: HttpClientConfig,
+    ) -> azure_core::Result<Self> {
+        Ok(Self::Gateway(
+            client_factory.build(connection_pool, config)?,
+        ))
+    }
+
     /// Creates a Gateway 2.0 transport (always HTTP/2 sharded).
     pub(crate) fn gateway20(
         connection_pool: &ConnectionPoolOptions,

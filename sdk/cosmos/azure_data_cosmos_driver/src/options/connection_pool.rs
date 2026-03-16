@@ -177,12 +177,21 @@ impl ConnectionPoolOptions {
         self.http2_keep_alive_timeout
     }
 
-    /// Returns the TCP keepalive time. Defaults to 1 second.
+    /// Returns the TCP keepalive time.
+    ///
+    /// Defaults to 1 second. This aggressive default is intentional to detect
+    /// stale connections quickly for low-latency workloads (P99 ~10ms). Override
+    /// via `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS` if your
+    /// infrastructure (NAT gateways, firewalls) does not tolerate frequent
+    /// keepalive probes.
     pub fn tcp_keepalive_time(&self) -> Option<Duration> {
         self.tcp_keepalive_time
     }
 
-    /// Returns the TCP keepalive probe interval. Defaults to 1 second.
+    /// Returns the TCP keepalive probe interval.
+    ///
+    /// Defaults to 1 second, matching the HTTP/2 keep-alive probe cadence.
+    /// Override via `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`.
     pub fn tcp_keepalive_interval(&self) -> Option<Duration> {
         self.tcp_keepalive_interval
     }
@@ -707,8 +716,10 @@ impl ConnectionPoolOptionsBuilder {
             u64::MAX,
         )?
         // Default to 1 s to match the HTTP/2 keep-alive interval.
-        // This ensures idle HTTP/1.1 connections are detected as stale
-        // before NAT/firewall timeouts silently close them.
+        // This aggressive default detects stale connections quickly, which is
+        // critical for low-latency workloads targeting P99 ~10ms. Users whose
+        // infrastructure does not tolerate frequent probes can override via
+        // AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS.
         .or(Some(Duration::from_secs(1)));
 
         let tcp_keepalive_interval = parse_optional_duration_millis_from_env(

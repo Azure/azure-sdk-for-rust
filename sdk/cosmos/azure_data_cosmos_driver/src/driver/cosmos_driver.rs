@@ -272,11 +272,17 @@ impl CosmosDriver {
 
     /// Fetches account properties using the current per-account transport.
     ///
-    /// If the current HTTP/2 transport fails with an explicit incompatibility
-    /// signal, the driver retries with HTTP/1.1 and swaps the transport if the
-    /// fallback succeeds. When the current transport is HTTP/1.1 and the refresh
-    /// succeeds, the driver opportunistically re-probes HTTP/2 so it can upgrade
-    /// after the account moves back to an HTTP/2-capable gateway.
+    /// Uses the existing transport for the refresh. Only on failure does it
+    /// attempt a version re-probe:
+    ///
+    /// - **HTTP/2 incompatibility failure**: falls back to HTTP/1.1 and swaps
+    ///   the transport.
+    /// - **Other transport failure with HTTP/2**: re-probes fully (may discover
+    ///   the gateway now requires HTTP/1.1).
+    ///
+    /// This avoids creating transient transport infrastructure on every refresh
+    /// cycle. A fresh probe (with its TCP/TLS overhead) only occurs when the
+    /// current transport actually fails, which is extremely rare in practice.
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
@@ -289,84 +295,69 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
 
-        let current_version = current_transport.negotiated_version();
-
+        let user_agent = Self::user_agent_header(runtime);
         match Self::fetch_account_properties_with_transport(
             &metadata_transport,
             account,
-            &Self::user_agent_header(runtime),
+            &user_agent,
         )
         .await
         {
-            Ok(props) => {
-                if runtime.connection_pool().is_http2_allowed()
-                    && matches!(current_version, NegotiatedHttpVersion::Http11)
-                {
-                    let upgraded_version = Self::alternate_http_version(current_version);
-                    match Self::fetch_account_properties_with_version(
-                        runtime,
-                        account,
-                        upgraded_version,
-                    )
-                    .await
-                    {
-                        Ok((upgraded_props, upgraded_transport)) => {
-                            tracing::info!(
-                                endpoint = %endpoint,
-                                current = ?current_version,
-                                upgraded = ?upgraded_version,
-                                "Metadata refresh re-probed HTTP/2 successfully; upgrading transport"
-                            );
-
-                            *transport_lock.write().expect("transport lock poisoned") =
-                                Arc::new(upgraded_transport);
-
-                            Ok(upgraded_props)
-                        }
-                        Err(error) if Self::has_explicit_http2_incompatibility(&error) => Ok(props),
-                        Err(error) => {
-                            tracing::debug!(
-                                endpoint = %endpoint,
-                                current = ?current_version,
-                                attempted = ?upgraded_version,
-                                error = %error,
-                                "Metadata refresh retained HTTP/1.1 after HTTP/2 reprobe failure"
-                            );
-                            Ok(props)
-                        }
-                    }
-                } else {
-                    Ok(props)
-                }
+            Ok(props) => Ok(props),
+            Err(error) => {
+                Self::handle_refresh_failure(
+                    runtime,
+                    account,
+                    transport_lock,
+                    current_transport.negotiated_version(),
+                    &endpoint,
+                    error,
+                )
+                .await
             }
-            Err(error)
-                if Self::should_downgrade_http2(
-                    current_version,
-                    &error,
-                    runtime.connection_pool().is_http2_allowed(),
-                ) =>
-            {
-                let fallback_version = Self::alternate_http_version(current_version);
-
-                tracing::info!(
-                    endpoint = %endpoint,
-                    current = ?current_version,
-                    fallback = ?fallback_version,
-                    error = %error,
-                    "Metadata refresh failed with protocol incompatibility; trying alternate HTTP version"
-                );
-
-                let (props, fallback_transport) =
-                    Self::fetch_account_properties_with_version(runtime, account, fallback_version)
-                        .await?;
-
-                *transport_lock.write().expect("transport lock poisoned") =
-                    Arc::new(fallback_transport);
-
-                Ok(props)
-            }
-            Err(error) => Err(error),
         }
+    }
+
+    /// Handles a metadata refresh failure by re-probing the HTTP version.
+    ///
+    /// If the error indicates explicit HTTP/2 incompatibility, falls back to
+    /// the alternate version directly. Otherwise, performs a full version probe
+    /// to determine whether the gateway's protocol support has changed.
+    async fn handle_refresh_failure(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_lock: &Arc<RwLock<Arc<CosmosTransport>>>,
+        current_version: NegotiatedHttpVersion,
+        endpoint: &AccountEndpoint,
+        error: azure_core::Error,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        if Self::should_downgrade_http2(
+            current_version,
+            &error,
+            runtime.connection_pool().is_http2_allowed(),
+        ) {
+            // Explicit HTTP/2 incompatibility — try the alternate version.
+            let fallback_version = Self::alternate_http_version(current_version);
+            tracing::info!(
+                endpoint = %endpoint,
+                current = ?current_version,
+                fallback = ?fallback_version,
+                error = %error,
+                "Metadata refresh failed with protocol incompatibility; trying alternate HTTP version"
+            );
+
+            let (props, fallback_transport) =
+                Self::fetch_account_properties_with_version(runtime, account, fallback_version)
+                    .await?;
+
+            *transport_lock.write().expect("transport lock poisoned") =
+                Arc::new(fallback_transport);
+
+            return Ok(props);
+        }
+
+        // Not a protocol incompatibility — propagate the original error.
+        Err(error)
     }
 
     async fn fetch_container_by_name(
@@ -1548,9 +1539,18 @@ mod tests {
 
     #[tokio::test]
     async fn probe_http_version_falls_back_to_http11_for_emulator_accounts() {
+        // The bootstrap_metadata_only transport eagerly builds 2 unsharded
+        // clients (metadata + dataplane) during runtime construction.
+        // The emulator probe then lazily builds a sharded client for the
+        // insecure emulator transport, and the HTTP/1.1 fallback builds
+        // additional clients.
         let factory = Arc::new(ScriptedFactory::new([
-            ResponsePlan::Http2Incompatible,
-            ResponsePlan::Success,
+            ResponsePlan::Success,           // bootstrap metadata (eager, unused)
+            ResponsePlan::Success,           // bootstrap dataplane (eager, unused)
+            ResponsePlan::Http2Incompatible, // emulator insecure transport shard
+            ResponsePlan::Success,           // fallback HTTP/1.1 metadata
+            ResponsePlan::Success,           // fallback HTTP/1.1 dataplane
+            ResponsePlan::Success,           // fallback emulator insecure metadata
         ]));
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_connection_pool(
@@ -1579,11 +1579,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn refresh_account_properties_reprobes_http2_after_http11_success() {
-        let factory = Arc::new(ScriptedFactory::new([
-            ResponsePlan::Success,
-            ResponsePlan::Success,
-        ]));
+    async fn refresh_account_properties_keeps_transport_on_success() {
+        let factory = Arc::new(ScriptedFactory::new([ResponsePlan::Success]));
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_http_client_factory(factory)
             .build()
@@ -1606,12 +1603,13 @@ mod tests {
                 .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        // Transport stays HTTP/1.1 — no opportunistic re-probe on success.
         assert_eq!(
             transport_lock
                 .read()
                 .expect("transport lock poisoned")
                 .negotiated_version(),
-            NegotiatedHttpVersion::Http2
+            NegotiatedHttpVersion::Http11
         );
     }
 }

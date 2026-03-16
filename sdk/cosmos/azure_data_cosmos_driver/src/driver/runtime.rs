@@ -308,7 +308,7 @@ impl CosmosDriverRuntime {
     ) -> azure_core::Result<Arc<CosmosDriver>> {
         let key = account.endpoint().to_string();
 
-        // Check if driver already exists (read lock)
+        // Fast path: return an already-initialized driver.
         {
             let registry = self.driver_registry.read().unwrap();
             if let Some(driver) = registry.get(&key) {
@@ -316,37 +316,19 @@ impl CosmosDriverRuntime {
             }
         }
 
-        // Create new driver (write lock)
-        let driver = {
-            let mut registry = self.driver_registry.write().unwrap();
+        // Slow path: create and initialize the driver *before* inserting into
+        // the registry. This ensures concurrent callers never observe an
+        // uninitialized driver. If two callers race, both will probe — but the
+        // first to finish inserts; the second discovers the existing entry and
+        // drops its duplicate.
+        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
 
-            // Double-check after acquiring write lock
-            if let Some(driver) = registry.get(&key) {
-                return Ok(driver.clone());
-            }
+        driver.initialize().await?;
 
-            // Build driver options if not provided
-            let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
-
-            let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-            registry.insert(key.clone(), driver.clone());
-            driver
-        };
-
-        // Eager initialization is required because operation execution assumes
-        // account metadata and the negotiated transport are ready before first use.
-        if let Err(error) = driver.initialize().await {
-            let mut registry = self.driver_registry.write().unwrap();
-            if registry
-                .get(&key)
-                .is_some_and(|existing| Arc::ptr_eq(existing, &driver))
-            {
-                registry.remove(&key);
-            }
-            return Err(error);
-        }
-
-        Ok(driver)
+        let mut registry = self.driver_registry.write().unwrap();
+        let entry = registry.entry(key).or_insert_with(|| driver.clone());
+        Ok(entry.clone())
     }
 }
 
@@ -565,14 +547,16 @@ impl CosmosDriverRuntimeBuilder {
             }
         };
 
-        // Bootstrap transport: HTTP/2-only for the initial protocol probe.
-        // If HTTP/2 is disabled by the user, fall back to HTTP/1.1.
+        // Bootstrap transport: lightweight metadata-only transport for the
+        // initial HTTP version probe. Uses an unsharded client (no per-endpoint
+        // shard pools, no background health sweep) since it only performs
+        // one-shot metadata requests during driver initialization.
         let bootstrap_version = if connection_pool.is_http2_allowed() {
             http_client_factory::NegotiatedHttpVersion::Http2
         } else {
             http_client_factory::NegotiatedHttpVersion::Http11
         };
-        let bootstrap_transport = Arc::new(CosmosTransport::with_factory(
+        let bootstrap_transport = Arc::new(CosmosTransport::bootstrap_metadata_only(
             connection_pool.clone(),
             http_client_factory.clone(),
             bootstrap_version,

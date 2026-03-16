@@ -840,6 +840,8 @@ pub struct TransportShardDiagnostics {
     consecutive_failures: u32,
     total_requests: u64,
     total_failures: u64,
+    /// Requests started but never finished (e.g., cancelled by a timeout race).
+    total_cancellations: u64,
     marked_for_eviction: bool,
 }
 
@@ -850,6 +852,7 @@ impl TransportShardDiagnostics {
         consecutive_failures: u32,
         total_requests: u64,
         total_failures: u64,
+        total_cancellations: u64,
         marked_for_eviction: bool,
     ) -> Self {
         Self {
@@ -858,6 +861,7 @@ impl TransportShardDiagnostics {
             consecutive_failures,
             total_requests,
             total_failures,
+            total_cancellations,
             marked_for_eviction,
         }
     }
@@ -880,6 +884,10 @@ impl TransportShardDiagnostics {
 
     pub fn total_failures(&self) -> u64 {
         self.total_failures
+    }
+
+    pub fn total_cancellations(&self) -> u64 {
+        self.total_cancellations
     }
 
     pub fn marked_for_eviction(&self) -> bool {
