@@ -29,8 +29,7 @@ use crate::{
 
 use super::{
     adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
-    infer_request_sent_status, request_signing::sign_request,
-    sharded_transport::EndpointKey,
+    infer_request_sent_status, request_signing::sign_request, sharded_transport::EndpointKey,
 };
 
 use crate::driver::pipeline::components::{
@@ -401,9 +400,14 @@ async fn execute_http_attempt(
         };
     }
 
-    let attempt_result =
-        execute_http_attempt_future(http_request, transport, excluded_shard_id, endpoint_key, None)
-            .await;
+    let attempt_result = execute_http_attempt_future(
+        http_request,
+        transport,
+        excluded_shard_id,
+        endpoint_key,
+        None,
+    )
+    .await;
     finalize_http_attempt(attempt_result, request_handle, diagnostics)
 }
 
