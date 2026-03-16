@@ -11,7 +11,7 @@ use crate::{
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
+        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
         ThroughputControlGroupSnapshot,
     },
 };
@@ -98,6 +98,50 @@ impl CosmosDriver {
             && Self::has_explicit_http2_incompatibility(error)
     }
 
+    fn alternate_http_version(current_version: NegotiatedHttpVersion) -> NegotiatedHttpVersion {
+        match current_version {
+            NegotiatedHttpVersion::Http2 => NegotiatedHttpVersion::Http11,
+            NegotiatedHttpVersion::Http11 => NegotiatedHttpVersion::Http2,
+        }
+    }
+
+    fn build_metadata_transport_for_version(
+        connection_pool: &ConnectionPoolOptions,
+        http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        version: NegotiatedHttpVersion,
+        endpoint: &AccountEndpoint,
+    ) -> azure_core::Result<(
+        CosmosTransport,
+        super::transport::adaptive_transport::AdaptiveTransport,
+    )> {
+        let transport =
+            CosmosTransport::with_factory(connection_pool.clone(), http_client_factory, version)?;
+        let metadata_transport = transport.get_metadata_transport(endpoint)?;
+        Ok((transport, metadata_transport))
+    }
+
+    async fn fetch_account_properties_with_version(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        version: NegotiatedHttpVersion,
+    ) -> azure_core::Result<(super::cache::AccountProperties, CosmosTransport)> {
+        let endpoint = AccountEndpoint::from(account);
+        let (transport, metadata_transport) = Self::build_metadata_transport_for_version(
+            runtime.connection_pool(),
+            Arc::clone(runtime.http_client_factory()),
+            version,
+            &endpoint,
+        )?;
+        let user_agent = Self::user_agent_header(runtime);
+        let props = Self::fetch_account_properties_with_transport(
+            &metadata_transport,
+            account,
+            &user_agent,
+        )
+        .await?;
+        Ok((props, transport))
+    }
+
     /// Fetches account properties using the bootstrap transport.
     ///
     /// This is used during initialization (before the per-account transport exists).
@@ -117,7 +161,8 @@ impl CosmosDriver {
     /// Probes the gateway's HTTP version and returns the negotiated version.
     ///
     /// Tries HTTP/2-only first. If that fails with an explicit HTTP/2
-    /// incompatibility signal, falls back to HTTP/1.1.
+    /// incompatibility signal, falls back to HTTP/1.1 using the same
+    /// emulator-aware metadata transport selection as the steady-state path.
     ///
     /// Callers that need to force HTTP/1.1 can disable HTTP/2 in
     /// [`crate::options::ConnectionPoolOptionsBuilder::with_is_http2_allowed`].
@@ -128,7 +173,12 @@ impl CosmosDriver {
     ) -> azure_core::Result<(NegotiatedHttpVersion, super::cache::AccountProperties)> {
         if !runtime.connection_pool().is_http2_allowed() {
             // User explicitly disabled HTTP/2 — skip the probe.
-            let props = Self::fetch_account_properties_with_runtime(runtime, account).await?;
+            let (props, _) = Self::fetch_account_properties_with_version(
+                runtime,
+                account,
+                NegotiatedHttpVersion::Http11,
+            )
+            .await?;
             return Ok((NegotiatedHttpVersion::Http11, props));
         }
 
@@ -148,21 +198,10 @@ impl CosmosDriver {
                     "HTTP/2 probe failed with protocol incompatibility; falling back to HTTP/1.1"
                 );
 
-                let pool = runtime.connection_pool();
-                let factory = runtime.http_client_factory();
-                let fallback_config =
-                    super::transport::http_client_factory::HttpClientConfig::bootstrap_http11_fallback(pool);
-                let fallback_client = factory.build(pool, fallback_config)?;
-                let fallback_transport =
-                    super::transport::adaptive_transport::AdaptiveTransport::Gateway(
-                        fallback_client,
-                    );
-
-                let user_agent = Self::user_agent_header(runtime);
-                let props = Self::fetch_account_properties_with_transport(
-                    &fallback_transport,
+                let (props, _) = Self::fetch_account_properties_with_version(
+                    runtime,
                     account,
-                    &user_agent,
+                    NegotiatedHttpVersion::Http11,
                 )
                 .await?;
                 Ok((NegotiatedHttpVersion::Http11, props))
@@ -233,9 +272,11 @@ impl CosmosDriver {
 
     /// Fetches account properties using the current per-account transport.
     ///
-    /// If the fetch fails with an explicit HTTP/2 incompatibility signal while
-    /// using HTTP/2, re-probes with HTTP/1.1 and swaps the transport if the
-    /// fallback succeeds.
+    /// If the current HTTP/2 transport fails with an explicit incompatibility
+    /// signal, the driver retries with HTTP/1.1 and swaps the transport if the
+    /// fallback succeeds. When the current transport is HTTP/1.1 and the refresh
+    /// succeeds, the driver opportunistically re-probes HTTP/2 so it can upgrade
+    /// after the account moves back to an HTTP/2-capable gateway.
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
@@ -248,6 +289,8 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
 
+        let current_version = current_transport.negotiated_version();
+
         match Self::fetch_account_properties_with_transport(
             &metadata_transport,
             account,
@@ -255,37 +298,67 @@ impl CosmosDriver {
         )
         .await
         {
-            Ok(props) => Ok(props),
+            Ok(props) => {
+                if runtime.connection_pool().is_http2_allowed()
+                    && matches!(current_version, NegotiatedHttpVersion::Http11)
+                {
+                    let upgraded_version = Self::alternate_http_version(current_version);
+                    match Self::fetch_account_properties_with_version(
+                        runtime,
+                        account,
+                        upgraded_version,
+                    )
+                    .await
+                    {
+                        Ok((upgraded_props, upgraded_transport)) => {
+                            tracing::info!(
+                                endpoint = %endpoint,
+                                current = ?current_version,
+                                upgraded = ?upgraded_version,
+                                "Metadata refresh re-probed HTTP/2 successfully; upgrading transport"
+                            );
+
+                            *transport_lock.write().expect("transport lock poisoned") =
+                                Arc::new(upgraded_transport);
+
+                            Ok(upgraded_props)
+                        }
+                        Err(error) if Self::has_explicit_http2_incompatibility(&error) => Ok(props),
+                        Err(error) => {
+                            tracing::debug!(
+                                endpoint = %endpoint,
+                                current = ?current_version,
+                                attempted = ?upgraded_version,
+                                error = %error,
+                                "Metadata refresh retained HTTP/1.1 after HTTP/2 reprobe failure"
+                            );
+                            Ok(props)
+                        }
+                    }
+                } else {
+                    Ok(props)
+                }
+            }
             Err(error)
                 if Self::should_downgrade_http2(
-                    current_transport.negotiated_version(),
+                    current_version,
                     &error,
                     runtime.connection_pool().is_http2_allowed(),
                 ) =>
             {
-                let fallback_version = NegotiatedHttpVersion::Http11;
+                let fallback_version = Self::alternate_http_version(current_version);
 
                 tracing::info!(
                     endpoint = %endpoint,
-                    current = ?current_transport.negotiated_version(),
+                    current = ?current_version,
                     fallback = ?fallback_version,
                     error = %error,
-                    "Metadata refresh failed with protocol incompatibility; trying HTTP/1.1 fallback"
+                    "Metadata refresh failed with protocol incompatibility; trying alternate HTTP version"
                 );
 
-                let fallback_transport = CosmosTransport::with_factory(
-                    runtime.connection_pool().clone(),
-                    Arc::clone(runtime.http_client_factory()),
-                    fallback_version,
-                )?;
-                let fallback_metadata = fallback_transport.get_metadata_transport(&endpoint)?;
-
-                let props = Self::fetch_account_properties_with_transport(
-                    &fallback_metadata,
-                    account,
-                    &Self::user_agent_header(runtime),
-                )
-                .await?;
+                let (props, fallback_transport) =
+                    Self::fetch_account_properties_with_version(runtime, account, fallback_version)
+                        .await?;
 
                 *transport_lock.write().expect("transport lock poisoned") =
                     Arc::new(fallback_transport);
@@ -876,6 +949,12 @@ impl CosmosDriver {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
+    use std::sync::Mutex;
+
+    use async_trait::async_trait;
+    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Request, StatusCode};
+
     use url::Url;
 
     use azure_core::error::ErrorKind;
@@ -890,6 +969,110 @@ mod tests {
 
     use super::*;
     use crate::options::Region;
+    use crate::{
+        driver::transport::http_client_factory::{
+            HttpClientConfig, HttpClientFactory, HttpVersionPolicy,
+        },
+        options::ConnectionPoolOptions,
+    };
+
+    const ACCOUNT_PROPERTIES_PAYLOAD: &str = r#"{
+        "_self": "",
+        "id": "test",
+        "_rid": "test.documents.azure.com",
+        "media": "//media/",
+        "addresses": "//addresses/",
+        "_dbs": "//dbs/",
+        "writableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "readableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "enableMultipleWriteLocations": false,
+        "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+        "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+        "queryEngineConfiguration": "{}"
+    }"#;
+
+    fn signed_test_account(url: &str) -> AccountReference {
+        AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+    }
+
+    #[derive(Clone, Debug)]
+    enum ResponsePlan {
+        Success,
+        Http2Incompatible,
+    }
+
+    #[derive(Debug)]
+    struct ScriptedClient {
+        plan: ResponsePlan,
+    }
+
+    #[async_trait]
+    impl HttpClient for ScriptedClient {
+        async fn execute_request(
+            &self,
+            _request: &Request,
+        ) -> azure_core::Result<AsyncRawResponse> {
+            match self.plan {
+                ResponsePlan::Success => Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    ACCOUNT_PROPERTIES_PAYLOAD.as_bytes(),
+                )),
+                ResponsePlan::Http2Incompatible => Err(azure_core::Error::with_error(
+                    ErrorKind::Io,
+                    h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+                    "http2 not supported",
+                )),
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    struct ScriptedFactory {
+        configs: Mutex<Vec<HttpClientConfig>>,
+        plans: Mutex<VecDeque<ResponsePlan>>,
+    }
+
+    impl ScriptedFactory {
+        fn new(plans: impl IntoIterator<Item = ResponsePlan>) -> Self {
+            Self {
+                configs: Mutex::new(Vec::new()),
+                plans: Mutex::new(plans.into_iter().collect()),
+            }
+        }
+
+        fn configs(&self) -> Vec<HttpClientConfig> {
+            self.configs.lock().expect("config lock poisoned").clone()
+        }
+    }
+
+    impl HttpClientFactory for ScriptedFactory {
+        fn build(
+            &self,
+            _connection_pool: &ConnectionPoolOptions,
+            config: HttpClientConfig,
+        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+            self.configs
+                .lock()
+                .expect("config lock poisoned")
+                .push(config);
+
+            let plan = self
+                .plans
+                .lock()
+                .expect("plan lock poisoned")
+                .pop_front()
+                .unwrap_or(ResponsePlan::Success);
+
+            Ok(Arc::new(ScriptedClient { plan }))
+        }
+    }
 
     fn test_account() -> AccountReference {
         AccountReference::with_master_key(
@@ -1322,5 +1505,113 @@ mod tests {
             &error,
             false,
         ));
+    }
+
+    #[test]
+    fn alternate_http_version_switches_between_http11_and_http2() {
+        assert_eq!(
+            CosmosDriver::alternate_http_version(NegotiatedHttpVersion::Http11),
+            NegotiatedHttpVersion::Http2
+        );
+        assert_eq!(
+            CosmosDriver::alternate_http_version(NegotiatedHttpVersion::Http2),
+            NegotiatedHttpVersion::Http11
+        );
+    }
+
+    #[test]
+    fn build_metadata_transport_for_version_uses_emulator_transport_selection() {
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_emulator_server_cert_validation(
+                crate::options::EmulatorServerCertValidation::DangerousDisabled,
+            )
+            .build()
+            .unwrap();
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+        ]));
+        let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
+
+        let _ = CosmosDriver::build_metadata_transport_for_version(
+            &connection_pool,
+            factory.clone(),
+            NegotiatedHttpVersion::Http11,
+            &endpoint,
+        )
+        .unwrap();
+
+        assert!(factory.configs().iter().any(|config| {
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
+        }));
+    }
+
+    #[tokio::test]
+    async fn probe_http_version_falls_back_to_http11_for_emulator_accounts() {
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Http2Incompatible,
+            ResponsePlan::Success,
+        ]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_emulator_server_cert_validation(
+                        crate::options::EmulatorServerCertValidation::DangerousDisabled,
+                    )
+                    .build()
+                    .unwrap(),
+            )
+            .with_http_client_factory(factory.clone())
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://localhost:8081/");
+
+        let (version, properties) = CosmosDriver::probe_http_version(&runtime, &account)
+            .await
+            .unwrap();
+
+        assert_eq!(version, NegotiatedHttpVersion::Http11);
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        assert!(factory.configs().iter().any(|config| {
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
+        }));
+    }
+
+    #[tokio::test]
+    async fn refresh_account_properties_reprobes_http2_after_http11_success() {
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+        ]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                NegotiatedHttpVersion::Http11,
+            )
+            .unwrap(),
+        );
+        let transport_lock = Arc::new(RwLock::new(current_transport));
+
+        let properties =
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_lock)
+                .await
+                .unwrap();
+
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        assert_eq!(
+            transport_lock
+                .read()
+                .expect("transport lock poisoned")
+                .negotiated_version(),
+            NegotiatedHttpVersion::Http2
+        );
     }
 }

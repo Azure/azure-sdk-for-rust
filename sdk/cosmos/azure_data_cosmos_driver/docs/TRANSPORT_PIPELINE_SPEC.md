@@ -1536,10 +1536,14 @@ by attempting the first metadata fetch (account properties) using an HTTP/2-only
 
 - **HTTP/2 succeeds**: Use `ShardedHttpTransport` (§6.1+) with HTTP/2 PING keepalive.
   TCP keepalive is **not** configured — HTTP/2 PING frames serve the liveness detection role.
-- **HTTP/2 fails** (connection/protocol error): Fall back to a plain `Arc<dyn HttpClient>`
+- **HTTP/2 fails** with an explicit HTTP/2 incompatibility signal (for example
+    `HTTP_1_1_REQUIRED`, `PROTOCOL_ERROR`, or `FRAME_SIZE_ERROR` surfaced by the h2 stack):
+    Fall back to a plain `Arc<dyn HttpClient>`
   with HTTP/1.1 only. TCP keepalive is configured. No sharding — HTTP/1.1 uses
   one-request-per-connection and the underlying client manages a connection pool via
-  `pool_max_idle_per_host`.
+    `pool_max_idle_per_host`. The HTTP/1.1 fallback reuses the same metadata transport
+    selection logic as steady-state requests, including insecure emulator transport
+    selection when localhost certificate validation is disabled.
 - **User disabled HTTP/2** (`is_http2_allowed() == false`): Skip the probe entirely.
   Use HTTP/1.1 with TCP keepalive.
 
@@ -1556,14 +1560,19 @@ the hot path. The write lock is only taken when the transport is actually replac
 
 #### Re-Probe on Metadata Refresh
 
-During periodic metadata refreshes (every ~5 minutes), the driver fetches account
-properties using the current transport. If the fetch fails with an explicit HTTP/2
-incompatibility signal while currently using HTTP/2, the driver retries the fetch
-with HTTP/1.1 and swaps the transport on success.
+During periodic metadata refreshes (every ~5 minutes), the driver first fetches account
+properties using the current transport.
 
-The refresh path does not automatically probe back from HTTP/1.1 to HTTP/2. That
-keeps the negotiated protocol stable for a driver instance unless a future explicit
-re-upgrade policy is introduced.
+- If the current transport is HTTP/2 and the fetch fails with an explicit HTTP/2
+    incompatibility signal, the driver retries the fetch with HTTP/1.1 and swaps the
+    transport on success.
+- If the current transport is HTTP/1.1 and the refresh succeeds, the driver
+    opportunistically re-runs the HTTP/2 probe. A successful probe upgrades the
+    transport back to HTTP/2; a failed reprobe leaves the driver on HTTP/1.1.
+
+This keeps downgrade behavior conservative while still allowing long-lived driver
+instances to recover HTTP/2 automatically after an account is moved back to an
+HTTP/2-capable gateway.
 
 #### Keepalive Separation
 
@@ -1912,6 +1921,8 @@ cause latency spikes.
 **Keepalive design**: TCP keepalive is configured **only** on HTTP/1.1 transports for
 connection liveness detection. HTTP/2 transports use protocol-level PING frames instead
 (`http2_keep_alive_interval`, `http2_keep_alive_timeout`, `http2_keep_alive_while_idle`).
+When HTTP/2 sharding is active, this keepalive policy is applied consistently to every shard,
+including initial, scale-up, and replacement shards.
 The two mechanisms are never mixed on the same client — the `HttpClientFactory::build()`
 method configures exactly one based on `HttpVersionPolicy::Http11Only` vs
 `HttpVersionPolicy::Http2Only`. The former ALPN-based `Http2Preferred` mode has been
@@ -2227,13 +2238,11 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 ### Step 6: HTTP/2 connection sharding
 
-| Sub-step | Work Item                                                                                                                                                                                                                                                                                   | Files                                             |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| 6.1      | **`ShardedHttpTransport`** — Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. The current implementation uses `Mutex`/`RwLock` guarded snapshots.                                         | `driver/transport/sharded_transport.rs`           |
-| 6.2      | **Shard selection algorithm** — `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. | `driver/transport/sharded_transport.rs`           |
-| 6.3      | **Connection-pool knobs** — Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. | `options/connection_pool.rs`                      |
-| 6.4      | **Wire into `AdaptiveTransport`** — `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry.                                                         | `driver/transport/adaptive_transport.rs`          |
-| 6.5      | **Background sweep and tests** — `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior.                                                  | `driver/transport/sharded_transport.rs`, `tests/` |
+1. **6.1 `ShardedHttpTransport`**: Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. The current implementation uses `Mutex`/`RwLock` guarded snapshots. Files: `driver/transport/sharded_transport.rs`.
+2. **6.2 Shard selection algorithm**: `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. Files: `driver/transport/sharded_transport.rs`.
+3. **6.3 Connection-pool knobs**: Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. Files: `options/connection_pool.rs`.
+4. **6.4 Wire into `AdaptiveTransport`**: `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry. Files: `driver/transport/adaptive_transport.rs`.
+5. **6.5 Background sweep and tests**: `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior. Files: `driver/transport/sharded_transport.rs`, `tests/`.
 
 **What works after Step 6**: HTTP/2 with per-endpoint connection sharding, elastic scale-up,
 background shard health sweeping, paced unhealthy-shard replacement/eviction, HTTP/2 protocol
@@ -2242,13 +2251,11 @@ minimum shard count.
 
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
-| Sub-step | Work Item                                                                                                                                                            | Files                                     |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 7.1      | **Shard health checks** — Keep shard-local health state in `ClientShardState` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. | `driver/transport/sharded_transport.rs`   |
-| 7.2      | **Background health sweep** — Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. | `driver/transport/sharded_transport.rs`   |
-| 7.3      | **Connectivity retry in transport** — Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover.        | `driver/transport/transport_pipeline.rs`  |
-| 7.4      | **TCP keepalive defaults** — Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob.   | `driver/transport/http_client_factory.rs` |
-| 7.5      | **Tests** — Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards.                                                        | `tests/`                                  |
+1. **7.1 Shard health checks**: Keep shard-local health state in `ClientShardState` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. Files: `driver/transport/sharded_transport.rs`.
+2. **7.2 Background health sweep**: Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. Files: `driver/transport/sharded_transport.rs`.
+3. **7.3 Connectivity retry in transport**: Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover. Files: `driver/transport/transport_pipeline.rs`.
+4. **7.4 TCP keepalive defaults**: Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob. Files: `driver/transport/http_client_factory.rs`.
+5. **7.5 Tests**: Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards. Files: `tests/`.
 
 **What works after Step 7**: Full HTTP/2 sharding with health monitoring, automatic eviction
 & scale-down, default TCP keepalive on HTTP/1.1 transports, and connectivity-level retry via

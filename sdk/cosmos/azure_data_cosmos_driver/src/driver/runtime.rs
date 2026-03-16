@@ -380,6 +380,8 @@ pub struct CosmosDriverRuntimeBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
+    #[cfg(test)]
+    http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -460,6 +462,12 @@ impl CosmosDriverRuntimeBuilder {
     /// Valid range: 1000–60000 ms (1–60 seconds).
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.cpu_refresh_interval = Some(interval);
+        self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
+        self.http_client_factory = Some(factory);
         self
     }
 
@@ -544,8 +552,18 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let http_client_factory: Arc<dyn HttpClientFactory> =
-            Arc::new(DefaultHttpClientFactory::new());
+        let http_client_factory: Arc<dyn HttpClientFactory> = {
+            #[cfg(test)]
+            {
+                self.http_client_factory
+                    .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
+            }
+
+            #[cfg(not(test))]
+            {
+                Arc::new(DefaultHttpClientFactory::new())
+            }
+        };
 
         // Bootstrap transport: HTTP/2-only for the initial protocol probe.
         // If HTTP/2 is disabled by the user, fall back to HTTP/1.1.

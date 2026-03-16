@@ -251,7 +251,7 @@ impl EndpointShardPool {
         {
             let mut shards = pool.shards.write().expect("shard lock poisoned");
             while shards.len() < pool.connection_pool.min_http2_connections_per_endpoint() {
-                    let shard = pool.build_shard()?;
+                let shard = pool.build_shard()?;
                 shards.push(Arc::new(shard));
             }
         }
