@@ -4,7 +4,7 @@
 mod common;
 
 use azure_core::{http::StatusCode, time::OffsetDateTime, Result};
-use azure_core_test::{recorded, Recording, TestContext};
+use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
     models::{
         CorsRule, GeoReplicationStatus, ListQueuesIncludeType, Logging, Metrics,
@@ -508,8 +508,10 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
             .set_properties(props.try_into()?, None)
             .await?;
 
-        // Allow settings to propagate
-        time::sleep(Duration::from_secs(15)).await;
+        // Allow settings to propagate in live/record mode
+        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+            time::sleep(Duration::from_secs(15)).await;
+        }
 
         // Act — read back
         let updated = queue_service_client
