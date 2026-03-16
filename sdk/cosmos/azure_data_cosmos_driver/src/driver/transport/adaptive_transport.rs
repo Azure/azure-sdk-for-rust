@@ -11,7 +11,7 @@ use crate::diagnostics::TransportKind;
 
 use super::{
     http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
-    sharded_transport::{ShardedHttpTransport, TransportDispatch},
+    sharded_transport::{EndpointKey, ShardedHttpTransport, TransportDispatch},
 };
 use crate::options::ConnectionPoolOptions;
 
@@ -71,13 +71,21 @@ impl AdaptiveTransport {
 
     /// Sends an HTTP request through the underlying transport.
     pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
-        self.send_with_dispatch(request, None).await.result
+        match self {
+            Self::Gateway(client) => client.execute_request(request).await,
+            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+                let endpoint_key = EndpointKey::from_url(request.url())?;
+                transport.send(request, None, &endpoint_key, None).await.result
+            }
+        }
     }
 
     pub(crate) async fn send_with_dispatch(
         &self,
         request: &Request,
         excluded_shard_id: Option<u64>,
+        endpoint_key: &EndpointKey,
+        preferred_shard_id: Option<u64>,
     ) -> TransportDispatch {
         match self {
             Self::Gateway(client) => TransportDispatch {
@@ -86,20 +94,22 @@ impl AdaptiveTransport {
                 shard_diagnostics: None,
             },
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
-                transport.send(request, excluded_shard_id).await
+                transport
+                    .send(request, excluded_shard_id, endpoint_key, preferred_shard_id)
+                    .await
             }
         }
     }
 
     pub(crate) fn can_retry_on_different_shard(
         &self,
-        request: &Request,
         excluded_shard_id: u64,
+        endpoint_key: &EndpointKey,
     ) -> bool {
         match self {
             Self::Gateway(_) => false,
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
-                transport.can_retry_on_different_shard(request, excluded_shard_id)
+                transport.can_retry_on_different_shard(excluded_shard_id, endpoint_key)
             }
         }
     }
@@ -110,13 +120,13 @@ impl AdaptiveTransport {
     /// targeted even when the transport future is cancelled.
     pub(crate) fn pre_select_shard(
         &self,
-        request: &Request,
         excluded_shard_id: Option<u64>,
+        endpoint_key: &EndpointKey,
     ) -> Option<u64> {
         match self {
             Self::Gateway(_) => None,
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
-                transport.pre_select_shard_id(request, excluded_shard_id)
+                transport.pre_select_shard_id(excluded_shard_id, endpoint_key)
             }
         }
     }

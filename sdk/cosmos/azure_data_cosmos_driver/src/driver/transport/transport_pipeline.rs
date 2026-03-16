@@ -30,6 +30,7 @@ use crate::{
 use super::{
     adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
     infer_request_sent_status, request_signing::sign_request,
+    sharded_transport::EndpointKey,
 };
 
 use crate::driver::pipeline::components::{
@@ -164,6 +165,22 @@ pub(crate) async fn execute_transport_pipeline(
     let mut local_connectivity_retry_count = 0_u32;
     let mut excluded_shard_id = None;
 
+    // Compute the endpoint key once for the entire transport pipeline.
+    // This avoids re-allocating the "host:port" string on every retry
+    // and every inner call (send, pre_select_shard, can_retry, etc.).
+    let endpoint_key = match EndpointKey::from_url(&request.url) {
+        Ok(key) => key,
+        Err(error) => {
+            return TransportResult {
+                outcome: TransportOutcome::TransportError {
+                    status: CosmosStatus::TRANSPORT_GENERATED_503,
+                    error,
+                    request_sent: RequestSentStatus::NotSent,
+                },
+            };
+        }
+    };
+
     loop {
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
@@ -221,7 +238,7 @@ pub(crate) async fn execute_transport_pipeline(
             diagnostics.fail_request(request_handle, e.to_string(), RequestSentStatus::NotSent);
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
-                    status: CosmosStatus::TRANSPORT_GENERATED_503,
+                    status: CosmosStatus::CLIENT_GENERATED_401,
                     error: e,
                     request_sent: RequestSentStatus::NotSent,
                 },
@@ -241,6 +258,7 @@ pub(crate) async fn execute_transport_pipeline(
             request_handle,
             diagnostics,
             excluded_shard_id.take(),
+            &endpoint_key,
         )
         .await;
 
@@ -249,7 +267,7 @@ pub(crate) async fn execute_transport_pipeline(
                 && should_retry_connectivity_failure(&result.result, ctx.allow_sent_transport_retry)
                 && ctx
                     .transport
-                    .can_retry_on_different_shard(&http_request, failed_shard_id)
+                    .can_retry_on_different_shard(failed_shard_id, &endpoint_key)
         }) {
             if let Some(failed_transport_shard) = failed_transport_shard(&result) {
                 diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
@@ -335,14 +353,23 @@ async fn execute_http_attempt(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
     excluded_shard_id: Option<u64>,
+    endpoint_key: &EndpointKey,
 ) -> ExecutedTransportAttempt {
     if let Some(timeout_duration) = per_request_timeout {
         // Pre-select the shard so we know which shard the request was dispatched
         // to even if the transport future is cancelled by the timeout race.
-        let dispatched_shard = transport.pre_select_shard(http_request, excluded_shard_id);
+        // The ID is passed as a preferred_shard_id hint to the actual dispatch
+        // so the same shard is reused when still selectable, keeping the
+        // diagnostic shard ID accurate.
+        let dispatched_shard = transport.pre_select_shard(excluded_shard_id, endpoint_key);
 
-        let transport_future =
-            execute_http_attempt_future(http_request, transport, excluded_shard_id);
+        let transport_future = execute_http_attempt_future(
+            http_request,
+            transport,
+            excluded_shard_id,
+            endpoint_key,
+            dispatched_shard,
+        );
         let timeout_future = async {
             azure_core::sleep(
                 azure_core::time::Duration::try_from(timeout_duration)
@@ -375,7 +402,8 @@ async fn execute_http_attempt(
     }
 
     let attempt_result =
-        execute_http_attempt_future(http_request, transport, excluded_shard_id).await;
+        execute_http_attempt_future(http_request, transport, excluded_shard_id, endpoint_key, None)
+            .await;
     finalize_http_attempt(attempt_result, request_handle, diagnostics)
 }
 
@@ -383,9 +411,16 @@ async fn execute_http_attempt_future(
     http_request: &Request,
     transport: &AdaptiveTransport,
     excluded_shard_id: Option<u64>,
+    endpoint_key: &EndpointKey,
+    preferred_shard_id: Option<u64>,
 ) -> HttpAttemptResult {
     let dispatch = transport
-        .send_with_dispatch(http_request, excluded_shard_id)
+        .send_with_dispatch(
+            http_request,
+            excluded_shard_id,
+            endpoint_key,
+            preferred_shard_id,
+        )
         .await;
 
     match dispatch.result {

@@ -38,3 +38,48 @@ pub(crate) fn error_chain_summary(error: &azure_core::Error) -> String {
     }
     parts.join(": ")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::error_chain_summary;
+
+    #[test]
+    fn error_chain_summary_single_error() {
+        let error = azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "top-level failure",
+        );
+        assert_eq!(error_chain_summary(&error), "top-level failure");
+    }
+
+    #[test]
+    fn error_chain_summary_with_source_chain() {
+        let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
+        let error = azure_core::Error::with_error(
+            azure_core::error::ErrorKind::Io,
+            inner,
+            "reqwest transport failed",
+        );
+        let summary = error_chain_summary(&error);
+        assert!(summary.contains("reqwest transport failed"));
+        assert!(summary.contains("socket reset"));
+    }
+
+    #[test]
+    fn error_chain_summary_deduplicates_consecutive_messages() {
+        // When a wrapper repeats the inner message, only one copy should appear.
+        let inner = azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "connection refused",
+        );
+        // Wrap with the same message text.
+        let outer = azure_core::Error::with_error(
+            azure_core::error::ErrorKind::Connection,
+            inner,
+            "connection refused",
+        );
+        let summary = error_chain_summary(&outer);
+        // "connection refused" should appear only once, not "connection refused: connection refused".
+        assert_eq!(summary, "connection refused");
+    }
+}

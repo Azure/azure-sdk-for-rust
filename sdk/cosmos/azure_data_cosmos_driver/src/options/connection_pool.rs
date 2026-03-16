@@ -183,12 +183,12 @@ impl ConnectionPoolOptions {
         self.http2_keep_alive_idle_client_count
     }
 
-    /// Returns the TCP keepalive time, if enabled.
+    /// Returns the TCP keepalive time. Defaults to 1 second.
     pub fn tcp_keepalive_time(&self) -> Option<Duration> {
         self.tcp_keepalive_time
     }
 
-    /// Returns the TCP keepalive probe interval, if enabled.
+    /// Returns the TCP keepalive probe interval. Defaults to 1 second.
     pub fn tcp_keepalive_interval(&self) -> Option<Duration> {
         self.tcp_keepalive_interval
     }
@@ -251,8 +251,8 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS`: HTTP/2 keep-alive ping interval in milliseconds (default: `1_000`, min: `100`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS`: HTTP/2 keep-alive ping timeout in milliseconds (default: `2_000`, min: `100`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_IDLE_CLIENT_COUNT`: Number of shard clients per endpoint that keep sending idle HTTP/2 pings (default: `10`, min: `0`, max: `256`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`: TCP keepalive time in milliseconds (default: none, min: `1_000` when set)
-/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: none, min: `1_000` when set)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS`: TCP keepalive time in milliseconds (default: `1_000`, min: `1_000` when set)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
@@ -635,6 +635,11 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::range(1, 20),
         )?;
 
+        // Default: available_parallelism * 2 (fallback 32).
+        // NOTE: In containerized environments, `available_parallelism()` may
+        // report the container's CPU quota or the host's CPU count depending
+        // on the runtime. This is a known limitation of `std`; the env-var
+        // override can be used to tune when the heuristic is wrong.
         let cpu_based_http2_max = std::thread::available_parallelism()
             .map(|count| count.get().saturating_mul(2))
             .unwrap_or(32)
@@ -725,14 +730,20 @@ impl ConnectionPoolOptionsBuilder {
             "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS",
             1_000,
             u64::MAX,
-        )?;
+        )?
+        // Default to 1 s to match the HTTP/2 keep-alive interval.
+        // This ensures idle HTTP/1.1 connections are detected as stale
+        // before NAT/firewall timeouts silently close them.
+        .or(Some(Duration::from_secs(1)));
 
         let tcp_keepalive_interval = parse_optional_duration_millis_from_env(
             self.tcp_keepalive_interval,
             "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS",
             1_000,
             u64::MAX,
-        )?;
+        )?
+        // Default to 1 s, matching the HTTP/2 keep-alive probe cadence.
+        .or(Some(Duration::from_secs(1)));
 
         let tcp_keepalive_retries = parse_optional_from_env(
             self.tcp_keepalive_retries,
@@ -848,8 +859,11 @@ mod tests {
         assert_eq!(options.http2_keep_alive_interval(), Duration::from_secs(1));
         assert_eq!(options.http2_keep_alive_timeout(), Duration::from_secs(2));
         assert_eq!(options.http2_keep_alive_idle_client_count(), 10);
-        assert_eq!(options.tcp_keepalive_time(), None);
-        assert_eq!(options.tcp_keepalive_interval(), None);
+        assert_eq!(options.tcp_keepalive_time(), Some(Duration::from_secs(1)));
+        assert_eq!(
+            options.tcp_keepalive_interval(),
+            Some(Duration::from_secs(1))
+        );
         assert_eq!(options.tcp_keepalive_retries(), None);
         assert_eq!(options.local_address(), None);
         // Default is 1_000 when HTTP/2 is allowed (which is true by default)

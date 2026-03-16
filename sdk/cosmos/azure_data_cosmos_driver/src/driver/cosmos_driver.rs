@@ -657,10 +657,13 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
         if !self.initialized.load(Ordering::Acquire) {
+            let endpoint = AccountEndpoint::from(self.options.account());
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                "CosmosDriver has not been initialized; call initialize() or use \
-                 CosmosDriverRuntime::get_or_create_driver() which initializes automatically",
+                format!(
+                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                ),
             ));
         }
         // Step 1: Derive effective runtime options

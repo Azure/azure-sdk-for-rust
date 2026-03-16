@@ -440,6 +440,11 @@ impl RequestDiagnostics {
         if let Some(sub_status) = sub_status {
             self.with_sub_status(sub_status);
         }
+        // Clear any prior failure state. In the current pipeline each attempt
+        // gets its own RequestDiagnostics, so `error` and `timed_out` should
+        // always be their initial values here. These resets are defensive:
+        // they ensure a valid state if a future flow (e.g., shard retry)
+        // reuses a handle after a transport-level failure on the same attempt.
         self.error = None;
         self.timed_out = false;
         self.request_sent = RequestSentStatus::Sent;

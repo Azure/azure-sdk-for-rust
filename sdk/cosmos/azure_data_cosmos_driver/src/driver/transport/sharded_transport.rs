@@ -7,7 +7,7 @@ use std::{
     collections::HashMap,
     fmt,
     sync::{
-        atomic::{AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc, Mutex, RwLock,
     },
     time::{Duration, Instant},
@@ -69,19 +69,10 @@ impl ShardedHttpTransport {
         &self,
         request: &Request,
         excluded_shard_id: Option<u64>,
+        endpoint_key: &EndpointKey,
+        preferred_shard_id: Option<u64>,
     ) -> TransportDispatch {
-        let endpoint_key = match EndpointKey::from_url(request.url()) {
-            Ok(endpoint_key) => endpoint_key,
-            Err(error) => {
-                return TransportDispatch {
-                    result: Err(error),
-                    shard_id: None,
-                    shard_diagnostics: None,
-                };
-            }
-        };
-
-        let pool = match self.get_or_create_pool(endpoint_key) {
+        let pool = match self.get_or_create_pool(endpoint_key.clone()) {
             Ok(pool) => pool,
             Err(error) => {
                 return TransportDispatch {
@@ -92,7 +83,7 @@ impl ShardedHttpTransport {
             }
         };
 
-        let shard = match pool.select_shard(excluded_shard_id) {
+        let shard = match pool.select_shard(excluded_shard_id, preferred_shard_id) {
             Ok(shard) => shard,
             Err(error) => {
                 return TransportDispatch {
@@ -118,16 +109,12 @@ impl ShardedHttpTransport {
 
     pub(crate) fn can_retry_on_different_shard(
         &self,
-        request: &Request,
         excluded_shard_id: u64,
+        endpoint_key: &EndpointKey,
     ) -> bool {
-        let endpoint_key = match EndpointKey::from_url(request.url()) {
-            Ok(endpoint_key) => endpoint_key,
-            Err(_) => return false,
-        };
         let pools = self.pools.lock().expect("endpoint pool lock poisoned");
         pools
-            .get(&endpoint_key)
+            .get(endpoint_key)
             .is_some_and(|pool| pool.can_select_different_shard(excluded_shard_id))
     }
 
@@ -136,14 +123,13 @@ impl ShardedHttpTransport {
     /// or shard selection fails.
     pub(crate) fn pre_select_shard_id(
         &self,
-        request: &Request,
         excluded_shard_id: Option<u64>,
+        endpoint_key: &EndpointKey,
     ) -> Option<u64> {
-        let endpoint_key = EndpointKey::from_url(request.url()).ok()?;
         let pools = self.pools.lock().expect("endpoint pool lock poisoned");
         pools
-            .get(&endpoint_key)
-            .and_then(|pool| pool.select_shard(excluded_shard_id).ok())
+            .get(endpoint_key)
+            .and_then(|pool| pool.select_shard(excluded_shard_id, None).ok())
             .map(|shard| shard.id)
     }
 
@@ -217,10 +203,10 @@ impl fmt::Debug for ShardedHttpTransport {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct EndpointKey(String);
+pub(crate) struct EndpointKey(String);
 
 impl EndpointKey {
-    fn from_url(url: &Url) -> azure_core::Result<Self> {
+    pub(crate) fn from_url(url: &Url) -> azure_core::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
             azure_core::Error::with_message(
                 ErrorKind::DataConversion,
@@ -273,7 +259,11 @@ impl EndpointShardPool {
         Ok(pool)
     }
 
-    fn select_shard(&self, excluded_shard_id: Option<u64>) -> azure_core::Result<Arc<ClientShard>> {
+    fn select_shard(
+        &self,
+        excluded_shard_id: Option<u64>,
+        preferred_shard_id: Option<u64>,
+    ) -> azure_core::Result<Arc<ClientShard>> {
         let max_streams = self.connection_pool.max_http2_streams_per_client();
 
         // Fast path: select in-place under read lock, clone only the winner.
@@ -281,6 +271,20 @@ impl EndpointShardPool {
             let shards = self.shards.read().expect("shard lock poisoned");
 
             if !shards.is_empty() {
+                // If a preferred shard was pre-selected (e.g. for timeout
+                // diagnostics accuracy), reuse it when still selectable and
+                // under the stream limit.
+                if let Some(preferred_id) = preferred_shard_id {
+                    if let Some(shard) = shards
+                        .iter()
+                        .find(|s| s.id == preferred_id && s.is_selectable(excluded_shard_id))
+                    {
+                        if shard.inflight() < max_streams {
+                            return Ok(Arc::clone(shard));
+                        }
+                    }
+                }
+
                 let active_count = self.active_shard_count_from_slice(&shards, excluded_shard_id);
 
                 // Try least-loaded with capacity among active shards
@@ -367,9 +371,17 @@ impl EndpointShardPool {
     }
 
     fn build_shard(&self, shard_ordinal: usize) -> azure_core::Result<ClientShard> {
+        self.build_shard_with_idle_ping(
+            shard_ordinal < self.connection_pool.http2_keep_alive_idle_client_count(),
+        )
+    }
+
+    fn build_shard_with_idle_ping(
+        &self,
+        http2_keep_alive_while_idle: bool,
+    ) -> azure_core::Result<ClientShard> {
         let mut client_config = self.base_client_config;
-        client_config.http2_keep_alive_while_idle =
-            shard_ordinal < self.connection_pool.http2_keep_alive_idle_client_count();
+        client_config.http2_keep_alive_while_idle = http2_keep_alive_while_idle;
 
         let client = self
             .client_factory
@@ -468,10 +480,14 @@ impl EndpointShardPool {
         // Phase 2: build replacement shards outside the lock. This is the
         // expensive part (TCP connect, TLS handshake) and must not block
         // concurrent `select_shard` readers.
+        //
+        // Replacement and backfill shards are built with idle HTTP/2 pings
+        // disabled. Only the initial shards created in `new()` and
+        // `try_create_shard()` use the ordinal-based policy because those
+        // paths run under the write lock with an accurate shard count.
         let mut new_shards = Vec::with_capacity(shards_needed);
-        let current_len = self.shards.read().expect("shard lock poisoned").len();
-        for i in 0..shards_needed {
-            let shard = self.build_shard(current_len + i)?;
+        for _ in 0..shards_needed {
+            let shard = self.build_shard_with_idle_ping(false)?;
             new_shards.push(Arc::new(shard));
         }
 
@@ -503,6 +519,9 @@ struct ClientShard {
     id: u64,
     client: Arc<dyn HttpClient>,
     inflight: AtomicU32,
+    /// Lock-free eviction flag checked on the hot path (`select_shard`).
+    /// Set by the background health sweep; read with `Relaxed` ordering.
+    marked_for_eviction: AtomicBool,
     state: Mutex<ClientShardState>,
 }
 
@@ -512,13 +531,13 @@ impl ClientShard {
             id,
             client,
             inflight: AtomicU32::new(0),
+            marked_for_eviction: AtomicBool::new(false),
             state: Mutex::new(ClientShardState {
                 last_request_at: Instant::now(),
                 last_success_at: None,
                 consecutive_failures: 0,
                 total_requests: 0,
                 total_failures: 0,
-                marked_for_eviction: false,
             }),
         }
     }
@@ -606,22 +625,16 @@ impl ClientShard {
             consecutive_failures: state.consecutive_failures,
             total_requests: state.total_requests,
             total_failures: state.total_failures,
-            marked_for_eviction: state.marked_for_eviction,
+            marked_for_eviction: self.is_marked_for_eviction(),
         }
     }
 
     fn mark_for_eviction(&self) {
-        self.state
-            .lock()
-            .expect("shard state lock poisoned")
-            .marked_for_eviction = true;
+        self.marked_for_eviction.store(true, Ordering::Relaxed);
     }
 
     fn is_marked_for_eviction(&self) -> bool {
-        self.state
-            .lock()
-            .expect("shard state lock poisoned")
-            .marked_for_eviction
+        self.marked_for_eviction.load(Ordering::Relaxed)
     }
 
     fn is_selectable(&self, excluded_shard_id: Option<u64>) -> bool {
@@ -633,8 +646,13 @@ impl ClientShard {
             return false;
         }
 
-        let state = self.state.lock().expect("shard state lock poisoned");
-        now.duration_since(state.last_request_at) >= idle_timeout
+        // Only lock when inflight == 0 (cold path during health sweep).
+        let last_request_at = self
+            .state
+            .lock()
+            .expect("shard state lock poisoned")
+            .last_request_at;
+        now.duration_since(last_request_at) >= idle_timeout
     }
 
     fn transport_diagnostics(&self) -> TransportShardDiagnostics {
@@ -645,7 +663,7 @@ impl ClientShard {
             state.consecutive_failures,
             state.total_requests,
             state.total_failures,
-            state.marked_for_eviction,
+            self.is_marked_for_eviction(),
         )
     }
 
@@ -671,7 +689,6 @@ struct ClientShardState {
     consecutive_failures: u32,
     total_requests: u64,
     total_failures: u64,
-    marked_for_eviction: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -699,23 +716,23 @@ fn pick_probe_candidate(
     grace_period: Duration,
     now: Instant,
 ) -> Option<u64> {
-    let eligible = snapshots
+    // If any eligible shard is healthy (below threshold or has a recent
+    // success), there's no all-failing condition — no probe needed.
+    let any_healthy = snapshots
         .iter()
-        .copied()
-        .filter(|snapshot| !snapshot.marked_for_eviction)
-        .collect::<Vec<_>>();
-
-    if eligible.is_empty()
-        || eligible.iter().any(|snapshot| {
+        .filter(|s| !s.marked_for_eviction)
+        .any(|snapshot| {
             snapshot.consecutive_failures < threshold
                 || snapshot.has_recent_success(now, grace_period)
-        })
-    {
+        });
+
+    if any_healthy || !snapshots.iter().any(|s| !s.marked_for_eviction) {
         return None;
     }
 
-    eligible
-        .into_iter()
+    snapshots
+        .iter()
+        .filter(|s| !s.marked_for_eviction)
         .max_by_key(|snapshot| {
             (
                 snapshot.consecutive_failures,
@@ -817,11 +834,11 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None).unwrap();
+        let first = pool.select_shard(None, None).unwrap();
         first.record_request_start();
         first.record_request_start();
 
-        let second = pool.select_shard(None).unwrap();
+        let second = pool.select_shard(None, None).unwrap();
 
         assert_ne!(first.id, second.id);
         assert_eq!(pool.shards.read().unwrap().len(), 2);
@@ -838,10 +855,10 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None).unwrap();
+        let first = pool.select_shard(None, None).unwrap();
         first.record_request_start();
         first.record_request_start();
-        let overflow = pool.select_shard(None).unwrap();
+        let overflow = pool.select_shard(None, None).unwrap();
         overflow.record_request_start();
         overflow.record_request_finish(&Err(azure_core::Error::with_message(
             ErrorKind::Other,
@@ -870,7 +887,7 @@ mod tests {
 
         pool.run_health_sweep().unwrap();
 
-        let selected = pool.select_shard(None).unwrap();
+        let selected = pool.select_shard(None, None).unwrap();
 
         assert_eq!(selected.id, first.id);
         assert_eq!(pool.shards.read().unwrap().len(), 1);
@@ -887,13 +904,13 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None).unwrap();
+        let first = pool.select_shard(None, None).unwrap();
         first.record_request_start();
         first.record_request_start();
-        let second = pool.select_shard(None).unwrap();
+        let second = pool.select_shard(None, None).unwrap();
         second.record_request_start();
         second.record_request_start();
-        let third = pool.select_shard(None).unwrap();
+        let third = pool.select_shard(None, None).unwrap();
 
         assert_ne!(first.id, second.id);
         assert_ne!(second.id, third.id);
@@ -911,10 +928,10 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None).unwrap();
+        let first = pool.select_shard(None, None).unwrap();
         first.record_request_start();
         first.record_request_start();
-        let second = pool.select_shard(None).unwrap();
+        let second = pool.select_shard(None, None).unwrap();
 
         first.record_request_finish(&Err(azure_core::Error::with_message(
             ErrorKind::Other,
@@ -972,10 +989,10 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None).unwrap();
+        let first = pool.select_shard(None, None).unwrap();
         first.record_request_start();
         first.record_request_start();
-        let second = pool.select_shard(None).unwrap();
+        let second = pool.select_shard(None, None).unwrap();
 
         first.record_request_finish(&Err(azure_core::Error::with_message(
             ErrorKind::Other,
