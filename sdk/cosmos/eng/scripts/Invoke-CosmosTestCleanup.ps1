@@ -5,23 +5,6 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\..\eng\common\scripts\common.ps1"
 
-# Returns $true if the emulator is no longer reachable via HTTP.
-function Test-EmulatorDown {
-    try {
-        Invoke-WebRequest -Uri "https://localhost:8081/" -TimeoutSec 1 -SkipCertificateCheck -UseBasicParsing -ErrorAction Stop | Out-Null
-        # Got an HTTP response: emulator is still up.
-        return $false
-    } catch {
-        $response = $_.Exception.Response
-        if ($null -ne $response) {
-            # An HTTP error response means the emulator process is still running.
-            return $false
-        }
-        # No HTTP response at all: connection refused / timeout — emulator is down.
-        return $true
-    }
-}
-
 $ShutdownTimeout = 30
 
 if ($IsWindows) {
@@ -40,13 +23,6 @@ if ($IsWindows) {
             $statusProcess = Start-Process $EmulatorPath -ArgumentList "/getstatus" -PassThru -Wait
             if ($statusProcess.ExitCode -eq 3) {
                 Write-Host "Cosmos DB Emulator has stopped (getstatus)."
-                $emulatorDown = $true
-                break
-            }
-
-            # Also check via HTTP: a connection failure means it is down.
-            if (Test-EmulatorDown) {
-                Write-Host "Cosmos DB Emulator has stopped (HTTP probe)."
                 $emulatorDown = $true
                 break
             }
@@ -75,13 +51,6 @@ if ($IsWindows) {
             $remaining = docker ps -a --filter "name=$containerName" --format "{{.Names}}"
             if (-not $remaining) {
                 Write-Host "Cosmos DB Emulator container has been removed."
-                $emulatorDown = $true
-                break
-            }
-
-            # Also check via HTTP: a connection failure means it is down.
-            if (Test-EmulatorDown) {
-                Write-Host "Cosmos DB Emulator has stopped (HTTP probe)."
                 $emulatorDown = $true
                 break
             }
