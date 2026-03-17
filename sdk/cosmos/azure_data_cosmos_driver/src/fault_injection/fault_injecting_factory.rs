@@ -17,11 +17,7 @@ use crate::options::ConnectionPoolOptions;
 /// When `create` is called, this factory delegates to the inner factory to build
 /// a real HTTP client, then wraps it in a [`FaultInjectingHttpClient`] that
 /// evaluates the configured rules on every request.
-// TODO: Remove allow(dead_code) when factory is wired into CosmosTransport.
-// The factory is staged for Transport Pipeline Spec §7 integration but not
-// yet called from production code.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub(crate) struct FaultInjectingHttpClientFactory {
     inner: Arc<dyn HttpClientFactory>,
     rules: Arc<RwLock<Vec<Arc<FaultInjectionRule>>>>,
@@ -29,7 +25,6 @@ pub(crate) struct FaultInjectingHttpClientFactory {
 
 impl FaultInjectingHttpClientFactory {
     /// Creates a new factory that wraps clients from `inner` with fault injection rules.
-    #[allow(dead_code)]
     pub(crate) fn new(
         inner: Arc<dyn HttpClientFactory>,
         rules: Vec<Arc<FaultInjectionRule>>,

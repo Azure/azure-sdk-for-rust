@@ -124,9 +124,31 @@ impl CosmosTransport {
     ///
     /// * `connection_pool` - Connection pool settings for HTTP clients
     pub(crate) fn new(connection_pool: ConnectionPoolOptions) -> azure_core::Result<Self> {
-        let http_client_factory: Arc<dyn HttpClientFactory> =
-            Arc::new(DefaultHttpClientFactory::new());
+        Self::with_factory(connection_pool, Arc::new(DefaultHttpClientFactory::new()))
+    }
 
+    /// Creates a new transport with fault injection rules.
+    ///
+    /// Wraps the default `HttpClientFactory` so that all created HTTP clients
+    /// evaluate rules before delegating to the real transport (per Transport
+    /// Pipeline Spec §7).
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn with_fault_injection(
+        connection_pool: ConnectionPoolOptions,
+        rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
+    ) -> azure_core::Result<Self> {
+        let base_factory: Arc<dyn HttpClientFactory> = Arc::new(DefaultHttpClientFactory::new());
+        let factory: Arc<dyn HttpClientFactory> = Arc::new(
+            crate::fault_injection::FaultInjectingHttpClientFactory::new(base_factory, rules),
+        );
+        Self::with_factory(connection_pool, factory)
+    }
+
+    /// Internal constructor that accepts an arbitrary factory.
+    fn with_factory(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+    ) -> azure_core::Result<Self> {
         let metadata_config = HttpClientConfig::metadata(&connection_pool);
         let metadata_transport = AdaptiveTransport::from_policy(
             metadata_config.version_policy,

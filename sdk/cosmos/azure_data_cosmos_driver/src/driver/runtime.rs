@@ -366,6 +366,8 @@ pub struct CosmosDriverRuntimeBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -504,6 +506,20 @@ impl CosmosDriverRuntimeBuilder {
         Ok(self)
     }
 
+    /// Sets the fault injection rules for testing.
+    ///
+    /// When set, all HTTP clients created by the transport layer will
+    /// evaluate these rules before delegating to the real transport
+    /// (per Transport Pipeline Spec §7).
+    #[cfg(feature = "fault_injection")]
+    pub fn with_fault_injection_rules(
+        mut self,
+        rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
+    ) -> Self {
+        self.fault_injection_rules = Some(rules);
+        self
+    }
+
     /// Builds the [`CosmosDriverRuntime`].
     ///
     /// The user agent is computed from (in priority order):
@@ -530,6 +546,17 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
+
+        #[cfg(feature = "fault_injection")]
+        let transport = if let Some(rules) = self.fault_injection_rules {
+            Arc::new(CosmosTransport::with_fault_injection(
+                connection_pool.clone(),
+                rules,
+            )?)
+        } else {
+            Arc::new(CosmosTransport::new(connection_pool.clone())?)
+        };
+        #[cfg(not(feature = "fault_injection"))]
         let transport = Arc::new(CosmosTransport::new(connection_pool.clone())?);
 
         // Initialize system monitoring singletons.

@@ -23,7 +23,7 @@ azure_core = { workspace = true, default-features = false, features = [
 base64.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
-rand = { workspace = true, optional = true }
+rand.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -63,4 +63,4 @@ reqwest_native_tls = [
   "reqwest/native-tls",
   "azure_core/reqwest_native_tls",
 ]
-fault_injection = ["dep:rand"]
+fault_injection = []
