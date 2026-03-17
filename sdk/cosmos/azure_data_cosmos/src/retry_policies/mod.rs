@@ -240,7 +240,15 @@ pub(crate) trait RequestSentExt {
 impl RequestSentExt for azure_core::Error {
     fn request_sent_status(&self) -> RequestSentStatus {
         match self.kind() {
-            ErrorKind::Credential | ErrorKind::DataConversion => RequestSentStatus::NotSent,
+            // Io errors at the HTTP client level are almost always connection
+            // failures (DNS, TCP, TLS) where the request body was never sent.
+            // Treating Io as NotSent is safe for Cosmos because operations are
+            // either idempotent (upsert, replace) or detect duplicates (create →
+            // 409 Conflict). When azure_core exposes ErrorKind::Connection,
+            // refine this to only map Connection → NotSent.
+            ErrorKind::Io | ErrorKind::Credential | ErrorKind::DataConversion => {
+                RequestSentStatus::NotSent
+            }
             ErrorKind::HttpResponse { .. } => RequestSentStatus::Sent,
             _ => RequestSentStatus::Unknown,
         }
@@ -252,9 +260,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn io_error_is_unknown() {
+    fn io_error_is_not_sent() {
         let err = azure_core::Error::with_message(ErrorKind::Io, "some io error");
-        assert_eq!(err.request_sent_status(), RequestSentStatus::Unknown);
+        assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
     }
 
     #[test]
