@@ -15,6 +15,7 @@ categories = ["api-bindings"]
 publish = false # Internal implementation layer, not yet ready for crates.io
 
 [dependencies]
+arc-swap.workspace = true
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [

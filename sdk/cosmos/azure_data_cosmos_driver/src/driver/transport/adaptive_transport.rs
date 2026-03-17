@@ -97,7 +97,7 @@ impl AdaptiveTransport {
         match self {
             Self::Gateway(client) => client.execute_request(request).await,
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
-                let endpoint_key = EndpointKey::from_url(request.url())?;
+                let endpoint_key = EndpointKey::try_from(request.url())?;
                 transport
                     .send(request, None, &endpoint_key, None)
                     .await

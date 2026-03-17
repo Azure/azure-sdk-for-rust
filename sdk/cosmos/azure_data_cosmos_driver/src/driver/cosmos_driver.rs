@@ -17,11 +17,12 @@ use crate::{
         ThroughputControlGroupSnapshot,
     },
 };
+use arc_swap::ArcSwap;
 use azure_core::http::Request;
 use futures::future::BoxFuture;
 use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use super::{
@@ -49,9 +50,10 @@ pub struct CosmosDriver {
     /// Driver-level options including account reference.
     options: DriverOptions,
     /// Per-account transport (created after HTTP/2 probe during initialization).
-    /// Wrapped in `Arc<RwLock<...>>` so the metadata refresh callback can
-    /// re-probe the HTTP version and swap the transport if needed.
-    transport: Arc<RwLock<Arc<CosmosTransport>>>,
+    /// Wrapped in `Arc<ArcSwap<...>>` so the metadata refresh callback can
+    /// re-probe the HTTP version and swap the transport atomically.
+    /// Reads are lock-free (no cache-line contention between readers).
+    transport: Arc<ArcSwap<CosmosTransport>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
     /// Resolved default for max failover retries (from env or hardcoded default).
@@ -186,7 +188,13 @@ impl CosmosDriver {
 
         // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
         match Self::fetch_account_properties_with_runtime(runtime, account).await {
-            Ok(props) => Ok((TransportHttpVersion::Http2, props)),
+            Ok(props) => {
+                tracing::trace!(
+                    endpoint = %AccountEndpoint::from(account),
+                    "HTTP/2 probe succeeded; using HTTP/2 transport"
+                );
+                Ok((TransportHttpVersion::Http2, props))
+            }
             Err(error)
                 if Self::should_downgrade_http2(
                     TransportHttpVersion::Http2,
@@ -194,7 +202,7 @@ impl CosmosDriver {
                     runtime.connection_pool().is_http2_allowed(),
                 ) =>
             {
-                tracing::info!(
+                tracing::warn!(
                     endpoint = %AccountEndpoint::from(account),
                     error = %error,
                     "HTTP/2 probe failed with protocol incompatibility; falling back to HTTP/1.1"
@@ -234,7 +242,13 @@ impl CosmosDriver {
 
         let response = transport.send(&request).await?;
         let raw = response.try_into_raw_response().await?;
-        Self::parse_account_properties_payload(raw.body())
+        let props = Self::parse_account_properties_payload(raw.body())?;
+        tracing::info!(
+            endpoint = %endpoint,
+            write_region = ?props.write_region(),
+            "AccountProperties retrieved successfully"
+        );
+        Ok(props)
     }
 
     fn parse_account_properties_payload(
@@ -290,12 +304,9 @@ impl CosmosDriver {
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
-        transport_lock: &Arc<RwLock<Arc<CosmosTransport>>>,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        let current_transport = transport_lock
-            .read()
-            .expect("transport lock poisoned")
-            .clone();
+        let current_transport = transport_holder.load_full();
         let current_version = current_transport.negotiated_version();
         let endpoint = AccountEndpoint::from(account);
         let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
@@ -312,7 +323,7 @@ impl CosmosDriver {
                 Self::maybe_restore_http2_after_refresh(
                     runtime,
                     account,
-                    transport_lock,
+                    transport_holder,
                     current_version,
                     &endpoint,
                 )
@@ -323,7 +334,7 @@ impl CosmosDriver {
                 Self::handle_refresh_failure(
                     runtime,
                     account,
-                    transport_lock,
+                    transport_holder,
                     current_version,
                     &endpoint,
                     error,
@@ -336,7 +347,7 @@ impl CosmosDriver {
     async fn maybe_restore_http2_after_refresh(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
-        transport_lock: &Arc<RwLock<Arc<CosmosTransport>>>,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
     ) {
@@ -353,7 +364,7 @@ impl CosmosDriver {
                 TransportHttpVersion::Http2,
             ) {
                 Ok(transport) => {
-                    *transport_lock.write().expect("transport lock poisoned") = Arc::new(transport);
+                    transport_holder.store(Arc::new(transport));
                     tracing::info!(
                         endpoint = %endpoint,
                         "Metadata refresh restored HTTP/2 transport after successful probe"
@@ -385,7 +396,7 @@ impl CosmosDriver {
     async fn handle_refresh_failure(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
-        transport_lock: &Arc<RwLock<Arc<CosmosTransport>>>,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
         error: azure_core::Error,
@@ -397,20 +408,19 @@ impl CosmosDriver {
         ) {
             // Explicit HTTP/2 incompatibility — try the alternate version.
             let fallback_version = Self::alternate_http_version(current_version);
-            tracing::info!(
+            tracing::warn!(
                 endpoint = %endpoint,
                 current = ?current_version,
                 fallback = ?fallback_version,
                 error = %error,
-                "Metadata refresh failed with protocol incompatibility; trying alternate HTTP version"
+                "Metadata refresh failed with protocol incompatibility; falling back to alternate HTTP version"
             );
 
             let (props, fallback_transport) =
                 Self::fetch_account_properties_with_version(runtime, account, fallback_version)
                     .await?;
 
-            *transport_lock.write().expect("transport lock poisoned") =
-                Arc::new(fallback_transport);
+            transport_holder.store(Arc::new(fallback_transport));
 
             return Ok(props);
         }
@@ -525,9 +535,11 @@ impl CosmosDriver {
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
-        // Shared transport lock — used by both the driver and the refresh callback.
-        let transport: Arc<RwLock<Arc<CosmosTransport>>> =
-            Arc::new(RwLock::new(Arc::clone(runtime.bootstrap_transport())));
+        // Shared transport holder — used by both the driver and the refresh callback.
+        // ArcSwap provides lock-free reads on the hot path (every operation)
+        // and only incurs overhead on writes (transport swap, ~every 5 min).
+        let transport: Arc<ArcSwap<CosmosTransport>> =
+            Arc::new(ArcSwap::from(Arc::clone(runtime.bootstrap_transport())));
 
         let runtime_for_callback = runtime.clone();
         let account_for_callback = account.clone();
@@ -535,10 +547,10 @@ impl CosmosDriver {
         let refresh_callback = Arc::new(move || {
             let runtime = runtime_for_callback.clone();
             let account = account_for_callback.clone();
-            let transport_lock = Arc::clone(&transport_for_callback);
+            let transport_holder = Arc::clone(&transport_for_callback);
             let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
                 Box::pin(async move {
-                    CosmosDriver::refresh_account_properties(&runtime, &account, &transport_lock)
+                    CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
                         .await
                 });
             fut
@@ -613,11 +625,11 @@ impl CosmosDriver {
     }
 
     /// Returns the current per-account transport.
+    ///
+    /// Lock-free via `ArcSwap::load_full()` — returns a cloned `Arc` with no
+    /// reader-counter contention between concurrent callers.
     fn transport(&self) -> Arc<CosmosTransport> {
-        self.transport
-            .read()
-            .expect("transport lock poisoned")
-            .clone()
+        self.transport.load_full()
     }
 
     /// Eagerly primes the account metadata cache and creates the per-account transport.
@@ -657,7 +669,7 @@ impl CosmosDriver {
             negotiated_version,
         )?);
 
-        *self.transport.write().expect("transport lock poisoned") = new_transport;
+        self.transport.store(new_transport);
         self.initialized.store(true, Ordering::Release);
         Ok(())
     }
@@ -1654,19 +1666,16 @@ mod tests {
             )
             .unwrap(),
         );
-        let transport_lock = Arc::new(RwLock::new(current_transport));
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
         let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_lock)
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
                 .await
                 .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
-            transport_lock
-                .read()
-                .expect("transport lock poisoned")
-                .negotiated_version(),
+            transport_holder.load().negotiated_version(),
             TransportHttpVersion::Http2
         );
     }
@@ -1693,19 +1702,16 @@ mod tests {
             )
             .unwrap(),
         );
-        let transport_lock = Arc::new(RwLock::new(current_transport));
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
         let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_lock)
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
                 .await
                 .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
-            transport_lock
-                .read()
-                .expect("transport lock poisoned")
-                .negotiated_version(),
+            transport_holder.load().negotiated_version(),
             TransportHttpVersion::Http11
         );
     }
@@ -1733,19 +1739,16 @@ mod tests {
             )
             .unwrap(),
         );
-        let transport_lock = Arc::new(RwLock::new(current_transport));
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
         let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_lock)
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
                 .await
                 .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
-            transport_lock
-                .read()
-                .expect("transport lock poisoned")
-                .negotiated_version(),
+            transport_holder.load().negotiated_version(),
             TransportHttpVersion::Http11
         );
     }

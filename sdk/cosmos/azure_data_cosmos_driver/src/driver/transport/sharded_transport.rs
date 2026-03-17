@@ -8,10 +8,12 @@ use std::{
     fmt,
     sync::{
         atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
-        Arc, Mutex, RwLock,
+        Arc, Mutex,
     },
     time::{Duration, Instant},
 };
+
+use arc_swap::ArcSwap;
 
 use azure_core::{
     error::ErrorKind,
@@ -19,6 +21,7 @@ use azure_core::{
 };
 #[cfg(feature = "tokio")]
 use tracing::debug;
+use tracing::trace;
 use url::Url;
 
 use crate::diagnostics::TransportShardDiagnostics;
@@ -113,7 +116,9 @@ impl ShardedHttpTransport {
         endpoint_key: &EndpointKey,
     ) -> bool {
         let pool = {
-            let pools = self.pools.lock().expect("endpoint pool lock poisoned");
+            // Safe to ignore poisoning: the critical section only performs
+            // a HashMap::get + Arc::clone which cannot panic.
+            let pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
             pools.get(endpoint_key).cloned()
         };
         pool.is_some_and(|pool| pool.can_select_different_shard(excluded_shard_id))
@@ -128,7 +133,9 @@ impl ShardedHttpTransport {
         endpoint_key: &EndpointKey,
     ) -> Option<u64> {
         let pool = {
-            let pools = self.pools.lock().expect("endpoint pool lock poisoned");
+            // Safe to ignore poisoning: the critical section only performs
+            // a HashMap::get + Arc::clone which cannot panic.
+            let pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
             pools.get(endpoint_key).cloned()
         };
         // The outer pools mutex is released before calling select_shard,
@@ -142,7 +149,9 @@ impl ShardedHttpTransport {
         &self,
         endpoint_key: EndpointKey,
     ) -> azure_core::Result<Arc<EndpointShardPool>> {
-        let mut pools = self.pools.lock().expect("endpoint pool lock poisoned");
+        // Safe to ignore poisoning: the critical section only performs
+        // HashMap::get/insert + Arc::clone which cannot panic.
+        let mut pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(pool) = pools.get(&endpoint_key) {
             return Ok(pool.clone());
         }
@@ -175,7 +184,9 @@ impl ShardedHttpTransport {
 
                 let snapshot = pools
                     .lock()
-                    .expect("endpoint pool lock poisoned")
+                    // Safe to ignore poisoning: the critical section only
+                    // clones Arc values from the HashMap.
+                    .unwrap_or_else(|e| e.into_inner())
                     .values()
                     .cloned()
                     .collect::<Vec<_>>();
@@ -210,8 +221,10 @@ impl fmt::Debug for ShardedHttpTransport {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct EndpointKey(String);
 
-impl EndpointKey {
-    pub(crate) fn from_url(url: &Url) -> azure_core::Result<Self> {
+impl TryFrom<&Url> for EndpointKey {
+    type Error = azure_core::Error;
+
+    fn try_from(url: &Url) -> azure_core::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
             azure_core::Error::with_message(
                 ErrorKind::DataConversion,
@@ -233,7 +246,14 @@ struct EndpointShardPool {
     connection_pool: ConnectionPoolOptions,
     client_factory: Arc<dyn HttpClientFactory>,
     base_client_config: HttpClientConfig,
-    shards: RwLock<Vec<Arc<ClientShard>>>,
+    /// Lock-free shard list. Reads via `ArcSwap::load()` incur no
+    /// reader-counter contention. Writes build a new `Vec` and swap
+    /// the pointer atomically.
+    shards: ArcSwap<Vec<Arc<ClientShard>>>,
+    /// Serializes write operations (try_create_shard, health sweep)
+    /// to prevent concurrent mutations from racing. Readers never
+    /// acquire this lock — they use `shards.load()` directly.
+    write_lock: Mutex<()>,
     next_shard_id: AtomicU64,
 }
 
@@ -249,7 +269,8 @@ impl EndpointShardPool {
             connection_pool,
             client_factory,
             base_client_config,
-            shards: RwLock::new(Vec::new()),
+            shards: ArcSwap::from_pointee(Vec::new()),
+            write_lock: Mutex::new(()),
             next_shard_id: AtomicU64::new(1),
         };
 
@@ -258,15 +279,15 @@ impl EndpointShardPool {
         // `select_shard` → `try_create_shard` will retry on the next request.
         // The background health sweep also backfills to min_clients.
         {
-            let mut shards = pool.shards.write().expect("shard lock poisoned");
-            while shards.len() < pool.connection_pool.min_http2_connections_per_endpoint() {
+            let mut initial = Vec::new();
+            while initial.len() < pool.connection_pool.min_http2_connections_per_endpoint() {
                 match pool.build_shard() {
-                    Ok(shard) => shards.push(Arc::new(shard)),
+                    Ok(shard) => initial.push(Arc::new(shard)),
                     Err(error) => {
                         tracing::debug!(
                             endpoint = %pool.endpoint.0,
                             error = %error,
-                            created = shards.len(),
+                            created = initial.len(),
                             target = pool.connection_pool.min_http2_connections_per_endpoint(),
                             "Initial shard creation failed; pool will backfill lazily"
                         );
@@ -274,6 +295,7 @@ impl EndpointShardPool {
                     }
                 }
             }
+            pool.shards.store(Arc::new(initial));
         }
 
         Ok(pool)
@@ -285,44 +307,20 @@ impl EndpointShardPool {
         preferred_shard_id: Option<u64>,
     ) -> azure_core::Result<Arc<ClientShard>> {
         let max_streams = self.connection_pool.max_http2_streams_per_client();
+        let min_connections = self.connection_pool.min_http2_connections_per_endpoint();
 
-        // Fast path: select in-place under read lock, clone only the winner.
+        // Fast path: lock-free read via ArcSwap::load().
         {
-            let shards = self.shards.read().expect("shard lock poisoned");
-
-            if !shards.is_empty() {
-                // If a preferred shard was pre-selected (e.g. for timeout
-                // diagnostics accuracy), reuse it when still selectable and
-                // under the stream limit. This may keep traffic on a shard
-                // that would otherwise fall just outside the current active
-                // set boundary, which is an accepted trade-off to preserve
-                // timeout-race shard affinity and avoid reporting a different
-                // shard than the one the caller was racing.
-                if let Some(preferred_id) = preferred_shard_id {
-                    if let Some(shard) = shards
-                        .iter()
-                        .find(|s| s.id == preferred_id && s.is_selectable(excluded_shard_id))
-                    {
-                        if shard.inflight() < max_streams {
-                            return Ok(Arc::clone(shard));
-                        }
-                    }
-                }
-
-                let active_count = self.active_shard_count_from_slice(&shards, excluded_shard_id);
-
-                // Try least-loaded with capacity among active shards
-                if let Some(shard) = shards
-                    .iter()
-                    .filter(|s| s.is_selectable(excluded_shard_id))
-                    .take(active_count)
-                    .filter(|s| s.inflight() < max_streams)
-                    .min_by_key(|s| s.inflight())
-                {
-                    return Ok(Arc::clone(shard));
-                }
+            let shards = self.shards.load();
+            if let Some(shard) = select_from_shards(
+                &shards,
+                excluded_shard_id,
+                preferred_shard_id,
+                max_streams,
+                min_connections,
+            ) {
+                return Ok(shard);
             }
-            // Read lock dropped here before potential write lock in try_create_shard.
         }
 
         // All active shards at capacity (or pool is empty) — try creating a new one.
@@ -331,7 +329,7 @@ impl EndpointShardPool {
         }
 
         // Fallback: least-loaded of all selectable shards (over-capacity).
-        let shards = self.shards.read().expect("shard lock poisoned");
+        let shards = self.shards.load();
         shards
             .iter()
             .filter(|s| s.is_selectable(excluded_shard_id))
@@ -348,49 +346,36 @@ impl EndpointShardPool {
             })
     }
 
-    fn active_shard_count_from_slice(
-        &self,
-        shards: &[Arc<ClientShard>],
-        excluded_shard_id: Option<u64>,
-    ) -> usize {
-        let mut selectable_count = 0usize;
-        let mut total_inflight = 0u32;
-
-        for shard in shards {
-            if shard.is_selectable(excluded_shard_id) {
-                selectable_count += 1;
-                total_inflight += shard.inflight();
-            }
-        }
-
-        if selectable_count == 0 {
-            return 0;
-        }
-
-        let max_streams = self.connection_pool.max_http2_streams_per_client() as usize;
-        let needed = (total_inflight as usize + 1).div_ceil(max_streams);
-        needed
-            .max(self.connection_pool.min_http2_connections_per_endpoint())
-            .min(selectable_count)
-            .max(1)
-    }
-
     fn can_select_different_shard(&self, excluded_shard_id: u64) -> bool {
-        let shards = self.shards.read().expect("shard lock poisoned");
+        let shards = self.shards.load();
         shards
             .iter()
             .any(|shard| shard.is_selectable(Some(excluded_shard_id)))
             || shards.len() < self.connection_pool.max_http2_connections_per_endpoint()
     }
 
+    /// Creates a new shard if below the max limit. Serialized via `write_lock`
+    /// to prevent concurrent scale-up from exceeding `max_connections`.
     fn try_create_shard(&self) -> azure_core::Result<Option<Arc<ClientShard>>> {
-        let mut shards = self.shards.write().expect("shard lock poisoned");
-        if shards.len() >= self.connection_pool.max_http2_connections_per_endpoint() {
+        // Safe to ignore poisoning: the critical section only reads
+        // ArcSwap, builds a shard, and stores a new Vec — none of
+        // which panic.
+        let _guard = self.write_lock.lock().unwrap_or_else(|e| e.into_inner());
+        let current = self.shards.load();
+        if current.len() >= self.connection_pool.max_http2_connections_per_endpoint() {
             return Ok(None);
         }
 
         let shard = Arc::new(self.build_shard()?);
-        shards.push(shard.clone());
+        trace!(
+            endpoint = %self.endpoint.0,
+            shard_id = shard.id,
+            pool_size = current.len() + 1,
+            "Created new shard (scale-up from request path)"
+        );
+        let mut new_vec = (**current).clone();
+        new_vec.push(shard.clone());
+        self.shards.store(Arc::new(new_vec));
         Ok(Some(shard))
     }
 
@@ -415,17 +400,18 @@ impl EndpointShardPool {
         let min_clients = self.connection_pool.min_http2_connections_per_endpoint();
         let max_clients = self.connection_pool.max_http2_connections_per_endpoint();
 
-        // Phase 1: evaluate, mark, and remove under write lock.
-        // Determine how many replacement shards are needed but do NOT build
-        // them here — `build_shard` performs TCP/TLS which would block
-        // concurrent `select_shard` readers.
+        // Phase 1: evaluate, mark, and compute a new shard list.
+        // Serialized via write_lock to prevent concurrent mutations.
         let shards_needed = {
-            let mut shards = self.shards.write().expect("shard lock poisoned");
+            // Safe to ignore poisoning: the critical section only reads
+            // snapshots and swaps the ArcSwap — no panicking operations.
+            let _guard = self.write_lock.lock().unwrap_or_else(|e| e.into_inner());
+            let current = self.shards.load();
 
-            if shards.is_empty() {
-                min_clients.saturating_sub(shards.len())
+            if current.is_empty() {
+                min_clients
             } else {
-                let snapshots = shards
+                let snapshots = current
                     .iter()
                     .map(|shard| shard.snapshot())
                     .collect::<Vec<_>>();
@@ -452,45 +438,58 @@ impl EndpointShardPool {
                         if probe_candidate == Some(snapshot.id) {
                             needs_probe_replacement = true;
                         }
-                        if let Some(shard) = shards.iter().find(|s| s.id == snapshot.id) {
+                        if let Some(shard) = current.iter().find(|s| s.id == snapshot.id) {
+                            trace!(
+                                endpoint = %self.endpoint.0,
+                                shard_id = snapshot.id,
+                                consecutive_failures = snapshot.consecutive_failures,
+                                is_probe_candidate = probe_candidate == Some(snapshot.id),
+                                "Marking shard for eviction"
+                            );
                             shard.mark_for_eviction();
                         }
                     }
                 }
 
-                shards.retain(|shard| !(shard.is_marked_for_eviction() && shard.inflight() == 0));
+                // Build the new shard list, removing evicted idle shards.
+                let mut new_shards: Vec<Arc<ClientShard>> = current
+                    .iter()
+                    .filter(|shard| !(shard.is_marked_for_eviction() && shard.inflight() == 0))
+                    .cloned()
+                    .collect();
 
-                // HTTP/2 keep-alive and ping timeouts are responsible for
-                // surfacing hung connections so eviction continues to key off
-                // transport failures rather than a separate ReadHang detector.
-
-                // Reclaim idle overflow shards from the tail. Shards in the
-                // middle of the vector that become idle after eviction-and-
-                // replacement cycles are not reclaimed here — this is an
-                // accepted trade-off because those slots will eventually be
-                // freed when they end up at the tail (or replaced by a future
-                // eviction sweep). Compacting mid-vector would invalidate
-                // inflight shard references and add complexity with minimal
-                // benefit since the vector is bounded by max_clients.
-                while shards.len() > min_clients {
-                    let should_remove = shards.last().is_some_and(|shard| {
+                // Reclaim idle overflow shards from the tail.
+                while new_shards.len() > min_clients {
+                    let should_remove = new_shards.last().is_some_and(|shard| {
                         !shard.is_marked_for_eviction() && shard.is_idle_for(now, idle_timeout)
                     });
                     if !should_remove {
                         break;
                     }
-                    shards.pop();
+                    new_shards.pop();
                 }
 
                 // Calculate how many shards we need to build outside the lock.
                 let mut needed = 0;
-                if needs_probe_replacement && shards.len() < max_clients {
+                if needs_probe_replacement && new_shards.len() < max_clients {
                     needed += 1;
                 }
-                needed += min_clients.saturating_sub(shards.len() + needed);
+                needed += min_clients.saturating_sub(new_shards.len() + needed);
+
+                // Swap the shard list atomically.
+                if new_shards.len() != current.len() {
+                    trace!(
+                        endpoint = %self.endpoint.0,
+                        previous_count = current.len(),
+                        new_count = new_shards.len(),
+                        backfill_needed = needed,
+                        "Health sweep updated shard pool"
+                    );
+                }
+                self.shards.store(Arc::new(new_shards));
                 needed
             }
-            // Write lock dropped here.
+            // write_lock dropped here.
         };
 
         if shards_needed == 0 {
@@ -498,25 +497,29 @@ impl EndpointShardPool {
         }
 
         // Phase 2: build replacement shards outside the lock. This is the
-        // expensive part (TCP connect, TLS handshake) and must not block
+        // expensive part (TCP connect, TLS handshake) and does not block
         // concurrent `select_shard` readers.
-        //
-        // All HTTP/2 shards keep idle pings enabled. This keeps liveness
-        // detection uniform across initial creation, scale-up, and replacement.
         let mut new_shards = Vec::with_capacity(shards_needed);
         for _ in 0..shards_needed {
-            let shard = self.build_shard()?;
-            new_shards.push(Arc::new(shard));
-        }
-
-        // Phase 3: re-acquire write lock and insert the new shards.
-        {
-            let mut shards = self.shards.write().expect("shard lock poisoned");
-            for new_shard in new_shards {
-                if shards.len() < max_clients {
-                    shards.push(new_shard);
+            match self.build_shard() {
+                Ok(shard) => new_shards.push(Arc::new(shard)),
+                Err(error) => {
+                    debug!(endpoint = %self.endpoint.0, %error, "shard build failed during health sweep");
                 }
             }
+        }
+
+        if !new_shards.is_empty() {
+            // Phase 3: re-acquire write lock and insert the new shards.
+            let _guard = self.write_lock.lock().unwrap_or_else(|e| e.into_inner());
+            let current = self.shards.load();
+            let mut updated = (**current).clone();
+            for new_shard in new_shards {
+                if updated.len() < max_clients {
+                    updated.push(new_shard);
+                }
+            }
+            self.shards.store(Arc::new(updated));
         }
 
         Ok(())
@@ -525,7 +528,7 @@ impl EndpointShardPool {
 
 impl fmt::Debug for EndpointShardPool {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let shard_count = self.shards.read().map(|s| s.len()).unwrap_or_default();
+        let shard_count = self.shards.load().len();
         f.debug_struct("EndpointShardPool")
             .field("endpoint", &self.endpoint)
             .field("shard_count", &shard_count)
@@ -533,14 +536,33 @@ impl fmt::Debug for EndpointShardPool {
     }
 }
 
+/// Sentinel value for `AtomicU64` timestamp fields meaning "no value" (like `None`).
+const TIMESTAMP_NONE: u64 = u64::MAX;
+
+/// Offset added to nanos values so that times before `creation_time` can be
+/// represented as positive integers. With a 30-second pre-creation window,
+/// `Instant::now() - 30s` still fits comfortably in a `u64`.
+const TIMESTAMP_BIAS_NANOS: u64 = 30_000_000_000; // 30 seconds
+
 struct ClientShard {
     id: u64,
     client: Arc<dyn HttpClient>,
+    /// Monotonic base used for all timestamp offsets on this shard.
+    creation_time: Instant,
+    // -- Hot-path atomic counters (no Mutex needed) --
     inflight: AtomicU32,
     /// Lock-free eviction flag checked on the hot path (`select_shard`).
-    /// Set by the background health sweep; read with `Relaxed` ordering.
     marked_for_eviction: AtomicBool,
-    state: Mutex<ClientShardState>,
+    /// Nanos since `creation_time` of the most recent request start.
+    last_request_at_nanos: AtomicU64,
+    /// Nanos since `creation_time` of the most recent successful response,
+    /// or `TIMESTAMP_NONE` if no success has been recorded yet.
+    last_success_at_nanos: AtomicU64,
+    consecutive_failures: AtomicU32,
+    total_requests: AtomicU64,
+    total_failures: AtomicU64,
+    /// Requests started but never finished (e.g., cancelled by a timeout race).
+    total_cancellations: AtomicU64,
 }
 
 impl ClientShard {
@@ -548,16 +570,36 @@ impl ClientShard {
         Self {
             id,
             client,
+            creation_time: Instant::now(),
             inflight: AtomicU32::new(0),
             marked_for_eviction: AtomicBool::new(false),
-            state: Mutex::new(ClientShardState {
-                last_request_at: Instant::now(),
-                last_success_at: None,
-                consecutive_failures: 0,
-                total_requests: 0,
-                total_failures: 0,
-                total_cancellations: 0,
-            }),
+            last_request_at_nanos: AtomicU64::new(TIMESTAMP_BIAS_NANOS),
+            last_success_at_nanos: AtomicU64::new(TIMESTAMP_NONE),
+            consecutive_failures: AtomicU32::new(0),
+            total_requests: AtomicU64::new(0),
+            total_failures: AtomicU64::new(0),
+            total_cancellations: AtomicU64::new(0),
+        }
+    }
+
+    /// Converts a biased nanos offset to an `Instant` relative to this shard's creation time.
+    fn nanos_to_instant(&self, biased_nanos: u64) -> Instant {
+        if biased_nanos >= TIMESTAMP_BIAS_NANOS {
+            self.creation_time + Duration::from_nanos(biased_nanos - TIMESTAMP_BIAS_NANOS)
+        } else {
+            // Time before creation_time: subtract the deficit.
+            self.creation_time - Duration::from_nanos(TIMESTAMP_BIAS_NANOS - biased_nanos)
+        }
+    }
+
+    /// Converts an `Instant` to a biased nanos offset from this shard's creation time.
+    fn instant_to_nanos(&self, instant: Instant) -> u64 {
+        if let Some(d) = instant.checked_duration_since(self.creation_time) {
+            TIMESTAMP_BIAS_NANOS.saturating_add(d.as_nanos() as u64)
+        } else {
+            // instant is before creation_time — subtract the deficit from the bias.
+            let deficit = self.creation_time.duration_since(instant).as_nanos() as u64;
+            TIMESTAMP_BIAS_NANOS.saturating_sub(deficit)
         }
     }
 
@@ -567,18 +609,13 @@ impl ClientShard {
 
     /// Begins tracking an inflight request and returns an RAII guard.
     ///
-    /// The guard ensures the inflight counter is always decremented, even if
-    /// the async transport future is cancelled (e.g., by a timeout race in
-    /// `execute_http_attempt`). Call [`InflightGuard::finish`] with the result
-    /// to record success/failure state. If the guard is dropped without
-    /// `finish`, only the inflight counter is decremented.
+    /// Fully lock-free: only atomic increments on `inflight` and `total_requests`,
+    /// plus an atomic store for `last_request_at_nanos`.
     fn start_request(&self) -> InflightGuard<'_> {
         self.inflight.fetch_add(1, Ordering::Relaxed);
-        {
-            let mut state = self.state.lock().expect("shard state lock poisoned");
-            state.last_request_at = Instant::now();
-            state.total_requests = state.total_requests.saturating_add(1);
-        }
+        self.total_requests.fetch_add(1, Ordering::Relaxed);
+        self.last_request_at_nanos
+            .store(self.instant_to_nanos(Instant::now()), Ordering::Relaxed);
         InflightGuard {
             shard: self,
             finished: false,
@@ -587,21 +624,22 @@ impl ClientShard {
 
     fn record_request_outcome(&self, result: &azure_core::Result<AsyncRawResponse>) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
-        let mut state = self.state.lock().expect("shard state lock poisoned");
-        state.last_request_at = Instant::now();
+        let now_nanos = self.instant_to_nanos(Instant::now());
+        self.last_request_at_nanos
+            .store(now_nanos, Ordering::Relaxed);
         if result.is_ok() {
-            state.last_success_at = Some(state.last_request_at);
-            state.consecutive_failures = 0;
+            self.last_success_at_nanos
+                .store(now_nanos, Ordering::Relaxed);
+            self.consecutive_failures.store(0, Ordering::Relaxed);
         } else {
-            state.consecutive_failures = state.consecutive_failures.saturating_add(1);
-            state.total_failures = state.total_failures.saturating_add(1);
+            self.consecutive_failures.fetch_add(1, Ordering::Relaxed);
+            self.total_failures.fetch_add(1, Ordering::Relaxed);
         }
     }
 
     fn decrement_inflight(&self) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
-        let mut state = self.state.lock().expect("shard state lock poisoned");
-        state.total_cancellations = state.total_cancellations.saturating_add(1);
+        self.total_cancellations.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -637,15 +675,20 @@ impl Drop for InflightGuard<'_> {
 
 impl ClientShard {
     fn snapshot(&self) -> ClientShardHealthSnapshot {
-        let state = self.state.lock().expect("shard state lock poisoned");
+        let last_success_nanos = self.last_success_at_nanos.load(Ordering::Relaxed);
         ClientShardHealthSnapshot {
             id: self.id,
             inflight: self.inflight(),
-            last_request_at: state.last_request_at,
-            last_success_at: state.last_success_at,
-            consecutive_failures: state.consecutive_failures,
-            total_requests: state.total_requests,
-            total_failures: state.total_failures,
+            last_request_at: self
+                .nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed)),
+            last_success_at: if last_success_nanos == TIMESTAMP_NONE {
+                None
+            } else {
+                Some(self.nanos_to_instant(last_success_nanos))
+            },
+            consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
+            total_requests: self.total_requests.load(Ordering::Relaxed),
+            total_failures: self.total_failures.load(Ordering::Relaxed),
             marked_for_eviction: self.is_marked_for_eviction(),
         }
     }
@@ -667,24 +710,19 @@ impl ClientShard {
             return false;
         }
 
-        // Only lock when inflight == 0 (cold path during health sweep).
-        let last_request_at = self
-            .state
-            .lock()
-            .expect("shard state lock poisoned")
-            .last_request_at;
+        let last_request_at =
+            self.nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed));
         now.duration_since(last_request_at) >= idle_timeout
     }
 
     fn transport_diagnostics(&self) -> TransportShardDiagnostics {
-        let state = self.state.lock().expect("shard state lock poisoned");
         TransportShardDiagnostics::new(
             self.id,
             self.inflight(),
-            state.consecutive_failures,
-            state.total_requests,
-            state.total_failures,
-            state.total_cancellations,
+            self.consecutive_failures.load(Ordering::Relaxed),
+            self.total_requests.load(Ordering::Relaxed),
+            self.total_failures.load(Ordering::Relaxed),
+            self.total_cancellations.load(Ordering::Relaxed),
             self.is_marked_for_eviction(),
         )
     }
@@ -693,9 +731,9 @@ impl ClientShard {
     #[cfg(test)]
     fn record_request_start(&self) {
         self.inflight.fetch_add(1, Ordering::Relaxed);
-        let mut state = self.state.lock().expect("shard state lock poisoned");
-        state.last_request_at = Instant::now();
-        state.total_requests = state.total_requests.saturating_add(1);
+        self.total_requests.fetch_add(1, Ordering::Relaxed);
+        self.last_request_at_nanos
+            .store(self.instant_to_nanos(Instant::now()), Ordering::Relaxed);
     }
 
     /// Records outcome for test setup (not cancellation-safe; use `InflightGuard::finish` in production).
@@ -703,16 +741,32 @@ impl ClientShard {
     fn record_request_finish(&self, result: &azure_core::Result<AsyncRawResponse>) {
         self.record_request_outcome(result);
     }
-}
 
-struct ClientShardState {
-    last_request_at: Instant,
-    last_success_at: Option<Instant>,
-    consecutive_failures: u32,
-    total_requests: u64,
-    total_failures: u64,
-    /// Requests started but never finished (e.g., cancelled by a timeout race).
-    total_cancellations: u64,
+    /// Sets the `last_request_at` timestamp for testing.
+    #[cfg(test)]
+    fn set_last_request_at(&self, instant: Instant) {
+        self.last_request_at_nanos
+            .store(self.instant_to_nanos(instant), Ordering::Relaxed);
+    }
+
+    /// Sets the `last_success_at` timestamp for testing.
+    #[cfg(test)]
+    fn set_last_success_at(&self, instant: Option<Instant>) {
+        match instant {
+            Some(t) => self
+                .last_success_at_nanos
+                .store(self.instant_to_nanos(t), Ordering::Relaxed),
+            None => self
+                .last_success_at_nanos
+                .store(TIMESTAMP_NONE, Ordering::Relaxed),
+        }
+    }
+
+    /// Sets the consecutive failure counter for testing.
+    #[cfg(test)]
+    fn set_consecutive_failures(&self, count: u32) {
+        self.consecutive_failures.store(count, Ordering::Relaxed);
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -732,6 +786,79 @@ impl ClientShardHealthSnapshot {
         self.last_success_at
             .is_some_and(|last_success_at| now.duration_since(last_success_at) <= grace_period)
     }
+}
+
+/// Pure selection logic operating on a shard slice — no side effects.
+///
+/// Returns the best shard from `shards` that is selectable and under the
+/// stream limit, preferring `preferred_shard_id` when available. Returns
+/// `None` when all shards are at capacity (caller should try creating a
+/// new shard or fall back to over-capacity selection).
+fn select_from_shards(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    preferred_shard_id: Option<u64>,
+    max_streams: u32,
+    min_connections: usize,
+) -> Option<Arc<ClientShard>> {
+    if shards.is_empty() {
+        return None;
+    }
+
+    // If a preferred shard was pre-selected (e.g. for timeout diagnostics
+    // accuracy), reuse it when still selectable and under the stream limit.
+    if let Some(preferred_id) = preferred_shard_id {
+        if let Some(shard) = shards
+            .iter()
+            .find(|s| s.id == preferred_id && s.is_selectable(excluded_shard_id))
+        {
+            if shard.inflight() < max_streams {
+                return Some(Arc::clone(shard));
+            }
+        }
+    }
+
+    let active_count = active_shard_count(shards, excluded_shard_id, max_streams, min_connections);
+
+    // Try least-loaded with capacity among active shards
+    shards
+        .iter()
+        .filter(|s| s.is_selectable(excluded_shard_id))
+        .take(active_count)
+        .filter(|s| s.inflight() < max_streams)
+        .min_by_key(|s| s.inflight())
+        .cloned()
+}
+
+/// Computes the number of active shards that should participate in selection.
+///
+/// Based on current inflight load, returns a count between `min_connections`
+/// and the number of selectable shards.
+fn active_shard_count(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    max_streams: u32,
+    min_connections: usize,
+) -> usize {
+    let mut selectable_count = 0usize;
+    let mut total_inflight = 0u32;
+
+    for shard in shards {
+        if shard.is_selectable(excluded_shard_id) {
+            selectable_count += 1;
+            total_inflight += shard.inflight();
+        }
+    }
+
+    if selectable_count == 0 {
+        return 0;
+    }
+
+    let needed = (total_inflight as usize + 1).div_ceil(max_streams as usize);
+    needed
+        .max(min_connections)
+        .min(selectable_count)
+        .max(1)
 }
 
 fn pick_probe_candidate(
@@ -864,7 +991,7 @@ mod tests {
         let second = pool.select_shard(None, None).unwrap();
 
         assert_ne!(first.id, second.id);
-        assert_eq!(pool.shards.read().unwrap().len(), 2);
+        assert_eq!(pool.shards.load().len(), 2);
     }
 
     #[test]
@@ -888,10 +1015,7 @@ mod tests {
             "synthetic",
         )));
 
-        {
-            let mut state = overflow.state.lock().unwrap();
-            state.last_request_at = Instant::now() - Duration::from_secs(5);
-        }
+        overflow.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
         first.record_request_finish(&Err(azure_core::Error::with_message(
             ErrorKind::Other,
@@ -902,18 +1026,15 @@ mod tests {
             "synthetic",
         )));
 
-        {
-            let mut state = first.state.lock().unwrap();
-            state.consecutive_failures = 0;
-            state.last_success_at = Some(Instant::now());
-        }
+        first.set_consecutive_failures(0);
+        first.set_last_success_at(Some(Instant::now()));
 
         pool.run_health_sweep().unwrap();
 
         let selected = pool.select_shard(None, None).unwrap();
 
         assert_eq!(selected.id, first.id);
-        assert_eq!(pool.shards.read().unwrap().len(), 1);
+        assert_eq!(pool.shards.load().len(), 1);
     }
 
     #[test]
@@ -977,24 +1098,21 @@ mod tests {
         )));
 
         {
-            let mut state = first.state.lock().unwrap();
-            state.consecutive_failures = 0;
-            state.last_success_at = Some(Instant::now());
-            state.last_request_at = Instant::now();
+            first.set_consecutive_failures(0);
+            first.set_last_success_at(Some(Instant::now()));
+            first.set_last_request_at(Instant::now());
         }
 
         {
-            let mut state = second.state.lock().unwrap();
-            state.last_success_at = Some(Instant::now() - Duration::from_secs(5));
-            state.last_request_at = Instant::now() - Duration::from_secs(5);
+            second.set_last_success_at(Some(Instant::now() - Duration::from_secs(5)));
+            second.set_last_request_at(Instant::now() - Duration::from_secs(5));
         }
 
         pool.run_health_sweep().unwrap();
 
         let snapshots = pool
             .shards
-            .read()
-            .unwrap()
+            .load()
             .iter()
             .map(|shard| shard.id)
             .collect::<Vec<_>>();
@@ -1027,11 +1145,9 @@ mod tests {
         )));
 
         for shard in [&first, &second] {
-            let mut state = shard.state.lock().unwrap();
-            state.last_success_at = None;
-            state.last_request_at = Instant::now() - Duration::from_secs(5);
-            state.consecutive_failures = 2;
-            state.total_failures = 2;
+            shard.set_last_success_at(None);
+            shard.set_last_request_at(Instant::now() - Duration::from_secs(5));
+            shard.set_consecutive_failures(2);
         }
 
         first.inflight.store(0, Ordering::Relaxed);
@@ -1040,8 +1156,7 @@ mod tests {
 
         let shard_ids = pool
             .shards
-            .read()
-            .unwrap()
+            .load()
             .iter()
             .map(|shard| shard.id)
             .collect::<Vec<_>>();
@@ -1097,11 +1212,8 @@ mod tests {
         }
 
         // Make second's last success old enough that it passes the grace period.
-        {
-            let mut state = second.state.lock().unwrap();
-            state.last_success_at = None;
-            state.last_request_at = Instant::now() - Duration::from_secs(5);
-        }
+        second.set_last_success_at(None);
+        second.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
         // Ensure the first shard is healthy so eviction can proceed.
         first.record_request_finish(&Ok(azure_core::http::AsyncRawResponse::from_bytes(
@@ -1126,7 +1238,7 @@ mod tests {
         tokio::time::advance(health_interval).await;
         tokio::task::yield_now().await;
 
-        let shard_ids: Vec<u64> = pool.shards.read().unwrap().iter().map(|s| s.id).collect();
+        let shard_ids: Vec<u64> = pool.shards.load().iter().map(|s| s.id).collect();
 
         // The failed shard should have been evicted and replaced.
         assert!(

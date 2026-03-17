@@ -168,7 +168,7 @@ pub(crate) async fn execute_transport_pipeline(
     // Compute the endpoint key once for the entire transport pipeline.
     // This avoids re-allocating the "host:port" string on every retry
     // and every inner call (send, pre_select_shard, can_retry, etc.).
-    let endpoint_key = match EndpointKey::from_url(&request.url) {
+    let endpoint_key = match EndpointKey::try_from(&request.url) {
         Ok(key) => key,
         Err(error) => {
             return TransportResult {
