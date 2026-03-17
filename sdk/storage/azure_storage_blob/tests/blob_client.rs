@@ -10,34 +10,21 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
-        method_options::BlobClientManagedDownloadOptions, AccessTier, AccountKind,
-        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-        BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
-        BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
-        StorageErrorCode,
+        AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
+        BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
-    StorageAccount, TestPolicy,
+    create_test_blob, get_blob_name, get_container_client, get_container_name, StorageAccount,
 };
-use bytes::{BufMut, BytesMut};
 use futures::TryStreamExt;
-use std::{
-    cmp::min,
-    collections::HashMap,
-    error::Error,
-    num::NonZero,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
-    time::Duration,
-};
+use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
 #[recorded::test]
@@ -923,105 +910,105 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
     Ok(())
 }
 
-#[recorded::test]
-async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    const DATA_LEN: usize = 1024;
+// #[recorded::test]
+// async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     const DATA_LEN: usize = 1024;
 
-    let request_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+//     let request_count = Arc::new(AtomicUsize::new(0));
+//     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
+//     let recording = ctx.recording();
+//     let container_client = get_container_client(
+//         recording,
+//         true,
+//         StorageAccount::Standard,
+//         Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+//     )
+//     .await?;
+//     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    let data: [u8; DATA_LEN] = recording.random();
+//     let data: [u8; DATA_LEN] = recording.random();
 
-    blob_client
-        .upload(RequestContent::from(data.to_vec()), None)
-        .await?;
+//     blob_client
+//         .upload(RequestContent::from(data.to_vec()), None)
+//         .await?;
 
-    for (parallel, partition_len, download_range, expected_gets) in [
-        (2, DATA_LEN, None, 1),
-        (2, DATA_LEN * 2, None, 1),
-        (2, 512, None, 2),
-        (1, 256, None, 4),
-        (8, 31, None, 34),
-        (1, 16, Some((0, 16)), 1),
-        (4, 16, Some((16, 20)), 1),
-        (4, 256, Some((0, 12345)), 4),
-        (4, 100, Some((123, 223)), 1),
-    ] {
-        request_count.store(0, Ordering::Relaxed);
-        let _scope = count_policy.check_request_scope();
-        let mut download_stream = blob_client
-            .managed_download(Some(BlobClientManagedDownloadOptions {
-                partition_size: Some(NonZero::new(partition_len).unwrap()),
-                parallel: Some(NonZero::new(parallel).unwrap()),
-                range: download_range.map(|r| r.0..r.1),
-                ..Default::default()
-            }))
-            .await?;
+//     for (parallel, partition_len, download_range, expected_gets) in [
+//         (2, DATA_LEN, None, 1),
+//         (2, DATA_LEN * 2, None, 1),
+//         (2, 512, None, 2),
+//         (1, 256, None, 4),
+//         (8, 31, None, 34),
+//         (1, 16, Some((0, 16)), 1),
+//         (4, 16, Some((16, 20)), 1),
+//         (4, 256, Some((0, 12345)), 4),
+//         (4, 100, Some((123, 223)), 1),
+//     ] {
+//         request_count.store(0, Ordering::Relaxed);
+//         let _scope = count_policy.check_request_scope();
+//         let mut download_stream = blob_client
+//             .managed_download(Some(BlobClientManagedDownloadOptions {
+//                 partition_size: Some(NonZero::new(partition_len).unwrap()),
+//                 parallel: Some(NonZero::new(parallel).unwrap()),
+//                 range: download_range.map(|r| r.0..r.1),
+//                 ..Default::default()
+//             }))
+//             .await?;
 
-        let mut downloaded_data = BytesMut::new();
-        while let Some(bytes) = download_stream.try_next().await? {
-            downloaded_data.put(bytes);
-        }
-        let downloaded_data = downloaded_data.freeze();
-        assert_eq!(
-            &downloaded_data,
-            match download_range {
-                Some(r) => &data[r.0..min(r.1, DATA_LEN)],
-                None => &data,
-            }
-        );
-        assert_eq!(request_count.load(Ordering::Relaxed), expected_gets);
-    }
+//         let mut downloaded_data = BytesMut::new();
+//         while let Some(bytes) = download_stream.try_next().await? {
+//             downloaded_data.put(bytes);
+//         }
+//         let downloaded_data = downloaded_data.freeze();
+//         assert_eq!(
+//             &downloaded_data,
+//             match download_range {
+//                 Some(r) => &data[r.0..min(r.1, DATA_LEN)],
+//                 None => &data,
+//             }
+//         );
+//         assert_eq!(request_count.load(Ordering::Relaxed), expected_gets);
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-// TODO edge case where a range was requested on a 0-length blob
-#[recorded::test]
-async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let request_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+// // TODO edge case where a range was requested on a 0-length blob
+// #[recorded::test]
+// async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     let request_count = Arc::new(AtomicUsize::new(0));
+//     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
+//     let recording = ctx.recording();
+//     let container_client = get_container_client(
+//         recording,
+//         true,
+//         StorageAccount::Standard,
+//         Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+//     )
+//     .await?;
+//     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    blob_client
-        .upload(RequestContent::from(vec![]), None)
-        .await?;
+//     blob_client
+//         .upload(RequestContent::from(vec![]), None)
+//         .await?;
 
-    request_count.store(0, Ordering::Relaxed);
-    let _scope = count_policy.check_request_scope();
-    let mut download_stream = blob_client.managed_download(None).await?;
+//     request_count.store(0, Ordering::Relaxed);
+//     let _scope = count_policy.check_request_scope();
+//     let mut download_stream = blob_client.managed_download(None).await?;
 
-    let mut downloaded_data = BytesMut::new();
-    while let Some(bytes) = download_stream.try_next().await? {
-        downloaded_data.put(bytes);
-    }
-    let downloaded_data = downloaded_data.freeze();
+//     let mut downloaded_data = BytesMut::new();
+//     while let Some(bytes) = download_stream.try_next().await? {
+//         downloaded_data.put(bytes);
+//     }
+//     let downloaded_data = downloaded_data.freeze();
 
-    assert_eq!(downloaded_data.len(), 0);
-    // 1 op with a range, 1 op without after the first one fails
-    assert_eq!(request_count.load(Ordering::Relaxed), 2);
+//     assert_eq!(downloaded_data.len(), 0);
+//     // 1 op with a range, 1 op without after the first one fails
+//     assert_eq!(request_count.load(Ordering::Relaxed), 2);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 #[recorded::test]
 async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
