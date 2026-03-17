@@ -19,7 +19,6 @@ use framework::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Duration;
 use std::{borrow::Cow, error::Error};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -554,8 +553,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_application_region(HUB_REGION)
-                .with_timeout(Duration::from_secs(180)),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -855,8 +853,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_application_region(SATELLITE_REGION)
-                .with_timeout(Duration::from_secs(180)),
+                .with_fault_client_application_region(SATELLITE_REGION),
         ),
     )
     .await
@@ -932,8 +929,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_application_region(HUB_REGION)
-                .with_timeout(Duration::from_secs(180)),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await
@@ -1066,8 +1062,7 @@ pub async fn fault_injection_custom_response_403_3_transitions_to_single_write(
         Some(
             TestOptions::new()
                 .with_fault_injection_builder(fault_builder)
-                .with_fault_client_application_region(HUB_REGION)
-                .with_timeout(Duration::from_secs(180)),
+                .with_fault_client_application_region(HUB_REGION),
         ),
     )
     .await

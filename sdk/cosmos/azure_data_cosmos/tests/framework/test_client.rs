@@ -17,6 +17,7 @@ use azure_data_cosmos::{
     Query,
 };
 use futures::TryStreamExt;
+use serde::Serialize;
 use std::time::Duration;
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
@@ -770,6 +771,51 @@ impl TestRunContext {
                 }
             }
         }
+
+        // Ensure satellite data-plane readiness by creating a warmup item routed
+        // exclusively to the satellite region. The metadata reads above only validate
+        // the control plane; the data plane (partition key range resolution + item
+        // operations) may still return 404 until fully replicated.
+        #[derive(Serialize)]
+        struct WarmupItem {
+            id: &'static str,
+            partition_key: &'static str,
+        }
+
+        let warmup_item = WarmupItem {
+            id: "__warmup__",
+            partition_key: "__warmup__",
+        };
+        let satellite_container = satellite_client
+            .database_client(db_client.id())
+            .container_client(container_id)
+            .await;
+        let exclude_hub =
+            Some(ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]));
+
+        loop {
+            match satellite_container
+                .create_item("__warmup__", &warmup_item, exclude_hub.clone())
+                .await
+            {
+                Ok(_) => break,
+                Err(e) if e.http_status() == Some(StatusCode::Conflict) => break,
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    println!(
+                        "waiting for data-plane readiness in satellite ({}): {}",
+                        SATELLITE_REGION.as_str(),
+                        e
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        // Clean up the warmup item
+        let _ = satellite_container
+            .delete_item("__warmup__", "__warmup__", exclude_hub.clone())
+            .await;
 
         Ok(db_client.container_client(container_id).await)
     }
