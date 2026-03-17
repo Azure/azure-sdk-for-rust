@@ -3,7 +3,10 @@
 
 use std::{collections::HashMap, num::NonZero, ops::Range};
 
-use azure_core::{fmt::SafeDebug, http::ClientMethodOptions};
+use azure_core::{
+    fmt::SafeDebug,
+    http::{ClientMethodOptions, Etag},
+};
 use time::OffsetDateTime;
 
 use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode};
@@ -86,9 +89,9 @@ pub struct BlobClientManagedDownloadOptions<'a> {
     pub version_id: Option<String>,
 }
 
-/// Options to be passed to `BlockBlobClient::managed_upload()`
+/// Options to be passed to `BlockBlobClient::upload()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlockBlobClientManagedUploadOptions<'a> {
+pub struct BlockBlobClientUploadOptions<'a> {
     /// Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read
     /// request.
     pub blob_cache_control: Option<String>,
@@ -140,7 +143,7 @@ pub struct BlockBlobClientManagedUploadOptions<'a> {
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// A condition that must be met in order for the request to be processed.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
@@ -148,7 +151,7 @@ pub struct BlockBlobClientManagedUploadOptions<'a> {
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// A condition that must be met in order for the request to be processed.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Optional. Applied only to the final commit of the new block blob.
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.

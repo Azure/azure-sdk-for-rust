@@ -1,27 +1,81 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{borrow::Cow, time::Duration};
+use std::borrow::Cow;
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
 
-fn deserialize_ttl<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(Option::<u64>::deserialize(deserializer)?.map(Duration::from_secs))
+/// Represents the time-to-live configuration for a Cosmos DB container.
+///
+/// Cosmos DB supports three TTL states:
+/// - **Forever**: TTL is disabled; items never expire. This is the default.
+/// - **NoDefault**: TTL is enabled at the container level, but items have no default expiration.
+///   Individual items can still set their own TTL via the `ttl` property.
+///   Corresponds to the value `-1` on the wire.
+/// - **Seconds**: TTL is enabled with a default expiration in seconds. Items expire after the given
+///   number of seconds unless they override it with their own `ttl` property.
+///
+/// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
+#[derive(Clone, Default, SafeDebug, PartialEq, Eq)]
+#[safe(true)]
+#[non_exhaustive]
+pub enum TimeToLive {
+    /// TTL is disabled; items never expire.
+    #[default]
+    Forever,
+
+    /// TTL is enabled, but items have no default expiration.
+    ///
+    /// Individual items can still define their own TTL.
+    NoDefault,
+
+    /// TTL is enabled with a default expiration of the given number of seconds.
+    Seconds(u32),
 }
 
-fn serialize_ttl<S>(duration: &Option<Duration>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    match duration {
-        Some(d) => serializer.serialize_some(&d.as_secs()),
-        None => serializer.serialize_none(),
+impl TimeToLive {
+    /// Returns `true` if TTL is [`Forever`](TimeToLive::Forever).
+    pub fn is_forever(&self) -> bool {
+        matches!(self, TimeToLive::Forever)
+    }
+}
+
+impl From<u32> for TimeToLive {
+    fn from(n: u32) -> Self {
+        TimeToLive::Seconds(n)
+    }
+}
+
+impl Serialize for TimeToLive {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            TimeToLive::Forever => serializer.serialize_none(),
+            TimeToLive::NoDefault => serializer.serialize_i32(-1),
+            TimeToLive::Seconds(n) => serializer.serialize_u32(*n),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for TimeToLive {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        match Option::<i32>::deserialize(deserializer)? {
+            None => Ok(TimeToLive::Forever),
+            Some(-1) => Ok(TimeToLive::NoDefault),
+            Some(n) if n > 0 => Ok(TimeToLive::Seconds(n as u32)),
+            Some(n) => Err(serde::de::Error::invalid_value(
+                serde::de::Unexpected::Signed(n as i64),
+                &"a nonzero positive integer or -1",
+            )),
+        }
     }
 }
 
@@ -68,19 +122,15 @@ pub struct ContainerProperties {
     ///
     /// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(deserialize_with = "deserialize_ttl")]
-    #[serde(serialize_with = "serialize_ttl")]
-    pub default_ttl: Option<Duration>,
+    #[serde(skip_serializing_if = "TimeToLive::is_forever")]
+    pub default_ttl: TimeToLive,
 
     /// The time-to-live for the analytical store in the container.
     ///
     /// For more information see <https://learn.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(deserialize_with = "deserialize_ttl")]
-    #[serde(serialize_with = "serialize_ttl")]
-    pub analytical_storage_ttl: Option<Duration>,
+    #[serde(skip_serializing_if = "TimeToLive::is_forever")]
+    pub analytical_storage_ttl: TimeToLive,
 
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
@@ -96,8 +146,8 @@ impl ContainerProperties {
             unique_key_policy: None,
             conflict_resolution_policy: None,
             vector_embedding_policy: None,
-            default_ttl: None,
-            analytical_storage_ttl: None,
+            default_ttl: TimeToLive::Forever,
+            analytical_storage_ttl: TimeToLive::Forever,
             system_properties: SystemProperties::default(),
         }
     }
@@ -128,13 +178,16 @@ impl ContainerProperties {
         self
     }
 
-    pub fn with_default_ttl(mut self, default_ttl: Duration) -> Self {
-        self.default_ttl = Some(default_ttl);
+    pub fn with_default_ttl(mut self, default_ttl: impl Into<TimeToLive>) -> Self {
+        self.default_ttl = default_ttl.into();
         self
     }
 
-    pub fn with_analytical_storage_ttl(mut self, analytical_storage_ttl: Duration) -> Self {
-        self.analytical_storage_ttl = Some(analytical_storage_ttl);
+    pub fn with_analytical_storage_ttl(
+        mut self,
+        analytical_storage_ttl: impl Into<TimeToLive>,
+    ) -> Self {
+        self.analytical_storage_ttl = analytical_storage_ttl.into();
         self
     }
 }
@@ -260,52 +313,127 @@ pub enum ConflictResolutionMode {
 #[cfg(test)]
 mod tests {
     use serde::{Deserialize, Serialize};
-    use std::time::Duration;
 
+    use super::TimeToLive;
     use crate::models::ContainerProperties;
 
-    #[cfg(test)]
     #[derive(Debug, Deserialize, Serialize)]
-    struct DurationHolder {
+    struct TtlHolder {
         #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "super::deserialize_ttl")]
-        #[serde(serialize_with = "super::serialize_ttl")]
-        pub duration: Option<Duration>,
+        #[serde(skip_serializing_if = "TimeToLive::is_forever")]
+        pub ttl: TimeToLive,
     }
 
     #[test]
-    pub fn serialize_ttl() {
-        let value = DurationHolder {
-            duration: Some(Duration::from_secs(4200)),
+    fn serialize_ttl_seconds() {
+        let value = TtlHolder {
+            ttl: TimeToLive::Seconds(4200),
         };
         let json = serde_json::to_string(&value).unwrap();
-        assert_eq!(r#"{"duration":4200}"#, json);
+        assert_eq!(r#"{"ttl":4200}"#, json);
     }
 
     #[test]
-    pub fn serialize_missing_ttl() {
-        let value = DurationHolder { duration: None };
+    fn serialize_ttl_forever() {
+        let value = TtlHolder {
+            ttl: TimeToLive::Forever,
+        };
         let json = serde_json::to_string(&value).unwrap();
         assert_eq!(r#"{}"#, json);
     }
 
     #[test]
-    pub fn deserialize_ttl() {
-        let value: DurationHolder = serde_json::from_str(r#"{"duration":4200}"#).unwrap();
-        assert_eq!(Some(Duration::from_secs(4200)), value.duration);
+    fn serialize_ttl_no_default() {
+        let value = TtlHolder {
+            ttl: TimeToLive::NoDefault,
+        };
+        let json = serde_json::to_string(&value).unwrap();
+        assert_eq!(r#"{"ttl":-1}"#, json);
     }
 
     #[test]
-    pub fn deserialize_missing_ttl() {
-        let value: DurationHolder = serde_json::from_str(r#"{}"#).unwrap();
-        assert_eq!(None, value.duration);
+    fn deserialize_ttl_seconds() {
+        let value: TtlHolder = serde_json::from_str(r#"{"ttl":4200}"#).unwrap();
+        assert_eq!(TimeToLive::Seconds(4200), value.ttl);
     }
 
     #[test]
-    pub fn deserialize_null_ttl() {
-        let value: DurationHolder = serde_json::from_str(r#"{"duration":null}"#).unwrap();
-        assert_eq!(None, value.duration);
+    fn deserialize_ttl_missing() {
+        let value: TtlHolder = serde_json::from_str(r#"{}"#).unwrap();
+        assert_eq!(TimeToLive::Forever, value.ttl);
+    }
+
+    #[test]
+    fn deserialize_ttl_null() {
+        let value: TtlHolder = serde_json::from_str(r#"{"ttl":null}"#).unwrap();
+        assert_eq!(TimeToLive::Forever, value.ttl);
+    }
+
+    #[test]
+    fn deserialize_ttl_negative_one() {
+        let value: TtlHolder = serde_json::from_str(r#"{"ttl":-1}"#).unwrap();
+        assert_eq!(TimeToLive::NoDefault, value.ttl);
+    }
+
+    #[test]
+    fn deserialize_ttl_zero() {
+        let result = serde_json::from_str::<TtlHolder>(r#"{"ttl":0}"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn deserialize_ttl_invalid_negative() {
+        let result = serde_json::from_str::<TtlHolder>(r#"{"ttl":-2}"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn deserialize_ttl_overflow() {
+        let result = serde_json::from_str::<TtlHolder>(r#"{"ttl":2147483648}"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn serialize_ttl_seconds_value() {
+        let json = serde_json::to_string(&TimeToLive::Seconds(86400)).unwrap();
+        assert_eq!("86400", json);
+    }
+
+    #[test]
+    fn serialize_ttl_no_default_value() {
+        let json = serde_json::to_string(&TimeToLive::NoDefault).unwrap();
+        assert_eq!("-1", json);
+    }
+
+    #[test]
+    fn serialize_ttl_forever_value() {
+        let json = serde_json::to_string(&TimeToLive::Forever).unwrap();
+        assert_eq!("null", json);
+    }
+
+    #[test]
+    fn deserialize_container_properties_with_ttl_negative_one() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2},
+            "defaultTtl": -1
+        }"#;
+        let props: ContainerProperties = serde_json::from_str(json).unwrap();
+        assert_eq!(TimeToLive::NoDefault, props.default_ttl);
+        assert_eq!(TimeToLive::Forever, props.analytical_storage_ttl);
+    }
+
+    #[test]
+    fn deserialize_container_properties_with_ttl_seconds() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2},
+            "defaultTtl": 3600,
+            "analyticalStorageTtl": -1
+        }"#;
+        let props: ContainerProperties = serde_json::from_str(json).unwrap();
+        assert_eq!(TimeToLive::Seconds(3600), props.default_ttl);
+        assert_eq!(TimeToLive::NoDefault, props.analytical_storage_ttl);
     }
 
     #[test]

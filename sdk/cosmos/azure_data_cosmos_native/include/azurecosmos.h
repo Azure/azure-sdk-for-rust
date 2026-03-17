@@ -70,7 +70,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  * Using Entra ID authentication:
  *
  * ```rust,no_run
- * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, RoutingStrategy, regions};
  * use std::sync::Arc;
  *
  * # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -81,7 +81,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  *     .unwrap();
  * let account = CosmosAccountReference::with_credential(endpoint, credential);
  * let client = CosmosClient::builder()
- *     .build(account)
+ *     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
  *     .await?;
  * # Ok(())
  * # }
@@ -90,7 +90,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  * Using key authentication (requires `key_auth` feature):
  *
  * ```rust,no_run,ignore
- * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+ * use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, RoutingStrategy, regions};
  * use azure_core::credentials::Secret;
  *
  * # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -102,7 +102,7 @@ typedef struct cosmos_container_client cosmos_container_client;
  *     Secret::from("my_account_key"),
  * );
  * let client = CosmosClient::builder()
- *     .build(account)
+ *     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
  *     .await?;
  * # Ok(())
  * # }
@@ -441,6 +441,7 @@ cosmos_error_code cosmos_container_query_items(struct cosmos_call_context *ctx,
  * * `ctx` - Pointer to a [`CallContext`] to use for this call.
  * * `endpoint` - The Cosmos DB account endpoint, as a nul-terminated C string.
  * * `key` - The Cosmos DB account key, as a nul-terminated C string
+ * * `region` - The Azure region for proximity-based routing, as a nul-terminated C string.
  * * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
  * * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
  *
@@ -451,6 +452,7 @@ cosmos_error_code cosmos_container_query_items(struct cosmos_call_context *ctx,
 cosmos_error_code cosmos_client_create_with_key(struct cosmos_call_context *ctx,
                                                 const char *endpoint,
                                                 const char *key,
+                                                const char *region,
                                                 const struct cosmos_client_options *options,
                                                 struct cosmos_client **out_client);
 
@@ -463,6 +465,7 @@ cosmos_error_code cosmos_client_create_with_key(struct cosmos_call_context *ctx,
  *                         Can be "emulator" to use the well-known emulator endpoint and key,
  *                         or a full connection string in the format:
  *                         `AccountEndpoint=https://...;AccountKey=...;`
+ * * `region` - The Azure region for proximity-based routing, as a nul-terminated C string.
  * * `options` - Pointer to [`ClientOptions`] for client configuration, may be null.
  * * `out_client` - Output parameter that will receive a pointer to the created CosmosClient.
  *
@@ -472,6 +475,7 @@ cosmos_error_code cosmos_client_create_with_key(struct cosmos_call_context *ctx,
  */
 cosmos_error_code cosmos_client_create_with_connection_string(struct cosmos_call_context *ctx,
                                                               const char *connection_string,
+                                                              const char *region,
                                                               const struct cosmos_client_options *options,
                                                               struct cosmos_client **out_client);
 

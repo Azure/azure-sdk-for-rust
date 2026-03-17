@@ -304,35 +304,25 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Create Source Blob with Multiple Versions
     let data_v1 = b"source version 1";
     source_blob_client
-        .upload(
-            RequestContent::from(data_v1.to_vec()),
-            false,
-            u64::try_from(data_v1.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data_v1.to_vec()), None)
         .await?;
 
     let data_v2 = b"source version 2";
     source_blob_client
-        .upload(
-            RequestContent::from(data_v2.to_vec()),
-            true,
-            u64::try_from(data_v2.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data_v2.to_vec()), None)
         .await?;
 
     // Test: Lease on Current Version
     let lease_blob_name = format!("{}-lease", get_blob_name(recording));
     let lease_blob_client = container_client.blob_client(&lease_blob_name);
     lease_blob_client
-        .upload(RequestContent::from(b"v1".to_vec()), false, 2, None)
+        .upload(RequestContent::from(b"v1".to_vec()), None)
         .await?;
     let response = lease_blob_client.get_properties(None).await?;
     let lease_version_1 = response.version_id()?.unwrap();
 
     lease_blob_client
-        .upload(RequestContent::from(b"v2".to_vec()), true, 2, None)
+        .upload(RequestContent::from(b"v2".to_vec()), None)
         .await?;
 
     // Acquire Lease on Current Version
@@ -350,7 +340,7 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Test: Conditional Operation with Version
     let etag = props.etag()?.unwrap();
     let get_options = BlobClientGetPropertiesOptions {
-        if_match: Some(etag.into()),
+        if_match: Some(etag),
         version_id: Some(lease_version_1.clone()),
         ..Default::default()
     };

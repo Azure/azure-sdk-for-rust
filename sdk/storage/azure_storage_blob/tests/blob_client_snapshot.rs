@@ -55,12 +55,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
     // Modify Base Blob
     let data_v2 = b"snapshot version 2";
     blob_client
-        .upload(
-            RequestContent::from(data_v2.to_vec()),
-            true,
-            u64::try_from(data_v2.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data_v2.to_vec()), None)
         .await?;
 
     // Create Second Snapshot
@@ -318,7 +313,7 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
     let props = blob_client.get_properties(None).await?;
     let etag = props.etag()?.unwrap();
     let conditional_options = BlobClientCreateSnapshotOptions {
-        if_match: Some(etag.into()),
+        if_match: Some(etag),
         ..Default::default()
     };
     let conditional_snapshot = blob_client
@@ -402,12 +397,7 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
     // Try to Upload to Snapshot
     let data = b"squash data";
     let result = snapshot_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            true,
-            u64::try_from(data.len())?,
-            None,
-        )
+        .upload(RequestContent::from(data.to_vec()), None)
         .await;
     assert!(result.is_err());
 

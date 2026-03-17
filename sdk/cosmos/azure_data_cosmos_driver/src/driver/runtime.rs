@@ -6,7 +6,10 @@
 use azure_core::http::ClientOptions;
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, RwLock,
+    },
     time::Duration,
 };
 
@@ -71,6 +74,9 @@ use super::{transport::CosmosTransport, CosmosDriver};
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct CosmosDriverRuntime {
+    /// Unique ID of the driver runtime internally. Used in traces to identify multi-runtime scenarios.
+    id: usize,
+
     /// Core HTTP client options from azure_core.
     client_options: ClientOptions,
 
@@ -136,6 +142,11 @@ impl CosmosDriverRuntime {
     /// Returns a new builder for creating a runtime.
     pub fn builder() -> CosmosDriverRuntimeBuilder {
         CosmosDriverRuntimeBuilder::new()
+    }
+
+    /// Returns a unique identifier for the runtime, for internal tracing.
+    pub(crate) fn id(&self) -> usize {
+        self.id
     }
 
     /// Returns the HTTP client options.
@@ -289,6 +300,10 @@ impl CosmosDriverRuntime {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, fields(
+        runtime = &self.id,
+        account = %account.endpoint(),
+    ), err)]
     pub async fn get_or_create_driver(
         &self,
         account: AccountReference,
@@ -300,23 +315,39 @@ impl CosmosDriverRuntime {
         {
             let registry = self.driver_registry.read().unwrap();
             if let Some(driver) = registry.get(&key) {
+                tracing::trace!("retrieved existing driver");
                 return Ok(driver.clone());
             }
         }
 
         // Create new driver (write lock)
-        let mut registry = self.driver_registry.write().unwrap();
+        let driver = {
+            let mut registry = self.driver_registry.write().unwrap();
 
-        // Double-check after acquiring write lock
-        if let Some(driver) = registry.get(&key) {
-            return Ok(driver.clone());
+            // Double-check after acquiring write lock
+            if let Some(driver) = registry.get(&key) {
+                return Ok(driver.clone());
+            }
+            tracing::trace!("creating new driver");
+
+            // Build driver options if not provided
+            let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+
+            let driver = Arc::new(CosmosDriver::new(self.clone(), options));
+            registry.insert(key.clone(), driver.clone());
+            driver
+        };
+
+        // Best-effort initialization: prime the account metadata cache.
+        // On failure, log a warning and return the driver with cold caches
+        // so that a transient error doesn't block driver creation.
+        if let Err(e) = driver.initialize().await {
+            tracing::warn!(
+                endpoint = %key,
+                error = %e,
+                "Driver initialization failed; caches will be populated lazily on first operation"
+            );
         }
-
-        // Build driver options if not provided
-        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
-
-        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-        registry.insert(key, driver.clone());
 
         Ok(driver)
     }
@@ -533,6 +564,7 @@ impl CosmosDriverRuntimeBuilder {
         let machine_id = Arc::new(vm_metadata.machine_id().to_owned());
 
         Ok(CosmosDriverRuntime {
+            id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
             transport,
@@ -552,3 +584,5 @@ impl CosmosDriverRuntimeBuilder {
         })
     }
 }
+
+static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);

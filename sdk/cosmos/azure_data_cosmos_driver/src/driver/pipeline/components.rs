@@ -14,60 +14,153 @@ use url::Url;
 
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
-    driver::{jitter::with_jitter, transport::AuthorizationContext},
+    driver::{
+        jitter::with_jitter,
+        routing::{CosmosEndpoint, LocationIndex},
+        transport::AuthorizationContext,
+    },
     models::CosmosStatus,
     options::Region,
 };
 
 // ── Operation-Level Components ─────────────────────────────────────────
 
+/// Transport mode for a routed attempt.
+///
+/// Determines which HTTP transport (and protocol version) is used
+/// for a given request attempt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TransportMode {
+    /// Standard gateway (HTTP/1.1 or HTTP/2 via ALPN).
+    Gateway,
+    /// Gateway 2.0 (HTTP/2 with prior knowledge).
+    Gateway20,
+}
+
 /// Routing decision for the current attempt.
 ///
-/// In Step 1 this is a simple endpoint + region pair.
-/// In Step 2+ this will carry `CosmosEndpoint` and partition overrides.
+/// Wraps a `CosmosEndpoint` that carries the resolved URL and optional
+/// region for diagnostics and routing purposes.
 #[derive(Clone, Debug)]
 pub(crate) struct RoutingDecision {
-    /// The resolved endpoint URL for this attempt.
-    pub endpoint: Url,
-    /// The region this endpoint resides in, if known.
-    pub region: Option<Region>,
+    /// The resolved endpoint for this attempt.
+    pub endpoint: CosmosEndpoint,
+    /// The concrete URL selected for this attempt.
+    pub selected_url: Url,
+    /// The transport mode for this attempt.
+    pub transport_mode: TransportMode,
+}
+
+impl std::fmt::Display for RoutingDecision {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(region) = self.endpoint.region() {
+            write!(f, "{}({})", region, self.selected_url)
+        } else {
+            write!(f, "{}", self.selected_url)
+        }
+    }
 }
 
 /// Operation-level retry state.
 ///
-/// Slim for Step 1 — only tracks transport-level retry count.
-/// Expanded in Step 2 with failover, session, and location index fields.
+/// Tracks failover retry count, session retry count, location index,
+/// and write-region topology for the multi-region operation loop.
 #[derive(Clone, Debug)]
 pub(crate) struct OperationRetryState {
-    /// How many transport-level retries have been attempted.
-    pub transport_retry_count: u32,
-    /// Maximum number of transport retries allowed.
-    pub max_transport_retries: u32,
+    /// Type-safe index into preferred endpoint lists.
+    pub location: LocationIndex,
+    /// Number of operation-level failover retries attempted.
+    pub failover_retry_count: u32,
+    /// Number of session-token retries attempted.
+    pub session_token_retry_count: u32,
+    /// Maximum failover retries.
+    pub max_failover_retries: u32,
+    /// Maximum session retries.
+    pub max_session_retries: u32,
+    /// Whether multiple write locations can be used.
+    pub can_use_multiple_write_locations: bool,
+    /// Regions excluded for this operation.
+    pub excluded_regions: Vec<Region>,
+    /// Session-retry routing override for read operations.
+    pub session_retry_routing: SessionRetryRouting,
+}
+
+/// How a session retry should resolve endpoints for a read operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SessionRetryRouting {
+    /// Continue using the normal preferred endpoint list for the operation kind.
+    PreferredEndpoints,
+    /// Route a read session retry through the preferred write endpoint list.
+    PreferredWriteEndpoints,
 }
 
 impl OperationRetryState {
     /// Creates the initial retry state for an operation.
-    pub fn initial() -> Self {
+    pub fn initial(
+        generation: u64,
+        can_use_multiple_write_locations: bool,
+        excluded_regions: Vec<Region>,
+        max_failover_retries: u32,
+        max_session_retries: u32,
+    ) -> Self {
         Self {
-            transport_retry_count: 0,
-            // Step 1 keeps the historical single transport retry behavior.
-            // TODO(Step 2): source this from runtime/retry options once failover
-            // and richer operation-level retry controls are wired.
-            max_transport_retries: 1,
+            location: LocationIndex::initial(generation),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries,
+            max_session_retries,
+            can_use_multiple_write_locations,
+            excluded_regions,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
         }
     }
 
-    /// Whether the retry budget allows another transport retry.
-    pub fn can_retry_transport(&self) -> bool {
-        self.transport_retry_count < self.max_transport_retries
+    /// Whether failover retry budget allows another attempt.
+    pub fn can_retry_failover(&self) -> bool {
+        self.failover_retry_count < self.max_failover_retries
     }
 
-    /// Advance to the next transport retry attempt.
-    pub fn advance_transport_retry(&self) -> Self {
+    /// Whether session retry budget allows another attempt.
+    pub fn can_retry_session(&self) -> bool {
+        self.session_token_retry_count < self.max_session_retries
+    }
+
+    /// Returns a new state advanced for failover retry.
+    pub fn advance_failover(self) -> Self {
         Self {
-            transport_retry_count: self.transport_retry_count + 1,
-            max_transport_retries: self.max_transport_retries,
+            failover_retry_count: self.failover_retry_count + 1,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            ..self
         }
+    }
+
+    /// Returns a new state advanced for session retry.
+    pub fn advance_session_retry(self) -> Self {
+        Self {
+            session_token_retry_count: self.session_token_retry_count + 1,
+            session_retry_routing: if self.can_use_multiple_write_locations {
+                SessionRetryRouting::PreferredEndpoints
+            } else {
+                SessionRetryRouting::PreferredWriteEndpoints
+            },
+            ..self
+        }
+    }
+
+    /// Advances the location index for endpoint list of `list_len`.
+    pub fn advance_location(self, list_len: usize, generation: u64) -> Self {
+        Self {
+            location: self.location.next_for_generation(list_len, generation),
+            ..self
+        }
+    }
+
+    /// Returns true when a read retry should use the write-endpoint list.
+    pub fn route_reads_to_write_endpoints(&self) -> bool {
+        matches!(
+            self.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        )
     }
 }
 
@@ -82,10 +175,10 @@ impl OperationRetryState {
 pub(crate) struct TransportRequest {
     /// The HTTP method.
     pub method: Method,
+    /// The endpoint selected for this attempt.
+    pub endpoint: CosmosEndpoint,
     /// The fully resolved URL for this attempt.
     pub url: Url,
-    /// The resolved region for this attempt, if known.
-    pub region: Option<Region>,
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
     /// Request body bytes (schema-agnostic).
@@ -195,13 +288,7 @@ impl TransportResult {
     /// Creates a timeout result when the end-to-end operation deadline is exceeded.
     pub fn deadline_exceeded(request_sent: RequestSentStatus) -> Self {
         Self {
-            outcome: TransportOutcome::TransportError {
-                error: azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    "end-to-end operation timeout exceeded",
-                ),
-                request_sent,
-            },
+            outcome: TransportOutcome::DeadlineExceeded { request_sent },
         }
     }
 
@@ -235,13 +322,14 @@ impl TransportResult {
         match &self.outcome {
             TransportOutcome::Success { headers, .. } => Some(headers),
             TransportOutcome::HttpError { headers, .. } => Some(headers),
-            TransportOutcome::TransportError { .. } => None,
+            TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
+                None
+            }
         }
     }
 }
 
 /// The outcome of a single transport attempt.
-#[derive(Debug)]
 pub(crate) enum TransportOutcome {
     /// Successful response (2xx).
     Success {
@@ -261,6 +349,57 @@ pub(crate) enum TransportOutcome {
         error: azure_core::Error,
         request_sent: RequestSentStatus,
     },
+    /// End-to-end deadline exceeded while this transport attempt was pending.
+    DeadlineExceeded { request_sent: RequestSentStatus },
+}
+
+/// Display implementation for logging the high-level outcome in a compact format
+impl std::fmt::Display for TransportOutcome {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransportOutcome::Success { status, .. } => write!(f, "Success({})", status),
+            TransportOutcome::HttpError { status, .. } => write!(f, "HttpError({})", status),
+            TransportOutcome::TransportError { error, .. } => {
+                write!(f, "TransportError({})", error)
+            }
+            TransportOutcome::DeadlineExceeded { .. } => write!(f, "DeadlineExceeded"),
+        }
+    }
+}
+
+impl std::fmt::Debug for TransportOutcome {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransportOutcome::Success {
+                status, headers, ..
+            } => f
+                .debug_struct("Success")
+                .field("status", status)
+                .field("headers", headers)
+                .field("body", &"...")
+                .finish(),
+            TransportOutcome::HttpError {
+                status, headers, ..
+            } => f
+                .debug_struct("HttpError")
+                .field("status", status)
+                .field("headers", headers)
+                .field("body", &"...")
+                .finish(),
+            TransportOutcome::TransportError {
+                error,
+                request_sent,
+            } => f
+                .debug_struct("TransportError")
+                .field("error", error)
+                .field("request_sent", request_sent)
+                .finish(),
+            TransportOutcome::DeadlineExceeded { request_sent } => f
+                .debug_struct("DeadlineExceeded")
+                .field("request_sent", request_sent)
+                .finish(),
+        }
+    }
 }
 
 // ── Decision Enums ─────────────────────────────────────────────────────
@@ -273,8 +412,13 @@ pub(crate) enum TransportOutcome {
 pub(crate) enum OperationAction {
     /// Return the successful response.
     Complete(TransportResult),
-    /// Retry the transport attempt on the same endpoint.
-    TransportRetry { new_state: OperationRetryState },
+    /// Retry in another endpoint/region.
+    FailoverRetry {
+        new_state: OperationRetryState,
+        delay: Option<Duration>,
+    },
+    /// Retry for session consistency.
+    SessionRetry { new_state: OperationRetryState },
     /// Abort the operation with this error.
     Abort {
         error: azure_core::Error,
@@ -371,10 +515,38 @@ mod tests {
 
     #[test]
     fn operation_retry_state_budget() {
-        let state = OperationRetryState::initial();
-        assert!(state.can_retry_transport());
+        let state = OperationRetryState::initial(0, false, Vec::new(), 1, 1);
+        assert!(state.can_retry_failover());
 
-        let state = state.advance_transport_retry();
-        assert!(!state.can_retry_transport());
+        let state = state.advance_failover();
+        assert!(!state.can_retry_failover());
+    }
+
+    #[test]
+    fn advance_session_retry_single_write_routes_to_write_endpoints() {
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 2);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredEndpoints
+        );
+
+        let state = state.advance_session_retry();
+        assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        );
+    }
+
+    #[test]
+    fn advance_session_retry_multi_write_stays_on_preferred_endpoints() {
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 2);
+
+        let state = state.advance_session_retry();
+        assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredEndpoints
+        );
     }
 }

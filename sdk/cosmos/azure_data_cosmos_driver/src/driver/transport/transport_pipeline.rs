@@ -14,6 +14,7 @@
 use std::time::{Duration, Instant};
 
 use azure_core::http::Request;
+use futures::{future::Either, pin_mut};
 use tracing::trace;
 
 use crate::{
@@ -25,7 +26,8 @@ use crate::{
 };
 
 use super::{
-    cosmos_headers::apply_cosmos_headers, infer_request_sent_status, request_signing::sign_request,
+    adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
+    infer_request_sent_status, request_signing::sign_request,
 };
 
 use crate::driver::pipeline::components::{
@@ -134,14 +136,20 @@ pub(crate) fn evaluate_transport_retry(
 
 /// Executes a single transport attempt.
 ///
-/// Applies headers, signs the request, sends it via the `HttpClient`, and
+/// Applies headers, signs the request, sends it via the selected transport, and
 /// handles 429 throttle retry internally. Returns a `TransportResult` to the
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
+#[tracing::instrument(level = tracing::Level::DEBUG, name = "transport", skip_all, fields(
+    method = ?request.method,
+    region = request.endpoint.region().map(|e| e.as_str()).unwrap_or("<global>"),
+    url = %request.url,
+    outcome = tracing::field::Empty,
+))]
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
-    http_client: &dyn azure_core::http::HttpClient,
+    transport: &AdaptiveTransport,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
     pipeline_type: PipelineType,
@@ -150,7 +158,16 @@ pub(crate) async fn execute_transport_pipeline(
 ) -> TransportResult {
     let mut throttle_state = ThrottleRetryState::new();
 
+    let mut attempt = 0;
     loop {
+        attempt += 1;
+        let attempt_span = tracing::span!(
+            tracing::Level::DEBUG,
+            "transport_attempt",
+            attempt = attempt,
+            outcome = tracing::field::Empty
+        )
+        .entered();
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
@@ -166,14 +183,12 @@ pub(crate) async fn execute_transport_pipeline(
             ExecutionContext::Retry
         };
 
-        let endpoint_string = request.url.as_str().to_owned();
-        let region = request.region.clone();
         let request_handle = diagnostics.start_request(
             execution_context,
             pipeline_type,
             transport_security,
-            region,
-            endpoint_string,
+            transport.diagnostics_kind(),
+            &request.endpoint,
         );
 
         // Build HTTP request from TransportRequest
@@ -218,36 +233,18 @@ pub(crate) async fn execute_transport_pipeline(
             RequestEvent::new(RequestEventType::TransportStart),
         );
 
-        // Send the HTTP request
-        let http_result = http_client.execute_request(&http_request).await;
-
-        // Map the result to TransportResult
-        let result = match http_result {
-            Ok(response) => {
-                diagnostics.add_event(
-                    request_handle,
-                    RequestEvent::new(RequestEventType::ResponseHeadersReceived),
-                );
-
-                map_http_response(response, request_handle, diagnostics).await
-            }
-            Err(error) => {
-                let sent_status = infer_request_sent_status(&error);
-                diagnostics.add_event(
-                    request_handle,
-                    RequestEvent::new(RequestEventType::TransportFailed)
-                        .with_details(error.to_string()),
-                );
-                diagnostics.fail_request(request_handle, error.to_string(), sent_status);
-
-                TransportResult {
-                    outcome: TransportOutcome::TransportError {
-                        error,
-                        request_sent: sent_status,
-                    },
-                }
-            }
-        };
+        let result = execute_http_attempt(
+            &http_request,
+            transport,
+            per_request_timeout,
+            request_handle,
+            diagnostics,
+        )
+        .await;
+        if !attempt_span.is_disabled() {
+            attempt_span.record("outcome", format!("{}", result.outcome));
+        }
+        tracing::debug!("transport request complete");
 
         // Check for 429 throttling → transport-level retry
         let action = evaluate_transport_retry(&result, &throttle_state);
@@ -315,15 +312,150 @@ fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult 
     TransportResult::deadline_exceeded(request_sent)
 }
 
-/// Maps an HTTP response to a `TransportResult`.
-async fn map_http_response(
-    response: azure_core::http::response::AsyncRawResponse,
+async fn execute_http_attempt(
+    http_request: &Request,
+    transport: &AdaptiveTransport,
+    per_request_timeout: Option<Duration>,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let status_code = response.status();
-    let headers = response.headers().clone();
+    if let Some(timeout_duration) = per_request_timeout {
+        let transport_future = execute_http_attempt_future(http_request, transport);
+        let timeout_future = async {
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(timeout_duration)
+                    .unwrap_or(azure_core::time::Duration::ZERO),
+            )
+            .await;
+        };
 
+        pin_mut!(transport_future);
+        pin_mut!(timeout_future);
+
+        return match futures::future::select(transport_future, timeout_future).await {
+            Either::Left((attempt_result, _)) => {
+                finalize_http_attempt(attempt_result, request_handle, diagnostics)
+            }
+            Either::Right((_, _remaining_transport_future)) => {
+                diagnostics.add_event(
+                    request_handle,
+                    RequestEvent::new(RequestEventType::TransportFailed)
+                        .with_details("end-to-end operation timeout exceeded"),
+                );
+                diagnostics.timeout_request(request_handle);
+                deadline_exceeded_result(RequestSentStatus::Unknown)
+            }
+        };
+    }
+
+    let attempt_result = execute_http_attempt_future(http_request, transport).await;
+    finalize_http_attempt(attempt_result, request_handle, diagnostics)
+}
+
+async fn execute_http_attempt_future(
+    http_request: &Request,
+    transport: &AdaptiveTransport,
+) -> HttpAttemptResult {
+    match transport.send(http_request).await {
+        Ok(response) => {
+            let status_code = response.status();
+            let headers = response.headers().clone();
+            match response.try_into_raw_response().await {
+                Ok(raw) => HttpAttemptResult::Response {
+                    status_code,
+                    headers,
+                    body: raw.body().to_vec(),
+                },
+                Err(error) => HttpAttemptResult::Error {
+                    error,
+                    headers_received: true,
+                },
+            }
+        }
+        Err(error) => HttpAttemptResult::Error {
+            error,
+            headers_received: false,
+        },
+    }
+}
+
+fn finalize_http_attempt(
+    attempt_result: HttpAttemptResult,
+    request_handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
+    match attempt_result {
+        HttpAttemptResult::Response {
+            status_code,
+            headers,
+            body,
+        } => {
+            diagnostics.add_event(
+                request_handle,
+                RequestEvent::new(RequestEventType::ResponseHeadersReceived),
+            );
+            map_http_response_payload(status_code, headers, body, request_handle, diagnostics)
+        }
+        HttpAttemptResult::Error {
+            error,
+            headers_received,
+        } => transport_error_result(error, headers_received, request_handle, diagnostics),
+    }
+}
+
+fn transport_error_result(
+    error: azure_core::Error,
+    headers_received: bool,
+    request_handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
+    let sent_status = if headers_received {
+        RequestSentStatus::Sent
+    } else {
+        infer_request_sent_status(&error)
+    };
+
+    if headers_received {
+        diagnostics.add_event(
+            request_handle,
+            RequestEvent::new(RequestEventType::ResponseHeadersReceived),
+        );
+    }
+
+    diagnostics.add_event(
+        request_handle,
+        RequestEvent::new(RequestEventType::TransportFailed).with_details(error.to_string()),
+    );
+    diagnostics.fail_request(request_handle, error.to_string(), sent_status);
+
+    TransportResult {
+        outcome: TransportOutcome::TransportError {
+            error,
+            request_sent: sent_status,
+        },
+    }
+}
+
+enum HttpAttemptResult {
+    Response {
+        status_code: azure_core::http::StatusCode,
+        headers: azure_core::http::headers::Headers,
+        body: Vec<u8>,
+    },
+    Error {
+        error: azure_core::Error,
+        headers_received: bool,
+    },
+}
+
+/// Maps an HTTP response payload to a `TransportResult`.
+fn map_http_response_payload(
+    status_code: azure_core::http::StatusCode,
+    headers: azure_core::http::headers::Headers,
+    body: Vec<u8>,
+    request_handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
     let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
     let sub_status = cosmos_headers.substatus;
     let cosmos_status = CosmosStatus::from_parts(status_code, sub_status);
@@ -341,28 +473,6 @@ async fn map_http_response(
         }
     });
 
-    // Read the body by converting to a raw response.
-    // If conversion fails, this is a transport failure (truncated/invalid response stream),
-    // not a successful HTTP response with an empty payload. The request was
-    // definitely sent — we already received the status code and headers.
-    let body = match response.try_into_raw_response().await {
-        Ok(raw) => raw.body().to_vec(),
-        Err(error) => {
-            diagnostics.add_event(
-                request_handle,
-                RequestEvent::new(RequestEventType::TransportFailed)
-                    .with_details(error.to_string()),
-            );
-            diagnostics.fail_request(request_handle, error.to_string(), RequestSentStatus::Sent);
-            return TransportResult {
-                outcome: TransportOutcome::TransportError {
-                    error,
-                    request_sent: RequestSentStatus::Sent,
-                },
-            };
-        }
-    };
-
     diagnostics.complete_request(request_handle, status_code, sub_status);
     TransportResult::from_http_response(cosmos_status, headers, body)
 }
@@ -370,7 +480,36 @@ async fn map_http_response(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+    use std::{sync::Arc, time::Duration};
+
+    use async_trait::async_trait;
+    use azure_core::http::{AsyncRawResponse, Request};
+
+    use crate::{
+        diagnostics::DiagnosticsContextBuilder,
+        driver::{routing::CosmosEndpoint, transport::adaptive_transport::AdaptiveTransport},
+        models::{ActivityId, Credential, ResourceType},
+        options::DiagnosticsOptions,
+    };
+
+    #[derive(Debug)]
+    struct HangingHttpClient {
+        delay: Duration,
+    }
+
+    #[async_trait]
+    impl azure_core::http::HttpClient for HangingHttpClient {
+        async fn execute_request(
+            &self,
+            _request: &Request,
+        ) -> azure_core::Result<AsyncRawResponse> {
+            tokio::time::sleep(self.delay).await;
+            Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                "request should have timed out before completion",
+            ))
+        }
+    }
 
     fn make_throttled_result() -> TransportResult {
         TransportResult {
@@ -544,5 +683,54 @@ mod tests {
         let timeout = remaining_request_timeout(Some(Instant::now() - Duration::from_millis(1)))
             .expect("timeout should be present when deadline exists");
         assert_eq!(timeout, Duration::from_millis(1));
+    }
+
+    #[tokio::test]
+    async fn execute_transport_pipeline_times_out_in_flight_request() {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let request = TransportRequest {
+            method: azure_core::http::Method::Get,
+            endpoint: endpoint.clone(),
+            url: endpoint.url().clone(),
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            auth_context: super::super::AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                ResourceType::Database,
+                "",
+            ),
+            execution_context: ExecutionContext::Initial,
+            deadline: Some(Instant::now() + Duration::from_millis(100)),
+        };
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
+            delay: Duration::from_secs(2),
+        }));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("transport-timeout".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            request,
+            &client,
+            &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+            &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+            PipelineType::Metadata,
+            TransportSecurity::Secure,
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(
+            result.outcome,
+            TransportOutcome::DeadlineExceeded { .. }
+        ));
+
+        let completed = diagnostics.complete();
+        let requests = completed.requests();
+        assert_eq!(requests.len(), 1);
+        assert!(requests[0].timed_out());
     }
 }

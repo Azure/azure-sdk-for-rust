@@ -5,6 +5,7 @@
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
+    driver::routing::{CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
@@ -15,7 +16,9 @@ use crate::{
     },
 };
 use azure_core::http::Request;
+use futures::future::BoxFuture;
 use std::sync::Arc;
+use std::time::Duration;
 
 use super::{
     cache::AccountRegion,
@@ -41,9 +44,45 @@ pub struct CosmosDriver {
     runtime: CosmosDriverRuntime,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    /// Shared operation routing state for multi-region failover.
+    location_state_store: Arc<LocationStateStore>,
+    /// Resolved default for max failover retries (from env or hardcoded default).
+    default_max_failover_retries: u32,
+    /// Resolved default for max session retries (from env or None = compute at operation time).
+    default_max_session_retries: Option<u32>,
 }
 
 impl CosmosDriver {
+    async fn fetch_account_properties_with_runtime(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let endpoint = AccountEndpoint::from(account);
+        let transport = runtime.transport();
+        let metadata_transport = transport.get_metadata_transport(&endpoint)?;
+        let user_agent = runtime.user_agent().as_str();
+
+        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
+        cosmos_headers::apply_cosmos_headers(
+            &mut request,
+            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
+        );
+        request_signing::sign_request(
+            &mut request,
+            account.auth(),
+            &AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                crate::models::ResourceType::DatabaseAccount,
+                "",
+            ),
+        )
+        .await?;
+
+        let response = metadata_transport.send(&request).await?;
+        let raw = response.try_into_raw_response().await?;
+        Self::parse_account_properties_payload(raw.body())
+    }
+
     fn parse_account_properties_payload(
         payload: &[u8],
     ) -> azure_core::Result<super::cache::AccountProperties> {
@@ -72,30 +111,7 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        let endpoint = AccountEndpoint::from(account);
-        let transport = self.runtime.transport();
-        let http_client = transport.get_metadata_http_client(&endpoint);
-        let user_agent = self.runtime.user_agent().as_str();
-
-        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        cosmos_headers::apply_cosmos_headers(
-            &mut request,
-            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
-        );
-        request_signing::sign_request(
-            &mut request,
-            account.auth(),
-            &AuthorizationContext::new(
-                azure_core::http::Method::Get,
-                crate::models::ResourceType::DatabaseAccount,
-                "",
-            ),
-        )
-        .await?;
-
-        let response = http_client.execute_request(&request).await?;
-        let raw = response.try_into_raw_response().await?;
-        Self::parse_account_properties_payload(raw.body())
+        Self::fetch_account_properties_with_runtime(&self.runtime, account).await
     }
 
     async fn fetch_container_by_name(
@@ -200,7 +216,71 @@ impl CosmosDriver {
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
     pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
-        Self { runtime, options }
+        let account = options.account().clone();
+        let account_endpoint = AccountEndpoint::from(&account);
+        let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
+
+        let runtime_clone = runtime.clone();
+        let account_clone = account.clone();
+        let refresh_callback = Arc::new(move || {
+            let runtime = runtime_clone.clone();
+            let account = account_clone.clone();
+            let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
+                Box::pin(async move {
+                    CosmosDriver::fetch_account_properties_with_runtime(&runtime, &account).await
+                });
+            fut
+        });
+
+        let endpoint_unavailability_ttl = runtime
+            .runtime_options()
+            .snapshot()
+            .endpoint_unavailability_ttl
+            .unwrap_or_else(|| {
+                std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .map(Duration::from_millis)
+                    .unwrap_or(Duration::from_secs(60))
+            });
+
+        let location_state_store = Arc::new(LocationStateStore::new(
+            runtime.account_metadata_cache().clone(),
+            account_endpoint,
+            default_endpoint,
+            refresh_callback,
+            runtime.connection_pool().is_gateway20_allowed(),
+            endpoint_unavailability_ttl,
+        ));
+
+        let default_max_failover_retries = runtime
+            .runtime_options()
+            .snapshot()
+            .max_failover_retry_count
+            .unwrap_or_else(|| {
+                std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .unwrap_or(3)
+            });
+
+        let default_max_session_retries = runtime
+            .runtime_options()
+            .snapshot()
+            .max_session_retry_count
+            .or_else(|| {
+                std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
+                    .ok()
+                    .and_then(|v| v.parse::<u32>().ok())
+            });
+
+        Self {
+            runtime,
+            options,
+            location_state_store,
+            default_max_failover_retries,
+            default_max_session_retries,
+        }
     }
 
     /// Returns the account reference.
@@ -216,6 +296,47 @@ impl CosmosDriver {
     /// Returns the driver options.
     pub fn options(&self) -> &DriverOptions {
         &self.options
+    }
+
+    /// Eagerly primes the account metadata cache.
+    ///
+    /// Fetches account properties from the service and caches them so that
+    /// regional endpoint information is available before the first
+    /// [`execute_operation`](Self::execute_operation) call. This avoids
+    /// cold-start latency on the first data-plane operation.
+    ///
+    /// This method is called automatically by
+    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
+    /// on a best-effort basis. Callers may invoke it again to retry if the
+    /// initial attempt failed (the result is idempotent).
+    ///
+    /// Returns an error if the account is unreachable.
+    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, err)]
+    pub async fn initialize(&self) -> azure_core::Result<()> {
+        let account = self.options.account();
+        let account_endpoint = AccountEndpoint::from(account);
+        self.runtime
+            .account_metadata_cache()
+            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
+            .await?;
+        Ok(())
+    }
+
+    /// Eagerly primes the container metadata cache.
+    ///
+    /// Resolves container properties (partition key definition, resource ID)
+    /// and caches them so that subsequent operations targeting this container
+    /// can skip the metadata lookup round-trip.
+    ///
+    /// Returns an error if the container does not exist or is unreachable.
+    pub async fn prime_container(
+        &self,
+        db_name: &str,
+        container_name: &str,
+    ) -> azure_core::Result<()> {
+        self.resolve_container_by_name(db_name, container_name)
+            .await?;
+        Ok(())
     }
 
     /// Computes the effective runtime options by merging operation, driver, and runtime options.
@@ -326,13 +447,28 @@ impl CosmosDriver {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(level = tracing::Level::DEBUG, name = "operation", skip_all, fields(
+        runtime = self.runtime.id(),
+        operation_type = ?operation.operation_type(),
+        resource = %operation.resource_reference(),
+    ), err)]
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
+        tracing::debug!("operation started");
+
         // Step 1: Derive effective runtime options
-        let effective_options = self.effective_runtime_options(&options);
+        let mut effective_options = self.effective_runtime_options(&options);
+
+        // Fill in resolved defaults for retry counts (env vars read once at construction).
+        if effective_options.max_failover_retry_count.is_none() {
+            effective_options.max_failover_retry_count = Some(self.default_max_failover_retries);
+        }
+        if effective_options.max_session_retry_count.is_none() {
+            effective_options.max_session_retry_count = self.default_max_session_retries;
+        }
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
@@ -355,21 +491,23 @@ impl CosmosDriver {
             .account_metadata_cache()
             .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
             .await?;
+
+        // Keep the operation routing snapshot in sync with current account metadata.
+        // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
+        // Skips the CAS loop when the etag matches (same server version).
+        self.location_state_store.sync_account_properties(
+            account_properties.as_ref(),
+            self.location_state_store.default_endpoint(),
+        );
+
         let write_region = account_properties.write_account_region();
-        let region = write_region.map(|r| r.name.clone());
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        // Step 5: Select appropriate HttpClient based on pipeline type
+        // Step 5: Select the adaptive transport context for the chosen pipeline
         let transport = self.runtime.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        let http_client = if is_dataplane {
-            transport.get_dataplane_http_client(&endpoint)
-        } else {
-            transport.get_metadata_http_client(&endpoint)
-        };
-
         // Step 6: Initialize diagnostics
         let mut diagnostics_builder = DiagnosticsContextBuilder::new(
             activity_id.clone(),
@@ -403,9 +541,9 @@ impl CosmosDriver {
             &operation,
             &options,
             &effective_options,
+            self.location_state_store.as_ref(),
+            transport,
             &endpoint,
-            &region,
-            http_client,
             auth,
             &user_agent,
             &activity_id,
