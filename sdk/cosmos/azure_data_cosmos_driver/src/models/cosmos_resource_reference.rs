@@ -43,6 +43,12 @@ pub struct CosmosResourceReference {
     is_feed: bool,
 }
 
+impl std::fmt::Display for CosmosResourceReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}('{}')", self.resource_type, self.request_path())
+    }
+}
+
 impl CosmosResourceReference {
     /// Returns the resource type.
     pub fn resource_type(&self) -> ResourceType {

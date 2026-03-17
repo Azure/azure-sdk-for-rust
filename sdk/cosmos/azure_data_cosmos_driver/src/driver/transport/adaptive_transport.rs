@@ -53,7 +53,12 @@ impl AdaptiveTransport {
     // TODO(Step 6): When sharding is added, `Gateway` and `Gateway20`
     // variants will dispatch through `ShardedHttpTransport` instead of
     // delegating directly to the `HttpClient`.
+    #[tracing::instrument(level = tracing::Level::TRACE, skip_all, err, fields(
+        method = %request.method(),
+        url = %request.url(),
+    ))]
     pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+        tracing::trace!("sending request");
         self.client().execute_request(request).await
     }
 
