@@ -1,5 +1,11 @@
 # Release History
 
+## 0.10.1 (2026-03-17)
+
+### Bugs Fixed
+
+- Updated minimum dependency versions to incorporate a fix for TLS 1.3 data corruption on Windows when uploading large payloads ([schannel-rs#121](https://github.com/steffengy/schannel-rs/pull/121)).
+
 ## 0.10.0 (2026-03-11)
 
 ### Breaking Changes
