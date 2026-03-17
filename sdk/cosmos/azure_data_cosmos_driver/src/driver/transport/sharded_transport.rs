@@ -855,10 +855,7 @@ fn active_shard_count(
     }
 
     let needed = (total_inflight as usize + 1).div_ceil(max_streams as usize);
-    needed
-        .max(min_connections)
-        .min(selectable_count)
-        .max(1)
+    needed.max(min_connections).min(selectable_count).max(1)
 }
 
 fn pick_probe_candidate(

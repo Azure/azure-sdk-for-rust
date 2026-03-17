@@ -2709,16 +2709,16 @@ outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>
 
 **Already applied to spec structures** (see §4.6, §6.2, §6.3):
 
-| Structure              | Field        | Section | Hot-path?                                  | Notes                                          |
-| ---------------------- | ------------ | ------- | ------------------------------------------ | ---------------------------------------------- |
-| `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`                 |
-| `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>`               |
-| `CosmosDriver`         | `transport`  | §5.5    | Yes — every operation reads the transport  | ✅ Migrated to `ArcSwap<CosmosTransport>`       |
-| `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>` (planned)                 |
-| `EndpointShardPool`    | `shards`     | §6.3    | Yes — every HTTP request selects a shard   | ✅ Migrated to `ArcSwap<Vec<…>>`                |
-| `ClientShard`          | all counters | §6.3    | Yes — updated per HTTP request             | ✅ Migrated to individual `Atomic*` fields      |
-| `EndpointStats`        | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field                        |
-| `ShardHealth`          | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field                        |
+| Structure              | Field        | Section | Hot-path?                                  | Notes                                     |
+| ---------------------- | ------------ | ------- | ------------------------------------------ | ----------------------------------------- |
+| `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`            |
+| `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>`          |
+| `CosmosDriver`         | `transport`  | §5.5    | Yes — every operation reads the transport  | ✅ Migrated to `ArcSwap<CosmosTransport>`  |
+| `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>` (planned)            |
+| `EndpointShardPool`    | `shards`     | §6.3    | Yes — every HTTP request selects a shard   | ✅ Migrated to `ArcSwap<Vec<…>>`           |
+| `ClientShard`          | all counters | §6.3    | Yes — updated per HTTP request             | ✅ Migrated to individual `Atomic*` fields |
+| `EndpointStats`        | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field                   |
+| `ShardHealth`          | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field                   |
 
 **Applies to (existing driver code)**:
 
