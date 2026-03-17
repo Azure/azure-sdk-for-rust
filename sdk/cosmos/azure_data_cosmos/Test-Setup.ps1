@@ -36,9 +36,15 @@ if($IsAzDo) {
 if ($IsWindows) {
     $EmulatorPath = $null
 
-    if($AzDoEmulatorPath -and (Test-Path $AzDoEmulatorPath)) {
+    # Check for emulator in known locations
+    $TempEmulatorPath = [System.IO.Path]::Combine($env:TEMP, 'AzureCosmosEmulator', 'Azure Cosmos DB Emulator', 'Microsoft.Azure.Cosmos.Emulator.exe')
+    Write-Host "Temp Emulator Path: $TempEmulatorPath"
+    if ($AzDoEmulatorPath -and (Test-Path $AzDoEmulatorPath)) {
         Write-Host "Detected Azure DevOps Agent environment with Cosmos DB Emulator. Skipping Cosmos DB Emulator install."
         $EmulatorPath = $AzDoEmulatorPath
+    } elseif (Test-Path $TempEmulatorPath) {
+        Write-Host "Found Cosmos DB Emulator at $TempEmulatorPath. Skipping Cosmos DB Emulator install."
+        $EmulatorPath = $TempEmulatorPath
     } else {
         LogGroupStart "Installing Cosmos DB Emulator"
         & "$PSScriptRoot\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
@@ -49,9 +55,39 @@ if ($IsWindows) {
 
     LogGroupStart "Launching Cosmos DB Emulator"
     & "$PSScriptRoot\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
-        -StartParameters "/noexplorer /noui /disableratelimiting /enableaadauthentication /partitioncount=50" `
+        -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
         -Emulator:$EmulatorPath `
         -Stage "Launch"
+    LogGroupEnd
+
+    # Probe the emulator endpoint to verify it is responding
+    LogGroupStart "Probing Cosmos DB Emulator endpoint"
+    $emulatorUrl = "https://localhost:8081/"
+    $maxProbeRetries = 30
+    $probeRetry = 0
+    $emulatorReady = $false
+    while (-not $emulatorReady -and $probeRetry -lt $maxProbeRetries) {
+        try {
+            $response = Invoke-WebRequest -Uri $emulatorUrl -SkipCertificateCheck -UseBasicParsing -ErrorAction Stop
+            Write-Host "Emulator responded with status $($response.StatusCode)."
+            $emulatorReady = $true
+        } catch {
+            $statusCode = $_.Exception.Response.StatusCode.value__
+            if ($statusCode -ge 400 -and $statusCode -lt 500) {
+                # 4xx means the emulator is up but rejecting unauthenticated requests
+                Write-Host "Emulator responded with status $statusCode (expected auth failure). Emulator is ready."
+                $emulatorReady = $true
+            } else {
+                $probeRetry++
+                Write-Host "[Retry: $probeRetry/$maxProbeRetries] Emulator not yet responding: $_"
+                Start-Sleep -Seconds 5
+            }
+        }
+    }
+    if (-not $emulatorReady) {
+        LogError "Cosmos DB Emulator failed to respond at $emulatorUrl after $maxProbeRetries retries."
+        exit 1
+    }
     LogGroupEnd
 
     # Set environment variables for the tests
