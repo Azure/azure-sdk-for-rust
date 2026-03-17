@@ -10,6 +10,25 @@ mod seed;
 mod setup;
 mod stats;
 
+/// Creates an AAD credential using WorkloadIdentity (AKS) with fallback to ManagedIdentity (VMs).
+fn create_aad_credential(
+) -> Result<std::sync::Arc<dyn azure_core::credentials::TokenCredential>, Box<dyn std::error::Error>>
+{
+    azure_identity::WorkloadIdentityCredential::new(None)
+        .map(|c| c as std::sync::Arc<dyn azure_core::credentials::TokenCredential>)
+        .or_else(|_| {
+            azure_identity::ManagedIdentityCredential::new(None)
+                .map(|c| c as std::sync::Arc<dyn azure_core::credentials::TokenCredential>)
+        })
+        .map_err(|e| {
+            format!(
+                "Failed to create AAD credential. \
+                 Neither WorkloadIdentityCredential nor ManagedIdentityCredential are available: {e}"
+            )
+            .into()
+        })
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::sync::Arc;
@@ -64,14 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
-            // Try WorkloadIdentityCredential first (AKS), fall back to ManagedIdentityCredential (VMs)
-            let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-                azure_identity::WorkloadIdentityCredential::new(None)
-                    .map(|c| c as Arc<dyn azure_core::credentials::TokenCredential>)
-                    .unwrap_or_else(|_| {
-                        azure_identity::ManagedIdentityCredential::new(None)
-                            .expect("Failed to create ManagedIdentityCredential")
-                    });
+            let credential = create_aad_credential()?;
             let account = CosmosAccountReference::with_credential(endpoint, credential);
             builder.build(account, strategy).await?
         }
@@ -141,13 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 results_builder.build(account, results_strategy).await?
             }
             AuthMethod::Aad => {
-                let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-                    azure_identity::WorkloadIdentityCredential::new(None)
-                        .map(|c| c as Arc<dyn azure_core::credentials::TokenCredential>)
-                        .unwrap_or_else(|_| {
-                            azure_identity::ManagedIdentityCredential::new(None)
-                                .expect("Failed to create ManagedIdentityCredential")
-                        });
+                let credential = create_aad_credential()?;
                 let account = CosmosAccountReference::with_credential(results_ep, credential);
                 results_builder.build(account, results_strategy).await?
             }

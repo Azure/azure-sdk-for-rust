@@ -75,53 +75,12 @@ echo "  Image built and pushed."
 echo "  Restarting perf job..."
 kubectl delete job cosmos-perf -n "$PERF_NAMESPACE" 2>/dev/null || true
 
-# Generate and apply the new job manifest
-cat <<JOBEOF | kubectl apply -f -
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: cosmos-perf
-  namespace: ${PERF_NAMESPACE}
-spec:
-  parallelism: ${PARALLELISM}
-  completions: ${PARALLELISM}
-  template:
-    metadata:
-      labels:
-        app: cosmos-perf
-        azure.workload.identity/use: "true"
-    spec:
-      serviceAccountName: cosmos-perf-sa
-      imagePullSecrets:
-      - name: acr-secret
-      containers:
-      - name: perf
-        image: ${ACR_NAME}.azurecr.io/cosmos-perf:${IMAGE_TAG}
-        args:
-        - "--endpoint"
-        - "${COSMOS_ENDPOINT}"
-        - "--auth"
-        - "aad"
-        - "--application-region"
-        - "${APPLICATION_REGION}"
-        - "--concurrency"
-        - "${CONCURRENCY}"
-        - "--commit-sha"
-        - "${REMOTE_SHA}"
-        - "--results-endpoint"
-        - "${RESULTS_ENDPOINT}"
-        - "--results-auth"
-        - "${RESULTS_AUTH}"
-        resources:
-          requests:
-            cpu: "2"
-            memory: "1Gi"
-          limits:
-            cpu: "4"
-            memory: "2Gi"
-      restartPolicy: Never
-  backoffLimit: 0
-JOBEOF
+# Apply the job manifest from the repo template, substituting env vars
+export COMMIT_SHA="$REMOTE_SHA"
+export ACR_NAME IMAGE_TAG PERF_NAMESPACE COSMOS_ENDPOINT RESULTS_ENDPOINT RESULTS_AUTH
+export APPLICATION_REGION CONCURRENCY PARALLELISM IDENTITY_CLIENT_ID
+TEMPLATE="$WORK_DIR/repo/sdk/cosmos/azure_data_cosmos_perf/deploy/perf-job.yaml"
+envsubst < "$TEMPLATE" | kubectl apply -f -
 
 echo "  Job restarted with commit $REMOTE_SHA"
 rm -rf "$WORK_DIR"

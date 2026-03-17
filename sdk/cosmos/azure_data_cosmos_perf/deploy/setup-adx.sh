@@ -158,8 +158,18 @@ if [[ -z "$ADX_PRINCIPAL_ID" || "$ADX_PRINCIPAL_ID" == "null" ]]; then
         --url "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Kusto/clusters/${CLUSTER_NAME}?api-version=2023-08-15" \
         --body '{"identity":{"type":"SystemAssigned"}}' \
         --output none
-    sleep 30
-    ADX_PRINCIPAL_ID=$(az kusto cluster show --name "$CLUSTER_NAME" --resource-group "$RESOURCE_GROUP" --query "identity.principalId" -o tsv)
+    echo "  Waiting for identity to propagate..." >&2
+    for i in $(seq 1 30); do
+        ADX_PRINCIPAL_ID=$(az kusto cluster show --name "$CLUSTER_NAME" --resource-group "$RESOURCE_GROUP" --query "identity.principalId" -o tsv 2>/dev/null)
+        if [[ -n "$ADX_PRINCIPAL_ID" && "$ADX_PRINCIPAL_ID" != "null" ]]; then
+            break
+        fi
+        sleep 5
+    done
+    if [[ -z "$ADX_PRINCIPAL_ID" || "$ADX_PRINCIPAL_ID" == "null" ]]; then
+        echo "Error: ADX cluster identity did not propagate within timeout." >&2
+        exit 1
+    fi
 fi
 
 # Grant ADX cluster read access to the Cosmos DB change feed

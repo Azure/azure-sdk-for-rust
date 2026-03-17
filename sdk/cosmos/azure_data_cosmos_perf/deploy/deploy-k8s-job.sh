@@ -81,6 +81,7 @@ fi
 # --- Build and push Docker image ---
 echo "  Creating build context..."
 BUILD_CONTEXT=$(mktemp -d /tmp/cosmos-perf-context-XXXXXX)
+trap 'rm -rf "$BUILD_CONTEXT"' EXIT
 rsync -a \
     --exclude='target' \
     --exclude='.git' \
@@ -100,7 +101,6 @@ az acr build \
     --image "cosmos-perf:$IMAGE_TAG" \
     --file "$BUILD_CONTEXT/sdk/cosmos/azure_data_cosmos_perf/Dockerfile" \
     "$BUILD_CONTEXT"
-rm -rf "$BUILD_CONTEXT"
 
 # --- Deploy Job ---
 COMMIT_SHA=$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown")
