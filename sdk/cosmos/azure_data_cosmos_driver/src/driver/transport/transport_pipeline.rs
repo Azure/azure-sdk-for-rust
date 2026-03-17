@@ -166,7 +166,8 @@ pub(crate) async fn execute_transport_pipeline(
             "transport_attempt",
             attempt = attempt,
             outcome = tracing::field::Empty
-        ).entered();
+        )
+        .entered();
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
