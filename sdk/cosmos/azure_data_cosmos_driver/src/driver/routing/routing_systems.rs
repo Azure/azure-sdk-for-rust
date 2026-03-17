@@ -347,17 +347,12 @@ pub(crate) fn mark_partition_unavailable(
                 health_status: HealthStatus::Unhealthy,
             });
 
-        // If probe failed, transition back to Unhealthy and reset timer.
-        if entry.health_status == HealthStatus::ProbeCandidate {
-            entry.health_status = HealthStatus::Unhealthy;
-            entry.first_failure_time = now;
-            entry.last_failure_time = now;
-            return new_state;
-        }
-
         entry.last_failure_time = now;
 
         // PPAF unconditionally moves to the next endpoint.
+        // Note: PPAF entries never transition to ProbeCandidate — background
+        // failback only applies to PPCB. PPAF overrides persist until the
+        // backend signals a change organically.
         if !try_move_next_endpoint(entry, next_endpoints, &failed_endpoint) {
             new_state
                 .failover_overrides
@@ -417,21 +412,22 @@ pub(crate) fn expire_partition_overrides(
         }
     }
 
-    for entry in new_state.failover_overrides.values_mut() {
-        if entry.health_status == HealthStatus::Unhealthy
-            && now.saturating_duration_since(entry.first_failure_time) >= unavailability_duration
-        {
-            entry.health_status = HealthStatus::ProbeCandidate;
-        }
-    }
+    // Note: failover_overrides (PPAF) are intentionally NOT swept here.
+    // PPAF failovers for writes on single-master accounts persist until the
+    // backend signals a change (e.g., a new 403/3 from the override region).
+    // Only PPCB (circuit breaker) overrides use probe-based failback.
 
     new_state
 }
 
-/// Removes a probe-successful entry from the partition state.
+/// Removes a probe-successful entry from the circuit breaker overrides.
 ///
-/// Called when a probe request succeeds (the request completed without errors).
+/// Called when a PPCB probe request succeeds (the request completed without errors).
 /// This causes the partition to return to default routing.
+///
+/// Note: Only PPCB (circuit breaker) overrides are removed here. PPAF (failover)
+/// overrides do not use probe-based failback — they persist until the backend
+/// signals a change organically.
 pub(crate) fn remove_probe_succeeded_entry(
     state: &PartitionEndpointState,
     partition_key_range_id: &str,
@@ -440,7 +436,6 @@ pub(crate) fn remove_probe_succeeded_entry(
     new_state
         .circuit_breaker_overrides
         .remove(partition_key_range_id);
-    new_state.failover_overrides.remove(partition_key_range_id);
     new_state
 }
 
@@ -948,20 +943,22 @@ mod tests {
 
         let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
 
-        // Old entries transitioned to ProbeCandidate, recent entry stays Unhealthy
-        assert_eq!(expired.failover_overrides.len(), 2);
-        assert_eq!(
-            expired.failover_overrides["old-pk"].health_status,
-            HealthStatus::ProbeCandidate
-        );
-        assert_eq!(
-            expired.failover_overrides["recent-pk"].health_status,
-            HealthStatus::Unhealthy
-        );
+        // PPCB old entry transitioned to ProbeCandidate
         assert_eq!(expired.circuit_breaker_overrides.len(), 1);
         assert_eq!(
             expired.circuit_breaker_overrides["old-ppcb"].health_status,
             HealthStatus::ProbeCandidate
+        );
+
+        // PPAF entries are NOT transitioned (background failback doesn't apply to PPAF)
+        assert_eq!(expired.failover_overrides.len(), 2);
+        assert_eq!(
+            expired.failover_overrides["old-pk"].health_status,
+            HealthStatus::Unhealthy
+        );
+        assert_eq!(
+            expired.failover_overrides["recent-pk"].health_status,
+            HealthStatus::Unhealthy
         );
     }
 
@@ -1041,7 +1038,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_probe_succeeded_entry_removes_from_both_maps() {
+    fn remove_probe_succeeded_entry_removes_from_circuit_breaker_only() {
         let mut state = partition_state_with_ppaf_ppcb_enabled();
         state.circuit_breaker_overrides.insert(
             "pk-1".to_string(),
@@ -1056,9 +1053,28 @@ mod tests {
                 health_status: HealthStatus::ProbeCandidate,
             },
         );
+        state.failover_overrides.insert(
+            "pk-1".to_string(),
+            PartitionFailoverEntry {
+                current_endpoint: regional_endpoint("westus"),
+                first_failed_endpoint: regional_endpoint("eastus"),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+            },
+        );
 
         let result = remove_probe_succeeded_entry(&state, "pk-1");
 
+        // PPCB entry removed, PPAF entry preserved
         assert!(result.circuit_breaker_overrides.is_empty());
+        assert_eq!(result.failover_overrides.len(), 1);
+        assert_eq!(
+            result.failover_overrides["pk-1"].health_status,
+            HealthStatus::Unhealthy
+        );
     }
 }

@@ -166,14 +166,15 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
             OperationAction::Complete(result) => {
-                // If a probe request succeeded, remove the ProbeCandidate entry.
+                // If a PPCB probe request succeeded, remove the ProbeCandidate entry.
+                // Only circuit breaker overrides use probe-based failback; PPAF
+                // overrides persist until the backend signals a change organically.
                 if let Some(pk_range_id) = &retry_state.partition_key_range_id {
                     let snapshot = location_state_store.snapshot();
                     let partitions = snapshot.partitions.as_ref();
                     let has_probe = partitions
                         .circuit_breaker_overrides
                         .get(pk_range_id.as_str())
-                        .or_else(|| partitions.failover_overrides.get(pk_range_id.as_str()))
                         .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
                     if has_probe {
                         location_state_store.apply_partition(|current| {
@@ -349,9 +350,8 @@ fn resolve_endpoint(
             }
         } else if is_eligible_for_ppaf(partitions, account, is_read, is_partitioned) {
             if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
-                if entry.health_status == HealthStatus::ProbeCandidate {
-                    return make_partition_routing(entry.first_failed_endpoint.clone());
-                }
+                // PPAF overrides do not use probe-based failback (no ProbeCandidate
+                // handling). The override persists until the backend signals a change.
                 return make_partition_routing(entry.current_endpoint.clone());
             }
         }
