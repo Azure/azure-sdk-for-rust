@@ -9,7 +9,7 @@ use azure_core::{
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        TestOptionType,
+        TestOptionKind,
     },
     TestContext,
 };
@@ -43,7 +43,7 @@ impl MockXmlTest {
                 short_activator: None,
                 long_activator: "count",
                 expected_args_len: 1,
-                option_type: TestOptionType::Usize,
+                option_type: TestOptionKind::Usize,
                 ..Default::default()
             }],
             create_test: Self::create_items,

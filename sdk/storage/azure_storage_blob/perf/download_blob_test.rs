@@ -10,7 +10,7 @@ use azure_core::{error::ErrorKind, Bytes};
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        TestOptionType,
+        TestOptionKind,
     },
     TestContext,
 };
@@ -81,7 +81,7 @@ impl DownloadBlobTest {
                     short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
-                    option_type: TestOptionType::Uint32,
+                    option_type: TestOptionKind::Uint32,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -91,7 +91,7 @@ impl DownloadBlobTest {
                     short_activator: Some('l'),
                     long_activator: "collect",
                     expected_args_len: 1,
-                    option_type: TestOptionType::String,
+                    option_type: TestOptionKind::String,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -101,7 +101,7 @@ impl DownloadBlobTest {
                     short_activator: Some('s'),
                     long_activator: "size",
                     expected_args_len: 1,
-                    option_type: TestOptionType::Usize,
+                    option_type: TestOptionKind::Usize,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -213,7 +213,7 @@ impl PerfTest for DownloadBlobTest {
             let body = vec![0u8; self.size]; // Blob size specified by the test option
             let body_bytes = Bytes::from(body);
 
-            let _result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
+            let _result = blob_client.upload(body_bytes.into(), None).await?;
         }
 
         Ok(())

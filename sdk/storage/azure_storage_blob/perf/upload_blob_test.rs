@@ -1,13 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// NOTE: BLOB UPLOAD TEST IS CURRENTLY DISABLED IN THE PERF TEST CONFIGURATION FILE (perf-tests.yml) BECAUSE IT
+// IS FAILING CONSISTENTLY. THE CORE PROBLEM IS THAT YOU CANNOT HAVE MULTIPLE CONCURRENT UPLOADS TO THE SAME BLOB NAME IN AZURE STORAGE
+// (WHICH IS WHAT THIS TEST DOES TO SIMULATE CONCURRENT UPLOADS). THIS TEST NEEDS TO BE REWORKED TO UPLOAD TO UNIQUE BLOB NAMES INSTEAD OF THE SAME BLOB NAME
+
 use std::sync::{Arc, OnceLock};
 
 use azure_core::Bytes;
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        TestOptionType,
+        TestOptionKind,
     },
     TestContext,
 };
@@ -50,7 +54,7 @@ impl UploadBlobTest {
                     short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
-                    option_type: TestOptionType::Uint32,
+                    option_type: TestOptionKind::Uint32,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -69,7 +73,7 @@ impl UploadBlobTest {
                     short_activator: Some('s'),
                     long_activator: "size",
                     expected_args_len: 1,
-                    option_type: TestOptionType::Usize,
+                    option_type: TestOptionKind::Usize,
                     ..Default::default()
                 },
             ],
@@ -110,9 +114,7 @@ impl PerfTest for UploadBlobTest {
             let blob_client = container_client.blob_client(&blob_name);
             let body = self.upload_buffer.get().unwrap().clone();
 
-            let _result = blob_client
-                .upload(body.into(), true, self.size as u64, None)
-                .await?;
+            let _result = blob_client.upload(body.into(), None).await?;
         }
 
         Ok(())
@@ -130,9 +132,7 @@ impl PerfTest for UploadBlobTest {
                 .blob_client(blob.name.unwrap().as_ref());
 
             let data_bytes = self.upload_buffer.get().unwrap().clone();
-            blob_client
-                .upload(data_bytes.into(), true, self.size as u64, None)
-                .await?;
+            blob_client.upload(data_bytes.into(), None).await?;
         }
 
         Ok(())

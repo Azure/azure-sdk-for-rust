@@ -70,7 +70,12 @@ pub struct PerfTestMetadata {
 ///
 /// The default option type is `String`,
 #[derive(Debug, Clone, Default)]
-pub enum TestOptionType {
+pub enum TestOptionKind {
+    // Note: We need this type because `clap` requires us to specify the expected type of each argument
+    // for proper parsing, and this allows us to leverage that parsing in `try_get_test_arg` and
+    // `try_get_global_arg` to get typed arguments without needing to do any additional parsing
+    // or error handling in the test code. See also get_command_for_metadata which specifies the
+    // clap parser for each option based on this type.
     #[default]
     String,
     Int8,
@@ -110,7 +115,7 @@ pub struct PerfTestOption {
     pub sensitive: bool,
 
     /// The expected type of the argument value.
-    pub option_type: TestOptionType,
+    pub option_type: TestOptionKind,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -577,17 +582,17 @@ impl PerfRunner {
                     .required(option.mandatory)
                     .global(false);
                 arg = match option.option_type {
-                    TestOptionType::String => arg.value_parser(clap::value_parser!(String)),
-                    TestOptionType::Usize => arg.value_parser(clap::value_parser!(usize)),
-                    TestOptionType::Int8 => arg.value_parser(clap::value_parser!(i8)),
-                    TestOptionType::Int16 => arg.value_parser(clap::value_parser!(i16)),
-                    TestOptionType::Int32 => arg.value_parser(clap::value_parser!(i32)),
-                    TestOptionType::Int64 => arg.value_parser(clap::value_parser!(i64)),
-                    TestOptionType::Uint8 => arg.value_parser(clap::value_parser!(u8)),
-                    TestOptionType::Uint16 => arg.value_parser(clap::value_parser!(u16)),
-                    TestOptionType::Uint32 => arg.value_parser(clap::value_parser!(u32)),
-                    TestOptionType::Uint64 => arg.value_parser(clap::value_parser!(u64)),
-                    TestOptionType::Boolean => {
+                    TestOptionKind::String => arg.value_parser(clap::value_parser!(String)),
+                    TestOptionKind::Usize => arg.value_parser(clap::value_parser!(usize)),
+                    TestOptionKind::Int8 => arg.value_parser(clap::value_parser!(i8)),
+                    TestOptionKind::Int16 => arg.value_parser(clap::value_parser!(i16)),
+                    TestOptionKind::Int32 => arg.value_parser(clap::value_parser!(i32)),
+                    TestOptionKind::Int64 => arg.value_parser(clap::value_parser!(i64)),
+                    TestOptionKind::Uint8 => arg.value_parser(clap::value_parser!(u8)),
+                    TestOptionKind::Uint16 => arg.value_parser(clap::value_parser!(u16)),
+                    TestOptionKind::Uint32 => arg.value_parser(clap::value_parser!(u32)),
+                    TestOptionKind::Uint64 => arg.value_parser(clap::value_parser!(u64)),
+                    TestOptionKind::Boolean => {
                         // For boolean options, we can use the presence of the flag to indicate true, and absence to indicate false.
                         // Therefore, we don't need to specify a value parser or expect any arguments for this type.
                         arg.action(clap::ArgAction::SetTrue).num_args(0)

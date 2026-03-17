@@ -313,6 +313,10 @@ impl AsyncResponseBody {
 
     /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
+        // Collect the received stream into an array of `Bytes` and then combine into a single `Bytes` to return.
+        // This consumes more memory than strictly necessary, but avoids multiple trips to the heap extending a single `BytesMut` buffer as we receive the stream.
+        //
+        // When the collected data is large, this can result in many fewer heap reallocations.
         let mut bytes = Vec::<Bytes>::new();
         let mut total_length = 0usize;
 
@@ -348,7 +352,7 @@ impl AsyncResponseBody {
             // If the remaining space in the buffer won't hold this chunk, fail.
             if buffer.len() - total_copied < bytes.len() {
                 return Err(crate::Error::with_message(
-                    ErrorKind::Other,
+                    ErrorKind::Io,
                     "buffer is too small to hold response body",
                 ));
             }

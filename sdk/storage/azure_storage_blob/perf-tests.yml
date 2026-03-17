@@ -24,13 +24,13 @@ Tests:
       - --size 1073741824 --parallel 64 --warmup 30 --duration 60 --count 1 -l into
       - --size 1073741824 --parallel 64 --warmup 30 --duration 60 --count 1 -l vec_bytes
 
-  - Test: upload
-    Class: upload_blob
-    Arguments:
-      - --size 10240 --parallel 64
-      - --size 10485760 --parallel 32
-      - --size 1073741824 --parallel 1 --warmup 60 --duration 60
-      - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+  #  - Test: upload
+  #    Class: upload_blob
+  #    Arguments:
+  #      - --size 10240 --parallel 64
+  #      - --size 10485760 --parallel 32
+  #      - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+  #      - --size 1073741824 --parallel 8 --warmup 60 --duration 60
 
   - Test: list-blobs
     Class: list_blob

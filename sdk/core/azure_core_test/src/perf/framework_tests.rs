@@ -83,7 +83,7 @@ async fn test_perf_runner_with_single_test() {
                 short_activator: Some('c'),
                 expected_args_len: 1,
                 display_message: "The Fibonacci number to compute",
-                option_type: TestOptionType::Uint32,
+                option_type: TestOptionKind::Uint32,
                 ..Default::default()
             }],
             create_test: create_fibonacci1_test,
