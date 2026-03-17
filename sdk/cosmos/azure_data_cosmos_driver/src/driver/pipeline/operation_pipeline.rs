@@ -123,10 +123,7 @@ pub(crate) async fn execute_operation_pipeline(
         } else {
             ExecutionContext::RegionFailover
         };
-        if !attempt_span.is_disabled() {
-            let ctx = format!("{:?}", execution_context);
-            attempt_span.record("context", &ctx);
-        }
+        attempt_span.record("context", &tracing::field::debug(&execution_context));
         tracing::debug!(routing_decision = %routing, "routing decision made");
 
         let transport_request = build_transport_request(

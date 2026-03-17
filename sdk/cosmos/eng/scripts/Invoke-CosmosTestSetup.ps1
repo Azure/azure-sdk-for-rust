@@ -72,16 +72,20 @@ if ($IsWindows) {
             Write-Host "Emulator responded with status $($response.StatusCode)."
             $emulatorReady = $true
         } catch {
-            $statusCode = $_.Exception.Response.StatusCode.value__
-            if ($statusCode -ge 400 -and $statusCode -lt 500) {
-                # 4xx means the emulator is up but rejecting unauthenticated requests
-                Write-Host "Emulator responded with status $statusCode (expected auth failure). Emulator is ready."
-                $emulatorReady = $true
-            } else {
-                $probeRetry++
-                Write-Host "[Retry: $probeRetry/$maxProbeRetries] Emulator not yet responding: $_"
-                Start-Sleep -Seconds 5
-            }
+             $response = $_.Exception.Response
+             if ($null -ne $response -and $null -ne $response.StatusCode) {
+                 $statusCode = $response.StatusCode.value__
+                 if ($statusCode -ge 400 -and $statusCode -lt 500) {
+                     # 4xx means the emulator is up but rejecting unauthenticated requests
+                     Write-Host "Emulator responded with status $statusCode (expected auth failure). Emulator is ready."
+                     $emulatorReady = $true
+                     continue
+                 }
+             }
+             # No HTTP response or non-4xx status: treat as retryable failure
+             $probeRetry++
+             Write-Host "[Retry: $probeRetry/$maxProbeRetries] Emulator not yet responding. Exception: $($_.Exception.Message)"
+             Start-Sleep -Seconds 5
         }
     }
     if (-not $emulatorReady) {
