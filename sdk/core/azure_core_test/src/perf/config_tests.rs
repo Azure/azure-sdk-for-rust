@@ -32,7 +32,7 @@ fn create_basic_test_metadata() -> PerfTestMetadata {
             expected_args_len: 1,
             mandatory: false,
             sensitive: false,
-            option_type: TestOptionKind::String,
+            option_type: PerfTestOptionKind::String,
         }],
         create_test: create_failed_test,
     }
@@ -69,7 +69,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
                 short_activator: Some('f'),
                 long_activator: "flag",
                 display_message: "Flag option",
-                option_type: TestOptionKind::Boolean,
+                option_type: PerfTestOptionKind::Boolean,
                 ..Default::default()
             },
         ],
@@ -622,7 +622,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 0,
                 mandatory: false,
                 sensitive: false,
-                option_type: TestOptionKind::Boolean,
+                option_type: PerfTestOptionKind::Boolean,
             },
         ],
         create_test: complex_test_create,

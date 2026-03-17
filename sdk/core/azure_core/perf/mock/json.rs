@@ -9,7 +9,7 @@ use azure_core::{
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        TestOptionKind,
+        PerfTestOptionKind,
     },
     TestContext,
 };
@@ -43,7 +43,7 @@ impl MockJsonTest {
                 short_activator: None,
                 long_activator: "count",
                 expected_args_len: 1,
-                option_type: TestOptionKind::Usize,
+                option_type: PerfTestOptionKind::Usize,
                 ..Default::default()
             }],
             create_test: Self::create_items,

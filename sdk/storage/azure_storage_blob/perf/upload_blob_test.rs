@@ -11,7 +11,7 @@ use azure_core::Bytes;
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        TestOptionKind,
+        PerfTestOptionKind,
     },
     TestContext,
 };
@@ -54,7 +54,7 @@ impl UploadBlobTest {
                     short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
-                    option_type: TestOptionKind::Uint32,
+                    option_type: PerfTestOptionKind::Uint32,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -73,7 +73,7 @@ impl UploadBlobTest {
                     short_activator: Some('s'),
                     long_activator: "size",
                     expected_args_len: 1,
-                    option_type: TestOptionKind::Usize,
+                    option_type: PerfTestOptionKind::Usize,
                     ..Default::default()
                 },
             ],
