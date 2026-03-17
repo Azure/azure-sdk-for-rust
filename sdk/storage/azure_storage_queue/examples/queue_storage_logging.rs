@@ -22,7 +22,7 @@
 //!
 //! # Prerequisites
 //!
-//! - Set the `AZURE_STORAGE_ACCOUNT_NAME` environment variable to your storage account name
+//! - Set the `AZURE_QUEUE_STORAGE_ACCOUNT_NAME` environment variable to your storage account name
 //! - Authenticate using Azure CLI: `az login`
 //! - Set `RUST_LOG` to control log level (optional, defaults to `trace` in this example):
 //!   - `error` - Only errors
@@ -35,7 +35,7 @@
 //!
 //! ```bash
 //! az login
-//! export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
+//! export AZURE_QUEUE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
 //! export RUST_LOG="<log-level>"
 //! cargo run --package azure_storage_queue --example queue_storage_logging
 //! ```
@@ -87,8 +87,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Get Azure Storage Account name from environment variable
-    let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
-        .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
+    let account = env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME")
+        .expect("Set AZURE_QUEUE_STORAGE_ACCOUNT_NAME environment variable");
 
     let queue_name = "test-logging-queue";
     let message_text = "Hello from azure_storage_queue logging example!";

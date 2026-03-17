@@ -3,26 +3,25 @@
 
 pub use crate::generated::clients::{QueueClient, QueueClientOptions};
 
-use crate::{generated::models::*, logging::apply_storage_logging_defaults};
+use crate::logging::apply_storage_logging_defaults;
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, Response, StatusCode, Url,
+        Pipeline, StatusCode, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
 
 impl QueueClient {
-    /// Creates a new QueueClient, using Entra ID authentication.
+    /// Creates a new `QueueClient`.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
     /// * `queue_name` - The name of the queue to interact with.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    ///   If None, the URL must contain authentication information (e.g., SAS token).
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
@@ -42,13 +41,12 @@ impl QueueClient {
         Self::from_url(url, credential, options)
     }
 
-    /// Creates a new QueueClient from a queue URL.
+    /// Creates a new `QueueClient` from a queue URL.
     ///
     /// # Arguments
     ///
     /// * `queue_url` - The full URL of the queue, for example `https://myaccount.queue.core.windows.net/myqueue`
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    ///   If None, the URL must contain authentication information (e.g., SAS token).
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Queue")]
     pub fn from_url(
@@ -93,29 +91,69 @@ impl QueueClient {
     ///
     /// Returns `true` if the queue exists, `false` if the queue does not exist, and propagates all other errors.
     pub async fn exists(&self) -> Result<bool> {
-        match self.get_metadata(None).await {
+        match self.get_properties(None).await {
             Ok(_) => Ok(true),
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => Ok(false),
             Err(e) => Err(e),
         }
     }
+}
 
-    /// Updates the visibility timeout and optionally the content of a queued message.
-    ///
-    /// # Arguments
-    ///
-    /// * `message_id` - The ID of the message to update.
-    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved.
-    /// * `visibility_timeout` - The new visibility timeout for the message, in seconds.
-    /// * `options` - Optional configuration for the request.
-    pub async fn update_message(
-        &self,
-        message_id: &str,
-        pop_receipt: &str,
-        visibility_timeout: i32,
-        options: Option<QueueClientUpdateOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.update(message_id, pop_receipt, visibility_timeout, options)
-            .await
+#[cfg(test)]
+mod tests {
+    use super::{QueueClient, QueueClientOptions};
+    use azure_core_test::credentials::MockCredential;
+
+    #[test]
+    fn new_requires_https_with_credential() {
+        let cred = MockCredential::new().unwrap();
+        let err = QueueClient::new(
+            "http://myaccount.queue.core.windows.net/",
+            "myqueue",
+            Some(cred),
+            None,
+        )
+        .err()
+        .unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected error message to contain 'must use https', got: {err}"
+        );
+    }
+
+    #[test]
+    fn from_url_requires_https_with_credential() {
+        let cred = MockCredential::new().unwrap();
+        let url = azure_core::http::Url::parse("http://myaccount.queue.core.windows.net/myqueue")
+            .unwrap();
+        let err = QueueClient::from_url(url, Some(cred), None).err().unwrap();
+        assert!(
+            err.to_string().contains("must use https"),
+            "Expected error message to contain 'must use https', got: {err}"
+        );
+    }
+
+    #[test]
+    fn new_allows_http_without_credential() {
+        // HTTP is allowed when no credential is provided (e.g., SAS token in URL)
+        let result = QueueClient::new(
+            "http://myaccount.queue.core.windows.net/",
+            "myqueue",
+            None,
+            None,
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_allows_https_with_credential() {
+        let cred = MockCredential::new().unwrap();
+        let result = QueueClient::new(
+            "https://myaccount.queue.core.windows.net/",
+            "myqueue",
+            Some(cred),
+            Some(QueueClientOptions::default()),
+        );
+        assert!(result.is_ok());
     }
 }

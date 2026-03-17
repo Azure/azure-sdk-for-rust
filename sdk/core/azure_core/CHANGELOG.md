@@ -1,5 +1,17 @@
 # Release History
 
+## 0.34.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Added `tokio` feature to `default` features.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.33.0 (2026-03-05)
 
 ### Features Added

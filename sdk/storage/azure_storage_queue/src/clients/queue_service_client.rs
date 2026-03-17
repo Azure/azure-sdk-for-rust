@@ -3,29 +3,24 @@
 
 pub use crate::generated::clients::{QueueServiceClient, QueueServiceClientOptions};
 
-use crate::{
-    clients::QueueClient,
-    generated::models::{QueueClientCreateOptions, QueueClientDeleteOptions},
-    logging::apply_storage_logging_defaults,
-};
+use crate::{clients::QueueClient, logging::apply_storage_logging_defaults};
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        NoFormat, Pipeline, Response, Url,
+        Pipeline, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
 
 impl QueueServiceClient {
-    /// Creates a new QueueServiceClient, using Entra ID authentication.
+    /// Creates a new `QueueServiceClient`.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication.
-    ///   If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Service")]
     pub fn new(
@@ -89,33 +84,5 @@ impl QueueServiceClient {
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         })
-    }
-
-    /// Creates a new queue under the given account.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_name` - The name of the queue to create.
-    /// * `options` - Optional configuration for the request.
-    pub async fn create_queue(
-        &self,
-        queue_name: &str,
-        options: Option<QueueClientCreateOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.queue_client(queue_name)?.create(options).await
-    }
-
-    /// Permanently deletes the specified queue.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_name` - The name of the queue to delete.
-    /// * `options` - Optional configuration for the request.
-    pub async fn delete_queue(
-        &self,
-        queue_name: &str,
-        options: Option<QueueClientDeleteOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        self.queue_client(queue_name)?.delete(options).await
     }
 }

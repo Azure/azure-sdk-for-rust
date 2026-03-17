@@ -63,9 +63,9 @@ pub struct QueueClientGetAccessPolicyOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueClient::get_metadata()`
+/// Options to be passed to `QueueClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueClientGetMetadataOptions<'a> {
+pub struct QueueClientGetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -154,9 +154,9 @@ pub struct QueueClientSetMetadataOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueClient::update()`
+/// Options to be passed to `QueueClient::update_message()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueClientUpdateOptions<'a> {
+pub struct QueueClientUpdateMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 

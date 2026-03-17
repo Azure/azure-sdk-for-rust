@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Model types for Azure Storage Queue.
+
 pub use crate::generated::models::*;
 
 use azure_core::fmt::SafeDebug;
@@ -18,19 +20,20 @@ impl Deref for SentMessage {
     }
 }
 
+/// XML envelope used to deserialize the `QueueMessagesList` response for a put-message operation.
+#[derive(Deserialize)]
+#[serde(rename = "QueueMessagesList")]
+struct SentMessageEnvelope {
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    items: Option<Vec<SentMessageInternal>>,
+}
+
 impl<'de> Deserialize<'de> for SentMessage {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        #[derive(Deserialize)]
-        #[serde(rename = "QueueMessagesList")]
-        struct ListOfSentMessage {
-            #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-            pub items: Option<Vec<SentMessageInternal>>,
-        }
-
-        let list = ListOfSentMessage::deserialize(deserializer)?;
+        let list = SentMessageEnvelope::deserialize(deserializer)?;
         let message = list
             .items
             .unwrap_or_default()
