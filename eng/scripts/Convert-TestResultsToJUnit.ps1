@@ -86,7 +86,7 @@ foreach ($jsonFile in $jsonFiles) {
     # cargo2junit exits non-zero when tests fail, not just on conversion errors.
     # Filter out the known "One or more tests failed." message and only treat
     # remaining stderr lines as actual conversion failures.
-    $otherErrors = @($stderr | Where-Object { "$_" -notmatch 'One or more tests failed\.' })
+    $otherErrors = @($stderr | Where-Object { "$_" -notlike '*One or more tests failed.*' })
     if ($otherErrors.Count -gt 0) {
       LogError "Failure during conversion of $($jsonFile.Name) to JUnit XML."
       $succeeded = $false
