@@ -23,6 +23,7 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         Body, NoFormat, Pipeline, RequestContent, Url,
     },
+    stream::SeekableStream,
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
@@ -121,6 +122,7 @@ impl BlockBlobClient {
     ///
     /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
     /// To perform a partial update of the content of a block blob, use [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
+    /// To upload content from a [`SeekableStream`], use [`upload_stream`](Self::upload_stream).
     ///
     /// # Arguments
     ///
@@ -130,6 +132,36 @@ impl BlockBlobClient {
     pub async fn upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
+        options: Option<BlockBlobClientUploadOptions<'_>>,
+    ) -> Result<BlockBlobClientUploadResult> {
+        self.upload_body(content.into(), options).await
+    }
+
+    /// Uploads content from a seekable stream to a block blob, overwriting any existing blob by default.
+    ///
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// To perform a partial update of the content of a block blob, use [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The seekable stream to upload.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlockBlob.upload_stream")]
+    pub async fn upload_stream<S>(
+        &self,
+        content: S,
+        options: Option<BlockBlobClientUploadOptions<'_>>,
+    ) -> Result<BlockBlobClientUploadResult>
+    where
+        S: SeekableStream + 'static,
+    {
+        self.upload_body(Body::SeekableStream(Box::new(content)), options)
+            .await
+    }
+
+    async fn upload_body(
+        &self,
+        content: Body,
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<BlockBlobClientUploadResult> {
         let options = options.unwrap_or_default();
@@ -213,7 +245,7 @@ impl BlockBlobClient {
             stage_block_options,
             commit_block_list_options,
         );
-        partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
+        partitioned_transfer::upload(content, parallel, partition_size, &behavior).await?;
         behavior.result.into_inner().ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,

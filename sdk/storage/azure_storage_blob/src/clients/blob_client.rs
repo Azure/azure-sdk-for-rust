@@ -24,6 +24,7 @@ use azure_core::{
         response::{AsyncResponse, PinnedStream},
         AsyncRawResponse, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
     },
+    stream::SeekableStream,
     tracing, Bytes, Result,
 };
 use std::sync::Arc;
@@ -250,6 +251,7 @@ impl BlobClient {
     ///
     /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
     /// To perform a partial update of the content of a block blob, use [`BlockBlobClient::stage_block()`] and [`BlockBlobClient::commit_block_list()`] directly.
+    /// To upload content from a [`SeekableStream`], use [`BlobClient::upload_stream()`].
     ///
     /// # Arguments
     ///
@@ -261,6 +263,28 @@ impl BlobClient {
         options: Option<BlobClientUploadOptions<'_>>,
     ) -> Result<BlobClientUploadResult> {
         self.block_blob_client().upload(content, options).await
+    }
+
+    /// Uploads content from a seekable stream to a block blob, overwriting any existing blob by default.
+    ///
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// To perform a partial update of the content of a block blob, use [`BlockBlobClient::stage_block()`] and [`BlockBlobClient::commit_block_list()`] directly.
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The seekable stream to upload.
+    /// * `options` - Optional parameters for the request.
+    pub async fn upload_stream<S>(
+        &self,
+        content: S,
+        options: Option<BlobClientUploadOptions<'_>>,
+    ) -> Result<BlobClientUploadResult>
+    where
+        S: SeekableStream + 'static,
+    {
+        self.block_blob_client()
+            .upload_stream(content, options)
+            .await
     }
 
     /// Checks if the blob exists.
