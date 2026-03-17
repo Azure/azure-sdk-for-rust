@@ -3,7 +3,7 @@
 
 //! Defines fault injection rules that combine conditions and results.
 
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Instant;
 
 use super::condition::FaultInjectionCondition;
@@ -11,69 +11,82 @@ use super::result::FaultInjectionResult;
 
 /// A fault injection rule that defines when and how to inject faults.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct FaultInjectionRule {
-    /// The condition under which to inject the fault.
-    pub condition: FaultInjectionCondition,
-    /// The result to inject when the condition is met.
-    pub result: FaultInjectionResult,
-    /// The absolute time at which the rule becomes active.
-    pub start_time: Instant,
-    /// The absolute time at which the rule expires, if set.
-    pub end_time: Option<Instant>,
-    /// The total hit limit of the rule.
-    pub hit_limit: Option<u32>,
-    /// Unique identifier for the fault injection scenario.
-    pub id: String,
-    /// Whether the rule is currently enabled.
+    condition: FaultInjectionCondition,
+    result: FaultInjectionResult,
+    id: String,
     enabled: AtomicBool,
-}
-
-impl Clone for FaultInjectionRule {
-    fn clone(&self) -> Self {
-        Self {
-            condition: self.condition.clone(),
-            result: self.result.clone(),
-            start_time: self.start_time,
-            end_time: self.end_time,
-            hit_limit: self.hit_limit,
-            id: self.id.clone(),
-            enabled: AtomicBool::new(self.enabled.load(std::sync::atomic::Ordering::SeqCst)),
-        }
-    }
+    hit_count: AtomicU32,
+    start_time: Option<Instant>,
+    end_time: Option<Instant>,
+    hit_limit: Option<u32>,
 }
 
 impl FaultInjectionRule {
+    /// Returns the condition under which to inject the fault.
+    pub fn condition(&self) -> &FaultInjectionCondition {
+        &self.condition
+    }
+
+    /// Returns the result to inject when the condition is met.
+    pub fn result(&self) -> &FaultInjectionResult {
+        &self.result
+    }
+
+    /// Returns the unique identifier for the fault injection scenario.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     /// Returns whether the rule is currently enabled.
     pub fn is_enabled(&self) -> bool {
-        self.enabled.load(std::sync::atomic::Ordering::SeqCst)
+        self.enabled.load(Ordering::SeqCst)
     }
 
     /// Enables the rule.
     pub fn enable(&self) {
-        self.enabled
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.enabled.store(true, Ordering::SeqCst);
     }
 
     /// Disables the rule.
     pub fn disable(&self) {
-        self.enabled
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.enabled.store(false, Ordering::SeqCst);
+    }
+
+    /// Returns the number of times this rule has been applied.
+    pub fn hit_count(&self) -> u32 {
+        self.hit_count.load(Ordering::SeqCst)
+    }
+
+    /// Increments the hit count by one.
+    pub fn increment_hit_count(&self) {
+        self.hit_count.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// Returns the absolute time at which the rule becomes active, if set.
+    pub fn start_time(&self) -> Option<Instant> {
+        self.start_time
+    }
+
+    /// Returns the absolute time at which the rule expires, if set.
+    pub fn end_time(&self) -> Option<Instant> {
+        self.end_time
+    }
+
+    /// Returns the total hit limit of the rule, if set.
+    pub fn hit_limit(&self) -> Option<u32> {
+        self.hit_limit
     }
 }
 
 /// Builder for creating a fault injection rule.
 pub struct FaultInjectionRuleBuilder {
-    /// The condition under which to inject the fault.
     condition: FaultInjectionCondition,
-    /// The result to inject when the condition is met.
     result: FaultInjectionResult,
-    /// The absolute time at which the rule becomes active.
-    start_time: Instant,
-    /// The absolute time at which the rule expires.
+    start_time: Option<Instant>,
     end_time: Option<Instant>,
-    /// The total hit limit of the rule.
     hit_limit: Option<u32>,
-    /// Unique identifier for the fault injection scenario.
     id: String,
 }
 
@@ -85,7 +98,7 @@ impl FaultInjectionRuleBuilder {
         Self {
             condition: FaultInjectionCondition::default(),
             result,
-            start_time: Instant::now(),
+            start_time: None,
             end_time: None,
             hit_limit: None,
             id: id.into(),
@@ -106,7 +119,7 @@ impl FaultInjectionRuleBuilder {
 
     /// Sets the absolute time at which the rule becomes active.
     pub fn with_start_time(mut self, start_time: Instant) -> Self {
-        self.start_time = start_time;
+        self.start_time = Some(start_time);
         self
     }
 
@@ -132,6 +145,7 @@ impl FaultInjectionRuleBuilder {
             hit_limit: self.hit_limit,
             id: self.id,
             enabled: AtomicBool::new(true),
+            hit_count: AtomicU32::new(0),
         }
     }
 }
@@ -150,15 +164,46 @@ mod tests {
 
     #[test]
     fn builder_default_values() {
-        let before = Instant::now();
         let rule = FaultInjectionRuleBuilder::new("test-rule", create_test_error()).build();
 
-        assert_eq!(rule.id, "test-rule");
-        assert!(rule.start_time >= before);
-        assert!(rule.start_time <= Instant::now());
-        assert!(rule.end_time.is_none());
-        assert!(rule.hit_limit.is_none());
-        assert!(rule.condition.operation_type.is_none());
+        assert_eq!(rule.id(), "test-rule");
+        assert!(rule.start_time().is_none());
+        assert!(rule.end_time().is_none());
+        assert!(rule.hit_limit().is_none());
+        assert!(rule.condition().operation_type().is_none());
         assert!(rule.is_enabled());
+        assert_eq!(rule.hit_count(), 0);
+    }
+
+    #[test]
+    fn hit_count_increments() {
+        let rule = FaultInjectionRuleBuilder::new("hit-test", create_test_error()).build();
+
+        assert_eq!(rule.hit_count(), 0);
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 1);
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 2);
+    }
+
+    #[test]
+    fn enable_disable() {
+        let rule = FaultInjectionRuleBuilder::new("toggle-test", create_test_error()).build();
+
+        assert!(rule.is_enabled());
+        rule.disable();
+        assert!(!rule.is_enabled());
+        rule.enable();
+        assert!(rule.is_enabled());
+    }
+
+    #[test]
+    fn builder_with_start_time() {
+        let start = Instant::now();
+        let rule = FaultInjectionRuleBuilder::new("start-test", create_test_error())
+            .with_start_time(start)
+            .build();
+
+        assert_eq!(rule.start_time(), Some(start));
     }
 }

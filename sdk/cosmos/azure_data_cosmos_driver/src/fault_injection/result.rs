@@ -5,7 +5,10 @@
 
 use std::time::Duration;
 
-use azure_core::http::{headers::Headers, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, HeaderValue, Headers},
+    StatusCode,
+};
 
 use super::FaultInjectionErrorType;
 
@@ -15,29 +18,104 @@ use super::FaultInjectionErrorType;
 /// the specified status code, headers, and body. Useful for mocking service
 /// responses such as `GetDatabaseAccount` in tests.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct CustomResponse {
-    /// The HTTP status code for the synthetic response.
-    pub status_code: StatusCode,
-    /// The headers for the synthetic response.
-    pub headers: Headers,
-    /// The body for the synthetic response.
-    pub body: Vec<u8>,
+    status_code: StatusCode,
+    headers: Headers,
+    body: Vec<u8>,
+}
+
+impl CustomResponse {
+    /// Returns the HTTP status code for the synthetic response.
+    pub fn status_code(&self) -> StatusCode {
+        self.status_code
+    }
+
+    /// Returns the headers for the synthetic response.
+    pub fn headers(&self) -> &Headers {
+        &self.headers
+    }
+
+    /// Returns the body for the synthetic response.
+    pub fn body(&self) -> &[u8] {
+        &self.body
+    }
+}
+
+/// Builder for creating a [`CustomResponse`].
+pub struct CustomResponseBuilder {
+    status_code: StatusCode,
+    headers: Headers,
+    body: Vec<u8>,
+}
+
+impl CustomResponseBuilder {
+    /// Creates a new builder with the given HTTP status code.
+    pub fn new(status_code: StatusCode) -> Self {
+        Self {
+            status_code,
+            headers: Headers::new(),
+            body: Vec::new(),
+        }
+    }
+
+    /// Adds a header to the response.
+    pub fn with_header(
+        mut self,
+        name: impl Into<HeaderName>,
+        value: impl Into<HeaderValue>,
+    ) -> Self {
+        self.headers.insert(name, value);
+        self
+    }
+
+    /// Adds a sub-status header to the response.
+    pub fn with_sub_status(self, code: u32) -> Self {
+        self.with_header("x-ms-substatus", code.to_string())
+    }
+
+    /// Sets the body of the response.
+    pub fn with_body(mut self, body: impl Into<Vec<u8>>) -> Self {
+        self.body = body.into();
+        self
+    }
+
+    /// Builds the [`CustomResponse`].
+    pub fn build(self) -> CustomResponse {
+        CustomResponse {
+            status_code: self.status_code,
+            headers: self.headers,
+            body: self.body,
+        }
+    }
 }
 
 /// Represents a server error to be injected.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct FaultInjectionResult {
-    /// The type of server error to inject.
-    pub error_type: Option<FaultInjectionErrorType>,
-    /// A custom response to return instead of injecting an error.
-    pub custom_response: Option<CustomResponse>,
-    /// Delay before injecting the error.
-    pub delay: Duration,
-    /// Probability of injecting the error (0.0 to 1.0).
+    error_type: Option<FaultInjectionErrorType>,
+    custom_response: Option<CustomResponse>,
+    delay: Option<Duration>,
     probability: f32,
 }
 
 impl FaultInjectionResult {
+    /// Returns the type of server error to inject.
+    pub fn error_type(&self) -> Option<FaultInjectionErrorType> {
+        self.error_type
+    }
+
+    /// Returns the custom response to return instead of injecting an error.
+    pub fn custom_response(&self) -> Option<&CustomResponse> {
+        self.custom_response.as_ref()
+    }
+
+    /// Returns the delay before injecting the error.
+    pub fn delay(&self) -> Option<Duration> {
+        self.delay
+    }
+
     /// Returns the probability of injecting the fault (0.0 to 1.0).
     pub fn probability(&self) -> f32 {
         self.probability
@@ -48,7 +126,7 @@ impl FaultInjectionResult {
 pub struct FaultInjectionResultBuilder {
     error_type: Option<FaultInjectionErrorType>,
     custom_response: Option<CustomResponse>,
-    delay: Duration,
+    delay: Option<Duration>,
     probability: f32,
 }
 
@@ -58,7 +136,7 @@ impl FaultInjectionResultBuilder {
         Self {
             error_type: None,
             custom_response: None,
-            delay: Duration::ZERO,
+            delay: None,
             probability: 1.0,
         }
     }
@@ -81,7 +159,7 @@ impl FaultInjectionResultBuilder {
 
     /// Sets the delay before injecting the error.
     pub fn with_delay(mut self, delay: Duration) -> Self {
-        self.delay = delay;
+        self.delay = Some(delay);
         self
     }
 
@@ -110,9 +188,9 @@ impl Default for FaultInjectionResultBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{CustomResponse, FaultInjectionResultBuilder};
+    use super::{CustomResponseBuilder, FaultInjectionResultBuilder};
     use crate::fault_injection::FaultInjectionErrorType;
-    use azure_core::http::{headers::Headers, StatusCode};
+    use azure_core::http::StatusCode;
     use std::time::Duration;
 
     #[test]
@@ -121,8 +199,11 @@ mod tests {
             .with_error(FaultInjectionErrorType::Timeout)
             .build();
 
-        assert_eq!(error.error_type.unwrap(), FaultInjectionErrorType::Timeout);
-        assert_eq!(error.delay, Duration::ZERO);
+        assert_eq!(
+            error.error_type().unwrap(),
+            FaultInjectionErrorType::Timeout
+        );
+        assert!(error.delay().is_none());
         assert!((error.probability() - 1.0).abs() < f32::EPSILON);
     }
 
@@ -150,16 +231,36 @@ mod tests {
     fn builder_with_custom_response() {
         let body = b"{\"test\": true}".to_vec();
         let result = FaultInjectionResultBuilder::new()
-            .with_custom_response(CustomResponse {
-                status_code: StatusCode::Ok,
-                headers: Headers::new(),
-                body: body.clone(),
-            })
+            .with_custom_response(
+                CustomResponseBuilder::new(StatusCode::Ok)
+                    .with_body(body.clone())
+                    .build(),
+            )
             .build();
 
-        assert!(result.error_type.is_none());
-        let custom = result.custom_response.unwrap();
-        assert_eq!(custom.status_code, StatusCode::Ok);
-        assert_eq!(custom.body, body);
+        assert!(result.error_type().is_none());
+        let custom = result.custom_response().unwrap();
+        assert_eq!(custom.status_code(), StatusCode::Ok);
+        assert_eq!(custom.body(), body);
+    }
+
+    #[test]
+    fn builder_with_delay() {
+        let result = FaultInjectionResultBuilder::new()
+            .with_delay(Duration::from_millis(200))
+            .build();
+
+        assert_eq!(result.delay(), Some(Duration::from_millis(200)));
+    }
+
+    #[test]
+    fn custom_response_builder_with_sub_status() {
+        let response = CustomResponseBuilder::new(StatusCode::Forbidden)
+            .with_sub_status(3)
+            .with_body(b"forbidden")
+            .build();
+
+        assert_eq!(response.status_code(), StatusCode::Forbidden);
+        assert_eq!(response.body(), b"forbidden");
     }
 }

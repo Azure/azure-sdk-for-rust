@@ -40,11 +40,14 @@ pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
 pub use fault_injecting_client::FaultInjectingHttpClient;
 #[allow(unused_imports)]
 pub(crate) use fault_injecting_factory::FaultInjectingHttpClientFactory;
-pub use result::{CustomResponse, FaultInjectionResult, FaultInjectionResultBuilder};
+pub use result::{
+    CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
+};
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Represents different server error types that can be injected for fault testing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum FaultInjectionErrorType {
     /// 500 from server.
     InternalServerError,
@@ -63,7 +66,7 @@ pub enum FaultInjectionErrorType {
     /// 403-1008 Forbidden from server.
     DatabaseAccountNotFound,
     /// Simulates a connection failure (e.g., connection refused, DNS failure).
-    /// Produces an `ErrorKind::Io` error, not an HTTP response error.
+    /// Produces an `ErrorKind::Connection` error, not an HTTP response error.
     ConnectionError,
     /// Simulates a response timeout (request sent but no response received).
     /// Produces an `ErrorKind::Io` error, not an HTTP response error.
@@ -72,6 +75,7 @@ pub enum FaultInjectionErrorType {
 
 /// The type of operation to which the fault injection applies.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum FaultOperationType {
     /// Read items.
     ReadItem,
@@ -186,6 +190,46 @@ impl FromStr for FaultOperationType {
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
             _ => Err(()),
+        }
+    }
+}
+
+impl fmt::Display for FaultInjectionErrorType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InternalServerError => write!(f, "InternalServerError"),
+            Self::TooManyRequests => write!(f, "TooManyRequests"),
+            Self::ReadSessionNotAvailable => write!(f, "ReadSessionNotAvailable"),
+            Self::Timeout => write!(f, "Timeout"),
+            Self::ServiceUnavailable => write!(f, "ServiceUnavailable"),
+            Self::PartitionIsGone => write!(f, "PartitionIsGone"),
+            Self::WriteForbidden => write!(f, "WriteForbidden"),
+            Self::DatabaseAccountNotFound => write!(f, "DatabaseAccountNotFound"),
+            Self::ConnectionError => write!(f, "ConnectionError"),
+            Self::ResponseTimeout => write!(f, "ResponseTimeout"),
+        }
+    }
+}
+
+impl FromStr for FaultInjectionErrorType {
+    type Err = azure_core::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "InternalServerError" => Ok(Self::InternalServerError),
+            "TooManyRequests" => Ok(Self::TooManyRequests),
+            "ReadSessionNotAvailable" => Ok(Self::ReadSessionNotAvailable),
+            "Timeout" => Ok(Self::Timeout),
+            "ServiceUnavailable" => Ok(Self::ServiceUnavailable),
+            "PartitionIsGone" => Ok(Self::PartitionIsGone),
+            "WriteForbidden" => Ok(Self::WriteForbidden),
+            "DatabaseAccountNotFound" => Ok(Self::DatabaseAccountNotFound),
+            "ConnectionError" => Ok(Self::ConnectionError),
+            "ResponseTimeout" => Ok(Self::ResponseTimeout),
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!("unknown fault injection error type: {s}"),
+            )),
         }
     }
 }
