@@ -1553,10 +1553,12 @@ is stored on the per-account `CosmosTransport` instance.
 #### Per-Account Transport Ownership
 
 Each `CosmosDriver` (one per Cosmos DB account) owns its own `CosmosTransport` via
-`Arc<RwLock<Arc<CosmosTransport>>>`. The `RwLock` allows the transport to be swapped
-if the HTTP version changes during a metadata refresh (see below). Operations acquire
-a read lock (nanoseconds — clone the `Arc` and release) so there is no contention on
-the hot path. The write lock is only taken when the transport is actually replaced.
+`Arc<ArcSwap<CosmosTransport>>`. The `ArcSwap` allows the transport to be swapped
+atomically if the HTTP version changes during a metadata refresh (see below). Operations
+read the transport via `ArcSwap::load_full()` — a lock-free operation with no
+reader-counter contention. The write path (transport swap) uses `ArcSwap::store()`,
+which is more expensive than a read but only occurs during version negotiation
+(~every 5 minutes at most).
 
 #### Re-Probe on Metadata Refresh
 
@@ -1632,14 +1634,20 @@ load-balances requests based on inflight count and shard health. The sharded tra
 `azure_core::http::HttpClient` trait exclusively — it never references a concrete HTTP library.
 All concrete client creation is delegated to a pluggable factory.
 
-The current implementation intentionally uses simple synchronization primitives on the hot data
-structures:
+The current implementation uses lock-free reads on the hot-path data structures:
 
 - `Mutex<HashMap<EndpointKey, Arc<EndpointShardPool>>>` for endpoint pool lookup/creation
-- `RwLock<Vec<Arc<ClientShard>>>` for per-endpoint shard membership
-- `Mutex<ClientShardState>` plus an atomic inflight counter per shard
+  (the `Mutex` is only held for nanosecond-range hashmap operations; poisoning is ignored
+  since the critical section cannot panic)
+- `ArcSwap<Vec<Arc<ClientShard>>>` for per-endpoint shard membership — lock-free reads
+  via `ArcSwap::load()`, writes serialized by a separate `Mutex<()>` and swapped atomically
+- Individual `Atomic*` fields per shard for all health/inflight counters — no per-shard
+  mutex; `start_request()` and `record_request_outcome()` are fully lock-free
 
-That keeps the first implementation straightforward while still isolating shard state cleanly.
+Shard selection logic is extracted into pure free functions (`select_from_shards`,
+`active_shard_count`, `pick_probe_candidate`) that operate on shard slices and config
+parameters, with side effects (pool growth) handled by the pool wrapper.
+
 Background cleanup and health evaluation run via `BackgroundTaskManager` when a Tokio runtime is
 available. Synchronous test contexts skip spawning the sweep loop.
 
@@ -1699,30 +1707,37 @@ struct EndpointShardPool {
     client_factory: Arc<dyn HttpClientFactory>,
     /// Base HttpClient configuration for this pool.
     base_client_config: HttpClientConfig,
-    /// The current shards for this endpoint.
-    shards: RwLock<Vec<Arc<ClientShard>>>,
+    /// Lock-free shard list. Reads via ArcSwap::load() incur no
+    /// reader-counter contention. Writes build a new Vec and swap
+    /// the pointer atomically.
+    shards: ArcSwap<Vec<Arc<ClientShard>>>,
+    /// Serializes write operations (try_create_shard, health sweep).
+    /// Readers never acquire this lock.
+    write_lock: Mutex<()>,
     /// Deterministic shard ID generator for diagnostics and shard-local retry.
     next_shard_id: AtomicU64,
 }
 
 /// A single HttpClient with per-endpoint health/inflight tracking.
+/// All state is stored as individual atomics — no per-shard Mutex.
 struct ClientShard {
     id: u64,
     /// The HTTP client behind the azure_core abstraction.
     client: Arc<dyn HttpClient>,
+    /// Monotonic base used for all timestamp offsets on this shard.
+    creation_time: Instant,
     /// Current inflight request count on this shard.
     inflight: AtomicU32,
-    /// Shard health and request counters.
-    state: Mutex<ClientShardState>,
-}
-
-struct ClientShardState {
-    last_request_at: Instant,
-    last_success_at: Option<Instant>,
-    consecutive_failures: u32,
-    total_requests: u64,
-    total_failures: u64,
-    marked_for_eviction: bool,
+    /// Lock-free eviction flag.
+    marked_for_eviction: AtomicBool,
+    /// Nanos since creation_time of the most recent request start.
+    last_request_at_nanos: AtomicU64,
+    /// Nanos since creation_time of the most recent success, or TIMESTAMP_NONE.
+    last_success_at_nanos: AtomicU64,
+    consecutive_failures: AtomicU32,
+    total_requests: AtomicU64,
+    total_failures: AtomicU64,
+    total_cancellations: AtomicU64,
 }
 ```
 
@@ -1767,7 +1782,7 @@ Traffic spike scaling:
     Shard 3: [||]                 2/16  ← draining (no new requests)
     Shard 4: []                   0/16  ← draining, idle timer started
         let fallback = {
-            let shards = self.shards.read();
+            let shards = self.shards.load();
 
             // `select_shard` reads the current shard snapshot, filters out
             // eviction-marked and excluded shards, computes the active shard
@@ -1946,7 +1961,7 @@ impl ShardedHttpTransport {
             sleep(self.config.health_check_interval).await;
 
             for (endpoint, pool) in self.pools.read().iter() {
-                let shards = pool.shards.read().clone();
+                let shards = pool.shards.load();
                 let min = pool.config.min_clients_per_endpoint as usize;
 
                 // ── Phase 1: identify & remove unhealthy shards ──────────
@@ -2238,7 +2253,7 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 ### Step 6: HTTP/2 connection sharding
 
-1. **6.1 `ShardedHttpTransport`**: Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. The current implementation uses `Mutex`/`RwLock` guarded snapshots. Files: `driver/transport/sharded_transport.rs`.
+1. **6.1 `ShardedHttpTransport`**: Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. Shard membership uses `ArcSwap` for lock-free reads; per-shard state uses individual atomics. Files: `driver/transport/sharded_transport.rs`.
 2. **6.2 Shard selection algorithm**: `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. Files: `driver/transport/sharded_transport.rs`.
 3. **6.3 Connection-pool knobs**: Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. Files: `options/connection_pool.rs`.
 4. **6.4 Wire into `AdaptiveTransport`**: `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry. Files: `driver/transport/adaptive_transport.rs`.
@@ -2251,7 +2266,7 @@ minimum shard count.
 
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
-1. **7.1 Shard health checks**: Keep shard-local health state in `ClientShardState` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. Files: `driver/transport/sharded_transport.rs`.
+1. **7.1 Shard health checks**: Keep shard-local health state as atomic fields on `ClientShard` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. Files: `driver/transport/sharded_transport.rs`.
 2. **7.2 Background health sweep**: Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. Files: `driver/transport/sharded_transport.rs`.
 3. **7.3 Connectivity retry in transport**: Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover. Files: `driver/transport/transport_pipeline.rs`.
 4. **7.4 TCP keepalive defaults**: Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob. Files: `driver/transport/http_client_factory.rs`.
@@ -2694,14 +2709,16 @@ outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>
 
 **Already applied to spec structures** (see §4.6, §6.2, §6.3):
 
-| Structure              | Field        | Section | Hot-path?                                  | Notes                            |
-| ---------------------- | ------------ | ------- | ------------------------------------------ | -------------------------------- |
-| `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`   |
-| `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>` |
-| `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>`             |
-| `EndpointShardPool`    | `shards`     | §6.3    | Yes — every HTTP request selects a shard   | `Atomic<Vec<…>>`                 |
-| `EndpointStats`        | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
-| `ShardHealth`          | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field          |
+| Structure              | Field        | Section | Hot-path?                                  | Notes                                          |
+| ---------------------- | ------------ | ------- | ------------------------------------------ | ---------------------------------------------- |
+| `LocationStateStore`   | `account`    | §4.6    | Yes — every request reads routing state    | `Atomic<AccountEndpointState>`                 |
+| `LocationStateStore`   | `partitions` | §4.6    | Yes — every request checks circuit-breaker | `Atomic<PartitionEndpointState>`               |
+| `CosmosDriver`         | `transport`  | §5.5    | Yes — every operation reads the transport  | ✅ Migrated to `ArcSwap<CosmosTransport>`       |
+| `ShardedHttpTransport` | `pools`      | §6.2    | Yes — every HTTP request looks up the pool | `Atomic<HashMap<…>>` (planned)                 |
+| `EndpointShardPool`    | `shards`     | §6.3    | Yes — every HTTP request selects a shard   | ✅ Migrated to `ArcSwap<Vec<…>>`                |
+| `ClientShard`          | all counters | §6.3    | Yes — updated per HTTP request             | ✅ Migrated to individual `Atomic*` fields      |
+| `EndpointStats`        | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field                        |
+| `ShardHealth`          | all          | §6.3    | Yes — updated per HTTP request             | `CachePadded` per field                        |
 
 **Applies to (existing driver code)**:
 
