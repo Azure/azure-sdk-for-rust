@@ -7,7 +7,6 @@ use std::{
     ops::Range,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        mpsc::{self, TryRecvError},
         Arc,
     },
 };
@@ -21,7 +20,7 @@ use azure_core::{
     Error,
 };
 use bytes::{Bytes, BytesMut};
-use futures::TryStream;
+use futures::{channel::mpsc, future::Either, SinkExt, TryStream};
 
 use crate::models::http_ranges::ContentRange;
 
@@ -37,10 +36,6 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// Downloads are stored in-order. The returned stream will produce an item only when the next
 /// download in the sequence has been buffered, regardless of the state of any other downloads.
 /// This means completed ranged downloads may sit for a while while earlier ones complete.
-///
-/// A download that has completed buffering but has not yet returned its buffer in the resulting
-/// stream will still count when determining current running operations. This is so the stream can
-/// promise its buffered bytes do not exceed parallel * partition_size.
 pub(crate) async fn download<Behavior>(
     range: Option<Range<usize>>,
     parallel: NonZero<usize>,
@@ -84,46 +79,48 @@ where
         return Ok(Box::pin(initial_response.into_body()));
     }
 
-    let (tx, rx) = mpsc::channel();
-    // start with one task: init_download_task
-    let active_tasks_counter = Arc::new(AtomicUsize::new(1));
+    let (tx, mut rx) = mpsc::unbounded();
 
-    let tx_init = tx.clone();
+    // start with one initial download task
+    let mut total_tasks_counter = 1;
+    let active_tasks_counter = Arc::new(AtomicUsize::new(total_tasks_counter));
+
+    let mut tx_init = tx.clone();
     let counter_init = active_tasks_counter.clone();
-    let init_download_task = get_async_runtime().spawn(Box::pin(async move {
+    let mut task_bucket = vec![get_async_runtime().spawn(Box::pin(async move {
         let res = collect_into(
             initial_response.into_body(),
             BytesMut::with_capacity(partition_size),
         )
         .await
         .map(|bytes| (0usize, bytes));
-        let _ = tx_init.send(res);
         counter_init.fetch_sub(1, Ordering::Relaxed);
-    }));
+        let _send_res = tx_init.send(res).await;
+    }))];
 
-    let mut tasks = vec![init_download_task];
+    // use drain as ring buffer
     let mut drain = vec![None; max_buffers];
     let drain_len = drain.len(); // store this to dodge some borrowing issues in try_stream
-
     let mut drain_cursor = 0;
 
     let mut tx_opt = Some(tx);
     let stream = async_stream::try_stream! {
         while drain_cursor < total_chunks {
             // If room in the drain and not at max connections
-            while tasks.len() - drain_cursor < max_buffers && active_tasks_counter.load(Ordering::Relaxed) < parallel {
+            while total_tasks_counter - drain_cursor < max_buffers && active_tasks_counter.load(Ordering::Relaxed) < parallel {
                 match remaining_ranges.pop_front() {
                     Some(range) => {
-                        let i = tasks.len();
+                        let i = total_tasks_counter;
+                        total_tasks_counter += 1;
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
 
                         let c = client.clone();
-                        let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
-                        let active_tasks = active_tasks_counter.clone();
-                        tasks.push(get_async_runtime().spawn(Box::pin(async move {
+                        let mut t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
+                        let active_counter = active_tasks_counter.clone();
+                        task_bucket.push(get_async_runtime().spawn(Box::pin(async move {
                             let res = download_range_to_bytes(c, range).await.map(|bytes| (i, bytes));
-                            let _ = t.send(res);
-                            active_tasks.fetch_sub(1, Ordering::Relaxed);
+                            active_counter.fetch_sub(1, Ordering::Relaxed);
+                            let _send_res = t.send(res).await;
                         })));
                     }
                     None => {
@@ -144,23 +141,33 @@ where
                 break;
             }
 
-            match rx.try_recv() {
-                Ok(Ok((idx, bytes))) => drain[idx % drain_len] = Some(bytes),
-                Ok(Err(err)) => Err(err)?,
-                Err(TryRecvError::Empty) => get_async_runtime().yield_now().await,
-                // Unexpected channel close
-                Err(TryRecvError::Disconnected) => {
-                    // if we yielded all the chunks, no harm no foul
-                    if drain_cursor == total_chunks {
+            // max tasks are spawned and sequential ready bytes already returned
+            // this will not change until either:
+            //   1. a task sends a message through this channel
+            //   2. a task fails
+            // Race awaiting a message vs checking if tasks have completed successfully,
+            // until either message is received or a task failure is found
+            let mut message_fut = rx.recv();
+            let channel_message;
+            loop {
+                match future::select(message_fut, future::select_all(task_bucket)).await {
+                    Either::Left((message, task_select)) => {
+                        channel_message = message;
+                        task_bucket = task_select.into_inner();
                         break;
                     }
-                    // Did a task fail without notifying the channel?
-                    while !tasks.is_empty() {
-                        let result;
-                        (result, _, tasks) = future::select_all(tasks).await;
-                        result.map_err(|err| Error::with_message(ErrorKind::Other, format!("A download task failed: {err}")))?;
+                    Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
+                        completed_task.map_err(|e| Error::with_message(ErrorKind::Other, e.to_string()))?;
+                        task_bucket = remaining_tasks;
+                        message_fut = m_fut;
                     }
-                    // No detectable error but we didn't get everything we needed.
+                }
+            }
+            match channel_message {
+                Ok(Ok((idx, bytes))) => drain[idx % drain_len] = Some(bytes),
+                Ok(Err(err)) => Err(err)?,
+                // Unexpected channel close
+                Err(_) => {
                     Err(Error::with_message(ErrorKind::Other, format!("Download incomplete: received {drain_cursor} of {total_chunks} chunks.")))?;
                 }
             }
