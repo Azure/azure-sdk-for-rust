@@ -47,7 +47,7 @@ AI agents can assist with:
    - Generating unit tests using `#[cfg(test)]` modules
    - Creating integration tests with `#[recorded::test]` attributes (see `CONTRIBUTING.md` for details)
    - Generating documentation tests in `.rs` files (avoid `no_run` when tests can be run)
-   - Running `rustfmt` on all generated code to ensure proper formatting
+   - Running `cargo fmt` and `cargo clippy` on all modified crates (see [Linting and Formatting](#linting-and-formatting))
 
 2. **Code Review**
    - Identifying potential bugs or safety issues
@@ -221,18 +221,18 @@ See `CONTRIBUTING.md` for comprehensive testing guidance including debugging, Te
 
 ## Linting and Formatting
 
+**Always run `cargo fmt` and `cargo clippy` when any `.rs` file has been modified.** Wait until all code changes are complete before running these commands, since partial changes may not compile or lint correctly. This must be done before committing, opening a pull request, or presenting changes to the user. Fix all warnings and errors before proceeding.
+
 ```bash
-# Check for common issues
+# Format code
+cargo fmt -p <crate-name>
+
+# Lint code
 cargo clippy -p <crate-name>
 
 # Auto-fix some issues
 cargo clippy --fix -p <crate-name>
-
-# Format code
-cargo fmt -p <crate-name>
 ```
-
-Use `clippy` to validate that generated code does not contain lint errors.
 
 ## CI/CD Integration
 
