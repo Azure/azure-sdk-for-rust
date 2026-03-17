@@ -82,7 +82,7 @@ foreach ($jsonFile in $jsonFiles) {
     Write-Host "  stderr: $line"
   }
 
-  if ($exitCode -ne 0) {
+  if ($exitCode) {
     # cargo2junit exits non-zero when tests fail, not just on conversion errors.
     # Filter out the known "One or more tests failed." message and only treat
     # remaining stderr lines as actual conversion failures.
