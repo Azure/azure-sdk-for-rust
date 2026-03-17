@@ -62,3 +62,4 @@ reqwest_native_tls = [
   "reqwest/native-tls",
   "azure_core/reqwest_native_tls",
 ]
+fault_injection = []

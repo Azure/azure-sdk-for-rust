@@ -1,23 +1,30 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HTTP client wrapper that evaluates fault injection rules on each request.
+
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
-use super::FaultInjectionErrorType;
-use super::FaultOperationType;
-use crate::constants::{self, SubStatusCode};
+use super::{FaultInjectionErrorType, FaultOperationType, FAULT_INJECTION_OPERATION_HEADER};
+use crate::models::SubStatusCode;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
-use azure_core::http::{
-    headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
-};
+use azure_core::http::headers::{HeaderName, Headers};
+use azure_core::http::{AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+/// Header name constant for the fault injection operation header.
+const FAULT_INJECTION_OPERATION: HeaderName =
+    HeaderName::from_static(FAULT_INJECTION_OPERATION_HEADER);
+
+/// Header name constant for the sub-status header.
+const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
-pub struct FaultClient {
+pub struct FaultInjectingHttpClient {
     /// The inner HTTP client to which requests are delegated.
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
@@ -33,8 +40,8 @@ struct RuleState {
     hit_count: AtomicU32,
 }
 
-impl FaultClient {
-    /// Creates a new instance of the FaultClient.
+impl FaultInjectingHttpClient {
+    /// Creates a new instance of the FaultInjectingHttpClient.
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
         let rule_states = rules
             .into_iter()
@@ -91,7 +98,7 @@ impl FaultClient {
         if let Some(expected_op) = condition.operation_type {
             let request_op = request
                 .headers()
-                .get_optional_str(&constants::FAULT_INJECTION_OPERATION)
+                .get_optional_str(&FAULT_INJECTION_OPERATION)
                 .and_then(|s| s.parse::<FaultOperationType>().ok());
 
             match request_op {
@@ -217,7 +224,7 @@ impl FaultClient {
 
         let raw_response = sub_status.map(|ss| {
             let mut headers = Headers::new();
-            headers.insert(constants::SUB_STATUS, ss.to_string());
+            headers.insert(SUB_STATUS, ss.value().to_string());
             Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
         });
 
@@ -235,7 +242,7 @@ impl FaultClient {
 }
 
 #[async_trait]
-impl HttpClient for FaultClient {
+impl HttpClient for FaultInjectingHttpClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule and clone the result if needed
         let fault_result: Option<FaultInjectionResult> = {
@@ -277,7 +284,7 @@ impl HttpClient for FaultClient {
             let mut clean_request = request.clone();
             clean_request
                 .headers_mut()
-                .remove(constants::FAULT_INJECTION_OPERATION);
+                .remove(FAULT_INJECTION_OPERATION);
 
             // No fault injection or delay-only fault, proceed with actual request
             self.inner.execute_request(&clean_request).await
@@ -300,19 +307,23 @@ impl HttpClient for FaultClient {
 
 #[cfg(test)]
 mod tests {
-    use super::FaultClient;
-    use crate::constants::{SubStatusCode, SUB_STATUS};
+    use super::FaultInjectingHttpClient;
     use crate::fault_injection::{
         CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+        FAULT_INJECTION_OPERATION_HEADER,
     };
-    use crate::regions;
+    use crate::models::SubStatusCode;
+    use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
-    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Method, Request, Url};
+    use azure_core::http::headers::{HeaderName, Headers};
+    use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
+
+    const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
 
     /// A mock HTTP client that tracks call counts and returns success.
     #[derive(Debug)]
@@ -371,7 +382,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request without operation type header shouldn't match
         let request = create_test_request();
@@ -384,7 +395,7 @@ mod tests {
     #[tokio::test]
     async fn execute_request_empty_rules() {
         let mock_client = Arc::new(MockHttpClient::new());
-        let fault_client = FaultClient::new(mock_client.clone(), vec![]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![]);
 
         let request = create_test_request();
         let result = fault_client.execute_request(&request).await;
@@ -404,7 +415,7 @@ mod tests {
             .with_hit_limit(2)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // First two requests should hit the fault
@@ -431,7 +442,7 @@ mod tests {
             .with_start_time(Instant::now() + Duration::from_secs(60))
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // Request should pass through because start_time is in the future
@@ -449,7 +460,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -466,11 +477,63 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn execute_request_injects_too_many_requests() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::TooManyRequests)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
+
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let result = fault_client.execute_request(&request).await;
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(
+            err.http_status(),
+            Some(azure_core::http::StatusCode::TooManyRequests),
+            "expected TooManyRequests status code"
+        );
+    }
+
+    #[tokio::test]
+    async fn execute_request_response_delay_passes_through() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        // Create a rule with only delay, no error type - should pass through after delay
+        let error = FaultInjectionResultBuilder::new()
+            .with_delay(Duration::from_millis(200))
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
+
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        // Delay-only should pass through to actual request after delay
+        let start = std::time::Instant::now();
+        let result = fault_client.execute_request(&request).await;
+        let elapsed = start.elapsed();
+
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+
+        // Verify the delay was applied (at least 150ms to account for timing variance)
+        assert!(
+            elapsed >= Duration::from_millis(150),
+            "expected at least 150ms delay, got {:?}",
+            elapsed
+        );
+    }
+
+    #[tokio::test]
     async fn execute_request_region_matching() {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_region(regions::WEST_US)
+            .with_region(Region::WEST_US)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -479,13 +542,77 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "westus", should pass through
         let request = create_test_request();
         let result = fault_client.execute_request(&request).await;
 
         assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn execute_request_container_matching() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_container_id("my-container")
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::PartitionIsGone)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("container-rule", error)
+            .with_condition(condition)
+            .build();
+
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+
+        // Request URL doesn't contain "my-container", should pass through
+        let request = create_test_request();
+        let result = fault_client.execute_request(&request).await;
+
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn execute_request_with_hit_limit_on_rule() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        // Create a rule where the error is injected only 2 times via hit_limit on rule
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("hit-limited-rule", error)
+            .with_hit_limit(2)
+            .build();
+
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        // First request should hit the fault
+        let result1 = fault_client.execute_request(&request).await;
+        assert!(result1.is_err(), "first request should fail");
+        assert_eq!(
+            result1.unwrap_err().http_status(),
+            Some(azure_core::http::StatusCode::ServiceUnavailable)
+        );
+
+        // Second request should also hit the fault
+        let result2 = fault_client.execute_request(&request).await;
+        assert!(result2.is_err(), "second request should fail");
+        assert_eq!(
+            result2.unwrap_err().http_status(),
+            Some(azure_core::http::StatusCode::ServiceUnavailable)
+        );
+
+        // Third request should pass through (times limit reached)
+        let result3 = fault_client.execute_request(&request).await;
+        assert!(
+            result3.is_ok(),
+            "third request should succeed after times limit"
+        );
         assert_eq!(mock_client.call_count(), 1);
     }
 
@@ -522,7 +649,7 @@ mod tests {
                 .build();
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
-            let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+            let fault_client = FaultInjectingHttpClient::new(mock_client, vec![Arc::new(rule)]);
             let request = create_test_request();
 
             let result = fault_client.execute_request(&request).await;
@@ -542,7 +669,7 @@ mod tests {
                                 panic!("{:?} should have x-ms-substatus header", error_type)
                             });
                         assert_eq!(
-                            SubStatusCode::from(actual),
+                            SubStatusCode::new(actual),
                             expected,
                             "{:?}: substatus mismatch",
                             error_type
@@ -571,7 +698,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -589,7 +716,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -618,7 +745,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let response = fault_client.execute_request(&request).await;
@@ -627,6 +754,36 @@ mod tests {
         let raw = response.unwrap();
         assert_eq!(raw.status(), azure_core::http::StatusCode::Ok);
         // Request should NOT be forwarded to inner client
+        assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn execute_request_with_matching_operation_header() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::ReadItem)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("op-match-rule", error)
+            .with_condition(condition)
+            .build();
+
+        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+
+        let mut request = create_test_request();
+        request.headers_mut().insert(
+            HeaderName::from_static(FAULT_INJECTION_OPERATION_HEADER),
+            "ReadItem",
+        );
+
+        let result = fault_client.execute_request(&request).await;
+        assert!(
+            result.is_err(),
+            "should inject fault for matching operation"
+        );
         assert_eq!(mock_client.call_count(), 0);
     }
 }
