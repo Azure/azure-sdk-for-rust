@@ -5,38 +5,97 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\..\eng\common\scripts\common.ps1"
 
-$IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
-if($IsAzDo) {
-    $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
+# Returns $true if the emulator is no longer reachable via HTTP.
+function Test-EmulatorDown {
+    try {
+        Invoke-WebRequest -Uri "https://localhost:8081/" -TimeoutSec 1 -SkipCertificateCheck -UseBasicParsing -ErrorAction Stop | Out-Null
+        # Got an HTTP response: emulator is still up.
+        return $false
+    } catch {
+        $response = $_.Exception.Response
+        if ($null -ne $response) {
+            # An HTTP error response means the emulator process is still running.
+            return $false
+        }
+        # No HTTP response at all: connection refused / timeout — emulator is down.
+        return $true
+    }
 }
 
+$ShutdownTimeout = 30
 
-# if ($IsWindows) {
-#     $TempEmulatorPath = [System.IO.Path]::Combine($env:TEMP, 'AzureCosmosEmulator', 'Azure Cosmos DB Emulator', 'Microsoft.Azure.Cosmos.Emulator.exe')
-#     if ($AzDoEmulatorPath -and (Test-Path $AzDoEmulatorPath)) {
-#         Write-Host "Detected Azure DevOps Agent environment with Cosmos DB Emulator. Stopping Cosmos DB Emulator."
-#         & "$AzDoEmulatorPath" /shutdown
-#     } elseif (Test-Path $TempEmulatorPath) {
-#         Write-Host "Found Cosmos DB Emulator at $TempEmulatorPath. Stopping Cosmos DB Emulator."
-#         & "$TempEmulatorPath" /shutdown
-#     } else {
-#         Write-Host "Unable to confirm Cosmos DB Emulator location, skipping cleanup."
-#     }
-# } elseif (Get-Command docker -ErrorAction SilentlyContinue) {
-#     Write-Host "Docker detected. Stopping Cosmos DB Emulator container."
+if ($IsWindows) {
+    $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
+    if ($null -eq $EmulatorPath) {
+        Write-Host "Unable to confirm Cosmos DB Emulator location, skipping shutdown."
+    } else {
+        Write-Host "Shutting down Cosmos DB Emulator at '$EmulatorPath'."
+        & $EmulatorPath /shutdown
 
-#     $containerName = "cosmosdb-emulator-test"
+        Write-Host "Waiting up to ${ShutdownTimeout}s for Cosmos DB Emulator to shut down..."
+        $deadline = [DateTimeOffset]::Now.AddSeconds($ShutdownTimeout)
+        $emulatorDown = $false
+        while ([DateTimeOffset]::Now -lt $deadline) {
+            # Check via /getstatus: exit code 3 means stopped.
+            $statusProcess = Start-Process $EmulatorPath -ArgumentList "/getstatus" -PassThru -Wait
+            if ($statusProcess.ExitCode -eq 3) {
+                Write-Host "Cosmos DB Emulator has stopped (getstatus)."
+                $emulatorDown = $true
+                break
+            }
 
-#     $containerStatus = docker ps -a --filter "name=$containerName" --format "{{.Status}}"
-#     if ($containerStatus) {
-#         Write-Host "Stopping and removing container $containerName..."
-#         Invoke-LoggedCommand "docker rm -f $containerName"
-#     }
+            # Also check via HTTP: a connection failure means it is down.
+            if (Test-EmulatorDown) {
+                Write-Host "Cosmos DB Emulator has stopped (HTTP probe)."
+                $emulatorDown = $true
+                break
+            }
 
-#     Write-Host "Cosmos DB Emulator container stopped and removed."
-# } else {
-#     Write-Host "Docker is not available. No Cosmos DB Emulator container to clean up."
-# }
+            Start-Sleep -Seconds 2
+        }
+
+        if (-not $emulatorDown) {
+            Write-Warning "Cosmos DB Emulator did not shut down within ${ShutdownTimeout} seconds."
+        }
+    }
+} elseif (Get-Command docker -ErrorAction SilentlyContinue) {
+    $containerName = "cosmosdb-emulator-test"
+    $containerStatus = docker ps -a --filter "name=$containerName" --format "{{.Status}}"
+    if (-not $containerStatus) {
+        Write-Host "No Cosmos DB Emulator container found, skipping cleanup."
+    } else {
+        Write-Host "Stopping and removing Cosmos DB Emulator container '$containerName'."
+        Invoke-LoggedCommand "docker rm -f $containerName"
+
+        Write-Host "Waiting up to ${ShutdownTimeout}s for Cosmos DB Emulator to shut down..."
+        $deadline = [DateTimeOffset]::Now.AddSeconds($ShutdownTimeout)
+        $emulatorDown = $false
+        while ([DateTimeOffset]::Now -lt $deadline) {
+            # Check whether the container is still present.
+            $remaining = docker ps -a --filter "name=$containerName" --format "{{.Names}}"
+            if (-not $remaining) {
+                Write-Host "Cosmos DB Emulator container has been removed."
+                $emulatorDown = $true
+                break
+            }
+
+            # Also check via HTTP: a connection failure means it is down.
+            if (Test-EmulatorDown) {
+                Write-Host "Cosmos DB Emulator has stopped (HTTP probe)."
+                $emulatorDown = $true
+                break
+            }
+
+            Start-Sleep -Seconds 2
+        }
+
+        if (-not $emulatorDown) {
+            Write-Warning "Cosmos DB Emulator did not shut down within ${ShutdownTimeout} seconds."
+        }
+    }
+} else {
+    Write-Host "No Cosmos DB Emulator found to clean up."
+}
 
 # Clear env vars set by Test-Setup.ps1 so that subsequent packages in the same
 # pipeline run get a clean environment and are not skipped by their own setup.

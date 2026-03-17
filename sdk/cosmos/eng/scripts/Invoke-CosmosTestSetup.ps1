@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cSpell:ignore HOMEDIRECTORY noui noexplorer disableratelimiting enableaadauthentication partitioncount LASTEXITCODE TEAMPROJECTID
+# cSpell:ignore noui noexplorer disableratelimiting enableaadauthentication partitioncount LASTEXITCODE TEAMPROJECTID
 
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\..\eng\common\scripts\common.ps1"
@@ -21,9 +21,7 @@ if ($env:AZURE_COSMOS_CONNECTION_STRING) {
 }
 
 $IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
-if($IsAzDo) {
-    $AzDoEmulatorPath = Join-Path $env:AGENT_HOMEDIRECTORY "..\..\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
-
+if ($IsAzDo) {
     # We only run Cosmos DB tests on Windows agents in Azure DevOps
     if ($IsWindows) {
         $env:AZURE_COSMOS_TEST_MODE = "required"
@@ -34,17 +32,10 @@ if($IsAzDo) {
 
 
 if ($IsWindows) {
-    $EmulatorPath = $null
-
     # Check for emulator in known locations
-    $TempEmulatorPath = [System.IO.Path]::Combine($env:TEMP, 'AzureCosmosEmulator', 'Azure Cosmos DB Emulator', 'Microsoft.Azure.Cosmos.Emulator.exe')
-    Write-Host "Temp Emulator Path: $TempEmulatorPath"
-    if ($AzDoEmulatorPath -and (Test-Path $AzDoEmulatorPath)) {
-        Write-Host "Detected Azure DevOps Agent environment with Cosmos DB Emulator. Skipping Cosmos DB Emulator install."
-        $EmulatorPath = $AzDoEmulatorPath
-    } elseif (Test-Path $TempEmulatorPath) {
-        Write-Host "Found Cosmos DB Emulator at $TempEmulatorPath. Skipping Cosmos DB Emulator install."
-        $EmulatorPath = $TempEmulatorPath
+    $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
+    if ($null -ne $EmulatorPath) {
+        Write-Host "Found Cosmos DB Emulator at '$EmulatorPath'. Skipping Cosmos DB Emulator install."
     } else {
         LogGroupStart "Installing Cosmos DB Emulator"
         & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
