@@ -663,9 +663,8 @@ impl ClientRetryPolicy {
     ///
     /// # Summary
     /// First checks the [`RequestSentStatus`] to handle transport-level errors:
-    /// - `NotSent` (includes `Io`, `Credential`, `DataConversion`): retries reads
-    ///   and writes (request never reached server).
-    /// - `Sent`/`Unknown`: only retries reads (write may have been applied).
+    /// - `NotSent`: retries reads and writes (request never reached server).
+    /// - `Sent`/`Unknown` with transport errors (`Timeout`, `Io`): retries reads only.
     ///
     /// For HTTP-level errors, delegates to `should_retry_on_http_status` for
     /// scenario-specific retry logic (403.3, 404.1022, 503, 500, 410), then falls
@@ -1556,29 +1555,22 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn response_timeout_retries_write_as_connection_failure() {
+    async fn response_timeout_does_not_retry_write() {
         let mut policy = create_test_policy();
         let mut request = create_write_request();
         policy.before_send_request(&mut request).await;
 
-        // Io errors (including timeouts) are treated as connection failures
-        // (request not sent) because azure_core 0.32 cannot distinguish
-        // connection errors from response timeouts. This is safe for Cosmos
-        // because writes are either idempotent or detect duplicates (409).
         let err = create_timeout_error("response timeout");
         let result = policy.should_retry(&Err(err)).await;
-        assert!(
-            result.is_retry(),
-            "Io errors should retry write requests as connection failures"
-        );
         assert_eq!(
-            policy.connection_retry_count, 1,
-            "connection_retry_count should increment on Io error for writes"
+            result,
+            RetryResult::DoNotRetry,
+            "response timeout should NOT retry write requests"
         );
     }
 
     #[tokio::test]
-    async fn response_timeout_read_retries_as_connection_failure() {
+    async fn response_timeout_read_uses_service_unavailable_counter() {
         let mut policy = create_test_policy();
         let mut request = create_test_request();
         policy.before_send_request(&mut request).await;
@@ -1587,46 +1579,37 @@ mod tests {
         let result = policy.should_retry(&Err(err)).await;
         assert!(result.is_retry());
         assert_eq!(
-            policy.connection_retry_count, 1,
-            "connection_retry_count should increment on Io error for reads"
+            policy.service_unavailable_retry_count, 1,
+            "service_unavailable_retry_count should increment on response timeout for reads"
         );
     }
 
     #[tokio::test]
-    async fn io_error_retries_read_as_connection_failure() {
+    async fn unknown_io_error_retries_read() {
         let mut policy = create_test_policy();
         let mut request = create_test_request();
         policy.before_send_request(&mut request).await;
 
-        let err = create_io_error("some IO error");
+        let err = create_io_error("some unrelated IO error");
         let result = policy.should_retry(&Err(err)).await;
         assert!(
             result.is_retry(),
-            "IO errors should retry read requests as connection failures"
-        );
-        assert_eq!(
-            policy.connection_retry_count, 1,
-            "connection_retry_count should increment on Io error for reads"
+            "unknown IO errors should retry read requests"
         );
     }
 
     #[tokio::test]
-    async fn io_error_retries_write_as_connection_failure() {
+    async fn unknown_io_error_does_not_retry_write() {
         let mut policy = create_test_policy();
         let mut request = create_write_request();
         policy.before_send_request(&mut request).await;
 
-        // Io errors are treated as connection failures (request not sent)
-        // and retried for both reads and writes.
-        let err = create_io_error("some IO error");
+        let err = create_io_error("some unrelated IO error");
         let result = policy.should_retry(&Err(err)).await;
-        assert!(
-            result.is_retry(),
-            "IO errors should retry write requests as connection failures"
-        );
         assert_eq!(
-            policy.connection_retry_count, 1,
-            "connection_retry_count should increment on Io error for writes"
+            result,
+            RetryResult::DoNotRetry,
+            "unknown IO errors should not retry write requests"
         );
     }
 
