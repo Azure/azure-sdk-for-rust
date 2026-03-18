@@ -40,6 +40,11 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// Downloads are stored in-order. The returned stream will produce an item only when the next
 /// download in the sequence has been buffered, regardless of the state of any other downloads.
 /// This means completed ranged downloads may sit for a while while earlier ones complete.
+///
+/// This implementation makes an initial download request to gauge the actual size of the remote
+/// resource while not wasting a roundtrip just for a HEAD request. It then determines the
+/// correct set of additional ranges to download and queues them up. The returned `Stream`
+/// executes these downloads, maintaining limits for parallel downloads and buffer count.
 pub(crate) async fn download<Behavior>(
     range: Option<Range<usize>>,
     parallel: NonZero<usize>,
@@ -83,6 +88,7 @@ where
         return Ok(Box::pin(initial_response.into_body()));
     }
 
+    // channel for download workers to send results to their coordinator.
     let (tx, mut rx) = mpsc::unbounded();
 
     // start with one initial download task at index 0
