@@ -37,6 +37,11 @@ impl DriverTestClient {
     /// - The environment variable is not set and test mode is not "required"
     /// - The test mode is "skipped"
     pub async fn from_env() -> Result<Option<Self>, Box<dyn Error>> {
+        // We don't care about failures, they just mean the subscriber is already set up by another test
+        let _ = tracing_subscriber::fmt::fmt()
+            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+            .try_init();
+
         let test_mode = get_test_mode();
 
         if test_mode == CosmosTestMode::Skipped {
@@ -65,7 +70,7 @@ impl DriverTestClient {
         // Build runtime with emulator certificate handling
         let mut connection_pool_builder = ConnectionPoolOptions::builder();
 
-        if connection_string.to_lowercase() == EMULATOR_CONNECTION_STRING {
+        if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
             connection_pool_builder = connection_pool_builder.with_emulator_server_cert_validation(
                 EmulatorServerCertValidation::DangerousDisabled,
             );
@@ -244,7 +249,6 @@ impl DriverTestRunContext {
     pub async fn create_item(
         &self,
         container: &ContainerReference,
-        item_id: &str,
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
@@ -255,8 +259,8 @@ impl DriverTestRunContext {
             .await?;
 
         let pk = partition_key.into();
-        let item = ItemReference::from_name(container, pk, item_id.to_owned());
-        let operation = CosmosOperation::create_item(item).with_body(body.to_vec());
+        let operation =
+            CosmosOperation::create_item(container.clone(), pk).with_body(body.to_vec());
 
         let result = driver
             .execute_operation(operation, OperationOptions::new())

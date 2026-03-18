@@ -185,9 +185,12 @@ impl ContainerCache {
             }
             Err(error) => {
                 cache.invalidate(&key).await;
+                // The error is behind an Arc (from the cache) so we can't move
+                // it out. Reconstruct with the full source chain preserved as
+                // text so diagnostics remain actionable.
                 Err(azure_core::Error::with_message(
                     error.kind().clone(),
-                    error.to_string(),
+                    crate::driver::error_chain_summary(error),
                 ))
             }
         }

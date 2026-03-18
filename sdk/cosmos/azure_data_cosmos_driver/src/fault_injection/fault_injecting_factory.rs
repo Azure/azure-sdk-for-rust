@@ -103,7 +103,10 @@ mod tests {
 
         let pool = ConnectionPoolOptions::default();
         let factory = FaultInjectingHttpClientFactory::new(inner, vec![rule]);
-        let client = factory.build(&pool, HttpClientConfig::metadata(&pool));
+        let client = factory.build(
+            &pool,
+            HttpClientConfig::metadata(&pool, crate::diagnostics::TransportHttpVersion::Http11),
+        );
         assert!(
             client.is_ok(),
             "factory should create a client successfully"

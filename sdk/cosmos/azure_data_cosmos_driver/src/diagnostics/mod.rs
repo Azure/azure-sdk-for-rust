@@ -22,6 +22,7 @@ mod diagnostics_context;
 
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
-    DiagnosticsContext, ExecutionContext, PipelineType, RequestDiagnostics, RequestEvent,
-    RequestEventType, RequestHandle, RequestSentStatus, TransportKind, TransportSecurity,
+    DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
+    RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
+    TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };

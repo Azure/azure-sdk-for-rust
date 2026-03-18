@@ -97,6 +97,7 @@ async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
 base64 = "0.22"
+arc-swap = "1.7"
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
@@ -113,6 +114,7 @@ flate2 = "1.1.9"
 futures = "0.3"
 getrandom = { version = "0.4" }
 gloo-timers = { version = "0.3" }
+h2 = "0.4.13"
 hdrhistogram = "7.5"
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }

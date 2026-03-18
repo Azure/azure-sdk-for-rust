@@ -150,6 +150,7 @@
     "uksouth",
     "ukwest",
     "uncontended",
+    "unsharded",
     "upsert",
     "upserted",
     "upserting",
