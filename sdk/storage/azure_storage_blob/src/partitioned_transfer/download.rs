@@ -13,14 +13,18 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
-    async_runtime::get_async_runtime,
+    async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
     http::{response::PinnedStream, AsyncRawResponse, StatusCode},
     stream::BytesStream,
     Error,
 };
 use bytes::{Bytes, BytesMut};
-use futures::{channel::mpsc, future::Either, SinkExt, TryStream};
+use futures::{
+    channel::mpsc::{self, UnboundedSender},
+    future::Either,
+    SinkExt, TryStream,
+};
 
 use crate::models::http_ranges::ContentRange;
 
@@ -84,19 +88,12 @@ where
     // start with one initial download task
     let mut total_tasks_counter = 1;
     let active_tasks_counter = Arc::new(AtomicUsize::new(total_tasks_counter));
-
-    let mut tx_init = tx.clone();
-    let counter_init = active_tasks_counter.clone();
-    let mut task_bucket = vec![get_async_runtime().spawn(Box::pin(async move {
-        let res = collect_into(
-            initial_response.into_body(),
-            BytesMut::with_capacity(partition_size),
-        )
-        .await
-        .map(|bytes| (0usize, bytes));
-        counter_init.fetch_sub(1, Ordering::Relaxed);
-        let _send_res = tx_init.send(res).await;
-    }))];
+    let mut task_bucket = vec![start_initial_download_task(
+        initial_response,
+        tx.clone(),
+        active_tasks_counter.clone(),
+        partition_size,
+    )];
 
     // use drain as ring buffer
     let mut drain = vec![None; max_buffers];
@@ -194,6 +191,24 @@ async fn collect_into<S: TryStream<Ok = Bytes> + Unpin>(
         destination.extend_from_slice(&bytes);
     }
     Ok(destination.freeze())
+}
+
+fn start_initial_download_task(
+    initial_response: AsyncRawResponse,
+    mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
+    active_tasks_counter: Arc<AtomicUsize>,
+    partition_size: usize,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = collect_into(
+            initial_response.into_body(),
+            BytesMut::with_capacity(partition_size),
+        )
+        .await
+        .map(|bytes| (0usize, bytes));
+        active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
+        let _send_res = sender.send(res).await;
+    }))
 }
 
 /// Performs a `transfer_range()` call with the given range. If this results in a
