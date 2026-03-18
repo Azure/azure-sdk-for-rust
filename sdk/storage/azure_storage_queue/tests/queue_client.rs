@@ -406,7 +406,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
             "Expected time_next_visible to be set on the sent message"
         );
 
-        // Sub-case: XML-invalid control characters are rejected with 400 Bad Request.
+        // Invalid Control Character Scenario
         let err = queue_client
             .send_message(
                 QueueMessage {
@@ -425,7 +425,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
             err.http_status()
         );
 
-        // Sub-case: whitespace content round-trips correctly.
+        // Whitespace Content Scenario
         queue_client.clear(None).await?;
         let whitespace_text = " mess\t age1\n";
         queue_client
@@ -564,7 +564,7 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             );
         }
 
-        // Sub-case: message_time_to_live = -1 means "never expires" (service sets expiry to year 9999).
+        // Infinite TTL Scenario
         let infinite_ttl_options = Some(QueueClientSendMessageOptions {
             message_time_to_live: Some(-1),
             ..Default::default()
@@ -594,7 +594,7 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             "Expected expiration year to be 9999 for a message with infinite TTL, got {expiry_year}"
         );
 
-        // Sub-case: a large finite time-to-live value is accepted and expiration_time reflects it.
+        // Large Finite TTL Scenario
         let large_ttl_response = queue_client
             .send_message(
                 QueueMessage {
@@ -893,7 +893,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 
         setup_test_queue_with_messages(&queue_client, &test_messages).await?;
 
-        // Sub-case: calling peek_messages with no options returns exactly 1 message (service default).
+        // Default No Options Scenario
         let default_peek = queue_client.peek_messages(None).await?;
         assert_successful_response(&default_peek);
         let default_peeked = default_peek
@@ -1095,8 +1095,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             "Expected dequeue_count == 1 on first receive after update"
         );
 
-        // Sub-case: receiving a message, updating it using the received pop receipt, then
-        // receiving it again increments dequeue_count to 2.
+        // Dequeue Count Increment Scenario
         let recv_id = messages[0].message_id.clone().expect("Expected message_id");
         let recv_receipt = messages[0]
             .pop_receipt
@@ -1118,7 +1117,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
         queue_client.clear(None).await?;
 
-        // Sub-case: unicode content round-trips correctly through an update.
+        // Unicode Content Update Scenario
         let unicode_text = "啊齄丂狛狜";
         let send_response = queue_client
             .send_message(
@@ -1162,7 +1161,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             unicode_messages[0].message_text
         );
 
-        // Sub-case: unicode content round-trips correctly through an update.
+        // Unicode Content Update Scenario
         let unicode_text = "啊齄丂狛狜";
         let send_response = queue_client
             .send_message(
@@ -1262,7 +1261,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             "Expected queue to be empty after deleting the only message"
         );
 
-        // Sub-case: deleting one message from a multi-message queue leaves the others intact.
+        // Partial Queue Delete Scenario
         for msg in ["msg-a", "msg-b", "msg-c"] {
             queue_client
                 .send_message(
