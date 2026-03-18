@@ -243,28 +243,6 @@ where
     }
 }
 
-/// First attempts to get the length from the Content-Range header. Content range will give the
-/// most accurate reading for the content length, unaffected by an encoding such as structured
-/// message. It is highly unlikely content-range will be absent.
-/// Uses the content-length header if content-range is unavailable.
-fn get_body_len(response: &AsyncRawResponse) -> AzureResult<Option<usize>> {
-    if let Some(content_range) = response
-        .headers()
-        .get_optional_as::<ContentRange, _>(&"content-range".into())?
-    {
-        if let Some(range) = content_range.range {
-            return Ok(Some(range.1 - range.0));
-        }
-    }
-    if let Some(content_length) = response
-        .headers()
-        .get_optional_as::<usize, _>(&"content-length".into())?
-    {
-        return Ok(Some(content_length));
-    }
-    Ok(None)
-}
-
 struct InitialResponseAnalysis {
     overall_download_range: Range<usize>,
     initial_download_range: Range<usize>,
