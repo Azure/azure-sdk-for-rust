@@ -183,9 +183,15 @@ async fn download_range_to_bytes(
     client: Arc<impl PartitionedDownloadBehavior>,
     range: Range<usize>,
 ) -> AzureResult<Bytes> {
-    let dst = BytesMut::with_capacity(range.len());
-    let response = client.transfer_range(Some(range)).await?;
-    collect_into(response.into_body(), dst).await
+    let mut dst = vec![0u8; range.len()];
+    let count = client
+        .transfer_range(Some(range))
+        .await?
+        .into_body()
+        .collect_into(&mut dst)
+        .await?;
+    dst.truncate(count);
+    Ok(dst.into())
 }
 
 async fn collect_into<S: TryStream<Ok = Bytes> + Unpin>(
