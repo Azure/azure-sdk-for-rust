@@ -10,6 +10,25 @@ mod seed;
 mod setup;
 mod stats;
 
+/// Creates an AAD credential using WorkloadIdentity (AKS) with fallback to ManagedIdentity (VMs).
+fn create_aad_credential(
+) -> Result<std::sync::Arc<dyn azure_core::credentials::TokenCredential>, Box<dyn std::error::Error>>
+{
+    azure_identity::WorkloadIdentityCredential::new(None)
+        .map(|c| c as std::sync::Arc<dyn azure_core::credentials::TokenCredential>)
+        .or_else(|_| {
+            azure_identity::ManagedIdentityCredential::new(None)
+                .map(|c| c as std::sync::Arc<dyn azure_core::credentials::TokenCredential>)
+        })
+        .map_err(|e| {
+            format!(
+                "Failed to create AAD credential. \
+                 Neither WorkloadIdentityCredential nor ManagedIdentityCredential are available: {e}"
+            )
+            .into()
+        })
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::sync::Arc;
@@ -47,13 +66,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let preferred_region: azure_data_cosmos::regions::RegionName = config
-        .preferred_regions
-        .first()
-        .cloned()
-        .unwrap_or_else(|| "East US".to_string())
-        .into();
-    let strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
+    let application_region: azure_data_cosmos::regions::RegionName =
+        config.application_region.clone().into();
+    let strategy = RoutingStrategy::ProximityTo(application_region.clone());
 
     let builder = CosmosClientBuilder::new();
 
@@ -68,8 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
-            let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-                azure_identity::ManagedIdentityCredential::new(None)?;
+            let credential = create_aad_credential()?;
             let account = CosmosAccountReference::with_credential(endpoint, credential);
             builder.build(account, strategy).await?
         }
@@ -126,7 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
         let results_builder = CosmosClientBuilder::new();
-        let results_strategy = RoutingStrategy::ProximityTo(preferred_region.clone());
+        let results_strategy = RoutingStrategy::ProximityTo(application_region.clone());
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
@@ -139,8 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 results_builder.build(account, results_strategy).await?
             }
             AuthMethod::Aad => {
-                let credential: Arc<dyn azure_core::credentials::TokenCredential> =
-                    azure_identity::ManagedIdentityCredential::new(None)?;
+                let credential = create_aad_credential()?;
                 let account = CosmosAccountReference::with_credential(results_ep, credential);
                 results_builder.build(account, results_strategy).await?
             }
@@ -186,6 +199,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or_else(|| "unknown".to_string())
     });
 
+    // Resolve hostname for machine identification in results
+    let hostname = hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "unknown".to_string());
+
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
     let stats = Arc::new(Stats::new(&op_names));
@@ -199,6 +217,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         results_container,
         workload_id: config.workload_id,
         commit_sha,
+        hostname,
     })
     .await;
 

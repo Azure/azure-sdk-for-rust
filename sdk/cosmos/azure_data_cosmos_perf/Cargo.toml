@@ -17,6 +17,7 @@ azure_identity = { version = "0.32.0" }
 clap = { workspace = true, features = ["derive", "env"] }
 futures.workspace = true
 hdrhistogram.workspace = true
+hostname = "0.4"
 rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true

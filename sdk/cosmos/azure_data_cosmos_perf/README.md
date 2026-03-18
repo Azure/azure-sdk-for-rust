@@ -61,7 +61,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--container` | `perfcontainer` | Container name (partition key path must be `/partition_key`) |
 | `--auth` | *required* | Authentication method: `key` or `aad` |
 | `--key` | — | Account key (or set `AZURE_COSMOS_KEY` env var) |
-| `--preferred-regions` | — | Comma-separated preferred regions (e.g., `"West US,East US"`) |
+| `--application-region` | — | Azure region where the application is running (e.g., `"East US 2"`) |
 | `--excluded-regions` | — | Comma-separated excluded regions |
 | `--exclude-regions-for` | `both` | Scope for excluded regions: `reads`, `writes`, or `both` |
 | `--concurrency` | `50` | Number of concurrent operations |
@@ -94,14 +94,14 @@ cargo run -p azure_data_cosmos_perf -- \
   --concurrency 100 --duration 60 --report-interval 10
 ```
 
-Run all operations with preferred regions and custom database:
+Run all operations with application region and custom database:
 
 ```bash
 cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://myaccount.documents.azure.com:443/ \
   --database mydb --container mycontainer \
   --auth aad \
-  --preferred-regions "West US,East US" \
+  --application-region "East US 2" \
   --concurrency 200 --seed-count 5000
 ```
 
