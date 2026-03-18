@@ -62,7 +62,7 @@ where
         return Ok(raw_stream);
     }
 
-    let initial_response = download_handle_invalid_range(
+    let initial_response = download_with_empty_blob_safety(
         client.as_ref(),
         max_download_range.start
             ..min(
@@ -224,7 +224,10 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
 /// Performs a `transfer_range()` call with the given range. If this results in a
 /// RequestedRangeNotSatisfiable error, and if the requested range begins at the
 /// start of the blob, retries the operation without a range argument.
-async fn download_handle_invalid_range<Behavior>(
+/// This handles the service's edge case where a ranged get on an empty blob
+/// always fails. Retrying with an empty range gives the correct empty blob data
+/// as well as all the header information we expect.
+async fn download_with_empty_blob_safety<Behavior>(
     client: &Behavior,
     range: Range<usize>,
 ) -> AzureResult<AsyncRawResponse>
