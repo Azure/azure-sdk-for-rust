@@ -617,6 +617,8 @@ impl CosmosDriverRuntimeBuilder {
     }
 }
 
+static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -645,4 +647,3 @@ mod tests {
         assert!(runtime.driver_registry.read().unwrap().is_empty());
     }
 }
-static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);

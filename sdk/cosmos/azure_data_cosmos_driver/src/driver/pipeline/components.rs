@@ -390,6 +390,7 @@ impl std::fmt::Debug for TransportOutcome {
             TransportOutcome::TransportError {
                 error,
                 request_sent,
+                ..
             } => f
                 .debug_struct("TransportError")
                 .field("error", error)

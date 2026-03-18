@@ -290,7 +290,7 @@ pub(crate) async fn execute_transport_pipeline(
         )
         .await;
         if !attempt_span.is_disabled() {
-            attempt_span.record("outcome", format!("{}", result.outcome));
+            attempt_span.record("outcome", format!("{}", result.result.outcome));
         }
         tracing::debug!("transport request complete");
 
