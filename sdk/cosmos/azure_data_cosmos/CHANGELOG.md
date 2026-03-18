@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `FeedRange` type with `ContainerClient::read_feed_ranges()` and `ContainerClient::feed_range_from_partition_key()` for partition-aware workload distribution, including artificial range splitting, containment/overlap checks, and cross-SDK-compatible serialization.
+
 ### Breaking Changes
 
 - Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RoutingStrategy` parameter on `build()`. Use `RoutingStrategy::ProximityTo(region)` to specify the application region. Also removed `CosmosClientOptions::with_application_region()`. ([#3889](https://github.com/Azure/azure-sdk-for-rust/pull/3889))

@@ -344,6 +344,30 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
+/// Options to be passed to [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges).
+#[derive(Clone, Default, Debug)]
+#[non_exhaustive]
+pub struct ReadFeedRangesOptions {
+    num_of_ranges: Option<usize>,
+}
+
+impl ReadFeedRangesOptions {
+    /// Divides the EPK space into the specified number of evenly-sized artificial ranges
+    /// instead of returning physical partition boundaries.
+    ///
+    /// This is useful when you have more workers than physical partitions and want
+    /// finer-grained parallelism. When not set, one [`FeedRange`](crate::FeedRange)
+    /// is returned per physical partition.
+    pub fn with_num_of_ranges(mut self, n: usize) -> Self {
+        self.num_of_ranges = Some(n);
+        self
+    }
+
+    pub(crate) fn num_of_ranges(&self) -> Option<usize> {
+        self.num_of_ranges
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -3,8 +3,9 @@
 
 use crate::{
     clients::OffersClient,
+    feed_range::FeedRange,
     models::{ContainerProperties, CosmosResponse, ThroughputProperties},
-    options::{BatchOptions, QueryOptions, ReadContainerOptions},
+    options::{BatchOptions, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
@@ -743,5 +744,148 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+    }
+
+    /// Gets the feed ranges for this container.
+    ///
+    /// Each [`FeedRange`] represents a contiguous range of the container's partition key space.
+    /// By default, each returned feed range corresponds to one physical partition. When
+    /// [`ReadFeedRangesOptions::with_num_of_ranges()`] is specified, the full partition key space
+    /// is evenly divided into that many artificial ranges — useful for parallelism when you
+    /// have more workers than physical partitions.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// // Get feed ranges aligned to physical partitions:
+    /// let ranges = container_client.read_feed_ranges(None).await?;
+    /// println!("Container has {} physical partitions", ranges.len());
+    ///
+    /// // Get 8 artificial feed ranges for fine-grained parallelism:
+    /// use azure_data_cosmos::ReadFeedRangesOptions;
+    /// let options = ReadFeedRangesOptions::default().with_num_of_ranges(8);
+    /// let ranges = container_client.read_feed_ranges(Some(options)).await?;
+    /// assert_eq!(ranges.len(), 8);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub async fn read_feed_ranges(
+        &self,
+        options: Option<ReadFeedRangesOptions>,
+    ) -> azure_core::Result<Vec<FeedRange>> {
+        let options = options.unwrap_or_default();
+
+        // If num_of_ranges is set, return artificial ranges (no service call needed).
+        if let Some(n) = options.num_of_ranges() {
+            return FeedRange::create_artificial_ranges(n);
+        }
+
+        // Otherwise, resolve physical partition ranges from the routing map.
+        let container_properties = self
+            .container_connection
+            .resolve_container_properties(&self.container_id)
+            .await?;
+        let collection_rid = container_properties
+            .system_properties
+            .resource_id
+            .as_deref()
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "container properties missing '_rid'",
+                )
+            })?;
+
+        let routing_map = self
+            .container_connection
+            .resolve_routing_map(collection_rid)
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })?;
+
+        let feed_ranges = routing_map
+            .ordered_partition_key_ranges()
+            .iter()
+            .map(FeedRange::from_partition_key_range)
+            .collect();
+
+        Ok(feed_ranges)
+    }
+
+    /// Returns the [`FeedRange`] of the physical partition containing the given partition key.
+    ///
+    /// This hashes the partition key to its effective partition key (EPK) value and looks up the
+    /// physical partition that contains it. The returned feed range spans the full EPK range of
+    /// that physical partition, not just the single EPK point.
+    ///
+    /// # Arguments
+    ///
+    /// * `partition_key` - The partition key value to convert.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let feed_range = container_client
+    ///     .feed_range_from_partition_key("my_partition_key")
+    ///     .await?;
+    /// println!("Partition key maps to feed range: {}", feed_range);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub async fn feed_range_from_partition_key(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+    ) -> azure_core::Result<FeedRange> {
+        let partition_key = partition_key.into();
+
+        // Resolve container properties to get the partition key definition.
+        let container_properties = self
+            .container_connection
+            .resolve_container_properties(&self.container_id)
+            .await?;
+        let pk_def = &container_properties.partition_key;
+        let collection_rid = container_properties
+            .system_properties
+            .resource_id
+            .as_deref()
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "container properties missing '_rid'",
+                )
+            })?;
+
+        // Hash the partition key to its EPK.
+        let pk_version = pk_def.version.unwrap_or(2) as u8;
+        let epk = partition_key.get_hashed_partition_key_string(pk_def.kind.clone(), pk_version);
+
+        // Look up the physical partition range containing this EPK.
+        let routing_map = self
+            .container_connection
+            .resolve_routing_map(collection_rid)
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })?;
+
+        let pkr = routing_map.get_range_by_effective_partition_key(epk.as_str())?;
+        Ok(FeedRange::from_partition_key_range(pkr))
     }
 }

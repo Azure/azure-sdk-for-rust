@@ -54,6 +54,27 @@ impl ContainerConnection {
             .await;
     }
 
+    /// Resolves the container properties from the cache or service.
+    pub(crate) async fn resolve_container_properties(
+        &self,
+        container_id: &str,
+    ) -> Result<ContainerProperties, azure_core::Error> {
+        self.container_cache
+            .resolve_by_id(container_id.to_string(), None, false)
+            .await
+    }
+
+    /// Resolves the routing map for the given collection RID.
+    pub(crate) async fn resolve_routing_map(
+        &self,
+        collection_rid: &str,
+    ) -> Result<
+        Option<crate::routing::collection_routing_map::CollectionRoutingMap>,
+        azure_core::Error,
+    > {
+        self.pk_range_cache.try_lookup(collection_rid, None).await
+    }
+
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,
