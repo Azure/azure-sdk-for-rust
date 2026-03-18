@@ -59,7 +59,7 @@ impl<T> SequentialBoundedDrain<T> {
             Err(Error::with_message(ErrorKind::Other, format!("Received item for position {index}, but drain has no room for items of range `{end}..`.")))?;
         }
         let len = self.ring_buf.len();
-        self.ring_buf[self.cursor % len] = Some(item);
+        self.ring_buf[index % len] = Some(item);
         Ok(())
     }
 
