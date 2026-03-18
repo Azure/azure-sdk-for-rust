@@ -1,6 +1,10 @@
 # Release History
 
-## 0.10.1 (2026-03-18)
+## 0.11.0 (2026-03-18)
+
+### Breaking Changes
+
+- Removes previously exported `BlobClient::managed_download()` and associated model type `BlobClientManagedDownloadOptions`. These features were unintentionally included and are not suitable for usage in their previous state.
 
 ### Bugs Fixed
 
