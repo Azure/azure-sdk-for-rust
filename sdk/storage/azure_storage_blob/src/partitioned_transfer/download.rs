@@ -255,7 +255,7 @@ struct InitialResponseAnalysis {
 ///
 /// Ok(Some(analysis)) if the appropriate information was available.
 ///
-/// Ok(None) of the appropriate information was not available.
+/// Ok(None) if the appropriate information was not available.
 ///
 /// Err(error) if there was an error parsing the appropriate information.
 fn analyze_initial_response(
