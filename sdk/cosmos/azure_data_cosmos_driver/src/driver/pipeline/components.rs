@@ -346,6 +346,7 @@ pub(crate) enum TransportOutcome {
     },
     /// Transport/connection error (no HTTP response received).
     TransportError {
+        status: CosmosStatus,
         error: azure_core::Error,
         request_sent: RequestSentStatus,
     },
@@ -389,6 +390,7 @@ impl std::fmt::Debug for TransportOutcome {
             TransportOutcome::TransportError {
                 error,
                 request_sent,
+                ..
             } => f
                 .debug_struct("TransportError")
                 .field("error", error)

@@ -73,6 +73,39 @@ where
     validate_bounds(value, env_var_name, bounds)
 }
 
+/// Parses an optional value from an environment variable with proper validation.
+pub(super) fn parse_optional_from_env<T>(
+    builder_value: Option<T>,
+    env_var_name: &str,
+    bounds: ValidationBounds<T>,
+) -> azure_core::Result<Option<T>>
+where
+    T: std::str::FromStr + PartialOrd + std::fmt::Debug,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    match builder_value {
+        Some(value) => validate_bounds(value, env_var_name, bounds).map(Some),
+        None => match std::env::var(env_var_name) {
+            Ok(raw) => raw
+                .parse()
+                .map_err(|e| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        format!(
+                            "Failed to parse {} as {}: {} ({})",
+                            env_var_name,
+                            std::any::type_name::<T>(),
+                            raw,
+                            e
+                        ),
+                    )
+                })
+                .and_then(|value| validate_bounds(value, env_var_name, bounds).map(Some)),
+            Err(_) => Ok(None),
+        },
+    }
+}
+
 /// Validates a value against optional min/max bounds.
 fn validate_bounds<T>(
     value: T,
