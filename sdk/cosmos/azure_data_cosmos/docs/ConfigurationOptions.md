@@ -1,6 +1,6 @@
 # Azure Cosmos DB Rust SDK — Configuration Options Specification
 
-This document specifies the configuration option types for the Rust SDK (`azure_data_cosmos`), aligned with the [Hierarchical Configuration Model](HierarchicalConfigModel.md).
+This document specifies the configuration option types for the Rust SDK (`azure_data_cosmos`), aligned with the Hierarchical Configuration Model.
 
 ## Table of Contents
 
