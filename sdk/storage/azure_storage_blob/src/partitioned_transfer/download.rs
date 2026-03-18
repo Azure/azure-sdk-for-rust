@@ -476,7 +476,7 @@ mod tests {
             };
         let offset = (rand::random::<u64>() as usize % 500) + 500;
 
-        for parallel in [4, 1] {
+        for parallel in [1, 4] {
             for blob_range in [
                 (0, range_len),                   // start of blob
                 (offset, offset + range_len),     // middle of blob
