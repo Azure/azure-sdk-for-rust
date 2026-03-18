@@ -63,6 +63,33 @@ pub struct PerfTestMetadata {
     pub create_test: CreatePerfTestFn,
 }
 
+/// The expected type of a test option, used in [`PerfRunner::try_get_test_arg`] and [`PerfRunner::try_get_global_arg`]
+///
+/// This allows a test author to declare the expected numeric type of the option value, which
+/// simplifies the work involved in processing a test option value and reduces the chance of errors in that processing.
+///
+/// The default option type is `String`,
+#[derive(Debug, Clone, Default)]
+pub enum PerfTestOptionKind {
+    // Note: We need this type because `clap` requires us to specify the expected type of each argument
+    // for proper parsing, and this allows us to leverage that parsing in `try_get_test_arg` and
+    // `try_get_global_arg` to get typed arguments without needing to do any additional parsing
+    // or error handling in the test code. See also get_command_for_metadata which specifies the
+    // clap parser for each option based on this type.
+    #[default]
+    String,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Uint8,
+    Uint16,
+    Uint32,
+    Uint64,
+    Usize,
+    Boolean,
+}
+
 /// A `PerfTestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
 #[derive(Debug, Default, Clone)]
 pub struct PerfTestOption {
@@ -86,6 +113,9 @@ pub struct PerfTestOption {
 
     /// Argument value is sensitive and should be sanitized.
     pub sensitive: bool,
+
+    /// The expected type of the argument value.
+    pub option_type: PerfTestOptionKind,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -217,18 +247,21 @@ impl PerfRunner {
         })
     }
 
-    /// Gets a reference to a typed argument by its id.
-    pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<&T>>
+    /// Gets a typed argument by its id.
+    pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<T>>
     where
         T: Clone + Send + Sync + 'static,
     {
-        self.arguments.try_get_one::<T>(id).with_context(
-            ErrorKind::Other,
-            format!("Failed to get argument '{}'.", id),
-        )
+        self.arguments
+            .try_get_one::<T>(id)
+            .with_context(
+                ErrorKind::Other,
+                format!("Failed to get argument '{}'.", id),
+            )
+            .map(|arg| arg.cloned())
     }
 
-    /// Gets a reference to a typed argument for the selected test by its id.
+    /// Gets a typed argument for the selected test by its id.
     ///
     /// # Arguments
     ///
@@ -236,16 +269,18 @@ impl PerfRunner {
     ///
     /// # Returns
     ///
-    /// A reference to the argument if it exists, or None.
-    pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<&T>>
+    /// The argument if it exists, or None.
+    pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<T>>
     where
         T: Clone + Send + Sync + 'static,
     {
         if let Some((_, args)) = self.arguments.subcommand() {
-            args.try_get_one::<T>(id).with_context(
-                ErrorKind::Other,
-                format!("Failed to get argument '{}' for test.", id),
-            )
+            args.try_get_one::<T>(id)
+                .with_context(
+                    ErrorKind::Other,
+                    format!("Failed to get argument '{}' for test.", id),
+                )
+                .map(|arg| arg.cloned())
         } else {
             Ok(None)
         }
@@ -546,6 +581,23 @@ impl PerfRunner {
                     .num_args(option.expected_args_len..=option.expected_args_len)
                     .required(option.mandatory)
                     .global(false);
+                arg = match option.option_type {
+                    PerfTestOptionKind::String => arg.value_parser(clap::value_parser!(String)),
+                    PerfTestOptionKind::Usize => arg.value_parser(clap::value_parser!(usize)),
+                    PerfTestOptionKind::Int8 => arg.value_parser(clap::value_parser!(i8)),
+                    PerfTestOptionKind::Int16 => arg.value_parser(clap::value_parser!(i16)),
+                    PerfTestOptionKind::Int32 => arg.value_parser(clap::value_parser!(i32)),
+                    PerfTestOptionKind::Int64 => arg.value_parser(clap::value_parser!(i64)),
+                    PerfTestOptionKind::Uint8 => arg.value_parser(clap::value_parser!(u8)),
+                    PerfTestOptionKind::Uint16 => arg.value_parser(clap::value_parser!(u16)),
+                    PerfTestOptionKind::Uint32 => arg.value_parser(clap::value_parser!(u32)),
+                    PerfTestOptionKind::Uint64 => arg.value_parser(clap::value_parser!(u64)),
+                    PerfTestOptionKind::Boolean => {
+                        // For boolean options, we can use the presence of the flag to indicate true, and absence to indicate false.
+                        // Therefore, we don't need to specify a value parser or expect any arguments for this type.
+                        arg.action(clap::ArgAction::SetTrue).num_args(0)
+                    }
+                };
                 if let Some(short_activator) = option.short_activator {
                     arg = arg.short(short_activator);
                 }

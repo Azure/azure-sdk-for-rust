@@ -85,7 +85,8 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// Creates a new queue under the specified account. If the queue with the same name already exists, the operation fails.
+    /// Creates a new queue under the specified account. If a queue with the same name already exists, the operation succeeds
+    /// when the metadata is identical and returns 204; if the metadata differs, the operation returns 409.
     ///
     /// # Arguments
     ///
@@ -117,7 +118,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[201],
+                        success_codes: &[201, 204],
                     },
                     ..Default::default()
                 }),

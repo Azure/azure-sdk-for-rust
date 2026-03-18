@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Added `tokio` feature to `default` features.
+
 ### Bugs Fixed
 
 ### Other Changes
