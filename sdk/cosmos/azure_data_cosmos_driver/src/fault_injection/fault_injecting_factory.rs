@@ -3,7 +3,7 @@
 
 //! Factory decorator that wraps created HTTP clients with fault injection.
 
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use azure_core::http::HttpClient;
 
@@ -20,7 +20,7 @@ use crate::options::ConnectionPoolOptions;
 #[derive(Debug)]
 pub(crate) struct FaultInjectingHttpClientFactory {
     inner: Arc<dyn HttpClientFactory>,
-    rules: Arc<RwLock<Vec<Arc<FaultInjectionRule>>>>,
+    rules: Arc<Vec<Arc<FaultInjectionRule>>>,
 }
 
 impl FaultInjectingHttpClientFactory {
@@ -31,7 +31,7 @@ impl FaultInjectingHttpClientFactory {
     ) -> Self {
         Self {
             inner,
-            rules: Arc::new(RwLock::new(rules)),
+            rules: Arc::new(rules),
         }
     }
 }
@@ -43,7 +43,7 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
         config: HttpClientConfig,
     ) -> azure_core::Result<Arc<dyn HttpClient>> {
         let real_client = self.inner.build(connection_pool, config)?;
-        let rules = self.rules.read().unwrap_or_else(|e| e.into_inner()).clone();
+        let rules = (*self.rules).clone();
         Ok(Arc::new(FaultInjectingHttpClient::new(real_client, rules)))
     }
 }

@@ -157,6 +157,7 @@ impl FaultOperationType {
             (OperationType::ReadFeed, ResourceType::PartitionKeyRange) => {
                 Some(FaultOperationType::MetadataPartitionKeyRanges)
             }
+            // PatchItem will be mapped when OperationType::Patch is added to the driver.
             _ => None,
         }
     }
@@ -169,11 +170,11 @@ impl fmt::Display for FaultOperationType {
 }
 
 impl FromStr for FaultOperationType {
-    type Err = ();
+    type Err = azure_core::Error;
 
     /// Parses a string into a `FaultOperationType`.
     ///
-    /// Returns `Err(())` if the string is not a recognized operation type.
+    /// Returns an error if the string is not a recognized operation type.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "ReadItem" => Ok(FaultOperationType::ReadItem),
@@ -189,7 +190,10 @@ impl FromStr for FaultOperationType {
             "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(()),
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!("unknown fault operation type: {s}"),
+            )),
         }
     }
 }
