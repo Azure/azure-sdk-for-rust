@@ -155,6 +155,12 @@ pub(crate) struct TransportPipelineContext<'a> {
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
+#[tracing::instrument(level = tracing::Level::DEBUG, name = "transport", skip_all, fields(
+    method = ?request.method,
+    region = request.endpoint.region().map(|e| e.as_str()).unwrap_or("<global>"),
+    url = %request.url,
+    outcome = tracing::field::Empty,
+))]
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     ctx: &TransportPipelineContext<'_>,
@@ -181,7 +187,16 @@ pub(crate) async fn execute_transport_pipeline(
         }
     };
 
+    let mut attempt = 0;
     loop {
+        attempt += 1;
+        let attempt_span = tracing::span!(
+            tracing::Level::DEBUG,
+            "transport_attempt",
+            attempt = attempt,
+            outcome = tracing::field::Empty
+        )
+        .entered();
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
@@ -274,6 +289,10 @@ pub(crate) async fn execute_transport_pipeline(
             &endpoint_key,
         )
         .await;
+        if !attempt_span.is_disabled() {
+            attempt_span.record("outcome", format!("{}", result.outcome));
+        }
+        tracing::debug!("transport request complete");
 
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES

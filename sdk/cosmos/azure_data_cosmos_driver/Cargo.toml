@@ -12,7 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
 keywords = ["sdk", "internal"]
 categories = ["api-bindings"]
-publish = false # Internal implementation layer, not yet ready for crates.io
+
 
 [dependencies]
 arc-swap.workspace = true
@@ -42,6 +42,7 @@ tokio = { workspace = true, features = [
   "time",
   "test-util",
 ] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [target.'cfg(windows)'.dependencies]

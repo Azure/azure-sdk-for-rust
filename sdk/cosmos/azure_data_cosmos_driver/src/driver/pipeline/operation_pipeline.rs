@@ -93,7 +93,15 @@ pub(crate) async fn execute_operation_pipeline(
         .as_ref()
         .map(|p| Instant::now() + p.timeout());
 
+    let mut attempt = 0;
     loop {
+        attempt += 1;
+        let attempt_span = tracing::debug_span!(
+            "attempt",
+            attempt = attempt,
+            context = tracing::field::Empty
+        )
+        .entered();
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -116,6 +124,8 @@ pub(crate) async fn execute_operation_pipeline(
         } else {
             ExecutionContext::RegionFailover
         };
+        attempt_span.record("context", tracing::field::debug(&execution_context));
+        tracing::debug!(routing_decision = %routing, "routing decision made");
 
         let transport_request = build_transport_request(
             operation,
@@ -124,6 +134,10 @@ pub(crate) async fn execute_operation_pipeline(
             execution_context,
             deadline,
         )?;
+        tracing::trace!(
+            method = ?transport_request.method,
+            url = %transport_request.url,
+        "transport request created");
 
         let selected_transport = match pipeline_type {
             PipelineType::DataPlane => {

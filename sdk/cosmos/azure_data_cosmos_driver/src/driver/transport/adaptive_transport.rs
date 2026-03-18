@@ -93,6 +93,10 @@ impl AdaptiveTransport {
     }
 
     /// Sends an HTTP request through the underlying transport.
+    #[tracing::instrument(level = tracing::Level::TRACE, skip_all, err, fields(
+        method = %request.method(),
+        url = %request.url(),
+    ))]
     pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         match self {
             Self::Gateway(client) => client.execute_request(request).await,

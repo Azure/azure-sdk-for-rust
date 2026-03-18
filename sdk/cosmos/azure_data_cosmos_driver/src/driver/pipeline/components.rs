@@ -51,6 +51,16 @@ pub(crate) struct RoutingDecision {
     pub transport_mode: TransportMode,
 }
 
+impl std::fmt::Display for RoutingDecision {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(region) = self.endpoint.region() {
+            write!(f, "{}({})", region, self.selected_url)
+        } else {
+            write!(f, "{}", self.selected_url)
+        }
+    }
+}
+
 /// Operation-level retry state.
 ///
 /// Tracks failover retry count, session retry count, location index,
@@ -320,7 +330,6 @@ impl TransportResult {
 }
 
 /// The outcome of a single transport attempt.
-#[derive(Debug)]
 pub(crate) enum TransportOutcome {
     /// Successful response (2xx).
     Success {
@@ -343,6 +352,55 @@ pub(crate) enum TransportOutcome {
     },
     /// End-to-end deadline exceeded while this transport attempt was pending.
     DeadlineExceeded { request_sent: RequestSentStatus },
+}
+
+/// Display implementation for logging the high-level outcome in a compact format
+impl std::fmt::Display for TransportOutcome {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransportOutcome::Success { status, .. } => write!(f, "Success({})", status),
+            TransportOutcome::HttpError { status, .. } => write!(f, "HttpError({})", status),
+            TransportOutcome::TransportError { error, .. } => {
+                write!(f, "TransportError({})", error)
+            }
+            TransportOutcome::DeadlineExceeded { .. } => write!(f, "DeadlineExceeded"),
+        }
+    }
+}
+
+impl std::fmt::Debug for TransportOutcome {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransportOutcome::Success {
+                status, headers, ..
+            } => f
+                .debug_struct("Success")
+                .field("status", status)
+                .field("headers", headers)
+                .field("body", &"...")
+                .finish(),
+            TransportOutcome::HttpError {
+                status, headers, ..
+            } => f
+                .debug_struct("HttpError")
+                .field("status", status)
+                .field("headers", headers)
+                .field("body", &"...")
+                .finish(),
+            TransportOutcome::TransportError {
+                error,
+                request_sent,
+            } => f
+                .debug_struct("TransportError")
+                .field("error", error)
+                .field("request_sent", request_sent)
+                .finish(),
+            TransportOutcome::DeadlineExceeded { request_sent } => f
+                .debug_struct("DeadlineExceeded")
+                .field("request_sent", request_sent)
+                .finish(),
+        }
+    }
 }
 
 // ── Decision Enums ─────────────────────────────────────────────────────
