@@ -25,7 +25,13 @@ use crate::{
 };
 
 use super::cache::{AccountMetadataCache, ContainerCache};
-use super::{transport::CosmosTransport, CosmosDriver};
+use super::{
+    transport::{
+        http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
+        CosmosTransport,
+    },
+    CosmosDriver,
+};
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -83,11 +89,15 @@ pub struct CosmosDriverRuntime {
     /// Connection pool configuration for managing TCP connections.
     connection_pool: ConnectionPoolOptions,
 
-    /// HTTP transport manager with connection pools.
+    /// Bootstrap HTTP transport for initial metadata probes.
     ///
-    /// Manages separate pools for metadata and data plane operations,
-    /// with lazy initialization of emulator-specific pools.
-    transport: Arc<CosmosTransport>,
+    /// Uses HTTP/2-only to detect protocol support. Individual drivers
+    /// create their own `CosmosTransport` after the probe with the
+    /// negotiated HTTP version.
+    bootstrap_transport: Arc<CosmosTransport>,
+
+    /// Factory for creating HTTP clients, shared across per-account transports.
+    http_client_factory: Arc<dyn HttpClientFactory>,
 
     /// Thread-safe runtime options for operation options.
     runtime_options: SharedRuntimeOptions,
@@ -159,12 +169,14 @@ impl CosmosDriverRuntime {
         &self.connection_pool
     }
 
-    /// Returns the HTTP transport manager.
-    ///
-    /// The transport provides access to connection pools configured for
-    /// metadata and data plane operations, with automatic emulator detection.
-    pub(crate) fn transport(&self) -> &Arc<CosmosTransport> {
-        &self.transport
+    /// Returns the bootstrap transport for initial metadata probes.
+    pub(crate) fn bootstrap_transport(&self) -> &Arc<CosmosTransport> {
+        &self.bootstrap_transport
+    }
+
+    /// Returns the shared HTTP client factory for creating per-account transports.
+    pub(crate) fn http_client_factory(&self) -> &Arc<dyn HttpClientFactory> {
+        &self.http_client_factory
     }
 
     /// Returns the shared container cache.
@@ -311,7 +323,7 @@ impl CosmosDriverRuntime {
     ) -> azure_core::Result<Arc<CosmosDriver>> {
         let key = account.endpoint().to_string();
 
-        // Check if driver already exists (read lock)
+        // Fast path: return an already-initialized driver.
         {
             let registry = self.driver_registry.read().unwrap();
             if let Some(driver) = registry.get(&key) {
@@ -320,36 +332,21 @@ impl CosmosDriverRuntime {
             }
         }
 
-        // Create new driver (write lock)
-        let driver = {
-            let mut registry = self.driver_registry.write().unwrap();
+        tracing::trace!("creating new driver");
 
-            // Double-check after acquiring write lock
-            if let Some(driver) = registry.get(&key) {
-                return Ok(driver.clone());
-            }
-            tracing::trace!("creating new driver");
+        // Slow path: create and initialize the driver *before* inserting into
+        // the registry. This ensures concurrent callers never observe an
+        // uninitialized driver. If two callers race, both will probe — but the
+        // first to finish inserts; the second discovers the existing entry and
+        // drops its duplicate.
+        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
 
-            // Build driver options if not provided
-            let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+        driver.initialize().await?;
 
-            let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-            registry.insert(key.clone(), driver.clone());
-            driver
-        };
-
-        // Best-effort initialization: prime the account metadata cache.
-        // On failure, log a warning and return the driver with cold caches
-        // so that a transient error doesn't block driver creation.
-        if let Err(e) = driver.initialize().await {
-            tracing::warn!(
-                endpoint = %key,
-                error = %e,
-                "Driver initialization failed; caches will be populated lazily on first operation"
-            );
-        }
-
-        Ok(driver)
+        let mut registry = self.driver_registry.write().unwrap();
+        let entry = registry.entry(key).or_insert_with(|| driver.clone());
+        Ok(entry.clone())
     }
 }
 
@@ -383,6 +380,8 @@ pub struct CosmosDriverRuntimeBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
+    #[cfg(test)]
+    http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -463,6 +462,12 @@ impl CosmosDriverRuntimeBuilder {
     /// Valid range: 1000–60000 ms (1–60 seconds).
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.cpu_refresh_interval = Some(interval);
+        self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
+        self.http_client_factory = Some(factory);
         self
     }
 
@@ -547,7 +552,33 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(connection_pool.clone())?);
+        let http_client_factory: Arc<dyn HttpClientFactory> = {
+            #[cfg(test)]
+            {
+                self.http_client_factory
+                    .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
+            }
+
+            #[cfg(not(test))]
+            {
+                Arc::new(DefaultHttpClientFactory::new())
+            }
+        };
+
+        // Bootstrap transport: lightweight metadata-only transport for the
+        // initial HTTP version probe. Uses an unsharded client (no per-endpoint
+        // shard pools, no background health sweep) since it only performs
+        // one-shot metadata requests during driver initialization.
+        let bootstrap_version = if connection_pool.is_http2_allowed() {
+            crate::diagnostics::TransportHttpVersion::Http2
+        } else {
+            crate::diagnostics::TransportHttpVersion::Http11
+        };
+        let bootstrap_transport = Arc::new(CosmosTransport::bootstrap_metadata_only(
+            connection_pool.clone(),
+            http_client_factory.clone(),
+            bootstrap_version,
+        )?);
 
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
@@ -567,7 +598,8 @@ impl CosmosDriverRuntimeBuilder {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
-            transport,
+            bootstrap_transport,
+            http_client_factory,
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
@@ -586,3 +618,32 @@ impl CosmosDriverRuntimeBuilder {
 }
 
 static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use url::Url;
+
+    #[tokio::test]
+    async fn get_or_create_driver_removes_failed_initialization_from_registry() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "***not-base64***",
+        );
+
+        let error = runtime
+            .get_or_create_driver(account.clone(), None)
+            .await
+            .expect_err("invalid signing key should fail initialization");
+        assert!(!error.to_string().is_empty());
+        assert!(runtime.driver_registry.read().unwrap().is_empty());
+
+        let second_error = runtime
+            .get_or_create_driver(account, None)
+            .await
+            .expect_err("failed initialization should not poison the driver registry");
+        assert!(!second_error.to_string().is_empty());
+        assert!(runtime.driver_registry.read().unwrap().is_empty());
+    }
+}
