@@ -19,6 +19,7 @@ const FAULT_INJECTION_OPERATION: HeaderName =
     HeaderName::from_static(FAULT_INJECTION_OPERATION_HEADER);
 
 /// Header name constant for the sub-status header.
+/// Duplicates `models::cosmos_headers::response_header_names::SUBSTATUS` which is private.
 const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
 
 /// Header name constant indicating which rule injected a fault.
@@ -26,15 +27,15 @@ const FAULT_INJECTED_HEADER: HeaderName = HeaderName::from_static("x-ms-fault-in
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
-pub struct FaultInjectingHttpClient {
+pub struct FaultClient {
     /// The inner HTTP client to which requests are delegated.
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
     rules: Arc<Vec<Arc<FaultInjectionRule>>>,
 }
 
-impl FaultInjectingHttpClient {
-    /// Creates a new instance of the FaultInjectingHttpClient.
+impl FaultClient {
+    /// Creates a new instance of the FaultClient.
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
         Self {
             inner,
@@ -216,7 +217,7 @@ impl FaultInjectingHttpClient {
 }
 
 #[async_trait]
-impl HttpClient for FaultInjectingHttpClient {
+impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule
         let matched_rule: Option<Arc<FaultInjectionRule>> = {
@@ -270,7 +271,7 @@ impl HttpClient for FaultInjectingHttpClient {
 
 #[cfg(test)]
 mod tests {
-    use super::FaultInjectingHttpClient;
+    use super::FaultClient;
     use crate::fault_injection::{
         CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
@@ -345,7 +346,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request without operation type header shouldn't match
         let request = create_test_request();
@@ -358,7 +359,7 @@ mod tests {
     #[tokio::test]
     async fn execute_request_empty_rules() {
         let mock_client = Arc::new(MockHttpClient::new());
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![]);
 
         let request = create_test_request();
         let result = fault_client.execute_request(&request).await;
@@ -378,7 +379,7 @@ mod tests {
             .with_hit_limit(2)
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // First two requests should hit the fault
@@ -405,7 +406,7 @@ mod tests {
             .with_start_time(Instant::now() + Duration::from_secs(60))
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // Request should pass through because start_time is in the future
@@ -423,7 +424,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -448,7 +449,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -472,7 +473,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // Delay-only should pass through to actual request after delay
@@ -505,7 +506,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "westus", should pass through
         let request = create_test_request();
@@ -529,7 +530,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "my-container", should pass through
         let request = create_test_request();
@@ -551,7 +552,7 @@ mod tests {
             .with_hit_limit(2)
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         // First request should hit the fault
@@ -612,7 +613,7 @@ mod tests {
                 .build();
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
-            let fault_client = FaultInjectingHttpClient::new(mock_client, vec![Arc::new(rule)]);
+            let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
             let request = create_test_request();
 
             let result = fault_client.execute_request(&request).await;
@@ -661,7 +662,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -685,7 +686,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
@@ -714,7 +715,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let response = fault_client.execute_request(&request).await;
@@ -740,7 +741,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         let mut request = create_test_request();
         request.headers_mut().insert(
@@ -769,7 +770,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("header-test-rule", result).build();
 
-        let fault_client = FaultInjectingHttpClient::new(mock_client, vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
         let request = create_test_request();
 
         let response = fault_client.execute_request(&request).await;

@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use azure_core::http::HttpClient;
 
-use super::fault_injecting_client::FaultInjectingHttpClient;
+use super::http_client::FaultClient;
 use super::rule::FaultInjectionRule;
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 use crate::options::ConnectionPoolOptions;
@@ -15,7 +15,7 @@ use crate::options::ConnectionPoolOptions;
 /// An [`HttpClientFactory`] decorator that wraps clients with fault injection.
 ///
 /// When `create` is called, this factory delegates to the inner factory to build
-/// a real HTTP client, then wraps it in a [`FaultInjectingHttpClient`] that
+/// a real HTTP client, then wraps it in a [`FaultClient`] that
 /// evaluates the configured rules on every request.
 #[derive(Debug)]
 pub(crate) struct FaultInjectingHttpClientFactory {
@@ -44,7 +44,7 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
     ) -> azure_core::Result<Arc<dyn HttpClient>> {
         let real_client = self.inner.build(connection_pool, config)?;
         let rules = (*self.rules).clone();
-        Ok(Arc::new(FaultInjectingHttpClient::new(real_client, rules)))
+        Ok(Arc::new(FaultClient::new(real_client, rules)))
     }
 }
 

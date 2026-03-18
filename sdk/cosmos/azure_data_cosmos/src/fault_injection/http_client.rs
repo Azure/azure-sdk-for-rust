@@ -443,6 +443,58 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn execute_request_injects_too_many_requests() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::TooManyRequests)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let result = fault_client.execute_request(&request).await;
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(
+            err.http_status(),
+            Some(azure_core::http::StatusCode::TooManyRequests),
+            "expected TooManyRequests status code"
+        );
+    }
+
+    #[tokio::test]
+    async fn execute_request_response_delay_passes_through() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        // Create a rule with only delay, no error type - should pass through after delay
+        let error = FaultInjectionResultBuilder::new()
+            .with_delay(Duration::from_millis(200))
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        // Delay-only should pass through to actual request after delay
+        let start = std::time::Instant::now();
+        let result = fault_client.execute_request(&request).await;
+        let elapsed = start.elapsed();
+
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+
+        // Verify the delay was applied (at least 150ms to account for timing variance)
+        assert!(
+            elapsed >= Duration::from_millis(150),
+            "expected at least 150ms delay, got {:?}",
+            elapsed
+        );
+    }
+
+    #[tokio::test]
     async fn execute_request_region_matching() {
         let mock_client = Arc::new(MockHttpClient::new());
 
@@ -463,6 +515,70 @@ mod tests {
         let result = fault_client.execute_request(&request).await;
 
         assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn execute_request_container_matching() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_container_id("my-container")
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::PartitionIsGone)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("container-rule", error)
+            .with_condition(condition)
+            .build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+
+        // Request URL doesn't contain "my-container", should pass through
+        let request = create_test_request();
+        let result = fault_client.execute_request(&request).await;
+
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn execute_request_with_hit_limit_on_rule() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        // Create a rule where the error is injected only 2 times via hit_limit on rule
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("hit-limited-rule", error)
+            .with_hit_limit(2)
+            .build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        // First request should hit the fault
+        let result1 = fault_client.execute_request(&request).await;
+        assert!(result1.is_err(), "first request should fail");
+        assert_eq!(
+            result1.unwrap_err().http_status(),
+            Some(azure_core::http::StatusCode::ServiceUnavailable)
+        );
+
+        // Second request should also hit the fault
+        let result2 = fault_client.execute_request(&request).await;
+        assert!(result2.is_err(), "second request should fail");
+        assert_eq!(
+            result2.unwrap_err().http_status(),
+            Some(azure_core::http::StatusCode::ServiceUnavailable)
+        );
+
+        // Third request should pass through (times limit reached)
+        let result3 = fault_client.execute_request(&request).await;
+        assert!(
+            result3.is_ok(),
+            "third request should succeed after times limit"
+        );
         assert_eq!(mock_client.call_count(), 1);
     }
 

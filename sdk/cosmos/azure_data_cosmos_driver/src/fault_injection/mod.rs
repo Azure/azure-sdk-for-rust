@@ -20,14 +20,14 @@
 //!   and probability.
 //! - [`FaultInjectionRule`] — Combines a condition with a result and additional controls
 //!   like duration, start delay, and hit limit.
-//! - [`FaultInjectingHttpClient`] — An [`HttpClient`](azure_core::http::HttpClient)
+//! - [`FaultClient`] — An [`HttpClient`](azure_core::http::HttpClient)
 //!   implementation that evaluates rules and injects faults.
 //! - `FaultInjectingHttpClientFactory` — An `HttpClientFactory`
 //!   decorator that wraps created clients with fault injection.
 
 mod condition;
-mod fault_injecting_client;
 mod fault_injecting_factory;
+mod http_client;
 mod result;
 mod rule;
 
@@ -37,9 +37,9 @@ use std::str::FromStr;
 use crate::models::{OperationType, ResourceType};
 
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
-pub use fault_injecting_client::FaultInjectingHttpClient;
 #[allow(unused_imports)]
 pub(crate) use fault_injecting_factory::FaultInjectingHttpClientFactory;
+pub use http_client::FaultClient;
 pub use result::{
     CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
 };
