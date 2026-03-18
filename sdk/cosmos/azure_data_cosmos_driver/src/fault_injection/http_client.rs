@@ -102,6 +102,10 @@ impl FaultClient {
     }
 
     /// Applies the fault injection result and returns an error or modifies the response.
+    ///
+    /// This method handles the full fault lifecycle: probability check, delay application,
+    /// and fault response generation. If the probability check fails, no fault is injected
+    /// and no delay is applied.
     async fn apply_fault(
         &self,
         server_error: &FaultInjectionResult,
@@ -121,6 +125,17 @@ impl FaultClient {
         // Probability check passed — count this as a hit.
         rule.increment_hit_count();
         let rule_id = rule.id();
+
+        // Apply delay if configured (only when fault is actually injected).
+        if let Some(delay) = server_error.delay() {
+            if delay > Duration::ZERO {
+                let delay = azure_core::time::Duration::try_from(delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO);
+                azure_core::async_runtime::get_async_runtime()
+                    .sleep(delay)
+                    .await;
+            }
+        }
 
         // Check for custom response first (takes precedence over error injection)
         if let Some(custom) = server_error.custom_response() {
@@ -196,18 +211,18 @@ impl FaultClient {
             ),
         };
 
-        let raw_response = sub_status.map(|ss| {
-            let mut headers = Headers::new();
+        let mut headers = Headers::new();
+        if let Some(ss) = sub_status {
             headers.insert(SUB_STATUS, ss.value().to_string());
-            headers.insert(FAULT_INJECTED_HEADER, rule_id.to_owned());
-            Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
-        });
+        }
+        headers.insert(FAULT_INJECTED_HEADER, rule_id.to_owned());
+        let raw_response = Box::new(RawResponse::from_bytes(status_code, headers, vec![]));
 
         let error = azure_core::Error::with_message(
             ErrorKind::HttpResponse {
                 status: status_code,
                 error_code: Some("Injected Fault".to_string()),
-                raw_response,
+                raw_response: Some(raw_response),
             },
             message,
         );
@@ -220,17 +235,11 @@ impl FaultClient {
 impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule
-        let matched_rule: Option<Arc<FaultInjectionRule>> = {
-            let mut matched: Option<&Arc<FaultInjectionRule>> = None;
-            for rule in self.rules.iter() {
-                if self.is_rule_applicable(rule) && self.matches_condition(request, rule) {
-                    matched = Some(rule);
-                    break;
-                }
-            }
-
-            matched.cloned()
-        };
+        let matched_rule = self
+            .rules
+            .iter()
+            .find(|rule| self.is_rule_applicable(rule) && self.matches_condition(request, rule))
+            .cloned();
 
         // Apply the fault if we found an applicable rule
         let fault_response = if let Some(ref rule) = matched_rule {
@@ -239,7 +248,7 @@ impl HttpClient for FaultClient {
             None
         };
 
-        let resp = if let Some(fault_response) = fault_response {
+        if let Some(fault_response) = fault_response {
             fault_response
         } else {
             // Clone the request and remove fault injection headers before forwarding
@@ -248,24 +257,9 @@ impl HttpClient for FaultClient {
                 .headers_mut()
                 .remove(FAULT_INJECTION_OPERATION);
 
-            // No fault injection or delay-only fault, proceed with actual request
+            // No fault injection, proceed with actual request
             self.inner.execute_request(&clean_request).await
-        };
-
-        // Apply delay after the request is sent
-        if let Some(rule) = matched_rule {
-            if let Some(delay) = rule.result().delay() {
-                if delay > Duration::ZERO {
-                    let delay = azure_core::time::Duration::try_from(delay)
-                        .unwrap_or(azure_core::time::Duration::ZERO);
-                    azure_core::async_runtime::get_async_runtime()
-                        .sleep(delay)
-                        .await;
-                }
-            }
         }
-
-        resp
     }
 }
 
@@ -621,11 +615,24 @@ mod tests {
 
             let err = result.unwrap_err();
             if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
+                // All HTTP-level faults should have a raw_response with x-ms-fault-injected header
+                let response = raw_response
+                    .as_ref()
+                    .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
+
+                // Verify x-ms-fault-injected header is present
+                let fault_header = response
+                    .headers()
+                    .get_optional_str(&HeaderName::from_static("x-ms-fault-injected"));
+                assert_eq!(
+                    fault_header,
+                    Some("substatus-rule"),
+                    "{:?} should have x-ms-fault-injected header",
+                    error_type
+                );
+
                 match expected_substatus {
                     Some(expected) => {
-                        let response = raw_response.as_ref().unwrap_or_else(|| {
-                            panic!("{:?} should have a raw_response with substatus", error_type)
-                        });
                         let actual: u32 = response
                             .headers()
                             .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
@@ -640,9 +647,10 @@ mod tests {
                         );
                     }
                     None => {
+                        let substatus_header = response.headers().get_optional_str(&SUB_STATUS);
                         assert!(
-                            raw_response.is_none(),
-                            "{:?} should not have a raw_response",
+                            substatus_header.is_none(),
+                            "{:?} should not have x-ms-substatus header",
                             error_type
                         );
                     }

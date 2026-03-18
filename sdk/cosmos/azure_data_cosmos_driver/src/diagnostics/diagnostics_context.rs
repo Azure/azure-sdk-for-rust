@@ -1161,6 +1161,10 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
 
+    /// Whether fault injection is enabled for this operation's runtime.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_enabled: bool,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -1177,6 +1181,8 @@ impl DiagnosticsContextBuilder {
             options,
             cpu_monitor: None,
             machine_id: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: false,
             #[cfg(test)]
             test_system_usage: None,
         }
@@ -1190,6 +1196,14 @@ impl DiagnosticsContextBuilder {
     /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
     pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
         self.machine_id = Some(machine_id);
+    }
+
+    /// Sets whether fault injection is enabled for this operation's runtime.
+    // TODO: Wire this up when the operation pipeline sets fault injection state.
+    #[cfg(feature = "fault_injection")]
+    #[allow(dead_code)]
+    pub(crate) fn set_fault_injection_enabled(&mut self, enabled: bool) {
+        self.fault_injection_enabled = enabled;
     }
 
     /// Returns the operation-level activity ID.
@@ -1360,6 +1374,10 @@ impl DiagnosticsContextBuilder {
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
+            #[cfg(not(feature = "fault_injection"))]
+            fault_injection_enabled: false,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -1429,6 +1447,9 @@ pub struct DiagnosticsContext {
 
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
+
+    /// Whether fault injection was enabled when this operation executed.
+    fault_injection_enabled: bool,
 
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
@@ -1508,6 +1529,11 @@ impl DiagnosticsContext {
     /// `"uuid_{generated-uuid}"` (stable for process lifetime).
     pub fn machine_id(&self) -> Option<&str> {
         self.machine_id.as_ref().map(|s| s.as_str())
+    }
+
+    /// Returns whether fault injection was enabled when this operation executed.
+    pub fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
     }
 
     /// Serializes diagnostics to a JSON string.
@@ -1631,6 +1657,7 @@ impl Clone for DiagnosticsContext {
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached

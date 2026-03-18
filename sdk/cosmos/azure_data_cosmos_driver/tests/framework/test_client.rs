@@ -28,6 +28,57 @@ pub struct DriverTestClient {
     account: AccountReference,
 }
 
+/// Resolved test environment containing account and connection pool configuration.
+struct TestEnv {
+    account: AccountReference,
+    connection_pool: ConnectionPoolOptions,
+}
+
+/// Resolves the test environment from environment variables.
+///
+/// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
+fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
+    let _ = tracing_subscriber::fmt::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .try_init();
+
+    let test_mode = get_test_mode();
+    if test_mode == CosmosTestMode::Skipped {
+        return Ok(None);
+    }
+
+    let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
+        Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
+        Ok(val) => val,
+        Err(_) => {
+            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                panic!(
+                    "{} is not set but test mode is required",
+                    CONNECTION_STRING_ENV_VAR
+                );
+            }
+            return Ok(None);
+        }
+    };
+
+    let conn_str: ConnectionString = connection_string.parse()?;
+    let endpoint = conn_str.account_endpoint().parse()?;
+    let key = conn_str.account_key().secret().to_string();
+    let account = AccountReference::with_master_key(endpoint, key);
+
+    let mut connection_pool_builder = ConnectionPoolOptions::builder();
+    if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
+        connection_pool_builder = connection_pool_builder
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
+    }
+    let connection_pool = connection_pool_builder.build()?;
+
+    Ok(Some(TestEnv {
+        account,
+        connection_pool,
+    }))
+}
+
 impl DriverTestClient {
     /// Creates a new test client from environment variables.
     ///
@@ -39,53 +90,19 @@ impl DriverTestClient {
     /// - The environment variable is not set and test mode is not "required"
     /// - The test mode is "skipped"
     pub async fn from_env() -> Result<Option<Self>, Box<dyn Error>> {
-        // We don't care about failures, they just mean the subscriber is already set up by another test
-        let _ = tracing_subscriber::fmt::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .try_init();
-
-        let test_mode = get_test_mode();
-
-        if test_mode == CosmosTestMode::Skipped {
+        let Some(env) = resolve_test_env()? else {
             return Ok(None);
-        }
-
-        let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-            Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
-            Ok(val) => val,
-            Err(_) => {
-                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
-                    panic!(
-                        "{} is not set but test mode is required",
-                        CONNECTION_STRING_ENV_VAR
-                    );
-                }
-                return Ok(None);
-            }
         };
 
-        let conn_str: ConnectionString = connection_string.parse()?;
-        let endpoint = conn_str.account_endpoint().parse()?;
-        let key = conn_str.account_key().secret().to_string();
-        let account = AccountReference::with_master_key(endpoint, key);
-
-        // Build runtime with emulator certificate handling
-        let mut connection_pool_builder = ConnectionPoolOptions::builder();
-
-        if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
-            connection_pool_builder = connection_pool_builder.with_emulator_server_cert_validation(
-                EmulatorServerCertValidation::DangerousDisabled,
-            );
-        }
-
-        let connection_pool = connection_pool_builder.build()?;
-
         let runtime = CosmosDriverRuntime::builder()
-            .with_connection_pool(connection_pool)
+            .with_connection_pool(env.connection_pool)
             .build()
             .await?;
 
-        Ok(Some(Self { runtime, account }))
+        Ok(Some(Self {
+            runtime,
+            account: env.account,
+        }))
     }
 
     /// Creates a new test client from environment variables with fault injection rules.
@@ -96,52 +113,20 @@ impl DriverTestClient {
     pub async fn from_env_with_fault_injection(
         rules: Vec<Arc<FaultInjectionRule>>,
     ) -> Result<Option<Self>, Box<dyn Error>> {
-        let _ = tracing_subscriber::fmt::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .try_init();
-
-        let test_mode = get_test_mode();
-
-        if test_mode == CosmosTestMode::Skipped {
+        let Some(env) = resolve_test_env()? else {
             return Ok(None);
-        }
-
-        let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-            Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
-            Ok(val) => val,
-            Err(_) => {
-                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
-                    panic!(
-                        "{} is not set but test mode is required",
-                        CONNECTION_STRING_ENV_VAR
-                    );
-                }
-                return Ok(None);
-            }
         };
 
-        let conn_str: ConnectionString = connection_string.parse()?;
-        let endpoint = conn_str.account_endpoint().parse()?;
-        let key = conn_str.account_key().secret().to_string();
-        let account = AccountReference::with_master_key(endpoint, key);
-
-        let mut connection_pool_builder = ConnectionPoolOptions::builder();
-
-        if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
-            connection_pool_builder = connection_pool_builder.with_emulator_server_cert_validation(
-                EmulatorServerCertValidation::DangerousDisabled,
-            );
-        }
-
-        let connection_pool = connection_pool_builder.build()?;
-
         let runtime = CosmosDriverRuntime::builder()
-            .with_connection_pool(connection_pool)
+            .with_connection_pool(env.connection_pool)
             .with_fault_injection_rules(rules)
             .build()
             .await?;
 
-        Ok(Some(Self { runtime, account }))
+        Ok(Some(Self {
+            runtime,
+            account: env.account,
+        }))
     }
 
     /// Runs a test with access to a driver and run context.

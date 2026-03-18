@@ -170,6 +170,10 @@ impl FaultInjectionResultBuilder {
     }
 
     /// Builds the FaultInjectionResult.
+    ///
+    /// **Note**: A result with no `error_type`, no `custom_response`, and no
+    /// `delay` will match requests but produce no observable effect — silently
+    /// consuming any configured `hit_limit`. Ensure at least one of these is set.
     pub fn build(self) -> FaultInjectionResult {
         FaultInjectionResult {
             error_type: self.error_type,
