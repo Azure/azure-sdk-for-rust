@@ -84,11 +84,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[derive(Clone)]
 pub struct FileStream {
     handle: Arc<Mutex<File>>,
     pub stream_size: u64,
     buffer_size: usize,
-    read_state: Mutex<ReadState>,
+    read_state: Arc<Mutex<ReadState>>,
 }
 
 impl std::fmt::Debug for FileStream {
@@ -97,17 +98,6 @@ impl std::fmt::Debug for FileStream {
             .field("stream_size", &self.stream_size)
             .field("buffer_size", &self.buffer_size)
             .finish()
-    }
-}
-
-impl Clone for FileStream {
-    fn clone(&self) -> Self {
-        Self {
-            handle: self.handle.clone(),
-            stream_size: self.stream_size,
-            buffer_size: self.buffer_size,
-            read_state: Mutex::new(ReadState::default()),
-        }
     }
 }
 
@@ -121,7 +111,7 @@ impl FileStream {
             handle,
             stream_size,
             buffer_size,
-            read_state: Mutex::new(ReadState::default()),
+            read_state: Arc::new(Mutex::new(ReadState::default())),
         })
     }
 }
