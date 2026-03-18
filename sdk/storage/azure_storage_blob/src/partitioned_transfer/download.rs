@@ -111,14 +111,8 @@ where
                         total_tasks_counter += 1;
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
 
-                        let c = client.clone();
-                        let mut t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
-                        let active_counter = active_tasks_counter.clone();
-                        task_bucket.push(get_async_runtime().spawn(Box::pin(async move {
-                            let res = download_range_to_bytes(c, range).await.map(|bytes| (i, bytes));
-                            active_counter.fetch_sub(1, Ordering::Relaxed);
-                            let _send_res = t.send(res).await;
-                        })));
+                        let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
+                        task_bucket.push(start_download_task(client.clone(), range, t, active_tasks_counter.clone(), i));
                     }
                     None => {
                         tx_opt = None;
@@ -206,6 +200,22 @@ fn start_initial_download_task(
         )
         .await
         .map(|bytes| (0usize, bytes));
+        active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
+        let _send_res = sender.send(res).await;
+    }))
+}
+
+fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'static>(
+    client: Arc<Behavior>,
+    range: Range<usize>,
+    mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
+    active_tasks_counter: Arc<AtomicUsize>,
+    chunk_idx: usize,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = download_range_to_bytes(client, range)
+            .await
+            .map(|bytes| (chunk_idx, bytes));
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
         let _send_res = sender.send(res).await;
     }))
