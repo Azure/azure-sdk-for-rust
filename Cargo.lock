@@ -3435,6 +3435,7 @@ version = "0.13.0"
 dependencies = [
  "async-trait",
  "base64",
+ "bytes",
  "dyn-clone",
  "futures",
  "gloo-timers",

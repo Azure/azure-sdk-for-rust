@@ -618,9 +618,10 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             large_ttl_sent.expiration_time.is_some(),
             "Expected expiration_time to be set for a message with a large time-to-live"
         );
-        if let (Some(exp), Some(ins)) =
-            (large_ttl_sent.expiration_time, large_ttl_sent.insertion_time)
-        {
+        if let (Some(exp), Some(ins)) = (
+            large_ttl_sent.expiration_time,
+            large_ttl_sent.insertion_time,
+        ) {
             assert!(
                 exp > ins,
                 "Expected expiration_time ({exp}) to be after insertion_time ({ins}) for large TTL"
@@ -1097,7 +1098,10 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         // Sub-case: receiving a message, updating it using the received pop receipt, then
         // receiving it again increments dequeue_count to 2.
         let recv_id = messages[0].message_id.clone().expect("Expected message_id");
-        let recv_receipt = messages[0].pop_receipt.clone().expect("Expected pop_receipt");
+        let recv_receipt = messages[0]
+            .pop_receipt
+            .clone()
+            .expect("Expected pop_receipt");
         queue_client
             .update_message(&recv_id, &recv_receipt, 0, None)
             .await?;
@@ -1113,6 +1117,50 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         );
 
         queue_client.clear(None).await?;
+
+        // Sub-case: unicode content round-trips correctly through an update.
+        let unicode_text = "啊齄丂狛狜";
+        let send_response = queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some("initial ascii".to_string()),
+                }
+                .try_into()?,
+                None,
+            )
+            .await?;
+        let sent: SentMessage = send_response.into_model()?;
+        let message_id = sent.message_id.clone().expect("Expected message_id");
+        let pop_receipt = sent.pop_receipt.clone().expect("Expected pop_receipt");
+        let update_options = Some(QueueClientUpdateMessageOptions {
+            queue_message: Some(
+                QueueMessage {
+                    message_text: Some(unicode_text.to_string()),
+                }
+                .try_into()?,
+            ),
+            ..Default::default()
+        });
+        queue_client
+            .update_message(&message_id, &pop_receipt, 0, update_options)
+            .await?;
+        let recv_response = queue_client.receive_messages(None).await?;
+        assert_successful_response(&recv_response);
+        let unicode_messages = recv_response
+            .into_model()?
+            .items
+            .expect("Expected at least one message");
+        assert_eq!(
+            unicode_messages.len(),
+            1,
+            "Expected exactly one message after unicode update"
+        );
+        assert_eq!(
+            unicode_messages[0].message_text.as_deref(),
+            Some(unicode_text),
+            "Expected updated Unicode content, got {:?}",
+            unicode_messages[0].message_text
+        );
 
         // Sub-case: unicode content round-trips correctly through an update.
         let unicode_text = "啊齄丂狛狜";
