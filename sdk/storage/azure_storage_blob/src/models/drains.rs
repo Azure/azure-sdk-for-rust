@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::Error;
+use std::ops::Range;
+
+use azure_core::{error::ErrorKind, Error};
 
 /// A drain which accepts elements out-of-order with a specified position and
 /// releases them in-order.
@@ -36,26 +38,32 @@ impl<T> SequentialBoundedDrain<T> {
         self.ring_buf.len()
     }
 
+    pub fn currently_accepting(&self) -> Range<usize> {
+        self.cursor..self.cursor + self.ring_buf.len()
+    }
+
     /// Pushes the given item into the drain at the specified index. Overwrites
     /// the existing element in the drain, if any.
     ///
     /// # Error
     ///
-    /// Returns an error when `index < position()` or
-    /// `index >= position() + capacity()`.
+    /// Returns an error when `index` is not contained within `currently_accepting()`.
     pub fn push(&mut self, index: usize, item: T) -> Result<(), Error> {
-        if index < self.cursor {
-            todo!()
+        let accepted_indices = self.currently_accepting();
+        if index < accepted_indices.start {
+            let start = accepted_indices.start;
+            Err(Error::with_message(ErrorKind::Other, format!("Received item for position {index}, but drain has already progressed to position {start}.")))?;
         }
-        if index >= self.cursor + self.ring_buf.len() {
-            todo!()
+        if index >= accepted_indices.end {
+            let end = accepted_indices.end;
+            Err(Error::with_message(ErrorKind::Other, format!("Received item for position {index}, but drain has no room for items of range `{end}..`.")))?;
         }
         let len = self.ring_buf.len();
         self.ring_buf[self.cursor % len] = Some(item);
         Ok(())
     }
 
-    /// Returns the next
+    /// Returns the next sequential item in the drain, if present.
     pub fn pop(&mut self) -> Option<T> {
         let len = self.ring_buf.len();
         if let Some(item) = self.ring_buf[self.cursor % len].take() {

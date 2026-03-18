@@ -85,9 +85,9 @@ where
 
     let (tx, mut rx) = mpsc::unbounded();
 
-    // start with one initial download task
-    let mut total_tasks_counter = 1;
-    let active_tasks_counter = Arc::new(AtomicUsize::new(total_tasks_counter));
+    // start with one initial download task at index 0
+    let active_tasks_counter = Arc::new(AtomicUsize::new(1));
+    let mut next_task_index = 1;
     let mut task_bucket = vec![start_initial_download_task(
         initial_response,
         tx.clone(),
@@ -97,14 +97,21 @@ where
 
     let mut drain = SequentialBoundedDrain::new(max_buffers);
     let mut tx_opt = Some(tx);
+
+    // This stream maintains up to parallel-many active client downloads at a time while maintaining
+    // up to max_buffers-many buffers of length partition_size.
+    // It re-sequences these buffers, only yielding the sequentially next buffer when it is ready,
+    // regardless of the state of subsequent buffers.
+    // Drain serves double duty of holding completed buffers as well as tracking position of the
+    // download, indexed by chunk.
     let stream = async_stream::try_stream! {
         while drain.position() < total_chunks {
-            // If room in the drain and not at max connections
-            while total_tasks_counter - drain.position() < max_buffers && active_tasks_counter.load(Ordering::Relaxed) < parallel {
+            // while there is room in the buffer drain and not at max connections, start new range downloads
+            while drain.currently_accepting().contains(&next_task_index) && active_tasks_counter.load(Ordering::Relaxed) < parallel {
                 match remaining_ranges.pop_front() {
                     Some(range) => {
-                        let i = total_tasks_counter;
-                        total_tasks_counter += 1;
+                        let i = next_task_index;
+                        next_task_index += 1;
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
 
                         let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
@@ -112,14 +119,14 @@ where
                     }
                     None => {
                         // if ranges are finished, we'll never need to clone the transmitter again.
-                        // drop this source transmitter to ensure channel closes when expected
+                        // drop this transmitter to ensure channel closes when expected
                         tx_opt = None;
                         break;
                     }
                 }
             }
 
-            // return next readied bytes
+            // return next readied bytes, if any
             while let Some(bytes) = drain.pop() {
                 yield bytes;
             }
