@@ -2,13 +2,9 @@
 
 ## 0.5.0 (Unreleased)
 
-### Features Added
-
-### Breaking Changes
-
 ### Bugs Fixed
 
-### Other Changes
+- Fixed `QueueClient::create()` to treat `204 No Content` as a success response when a queue already exists with identical metadata.
 
 ## 0.4.0 (2026-03-11)
 

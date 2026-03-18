@@ -4,16 +4,20 @@
 mod common;
 
 use azure_core::{http::StatusCode, time::OffsetDateTime, Result};
-use azure_core_test::{recorded, Recording, TestContext};
+use azure_core_test::{recorded, Recording, TestContext, TestMode};
 use azure_storage_queue::{
-    models::{GeoReplicationStatus, ListQueuesIncludeType, QueueServiceClientListQueuesOptions},
+    models::{
+        CorsRule, GeoReplicationStatus, ListQueuesIncludeType, Logging, Metrics,
+        QueueServiceClientListQueuesOptions, QueueServiceProperties, RetentionPolicy,
+    },
     QueueServiceClient, QueueServiceClientOptions,
 };
 use common::{assert_successful_response, get_queue_name, recorded_test_setup};
 use futures::StreamExt;
 
-use std::collections::HashMap;
 use std::option::Option;
+use std::{collections::HashMap, time::Duration};
+use tokio::time;
 
 /// Creates a new queue under the given account.
 #[recorded::test]
@@ -131,12 +135,16 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_service_client = get_queue_service_client(recording).await?;
     let queue_name = get_queue_name(recording);
+    let queue_name_b = format!("{queue_name}-b");
+    let queue_name_c = format!("{queue_name}-c");
 
-    // Arrange — create a queue so the listing is guaranteed to contain at least one entry
-    queue_service_client
-        .queue_client(&queue_name)?
-        .create(None)
-        .await?;
+    // Arrange — create three queues sharing the same prefix
+    for name in [&queue_name, &queue_name_b, &queue_name_c] {
+        queue_service_client
+            .queue_client(name)?
+            .create(None)
+            .await?;
+    }
 
     // Act
     let options = QueueServiceClientListQueuesOptions {
@@ -170,11 +178,73 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         all_queue_names
     );
 
+    // Act — first page with prefix filter: maxresults=1
+    let first_page_options = QueueServiceClientListQueuesOptions {
+        prefix: Some(queue_name.clone()),
+        maxresults: Some(1),
+        ..Default::default()
+    };
+    let mut pager = queue_service_client
+        .list_queues(Some(first_page_options))?
+        .into_pages();
+    let first_page = pager
+        .next()
+        .await
+        .expect("Expected at least one page")?
+        .into_model()?;
+    assert_eq!(
+        first_page.queue_items.len(),
+        1,
+        "Expected first page to contain exactly 1 queue"
+    );
+    let marker = first_page
+        .next_marker
+        .clone()
+        .expect("Expected a next_marker to be present after first page");
+
+    // Act — second page: resume via explicit marker
+    let second_page_options = QueueServiceClientListQueuesOptions {
+        prefix: Some(queue_name.clone()),
+        maxresults: Some(1),
+        marker: Some(marker.clone()),
+        ..Default::default()
+    };
+    let mut pager2 = queue_service_client
+        .list_queues(Some(second_page_options))?
+        .into_pages();
+    let second_page = pager2
+        .next()
+        .await
+        .expect("Expected second page")?
+        .into_model()?;
+    assert_eq!(
+        second_page.queue_items.len(),
+        1,
+        "Expected second page to contain exactly 1 queue"
+    );
+
+    // Assert — the two pages returned different queues
+    let first_name = first_page.queue_items[0]
+        .name
+        .as_deref()
+        .expect("Expected queue name");
+    let second_name = second_page.queue_items[0]
+        .name
+        .as_deref()
+        .expect("Expected queue name");
+    assert_ne!(
+        first_name, second_name,
+        "Expected the two pages to return different queues"
+    );
+
     // Cleanup
-    queue_service_client
-        .queue_client(&queue_name)?
-        .delete(None)
-        .await?;
+    for name in [&queue_name, &queue_name_b, &queue_name_c] {
+        queue_service_client
+            .queue_client(name)?
+            .delete(None)
+            .await
+            .unwrap();
+    }
 
     Ok(())
 }
@@ -370,6 +440,283 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
         "Last sync time should be after 2025-06-01T00:00:00Z"
     );
 
+    Ok(())
+}
+
+/// Sets account-level service properties and verifies they all round-trip correctly.
+#[recorded::test]
+async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+
+    // Arrange
+    let original = queue_service_client
+        .get_properties(None)
+        .await?
+        .into_model()?;
+
+    let test_result = async {
+        // Act — set all properties in one call
+        let props = QueueServiceProperties {
+            logging: Some(Logging {
+                version: Some("1.0".to_string()),
+                delete: Some(true),
+                read: Some(true),
+                write: Some(true),
+                retention_policy: Some(RetentionPolicy {
+                    enabled: Some(true),
+                    days: Some(5),
+                }),
+            }),
+            hour_metrics: Some(Metrics {
+                version: Some("1.0".to_string()),
+                enabled: Some(true),
+                include_apis: Some(true),
+                retention_policy: Some(RetentionPolicy {
+                    enabled: Some(true),
+                    days: Some(5),
+                }),
+            }),
+            minute_metrics: Some(Metrics {
+                version: Some("1.0".to_string()),
+                enabled: Some(true),
+                include_apis: Some(true),
+                retention_policy: Some(RetentionPolicy {
+                    enabled: Some(true),
+                    days: Some(5),
+                }),
+            }),
+            cors: Some(vec![
+                CorsRule {
+                    allowed_origins: Some("http://www.contoso.com".to_string()),
+                    allowed_methods: Some("GET,PUT".to_string()),
+                    allowed_headers: Some("x-ms-meta-*".to_string()),
+                    exposed_headers: Some("x-ms-meta-data*".to_string()),
+                    max_age_in_seconds: Some(3600),
+                },
+                CorsRule {
+                    allowed_origins: Some("http://www.fabrikam.com".to_string()),
+                    allowed_methods: Some("POST".to_string()),
+                    allowed_headers: Some("Content-Type".to_string()),
+                    exposed_headers: Some("Content-Length".to_string()),
+                    max_age_in_seconds: Some(1800),
+                },
+            ]),
+        };
+        queue_service_client
+            .set_properties(props.try_into()?, None)
+            .await?;
+
+        // Allow settings to propagate in live/record mode
+        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+            time::sleep(Duration::from_secs(15)).await;
+        }
+
+        // Act — read back
+        let updated = queue_service_client
+            .get_properties(None)
+            .await?
+            .into_model()?;
+
+        // Assert — logging
+        let logging = updated.logging.as_ref().expect("Expected logging settings");
+        assert_eq!(logging.delete, Some(true), "Expected delete logging = true");
+        assert_eq!(logging.read, Some(true), "Expected read logging = true");
+        assert_eq!(logging.write, Some(true), "Expected write logging = true");
+        let rp = logging
+            .retention_policy
+            .as_ref()
+            .expect("Expected retention policy on logging");
+        assert_eq!(rp.enabled, Some(true), "Expected logging retention enabled");
+        assert_eq!(rp.days, Some(5), "Expected logging retention days = 5");
+
+        // Assert — hour metrics
+        let hm = updated
+            .hour_metrics
+            .as_ref()
+            .expect("Expected hour_metrics settings");
+        assert_eq!(
+            hm.enabled,
+            Some(true),
+            "Expected hour_metrics enabled = true"
+        );
+        assert_eq!(
+            hm.include_apis,
+            Some(true),
+            "Expected hour_metrics include_apis = true"
+        );
+        let rp = hm
+            .retention_policy
+            .as_ref()
+            .expect("Expected retention policy on hour_metrics");
+        assert_eq!(
+            rp.enabled,
+            Some(true),
+            "Expected hour_metrics retention enabled"
+        );
+        assert_eq!(rp.days, Some(5), "Expected hour_metrics retention days = 5");
+
+        // Assert — minute metrics
+        let mm = updated
+            .minute_metrics
+            .as_ref()
+            .expect("Expected minute_metrics settings");
+        assert_eq!(
+            mm.enabled,
+            Some(true),
+            "Expected minute_metrics enabled = true"
+        );
+        assert_eq!(
+            mm.include_apis,
+            Some(true),
+            "Expected minute_metrics include_apis = true"
+        );
+        let rp = mm
+            .retention_policy
+            .as_ref()
+            .expect("Expected retention policy on minute_metrics");
+        assert_eq!(
+            rp.enabled,
+            Some(true),
+            "Expected minute_metrics retention enabled"
+        );
+        assert_eq!(
+            rp.days,
+            Some(5),
+            "Expected minute_metrics retention days = 5"
+        );
+
+        // Assert — CORS rules
+        let returned = updated.cors.as_ref().expect("Expected CORS rules");
+        assert_eq!(returned.len(), 2, "Expected exactly 2 CORS rules");
+        assert_eq!(
+            returned[0].allowed_origins.as_deref(),
+            Some("http://www.contoso.com")
+        );
+        assert_eq!(returned[0].allowed_methods.as_deref(), Some("GET,PUT"));
+        assert_eq!(returned[0].max_age_in_seconds, Some(3600));
+        assert_eq!(
+            returned[1].allowed_origins.as_deref(),
+            Some("http://www.fabrikam.com")
+        );
+        assert_eq!(returned[1].allowed_methods.as_deref(), Some("POST"));
+        assert_eq!(returned[1].max_age_in_seconds, Some(1800));
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Restore original properties regardless of test outcome
+    queue_service_client
+        .set_properties(original.try_into()?, None)
+        .await
+        .unwrap();
+
+    test_result?;
+    Ok(())
+}
+
+/// Setting more than 5 CORS rules is rejected by the service with 400 Bad Request.
+#[recorded::test]
+async fn test_set_cors_too_many_rules(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+
+    let original = queue_service_client
+        .get_properties(None)
+        .await?
+        .into_model()?;
+
+    let test_result = async {
+        let rule = CorsRule {
+            allowed_origins: Some("http://example.com".to_string()),
+            allowed_methods: Some("GET".to_string()),
+            allowed_headers: Some("*".to_string()),
+            exposed_headers: Some("*".to_string()),
+            max_age_in_seconds: Some(60),
+        };
+        let props = QueueServiceProperties {
+            cors: Some(vec![
+                rule.clone(),
+                rule.clone(),
+                rule.clone(),
+                rule.clone(),
+                rule.clone(),
+                rule.clone(),
+            ]),
+            ..original.clone()
+        };
+
+        // Act
+        let err = queue_service_client
+            .set_properties(props.try_into()?, None)
+            .await
+            .err()
+            .unwrap();
+
+        // Assert
+        assert_eq!(
+            err.http_status(),
+            Some(StatusCode::BadRequest),
+            "Expected 400 Bad Request for too many CORS rules, got {:?}",
+            err.http_status()
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    test_result?;
+    Ok(())
+}
+
+/// Setting a retention policy with days > 365 is rejected by the service with 400 Bad Request.
+#[recorded::test]
+async fn test_set_retention_too_long(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+
+    let original = queue_service_client
+        .get_properties(None)
+        .await?
+        .into_model()?;
+
+    let test_result = async {
+        let props = QueueServiceProperties {
+            logging: Some(Logging {
+                version: Some("1.0".to_string()),
+                delete: Some(false),
+                read: Some(false),
+                write: Some(false),
+                retention_policy: Some(RetentionPolicy {
+                    enabled: Some(true),
+                    days: Some(366),
+                }),
+            }),
+            ..original.clone()
+        };
+
+        // Act
+        let err = queue_service_client
+            .set_properties(props.try_into()?, None)
+            .await
+            .err()
+            .unwrap();
+
+        // Assert
+        assert_eq!(
+            err.http_status(),
+            Some(StatusCode::BadRequest),
+            "Expected 400 Bad Request for retention days > 365, got {:?}",
+            err.http_status()
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    test_result?;
     Ok(())
 }
 
