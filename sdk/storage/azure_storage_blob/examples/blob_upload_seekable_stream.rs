@@ -29,12 +29,12 @@ use azure_core::{
 use azure_identity::AzureCliCredential;
 use azure_storage_blob::{models::BlockBlobClientUploadOptions, BlobContainerClient};
 use clap::Parser;
-use futures::{io::AsyncRead, task::Poll, Future};
+use futures::{io::AsyncRead, task::Poll};
 use std::{io::SeekFrom, num::NonZeroUsize, path::PathBuf, pin::Pin, sync::Arc, task::Context};
 use tokio::{
     fs::{read, File},
-    io::{AsyncReadExt, AsyncSeekExt},
-    sync::Mutex,
+    io::{AsyncSeekExt, ReadBuf},
+    sync::{Mutex, OwnedMutexGuard},
 };
 use tracing::debug;
 
@@ -84,11 +84,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[derive(Debug, Clone)]
 pub struct FileStream {
     handle: Arc<Mutex<File>>,
     pub stream_size: u64,
     buffer_size: usize,
+    read_state: Mutex<ReadState>,
+}
+
+impl std::fmt::Debug for FileStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FileStream")
+            .field("stream_size", &self.stream_size)
+            .field("buffer_size", &self.buffer_size)
+            .finish()
+    }
+}
+
+impl Clone for FileStream {
+    fn clone(&self) -> Self {
+        Self {
+            handle: self.handle.clone(),
+            stream_size: self.stream_size,
+            buffer_size: self.buffer_size,
+            read_state: Mutex::new(ReadState::default()),
+        }
+    }
 }
 
 impl FileStream {
@@ -101,12 +121,8 @@ impl FileStream {
             handle,
             stream_size,
             buffer_size,
+            read_state: Mutex::new(ReadState::default()),
         })
-    }
-
-    async fn read(&mut self, slice: &mut [u8]) -> std::io::Result<usize> {
-        let mut handle = self.handle.clone().lock_owned().await;
-        handle.read(slice).await
     }
 }
 
@@ -114,6 +130,7 @@ impl FileStream {
 impl SeekableStream for FileStream {
     async fn reset(&mut self) -> azure_core::Result<()> {
         debug!("resetting stream to beginning");
+        *self.read_state.lock().await = ReadState::Idle;
         let mut handle = self.handle.clone().lock_owned().await;
         handle.seek(SeekFrom::Start(0)).await?;
         Ok(())
@@ -129,13 +146,55 @@ impl SeekableStream for FileStream {
     }
 }
 
+type FileLockFuture = Pin<Box<dyn std::future::Future<Output = OwnedMutexGuard<File>> + Send>>;
+
+#[derive(Default)]
+enum ReadState {
+    #[default]
+    Idle,
+    Locking(FileLockFuture),
+    Locked(OwnedMutexGuard<File>),
+}
+
 impl AsyncRead for FileStream {
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         slice: &mut [u8],
     ) -> Poll<std::io::Result<usize>> {
-        std::pin::pin!(self.read(slice)).poll(cx)
+        let this = self.get_mut();
+        let mut state = this
+            .read_state
+            .try_lock()
+            .expect("read_state mutex should not be locked across poll calls");
+
+        loop {
+            match &mut *state {
+                ReadState::Idle => {
+                    *state = ReadState::Locking(Box::pin(this.handle.clone().lock_owned()));
+                }
+                ReadState::Locking(lock_future) => {
+                    let poll_result = std::future::Future::poll(Pin::as_mut(lock_future), cx);
+                    match poll_result {
+                        Poll::Ready(guard) => *state = ReadState::Locked(guard),
+                        Poll::Pending => return Poll::Pending,
+                    }
+                }
+                ReadState::Locked(guard) => {
+                    let mut read_buf = ReadBuf::new(slice);
+
+                    return match tokio::io::AsyncRead::poll_read(
+                        Pin::new(&mut **guard),
+                        cx,
+                        &mut read_buf,
+                    ) {
+                        Poll::Ready(Ok(())) => Poll::Ready(Ok(read_buf.filled().len())),
+                        Poll::Ready(Err(err)) => Poll::Ready(Err(err)),
+                        Poll::Pending => Poll::Pending,
+                    };
+                }
+            }
+        }
     }
 }
 
