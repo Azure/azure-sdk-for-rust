@@ -146,6 +146,9 @@ pub struct CosmosDriverRuntime {
 
     /// Machine identifier for diagnostics (VM ID on Azure, generated UUID otherwise).
     machine_id: Arc<String>,
+
+    /// Whether fault injection is enabled for this runtime.
+    fault_injection_enabled: bool,
 }
 
 impl CosmosDriverRuntime {
@@ -197,6 +200,11 @@ impl CosmosDriverRuntime {
     /// Returns the machine identifier for diagnostics.
     pub(crate) fn machine_id(&self) -> &Arc<String> {
         &self.machine_id
+    }
+
+    /// Returns whether fault injection is enabled for this runtime.
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
     }
 
     /// Returns the thread-safe runtime options.
@@ -568,6 +576,8 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
+        #[allow(unused_mut)]
+        let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
                 #[cfg(test)]
@@ -585,6 +595,7 @@ impl CosmosDriverRuntimeBuilder {
             #[cfg(feature = "fault_injection")]
             {
                 if let Some(rules) = self.fault_injection_rules {
+                    fault_injection_enabled = true;
                     Arc::new(
                         crate::fault_injection::FaultInjectingHttpClientFactory::new(
                             base_factory,
@@ -650,6 +661,7 @@ impl CosmosDriverRuntimeBuilder {
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
             machine_id,
+            fault_injection_enabled,
         })
     }
 }

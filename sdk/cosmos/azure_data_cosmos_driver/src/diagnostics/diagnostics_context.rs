@@ -1199,9 +1199,7 @@ impl DiagnosticsContextBuilder {
     }
 
     /// Sets whether fault injection is enabled for this operation's runtime.
-    // TODO: Wire this up when the operation pipeline sets fault injection state.
     #[cfg(feature = "fault_injection")]
-    #[allow(dead_code)]
     pub(crate) fn set_fault_injection_enabled(&mut self, enabled: bool) {
         self.fault_injection_enabled = enabled;
     }
