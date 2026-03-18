@@ -38,6 +38,52 @@ use tokio::{
 };
 use tracing::debug;
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+
+    let endpoint = format!("https://{}.blob.core.windows.net", args.account_name);
+
+    let credential = AzureCliCredential::new(None)?;
+    let container_client =
+        BlobContainerClient::new(&endpoint, &args.container_name, Some(credential), None)?;
+
+    if !container_client.exists().await? {
+        container_client.create(None).await?;
+    }
+
+    let blob_client = container_client.blob_client(&args.blob_name);
+    let expected_content = read(&args.file_path).await?;
+    let file = File::open(&args.file_path).await?;
+    let stream = FileStream::new(file, args.buffer_size).await?;
+    let content: RequestContent<Bytes, NoFormat> =
+        Body::from(Box::new(stream) as Box<dyn SeekableStream>).into();
+    let upload_options = if args.parallel.is_some() || args.partition_size.is_some() {
+        Some(BlockBlobClientUploadOptions {
+            parallel: args.parallel,
+            partition_size: args.partition_size,
+            ..Default::default()
+        })
+    } else {
+        None
+    };
+
+    blob_client.upload(content, upload_options).await?;
+
+    let response = blob_client.download(None).await?;
+    let (_, _, body) = response.deconstruct();
+    let content = body.collect().await?;
+    assert_eq!(content, expected_content);
+
+    println!(
+        "Uploaded and verified {} bytes from {}",
+        content.len(),
+        args.file_path.display()
+    );
+
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 pub struct FileStream {
     handle: Arc<Mutex<File>>,
@@ -91,52 +137,6 @@ impl AsyncRead for FileStream {
     ) -> Poll<std::io::Result<usize>> {
         std::pin::pin!(self.read(slice)).poll(cx)
     }
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
-
-    let endpoint = format!("https://{}.blob.core.windows.net", args.account_name);
-
-    let credential = AzureCliCredential::new(None)?;
-    let container_client =
-        BlobContainerClient::new(&endpoint, &args.container_name, Some(credential), None)?;
-
-    if !container_client.exists().await? {
-        container_client.create(None).await?;
-    }
-
-    let blob_client = container_client.blob_client(&args.blob_name);
-    let expected_content = read(&args.file_path).await?;
-    let file = File::open(&args.file_path).await?;
-    let stream = FileStream::new(file, args.buffer_size).await?;
-    let content: RequestContent<Bytes, NoFormat> =
-        Body::from(Box::new(stream) as Box<dyn SeekableStream>).into();
-    let upload_options = if args.parallel.is_some() || args.partition_size.is_some() {
-        Some(BlockBlobClientUploadOptions {
-            parallel: args.parallel,
-            partition_size: args.partition_size,
-            ..Default::default()
-        })
-    } else {
-        None
-    };
-
-    blob_client.upload(content, upload_options).await?;
-
-    let response = blob_client.download(None).await?;
-    let (_, _, body) = response.deconstruct();
-    let content = body.collect().await?;
-    assert_eq!(content, expected_content);
-
-    println!(
-        "Uploaded and verified {} bytes from {}",
-        content.len(),
-        args.file_path.display()
-    );
-
-    Ok(())
 }
 
 #[derive(Debug, Parser)]
