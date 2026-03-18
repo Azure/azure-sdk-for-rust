@@ -3,7 +3,7 @@
 
 //! Page blob client example for Azure Blob Storage.
 //!
-//! Page blobs are optimised for random read/write workloads (e.g., VHD images).
+//! Page blobs are optimized for random read/write workloads (e.g., VHD images).
 //! All reads and writes must be aligned to 512-byte page boundaries. This sample
 //! demonstrates:
 //! 1. Create a page blob (512 bytes) with the "if not exists" guard.

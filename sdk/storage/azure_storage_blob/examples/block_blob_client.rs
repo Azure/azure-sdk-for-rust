@@ -3,7 +3,7 @@
 
 //! Block blob client example for Azure Blob Storage.
 //!
-//! Block blobs are the most common blob type and are optimised for sequential
+//! Block blobs are the most common blob type and are optimized for sequential
 //! reads/writes of large streams. This sample demonstrates:
 //! 1. Staged upload: stage three blocks individually, then commit them as one blob.
 //! 2. Get the block list to inspect committed and uncommitted blocks.
