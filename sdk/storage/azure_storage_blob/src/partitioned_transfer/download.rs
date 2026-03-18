@@ -26,7 +26,7 @@ use futures::{
     SinkExt, TryStream,
 };
 
-use crate::models::http_ranges::ContentRange;
+use crate::models::{drains::SequentialBoundedDrain, http_ranges::ContentRange};
 
 use super::*;
 
@@ -95,16 +95,12 @@ where
         partition_size,
     )];
 
-    // use drain as ring buffer
-    let mut drain = vec![None; max_buffers];
-    let drain_len = drain.len(); // store this to dodge some borrowing issues in try_stream
-    let mut drain_cursor = 0;
-
+    let mut drain = SequentialBoundedDrain::new(max_buffers);
     let mut tx_opt = Some(tx);
     let stream = async_stream::try_stream! {
-        while drain_cursor < total_chunks {
+        while drain.position() < total_chunks {
             // If room in the drain and not at max connections
-            while total_tasks_counter - drain_cursor < max_buffers && active_tasks_counter.load(Ordering::Relaxed) < parallel {
+            while total_tasks_counter - drain.position() < max_buffers && active_tasks_counter.load(Ordering::Relaxed) < parallel {
                 match remaining_ranges.pop_front() {
                     Some(range) => {
                         let i = total_tasks_counter;
@@ -115,20 +111,21 @@ where
                         task_bucket.push(start_download_task(client.clone(), range, t, active_tasks_counter.clone(), i));
                     }
                     None => {
+                        // if ranges are finished, we'll never need to clone the transmitter again.
+                        // drop this source transmitter to ensure channel closes when expected
                         tx_opt = None;
                         break;
                     }
                 }
             }
 
-            // return readied bytes, sequentially
-            while let Some(bytes) = drain[drain_cursor % drain_len].take() {
-                drain_cursor += 1;
+            // return next readied bytes
+            while let Some(bytes) = drain.pop() {
                 yield bytes;
             }
 
             // early break if finished
-            if drain_cursor >= total_chunks {
+            if drain.position() >= total_chunks {
                 break;
             }
 
@@ -155,13 +152,14 @@ where
                 }
             }
             match channel_message {
-                Ok(Ok((idx, bytes))) => drain[idx % drain_len] = Some(bytes),
+                Ok(Ok((idx, bytes))) => drain.push(idx, bytes)?,
                 Ok(Err(err)) => Err(err)?,
                 // Unexpected channel close
                 Err(_) => {
-                    Err(Error::with_message(ErrorKind::Other, format!("Download incomplete: received {drain_cursor} of {total_chunks} chunks.")))?;
+                    let received = drain.position();
+                    Err(Error::with_message(ErrorKind::Other, format!("Download incomplete: received {received} of {total_chunks} chunks.")))?;
                 }
-            }
+            };
         }
     };
 
