@@ -13,7 +13,7 @@ mod account_reference;
 mod activity_id;
 mod connection_string;
 mod consistency_level;
-mod cosmos_headers;
+pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;

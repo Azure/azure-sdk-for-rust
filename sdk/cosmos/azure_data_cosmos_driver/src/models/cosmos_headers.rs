@@ -19,7 +19,7 @@ pub(crate) mod request_header_names {
 }
 
 /// Standard Cosmos DB response header names.
-mod response_header_names {
+pub(crate) mod response_header_names {
     use azure_core::http::headers::HeaderName;
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
@@ -31,6 +31,18 @@ mod response_header_names {
     pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
     pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
     pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
+}
+
+/// Header names used by the fault injection framework.
+#[cfg(feature = "fault_injection")]
+pub(crate) mod fault_injection_header_names {
+    use azure_core::http::headers::HeaderName;
+
+    /// Operation type header set on requests for fault injection rule matching.
+    pub static FAULT_INJECTION_OPERATION: HeaderName =
+        HeaderName::from_static("x-ms-fault-injection-operation");
+    /// Header added to synthetic responses indicating which rule injected a fault.
+    pub static FAULT_INJECTED: HeaderName = HeaderName::from_static("x-ms-fault-injected");
 }
 
 /// Cosmos request headers for operation-level customization.

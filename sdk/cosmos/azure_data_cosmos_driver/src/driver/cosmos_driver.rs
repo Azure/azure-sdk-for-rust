@@ -881,6 +881,10 @@ impl CosmosDriver {
         );
         diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
         diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
+        if self.runtime.fault_injection_enabled() {
+            #[cfg(feature = "fault_injection")]
+            diagnostics_builder.set_fault_injection_enabled(true);
+        }
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
