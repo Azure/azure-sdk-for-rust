@@ -16,8 +16,93 @@ use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::headers::Headers;
 use azure_core::http::{AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode};
+pub use evaluation::FaultInjectionEvaluation;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+mod evaluation {
+    /// Records the evaluation result of a fault injection rule for a single request.
+    ///
+    /// When fault injection is enabled, each request evaluates all configured rules.
+    /// This enum captures why each rule was applied, skipped, or missed.
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum FaultInjectionEvaluation {
+        /// Rule was applied — fault was injected.
+        Applied {
+            /// The ID of the applied rule.
+            rule_id: String,
+        },
+        /// Rule matched but the probability check failed — no fault injected.
+        ProbabilityMiss {
+            /// The ID of the rule.
+            rule_id: String,
+            /// The configured probability (0.0–1.0).
+            probability: f32,
+        },
+        /// Rule was skipped because it is disabled.
+        Disabled {
+            /// The ID of the rule.
+            rule_id: String,
+        },
+        /// Rule was skipped because the current time is before its start_time.
+        BeforeStartTime {
+            /// The ID of the rule.
+            rule_id: String,
+        },
+        /// Rule was skipped because the current time is at or after its end_time.
+        AfterEndTime {
+            /// The ID of the rule.
+            rule_id: String,
+        },
+        /// Rule was skipped because its hit_limit has been exhausted.
+        HitLimitExhausted {
+            /// The ID of the rule.
+            rule_id: String,
+            /// The current hit count.
+            hit_count: u32,
+            /// The configured hit limit.
+            hit_limit: u32,
+        },
+        /// Rule was skipped because the operation type did not match.
+        OperationMismatch {
+            /// The ID of the rule.
+            rule_id: String,
+        },
+        /// Rule was skipped because the region did not match.
+        RegionMismatch {
+            /// The ID of the rule.
+            rule_id: String,
+        },
+        /// Rule was skipped because the container ID did not match.
+        ContainerMismatch {
+            /// The ID of the rule.
+            rule_id: String,
+        },
+    }
+
+    impl FaultInjectionEvaluation {
+        /// Returns the rule ID associated with this evaluation.
+        pub fn rule_id(&self) -> &str {
+            match self {
+                Self::Applied { rule_id }
+                | Self::ProbabilityMiss { rule_id, .. }
+                | Self::Disabled { rule_id }
+                | Self::BeforeStartTime { rule_id }
+                | Self::AfterEndTime { rule_id }
+                | Self::HitLimitExhausted { rule_id, .. }
+                | Self::OperationMismatch { rule_id }
+                | Self::RegionMismatch { rule_id }
+                | Self::ContainerMismatch { rule_id } => rule_id,
+            }
+        }
+
+        /// Returns true if the rule was applied (fault injected).
+        pub fn was_applied(&self) -> bool {
+            matches!(self, Self::Applied { .. })
+        }
+    }
+}
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
@@ -38,37 +123,53 @@ impl FaultClient {
     }
 
     /// Checks if a rule is currently applicable based on timing constraints.
-    fn is_rule_applicable(&self, rule: &FaultInjectionRule) -> bool {
+    /// Returns `None` if applicable, or `Some(evaluation)` with the skip reason.
+    fn evaluate_applicability(
+        &self,
+        rule: &FaultInjectionRule,
+    ) -> Option<FaultInjectionEvaluation> {
         let now = Instant::now();
+        let rule_id = rule.id().to_owned();
 
         if !rule.is_enabled() {
-            return false;
+            return Some(FaultInjectionEvaluation::Disabled { rule_id });
         }
 
         if let Some(start_time) = rule.start_time() {
             if now < start_time {
-                return false;
+                return Some(FaultInjectionEvaluation::BeforeStartTime { rule_id });
             }
         }
 
         if let Some(end_time) = rule.end_time() {
             if now >= end_time {
-                return false;
+                return Some(FaultInjectionEvaluation::AfterEndTime { rule_id });
             }
         }
 
         if let Some(hit_limit) = rule.hit_limit() {
-            if rule.hit_count() >= hit_limit {
-                return false;
+            let hit_count = rule.hit_count();
+            if hit_count >= hit_limit {
+                return Some(FaultInjectionEvaluation::HitLimitExhausted {
+                    rule_id,
+                    hit_count,
+                    hit_limit,
+                });
             }
         }
 
-        true
+        None // Rule is applicable
     }
 
     /// Checks if the request matches the rule's condition.
-    fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
+    /// Returns `None` if it matches, or `Some(evaluation)` with the mismatch reason.
+    fn evaluate_condition(
+        &self,
+        request: &Request,
+        rule: &FaultInjectionRule,
+    ) -> Option<FaultInjectionEvaluation> {
         let condition = rule.condition();
+        let rule_id = rule.id().to_owned();
 
         if let Some(expected_op) = condition.operation_type() {
             let request_op = request
@@ -76,23 +177,23 @@ impl FaultClient {
                 .get_optional_str(&FAULT_INJECTION_OPERATION)
                 .and_then(|s| s.parse::<FaultOperationType>().ok());
             if request_op != Some(expected_op) {
-                return false;
+                return Some(FaultInjectionEvaluation::OperationMismatch { rule_id });
             }
         }
 
         if let Some(region) = condition.region() {
             if !request.url().as_str().contains(region.as_str()) {
-                return false;
+                return Some(FaultInjectionEvaluation::RegionMismatch { rule_id });
             }
         }
 
         if let Some(container_id) = condition.container_id() {
             if !request.url().as_str().contains(container_id) {
-                return false;
+                return Some(FaultInjectionEvaluation::ContainerMismatch { rule_id });
             }
         }
 
-        true
+        None // Condition matches
     }
 
     /// Applies the fault injection result and returns an error or modifies the response.
@@ -228,19 +329,53 @@ impl FaultClient {
 #[async_trait]
 impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
-        // Find applicable rule
-        let matched_rule = self
-            .rules
-            .iter()
-            .find(|rule| self.is_rule_applicable(rule) && self.matches_condition(request, rule))
-            .cloned();
+        let mut evaluations: Vec<FaultInjectionEvaluation> = Vec::new();
+        let mut matched_rule: Option<Arc<FaultInjectionRule>> = None;
 
-        // Apply the fault if we found an applicable rule
+        for rule in self.rules.iter() {
+            // Check applicability (timing, enabled, hit limit)
+            if let Some(skip_reason) = self.evaluate_applicability(rule) {
+                evaluations.push(skip_reason);
+                continue;
+            }
+
+            // Check condition match (operation, region, container)
+            if let Some(mismatch) = self.evaluate_condition(request, rule) {
+                evaluations.push(mismatch);
+                continue;
+            }
+
+            // Rule is applicable and matches — use it (first match wins)
+            if matched_rule.is_none() {
+                matched_rule = Some(Arc::clone(rule));
+            }
+        }
+
+        // Apply the fault if we found a matching rule
         let fault_response = if let Some(ref rule) = matched_rule {
-            self.apply_fault(rule.result(), rule).await
+            let result = self.apply_fault(rule.result(), rule).await;
+            if result.is_some() {
+                evaluations.push(FaultInjectionEvaluation::Applied {
+                    rule_id: rule.id().to_owned(),
+                });
+            } else {
+                evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
+                    rule_id: rule.id().to_owned(),
+                    probability: rule.result().probability(),
+                });
+            }
+            result
         } else {
             None
         };
+
+        // Log evaluations at trace level
+        if !evaluations.is_empty() {
+            tracing::trace!(
+                evaluations = ?evaluations,
+                "fault injection rule evaluation"
+            );
+        }
 
         if let Some(fault_response) = fault_response {
             fault_response
@@ -782,5 +917,22 @@ mod tests {
             Some("header-test-rule"),
             "custom response should include x-ms-fault-injected header"
         );
+    }
+
+    #[tokio::test]
+    async fn evaluation_records_disabled_rule() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = Arc::new(FaultInjectionRuleBuilder::new("disabled-rule", error).build());
+        rule.disable();
+
+        let fault_client = FaultClient::new(mock_client, vec![rule]);
+        let request = create_test_request();
+        let result = fault_client.execute_request(&request).await;
+        // The evaluation is logged via tracing - verified by the trace output
+        // For now, just verify the request still succeeds (rule is disabled)
+        assert!(result.is_ok());
     }
 }

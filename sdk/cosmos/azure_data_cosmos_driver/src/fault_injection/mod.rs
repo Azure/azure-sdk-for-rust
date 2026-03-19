@@ -39,6 +39,7 @@ use crate::models::{OperationType, ResourceType};
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
 pub(crate) use fault_injecting_factory::FaultInjectingHttpClientFactory;
 pub use http_client::FaultClient;
+pub use http_client::FaultInjectionEvaluation;
 pub use result::{
     CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
 };
