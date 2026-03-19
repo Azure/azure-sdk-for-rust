@@ -35,7 +35,7 @@ use super::{
 
 use crate::driver::transport::{
     transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext,
+    AuthorizationContext, CosmosTransport,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
