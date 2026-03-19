@@ -22,7 +22,7 @@ use crate::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{OperationOptions, ReadConsistencyStrategy, RuntimeOptions},
+    options::{OperationOptions, ReadConsistencyStrategy, RuntimeOptionsView},
 };
 
 use super::{
@@ -46,7 +46,7 @@ use crate::driver::transport::{
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptions,
-    effective_options: &RuntimeOptions,
+    effective_options: &RuntimeOptionsView<'_>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -61,19 +61,22 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
-    let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
+    let max_failover_retries = effective_options.max_failover_retry_count().copied().unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
     let session_capturing_disabled = effective_options
-        .session_capturing_disabled
+        .session_capturing_disabled()
+        .copied()
         .unwrap_or(false);
     let read_consistency_strategy = effective_options
-        .read_consistency_strategy
+        .read_consistency_strategy()
+        .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
     let max_session_retries = effective_options
-        .max_session_retry_count
+        .max_session_retry_count()
+        .copied()
         .unwrap_or_else(|| {
             // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
             // Uses the original endpoint count (before unavailability filtering).
@@ -92,8 +95,7 @@ pub(crate) async fn execute_operation_pipeline(
         location_snapshot.account.generation,
         location_snapshot.account.multiple_write_locations_enabled,
         effective_options
-            .excluded_regions
-            .as_ref()
+            .excluded_regions()
             .map(|r| r.0.clone())
             .unwrap_or_default(),
         max_failover_retries,
@@ -101,8 +103,7 @@ pub(crate) async fn execute_operation_pipeline(
     );
 
     let deadline = effective_options
-        .end_to_end_latency_policy
-        .as_ref()
+        .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
 
     let mut attempt = 0;
@@ -235,8 +236,7 @@ pub(crate) async fn execute_operation_pipeline(
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
                         let timeout_duration = effective_options
-                            .end_to_end_latency_policy
-                            .as_ref()
+                            .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
 
@@ -273,8 +273,7 @@ pub(crate) async fn execute_operation_pipeline(
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
                         let timeout_duration = effective_options
-                            .end_to_end_latency_policy
-                            .as_ref()
+                            .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
 

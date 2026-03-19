@@ -13,7 +13,7 @@ use crate::{
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
+        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
         RuntimeOptionsView, ThroughputControlGroupSnapshot,
     },
 };
@@ -699,11 +699,11 @@ impl CosmosDriver {
     /// Returns `None` if no applicable control group is found.
     pub(crate) fn effective_throughput_control_group(
         &self,
-        effective_options: &RuntimeOptions,
+        effective_options: &RuntimeOptionsView<'_>,
         container: &ContainerReference,
     ) -> Option<ThroughputControlGroupSnapshot> {
         // First, check if an explicit group name is specified in options
-        if let Some(group_name) = &effective_options.throughput_control_group_name {
+        if let Some(group_name) = effective_options.throughput_control_group_name() {
             if let Some(group) = self
                 .runtime
                 .get_throughput_control_group(container, group_name)
