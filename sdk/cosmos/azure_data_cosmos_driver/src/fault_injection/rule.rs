@@ -60,7 +60,7 @@ impl FaultInjectionRule {
     }
 
     /// Increments the hit count by one.
-    pub fn increment_hit_count(&self) {
+    pub(crate) fn increment_hit_count(&self) {
         self.hit_count.fetch_add(1, Ordering::SeqCst);
     }
 

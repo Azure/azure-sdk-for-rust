@@ -193,7 +193,11 @@ pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<
             // Due to internal retries, the limit may be exhausted within fewer
             // top-level calls than the limit value.
             for _ in 0..5 {
-                let _ = context.read_item(&container, "item1", "pk1").await;
+                let result = context.read_item(&container, "item1", "pk1").await;
+                if result.is_ok() {
+                    // Hit limit exhausted — reads succeed now
+                    break;
+                }
             }
 
             // Verify the rule was hit exactly the limit number of times
