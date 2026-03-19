@@ -11,7 +11,7 @@ use azure_core::http::headers::{HeaderValue, Headers};
 /// All names are lowercase as required by [`HeaderName`]. The azure_core [`Headers`]
 /// type normalizes header names to lowercase on insertion, so lookups are case-sensitive
 /// but will always match since both sides are lowercase.
-mod request_header_names {
+pub(crate) mod request_header_names {
     use azure_core::http::headers::HeaderName;
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
@@ -29,6 +29,8 @@ mod response_header_names {
     pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
     pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
     pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+    pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
+    pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
 }
 
 /// Cosmos request headers for operation-level customization.
@@ -94,6 +96,20 @@ pub struct CosmosResponseHeaders {
 
     /// Cosmos substatus code (`x-ms-substatus`).
     pub substatus: Option<SubStatusCode>,
+
+    /// Owner full name / alternate content path (`x-ms-alt-content-path`).
+    ///
+    /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
+    /// Will be used for container identity validation in follow-up work.
+    #[allow(dead_code)] // Used in follow-up PR for container identity validation
+    pub(crate) owner_full_name: Option<String>,
+
+    /// Owner resource ID / content path (`x-ms-content-path`).
+    ///
+    /// Contains the RID of the owning collection. Will be used for
+    /// RID mismatch validation in container-recreate detection.
+    #[allow(dead_code)] // Used in follow-up PR for RID validation
+    pub(crate) owner_id: Option<String>,
 }
 
 impl CosmosResponseHeaders {
@@ -129,6 +145,12 @@ impl CosmosResponseHeaders {
             substatus: headers
                 .get_optional_str(&response_header_names::SUBSTATUS)
                 .and_then(SubStatusCode::from_header_value),
+            owner_full_name: headers
+                .get_optional_str(&response_header_names::OWNER_FULL_NAME)
+                .map(|s| s.to_owned()),
+            owner_id: headers
+                .get_optional_str(&response_header_names::OWNER_ID)
+                .map(|s| s.to_owned()),
         }
     }
 }
@@ -185,6 +207,8 @@ mod tests {
             continuation: Some("cont".to_string()),
             item_count: Some(5),
             substatus: Some(SubStatusCode::new(1002)),
+            owner_full_name: Some("dbs/db1/colls/c1".to_string()),
+            owner_id: Some("rid1".to_string()),
         };
 
         assert_eq!(
