@@ -4,10 +4,10 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
+    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
