@@ -125,11 +125,20 @@ impl FeedRange {
     }
 
     /// Creates a `FeedRange` from an internal `Range<String>`.
+    ///
+    /// The source range must have `[min, max)` semantics (min inclusive, max exclusive),
+    /// which is the invariant for all partition key ranges from the service.
     #[allow(
         dead_code,
         reason = "will be used when query/change-feed gain FeedRange support"
     )]
     pub(crate) fn from_range(range: &Range<String>) -> Self {
+        debug_assert!(
+            range.is_min_inclusive && !range.is_max_inclusive,
+            "FeedRange requires [min, max) semantics but got is_min_inclusive={}, is_max_inclusive={}",
+            range.is_min_inclusive,
+            range.is_max_inclusive
+        );
         Self {
             min_inclusive: range.min.clone(),
             max_exclusive: range.max.clone(),
@@ -156,48 +165,6 @@ impl FeedRange {
             min_inclusive: pkr.min_inclusive.clone(),
             max_exclusive: pkr.max_exclusive.clone(),
         }
-    }
-
-    /// Creates evenly-spaced artificial feed ranges by dividing the EPK hex space.
-    ///
-    /// The EPK space is `["", "FF")`, which we interpret as the hex range `[0x00, 0xFF)`.
-    /// We divide this into `n` equal sub-ranges.
-    pub(crate) fn create_artificial_ranges(n: usize) -> azure_core::Result<Vec<FeedRange>> {
-        if n == 0 {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "num_of_ranges must be at least 1",
-            ));
-        }
-        if n == 1 {
-            return Ok(vec![FeedRange::full()]);
-        }
-
-        let total: u64 = 0xFF;
-        let mut ranges = Vec::with_capacity(n);
-
-        for i in 0..n {
-            let start = (total * i as u64) / n as u64;
-            let end = (total * (i as u64 + 1)) / n as u64;
-
-            let min_str = if start == 0 {
-                String::new()
-            } else {
-                format!("{:02X}", start)
-            };
-            let max_str = if end >= total {
-                "FF".to_string()
-            } else {
-                format!("{:02X}", end)
-            };
-
-            ranges.push(FeedRange {
-                min_inclusive: min_str,
-                max_exclusive: max_str,
-            });
-        }
-
-        Ok(ranges)
     }
 }
 
@@ -423,65 +390,6 @@ mod tests {
 
         let restored = FeedRange::from_range(&range);
         assert_eq!(feed_range, restored);
-    }
-
-    #[test]
-    fn artificial_ranges_zero() {
-        assert!(FeedRange::create_artificial_ranges(0).is_err());
-    }
-
-    #[test]
-    fn artificial_ranges_one() {
-        let ranges = FeedRange::create_artificial_ranges(1).unwrap();
-        assert_eq!(ranges.len(), 1);
-        assert_eq!(ranges[0], FeedRange::full());
-    }
-
-    #[test]
-    fn artificial_ranges_two() {
-        let ranges = FeedRange::create_artificial_ranges(2).unwrap();
-        assert_eq!(ranges.len(), 2);
-        // First range: ["", midpoint)
-        assert_eq!(ranges[0].min_inclusive, "");
-        // Second range: [midpoint, "FF")
-        assert_eq!(ranges[1].max_exclusive, "FF");
-        // Ranges should be contiguous
-        assert_eq!(ranges[0].max_exclusive, ranges[1].min_inclusive);
-    }
-
-    #[test]
-    fn artificial_ranges_cover_full_space() {
-        for n in [2, 3, 4, 5, 8, 16] {
-            let ranges = FeedRange::create_artificial_ranges(n).unwrap();
-            assert_eq!(ranges.len(), n);
-            // First starts at ""
-            assert_eq!(ranges[0].min_inclusive, "");
-            // Last ends at "FF"
-            assert_eq!(ranges[n - 1].max_exclusive, "FF");
-            // Contiguous: each range's max is the next range's min
-            for i in 0..n - 1 {
-                assert_eq!(
-                    ranges[i].max_exclusive,
-                    ranges[i + 1].min_inclusive,
-                    "Gap between range {} and {} for n={}",
-                    i,
-                    i + 1,
-                    n
-                );
-            }
-            // No overlap
-            for i in 0..n {
-                for j in i + 1..n {
-                    assert!(
-                        !ranges[i].overlaps(&ranges[j]),
-                        "Ranges {} and {} overlap for n={}",
-                        i,
-                        j,
-                        n
-                    );
-                }
-            }
-        }
     }
 
     #[test]

@@ -748,11 +748,9 @@ impl ContainerClient {
 
     /// Gets the feed ranges for this container.
     ///
-    /// Each [`FeedRange`] represents a contiguous range of the container's partition key space.
-    /// By default, each returned feed range corresponds to one physical partition. When
-    /// [`ReadFeedRangesOptions::with_num_of_ranges()`] is specified, the full partition key space
-    /// is evenly divided into that many artificial ranges — useful for parallelism when you
-    /// have more workers than physical partitions.
+    /// Each [`FeedRange`] represents a contiguous range of the container's partition key space,
+    /// corresponding to one physical partition. The returned feed ranges cover the entire
+    /// partition key space.
     ///
     /// # Arguments
     ///
@@ -766,12 +764,6 @@ impl ContainerClient {
     /// // Get feed ranges aligned to physical partitions:
     /// let ranges = container_client.read_feed_ranges(None).await?;
     /// println!("Container has {} physical partitions", ranges.len());
-    ///
-    /// // Get 8 artificial feed ranges for fine-grained parallelism:
-    /// use azure_data_cosmos::ReadFeedRangesOptions;
-    /// let options = ReadFeedRangesOptions::default().with_num_of_ranges(8);
-    /// let ranges = container_client.read_feed_ranges(Some(options)).await?;
-    /// assert_eq!(ranges.len(), 8);
     /// # Ok(())
     /// # }
     /// ```
@@ -782,12 +774,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
 
-        // If num_of_ranges is set, return artificial ranges (no service call needed).
-        if let Some(n) = options.num_of_ranges() {
-            return FeedRange::create_artificial_ranges(n);
-        }
-
-        // Otherwise, resolve physical partition ranges from the routing map.
+        // Resolve physical partition ranges from the routing map.
         let container_properties = self
             .container_connection
             .resolve_container_properties(&self.container_id)
@@ -805,7 +792,7 @@ impl ContainerClient {
 
         let routing_map = self
             .container_connection
-            .resolve_routing_map(collection_rid)
+            .resolve_routing_map(collection_rid, options.force_refresh())
             .await?
             .ok_or_else(|| {
                 azure_core::Error::with_message(
@@ -876,7 +863,7 @@ impl ContainerClient {
         // Look up the physical partition range containing this EPK.
         let routing_map = self
             .container_connection
-            .resolve_routing_map(collection_rid)
+            .resolve_routing_map(collection_rid, false)
             .await?
             .ok_or_else(|| {
                 azure_core::Error::with_message(

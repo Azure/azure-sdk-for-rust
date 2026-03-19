@@ -6,9 +6,7 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    models::ContainerProperties, CreateContainerOptions, FeedRange, ReadFeedRangesOptions,
-};
+use azure_data_cosmos::{models::ContainerProperties, CreateContainerOptions, FeedRange};
 
 use framework::TestClient;
 
@@ -42,44 +40,6 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
                     .parse()
                     .expect("feed range should round-trip through Display/FromStr");
                 assert_eq!(range, &deserialized);
-            }
-
-            Ok(())
-        },
-        None,
-    )
-    .await
-}
-
-#[tokio::test]
-pub async fn read_feed_ranges_artificial() -> Result<(), Box<dyn Error>> {
-    TestClient::run_with_unique_db(
-        async |run_context, db_client| {
-            let properties = ContainerProperties::new("FeedRangeArtificial", "/pk".into());
-
-            let container_client = run_context
-                .create_container(db_client, properties, None)
-                .await?;
-
-            let options = ReadFeedRangesOptions::default().with_num_of_ranges(4);
-            let ranges = container_client.read_feed_ranges(Some(options)).await?;
-
-            assert_eq!(ranges.len(), 4, "expected 4 artificial ranges");
-
-            // All artificial ranges should be contained in the full range.
-            let full = FeedRange::full();
-            for range in &ranges {
-                assert!(full.contains(range));
-            }
-
-            // No overlap between ranges.
-            for i in 0..ranges.len() {
-                for j in i + 1..ranges.len() {
-                    assert!(
-                        !ranges[i].overlaps(&ranges[j]),
-                        "artificial ranges should not overlap"
-                    );
-                }
             }
 
             Ok(())

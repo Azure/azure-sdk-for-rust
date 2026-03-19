@@ -65,14 +65,29 @@ impl ContainerConnection {
     }
 
     /// Resolves the routing map for the given collection RID.
+    ///
+    /// When `force_refresh` is `true`, any cached routing map is discarded and a fresh
+    /// copy is fetched from the service. This is useful after partition split/merge events.
     pub(crate) async fn resolve_routing_map(
         &self,
         collection_rid: &str,
+        force_refresh: bool,
     ) -> Result<
         Option<crate::routing::collection_routing_map::CollectionRoutingMap>,
         azure_core::Error,
     > {
-        self.pk_range_cache.try_lookup(collection_rid, None).await
+        let routing_map = self.pk_range_cache.try_lookup(collection_rid, None).await?;
+
+        if force_refresh {
+            if let Some(previous) = routing_map {
+                return self
+                    .pk_range_cache
+                    .try_lookup(collection_rid, Some(previous))
+                    .await;
+            }
+        }
+
+        Ok(routing_map)
     }
 
     pub async fn send<T>(

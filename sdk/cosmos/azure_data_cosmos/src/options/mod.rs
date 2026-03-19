@@ -348,23 +348,22 @@ pub struct ThroughputOptions;
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct ReadFeedRangesOptions {
-    num_of_ranges: Option<usize>,
+    force_refresh: bool,
 }
 
 impl ReadFeedRangesOptions {
-    /// Divides the EPK space into the specified number of evenly-sized artificial ranges
-    /// instead of returning physical partition boundaries.
+    /// When `true`, bypasses the local partition key range cache and fetches
+    /// fresh partition information from the service.
     ///
-    /// This is useful when you have more workers than physical partitions and want
-    /// finer-grained parallelism. When not set, one [`FeedRange`](crate::FeedRange)
-    /// is returned per physical partition.
-    pub fn with_num_of_ranges(mut self, n: usize) -> Self {
-        self.num_of_ranges = Some(n);
+    /// This is useful after container split/merge operations when the cached
+    /// routing map may be stale. Defaults to `false`.
+    pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
+        self.force_refresh = force_refresh;
         self
     }
 
-    pub(crate) fn num_of_ranges(&self) -> Option<usize> {
-        self.num_of_ranges
+    pub(crate) fn force_refresh(&self) -> bool {
+        self.force_refresh
     }
 }
 
