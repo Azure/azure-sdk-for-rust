@@ -33,9 +33,9 @@ pub struct QueueClientCreateOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueClient::delete()`
+/// Options to be passed to `QueueClient::delete_message()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueClientDeleteOptions<'a> {
+pub struct QueueClientDeleteMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -43,9 +43,9 @@ pub struct QueueClientDeleteOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueClient::delete_message()`
+/// Options to be passed to `QueueClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueClientDeleteMessageOptions<'a> {
+pub struct QueueClientDeleteOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
