@@ -61,7 +61,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--container` | `perfcontainer` | Container name (partition key path must be `/partition_key`) |
 | `--auth` | *required* | Authentication method: `key` or `aad` |
 | `--key` | — | Account key (or set `AZURE_COSMOS_KEY` env var) |
-| `--application-region` | — | Azure region where the application is running (e.g., `"East US 2"`) |
+| `--application-region` | *required* | Azure region where the application is running (e.g., `"East US 2"`) |
 | `--excluded-regions` | — | Comma-separated excluded regions |
 | `--exclude-regions-for` | `both` | Scope for excluded regions: `reads`, `writes`, or `both` |
 | `--concurrency` | `50` | Number of concurrent operations |

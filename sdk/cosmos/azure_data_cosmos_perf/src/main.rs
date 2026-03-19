@@ -16,17 +16,21 @@ fn create_aad_credential(
 {
     azure_identity::WorkloadIdentityCredential::new(None)
         .map(|c| c as std::sync::Arc<dyn azure_core::credentials::TokenCredential>)
-        .or_else(|_| {
+        .or_else(|workload_err| {
             azure_identity::ManagedIdentityCredential::new(None)
                 .map(|c| c as std::sync::Arc<dyn azure_core::credentials::TokenCredential>)
+                .map_err(|managed_err| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Credential,
+                        format!(
+                            "Failed to create AAD credential. \
+                             WorkloadIdentityCredential: {workload_err}, \
+                             ManagedIdentityCredential: {managed_err}"
+                        ),
+                    )
+                })
         })
-        .map_err(|e| {
-            format!(
-                "Failed to create AAD credential. \
-                 Neither WorkloadIdentityCredential nor ManagedIdentityCredential are available: {e}"
-            )
-            .into()
-        })
+        .map_err(|e| e.into())
 }
 
 #[tokio::main]
