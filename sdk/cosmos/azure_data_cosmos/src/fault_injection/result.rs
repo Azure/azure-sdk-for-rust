@@ -5,7 +5,12 @@
 
 use std::time::Duration;
 
-use azure_core::http::{headers::Headers, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, HeaderValue, Headers},
+    StatusCode,
+};
+
+use crate::constants::SubStatusCode;
 
 use super::FaultInjectionErrorType;
 
@@ -22,6 +27,75 @@ pub struct CustomResponse {
     pub headers: Headers,
     /// The body for the synthetic response.
     pub body: Vec<u8>,
+}
+
+/// Builder for creating a [`CustomResponse`].
+///
+/// Provides a fluent API for constructing synthetic HTTP responses
+/// for fault injection testing.
+///
+/// # Example
+///
+/// ```rust
+/// use azure_data_cosmos::fault_injection::CustomResponseBuilder;
+/// use azure_core::http::StatusCode;
+///
+/// let response = CustomResponseBuilder::new(StatusCode::Forbidden)
+///     .with_sub_status(3)
+///     .with_body(b"Write Forbidden".to_vec())
+///     .build();
+///
+/// assert_eq!(response.status_code, StatusCode::Forbidden);
+/// ```
+pub struct CustomResponseBuilder {
+    status_code: StatusCode,
+    headers: Headers,
+    body: Vec<u8>,
+}
+
+impl CustomResponseBuilder {
+    /// Creates a new builder with the specified HTTP status code.
+    pub fn new(status_code: StatusCode) -> Self {
+        Self {
+            status_code,
+            headers: Headers::new(),
+            body: Vec::new(),
+        }
+    }
+
+    /// Adds a header to the response.
+    pub fn with_header(
+        mut self,
+        name: impl Into<HeaderName>,
+        value: impl Into<HeaderValue>,
+    ) -> Self {
+        self.headers.insert(name, value);
+        self
+    }
+
+    /// Sets the `x-ms-substatus` header to the given numeric sub-status code.
+    ///
+    /// This is a convenience method equivalent to calling
+    /// `with_header("x-ms-substatus", code.to_string())`.
+    pub fn with_sub_status(self, code: impl Into<SubStatusCode>) -> Self {
+        let code = code.into();
+        self.with_header(crate::constants::SUB_STATUS, code.to_string())
+    }
+
+    /// Sets the response body.
+    pub fn with_body(mut self, body: impl Into<Vec<u8>>) -> Self {
+        self.body = body.into();
+        self
+    }
+
+    /// Builds the [`CustomResponse`].
+    pub fn build(self) -> CustomResponse {
+        CustomResponse {
+            status_code: self.status_code,
+            headers: self.headers,
+            body: self.body,
+        }
+    }
 }
 
 /// Represents a server error to be injected.
