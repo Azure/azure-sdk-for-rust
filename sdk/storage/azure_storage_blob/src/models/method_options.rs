@@ -49,7 +49,7 @@ pub struct BlobClientManagedDownloadOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 
     /// Optional. Size of the initial download request. A larger value means small/medium blobs
-    /// can be downloaded in a single request. Only used by `managed_download_to` and `reqwest_download_to`.
+    /// can be downloaded in a single request. Only used by `managed_download_to`.
     /// A default value will be chosen if none is provided.
     pub initial_partition_size: Option<NonZero<usize>>,
 
