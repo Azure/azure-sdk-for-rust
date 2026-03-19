@@ -19,7 +19,7 @@
 //! - [`FaultInjectionResult`] — Defines what error to inject, including error type, delay,
 //!   and probability.
 //! - [`FaultInjectionRule`] — Combines a condition with a result and additional controls
-//!   like duration, start delay, and hit limit.
+//!   like timing windows (`start_time`/`end_time`), `hit_limit`, and `probability`.
 //! - [`FaultClient`] — An [`HttpClient`](azure_core::http::HttpClient)
 //!   implementation that evaluates rules and injects faults.
 //! - `FaultInjectingHttpClientFactory` — An `HttpClientFactory`

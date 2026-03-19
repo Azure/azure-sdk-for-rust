@@ -165,7 +165,11 @@ impl FaultInjectionResultBuilder {
 
     /// Sets the probability of injecting the error (0.0 to 1.0).
     pub fn with_probability(mut self, probability: f32) -> Self {
-        self.probability = probability.clamp(0.0, 1.0);
+        self.probability = if probability.is_finite() {
+            probability.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         self
     }
 
@@ -255,6 +259,15 @@ mod tests {
             .build();
 
         assert_eq!(result.delay(), Some(Duration::from_millis(200)));
+    }
+
+    #[test]
+    fn builder_probability_nan_normalized_to_zero() {
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .with_probability(f32::NAN)
+            .build();
+        assert!(error.probability().abs() < f32::EPSILON);
     }
 
     #[test]
