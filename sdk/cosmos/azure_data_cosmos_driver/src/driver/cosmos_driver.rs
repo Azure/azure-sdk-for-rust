@@ -7,7 +7,7 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{CosmosEndpoint, LocationStateStore},
+    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
@@ -60,6 +60,8 @@ pub struct CosmosDriver {
     default_max_failover_retries: u32,
     /// Resolved default for max session retries (from env or None = compute at operation time).
     default_max_session_retries: Option<u32>,
+    /// Session token cache for session consistency.
+    session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
     /// Operations check this flag to fail fast if the driver is used before
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
@@ -605,6 +607,7 @@ impl CosmosDriver {
             location_state_store,
             default_max_failover_retries,
             default_max_session_retries,
+            session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
         }
     }
@@ -913,6 +916,10 @@ impl CosmosDriver {
             pipeline_type,
             transport_security,
             diagnostics_builder,
+            &self.session_manager,
+            account_properties
+                .user_consistency_policy
+                .default_consistency_level,
         )
         .await
     }

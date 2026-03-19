@@ -48,6 +48,13 @@ pub struct RuntimeOptions {
     pub max_session_retry_count: Option<u32>,
     /// Endpoint unavailability TTL used by routing state.
     pub endpoint_unavailability_ttl: Option<Duration>,
+    /// Whether session token capturing is disabled.
+    ///
+    /// When `None` or `Some(false)`, session tokens are captured and resolved
+    /// from response headers for session consistency (the default behavior).
+    /// Set to `Some(true)` to disable session token management for scenarios where
+    /// session consistency is not needed.
+    pub session_capturing_disabled: Option<bool>,
 }
 
 impl RuntimeOptions {
@@ -109,6 +116,9 @@ impl RuntimeOptions {
             endpoint_unavailability_ttl: self
                 .endpoint_unavailability_ttl
                 .or(base.endpoint_unavailability_ttl),
+            session_capturing_disabled: self
+                .session_capturing_disabled
+                .or(base.session_capturing_disabled),
         }
     }
 }
@@ -209,6 +219,15 @@ impl RuntimeOptionsBuilder {
         self
     }
 
+    /// Disables session token capturing.
+    ///
+    /// When `true`, the driver will not capture or resolve session tokens.
+    /// Defaults to `false` (session capturing is enabled).
+    pub fn with_session_capturing_disabled(mut self, value: bool) -> Self {
+        self.options.session_capturing_disabled = Some(value);
+        self
+    }
+
     /// Builds the [`RuntimeOptions`].
     pub fn build(self) -> RuntimeOptions {
         self.options
@@ -301,6 +320,11 @@ impl SharedRuntimeOptions {
     /// Sets endpoint unavailability TTL.
     pub fn set_endpoint_unavailability_ttl(&self, value: Option<Duration>) {
         self.write_guard().endpoint_unavailability_ttl = value;
+    }
+
+    /// Sets whether session token capturing is disabled.
+    pub fn set_session_capturing_disabled(&self, value: Option<bool>) {
+        self.write_guard().session_capturing_disabled = value;
     }
 }
 

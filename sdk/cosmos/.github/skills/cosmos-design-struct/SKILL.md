@@ -326,3 +326,37 @@ Breaking changes include:
 - For **new** structs, explicitly ask the developer which fields are required if not obvious from the context.
 - For **existing** structs, infer required fields from: (1) doc comments mentioning "required", (2) server rejection of default values, (3) every call site always setting the field, (4) non-`Option` type with no semantically valid zero value.
 - When a field requires invariant enforcement, prefer encoding the invariant in the type system (newtypes, enums, constrained wrappers) over runtime validation in `with_*` setters or constructors. Setter-level validation (clamping, range checks, format normalization) is a last resort for invariants that cannot be practically expressed in the type system (see Step 6b).
+
+## Test Conventions
+
+### No round-trip tests for parse/format pairs
+
+**Parse and format/display tests must be one-directional**, never round-trip.
+
+Round-tripping (parse → format → parse → assert equality) hides symmetric bugs: if both
+parse and format interpret a value wrong in the same way, the test still passes.
+
+Every test must be exactly one of:
+
+1. **Parse test** — hardcoded string input → `assert_eq!` against a directly-constructed expected
+   structure (using a helper like `make_token()`, not via parsing).
+2. **Format test** — directly-constructed structure → `assert_eq!` against a hardcoded expected string.
+
+```rust
+// ❌ BAD: round-trip — symmetric bugs are invisible
+let t = Token::parse("1#100#1=20").unwrap();
+let s = t.to_string();
+let t2 = Token::parse(&s).unwrap();
+assert_eq!(t, t2);
+
+// ✅ GOOD: parse test — string in, assert structure
+let t = Token::parse("1#100#1=20").unwrap();
+assert_eq!(t, make_token(1, 100, &[(1, 20)]));
+
+// ✅ GOOD: format test — structure in, assert string
+let t = make_token(1, 100, &[(1, 20)]);
+assert_eq!(t.to_string(), "1#100#1=20");
+```
+
+When reviewing tests, flag any test that feeds the output of `to_string()`/`Display` back into
+`parse()`/`FromStr` and only asserts equality between the parsed results.

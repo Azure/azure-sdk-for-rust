@@ -89,6 +89,12 @@ impl AsRef<str> for ResourceId {
     }
 }
 
+impl std::borrow::Borrow<str> for ResourceId {
+    fn borrow(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl std::fmt::Display for ResourceId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
