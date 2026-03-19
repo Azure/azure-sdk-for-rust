@@ -46,7 +46,7 @@ use super::{
 #[derive(Debug)]
 pub struct CosmosDriver {
     /// Reference to the parent runtime.
-    runtime: CosmosDriverRuntime,
+    runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
     options: DriverOptions,
     /// Per-account transport (created after HTTP/2 probe during initialization).
@@ -528,7 +528,7 @@ impl CosmosDriver {
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
-    pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
+    pub(crate) fn new(runtime: Arc<CosmosDriverRuntime>, options: DriverOptions) -> Self {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
@@ -539,11 +539,11 @@ impl CosmosDriver {
         let transport: Arc<ArcSwap<CosmosTransport>> =
             Arc::new(ArcSwap::from(Arc::clone(runtime.bootstrap_transport())));
 
-        let runtime_for_callback = runtime.clone();
+        let runtime_for_callback = Arc::clone(&runtime);
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
         let refresh_callback = Arc::new(move || {
-            let runtime = runtime_for_callback.clone();
+            let runtime = Arc::clone(&runtime_for_callback);
             let account = account_for_callback.clone();
             let transport_holder = Arc::clone(&transport_for_callback);
             let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
@@ -579,7 +579,7 @@ impl CosmosDriver {
         ));
 
         Self {
-            runtime: runtime.clone(),
+            runtime,
             options,
             transport,
             location_state_store,
@@ -683,8 +683,8 @@ impl CosmosDriver {
         operation_options: &'a OperationOptions,
     ) -> RuntimeOptionsView<'a> {
         RuntimeOptionsView::new(
-            Some(self.runtime.env_options().clone()),
-            Some(self.runtime.runtime_options().clone()),
+            Some(Arc::new(self.runtime.env_options().clone())),
+            Some(self.runtime.runtime_options()),
             Some(self.options.runtime_options().clone()),
             Some(operation_options.runtime()),
         )
@@ -1302,7 +1302,7 @@ mod tests {
 
     #[tokio::test]
     async fn runtime_modification() {
-        let mut runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
         // Initially none
         assert!(runtime
