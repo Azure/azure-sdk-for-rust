@@ -236,6 +236,3 @@ impl FromStr for FaultInjectionErrorType {
         }
     }
 }
-
-/// Name of the custom header used to pass the fault injection operation type on outgoing requests.
-pub const FAULT_INJECTION_OPERATION_HEADER: &str = "x-ms-fault-injection-operation";

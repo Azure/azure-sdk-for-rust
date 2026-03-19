@@ -5,25 +5,19 @@
 
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
-use super::{FaultInjectionErrorType, FaultOperationType, FAULT_INJECTION_OPERATION_HEADER};
+use super::FaultInjectionErrorType;
+use super::FaultOperationType;
+use crate::models::cosmos_headers::fault_injection_header_names::{
+    FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+};
+use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
-use azure_core::http::headers::{HeaderName, Headers};
+use azure_core::http::headers::Headers;
 use azure_core::http::{AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-
-/// Header name constant for the fault injection operation header.
-const FAULT_INJECTION_OPERATION: HeaderName =
-    HeaderName::from_static(FAULT_INJECTION_OPERATION_HEADER);
-
-/// Header name constant for the sub-status header.
-/// Duplicates `models::cosmos_headers::response_header_names::SUBSTATUS` which is private.
-const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
-
-/// Header name constant indicating which rule injected a fault.
-const FAULT_INJECTED_HEADER: HeaderName = HeaderName::from_static("x-ms-fault-injected");
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
@@ -140,7 +134,7 @@ impl FaultClient {
         // Check for custom response first (takes precedence over error injection)
         if let Some(custom) = server_error.custom_response() {
             let mut headers = custom.headers().clone();
-            headers.insert(FAULT_INJECTED_HEADER, rule_id.to_owned());
+            headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
             return Some(Ok(AsyncRawResponse::from_bytes(
                 custom.status_code(),
                 headers,
@@ -213,9 +207,9 @@ impl FaultClient {
 
         let mut headers = Headers::new();
         if let Some(ss) = sub_status {
-            headers.insert(SUB_STATUS, ss.value().to_string());
+            headers.insert(SUBSTATUS.clone(), ss.value().to_string());
         }
-        headers.insert(FAULT_INJECTED_HEADER, rule_id.to_owned());
+        headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
         let raw_response = Box::new(RawResponse::from_bytes(status_code, headers, vec![]));
 
         let error = azure_core::Error::with_message(
@@ -255,7 +249,7 @@ impl HttpClient for FaultClient {
             let mut clean_request = request.clone();
             clean_request
                 .headers_mut()
-                .remove(FAULT_INJECTION_OPERATION);
+                .remove(FAULT_INJECTION_OPERATION.clone());
 
             // No fault injection, proceed with actual request
             self.inner.execute_request(&clean_request).await
@@ -269,19 +263,19 @@ mod tests {
     use crate::fault_injection::{
         CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
-        FAULT_INJECTION_OPERATION_HEADER,
     };
+    use crate::models::cosmos_headers::fault_injection_header_names::{
+        FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+    };
+    use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
     use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
-    use azure_core::http::headers::HeaderName;
     use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
-
-    const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
 
     /// A mock HTTP client that tracks call counts and returns success.
     #[derive(Debug)]
@@ -621,9 +615,7 @@ mod tests {
                     .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
 
                 // Verify x-ms-fault-injected header is present
-                let fault_header = response
-                    .headers()
-                    .get_optional_str(&HeaderName::from_static("x-ms-fault-injected"));
+                let fault_header = response.headers().get_optional_str(&FAULT_INJECTED);
                 assert_eq!(
                     fault_header,
                     Some("substatus-rule"),
@@ -635,7 +627,7 @@ mod tests {
                     Some(expected) => {
                         let actual: u32 = response
                             .headers()
-                            .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
+                            .get_as::<u32, std::num::ParseIntError>(&SUBSTATUS)
                             .unwrap_or_else(|_| {
                                 panic!("{:?} should have x-ms-substatus header", error_type)
                             });
@@ -647,7 +639,7 @@ mod tests {
                         );
                     }
                     None => {
-                        let substatus_header = response.headers().get_optional_str(&SUB_STATUS);
+                        let substatus_header = response.headers().get_optional_str(&SUBSTATUS);
                         assert!(
                             substatus_header.is_none(),
                             "{:?} should not have x-ms-substatus header",
@@ -752,10 +744,9 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         let mut request = create_test_request();
-        request.headers_mut().insert(
-            HeaderName::from_static(FAULT_INJECTION_OPERATION_HEADER),
-            "ReadItem",
-        );
+        request
+            .headers_mut()
+            .insert(FAULT_INJECTION_OPERATION.clone(), "ReadItem");
 
         let result = fault_client.execute_request(&request).await;
         assert!(
@@ -785,9 +776,7 @@ mod tests {
         assert!(response.is_ok());
 
         let raw = response.unwrap();
-        let fault_header = raw
-            .headers()
-            .get_optional_str(&HeaderName::from_static("x-ms-fault-injected"));
+        let fault_header = raw.headers().get_optional_str(&FAULT_INJECTED);
         assert_eq!(
             fault_header,
             Some("header-test-rule"),
