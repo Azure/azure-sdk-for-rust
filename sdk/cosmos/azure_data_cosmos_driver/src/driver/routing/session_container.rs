@@ -233,7 +233,18 @@ mod tests {
         let c_new = test_container("db1", "c1", "rid_new");
         sc.set_session_token(&c_new, "0:1#50#1=5");
 
-        assert!(sc.resolve_session_token(&c_old).is_none());
+        // The old RID's tokens were removed, but resolving via c_old still
+        // works through the name→RID fallback (name now points to rid_new).
+        let old_token = sc.resolve_session_token(&c_old).unwrap();
+        assert!(
+            old_token.as_str().contains("50"),
+            "should resolve to new container's token via name fallback"
+        );
         assert!(sc.resolve_session_token(&c_new).is_some());
+
+        // Confirm the old RID's direct tokens are truly gone by checking
+        // that a container with a completely different name but rid_old has nothing.
+        let c_different_name = test_container("db1", "other", "rid_old");
+        assert!(sc.resolve_session_token(&c_different_name).is_none());
     }
 }
