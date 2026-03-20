@@ -53,7 +53,14 @@ impl ContainerClient {
         let items_link = link.feed(ResourceType::Documents);
 
         // Eagerly resolve immutable container metadata from the driver.
-        let driver_ref = driver.resolve_container(database_id, container_id).await?;
+        let driver_ref = driver
+            .resolve_container(database_id, container_id)
+            .await
+            .map_err(|e| {
+                e.with_context(format!(
+                    "failed to resolve container metadata for '{database_id}/{container_id}'"
+                ))
+            })?;
         let container_ref = ContainerReference::from_driver_ref(&driver_ref);
 
         let container_cache = Arc::from(ContainerCache::new(

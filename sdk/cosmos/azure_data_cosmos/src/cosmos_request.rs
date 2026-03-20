@@ -101,11 +101,6 @@ impl CosmosRequest {
         self.operation_type.is_read_only()
     }
 
-    /// Returns the container ID extracted from the request's resource link, if present.
-    pub fn container_id(&self) -> Option<String> {
-        self.resource_link.container_id()
-    }
-
     /// Gets the corresponding http method for the given `OperationType`.
     pub fn http_method(&self) -> Method {
         self.operation_type.http_method()
