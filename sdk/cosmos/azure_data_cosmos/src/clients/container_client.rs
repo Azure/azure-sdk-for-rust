@@ -16,7 +16,6 @@ use std::sync::Arc;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
-use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
@@ -63,20 +62,13 @@ impl ContainerClient {
             })?;
         let container_ref = ContainerReference::from_driver_ref(&driver_ref);
 
-        let container_cache = Arc::from(ContainerCache::new(
-            pipeline.clone(),
-            link.clone(),
-            global_endpoint_manager.clone(),
-        ));
         let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
             pipeline.clone(),
             database_link.clone(),
-            container_cache.clone(),
             global_endpoint_manager.clone(),
         ));
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),
-            container_cache,
             partition_key_range_cache,
             global_partition_endpoint_manager.clone(),
             container_ref,
@@ -122,15 +114,6 @@ impl ContainerClient {
             .container_connection
             .send(cosmos_request, Context::default())
             .await?;
-
-        // Populate the container cache so that subsequent item operations
-        // (which resolve container properties for partition-level routing)
-        // find them already cached and avoid an extra metadata fetch.
-        if let Ok(properties) = response.deserialize_body::<ContainerProperties>() {
-            self.container_connection
-                .populate_container_cache(self.container_id.clone(), properties)
-                .await;
-        }
 
         Ok(response)
     }

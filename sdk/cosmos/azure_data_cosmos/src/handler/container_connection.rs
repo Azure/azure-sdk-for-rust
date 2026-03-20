@@ -3,10 +3,9 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::{ContainerProperties, ContainerReference, CosmosResponse};
+use crate::models::{ContainerReference, CosmosResponse};
 use crate::pipeline::GatewayPipeline;
 use crate::resource_context::ResourceType;
-use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::Context;
@@ -16,7 +15,6 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub(crate) struct ContainerConnection {
     pipeline: Arc<GatewayPipeline>,
-    container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     container_ref: ContainerReference,
@@ -28,33 +26,19 @@ impl ContainerConnection {
     /// # Arguments
     ///
     /// * `pipeline` - The Cosmos gateway pipeline to use for sending requests.
-    /// * `container_cache` - The cache used to resolve container properties.
     /// * `pk_range_cache` - The cache used to resolve partition key ranges.
     pub(crate) fn new(
         pipeline: Arc<GatewayPipeline>,
-        container_cache: Arc<ContainerCache>,
         pk_range_cache: Arc<PartitionKeyRangeCache>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
         container_ref: ContainerReference,
     ) -> Self {
         Self {
             pipeline,
-            container_cache,
             pk_range_cache,
             global_partition_endpoint_manager,
             container_ref,
         }
-    }
-
-    /// Populates the container cache with the given properties.
-    pub(crate) async fn populate_container_cache(
-        &self,
-        container_id: String,
-        properties: ContainerProperties,
-    ) {
-        self.container_cache
-            .populate(container_id, properties)
-            .await;
     }
 
     pub async fn send<T>(
@@ -195,33 +179,15 @@ mod tests {
         )
     }
 
-    // Helper function to create a test ContainerCache
-    fn create_container_cache(
-        pipeline: Arc<GatewayPipeline>,
-        endpoint_manager: Arc<GlobalEndpointManager>,
-    ) -> Arc<ContainerCache> {
-        let container_link = ResourceLink::root(ResourceType::Databases)
-            .item("test_db")
-            .feed(ResourceType::Containers)
-            .item("test_container");
-        Arc::new(ContainerCache::new(
-            pipeline,
-            container_link,
-            endpoint_manager,
-        ))
-    }
-
     // Helper function to create a test PartitionKeyRangeCache
     fn create_pk_range_cache(
         pipeline: Arc<GatewayPipeline>,
-        container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Arc<PartitionKeyRangeCache> {
         let database_link = ResourceLink::root(ResourceType::Databases).item("test_db");
         Arc::new(PartitionKeyRangeCache::new(
             pipeline,
             database_link,
-            container_cache,
             endpoint_manager,
         ))
     }
@@ -275,17 +241,11 @@ mod tests {
             false,
         ));
 
-        let container_cache =
-            create_container_cache(gateway_pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            gateway_pipeline.clone(),
-            container_cache.clone(),
-            endpoint_manager.clone(),
-        );
+        let pk_range_cache =
+            create_pk_range_cache(gateway_pipeline.clone(), endpoint_manager.clone());
 
         let connection = ContainerConnection::new(
             gateway_pipeline,
-            container_cache,
             pk_range_cache,
             partition_manager,
             create_test_container_ref(),
@@ -299,37 +259,25 @@ mod tests {
     async fn multiple_container_connections_share_caches() {
         let endpoint_manager = create_endpoint_manager();
         let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
-        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            endpoint_manager.clone(),
-        );
+        let pk_range_cache = create_pk_range_cache(pipeline.clone(), endpoint_manager.clone());
 
         let container_ref = create_test_container_ref();
 
         // Create multiple connections sharing the same caches
         let connection1 = ContainerConnection::new(
             pipeline.clone(),
-            container_cache.clone(),
             pk_range_cache.clone(),
             partition_manager.clone(),
             container_ref.clone(),
         );
         let connection2 = ContainerConnection::new(
             pipeline.clone(),
-            container_cache.clone(),
             pk_range_cache.clone(),
             partition_manager.clone(),
             container_ref.clone(),
         );
-        let connection3 = ContainerConnection::new(
-            pipeline,
-            container_cache,
-            pk_range_cache,
-            partition_manager,
-            container_ref,
-        );
+        let connection3 =
+            ContainerConnection::new(pipeline, pk_range_cache, partition_manager, container_ref);
 
         // All connections should be valid
         assert!(std::mem::size_of_val(&connection1) > 0);
@@ -394,16 +342,10 @@ mod tests {
     async fn container_connection_debug_implementation() {
         let endpoint_manager = create_endpoint_manager();
         let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
-        let container_cache = create_container_cache(pipeline.clone(), endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(
-            pipeline.clone(),
-            container_cache.clone(),
-            endpoint_manager.clone(),
-        );
+        let pk_range_cache = create_pk_range_cache(pipeline.clone(), endpoint_manager.clone());
 
         let connection = ContainerConnection::new(
             pipeline,
-            container_cache,
             pk_range_cache,
             partition_manager,
             create_test_container_ref(),

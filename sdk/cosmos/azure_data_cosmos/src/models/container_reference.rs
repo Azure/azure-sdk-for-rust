@@ -16,6 +16,7 @@ use crate::models::{PartitionKeyDefinition, PartitionKeyKind};
 /// [`ContainerReference`](azure_data_cosmos_driver::models::ContainerReference)
 /// to maintain independent versioning between the two crates.
 #[derive(Clone, Debug)]
+#[allow(dead_code)] // Fields used by upcoming feed range APIs via accessors below
 pub(crate) struct ContainerReference {
     /// Container user-facing name (e.g., "MyContainer").
     container_id: String,
@@ -72,6 +73,7 @@ impl ContainerReference {
     }
 
     /// Returns the container's user-facing name.
+    #[allow(dead_code)] // Used by upcoming feed range APIs
     pub(crate) fn container_id(&self) -> &str {
         &self.container_id
     }
@@ -92,6 +94,7 @@ impl ContainerReference {
     /// Creates a `ContainerReference` from individual parts.
     ///
     /// Used in tests and when constructing from non-driver sources.
+    #[allow(dead_code)] // Used by upcoming feed range APIs
     pub(crate) fn from_parts(
         container_id: String,
         collection_rid: String,
