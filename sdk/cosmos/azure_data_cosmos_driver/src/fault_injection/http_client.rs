@@ -88,6 +88,12 @@ mod evaluation {
         },
     }
 
+    // Manual `Eq` because `ProbabilityMiss` contains `f32` which doesn't
+    // implement `Eq`. This is safe because the enum is a diagnostic value
+    // not used for hashing or ordering — the `f32` probability is always
+    // a finite value in [0.0, 1.0] (validated by the builder).
+    impl Eq for FaultInjectionEvaluation {}
+
     impl FaultInjectionEvaluation {
         /// Returns the rule ID associated with this evaluation.
         pub fn rule_id(&self) -> &str {

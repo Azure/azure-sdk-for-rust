@@ -368,7 +368,7 @@ impl AsRef<str> for RequestSentStatus {
 ///
 /// This type is non-exhaustive and new fields may be added in future releases.
 /// Use the getter methods to access field values.
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[non_exhaustive]
 pub struct RequestDiagnostics {
     /// Context describing why this request was made.
