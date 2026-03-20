@@ -26,6 +26,7 @@
 //!   decorator that wraps created clients with fault injection.
 
 mod condition;
+mod evaluation;
 mod fault_injecting_factory;
 mod http_client;
 mod result;
@@ -40,9 +41,9 @@ use std::sync::Mutex;
 use crate::models::{OperationType, ResourceType};
 
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
+pub use evaluation::FaultInjectionEvaluation;
 pub(crate) use fault_injecting_factory::FaultInjectingHttpClientFactory;
 pub use http_client::FaultClient;
-pub use http_client::FaultInjectionEvaluation;
 pub use result::{
     CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
 };
@@ -52,12 +53,20 @@ pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 static NEXT_EVALUATION_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Storage for fault injection evaluations keyed by request ID.
-/// Written by [`FaultClient`], read by the transport pipeline.
+///
+/// Written by [`FaultClient`] during `execute_request()`, read by the transport
+/// pipeline in `finalize_http_attempt()`.
+///
+/// **Contract**: Every `store_evaluations()` call must be paired with exactly one
+/// `take_evaluations()` call using the same request ID. Failure to call
+/// `take_evaluations()` (e.g., due to a panic) will leak the entry.
 static EVALUATION_STORE: std::sync::LazyLock<Mutex<HashMap<u64, Vec<FaultInjectionEvaluation>>>> =
     std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Generates a unique evaluation request ID.
 pub(crate) fn next_evaluation_id() -> u64 {
+    // Uniqueness is guaranteed by the atomic increment itself;
+    // no memory ordering with other operations is needed.
     NEXT_EVALUATION_ID.fetch_add(1, Ordering::Relaxed)
 }
 
