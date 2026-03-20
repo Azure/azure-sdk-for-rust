@@ -19,9 +19,7 @@ use azure_core::{
     error::ErrorKind,
     http::{AsyncRawResponse, HttpClient, Request},
 };
-#[cfg(feature = "tokio")]
-use tracing::debug;
-use tracing::trace;
+use tracing::{debug, trace};
 use url::Url;
 
 use crate::diagnostics::TransportShardDiagnostics;

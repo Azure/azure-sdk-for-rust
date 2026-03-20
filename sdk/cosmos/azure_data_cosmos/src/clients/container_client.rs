@@ -3,7 +3,7 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
+    models::{ContainerProperties, ContainerReference, CosmosResponse, ThroughputProperties},
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -22,6 +22,7 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
+use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -41,13 +42,19 @@ impl ContainerClient {
         pipeline: Arc<GatewayPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
+        database_id: &str,
+        driver: Arc<CosmosDriver>,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
-    ) -> Self {
+    ) -> azure_core::Result<Self> {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Documents);
+
+        // Eagerly resolve immutable container metadata from the driver.
+        let driver_ref = driver.resolve_container(database_id, container_id).await?;
+        let container_ref = ContainerReference::from_driver_ref(&driver_ref);
 
         let container_cache = Arc::from(ContainerCache::new(
             pipeline.clone(),
@@ -65,15 +72,16 @@ impl ContainerClient {
             container_cache,
             partition_key_range_cache,
             global_partition_endpoint_manager.clone(),
+            container_ref,
         ));
 
-        Self {
+        Ok(Self {
             link,
             items_link,
             pipeline,
             container_connection,
             container_id: container_id.to_string(),
-        }
+        })
     }
 
     /// Reads the properties of the container.

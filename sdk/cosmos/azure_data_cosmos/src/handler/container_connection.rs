@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::{ContainerProperties, CosmosResponse};
+use crate::models::{ContainerProperties, ContainerReference, CosmosResponse};
 use crate::pipeline::GatewayPipeline;
 use crate::resource_context::ResourceType;
 use crate::routing::container_cache::ContainerCache;
@@ -19,6 +19,7 @@ pub(crate) struct ContainerConnection {
     container_cache: Arc<ContainerCache>,
     pk_range_cache: Arc<PartitionKeyRangeCache>,
     global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    container_ref: ContainerReference,
 }
 
 impl ContainerConnection {
@@ -34,12 +35,14 @@ impl ContainerConnection {
         container_cache: Arc<ContainerCache>,
         pk_range_cache: Arc<PartitionKeyRangeCache>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+        container_ref: ContainerReference,
     ) -> Self {
         Self {
             pipeline,
             container_cache,
             pk_range_cache,
             global_partition_endpoint_manager,
+            container_ref,
         }
     }
 
@@ -65,81 +68,61 @@ impl ContainerConnection {
             && (cosmos_request.resource_type.is_partitioned()
                 || cosmos_request.resource_type == ResourceType::StoredProcedures)
         {
-            let mut container_properties = None;
-            if let Some(container_id) = cosmos_request.container_id() {
-                container_properties = Some(
-                    self.container_cache
-                        .resolve_by_id(container_id, None, false)
-                        .await?,
-                );
-            } else if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
-                if !pk_range.collection_rid.is_empty() {
-                    container_properties = Some(
-                        self.container_cache
-                            .resolve_by_id(pk_range.collection_rid.clone(), None, false)
-                            .await?,
-                    );
+            let pk_def = self.container_ref.partition_key();
+            let collection_rid = self.container_ref.collection_rid();
+
+            if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
+                if let Some(resolved) = self
+                    .pk_range_cache
+                    .resolve_partition_key_range_by_id(
+                        &pk_range.collection_rid,
+                        &pk_range.partition_key_range_id,
+                        false,
+                    )
+                    .await
+                {
+                    cosmos_request.request_context.resolved_partition_key_range =
+                        Some(resolved.clone());
                 }
-            }
+            } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
+                let routing_map = self.pk_range_cache.try_lookup(collection_rid, None).await?;
 
-            if let Some(container_prop) = container_properties {
-                let pk_def = container_prop.partition_key;
-                if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
-                    if let Some(resolved) = self
-                        .pk_range_cache
-                        .resolve_partition_key_range_by_id(
-                            &pk_range.collection_rid,
-                            &pk_range.partition_key_range_id,
-                            false,
-                        )
-                        .await
-                    {
-                        cosmos_request.request_context.resolved_partition_key_range =
-                            Some(resolved.clone());
-                    }
-                } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
-                    let routing_map = self
-                        .pk_range_cache
-                        .try_lookup(&container_prop.id, None)
-                        .await?;
+                if let Some(routing_map) = routing_map {
+                    // Use a safe default version (2) when the service omits the version field,
+                    // since get_hashed_partition_key_string only supports version 1 or 2.
+                    let pk_version = pk_def.version.unwrap_or(2) as u8;
+                    let epk = partition_key
+                        .get_hashed_partition_key_string(pk_def.kind.clone(), pk_version);
 
-                    if let Some(routing_map) = routing_map {
-                        // Use a safe default version (2) when the service omits the version field,
-                        // since get_hashed_partition_key_string only supports version 1 or 2.
-                        let pk_version = pk_def.version.unwrap_or(2) as u8;
-                        let epk =
-                            partition_key.get_hashed_partition_key_string(pk_def.kind, pk_version);
+                    // First attempt to resolve the partition key range from the
+                    // current routing map. If it succeeds, clone immediately so
+                    // we release the borrow on routing_map before possibly moving
+                    // it into try_lookup for a refresh.
+                    match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
+                        Ok(pk_range) => {
+                            cosmos_request.request_context.resolved_partition_key_range =
+                                Some(pk_range.clone());
+                        }
+                        Err(_) => {
+                            // Refresh the routing map and retry.
+                            let refreshed_routing_map = self
+                                .pk_range_cache
+                                .try_lookup(collection_rid, Some(routing_map))
+                                .await?;
 
-                        // First attempt to resolve the partition key range from the
-                        // current routing map. If it succeeds, clone immediately so
-                        // we release the borrow on routing_map before possibly moving
-                        // it into try_lookup for a refresh.
-                        match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
-                            Ok(pk_range) => {
+                            if let Some(refreshed_routing_map) = refreshed_routing_map {
+                                let pk_range = refreshed_routing_map
+                                    .get_range_by_effective_partition_key(epk.as_str())?;
                                 cosmos_request.request_context.resolved_partition_key_range =
                                     Some(pk_range.clone());
-                            }
-                            Err(_) => {
-                                // Refresh the routing map and retry.
-                                let refreshed_routing_map = self
-                                    .pk_range_cache
-                                    .try_lookup(&container_prop.id, Some(routing_map))
-                                    .await?;
-
-                                if let Some(refreshed_routing_map) = refreshed_routing_map {
-                                    let pk_range = refreshed_routing_map
-                                        .get_range_by_effective_partition_key(epk.as_str())?;
-                                    cosmos_request.request_context.resolved_partition_key_range =
-                                        Some(pk_range.clone());
-                                }
                             }
                         }
                     }
                 }
-
-                cosmos_request.request_context.resolved_collection_rid =
-                    Some(container_prop.id.into_owned());
             }
+
+            cosmos_request.request_context.resolved_collection_rid =
+                Some(collection_rid.to_string());
         }
 
         // Delegate to the retry handler, providing the sender callback
@@ -151,6 +134,7 @@ impl ContainerConnection {
 mod tests {
     use super::*;
     use crate::cosmos_request::CosmosRequest;
+    use crate::models::PartitionKeyDefinition;
     use crate::operation_context::OperationType;
     use crate::pipeline::GatewayPipeline;
     use crate::regions::RegionName;
@@ -160,6 +144,14 @@ mod tests {
     use crate::CosmosClientOptions;
     use azure_core::http::ClientOptions;
     use url::Url;
+
+    fn create_test_container_ref() -> ContainerReference {
+        ContainerReference::from_parts(
+            "test_container".to_string(),
+            "test_rid".to_string(),
+            PartitionKeyDefinition::new(vec!["/id".to_string()]),
+        )
+    }
 
     // Helper function to create a test GlobalEndpointManager
     fn create_endpoint_manager() -> Arc<GlobalEndpointManager> {
@@ -296,6 +288,7 @@ mod tests {
             container_cache,
             pk_range_cache,
             partition_manager,
+            create_test_container_ref(),
         );
 
         // Verify the connection was created successfully with preferred locations
@@ -313,21 +306,30 @@ mod tests {
             endpoint_manager.clone(),
         );
 
+        let container_ref = create_test_container_ref();
+
         // Create multiple connections sharing the same caches
         let connection1 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
             partition_manager.clone(),
+            container_ref.clone(),
         );
         let connection2 = ContainerConnection::new(
             pipeline.clone(),
             container_cache.clone(),
             pk_range_cache.clone(),
             partition_manager.clone(),
+            container_ref.clone(),
         );
-        let connection3 =
-            ContainerConnection::new(pipeline, container_cache, pk_range_cache, partition_manager);
+        let connection3 = ContainerConnection::new(
+            pipeline,
+            container_cache,
+            pk_range_cache,
+            partition_manager,
+            container_ref,
+        );
 
         // All connections should be valid
         assert!(std::mem::size_of_val(&connection1) > 0);
@@ -399,8 +401,13 @@ mod tests {
             endpoint_manager.clone(),
         );
 
-        let connection =
-            ContainerConnection::new(pipeline, container_cache, pk_range_cache, partition_manager);
+        let connection = ContainerConnection::new(
+            pipeline,
+            container_cache,
+            pk_range_cache,
+            partition_manager,
+            create_test_container_ref(),
+        );
 
         // Verify Debug trait is properly implemented
         let debug_str = format!("{:?}", connection);
