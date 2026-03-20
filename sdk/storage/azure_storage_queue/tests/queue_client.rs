@@ -406,7 +406,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
             "Expected time_next_visible to be set on the sent message"
         );
 
-        // Sub-case: XML-invalid control characters are rejected with 400 Bad Request.
+        // Invalid Control Character Scenario
         let err = queue_client
             .send_message(
                 QueueMessage {
@@ -425,7 +425,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
             err.http_status()
         );
 
-        // Sub-case: whitespace content round-trips correctly.
+        // Whitespace Content Scenario
         queue_client.clear(None).await?;
         let whitespace_text = " mess\t age1\n";
         queue_client
@@ -564,7 +564,7 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             );
         }
 
-        // Sub-case: message_time_to_live = -1 means "never expires" (service sets expiry to year 9999).
+        // Infinite TTL Scenario
         let infinite_ttl_options = Some(QueueClientSendMessageOptions {
             message_time_to_live: Some(-1),
             ..Default::default()
@@ -593,6 +593,40 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             expiry_year, 9999,
             "Expected expiration year to be 9999 for a message with infinite TTL, got {expiry_year}"
         );
+
+        // Large Finite TTL Scenario
+        let large_ttl_response = queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some("large TTL".to_string()),
+                }
+                .try_into()?,
+                Some(QueueClientSendMessageOptions {
+                    message_time_to_live: Some(1024 * 1024 * 1024),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        assert_eq!(
+            large_ttl_response.status(),
+            StatusCode::Created,
+            "Expected 201 Created for large TTL message, got {}",
+            large_ttl_response.status()
+        );
+        let large_ttl_sent: SentMessage = large_ttl_response.into_model()?;
+        assert!(
+            large_ttl_sent.expiration_time.is_some(),
+            "Expected expiration_time to be set for a message with a large time-to-live"
+        );
+        if let (Some(exp), Some(ins)) = (
+            large_ttl_sent.expiration_time,
+            large_ttl_sent.insertion_time,
+        ) {
+            assert!(
+                exp > ins,
+                "Expected expiration_time ({exp}) to be after insertion_time ({ins}) for large TTL"
+            );
+        }
 
         Ok::<(), azure_core::Error>(())
     }
@@ -859,6 +893,19 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 
         setup_test_queue_with_messages(&queue_client, &test_messages).await?;
 
+        // Default No Options Scenario
+        let default_peek = queue_client.peek_messages(None).await?;
+        assert_successful_response(&default_peek);
+        let default_peeked = default_peek
+            .into_model()?
+            .items
+            .expect("Expected at least one message with default peek");
+        assert_eq!(
+            default_peeked.len(),
+            1,
+            "Expected default peek (no options) to return exactly 1 message even when multiple are queued"
+        );
+
         let options = Some(QueueClientPeekMessagesOptions {
             number_of_messages: Some(10),
             ..Default::default()
@@ -1042,8 +1089,79 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             Some("Updated message text from Rust"),
             "Message text was not updated"
         );
+        assert_eq!(
+            messages[0].dequeue_count,
+            Some(1),
+            "Expected dequeue_count == 1 on first receive after update"
+        );
 
-        // Sub-case: unicode content round-trips correctly through an update.
+        // Dequeue Count Increment Scenario
+        let recv_id = messages[0].message_id.clone().expect("Expected message_id");
+        let recv_receipt = messages[0]
+            .pop_receipt
+            .clone()
+            .expect("Expected pop_receipt");
+        queue_client
+            .update_message(&recv_id, &recv_receipt, 0, None)
+            .await?;
+        let second_recv = queue_client.receive_messages(None).await?;
+        let second_msgs = second_recv
+            .into_model()?
+            .items
+            .expect("Expected message on second receive");
+        assert_eq!(
+            second_msgs[0].dequeue_count,
+            Some(2),
+            "Expected dequeue_count == 2 after receiving an updated message a second time"
+        );
+
+        queue_client.clear(None).await?;
+
+        // Unicode Content Update Scenario
+        let unicode_text = "啊齄丂狛狜";
+        let send_response = queue_client
+            .send_message(
+                QueueMessage {
+                    message_text: Some("initial ascii".to_string()),
+                }
+                .try_into()?,
+                None,
+            )
+            .await?;
+        let sent: SentMessage = send_response.into_model()?;
+        let message_id = sent.message_id.clone().expect("Expected message_id");
+        let pop_receipt = sent.pop_receipt.clone().expect("Expected pop_receipt");
+        let update_options = Some(QueueClientUpdateMessageOptions {
+            queue_message: Some(
+                QueueMessage {
+                    message_text: Some(unicode_text.to_string()),
+                }
+                .try_into()?,
+            ),
+            ..Default::default()
+        });
+        queue_client
+            .update_message(&message_id, &pop_receipt, 0, update_options)
+            .await?;
+        let recv_response = queue_client.receive_messages(None).await?;
+        assert_successful_response(&recv_response);
+        let unicode_messages = recv_response
+            .into_model()?
+            .items
+            .expect("Expected at least one message");
+        assert_eq!(
+            unicode_messages.len(),
+            1,
+            "Expected exactly one message after unicode update"
+        );
+        assert_eq!(
+            unicode_messages[0].message_text.as_deref(),
+            Some(unicode_text),
+            "Expected updated Unicode content, got {:?}",
+            unicode_messages[0].message_text
+        );
+
+        // Unicode Content Update Scenario
         let unicode_text = "啊齄丂狛狜";
         let send_response = queue_client
             .send_message(
@@ -1142,6 +1260,50 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             remaining.items.is_none(),
             "Expected queue to be empty after deleting the only message"
         );
+
+        // Partial Queue Delete Scenario
+        for msg in ["msg-a", "msg-b", "msg-c"] {
+            queue_client
+                .send_message(
+                    QueueMessage {
+                        message_text: Some(msg.to_string()),
+                    }
+                    .try_into()?,
+                    None,
+                )
+                .await?;
+        }
+        let recv = queue_client.receive_messages(None).await?;
+        let first_msg = recv
+            .into_model()?
+            .items
+            .expect("Expected at least one message")
+            .into_iter()
+            .next()
+            .expect("Expected a message");
+        queue_client
+            .delete_message(
+                &first_msg.message_id.clone().unwrap(),
+                &first_msg.pop_receipt.clone().unwrap(),
+                None,
+            )
+            .await?;
+        let peek_resp = queue_client
+            .peek_messages(Some(QueueClientPeekMessagesOptions {
+                number_of_messages: Some(10),
+                ..Default::default()
+            }))
+            .await?;
+        let remaining_msgs = peek_resp
+            .into_model()?
+            .items
+            .expect("Expected 2 remaining messages");
+        assert_eq!(
+            remaining_msgs.len(),
+            2,
+            "Expected 2 messages to remain after deleting 1 of 3"
+        );
+
         Ok::<(), azure_core::Error>(())
     }
     .await;
@@ -1486,6 +1648,36 @@ async fn test_set_access_policy_too_many_identifiers(ctx: TestContext) -> Result
     queue_client.delete(None).await.unwrap();
 
     test_result?;
+    Ok(())
+}
+
+/// Creating a queue with an invalid name (non-ASCII characters) is rejected with 400 Bad Request.
+#[recorded::test]
+async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint, _) = recorded_test_setup(recording);
+    let queue_client_options = QueueClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+
+    // Act — queue names must be lowercase alphanumeric; Unicode characters are not valid.
+    let queue_client = QueueClient::new(
+        &endpoint,
+        "啊齄丂狛狜",
+        Some(recording.credential()),
+        Some(queue_client_options),
+    )?;
+    let err = queue_client.create(None).await.err().unwrap();
+
+    // Assert
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::BadRequest),
+        "Expected 400 Bad Request for invalid queue name, got {:?}",
+        err.http_status()
+    );
     Ok(())
 }
 
