@@ -43,6 +43,9 @@ pub(crate) mod fault_injection_header_names {
         HeaderName::from_static("x-ms-fault-injection-operation");
     /// Header added to synthetic responses indicating which rule injected a fault.
     pub static FAULT_INJECTED: HeaderName = HeaderName::from_static("x-ms-fault-injected");
+    /// Header containing JSON-serialized fault injection evaluation results.
+    pub static FAULT_INJECTION_EVALUATIONS: HeaderName =
+        HeaderName::from_static("x-ms-fault-injection-evaluations");
 }
 
 /// Cosmos request headers for operation-level customization.

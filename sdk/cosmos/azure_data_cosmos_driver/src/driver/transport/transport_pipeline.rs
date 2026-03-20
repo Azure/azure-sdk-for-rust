@@ -589,6 +589,16 @@ fn transport_error_result(
         );
     }
 
+    // Extract fault injection evaluations from an HTTP error's raw_response headers.
+    #[cfg(feature = "fault_injection")]
+    if let ErrorKind::HttpResponse {
+        raw_response: Some(raw),
+        ..
+    } = error.kind()
+    {
+        extract_fault_injection_evaluations(raw.headers(), request_handle, diagnostics);
+    }
+
     diagnostics.add_event(
         request_handle,
         RequestEvent::new(RequestEventType::TransportFailed).with_details(error_details.clone()),
@@ -669,8 +679,31 @@ fn map_http_response_payload(
         }
     });
 
+    // Extract fault injection evaluations from response header when available.
+    #[cfg(feature = "fault_injection")]
+    extract_fault_injection_evaluations(&headers, request_handle, diagnostics);
+
     diagnostics.complete_request(request_handle, status_code, sub_status);
     TransportResult::from_http_response(cosmos_status, headers, body)
+}
+
+/// Deserializes fault injection evaluations from an HTTP header and attaches them
+/// to the request diagnostics.
+#[cfg(feature = "fault_injection")]
+fn extract_fault_injection_evaluations(
+    headers: &azure_core::http::headers::Headers,
+    request_handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) {
+    use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_EVALUATIONS;
+
+    if let Some(eval_json) = headers.get_optional_str(&FAULT_INJECTION_EVALUATIONS) {
+        if let Ok(evals) =
+            serde_json::from_str::<Vec<crate::fault_injection::FaultInjectionEvaluation>>(eval_json)
+        {
+            diagnostics.set_fault_injection_evaluations(request_handle, evals);
+        }
+    }
 }
 
 #[cfg(test)]

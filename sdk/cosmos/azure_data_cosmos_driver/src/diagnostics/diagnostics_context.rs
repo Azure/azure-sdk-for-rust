@@ -444,6 +444,15 @@ pub struct RequestDiagnostics {
 
     /// Error message if the request failed.
     error: Option<String>,
+
+    /// Fault injection rule evaluations for this request.
+    ///
+    /// Populated only when the `fault_injection` feature is enabled and
+    /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
+    /// via the `x-ms-fault-injection-evaluations` response header.
+    #[cfg(feature = "fault_injection")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }
 
 impl RequestDiagnostics {
@@ -480,6 +489,8 @@ impl RequestDiagnostics {
             timed_out: false,
             request_sent: RequestSentStatus::Unknown,
             error: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_evaluations: Vec::new(),
         }
     }
 
@@ -701,6 +712,26 @@ impl RequestDiagnostics {
     /// Returns the error message if the request failed.
     pub fn error(&self) -> Option<&str> {
         self.error.as_deref()
+    }
+
+    /// Returns fault injection rule evaluations for this request.
+    ///
+    /// Each entry describes why a rule was applied, skipped, or missed.
+    /// Only populated when the `fault_injection` feature is enabled.
+    #[cfg(feature = "fault_injection")]
+    pub fn fault_injection_evaluations(
+        &self,
+    ) -> &[crate::fault_injection::FaultInjectionEvaluation] {
+        &self.fault_injection_evaluations
+    }
+
+    /// Sets the fault injection evaluations for this request.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_evaluations(
+        &mut self,
+        evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
+    ) {
+        self.fault_injection_evaluations = evaluations;
     }
 }
 
@@ -1354,6 +1385,18 @@ impl DiagnosticsContextBuilder {
     pub(crate) fn increment_local_shard_retry_count(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.increment_local_shard_retry_count();
+        }
+    }
+
+    /// Sets fault injection evaluations on a request.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_evaluations(
+        &mut self,
+        handle: RequestHandle,
+        evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.set_fault_injection_evaluations(evaluations);
         }
     }
 

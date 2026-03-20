@@ -8,7 +8,7 @@ use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
 use crate::models::cosmos_headers::fault_injection_header_names::{
-    FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+    FAULT_INJECTED, FAULT_INJECTION_EVALUATIONS, FAULT_INJECTION_OPERATION,
 };
 use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
@@ -21,11 +21,13 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 mod evaluation {
+    use serde::{Deserialize, Serialize};
+
     /// Records the evaluation result of a fault injection rule for a single request.
     ///
     /// When fault injection is enabled, each request evaluates all configured rules.
     /// This enum captures why each rule was applied, skipped, or missed.
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[non_exhaustive]
     pub enum FaultInjectionEvaluation {
         /// Rule was applied — fault was injected.
@@ -102,6 +104,11 @@ mod evaluation {
             matches!(self, Self::Applied { .. })
         }
     }
+
+    // Manual `Eq` implementation because `ProbabilityMiss` contains `f32`,
+    // which implements `PartialEq` but not `Eq`. Probabilities in this context
+    // are always finite values between 0.0 and 1.0, so reflexivity holds.
+    impl Eq for FaultInjectionEvaluation {}
 }
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
@@ -201,10 +208,15 @@ impl FaultClient {
     /// This method handles the full fault lifecycle: probability check, delay application,
     /// and fault response generation. If the probability check fails, no fault is injected
     /// and no delay is applied.
+    ///
+    /// When a fault is injected, the provided `evaluations` list is serialized as JSON
+    /// and attached to the response via the `x-ms-fault-injection-evaluations` header
+    /// so the transport pipeline can propagate them into [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics).
     async fn apply_fault(
         &self,
         server_error: &FaultInjectionResult,
         rule: &FaultInjectionRule,
+        evaluations: &mut Vec<FaultInjectionEvaluation>,
     ) -> Option<azure_core::Result<AsyncRawResponse>> {
         // Check probability
         if server_error.probability() < 1.0 {
@@ -221,6 +233,11 @@ impl FaultClient {
         rule.increment_hit_count();
         let rule_id = rule.id();
 
+        // Record that the rule was applied before serializing evaluations.
+        evaluations.push(FaultInjectionEvaluation::Applied {
+            rule_id: rule_id.to_owned(),
+        });
+
         // Apply delay if configured (only when fault is actually injected).
         if let Some(delay) = server_error.delay() {
             if delay > Duration::ZERO {
@@ -236,6 +253,7 @@ impl FaultClient {
         if let Some(custom) = server_error.custom_response() {
             let mut headers = custom.headers().clone();
             headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
+            Self::insert_evaluations_header(&mut headers, evaluations);
             return Some(Ok(AsyncRawResponse::from_bytes(
                 custom.status_code(),
                 headers,
@@ -250,7 +268,8 @@ impl FaultClient {
         };
 
         // Connection-level faults return simple errors with the appropriate ErrorKind.
-        // HTTP-level faults produce synthetic error responses.
+        // No HTTP response is created, so evaluations cannot be propagated via headers.
+        // HTTP-level faults produce synthetic error responses with evaluations embedded.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 return Some(Err(azure_core::Error::with_message(
@@ -311,6 +330,7 @@ impl FaultClient {
             headers.insert(SUBSTATUS.clone(), ss.value().to_string());
         }
         headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
+        Self::insert_evaluations_header(&mut headers, evaluations);
         let raw_response = Box::new(RawResponse::from_bytes(status_code, headers, vec![]));
 
         let error = azure_core::Error::with_message(
@@ -323,6 +343,13 @@ impl FaultClient {
         );
 
         Some(Err(error))
+    }
+
+    /// Serializes evaluations as JSON and inserts them as a response header.
+    fn insert_evaluations_header(headers: &mut Headers, evaluations: &[FaultInjectionEvaluation]) {
+        if let Ok(json) = serde_json::to_string(evaluations) {
+            headers.insert(FAULT_INJECTION_EVALUATIONS.clone(), json);
+        }
     }
 }
 
@@ -351,14 +378,14 @@ impl HttpClient for FaultClient {
             }
         }
 
-        // Apply the fault if we found a matching rule
+        // Apply the fault if we found a matching rule.
+        // `apply_fault` pushes the Applied evaluation itself before serializing
+        // all evaluations into the response header.
         let fault_response = if let Some(ref rule) = matched_rule {
-            let result = self.apply_fault(rule.result(), rule).await;
-            if result.is_some() {
-                evaluations.push(FaultInjectionEvaluation::Applied {
-                    rule_id: rule.id().to_owned(),
-                });
-            } else {
+            let result = self
+                .apply_fault(rule.result(), rule, &mut evaluations)
+                .await;
+            if result.is_none() {
                 evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
                     rule_id: rule.id().to_owned(),
                     probability: rule.result().probability(),
