@@ -37,13 +37,25 @@ impl ContainerReference {
         let driver_pk = driver_ref.partition_key_definition();
         let paths: Vec<String> = driver_pk.paths().iter().map(|p| p.to_string()).collect();
 
-        // The driver distinguishes Hash vs Range (legacy). The SDK distinguishes
-        // Hash vs MultiHash (hierarchical PK). MultiHash is determined by path
-        // count, matching how PartitionKeyDefinition::new() works in the SDK.
-        let kind = if paths.len() > 1 {
-            PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH)
-        } else {
-            PartitionKeyKind::new(PartitionKeyKind::HASH)
+        use azure_data_cosmos_driver::models::PartitionKeyKind as DriverKind;
+        let kind = match driver_pk.kind() {
+            DriverKind::Hash => {
+                // Within Hash, the SDK distinguishes single-path (Hash) from
+                // multi-path hierarchical partitioning (MultiHash) by path count,
+                // matching how PartitionKeyDefinition::new() works.
+                if paths.len() > 1 {
+                    PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH)
+                } else {
+                    PartitionKeyKind::new(PartitionKeyKind::HASH)
+                }
+            }
+            DriverKind::Range => {
+                // Legacy range partitioning — preserve the kind so EPK calculation
+                // falls back to binary encoding instead of hashing.
+                PartitionKeyKind::new("Range")
+            }
+            // PartitionKeyKind is #[non_exhaustive]; treat unknown variants as Hash.
+            _ => PartitionKeyKind::new(PartitionKeyKind::HASH),
         };
 
         let version = Some(driver_pk.version().value() as i32);
