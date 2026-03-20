@@ -450,6 +450,20 @@ fn build_transport_request(
         }
     }
 
+    // Add operation type header for fault injection rule matching
+    #[cfg(feature = "fault_injection")]
+    {
+        if let Some(fault_op) =
+            crate::fault_injection::FaultOperationType::from_operation_and_resource(
+                &operation.operation_type(),
+                &operation.resource_type(),
+            )
+        {
+            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+            headers.insert(FAULT_INJECTION_OPERATION.clone(), fault_op.as_str());
+        }
+    }
+
     // Add resolved session token
     if let Some(token) = resolved_session_token {
         headers.insert(

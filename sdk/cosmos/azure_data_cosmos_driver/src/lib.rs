@@ -23,6 +23,8 @@
 
 pub mod diagnostics;
 pub mod driver;
+#[cfg(feature = "fault_injection")]
+pub mod fault_injection;
 pub mod models;
 pub mod options;
 pub(crate) mod system;
