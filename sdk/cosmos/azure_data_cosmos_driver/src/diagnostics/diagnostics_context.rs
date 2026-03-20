@@ -1730,6 +1730,8 @@ impl PartialEq for DiagnosticsContext {
     }
 }
 
+impl Eq for DiagnosticsContext {}
+
 /// Builds a summary for requests in a single region.
 fn build_region_summary(
     region: Option<Region>,
