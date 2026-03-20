@@ -76,7 +76,7 @@ impl<C> HttpClient for MockHttpClient<C>
 where
     C: FnMut(&Request) -> BoxFuture<'_, Result<AsyncRawResponse>> + Send + Sync,
 {
-    async fn execute_request(&self, req: &Request) -> Result<AsyncRawResponse> {
+    async fn execute_request(&self, req: &mut Request) -> Result<AsyncRawResponse> {
         let mut client = self.0.lock().await;
         (client)(req).await
     }
@@ -117,12 +117,12 @@ mod tests {
             .boxed()
         })) as Arc<dyn HttpClient>;
 
-        let req = Request::new("https://localhost".parse().unwrap(), Method::Get);
-        mock_client.execute_request(&req).await.unwrap();
+        let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+        mock_client.execute_request(&mut req).await.unwrap();
 
         let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
         req.insert_header(COUNT_HEADER, "true");
-        mock_client.execute_request(&req).await.unwrap();
+        mock_client.execute_request(&mut req).await.unwrap();
 
         assert_eq!(*count.lock().unwrap(), 1);
     }

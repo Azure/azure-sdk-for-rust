@@ -26,7 +26,6 @@ use std::{fmt, marker::PhantomData};
 use time::format_description::well_known::Rfc3339;
 
 /// An HTTP Body.
-#[derive(Clone)]
 pub enum Body {
     /// A body of a known size.
     Bytes(crate::Bytes),
@@ -37,16 +36,16 @@ pub enum Body {
 
 impl Body {
     /// Returns the length of the body in bytes.
-    pub fn len(&self) -> usize {
+    pub async fn len(&self) -> usize {
         match self {
             Body::Bytes(bytes) => bytes.len(),
-            Body::SeekableStream(stream) => stream.len(),
+            Body::SeekableStream(stream) => stream.len().await,
         }
     }
 
     /// Returns `true` if the body is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
+    pub async fn is_empty(&self) -> bool {
+        self.len().await == 0
     }
 
     /// Resets the body to the beginning, if it is a seekable stream.
@@ -70,6 +69,17 @@ impl Body {
         }
     }
 
+    /// Attempts to clone the body.
+    ///
+    /// Returns `Some` for `Bytes` bodies (which are cheap to clone) and
+    /// `None` for `SeekableStream` bodies.
+    pub fn try_clone(&self) -> Option<Body> {
+        match self {
+            Body::Bytes(bytes) => Some(Body::Bytes(bytes.clone())),
+            Body::SeekableStream(_) => None,
+        }
+    }
+
     #[cfg(test)]
     fn from_static(value: &'static [u8]) -> Self {
         Self::Bytes(Bytes::from_static(value))
@@ -86,10 +96,9 @@ impl fmt::Debug for Body {
                 .field("data", &v)
                 .finish_non_exhaustive(),
             #[cfg(not(test))]
-            Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { .. }"),
+            Self::Bytes(v) if !v.is_empty() => f.debug_tuple("Bytes").finish_non_exhaustive(),
             Self::Bytes(_) => f.write_str("Bytes {}"),
-            Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { .. }"),
-            Self::SeekableStream(_) => f.write_str("SeekableStream {}"),
+            Self::SeekableStream(_) => f.debug_tuple("SeekableStream").finish_non_exhaustive(),
         }
     }
 }
@@ -134,7 +143,6 @@ impl PartialEq for Body {
 ///
 /// A pipeline request is composed by a destination (uri), a method, a collection of headers and a
 /// body. Policies are expected to enrich the request by mutating it.
-#[derive(Clone)]
 pub struct Request {
     pub(crate) url: Url,
     pub(crate) method: Method,
@@ -246,6 +254,18 @@ impl Request {
     pub fn add_mandatory_header<T: Header>(&mut self, item: &T) {
         self.insert_header(item.name(), item.value());
     }
+
+    /// Attempts to clone the request.
+    ///
+    /// Returns `None` if the body is a `SeekableStream` (which cannot be cloned).
+    pub fn try_clone(&self) -> Option<Request> {
+        Some(Request {
+            url: self.url.clone(),
+            method: self.method,
+            headers: self.headers.clone(),
+            body: self.body.try_clone()?,
+        })
+    }
 }
 
 impl fmt::Debug for Request {
@@ -264,7 +284,7 @@ impl fmt::Debug for Request {
 ///
 /// This allows callers to pass a model to serialize or raw content to client methods.
 #[cfg(feature = "json")]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct RequestContent<T, F = JsonFormat> {
     body: Body,
     phantom: PhantomData<(T, F)>,
@@ -274,10 +294,22 @@ pub struct RequestContent<T, F = JsonFormat> {
 ///
 /// This allows callers to pass a model to serialize or raw content to client methods.
 #[cfg(not(feature = "json"))]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct RequestContent<T, F> {
     body: Body,
     phantom: PhantomData<(T, F)>,
+}
+
+impl<T, F> Clone for RequestContent<T, F> {
+    fn clone(&self) -> Self {
+        Self {
+            body: self
+                .body
+                .try_clone()
+                .expect("RequestContent body is always Bytes"),
+            phantom: PhantomData,
+        }
+    }
 }
 
 impl<T, F> RequestContent<T, F> {
@@ -712,8 +744,8 @@ mod tests {
         assert_eq!(*EXPECTED, RequestContent::from_str(actual));
     }
 
-    #[test]
-    fn body_take_bytes() {
+    #[tokio::test]
+    async fn body_take_bytes() {
         let bytes = b"bytes";
         let mut body = Body::from_static(bytes);
 
@@ -722,7 +754,7 @@ mod tests {
             _ => panic!("expected Bytes"),
         };
 
-        assert!(body.is_empty());
+        assert!(body.is_empty().await);
     }
 
     #[tokio::test]
@@ -748,6 +780,6 @@ mod tests {
             _ => panic!("expected SeekableStream"),
         }
 
-        assert!(body.is_empty());
+        assert!(body.is_empty().await);
     }
 }

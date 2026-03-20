@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 use super::{Bytes, SeekableStream};
-use futures::io::AsyncRead;
-use futures::stream::Stream;
-use std::fmt;
-use std::pin::Pin;
-use std::task::Poll;
+use futures::{
+    io::{AsyncRead, AsyncSeek},
+    stream::Stream,
+};
+use std::{fmt, io, pin::Pin, task::Poll};
 
 /// Convenience struct that maps a `bytes::Bytes` buffer into a stream.
 ///
@@ -79,7 +79,7 @@ impl SeekableStream for BytesStream {
         Ok(())
     }
 
-    fn len(&self) -> usize {
+    async fn len(&self) -> usize {
         self.bytes.len()
     }
 }
@@ -115,11 +115,37 @@ impl AsyncRead for BytesStream {
     }
 }
 
+impl AsyncSeek for BytesStream {
+    fn poll_seek(
+        self: Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+        pos: io::SeekFrom,
+    ) -> Poll<io::Result<u64>> {
+        let self_mut = self.get_mut();
+        let len = self_mut.bytes.len() as i64;
+        let new_pos = match pos {
+            io::SeekFrom::Start(offset) => offset as i64,
+            io::SeekFrom::End(offset) => len + offset,
+            io::SeekFrom::Current(offset) => self_mut.bytes_read as i64 + offset,
+        };
+
+        if new_pos < 0 {
+            return Poll::Ready(Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "seek to a negative position",
+            )));
+        }
+
+        self_mut.bytes_read = std::cmp::min(new_pos as usize, self_mut.bytes.len());
+        Poll::Ready(Ok(self_mut.bytes_read as u64))
+    }
+}
+
 // Unit tests
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::io::AsyncReadExt;
+    use futures::io::{AsyncReadExt, AsyncSeekExt};
     use futures::stream::StreamExt;
 
     // Test BytesStream Stream
@@ -163,5 +189,64 @@ mod tests {
             assert_eq!(bytes_read, 1);
             assert_eq!(buf[0], bytes[i]);
         }
+    }
+
+    #[tokio::test]
+    async fn seek_from_start() {
+        let mut stream = BytesStream::new(Bytes::from("hello world"));
+        let pos = stream.seek(io::SeekFrom::Start(6)).await.unwrap();
+        assert_eq!(pos, 6);
+
+        let mut buf = [0; 5];
+        stream.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"world");
+    }
+
+    #[tokio::test]
+    async fn seek_from_end() {
+        let mut stream = BytesStream::new(Bytes::from("hello world"));
+        let pos = stream.seek(io::SeekFrom::End(-5)).await.unwrap();
+        assert_eq!(pos, 6);
+
+        let mut buf = [0; 5];
+        stream.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"world");
+    }
+
+    #[tokio::test]
+    async fn seek_from_current() {
+        let mut stream = BytesStream::new(Bytes::from("hello world"));
+
+        // Read "hello" then seek forward past the space.
+        let mut buf = [0; 5];
+        stream.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"hello");
+
+        let pos = stream.seek(io::SeekFrom::Current(1)).await.unwrap();
+        assert_eq!(pos, 6);
+
+        let mut buf2 = [0; 5];
+        stream.read_exact(&mut buf2).await.unwrap();
+        assert_eq!(&buf2, b"world");
+    }
+
+    #[tokio::test]
+    async fn seek_negative_position_fails() {
+        let mut stream = BytesStream::new(Bytes::from("hello"));
+        let pos = stream.seek(io::SeekFrom::Start(0)).await.unwrap();
+        assert_eq!(pos, 0);
+
+        let err = stream.seek(io::SeekFrom::Current(-1)).await.unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+
+    #[tokio::test]
+    async fn seek_past_end_clamps_to_length() {
+        let mut stream = BytesStream::new(Bytes::from("hello"));
+        let pos = stream.seek(io::SeekFrom::Start(100)).await.unwrap();
+        assert_eq!(pos, 5);
+
+        let n = stream.read(&mut [0; 1]).await.unwrap();
+        assert_eq!(n, 0);
     }
 }

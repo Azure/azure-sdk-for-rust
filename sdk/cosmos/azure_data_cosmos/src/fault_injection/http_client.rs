@@ -236,7 +236,7 @@ impl FaultClient {
 
 #[async_trait]
 impl HttpClient for FaultClient {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+    async fn execute_request(&self, request: &mut Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule and clone the result if needed
         let fault_result: Option<FaultInjectionResult> = {
             let rules = self.rules.lock().unwrap();
@@ -273,14 +273,13 @@ impl HttpClient for FaultClient {
         let resp = if let Some(fault_response) = fault_response {
             fault_response
         } else {
-            // Clone the request and remove fault injection headers before forwarding
-            let mut clean_request = request.clone();
-            clean_request
+            // Remove fault injection headers before forwarding
+            request
                 .headers_mut()
                 .remove(constants::FAULT_INJECTION_OPERATION);
 
             // No fault injection or delay-only fault, proceed with actual request
-            self.inner.execute_request(&clean_request).await
+            self.inner.execute_request(request).await
         };
 
         // Apply delay after the request is sent
@@ -336,7 +335,7 @@ mod tests {
     impl HttpClient for MockHttpClient {
         async fn execute_request(
             &self,
-            _request: &Request,
+            _request: &mut Request,
         ) -> azure_core::Result<AsyncRawResponse> {
             self.call_count.fetch_add(1, Ordering::SeqCst);
 
@@ -374,8 +373,8 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request without operation type header shouldn't match
-        let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let mut request = create_test_request();
+        let result = fault_client.execute_request(&mut request).await;
 
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
@@ -386,8 +385,8 @@ mod tests {
         let mock_client = Arc::new(MockHttpClient::new());
         let fault_client = FaultClient::new(mock_client.clone(), vec![]);
 
-        let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let mut request = create_test_request();
+        let result = fault_client.execute_request(&mut request).await;
 
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
@@ -405,17 +404,17 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
         // First two requests should hit the fault
-        let result1 = fault_client.execute_request(&request).await;
+        let result1 = fault_client.execute_request(&mut request).await;
         assert!(result1.is_err());
 
-        let result2 = fault_client.execute_request(&request).await;
+        let result2 = fault_client.execute_request(&mut request).await;
         assert!(result2.is_err());
 
         // Third request should pass through (hit limit reached)
-        let result3 = fault_client.execute_request(&request).await;
+        let result3 = fault_client.execute_request(&mut request).await;
         assert!(result3.is_ok());
         assert_eq!(mock_client.call_count(), 1);
     }
@@ -432,10 +431,10 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
         // Request should pass through because start_time is in the future
-        let result = fault_client.execute_request(&request).await;
+        let result = fault_client.execute_request(&mut request).await;
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
     }
@@ -450,9 +449,9 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let result = fault_client.execute_request(&mut request).await;
 
         assert!(result.is_err());
         let err = result.unwrap_err();
@@ -475,9 +474,9 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let result = fault_client.execute_request(&mut request).await;
 
         assert!(result.is_err());
         let err = result.unwrap_err();
@@ -499,11 +498,11 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
         // Delay-only should pass through to actual request after delay
         let start = std::time::Instant::now();
-        let result = fault_client.execute_request(&request).await;
+        let result = fault_client.execute_request(&mut request).await;
         let elapsed = start.elapsed();
 
         assert!(result.is_ok());
@@ -534,8 +533,8 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "westus", should pass through
-        let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let mut request = create_test_request();
+        let result = fault_client.execute_request(&mut request).await;
 
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
@@ -558,8 +557,8 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "my-container", should pass through
-        let request = create_test_request();
-        let result = fault_client.execute_request(&request).await;
+        let mut request = create_test_request();
+        let result = fault_client.execute_request(&mut request).await;
 
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
@@ -578,10 +577,10 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
         // First request should hit the fault
-        let result1 = fault_client.execute_request(&request).await;
+        let result1 = fault_client.execute_request(&mut request).await;
         assert!(result1.is_err(), "first request should fail");
         assert_eq!(
             result1.unwrap_err().http_status(),
@@ -589,7 +588,7 @@ mod tests {
         );
 
         // Second request should also hit the fault
-        let result2 = fault_client.execute_request(&request).await;
+        let result2 = fault_client.execute_request(&mut request).await;
         assert!(result2.is_err(), "second request should fail");
         assert_eq!(
             result2.unwrap_err().http_status(),
@@ -597,7 +596,7 @@ mod tests {
         );
 
         // Third request should pass through (times limit reached)
-        let result3 = fault_client.execute_request(&request).await;
+        let result3 = fault_client.execute_request(&mut request).await;
         assert!(
             result3.is_ok(),
             "third request should succeed after times limit"
@@ -639,9 +638,9 @@ mod tests {
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
             let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
-            let request = create_test_request();
+            let mut request = create_test_request();
 
-            let result = fault_client.execute_request(&request).await;
+            let result = fault_client.execute_request(&mut request).await;
             assert!(result.is_err(), "{:?} should produce an error", error_type);
 
             let err = result.unwrap_err();
@@ -688,9 +687,9 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let result = fault_client.execute_request(&mut request).await;
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
@@ -712,9 +711,9 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
-        let result = fault_client.execute_request(&request).await;
+        let result = fault_client.execute_request(&mut request).await;
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
@@ -741,9 +740,9 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let mut request = create_test_request();
 
-        let response = fault_client.execute_request(&request).await;
+        let response = fault_client.execute_request(&mut request).await;
         assert!(response.is_ok(), "custom response should succeed");
 
         let raw = response.unwrap();

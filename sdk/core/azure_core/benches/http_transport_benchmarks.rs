@@ -213,8 +213,8 @@ pub fn baseline_http_transport_test(c: &mut Criterion) {
                 let url = url.clone();
                 let http_client = http_client.clone();
                 async move {
-                    let request = Request::new(url, Method::Get);
-                    let response = http_client.execute_request(&request).await;
+                    let mut request = Request::new(url, Method::Get);
+                    let response = http_client.execute_request(&mut request).await;
                     assert!(response.is_ok());
                     let response = response.unwrap();
                     assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
