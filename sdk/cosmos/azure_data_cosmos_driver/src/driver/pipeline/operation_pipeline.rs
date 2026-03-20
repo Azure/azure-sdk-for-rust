@@ -61,7 +61,10 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
-    let max_failover_retries = effective_options.max_failover_retry_count().copied().unwrap_or(3);
+    let max_failover_retries = effective_options
+        .max_failover_retry_count()
+        .copied()
+        .unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
     let session_capturing_disabled = effective_options
