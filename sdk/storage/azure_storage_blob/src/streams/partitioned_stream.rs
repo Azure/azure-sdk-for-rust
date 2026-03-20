@@ -13,17 +13,20 @@ pub(crate) struct PartitionedStream {
     inner: Box<dyn SeekableStream>,
     buf: BytesMut,
     partition_len: usize,
+    total_len: usize,
     total_read: usize,
     inner_complete: bool,
 }
 
 impl PartitionedStream {
-    pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
+    pub(crate) async fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
         let partition_len = partition_len.get();
+        let total_len = inner.len().await;
         Self {
-            buf: BytesMut::with_capacity(std::cmp::min(partition_len, inner.len())),
+            buf: BytesMut::with_capacity(std::cmp::min(partition_len, total_len)),
             inner,
             partition_len,
+            total_len,
             total_read: 0,
             inner_complete: false,
         }
@@ -45,7 +48,7 @@ impl Stream for PartitionedStream {
                     this.buf,
                     BytesMut::with_capacity(std::cmp::min(
                         *this.partition_len,
-                        this.inner.len() - *this.total_read,
+                        *this.total_len - *this.total_read,
                     )),
                 );
                 return if ret.is_empty() {
@@ -112,7 +115,8 @@ mod tests {
                 let stream = PartitionedStream::new(
                     Box::new(BytesStream::new(data.clone())),
                     NonZero::new(part_len).unwrap(),
-                );
+                )
+                .await;
 
                 let parts: Vec<_> = stream.try_collect().await?;
 
@@ -135,7 +139,8 @@ mod tests {
                     let stream = PartitionedStream::new(
                         Box::new(BytesStream::new(data.clone())),
                         NonZero::new(part_len).unwrap(),
-                    );
+                    )
+                    .await;
 
                     let parts: Vec<_> = stream.try_collect().await?;
 
@@ -162,7 +167,8 @@ mod tests {
             let mut stream = PartitionedStream::new(
                 Box::new(BytesStream::new(data.clone())),
                 NonZero::new(len).unwrap(),
-            );
+            )
+            .await;
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -180,7 +186,8 @@ mod tests {
             let mut stream = PartitionedStream::new(
                 Box::new(BytesStream::new(data.clone())),
                 NonZero::new(part_len).unwrap(),
-            );
+            )
+            .await;
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -197,7 +204,8 @@ mod tests {
             let mut stream = PartitionedStream::new(
                 Box::new(BytesStream::new(data.clone())),
                 NonZero::new(part_len).unwrap(),
-            );
+            )
+            .await;
 
             assert!(stream.try_next().await?.is_none());
         }

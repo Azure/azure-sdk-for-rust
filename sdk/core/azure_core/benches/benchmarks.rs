@@ -81,22 +81,20 @@ fn http_transport_test(c: &mut Criterion) {
         .boxed()
     })) as Arc<dyn HttpClient>;
 
-    // requests to be used in the benchmark
-    let get_req = Request::new(Url::parse("https://localhost").unwrap(), Method::Get);
-    let mut post_req = Request::new(Url::parse("https://localhost").unwrap(), Method::Post);
-    post_req.set_body("test body");
-
     // Benchmark GET and POST requests
     c.bench_function("http_transport_get_async", |b| {
         b.to_async(&rt).iter(|| async {
-            let _ = mock_client.execute_request(&get_req).await;
+            let mut req = Request::new(Url::parse("https://localhost").unwrap(), Method::Get);
+            let _ = mock_client.execute_request(&mut req).await;
             black_box(());
         });
     });
 
     c.bench_function("http_transport_post_async", |b| {
         b.to_async(&rt).iter(|| async {
-            let _ = mock_client.execute_request(&post_req).await;
+            let mut req = Request::new(Url::parse("https://localhost").unwrap(), Method::Post);
+            req.set_body("test body");
+            let _ = mock_client.execute_request(&mut req).await;
             black_box(());
         });
     });

@@ -197,9 +197,12 @@ mod tests {
         );
         let u = Url::parse(&url).expect("invalid URL");
         let client = azure_core::http::new_http_client();
-        let req = Request::new(u, Method::Get);
+        let mut req = Request::new(u, Method::Get);
 
-        let res = client.execute_request(&req).await.expect("request failed");
+        let res = client
+            .execute_request(&mut req)
+            .await
+            .expect("request failed");
         let status = res.status();
         let body = res.into_body().collect_string().await?;
         assert_eq!(StatusCode::Ok, status, "Test app responded with '{body}'");
@@ -291,7 +294,9 @@ mod tests {
         let mock_client = MockHttpClient::new(move |actual| {
             {
                 token_requests_clone.fetch_add(1, Ordering::SeqCst);
-                let expected = model_request.clone();
+                let expected = model_request
+                    .try_clone()
+                    .expect("model_request body is Bytes");
                 let response_format = response_format.clone();
                 async move {
                     assert_eq!(expected.method(), actual.method());

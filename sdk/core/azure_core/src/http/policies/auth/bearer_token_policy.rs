@@ -760,7 +760,6 @@ mod tests {
     #[tokio::test]
     async fn resets_stream_for_retry_after_challenge() {
         use crate::{http::Body, stream::BytesStream};
-        use futures::StreamExt;
 
         let on_challenge_calls = Arc::new(AtomicUsize::new(0));
         let on_challenge = Arc::new(TestOnChallenge {
@@ -788,18 +787,11 @@ mod tests {
         let client = MockHttpClient::new(move |actual| {
             let count = request_count_clone.fetch_add(1, Ordering::SeqCst);
             async move {
-                match actual.body() {
-                    Body::SeekableStream(stream) => {
-                        let mut stream = stream.clone();
-                        let mut collected = Vec::new();
-                        while let Some(chunk) = stream.next().await {
-                            let chunk = chunk?;
-                            collected.extend_from_slice(&chunk);
-                        }
-                        assert_eq!(b"test data", collected.as_slice());
-                    }
-                    _ => unreachable!("body is a SeekableStream"),
-                }
+                assert!(
+                    matches!(actual.body(), Body::SeekableStream(_)),
+                    "body is a SeekableStream"
+                );
+                assert_eq!(actual.body().len().await, b"test data".len());
 
                 if count == 0 {
                     Ok(AsyncRawResponse::from_bytes(

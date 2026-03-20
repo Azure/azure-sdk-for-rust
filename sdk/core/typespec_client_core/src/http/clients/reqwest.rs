@@ -36,16 +36,15 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
 
 #[async_trait]
 impl HttpClient for ::reqwest::Client {
-    async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
+    async fn execute_request(&self, request: &mut Request) -> Result<AsyncRawResponse> {
         let url = request.url().clone();
         let method = request.method();
         let mut req = self.request(from_method(method), url.clone());
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
-        let body = request.body().clone();
 
-        let reqwest_request = match body {
+        let reqwest_request = match request.body_mut().take() {
             Body::Bytes(bytes) => req.body(bytes).build(),
             Body::SeekableStream(seekable_stream) => req
                 .body(::reqwest::Body::wrap_stream(seekable_stream))
