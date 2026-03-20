@@ -8,7 +8,7 @@ use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
 use crate::models::cosmos_headers::fault_injection_header_names::{
-    FAULT_INJECTED, FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
+    FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
 };
 use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
@@ -317,8 +317,7 @@ impl FaultClient {
 
         // Check for custom response first (takes precedence over error injection)
         if let Some(custom) = server_error.custom_response() {
-            let mut headers = custom.headers().clone();
-            headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
+            let headers = custom.headers().clone();
             return Some(Ok(AsyncRawResponse::from_bytes(
                 custom.status_code(),
                 headers,
@@ -394,7 +393,6 @@ impl FaultClient {
         if let Some(ss) = sub_status {
             headers.insert(SUBSTATUS.clone(), ss.value().to_string());
         }
-        headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
         let raw_response = Box::new(RawResponse::from_bytes(status_code, headers, vec![]));
 
         let error = azure_core::Error::with_message(
@@ -501,7 +499,7 @@ mod tests {
         FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::{
-        FAULT_INJECTED, FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
+        FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
     };
     use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
@@ -850,19 +848,9 @@ mod tests {
 
             let err = result.unwrap_err();
             if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
-                // All HTTP-level faults should have a raw_response with x-ms-fault-injected header
                 let response = raw_response
                     .as_ref()
                     .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
-
-                // Verify x-ms-fault-injected header is present
-                let fault_header = response.headers().get_optional_str(&FAULT_INJECTED);
-                assert_eq!(
-                    fault_header,
-                    Some("substatus-rule"),
-                    "{:?} should have x-ms-fault-injected header",
-                    error_type
-                );
 
                 match expected_substatus {
                     Some(expected) => {
@@ -998,7 +986,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn custom_response_includes_fault_injected_header() {
+    async fn custom_response_evaluation_propagated() {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let result = FaultInjectionResultBuilder::new()
@@ -1011,18 +999,15 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("header-test-rule", result).build();
 
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, eval_id) = create_test_request();
 
         let response = fault_client.execute_request(&request).await;
         assert!(response.is_ok());
 
-        let raw = response.unwrap();
-        let fault_header = raw.headers().get_optional_str(&FAULT_INJECTED);
-        assert_eq!(
-            fault_header,
-            Some("header-test-rule"),
-            "custom response should include x-ms-fault-injected header"
-        );
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "header-test-rule");
     }
 
     #[tokio::test]
