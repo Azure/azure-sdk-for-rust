@@ -81,6 +81,11 @@ mod evaluation {
             /// The ID of the rule.
             rule_id: String,
         },
+        /// Rule matched but was superseded by a higher-priority rule (first-match-wins).
+        Superseded {
+            /// The ID of the superseded rule.
+            rule_id: String,
+        },
     }
 
     impl FaultInjectionEvaluation {
@@ -95,7 +100,8 @@ mod evaluation {
                 | Self::HitLimitExhausted { rule_id, .. }
                 | Self::OperationMismatch { rule_id }
                 | Self::RegionMismatch { rule_id }
-                | Self::ContainerMismatch { rule_id } => rule_id,
+                | Self::ContainerMismatch { rule_id }
+                | Self::Superseded { rule_id } => rule_id,
             }
         }
 
@@ -347,8 +353,16 @@ impl FaultClient {
 
     /// Serializes evaluations as JSON and inserts them as a response header.
     fn insert_evaluations_header(headers: &mut Headers, evaluations: &[FaultInjectionEvaluation]) {
-        if let Ok(json) = serde_json::to_string(evaluations) {
-            headers.insert(FAULT_INJECTION_EVALUATIONS.clone(), json);
+        match serde_json::to_string(evaluations) {
+            Ok(json) => {
+                headers.insert(FAULT_INJECTION_EVALUATIONS.clone(), json);
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "failed to serialize fault injection evaluations"
+                );
+            }
         }
     }
 }
@@ -375,6 +389,10 @@ impl HttpClient for FaultClient {
             // Rule is applicable and matches — use it (first match wins)
             if matched_rule.is_none() {
                 matched_rule = Some(Arc::clone(rule));
+            } else {
+                evaluations.push(FaultInjectionEvaluation::Superseded {
+                    rule_id: rule.id().to_owned(),
+                });
             }
         }
 
@@ -403,6 +421,13 @@ impl HttpClient for FaultClient {
                 "fault injection rule evaluation"
             );
         }
+
+        // Store evaluations in thread-local for the transport pipeline to pick up.
+        // finalize_http_attempt() runs synchronously after execute_http_attempt_future().await
+        // completes, so no intervening await can cause a thread migration.
+        super::PENDING_EVALUATIONS.with(|pending| {
+            *pending.borrow_mut() = evaluations;
+        });
 
         if let Some(fault_response) = fault_response {
             fault_response
@@ -961,5 +986,134 @@ mod tests {
         // The evaluation is logged via tracing - verified by the trace output
         // For now, just verify the request still succeeds (rule is disabled)
         assert!(result.is_ok());
+    }
+
+    /// Helper to drain evaluations from the thread-local set by FaultClient.
+    fn take_pending_evaluations() -> Vec<super::FaultInjectionEvaluation> {
+        crate::fault_injection::PENDING_EVALUATIONS
+            .with(|pending| std::mem::take(&mut *pending.borrow_mut()))
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_http_fault() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("test-rule", error).build();
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        let request = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_pending_evaluations();
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "test-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_connection_error() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ConnectionError)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("conn-rule", error).build();
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        let request = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_pending_evaluations();
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "conn-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_response_timeout() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeout)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("timeout-rule", error).build();
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        let request = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_pending_evaluations();
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "timeout-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluations_include_disabled_and_superseded() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error1 = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let error2 = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::InternalServerError)
+            .build();
+        let error3 = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::Timeout)
+            .build();
+
+        let rule1 = Arc::new(FaultInjectionRuleBuilder::new("disabled-rule", error1).build());
+        rule1.disable();
+        let rule2 = Arc::new(FaultInjectionRuleBuilder::new("active-rule", error2).build());
+        let rule3 = Arc::new(FaultInjectionRuleBuilder::new("superseded-rule", error3).build());
+
+        let fault_client = FaultClient::new(mock_client, vec![rule1, rule2, rule3]);
+        let request = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_pending_evaluations();
+        assert_eq!(evals.len(), 3);
+
+        // Iteration order: Disabled first, then Superseded (third rule), then Applied (second rule).
+        assert!(matches!(
+            &evals[0],
+            super::FaultInjectionEvaluation::Disabled { rule_id } if rule_id == "disabled-rule"
+        ));
+        assert!(matches!(
+            &evals[1],
+            super::FaultInjectionEvaluation::Superseded { rule_id } if rule_id == "superseded-rule"
+        ));
+        assert!(matches!(
+            &evals[2],
+            super::FaultInjectionEvaluation::Applied { rule_id } if rule_id == "active-rule"
+        ));
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_no_match() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::CreateItem)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("no-match-rule", error)
+            .with_condition(condition)
+            .build();
+
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        // Request without matching operation header
+        let request = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_pending_evaluations();
+        assert_eq!(evals.len(), 1);
+        assert!(matches!(
+            &evals[0],
+            super::FaultInjectionEvaluation::OperationMismatch { rule_id } if rule_id == "no-match-rule"
+        ));
     }
 }

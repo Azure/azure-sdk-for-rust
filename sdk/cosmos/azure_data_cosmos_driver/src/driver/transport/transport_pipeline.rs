@@ -493,7 +493,7 @@ fn finalize_http_attempt(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> ExecutedTransportAttempt {
-    match attempt_result {
+    let executed = match attempt_result {
         HttpAttemptResult::Response {
             status_code,
             headers,
@@ -540,7 +540,21 @@ fn finalize_http_attempt(
                 shard_diagnostics,
             }
         }
+    };
+
+    // Pick up fault injection evaluations from the FaultClient thread-local.
+    // This is safe because finalize_http_attempt runs synchronously after
+    // execute_http_attempt_future().await completes (no intervening await).
+    #[cfg(feature = "fault_injection")]
+    {
+        let evals = crate::fault_injection::PENDING_EVALUATIONS
+            .with(|pending| std::mem::take(&mut *pending.borrow_mut()));
+        if !evals.is_empty() {
+            diagnostics.set_fault_injection_evaluations(request_handle, evals);
+        }
     }
+
+    executed
 }
 
 fn should_retry_connectivity_failure(
@@ -587,16 +601,6 @@ fn transport_error_result(
             request_handle,
             RequestEvent::new(RequestEventType::ResponseHeadersReceived),
         );
-    }
-
-    // Extract fault injection evaluations from an HTTP error's raw_response headers.
-    #[cfg(feature = "fault_injection")]
-    if let ErrorKind::HttpResponse {
-        raw_response: Some(raw),
-        ..
-    } = error.kind()
-    {
-        extract_fault_injection_evaluations(raw.headers(), request_handle, diagnostics);
     }
 
     diagnostics.add_event(
@@ -679,31 +683,8 @@ fn map_http_response_payload(
         }
     });
 
-    // Extract fault injection evaluations from response header when available.
-    #[cfg(feature = "fault_injection")]
-    extract_fault_injection_evaluations(&headers, request_handle, diagnostics);
-
     diagnostics.complete_request(request_handle, status_code, sub_status);
     TransportResult::from_http_response(cosmos_status, headers, body)
-}
-
-/// Deserializes fault injection evaluations from an HTTP header and attaches them
-/// to the request diagnostics.
-#[cfg(feature = "fault_injection")]
-fn extract_fault_injection_evaluations(
-    headers: &azure_core::http::headers::Headers,
-    request_handle: RequestHandle,
-    diagnostics: &mut DiagnosticsContextBuilder,
-) {
-    use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_EVALUATIONS;
-
-    if let Some(eval_json) = headers.get_optional_str(&FAULT_INJECTION_EVALUATIONS) {
-        if let Ok(evals) =
-            serde_json::from_str::<Vec<crate::fault_injection::FaultInjectionEvaluation>>(eval_json)
-        {
-            diagnostics.set_fault_injection_evaluations(request_handle, evals);
-        }
-    }
 }
 
 #[cfg(test)]

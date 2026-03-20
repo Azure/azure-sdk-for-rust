@@ -31,6 +31,7 @@ mod http_client;
 mod result;
 mod rule;
 
+use std::cell::RefCell;
 use std::fmt;
 use std::str::FromStr;
 
@@ -44,6 +45,17 @@ pub use result::{
     CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
 };
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
+
+thread_local! {
+    /// Thread-local storage for fault injection evaluations.
+    ///
+    /// Written by [`FaultClient::execute_request()`] at the end of every code path,
+    /// read by `finalize_http_attempt()` in the transport pipeline.
+    /// This is safe because `finalize_http_attempt()` runs synchronously
+    /// after `execute_http_attempt_future().await` completes — no intervening
+    /// await point allows a thread migration between write and read.
+    pub(crate) static PENDING_EVALUATIONS: RefCell<Vec<FaultInjectionEvaluation>> = const { RefCell::new(Vec::new()) };
+}
 
 /// Represents different server error types that can be injected for fault testing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
