@@ -21,7 +21,7 @@ use azure_core::{
 };
 use bytes::{Bytes, BytesMut};
 use futures::{
-    channel::mpsc::{self, UnboundedSender},
+    channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
     future::Either,
     SinkExt, TryStream,
 };
@@ -146,37 +146,51 @@ where
             // this will not change until either:
             //   1. a task sends a message through this channel
             //   2. a task fails
-            // Race awaiting a message vs checking if tasks have completed successfully,
-            // until either message is received or a task failure is found
-            let mut message_fut = rx.recv();
             let channel_message;
-            loop {
-                match future::select(message_fut, future::select_all(task_bucket)).await {
-                    Either::Left((message, task_select)) => {
-                        channel_message = message;
-                        task_bucket = task_select.into_inner();
-                        break;
-                    }
-                    Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
-                        completed_task.map_err(|e| Error::with_message(ErrorKind::Other, e.to_string()))?;
-                        task_bucket = remaining_tasks;
-                        message_fut = m_fut;
-                    }
-                }
-            }
-            match channel_message {
-                Ok(Ok((idx, bytes))) => drain.push(idx, bytes)?,
-                Ok(Err(err)) => Err(err)?,
-                // Unexpected channel close
-                Err(_) => {
-                    let received = drain.position();
-                    Err(Error::with_message(ErrorKind::Other, format!("Download incomplete: received {received} of {total_chunks} chunks.")))?;
-                }
-            };
+            (channel_message, task_bucket) = await_message_while_joining_workers(&mut rx, task_bucket).await?;
+            let (idx, bytes) = channel_message?;
+            drain.push(idx, bytes)?;
         }
     };
 
     Ok(Box::pin(stream))
+}
+
+/// Race awaiting a message vs checking if tasks have completed successfully,
+/// until either message is received or a task failure is found.
+///
+/// # Returns
+///
+/// - Returns Ok with received message and remaining un-joined tasks.
+/// - Returns Err if channel closed before a message received.
+/// - Returns Err if joined task closed with an error.
+async fn await_message_while_joining_workers<T>(
+    receiver: &mut UnboundedReceiver<T>,
+    mut task_bucket: Vec<SpawnedTask>,
+) -> AzureResult<(T, Vec<SpawnedTask>)> {
+    let on_recv_err = |_| {
+        Error::with_message(
+            ErrorKind::Other,
+            "Download incomplete. Premature channel close.",
+        )
+    };
+
+    let mut message_fut = receiver.recv();
+    // `task_bucket`` may be empty. `select_all` cannot handle that.
+    while !task_bucket.is_empty() {
+        match future::select(message_fut, future::select_all(task_bucket)).await {
+            Either::Left((message, task_select)) => {
+                return Ok((message.map_err(on_recv_err)?, task_select.into_inner()));
+            }
+            Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
+                completed_task.map_err(|e| Error::with_message(ErrorKind::Other, e.to_string()))?;
+                task_bucket = remaining_tasks;
+                message_fut = m_fut;
+            }
+        }
+    }
+
+    Ok((message_fut.await.map_err(on_recv_err)?, task_bucket))
 }
 
 async fn download_range_to_bytes(
