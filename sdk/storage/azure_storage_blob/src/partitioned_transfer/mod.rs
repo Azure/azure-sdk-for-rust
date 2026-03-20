@@ -15,6 +15,7 @@ use futures::{
 };
 
 type AzureResult<T> = azure_core::Result<T>;
+type Operation = Pin<Box<dyn Future<Output = Result<(), azure_core::Error>>>>;
 
 /// Executes async operations from a queue with a concurrency limit.
 ///
@@ -39,12 +40,15 @@ type AzureResult<T> = azure_core::Result<T>;
 /// # Type Parameters
 /// - `TFut`: Future type returned by each operation.
 /// - `TErr`: Error type for queue or operation failures.
-async fn run_all_with_concurrency_limit<Fut, Err>(
-    mut ops_queue: impl Stream<Item = Result<impl FnOnce() -> Fut, Err>> + Unpin,
+async fn run_all_with_concurrency_limit(
+    mut ops_queue: impl Stream<Item = Result<Operation, azure_core::Error>> + Unpin,
     parallel: NonZero<usize>,
-) -> Result<(), Err>
-where
-    Fut: Future<Output = Result<(), Err>>,
+) -> Result<(), azure_core::Error>
+// where
+//     IF: IntoFuture<
+//         Output = Result<(), Err>,
+//         IntoFuture = Pin<Box<dyn Future<Output = Result<(), Err>>>>,
+//     >,
 {
     let parallel = parallel.get();
 
@@ -52,7 +56,7 @@ where
     // The "true" implementation can't handle parallel < 2.
     if parallel == 1 {
         while let Some(op) = ops_queue.try_next().await? {
-            op().await?;
+            op.await?;
         }
         return Ok(());
     }
@@ -62,7 +66,7 @@ where
         None => return Ok(()),
     };
 
-    let mut get_next_completed_op_future = future::select_all(vec![Box::pin(first_op())]);
+    let mut get_next_completed_op_future = future::select_all(vec![first_op]);
     let mut get_next_queue_op_future = ops_queue.try_next();
     loop {
         // while max parallel running ops, focus on just running ops
@@ -80,7 +84,7 @@ where
                 match next_op_in_queue {
                     Some(op) => {
                         get_next_completed_op_future =
-                            combine_select_all(get_next_completed_op_future, Box::pin(op()));
+                            combine_select_all(get_next_completed_op_future, op);
                     }
                     // queue was finished, race is over
                     None => break,
@@ -97,7 +101,7 @@ where
                         None => return Ok(()),
                     };
                     get_next_queue_op_future = ops_queue.try_next();
-                    get_next_completed_op_future = future::select_all(vec![Box::pin(next_op())]);
+                    get_next_completed_op_future = future::select_all(vec![next_op]);
                 } else {
                     get_next_queue_op_future = next_op_fut;
                     get_next_completed_op_future = future::select_all(remaining_running_ops);
@@ -113,13 +117,10 @@ where
 /// Loops `future::select_all()` with the existing `SelectAll`` until the target remaining
 /// inner futures is reached. Will always leave at least one inner future remaining, for
 /// type simplicity (select_all panics on len == 0);
-async fn run_down<Fut, Err>(
-    select_fut: future::SelectAll<Pin<Box<Fut>>>,
+async fn run_down(
+    select_fut: future::SelectAll<Operation>,
     target_remaining: usize,
-) -> Result<future::SelectAll<Pin<Box<Fut>>>, Err>
-where
-    Fut: Future<Output = Result<(), Err>>,
-{
+) -> Result<future::SelectAll<Operation>, azure_core::Error> {
     let target_remaining = max(target_remaining, 1);
     let mut select_vec = select_fut.into_inner();
     while select_vec.len() > target_remaining {
@@ -131,13 +132,10 @@ where
 }
 
 /// Adds a pin-boxed future to an existing SelectAll of pin-boxed futures.
-fn combine_select_all<Fut>(
-    select_fut: future::SelectAll<Pin<Box<Fut>>>,
-    new_fut: Pin<Box<Fut>>,
-) -> future::SelectAll<Pin<Box<Fut>>>
-where
-    Fut: Future,
-{
+fn combine_select_all(
+    select_fut: future::SelectAll<Operation>,
+    new_fut: Operation,
+) -> future::SelectAll<Operation> {
     let mut futures = select_fut.into_inner();
     futures.push(new_fut);
     future::select_all(futures)
@@ -163,11 +161,11 @@ mod tests {
         // we can then assert the expected numbers made it to the channel at expected times
         let ops = (0..num_ops).map(|i| {
             let s = sender.clone();
-            Ok(async move || {
+            Ok(Box::pin(async move {
                 s.send(i).unwrap();
                 tokio::time::sleep(Duration::from_millis(op_time_millis)).await;
                 AzureResult::<()>::Ok(())
-            })
+            }) as Operation)
         });
 
         let race = future::select(

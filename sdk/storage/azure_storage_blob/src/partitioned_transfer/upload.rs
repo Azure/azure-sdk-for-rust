@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::sync::Arc;
+
 use azure_core::http::Body;
 use bytes::Bytes;
 
@@ -20,11 +22,11 @@ pub(crate) trait PartitionedUploadBehavior {
     async fn finalize(&self) -> AzureResult<()>;
 }
 
-pub(crate) async fn upload(
+pub(crate) async fn upload<Behavior: PartitionedUploadBehavior>(
     content: Body,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
-    client: &impl PartitionedUploadBehavior,
+    client: Arc<Behavior>,
 ) -> AzureResult<()> {
     if content.len() <= partition_size.get() {
         client.transfer_oneshot(content).await?;
@@ -47,30 +49,33 @@ pub(crate) async fn upload(
     Ok(())
 }
 
-async fn upload_bytes_partitions(
+async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior>(
     content: Bytes,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
-    client: &impl PartitionedUploadBehavior,
+    client: Arc<Behavior>,
 ) -> AzureResult<()> {
     let part_size_actual = partition_size.get();
     let num_partitions = content.len().div_ceil(part_size_actual);
-    let partitions = (0..num_partitions).map(|part| {
-        let offset = part * part_size_actual;
-        let range = offset..std::cmp::min(offset + part_size_actual, content.len());
-        (offset, content.slice(range))
+    let partitions: Vec<_> = (0..num_partitions)
+        .map(|part| {
+            let offset = part * part_size_actual;
+            let range = offset..std::cmp::min(offset + part_size_actual, content.len());
+            (offset, content.slice(range), client.clone())
+        })
+        .collect();
+    let ops = partitions.into_iter().map(|(offset, bytes, c)| {
+        Ok(Box::pin(c.transfer_partition(offset, Body::Bytes(bytes))) as Operation)
     });
-    let ops = partitions
-        .map(|(offset, bytes)| Ok(move || client.transfer_partition(offset, Body::Bytes(bytes))));
     run_all_with_concurrency_limit(futures::stream::iter(ops), parallel).await?;
     Ok(())
 }
 
-async fn upload_stream_partitions(
+async fn upload_stream_partitions<Behavior: PartitionedUploadBehavior>(
     content: Box<dyn SeekableStream>,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
-    client: &impl PartitionedUploadBehavior,
+    client: Arc<Behavior>,
 ) -> AzureResult<()> {
     let partitions =
         PartitionedStream::new(content, partition_size).scan(0, |enumerated_bytes, result| {
@@ -83,8 +88,8 @@ async fn upload_stream_partitions(
                 Err(e) => future::ready(Some(Err(e))),
             }
         });
-    let ops = partitions
-        .map_ok(|(offset, bytes)| move || client.transfer_partition(offset, Body::Bytes(bytes)));
+    let ops =
+        partitions.map_ok(|(offset, bytes)| client.transfer_partition(offset, Body::Bytes(bytes)));
     run_all_with_concurrency_limit(ops, parallel).await?;
     Ok(())
 }
