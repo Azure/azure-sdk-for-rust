@@ -31,9 +31,11 @@ mod http_client;
 mod result;
 mod rule;
 
-use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 
 use crate::models::{OperationType, ResourceType};
 
@@ -46,15 +48,34 @@ pub use result::{
 };
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
-thread_local! {
-    /// Thread-local storage for fault injection evaluations.
-    ///
-    /// Written by [`FaultClient::execute_request()`] at the end of every code path,
-    /// read by `finalize_http_attempt()` in the transport pipeline.
-    /// This is safe because `finalize_http_attempt()` runs synchronously
-    /// after `execute_http_attempt_future().await` completes — no intervening
-    /// await point allows a thread migration between write and read.
-    pub(crate) static PENDING_EVALUATIONS: RefCell<Vec<FaultInjectionEvaluation>> = const { RefCell::new(Vec::new()) };
+/// Counter for generating unique evaluation request IDs.
+static NEXT_EVALUATION_ID: AtomicU64 = AtomicU64::new(0);
+
+/// Storage for fault injection evaluations keyed by request ID.
+/// Written by [`FaultClient`], read by the transport pipeline.
+static EVALUATION_STORE: std::sync::LazyLock<Mutex<HashMap<u64, Vec<FaultInjectionEvaluation>>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Generates a unique evaluation request ID.
+pub(crate) fn next_evaluation_id() -> u64 {
+    NEXT_EVALUATION_ID.fetch_add(1, Ordering::Relaxed)
+}
+
+/// Stores evaluations for a request ID.
+pub(crate) fn store_evaluations(request_id: u64, evaluations: Vec<FaultInjectionEvaluation>) {
+    EVALUATION_STORE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(request_id, evaluations);
+}
+
+/// Takes (removes and returns) evaluations for a request ID.
+pub(crate) fn take_evaluations(request_id: u64) -> Vec<FaultInjectionEvaluation> {
+    EVALUATION_STORE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&request_id)
+        .unwrap_or_default()
 }
 
 /// Represents different server error types that can be injected for fault testing.

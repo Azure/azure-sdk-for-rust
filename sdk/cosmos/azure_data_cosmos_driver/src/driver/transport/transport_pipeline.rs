@@ -279,6 +279,18 @@ pub(crate) async fn execute_transport_pipeline(
             RequestEvent::new(RequestEventType::TransportStart),
         );
 
+        #[cfg(feature = "fault_injection")]
+        let eval_id = {
+            use crate::fault_injection::next_evaluation_id;
+            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REQUEST_ID;
+            let id = next_evaluation_id();
+            http_request.headers_mut().insert(
+                FAULT_INJECTION_REQUEST_ID.clone(),
+                azure_core::http::headers::HeaderValue::from(id.to_string()),
+            );
+            id
+        };
+
         let result = execute_http_attempt(
             &http_request,
             ctx.transport,
@@ -289,6 +301,14 @@ pub(crate) async fn execute_transport_pipeline(
             &endpoint_key,
         )
         .await;
+
+        #[cfg(feature = "fault_injection")]
+        {
+            let evals = crate::fault_injection::take_evaluations(eval_id);
+            if !evals.is_empty() {
+                diagnostics.set_fault_injection_evaluations(request_handle, evals);
+            }
+        }
         if !attempt_span.is_disabled() {
             attempt_span.record("outcome", format!("{}", result.result.outcome));
         }
@@ -493,7 +513,7 @@ fn finalize_http_attempt(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> ExecutedTransportAttempt {
-    let executed = match attempt_result {
+    match attempt_result {
         HttpAttemptResult::Response {
             status_code,
             headers,
@@ -540,21 +560,7 @@ fn finalize_http_attempt(
                 shard_diagnostics,
             }
         }
-    };
-
-    // Pick up fault injection evaluations from the FaultClient thread-local.
-    // This is safe because finalize_http_attempt runs synchronously after
-    // execute_http_attempt_future().await completes (no intervening await).
-    #[cfg(feature = "fault_injection")]
-    {
-        let evals = crate::fault_injection::PENDING_EVALUATIONS
-            .with(|pending| std::mem::take(&mut *pending.borrow_mut()));
-        if !evals.is_empty() {
-            diagnostics.set_fault_injection_evaluations(request_handle, evals);
-        }
     }
-
-    executed
 }
 
 fn should_retry_connectivity_failure(

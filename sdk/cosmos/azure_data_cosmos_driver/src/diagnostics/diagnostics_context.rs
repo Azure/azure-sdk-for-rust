@@ -368,7 +368,7 @@ impl AsRef<str> for RequestSentStatus {
 ///
 /// This type is non-exhaustive and new fields may be added in future releases.
 /// Use the getter methods to access field values.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[non_exhaustive]
 pub struct RequestDiagnostics {
     /// Context describing why this request was made.
@@ -449,7 +449,7 @@ pub struct RequestDiagnostics {
     ///
     /// Populated only when the `fault_injection` feature is enabled and
     /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
-    /// via the `x-ms-fault-injection-evaluations` response header.
+    /// via a request-scoped concurrent map keyed by evaluation request ID.
     #[cfg(feature = "fault_injection")]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
@@ -1729,8 +1729,6 @@ impl PartialEq for DiagnosticsContext {
             && self.options == other.options
     }
 }
-
-impl Eq for DiagnosticsContext {}
 
 /// Builds a summary for requests in a single region.
 fn build_region_summary(
