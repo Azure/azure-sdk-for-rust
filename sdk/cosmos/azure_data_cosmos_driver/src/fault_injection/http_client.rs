@@ -186,8 +186,7 @@ impl FaultClient {
         };
 
         // Connection-level faults return simple errors with the appropriate ErrorKind.
-        // No HTTP response is created, so evaluations cannot be propagated via headers.
-        // HTTP-level faults produce synthetic error responses with evaluations embedded.
+        // Evaluations are propagated via the concurrent evaluation store for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 return Some(Err(azure_core::Error::with_message(
@@ -292,8 +291,8 @@ impl HttpClient for FaultClient {
         }
 
         // Apply the fault if we found a matching rule.
-        // `apply_fault` pushes the Applied evaluation itself before serializing
-        // all evaluations into the response header.
+        // `apply_fault` pushes the Applied evaluation; all evaluations are then
+        // stored in the concurrent evaluation store keyed by request ID.
         let fault_response = if let Some(ref rule) = matched_rule {
             let result = self
                 .apply_fault(rule.result(), rule, &mut evaluations)
