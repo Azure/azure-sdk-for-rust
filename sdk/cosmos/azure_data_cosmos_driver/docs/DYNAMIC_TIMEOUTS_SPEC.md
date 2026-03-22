@@ -16,9 +16,9 @@
 6. [Interaction with End-to-End Deadline](#6-interaction-with-end-to-end-deadline)
 7. [Interaction with ConnectionPoolOptions Bounds](#7-interaction-with-connectionpooloptions-bounds)
 8. [Implementation Details](#8-implementation-details)
-10. [Adaptive Connection Timeout](#10-adaptive-connection-timeout)
-11. [Cross-SDK Reference](#11-cross-sdk-reference)
-12. [Open Questions](#12-open-questions)
+9. [Adaptive Connection Timeout](#9-adaptive-connection-timeout)
+10. [Cross-SDK Reference](#10-cross-sdk-reference)
+11. [Open Questions](#11-open-questions)
 
 ---
 
@@ -53,7 +53,7 @@ add latency to the common case.
   clamping limits (see [§7](#7-interaction-with-connectionpooloptions-bounds)).
 - **Connection timeout escalation per retry**: Connection timeouts are NOT escalated per retry
   attempt like request timeouts are. Instead, connection timeouts use an adaptive model described
-  in [§10](#10-adaptive-connection-timeout).
+  in [§9](#9-adaptive-connection-timeout).
 - **Query plan timeout escalation**: Deferred until query plan execution is implemented.
 
 ---
@@ -128,6 +128,12 @@ internal defaults chosen to balance latency and reliability.
 | 1       | 10s     |
 | 2       | 65s     |
 
+The jump from 10s to 65s is intentionally large. Tiers 0 and 1 cover transient spikes where a
+slightly longer timeout resolves the issue. If 10s was not enough, the problem is likely
+backend-side (e.g., cross-partition query fan-out, throttled partition) and needs the full timeout
+budget. An intermediate step would just delay the inevitable success or failure without adding
+signal. The 65s value matches `max_dataplane_request_timeout`.
+
 ### Metadata Request Timeout Ladder
 
 Following the Java SDK pattern for `DatabaseAccount` metadata calls:
@@ -157,7 +163,8 @@ Dynamic timeout escalation is indexed by the **total attempt number** (i.e.,
 reason.
 
 With `max_failover_retries = 3`, all 3 tiers of the timeout ladder are reachable on the first 3
-attempts.
+attempts. Attempts beyond the ladder length saturate at the final tier (see
+[§4 Ladder Behavior](#4-timeout-ladders)).
 
 ### Timeout Selection per Attempt
 
@@ -311,6 +318,16 @@ internal `Context`.
 The `Request` struct (`typespec_client_core::http::request::Request`) currently has no timeout
 field. Per-request timeouts are needed so that callers (like the Cosmos driver) can override the
 client-level timeout on individual requests. The change is minimal and backwards-compatible:
+
+- The new field is `Option<Duration>` defaulting to `None` — existing callers are unaffected.
+- `Request` already derives `Clone`; `Option<Duration>` is `Clone + Copy`, so no breakage.
+- `Debug` is manually implemented for `Request` and would include the new field.
+
+**Cross-crate PR strategy**: This change touches `typespec_client_core`, which is shared across
+all Azure SDK crates. It requires a separate PR with cross-team review before the Cosmos driver
+can depend on it. The PR should be small (add field + getter/setter, update reqwest impl) and
+framed as a general-purpose feature, not Cosmos-specific — any SDK that needs per-request timeout
+overrides benefits from this.
 
 ```rust
 // In typespec_client_core::http::request::Request
@@ -476,7 +493,7 @@ value after clamping by both `ConnectionPoolOptions` bounds and the end-to-end d
 
 ---
 
-## 10. Adaptive Connection Timeout
+## 9. Adaptive Connection Timeout
 
 ### Motivation
 
@@ -519,7 +536,14 @@ Normal state: connect_timeout = 1s
   decides to increase the connection timeout for an endpoint, it creates new `HttpClient` instances
   with the higher timeout and marks old shards as unhealthy for immediate reclamation.
 - **No fallback to 1s**: Once elevated to 5s, the connection timeout stays at 5s for the lifetime
-  of the driver. A restart resets to 1s. This keeps the logic simple and avoids oscillation.
+  of the driver. A restart resets to 1s. Reverting risks oscillation (1s→fail→5s→succeed→1s→fail
+  cycle). Since >1s only matters for unusual environments, the permanent elevation is acceptable —
+  the 4s overhead per connection is negligible compared to the reliability gain.
+- **Idempotent transition**: Multiple concurrent connection failures may simultaneously observe
+  the threshold exceeded. The transition is idempotent — setting `effective_connect_timeout = 5s`
+  and marking old shards unhealthy are both safe to execute multiple times. The
+  `ShardedHttpTransport` already holds a `Mutex` for shard pool management, so the transition
+  is serialized naturally.
 
 ### Implementation in `ShardedHttpTransport`
 
@@ -530,9 +554,12 @@ time) and runs a periodic background health sweep that evicts unhealthy or idle 
 Connection timeout adaptation fits naturally into this model:
 
 1. **Track connection failures per endpoint**: The `ShardedHttpTransport` monitors connection
-   failures (errors where `is_connect()` returns `true`) for each endpoint independently. Since
-   the sharded transport already manages shard pools per endpoint, per-endpoint tracking is the
-   natural granularity — a connectivity issue in one region does not penalize healthy regions.
+   failures (errors where `is_connect()` returns `true`) for each endpoint independently,
+   aggregated across **all shards** for that endpoint. If any shard's connection attempt fails,
+   the per-endpoint consecutive failure counter increments. A successful connection on **any**
+   shard for that endpoint resets the counter. This ensures that a single consistently failing
+   shard cannot be masked by healthy peers — the endpoint-level view captures systemic issues
+   like DNS resolution failures or firewall rules that affect all connections to that host.
 2. **Consecutive failure threshold**: When an endpoint accumulates **>3 consecutive connection
    failures**, the transport transitions that endpoint to the elevated timeout. Consecutive
    failures (rather than a failure rate) avoid false positives from transient blips during pool
@@ -562,7 +589,7 @@ if endpoint_state.consecutive_connect_failures > 3 {
 
 ---
 
-## 11. Cross-SDK Reference
+## 10. Cross-SDK Reference
 
 ### Java SDK (`azure-cosmos`)
 
@@ -598,7 +625,7 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
 
 ---
 
-## 12. Open Questions
+## 11. Open Questions
 
 1. **Metadata timeout ladder scope**: Should the metadata ladder (5s → 10s → 20s) apply to all
    metadata operations uniformly, or should specific metadata operations (e.g., database account
