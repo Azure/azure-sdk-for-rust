@@ -787,22 +787,8 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        // Step 1: Build the runtime options view for layered resolution and
-        // materialize a resolved snapshot for the pipeline.
-        let view = self.runtime_options_view(&options);
-        let effective_options = RuntimeOptions {
-            throughput_control_group_name: view.throughput_control_group_name().cloned(),
-            dedicated_gateway_options: view.dedicated_gateway_options().cloned(),
-            diagnostics_thresholds: view.diagnostics_thresholds().cloned(),
-            end_to_end_latency_policy: view.end_to_end_latency_policy().cloned(),
-            excluded_regions: view.excluded_regions().cloned(),
-            read_consistency_strategy: view.read_consistency_strategy().copied(),
-            content_response_on_write: view.content_response_on_write().copied(),
-            max_failover_retry_count: view.max_failover_retry_count().copied(),
-            max_session_retry_count: view.max_session_retry_count().copied(),
-            endpoint_unavailability_ttl: view.endpoint_unavailability_ttl().copied(),
-            session_capturing_disabled: view.session_capturing_disabled().copied(),
-        };
+        // Step 1: Build the runtime options view for layered resolution.
+        let effective_options = self.runtime_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
