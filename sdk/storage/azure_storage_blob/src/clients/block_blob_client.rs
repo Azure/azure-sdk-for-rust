@@ -222,8 +222,14 @@ impl BlockBlobClient {
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
+        let client = BlockBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
         let behavior = Arc::new(BlockBlobClientUploadBehavior::new(
-            self,
+            client,
             oneshot_options,
             stage_block_options,
             commit_block_list_options,
@@ -242,17 +248,17 @@ struct BlockInfo {
     block_id: Uuid,
 }
 
-struct BlockBlobClientUploadBehavior<'c> {
-    client: &'c BlockBlobClient,
+struct BlockBlobClientUploadBehavior {
+    client: BlockBlobClient,
     oneshot_options: BlockBlobClientUploadInternalOptions<'static>,
     stage_block_options: BlockBlobClientStageBlockOptions<'static>,
     commit_block_list_options: BlockBlobClientCommitBlockListOptions<'static>,
     blocks: Mutex<Vec<BlockInfo>>,
 }
 
-impl<'c> BlockBlobClientUploadBehavior<'c> {
+impl BlockBlobClientUploadBehavior {
     fn new(
-        client: &'c BlockBlobClient,
+        client: BlockBlobClient,
         oneshot_options: BlockBlobClientUploadInternalOptions<'static>,
         stage_block_options: BlockBlobClientStageBlockOptions<'static>,
         commit_block_list_options: BlockBlobClientCommitBlockListOptions<'static>,
@@ -268,7 +274,7 @@ impl<'c> BlockBlobClientUploadBehavior<'c> {
 }
 
 #[async_trait]
-impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
+impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior {
     type Output = BlockBlobClientUploadResult;
     async fn transfer_oneshot(&self, content: Body) -> Result<Self::Output> {
         let content_len = content.len() as u64;
@@ -293,7 +299,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
         })
     }
 
-    async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
+    async fn transfer_partition(self: Arc<Self>, offset: usize, content: Body) -> Result<()> {
         let block_id = Uuid::new_v4();
         let content_len = content.len().try_into().unwrap();
         {

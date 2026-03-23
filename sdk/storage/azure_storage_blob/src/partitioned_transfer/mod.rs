@@ -200,10 +200,10 @@ mod tests {
         // setup a series of operations that send a unique number to a channel
         // we can then assert the expected numbers made it to the channel at expected times
         let ops = (0..num_ops).map(|_| {
-            Ok(async move || {
+            Ok(Box::pin(async move {
                 tokio::time::sleep(Duration::from_millis(op_time_millis)).await;
                 AzureResult::<()>::Ok(())
-            })
+            }) as Operation)
         });
 
         run_all_with_concurrency_limit(
@@ -217,14 +217,11 @@ mod tests {
     async fn success_when_no_ops() -> AzureResult<()> {
         let parallel = 4usize;
 
-        // not possible to manually type what we need
-        // make a vec with a concrete element and then remove it to get the desired typing
-        let op = || future::ready::<Result<(), azure_core::Error>>(Ok(()));
-        let mut ops = vec![Ok(op)];
-        ops.pop();
-
-        run_all_with_concurrency_limit(futures::stream::iter(ops), NonZero::new(parallel).unwrap())
-            .await
+        run_all_with_concurrency_limit(
+            futures::stream::iter(Vec::new()),
+            NonZero::new(parallel).unwrap(),
+        )
+        .await
     }
 
     struct SlowStream<Iter> {

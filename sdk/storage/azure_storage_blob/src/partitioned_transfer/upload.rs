@@ -18,12 +18,12 @@ use super::*;
 pub(crate) trait PartitionedUploadBehavior {
     type Output;
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<Self::Output>;
-    async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
+    async fn transfer_partition(self: Arc<Self>, offset: usize, content: Body) -> AzureResult<()>;
     async fn initialize(&self, content_len: usize) -> AzureResult<()>;
     async fn finalize(&self) -> AzureResult<Self::Output>;
 }
 
-pub(crate) async fn upload<Behavior: PartitionedUploadBehavior>(
+pub(crate) async fn upload<Behavior: PartitionedUploadBehavior + 'static>(
     content: Body,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
@@ -48,7 +48,7 @@ pub(crate) async fn upload<Behavior: PartitionedUploadBehavior>(
     return client.finalize().await;
 }
 
-async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior>(
+async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior + 'static>(
     content: Bytes,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
@@ -64,31 +64,31 @@ async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior>(
         })
         .collect();
     let ops = partitions.into_iter().map(|(offset, bytes, c)| {
-        Ok(Box::pin(c.transfer_partition(offset, Body::Bytes(bytes))) as Operation)
+        Ok(c.transfer_partition(offset, Body::Bytes(bytes)) as Operation)
     });
     run_all_with_concurrency_limit(futures::stream::iter(ops), parallel).await?;
     Ok(())
 }
 
-async fn upload_stream_partitions<Behavior: PartitionedUploadBehavior>(
+async fn upload_stream_partitions<Behavior: PartitionedUploadBehavior + 'static>(
     content: Box<dyn SeekableStream>,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
 ) -> AzureResult<()> {
-    let partitions =
-        PartitionedStream::new(content, partition_size).scan(0, |enumerated_bytes, result| {
-            match result {
-                Ok(bytes) => {
-                    let offset = *enumerated_bytes;
-                    *enumerated_bytes += bytes.len();
-                    future::ready(Some(Ok((offset, bytes))))
-                }
-                Err(e) => future::ready(Some(Err(e))),
+    let partitions = PartitionedStream::new(content, partition_size).scan(
+        (0, client),
+        |(enumerated_bytes, c), result| match result {
+            Ok(bytes) => {
+                let offset = *enumerated_bytes;
+                *enumerated_bytes += bytes.len();
+                future::ready(Some(Ok((offset, bytes, c.clone()))))
             }
-        });
-    let ops =
-        partitions.map_ok(|(offset, bytes)| client.transfer_partition(offset, Body::Bytes(bytes)));
+            Err(e) => future::ready(Some(Err(e))),
+        },
+    );
+    let ops = partitions
+        .map_ok(|(offset, bytes, c)| c.transfer_partition(offset, Body::Bytes(bytes)) as Operation);
     run_all_with_concurrency_limit(ops, parallel).await?;
     Ok(())
 }
@@ -149,7 +149,11 @@ mod tests {
             Ok(())
         }
 
-        async fn transfer_partition(&self, offset: usize, mut content: Body) -> AzureResult<()> {
+        async fn transfer_partition(
+            self: Arc<Self>,
+            offset: usize,
+            mut content: Body,
+        ) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
                 Body::SeekableStream(_) => BodyType::SeekableStream,
