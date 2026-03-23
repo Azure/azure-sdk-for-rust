@@ -52,14 +52,6 @@ impl ServiceIdentity {
             String::new()
         }
     }
-
-    fn service_uri(&self) -> &String {
-        &self.service_name
-    }
-
-    fn partition_key(&self) -> i64 {
-        0
-    }
 }
 
 impl fmt::Display for ServiceIdentity {

@@ -156,6 +156,14 @@ impl Hash for PartitionKeyRange {
     }
 }
 
+/// Response from the `/pkranges` REST endpoint.
+#[derive(Debug, Deserialize)]
+pub(crate) struct PkRangesResponse {
+    /// The partition key ranges returned by the service.
+    #[serde(rename = "PartitionKeyRanges")]
+    pub partition_key_ranges: Vec<PartitionKeyRange>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

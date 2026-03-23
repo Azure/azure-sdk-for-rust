@@ -5,8 +5,6 @@
 // MurmurHash3 implementation (public domain).
 // Ported from Cosmos DB SDK / Austin Appleby's original C++ code in SMHasher.
 
-use std::convert::TryInto;
-
 #[inline]
 fn low64(v: u128) -> u64 {
     v as u64
@@ -200,8 +198,9 @@ mod tests {
     }
 
     #[test]
-    fn murmurhash3_32_basic() {
+    fn murmurhash3_32_known_value() {
+        // Known hash value for "hello" with seed 0.
         let h = murmurhash3_32(b"hello", 0);
-        assert_ne!(h, 0);
+        assert_eq!(h, 613153351);
     }
 }

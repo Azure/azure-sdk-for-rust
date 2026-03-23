@@ -13,6 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 /// Error returned when partition key range validation fails.
 #[derive(Debug)]
+#[non_exhaustive]
 pub(crate) enum RoutingMapError {
     /// The ranges overlap, indicating data corruption.
     OverlappingRanges,
@@ -557,5 +558,74 @@ mod tests {
     fn empty_input_returns_none() {
         let result = CollectionRoutingMap::try_create(vec![], None).unwrap();
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn try_combine_split_produces_valid_map() {
+        // Start with a single range covering the full EPK space.
+        let map = CollectionRoutingMap::try_create(single_range(), None)
+            .unwrap()
+            .unwrap();
+
+        // Simulate a split: range "0" splits into "1" [, 7F) and "2" [7F, FF).
+        let new_ranges = vec![
+            (make_range("1", "", "7F", Some(vec!["0".into()])), None),
+            (make_range("2", "7F", "FF", Some(vec!["0".into()])), None),
+        ];
+
+        let merged = map
+            .try_combine(new_ranges, Some("new-etag".into()))
+            .unwrap()
+            .unwrap();
+
+        // Parent "0" should be gone, two child ranges remain.
+        assert_eq!(merged.ordered_ranges().len(), 2);
+        assert!(merged.is_gone("0"));
+        assert!(!merged.is_gone("1"));
+        assert!(!merged.is_gone("2"));
+        // EPK lookup should work on the merged map.
+        assert_eq!(
+            merged
+                .get_range_by_effective_partition_key("30")
+                .unwrap()
+                .id,
+            "1"
+        );
+        assert_eq!(
+            merged
+                .get_range_by_effective_partition_key("A0")
+                .unwrap()
+                .id,
+            "2"
+        );
+    }
+
+    #[test]
+    fn try_combine_incomplete_returns_none() {
+        let map = CollectionRoutingMap::try_create(single_range(), None)
+            .unwrap()
+            .unwrap();
+
+        // Only one child range — the merged set has a gap [7F, FF).
+        let new_ranges = vec![(make_range("1", "", "7F", Some(vec!["0".into()])), None)];
+
+        let result = map.try_combine(new_ranges, Some("etag".into())).unwrap();
+        assert!(result.is_none(), "Incomplete merge should return None");
+    }
+
+    #[test]
+    fn try_combine_overlapping_returns_error() {
+        let map = CollectionRoutingMap::try_create(single_range(), None)
+            .unwrap()
+            .unwrap();
+
+        // Two children that overlap: [, 80) and [7F, FF) — "80" > "7F".
+        let new_ranges = vec![
+            (make_range("1", "", "80", Some(vec!["0".into()])), None),
+            (make_range("2", "7F", "FF", Some(vec!["0".into()])), None),
+        ];
+
+        let result = map.try_combine(new_ranges, Some("etag".into()));
+        assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
     }
 }
