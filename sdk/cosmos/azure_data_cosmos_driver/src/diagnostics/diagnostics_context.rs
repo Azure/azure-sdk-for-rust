@@ -2059,30 +2059,63 @@ mod tests {
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
         let actual = normalize_diagnostics_json(json);
-        let expected: serde_json::Value = serde_json::json!({
-            "activity_id": "test-id",
-            "total_duration_ms": 0,
-            "total_request_charge": 1.0,
-            "request_count": 1,
-            "requests": [{
-                "execution_context": "initial",
-                "pipeline_type": "data_plane",
-                "transport_security": "secure",
-                "transport_kind": "gateway",
-                "transport_http_version": "http11",
-                "region": "westus2",
-                "endpoint": "https://test.documents.azure.com/",
-                "status": "200",
-                "request_charge": 1.0,
-                "activity_id": null,
-                "session_token": null,
-                "duration_ms": 0,
-                "events": [],
-                "timed_out": false,
-                "request_sent": "sent",
-                "error": null
-            }]
-        });
+        let expected: serde_json::Value = {
+            #[cfg(feature = "fault_injection")]
+            {
+                serde_json::json!({
+                    "activity_id": "test-id",
+                    "total_duration_ms": 0,
+                    "total_request_charge": 1.0,
+                    "request_count": 1,
+                    "requests": [{
+                        "execution_context": "initial",
+                        "pipeline_type": "data_plane",
+                        "transport_security": "secure",
+                        "transport_kind": "gateway",
+                        "transport_http_version": "http11",
+                        "region": "westus2",
+                        "endpoint": "https://test.documents.azure.com/",
+                        "status": "200",
+                        "request_charge": 1.0,
+                        "activity_id": null,
+                        "session_token": null,
+                        "duration_ms": 0,
+                        "events": [],
+                        "timed_out": false,
+                        "request_sent": "sent",
+                        "error": null,
+                        "fault_injection_evaluations": []
+                    }]
+                })
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                serde_json::json!({
+                    "activity_id": "test-id",
+                    "total_duration_ms": 0,
+                    "total_request_charge": 1.0,
+                    "request_count": 1,
+                    "requests": [{
+                        "execution_context": "initial",
+                        "pipeline_type": "data_plane",
+                        "transport_security": "secure",
+                        "transport_kind": "gateway",
+                        "transport_http_version": "http11",
+                        "region": "westus2",
+                        "endpoint": "https://test.documents.azure.com/",
+                        "status": "200",
+                        "request_charge": 1.0,
+                        "activity_id": null,
+                        "session_token": null,
+                        "duration_ms": 0,
+                        "events": [],
+                        "timed_out": false,
+                        "request_sent": "sent",
+                        "error": null
+                    }]
+                })
+            }
+        };
         assert_eq!(actual, expected, "Detailed JSON mismatch.\nActual:\n{json}");
     }
 
