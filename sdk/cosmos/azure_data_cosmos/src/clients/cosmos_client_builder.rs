@@ -351,50 +351,7 @@ fn build_driver_account(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    // TODO: These tests were disabled because CosmosClient::builder().build() now eagerly
-    // creates a CosmosDriver, which requires a real endpoint. Re-add once fault injection
-    // is linked from the SDK to the driver.
-
-    // use crate::{regions, CosmosAccountReference, CosmosClient, RoutingStrategy};
-    // use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
-    // use std::sync::Arc;
-    //
-    // #[derive(Debug)]
-    // struct MockCredential;
-    //
-    // #[async_trait::async_trait]
-    // impl TokenCredential for MockCredential {
-    //     async fn get_token(
-    //         &self,
-    //         _scopes: &[&str],
-    //         _options: Option<TokenRequestOptions<'_>>,
-    //     ) -> azure_core::Result<AccessToken> {
-    //         Ok(AccessToken::new(
-    //             "mock_token",
-    //             azure_core::time::OffsetDateTime::now_utc(),
-    //         ))
-    //     }
-    // }
-    //
-    // fn test_account() -> CosmosAccountReference {
-    //     let endpoint = "https://test.documents.azure.com/".parse().unwrap();
-    //     CosmosAccountReference::with_credential(endpoint, Arc::new(MockCredential))
-    // }
-    //
-    // #[tokio::test]
-    // async fn build_with_known_region_succeeds() { ... }
-    //
-    // #[tokio::test]
-    // async fn build_with_unknown_region_succeeds() { ... }
-    //
-    // #[tokio::test]
-    // async fn build_with_unknown_region_uses_account_order() { ... }
-    //
-    // #[tokio::test]
-    // async fn proximity_strategy_produces_ordered_endpoints() { ... }
-    //
-    // #[tokio::test]
-    // async fn proximity_strategy_with_excluded_regions() { ... }
-}
+// Unit tests for routing-strategy behavior were removed because
+// CosmosClient::builder().build() now eagerly creates a CosmosDriver,
+// which requires a real endpoint. Re-add once fault injection is linked
+// from the SDK to the driver.
