@@ -60,7 +60,7 @@ reqwest_deflate = ["reqwest", "reqwest/deflate"]
 reqwest_gzip = ["reqwest", "reqwest/gzip"]
 reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
-tokio = ["tokio/sync", "tokio/time"]
+tokio = ["tokio/fs", "tokio/sync", "tokio/time"]
 xml = [
   "dep:serde_json",
   "typespec/xml",
