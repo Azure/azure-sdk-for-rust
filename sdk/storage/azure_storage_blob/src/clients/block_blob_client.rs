@@ -21,12 +21,27 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
+        Body, ClientMethodOptions, NoFormat, Pipeline, RequestContent, Url,
     },
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
+
+/// Extension trait to clone `ClientMethodOptions` without lifetime dependencies.
+trait ClientMethodOptionsExt<'a> {
+    /// Clone the `ClientMethodOptions` with static lifetime by making the 
+    /// underlying context owned.
+    fn clone_owned(&self) -> ClientMethodOptions<'static>;
+}
+
+impl<'a> ClientMethodOptionsExt<'a> for ClientMethodOptions<'a> {
+    fn clone_owned(&self) -> ClientMethodOptions<'static> {
+        ClientMethodOptions {
+            context: self.context.to_owned(),
+        }
+    }
+}
 
 impl BlockBlobClient {
     /// Creates a new BlockBlobClient, using Entra ID authentication.
@@ -158,7 +173,7 @@ impl BlockBlobClient {
             lease_id: options.lease_id.clone(),
             legal_hold: options.legal_hold,
             metadata: options.metadata.clone(),
-            method_options: options.method_options.clone(),
+            method_options: options.method_options.clone_owned(),
             structured_body_type: None,
             structured_content_length: None,
             tier: options.tier.clone(),
@@ -172,7 +187,7 @@ impl BlockBlobClient {
             encryption_key_sha256: options.encryption_key_sha256.clone(),
             encryption_scope: options.encryption_scope.clone(),
             lease_id: options.lease_id.clone(),
-            method_options: options.method_options.clone(),
+            method_options: options.method_options.clone_owned(),
             structured_body_type: None,
             structured_content_length: None,
             timeout: options.per_request_timeout,
@@ -201,19 +216,20 @@ impl BlockBlobClient {
             lease_id: options.lease_id,
             legal_hold: options.legal_hold,
             metadata: options.metadata,
-            method_options: options.method_options,
+            method_options: options.method_options.clone_owned(),
             tier: options.tier,
             timeout: options.per_request_timeout,
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
-        let behavior = BlockBlobClientUploadBehavior::new(
+        let behavior = Arc::new(BlockBlobClientUploadBehavior::new(
             self,
             oneshot_options,
             stage_block_options,
             commit_block_list_options,
-        );
-        partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
+        ));
+        partitioned_transfer::upload(content.into(), parallel, partition_size, behavior.clone())
+            .await?;
         behavior.result.into_inner().ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -232,21 +248,21 @@ struct BlockInfo {
     block_id: Uuid,
 }
 
-struct BlockBlobClientUploadBehavior<'c, 'opt> {
+struct BlockBlobClientUploadBehavior<'c> {
     client: &'c BlockBlobClient,
-    oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
-    stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
-    commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
+    oneshot_options: BlockBlobClientUploadInternalOptions<'static>,
+    stage_block_options: BlockBlobClientStageBlockOptions<'static>,
+    commit_block_list_options: BlockBlobClientCommitBlockListOptions<'static>,
     blocks: Mutex<Vec<BlockInfo>>,
     result: Mutex<Option<BlockBlobClientUploadResult>>,
 }
 
-impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
+impl<'c> BlockBlobClientUploadBehavior<'c> {
     fn new(
         client: &'c BlockBlobClient,
-        oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
-        stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
-        commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
+        oneshot_options: BlockBlobClientUploadInternalOptions<'static>,
+        stage_block_options: BlockBlobClientStageBlockOptions<'static>,
+        commit_block_list_options: BlockBlobClientCommitBlockListOptions<'static>,
     ) -> Self {
         Self {
             client,
@@ -260,7 +276,7 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 }
 
 #[async_trait]
-impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
+impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
         let content_len = content.len() as u64;
         let rsp = self
