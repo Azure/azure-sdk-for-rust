@@ -42,6 +42,12 @@ impl SeekableStream for FileStream {
         Ok(())
     }
 
+    /// Get the length of the file.
+    ///
+    /// # Notes
+    ///
+    /// This may be inaccurate if the file is writable since it may be updated after getting the length.
+    /// This is best used on files opened read-only.
     async fn len(&self) -> usize {
         // We can't seek on &self, so use the file metadata instead.
         self.file

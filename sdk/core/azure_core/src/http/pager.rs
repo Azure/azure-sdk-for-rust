@@ -380,7 +380,7 @@ where
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
-    ///     let mut req = base_req.try_clone().unwrap();
+    ///     let mut req = base_req.try_clone().expect("Pager bodies should never be SeekableStream");
     ///     Box::pin(async move {
     ///         if let PagerState::More(next_link) = next_link {
     ///             let next_link: Url = next_link.try_into().expect("expected Url");
