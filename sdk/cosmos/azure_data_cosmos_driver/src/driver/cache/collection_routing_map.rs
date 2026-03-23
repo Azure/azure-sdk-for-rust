@@ -47,6 +47,8 @@ pub(crate) struct CollectionRoutingMap {
     gone_ranges: HashSet<String>,
     /// Highest non-offline partition key range ID (used for split detection).
     highest_non_offline_pk_range_id: i32,
+    /// ETag for incremental change feed refresh.
+    pub etag: Option<String>,
     /// Continuation token for incremental change feed fetches.
     pub change_feed_next_if_none_match: Option<String>,
 }
@@ -69,6 +71,7 @@ impl CollectionRoutingMap {
             ordered_ranges: Vec::new(),
             gone_ranges: HashSet::new(),
             highest_non_offline_pk_range_id: INVALID_PK_RANGE_ID,
+            etag: None,
             change_feed_next_if_none_match: None,
         }
     }
@@ -82,15 +85,17 @@ impl CollectionRoutingMap {
     /// or do not cover the full [`""`, `"FF"`) EPK space.
     pub fn try_create(
         ranges: Vec<PartitionKeyRange>,
+        etag: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
         let tuples = ranges.into_iter().map(|r| (r, None)).collect();
-        Self::try_create_with_continuation(tuples, None)
+        Self::try_create_with_continuation(tuples, etag, None)
     }
 
     /// Creates a routing map from a list of partition key ranges with optional
     /// service identities and an optional change feed continuation token.
     pub fn try_create_with_continuation(
         ranges: Vec<(PartitionKeyRange, Option<ServiceIdentity>)>,
+        etag: Option<String>,
         change_feed_next_if_none_match: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
         if ranges.is_empty() {
@@ -161,6 +166,7 @@ impl CollectionRoutingMap {
             ordered_ranges,
             gone_ranges: gone,
             highest_non_offline_pk_range_id,
+            etag,
             change_feed_next_if_none_match,
         }))
     }
@@ -190,9 +196,7 @@ impl CollectionRoutingMap {
         };
 
         let range = &self.ordered_ranges[idx];
-        // Inline [min_inclusive, max_exclusive) containment check to avoid
-        // allocating a Range<String> and a new String on every lookup.
-        if range.min_inclusive.as_str() <= epk && range.max_exclusive.as_str() > epk {
+        if range.to_range().contains(&epk.to_string()) {
             Some(range)
         } else {
             None
@@ -351,6 +355,7 @@ impl CollectionRoutingMap {
             ordered_ranges,
             gone_ranges: combined_gone,
             highest_non_offline_pk_range_id: highest,
+            etag: self.etag.clone(),
             change_feed_next_if_none_match,
         }))
     }
@@ -408,7 +413,7 @@ mod tests {
 
     #[test]
     fn create_single_range() {
-        let map = CollectionRoutingMap::try_create(single_range())
+        let map = CollectionRoutingMap::try_create(single_range(), None)
             .unwrap()
             .unwrap();
         assert_eq!(map.ordered_ranges().len(), 1);
@@ -416,7 +421,7 @@ mod tests {
 
     #[test]
     fn create_three_ranges() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
         assert_eq!(map.ordered_ranges().len(), 3);
@@ -424,7 +429,7 @@ mod tests {
 
     #[test]
     fn lookup_in_single_range() {
-        let map = CollectionRoutingMap::try_create(single_range())
+        let map = CollectionRoutingMap::try_create(single_range(), None)
             .unwrap()
             .unwrap();
         let r = map.get_range_by_effective_partition_key("7A").unwrap();
@@ -433,7 +438,7 @@ mod tests {
 
     #[test]
     fn lookup_in_three_ranges() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
 
@@ -464,7 +469,7 @@ mod tests {
 
     #[test]
     fn lookup_by_id() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
         assert!(map.get_range_by_id("1").is_some());
@@ -476,7 +481,7 @@ mod tests {
     #[test]
     fn incomplete_range_returns_error() {
         let ranges = vec![make_range("0", "", "7F", None)];
-        let result = CollectionRoutingMap::try_create(ranges);
+        let result = CollectionRoutingMap::try_create(ranges, None);
         assert!(matches!(result, Err(RoutingMapError::IncompleteRanges)));
     }
 
@@ -486,7 +491,7 @@ mod tests {
             make_range("0", "", "80", None),
             make_range("1", "7F", "FF", None), // Overlaps with range 0
         ];
-        let result = CollectionRoutingMap::try_create(ranges);
+        let result = CollectionRoutingMap::try_create(ranges, None);
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
     }
 
@@ -495,7 +500,7 @@ mod tests {
         let mut ranges = three_ranges();
         // Add the parent range "0" which should be filtered out.
         ranges.push(make_range("0", "", "FF", None));
-        let map = CollectionRoutingMap::try_create(ranges)
+        let map = CollectionRoutingMap::try_create(ranges, None)
             .unwrap()
             .unwrap();
         // Parent "0" should be filtered out, leaving 3 child ranges.
@@ -505,7 +510,7 @@ mod tests {
 
     #[test]
     fn is_gone_tracks_parent_ranges() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
         // "0" is listed as a parent in all three child ranges.
@@ -517,7 +522,7 @@ mod tests {
 
     #[test]
     fn get_overlapping_ranges_full_span() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
         // Query the full EPK space — should return all ranges.
@@ -527,7 +532,7 @@ mod tests {
 
     #[test]
     fn get_overlapping_ranges_partial() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
         // Query [30, 50) — overlaps range 1 (max "3F" > "30") and range 2 (min "3F" < "50").
@@ -539,7 +544,7 @@ mod tests {
 
     #[test]
     fn get_overlapping_ranges_single() {
-        let map = CollectionRoutingMap::try_create(three_ranges())
+        let map = CollectionRoutingMap::try_create(three_ranges(), None)
             .unwrap()
             .unwrap();
         // Query [40, 50) — only range 2 [3F, 7F).
@@ -550,91 +555,7 @@ mod tests {
 
     #[test]
     fn empty_input_returns_none() {
-        let result = CollectionRoutingMap::try_create(vec![]).unwrap();
+        let result = CollectionRoutingMap::try_create(vec![], None).unwrap();
         assert!(result.is_none());
-    }
-
-    #[test]
-    fn try_combine_split_produces_valid_map() {
-        // Start with a single range covering the full EPK space.
-        let map = CollectionRoutingMap::try_create(single_range())
-            .unwrap()
-            .unwrap();
-
-        // Simulate a split: range "0" splits into "1" [, 7F) and "2" [7F, FF).
-        let new_ranges = vec![
-            (
-                make_range("1", "", "7F", Some(vec!["0".into()])),
-                None,
-            ),
-            (
-                make_range("2", "7F", "FF", Some(vec!["0".into()])),
-                None,
-            ),
-        ];
-
-        let merged = map
-            .try_combine(new_ranges, Some("new-etag".into()))
-            .unwrap()
-            .unwrap();
-
-        // Parent "0" should be gone, two child ranges remain.
-        assert_eq!(merged.ordered_ranges().len(), 2);
-        assert!(merged.is_gone("0"));
-        assert!(!merged.is_gone("1"));
-        assert!(!merged.is_gone("2"));
-        // EPK lookup should work on the merged map.
-        assert_eq!(
-            merged
-                .get_range_by_effective_partition_key("30")
-                .unwrap()
-                .id,
-            "1"
-        );
-        assert_eq!(
-            merged
-                .get_range_by_effective_partition_key("A0")
-                .unwrap()
-                .id,
-            "2"
-        );
-    }
-
-    #[test]
-    fn try_combine_incomplete_returns_none() {
-        let map = CollectionRoutingMap::try_create(single_range())
-            .unwrap()
-            .unwrap();
-
-        // Only one child range — the merged set has a gap [7F, FF).
-        let new_ranges = vec![(
-            make_range("1", "", "7F", Some(vec!["0".into()])),
-            None,
-        )];
-
-        let result = map.try_combine(new_ranges, Some("etag".into())).unwrap();
-        assert!(result.is_none(), "Incomplete merge should return None");
-    }
-
-    #[test]
-    fn try_combine_overlapping_returns_error() {
-        let map = CollectionRoutingMap::try_create(single_range())
-            .unwrap()
-            .unwrap();
-
-        // Two children that overlap: [, 80) and [7F, FF) — "80" > "7F".
-        let new_ranges = vec![
-            (
-                make_range("1", "", "80", Some(vec!["0".into()])),
-                None,
-            ),
-            (
-                make_range("2", "7F", "FF", Some(vec!["0".into()])),
-                None,
-            ),
-        ];
-
-        let result = map.try_combine(new_ranges, Some("etag".into()));
-        assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
     }
 }

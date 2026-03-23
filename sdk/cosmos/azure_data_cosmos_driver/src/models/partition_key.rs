@@ -32,8 +32,6 @@ pub struct PartitionKeyValue(InnerPartitionKeyValue);
 // this inner private enum to store the data.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum InnerPartitionKeyValue {
-    /// Undefined sentinel, used for missing hierarchical partition key components.
-    Undefined,
     Null,
     String(Cow<'static, str>),
     Number(FiniteF64),
@@ -60,7 +58,6 @@ impl InnerPartitionKeyValue {
     /// Common hashing writer core: writes type marker + payload.
     fn write_for_hashing_core(&self, string_suffix: u8, writer: &mut Vec<u8>, truncate: bool) {
         match self {
-            InnerPartitionKeyValue::Undefined => writer.push(component::UNDEFINED),
             InnerPartitionKeyValue::Bool(true) => writer.push(component::BOOL_TRUE),
             InnerPartitionKeyValue::Bool(false) => writer.push(component::BOOL_FALSE),
             InnerPartitionKeyValue::Null => writer.push(component::NULL),
@@ -85,7 +82,6 @@ impl InnerPartitionKeyValue {
     /// V1 binary encoding for the EPK output string.
     fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
         match self {
-            InnerPartitionKeyValue::Undefined => writer.push(component::UNDEFINED),
             InnerPartitionKeyValue::Bool(true) => writer.push(component::BOOL_TRUE),
             InnerPartitionKeyValue::Bool(false) => writer.push(component::BOOL_FALSE),
             InnerPartitionKeyValue::Infinity => writer.push(component::INFINITY),
@@ -351,9 +347,9 @@ impl AsHeaders for PartitionKey {
                 InnerPartitionKeyValue::Bool(b) => {
                     json.push_str(if *b { "true" } else { "false" });
                 }
-                InnerPartitionKeyValue::Infinity | InnerPartitionKeyValue::Undefined => {
-                    // Internal sentinels — should never appear in a user-facing partition key.
-                    unreachable!("Infinity/Undefined are not valid partition key values for serialization");
+                InnerPartitionKeyValue::Infinity => {
+                    // Internal sentinel — should never appear in a user-facing partition key.
+                    unreachable!("Infinity is not a valid partition key value for serialization");
                 }
             }
 

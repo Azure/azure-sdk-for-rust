@@ -79,41 +79,14 @@ pub(crate) struct PartitionKeyRange {
 }
 
 /// Status of a partition key range
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum PartitionKeyRangeStatus {
     #[default]
     Online,
     Splitting,
     Offline,
     Split,
-}
-
-impl Serialize for PartitionKeyRangeStatus {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let s = match self {
-            PartitionKeyRangeStatus::Online => "online",
-            PartitionKeyRangeStatus::Splitting => "splitting",
-            PartitionKeyRangeStatus::Offline => "offline",
-            PartitionKeyRangeStatus::Split => "split",
-        };
-        serializer.serialize_str(s)
-    }
-}
-
-impl<'de> Deserialize<'de> for PartitionKeyRangeStatus {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(deserializer)?;
-        match s.to_lowercase().as_str() {
-            "online" => Ok(PartitionKeyRangeStatus::Online),
-            "splitting" => Ok(PartitionKeyRangeStatus::Splitting),
-            "offline" => Ok(PartitionKeyRangeStatus::Offline),
-            "split" => Ok(PartitionKeyRangeStatus::Split),
-            other => Err(serde::de::Error::unknown_variant(
-                other,
-                &["online", "splitting", "offline", "split"],
-            )),
-        }
-    }
 }
 
 impl PartitionKeyRange {
