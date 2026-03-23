@@ -353,7 +353,9 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity | InnerPartitionKeyValue::Undefined => {
                     // Internal sentinels — should never appear in a user-facing partition key.
-                    unreachable!("Infinity/Undefined are not valid partition key values for serialization");
+                    unreachable!(
+                        "Infinity/Undefined are not valid partition key values for serialization"
+                    );
                 }
             }
 

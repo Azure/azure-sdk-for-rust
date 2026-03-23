@@ -171,8 +171,11 @@ mod tests {
             compute_effective_partition_key(&[pk], PartitionKeyKind::Hash, PartitionKeyVersion::V1);
         // Validate determinism: same input always produces same hash.
         let pk2 = PartitionKeyValue::from("customer42".to_string());
-        let result2 =
-            compute_effective_partition_key(&[pk2], PartitionKeyKind::Hash, PartitionKeyVersion::V1);
+        let result2 = compute_effective_partition_key(
+            &[pk2],
+            PartitionKeyKind::Hash,
+            PartitionKeyVersion::V1,
+        );
         assert_eq!(result, result2);
         // The result must be a non-empty hex string.
         assert!(!result.is_empty());
