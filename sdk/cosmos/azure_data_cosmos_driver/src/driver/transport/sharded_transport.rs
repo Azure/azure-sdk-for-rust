@@ -19,7 +19,6 @@ use azure_core::{
     error::ErrorKind,
     http::{AsyncRawResponse, HttpClient, Request},
 };
-#[cfg(feature = "tokio")]
 use tracing::debug;
 use tracing::trace;
 use url::Url;

@@ -318,6 +318,9 @@ impl CosmosClientBuilder {
         ));
 
         // Create the CosmosDriver for eager container metadata resolution.
+        // TODO: Each CosmosClient currently creates its own CosmosDriverRuntime. The runtime
+        // should be shared across clients targeting the same account to avoid duplicate
+        // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
         let driver_account = build_driver_account(endpoint, driver_credential);
         let driver_runtime = CosmosDriverRuntimeBuilder::new().build().await?;
         let driver = driver_runtime

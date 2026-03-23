@@ -56,17 +56,19 @@ impl ContainerConnection {
             let collection_rid = self.container_ref.rid();
 
             if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
-                if let Some(resolved) = self
-                    .pk_range_cache
-                    .resolve_partition_key_range_by_id(
-                        &pk_range.collection_rid,
-                        &pk_range.partition_key_range_id,
-                        false,
-                    )
-                    .await
-                {
-                    cosmos_request.request_context.resolved_partition_key_range =
-                        Some(resolved.clone());
+                if !pk_range.collection_rid.is_empty() {
+                    if let Some(resolved) = self
+                        .pk_range_cache
+                        .resolve_partition_key_range_by_id(
+                            &pk_range.collection_rid,
+                            &pk_range.partition_key_range_id,
+                            false,
+                        )
+                        .await
+                    {
+                        cosmos_request.request_context.resolved_partition_key_range =
+                            Some(resolved.clone());
+                    }
                 }
             } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
                 let routing_map = self.pk_range_cache.try_lookup(collection_rid, None).await?;
@@ -74,6 +76,7 @@ impl ContainerConnection {
                 if let Some(routing_map) = routing_map {
                     // Use a safe default version (2) when the service omits the version field,
                     // since get_hashed_partition_key_string only supports version 1 or 2.
+                    // PartitionKeyVersion guarantees values 1 or 2; see driver's enum definition.
                     let pk_version = pk_def.version().value() as u8;
                     let epk =
                         partition_key.get_hashed_partition_key_string(pk_def.kind(), pk_version);
