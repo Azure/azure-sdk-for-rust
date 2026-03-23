@@ -25,8 +25,8 @@ type Operation = Pin<Box<dyn Future<Output = Result<(), azure_core::Error>>>>;
 /// with that error. When all operations and queue items are complete, returns `Ok(())`.
 ///
 /// # Parameters
-/// - `ops_queue`: A stream yielding `Result<FnOnce() -> TFut, TErr>`. Each item is either a closure producing a future,
-///   or an error. The stream must be `Unpin`.
+/// - `ops_queue`: A stream yielding `Result<Operation, TErr>`. Each item is either a future or an error.
+///   The stream must be `Unpin`.
 /// - `parallel`: The maximum number of operations to run concurrently. Must be non-zero.
 ///
 /// # Behavior
@@ -36,10 +36,6 @@ type Operation = Pin<Box<dyn Future<Output = Result<(), azure_core::Error>>>>;
 ///
 /// # Errors
 /// Returns the first error encountered from the queue or any operation.
-///
-/// # Type Parameters
-/// - `TFut`: Future type returned by each operation.
-/// - `TErr`: Error type for queue or operation failures.
 async fn run_all_with_concurrency_limit(
     mut ops_queue: impl Stream<Item = Result<Operation, azure_core::Error>> + Unpin,
     parallel: NonZero<usize>,
