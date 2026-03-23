@@ -3,7 +3,7 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, ContainerReference, CosmosResponse, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -52,7 +52,7 @@ impl ContainerClient {
         let items_link = link.feed(ResourceType::Documents);
 
         // Eagerly resolve immutable container metadata from the driver.
-        let driver_ref = driver
+        let container_ref = driver
             .resolve_container(database_id, container_id)
             .await
             .map_err(|e| {
@@ -60,7 +60,6 @@ impl ContainerClient {
                     "failed to resolve container metadata for '{database_id}/{container_id}'"
                 ))
             })?;
-        let container_ref = ContainerReference::from_driver_ref(&driver_ref);
 
         let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
             pipeline.clone(),

@@ -8,19 +8,21 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 mod account_properties;
 mod container_properties;
-mod container_reference;
 mod cosmos_response;
 mod indexing_policy;
-mod partition_key_definition;
 mod throughput_properties;
 
 pub(crate) use account_properties::*;
 pub use container_properties::*;
-pub(crate) use container_reference::ContainerReference;
 pub use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
-pub use partition_key_definition::*;
 pub use throughput_properties::*;
+
+// Re-export partition key and container reference types from the driver crate.
+// These are the canonical definitions; the SDK does not duplicate them.
+pub use azure_data_cosmos_driver::models::{
+    ContainerReference, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion,
+};
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where

@@ -52,8 +52,8 @@ impl ContainerConnection {
             && (cosmos_request.resource_type.is_partitioned()
                 || cosmos_request.resource_type == ResourceType::StoredProcedures)
         {
-            let pk_def = self.container_ref.partition_key();
-            let collection_rid = self.container_ref.collection_rid();
+            let pk_def = self.container_ref.partition_key_definition();
+            let collection_rid = self.container_ref.rid();
 
             if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
                 if let Some(resolved) = self
@@ -74,9 +74,9 @@ impl ContainerConnection {
                 if let Some(routing_map) = routing_map {
                     // Use a safe default version (2) when the service omits the version field,
                     // since get_hashed_partition_key_string only supports version 1 or 2.
-                    let pk_version = pk_def.version.unwrap_or(2) as u8;
-                    let epk = partition_key
-                        .get_hashed_partition_key_string(pk_def.kind.clone(), pk_version);
+                    let pk_version = pk_def.version().value() as u8;
+                    let epk =
+                        partition_key.get_hashed_partition_key_string(pk_def.kind(), pk_version);
 
                     // First attempt to resolve the partition key range from the
                     // current routing map. If it succeeds, clone immediately so
@@ -118,79 +118,8 @@ impl ContainerConnection {
 mod tests {
     use super::*;
     use crate::cosmos_request::CosmosRequest;
-    use crate::models::PartitionKeyDefinition;
     use crate::operation_context::OperationType;
-    use crate::pipeline::GatewayPipeline;
-    use crate::regions::RegionName;
     use crate::resource_context::{ResourceLink, ResourceType};
-    use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-    use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
-    use crate::CosmosClientOptions;
-    use azure_core::http::ClientOptions;
-    use url::Url;
-
-    fn create_test_container_ref() -> ContainerReference {
-        ContainerReference::from_parts(
-            "test_container".to_string(),
-            "test_rid".to_string(),
-            PartitionKeyDefinition::new(vec!["/id".to_string()]),
-        )
-    }
-
-    // Helper function to create a test GlobalEndpointManager
-    fn create_endpoint_manager() -> Arc<GlobalEndpointManager> {
-        let pipeline = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
-            None,
-        );
-        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        GlobalEndpointManager::new(endpoint, vec![], vec![], pipeline)
-    }
-
-    // Helper function to create a test GatewayPipeline
-    fn create_gateway_pipeline(
-        endpoint_manager: Arc<GlobalEndpointManager>,
-    ) -> (Arc<GatewayPipeline>, Arc<GlobalPartitionEndpointManager>) {
-        let pipeline_core = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
-            None,
-        );
-        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        let partition_manager =
-            GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
-        (
-            Arc::new(GatewayPipeline::new(
-                endpoint,
-                pipeline_core,
-                endpoint_manager,
-                partition_manager.clone(),
-                CosmosClientOptions::default(),
-                false,
-            )),
-            partition_manager,
-        )
-    }
-
-    // Helper function to create a test PartitionKeyRangeCache
-    fn create_pk_range_cache(
-        pipeline: Arc<GatewayPipeline>,
-        endpoint_manager: Arc<GlobalEndpointManager>,
-    ) -> Arc<PartitionKeyRangeCache> {
-        let database_link = ResourceLink::root(ResourceType::Databases).item("test_db");
-        Arc::new(PartitionKeyRangeCache::new(
-            pipeline,
-            database_link,
-            endpoint_manager,
-        ))
-    }
 
     // Helper function to create a test CosmosRequest
     fn create_cosmos_request() -> CosmosRequest {
@@ -210,79 +139,6 @@ mod tests {
         let request = create_cosmos_request();
         assert_eq!(request.operation_type, OperationType::Read);
         assert_eq!(request.resource_type, ResourceType::Documents);
-    }
-
-    #[tokio::test]
-    async fn container_connection_with_preferred_locations() {
-        let pipeline = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
-            None,
-        );
-        let endpoint = Url::parse("https://test.documents.azure.com").unwrap();
-        let endpoint_manager = GlobalEndpointManager::new(
-            endpoint.clone(),
-            vec![RegionName::from("East US"), RegionName::from("West US")],
-            vec![],
-            pipeline.clone(),
-        );
-        let partition_manager =
-            GlobalPartitionEndpointManager::new(endpoint_manager.clone(), false, false);
-
-        let gateway_pipeline = Arc::new(GatewayPipeline::new(
-            endpoint,
-            pipeline,
-            endpoint_manager.clone(),
-            partition_manager.clone(),
-            CosmosClientOptions::default(),
-            false,
-        ));
-
-        let pk_range_cache =
-            create_pk_range_cache(gateway_pipeline.clone(), endpoint_manager.clone());
-
-        let connection = ContainerConnection::new(
-            gateway_pipeline,
-            pk_range_cache,
-            partition_manager,
-            create_test_container_ref(),
-        );
-
-        // Verify the connection was created successfully with preferred locations
-        assert!(std::mem::size_of_val(&connection) > 0);
-    }
-
-    #[tokio::test]
-    async fn multiple_container_connections_share_caches() {
-        let endpoint_manager = create_endpoint_manager();
-        let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(pipeline.clone(), endpoint_manager.clone());
-
-        let container_ref = create_test_container_ref();
-
-        // Create multiple connections sharing the same caches
-        let connection1 = ContainerConnection::new(
-            pipeline.clone(),
-            pk_range_cache.clone(),
-            partition_manager.clone(),
-            container_ref.clone(),
-        );
-        let connection2 = ContainerConnection::new(
-            pipeline.clone(),
-            pk_range_cache.clone(),
-            partition_manager.clone(),
-            container_ref.clone(),
-        );
-        let connection3 =
-            ContainerConnection::new(pipeline, pk_range_cache, partition_manager, container_ref);
-
-        // All connections should be valid
-        assert!(std::mem::size_of_val(&connection1) > 0);
-        assert!(std::mem::size_of_val(&connection2) > 0);
-        assert!(std::mem::size_of_val(&connection3) > 0);
     }
 
     #[test]
@@ -336,23 +192,5 @@ mod tests {
             .unwrap();
         assert_eq!(query_request.operation_type, OperationType::Query);
         assert!(query_request.is_read_only_request());
-    }
-
-    #[tokio::test]
-    async fn container_connection_debug_implementation() {
-        let endpoint_manager = create_endpoint_manager();
-        let (pipeline, partition_manager) = create_gateway_pipeline(endpoint_manager.clone());
-        let pk_range_cache = create_pk_range_cache(pipeline.clone(), endpoint_manager.clone());
-
-        let connection = ContainerConnection::new(
-            pipeline,
-            pk_range_cache,
-            partition_manager,
-            create_test_container_ref(),
-        );
-
-        // Verify Debug trait is properly implemented
-        let debug_str = format!("{:?}", connection);
-        assert!(!debug_str.is_empty());
     }
 }
