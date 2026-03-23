@@ -71,7 +71,7 @@ request attempt:
 | Connection timeout (max)    | 5s      | 100ms | 6s    |
 | Data plane request (min)    | 100ms   | 100ms | 65s   |
 | Data plane request (max)    | 6s      | 100ms | ∞     |
-| Metadata request (min)      | 100ms   | 100ms | 65s   |
+| Metadata request (min)      | 100ms   | 100ms | 6s    |
 | Metadata request (max)      | 65s     | 100ms | 65s   |
 
 **Note on `min_*` values**: The `min_*` timeout fields are defined in `ConnectionPoolOptions` with
@@ -454,6 +454,13 @@ The connection timeout starts at **1s** (the aggressive default) and is **adapti
 5s** if the `ShardedHttpTransport` observes a sustained connection failure rate above a threshold.
 This is a **one-time, persistent transition** — not a per-retry escalation.
 
+**Reconciliation with existing config**: The existing `ConnectionPoolOptions::max_connect_timeout()`
+defaults to 5s and is currently used directly as the `reqwest::Client` connect timeout. This spec
+introduces a new internal **initial** connect timeout of 1s that starts below the pool max. The
+adaptive mechanism transitions from this 1s initial value to the configured
+`max_connect_timeout()` (5s) on sustained connection failures. The pool's `max_connect_timeout`
+remains the upper bound — the adaptive mechanism never exceeds it.
+
 ```text
 Normal state: connect_timeout = 1s
                     │
@@ -497,9 +504,10 @@ struct EndpointShardPool {
 
 ### Implementation in `ShardedHttpTransport`
 
-The `ShardedHttpTransport` (`sharded_transport.rs`) manages a pool of `HttpClient` shards per
-endpoint. It tracks per-shard health metrics (consecutive failures, inflight count, last success
-time) and runs a periodic background health sweep that evicts unhealthy or idle shards.
+The `ShardedHttpTransport` (introduced in Step 6, PR #3957, in `sharded_transport.rs`) manages a
+pool of `HttpClient` shards per endpoint. It tracks per-shard health metrics (consecutive
+failures, inflight count, last success time) and runs a periodic background health sweep that
+evicts unhealthy or idle shards.
 
 Connection timeout adaptation fits naturally into this model:
 
@@ -521,11 +529,11 @@ Connection timeout adaptation fits naturally into this model:
    **immediately marked unhealthy** so the health sweep reclaims them on its next pass, rather
    than waiting for natural drain. This ensures inflight requests on old shards do not continue
    failing at 1s while new shards are available with 5s.
-4. **No `azure_core` changes needed**: This is entirely internal to the `ShardedHttpTransport`.
-   The `HttpClientFactory::build()` method reads `connect_timeout` from `ConnectionPoolOptions`
-   (via `max_connect_timeout()`). To support adaptive connection timeouts, the factory accepts
-   an overridden connect timeout or the `ShardedHttpTransport` updates its `base_client_config`
-   before creating new shards.
+4. **No `azure_core` changes needed**: This is entirely internal to the `ShardedHttpTransport`
+   (introduced in Step 6). The `HttpClientFactory::build()` method reads `connect_timeout` from
+   `ConnectionPoolOptions` (via `max_connect_timeout()`). To support adaptive connection timeouts,
+   the `ShardedHttpTransport` overrides the connect timeout in its `base_client_config` before
+   creating new shards.
 
 ```rust
 // In ShardedHttpTransport, per-endpoint connection failure tracking:
