@@ -28,11 +28,6 @@ extends:
       Location: uksouth
       RunLiveTests: true
       PersistOidcToken: true
-      MatrixConfigs:
-        - Name: managed_identity_matrix
-          GenerateVMJobs: true
-          Path: sdk/identity/azure_identity/managed-identity-matrix.json
-          Selection: sparse
       LiveTestMatrixConfigs:
         - Name: managed_identity_matrix
           GenerateVMJobs: true
