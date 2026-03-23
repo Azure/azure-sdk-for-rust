@@ -209,6 +209,19 @@ A standalone helper that deserializes a raw `/pkranges` JSON response body into 
 `Vec<PartitionKeyRange>`. Returns `None` on deserialization failure. This is meant
 to be used by the caller when constructing the `fetch_fn` callback.
 
+The helper uses the `PkRangesResponse` envelope type defined in
+`models/partition_key_range.rs`:
+
+```rust
+/// Response from the `/pkranges` REST endpoint.
+#[derive(Debug, Deserialize)]
+pub(crate) struct PkRangesResponse {
+    /// The partition key ranges returned by the service.
+    #[serde(rename = "PartitionKeyRanges")]
+    pub partition_key_ranges: Vec<PartitionKeyRange>,
+}
+```
+
 ---
 
 ## 4. Effective Partition Key (EPK) Computation
@@ -266,11 +279,30 @@ which identifies the service replica responsible for that partition. This is use
 direct-mode routing. The identity is `None` when fetched via gateway mode (the
 current default) and populated when the driver has direct connectivity information.
 
+**`ServiceIdentity` comparison semantics:** `ServiceIdentity` uses manual
+`PartialEq`/`Eq` and `Hash` implementations with **case-insensitive** comparison on
+`federation_id` and `service_name` (via `eq_ignore_ascii_case` for equality and
+`to_lowercase()` for hashing). The `is_master_service` field is intentionally
+excluded from equality and hashing. This matches the .NET SDK behavior where service
+identities from different response casing variations are treated as equivalent.
+
 `PartitionKeyRange` provides a `to_range()` method that converts it to a
 `Range<String>` (from `models/range.rs`) with `is_min_inclusive: true` and
 `is_max_inclusive: false`, matching the `[minInclusive, maxExclusive)` semantics.
 
 ### 5.2 Construction — `try_create` / `try_create_with_continuation`
+
+Validation errors are represented by `RoutingMapError`, which is marked
+`#[non_exhaustive]` for forward compatibility:
+
+```rust
+#[derive(Debug)]
+#[non_exhaustive]
+pub(crate) enum RoutingMapError {
+    OverlappingRanges,
+    IncompleteRanges,
+}
+```
 
 `try_create(Vec<PartitionKeyRange>, etag)` is a convenience wrapper that pairs each
 range with `None` for `ServiceIdentity` and delegates to `try_create_with_continuation`.
@@ -529,6 +561,14 @@ The `PartitionKeyRangeCache` in the driver is a _standalone_ component (see the
 `#[allow(unused_imports)]` on its re-export in `cache/mod.rs`). It is designed to be
 wired into the operation pipeline for partition-level failover (PPAF/PPCB) but is
 currently pending integration.
+
+**Dead-code suppression pattern:** Because the cache and its model dependencies are
+not yet wired into the operation pipeline, the compiler would emit dead-code warnings.
+These are suppressed using `#[allow(dead_code)]` on the `mod` declarations in the
+parent modules (`models/mod.rs` and `driver/cache/mod.rs`), rather than `#![allow(dead_code)]`
+inner attributes in each file. This keeps the intent clear ("this module is
+intentionally unused for now") without masking legitimate dead-code issues within
+the modules themselves.
 
 The cache accepts a generic `fetch_fn` callback for transport-decoupled fetching:
 
