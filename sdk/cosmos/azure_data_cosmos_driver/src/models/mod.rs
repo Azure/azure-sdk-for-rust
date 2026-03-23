@@ -12,7 +12,8 @@
 mod account_reference;
 mod activity_id;
 mod connection_string;
-mod cosmos_headers;
+mod consistency_level;
+pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
@@ -22,13 +23,17 @@ mod finite_f64;
 pub(crate) use finite_f64::FiniteF64;
 mod partition_key;
 mod request_charge;
-mod resource_id;
+pub(crate) mod resource_id;
 mod resource_reference;
 mod user_agent;
+pub(crate) mod vector_session_token;
+
+pub(crate) use cosmos_headers::request_header_names;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
+pub(crate) use consistency_level::DefaultConsistencyLevel;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
@@ -55,6 +60,7 @@ use std::borrow::Cow;
 /// Returned by database read/query operations and used when creating databases.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct DatabaseProperties {
     /// Unique identifier for the database within the account.
     pub id: Cow<'static, str>,
@@ -71,6 +77,7 @@ impl DatabaseProperties {}
 /// Returned by container read/query operations and used when creating/updating containers.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct ContainerProperties {
     /// Unique identifier for the container within the database.
     pub id: Cow<'static, str>,
@@ -88,6 +95,7 @@ pub(crate) struct ContainerProperties {
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// List of partition key paths (e.g., `["/tenantId"]` for single partition key).
     paths: Vec<Cow<'static, str>>,

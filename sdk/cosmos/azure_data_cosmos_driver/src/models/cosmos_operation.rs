@@ -366,8 +366,7 @@ impl CosmosOperation {
 
     /// Creates an item (document) in a container.
     ///
-    /// The `ItemReference` contains the container, partition key, and item identifier,
-    /// providing all the information needed for the operation.
+    /// The `container` and `partition_key` identify where to create the document.
     /// Use `with_body()` to provide the document JSON.
     ///
     /// # Example
@@ -375,8 +374,7 @@ impl CosmosOperation {
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     /// use azure_data_cosmos_driver::models::{
-    ///     AccountReference, CosmosOperation, ItemReference,
-    ///     PartitionKey,
+    ///     AccountReference, CosmosOperation, ContainerReference, PartitionKey,
     /// };
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
@@ -390,10 +388,10 @@ impl CosmosOperation {
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
-    /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
+    /// let pk = PartitionKey::from("pk-value");
     /// let result = driver
     ///     .execute_operation(
-    ///         CosmosOperation::create_item(item)
+    ///         CosmosOperation::create_item(container, pk)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
     ///         OperationOptions::new(),
     ///     )
@@ -401,9 +399,11 @@ impl CosmosOperation {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item(item: ItemReference) -> Self {
-        let partition_key = item.partition_key().clone();
-        Self::new(OperationType::Create, item).with_partition_key(partition_key)
+    pub fn create_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::Create, resource_ref).with_partition_key(partition_key)
     }
 
     /// Reads an item (document) from a container.
