@@ -438,7 +438,10 @@ mod tests {
         let cache = PartitionKeyRangeCache::new();
 
         // A fetch function that always fails.
-        async fn failing_fetch(_rid: String, _cont: Option<String>) -> Option<PkRangeFetchResult> {
+        async fn failing_fetch(
+            _rid: String,
+            _cont: Option<String>,
+        ) -> Option<PkRangeFetchResult> {
             None
         }
 
@@ -479,7 +482,10 @@ mod tests {
         assert_eq!(range_id.as_deref(), Some("0"));
 
         // A fetch function that always fails (simulating a transient error).
-        async fn failing_fetch(_rid: String, _cont: Option<String>) -> Option<PkRangeFetchResult> {
+        async fn failing_fetch(
+            _rid: String,
+            _cont: Option<String>,
+        ) -> Option<PkRangeFetchResult> {
             None
         }
 

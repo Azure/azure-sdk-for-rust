@@ -80,7 +80,9 @@ impl CollectionRoutingMap {
     /// Returns `Err(RoutingMapError::OverlappingRanges)` if ranges overlap.
     /// Returns `Err(RoutingMapError::IncompleteRanges)` if ranges have gaps
     /// or do not cover the full [`""`, `"FF"`) EPK space.
-    pub fn try_create(ranges: Vec<PartitionKeyRange>) -> Result<Option<Self>, RoutingMapError> {
+    pub fn try_create(
+        ranges: Vec<PartitionKeyRange>,
+    ) -> Result<Option<Self>, RoutingMapError> {
         let tuples = ranges.into_iter().map(|r| (r, None)).collect();
         Self::try_create_with_continuation(tuples, None)
     }
@@ -493,7 +495,9 @@ mod tests {
         let mut ranges = three_ranges();
         // Add the parent range "0" which should be filtered out.
         ranges.push(make_range("0", "", "FF", None));
-        let map = CollectionRoutingMap::try_create(ranges).unwrap().unwrap();
+        let map = CollectionRoutingMap::try_create(ranges)
+            .unwrap()
+            .unwrap();
         // Parent "0" should be filtered out, leaving 3 child ranges.
         assert_eq!(map.ordered_ranges().len(), 3);
         assert!(map.get_range_by_id("0").is_none());
@@ -559,8 +563,14 @@ mod tests {
 
         // Simulate a split: range "0" splits into "1" [, 7F) and "2" [7F, FF).
         let new_ranges = vec![
-            (make_range("1", "", "7F", Some(vec!["0".into()])), None),
-            (make_range("2", "7F", "FF", Some(vec!["0".into()])), None),
+            (
+                make_range("1", "", "7F", Some(vec!["0".into()])),
+                None,
+            ),
+            (
+                make_range("2", "7F", "FF", Some(vec!["0".into()])),
+                None,
+            ),
         ];
 
         let merged = map
@@ -597,7 +607,10 @@ mod tests {
             .unwrap();
 
         // Only one child range — the merged set has a gap [7F, FF).
-        let new_ranges = vec![(make_range("1", "", "7F", Some(vec!["0".into()])), None)];
+        let new_ranges = vec![(
+            make_range("1", "", "7F", Some(vec!["0".into()])),
+            None,
+        )];
 
         let result = map.try_combine(new_ranges, Some("etag".into())).unwrap();
         assert!(result.is_none(), "Incomplete merge should return None");
@@ -611,8 +624,14 @@ mod tests {
 
         // Two children that overlap: [, 80) and [7F, FF) — "80" > "7F".
         let new_ranges = vec![
-            (make_range("1", "", "80", Some(vec!["0".into()])), None),
-            (make_range("2", "7F", "FF", Some(vec!["0".into()])), None),
+            (
+                make_range("1", "", "80", Some(vec!["0".into()])),
+                None,
+            ),
+            (
+                make_range("2", "7F", "FF", Some(vec!["0".into()])),
+                None,
+            ),
         ];
 
         let result = map.try_combine(new_ranges, Some("etag".into()));
