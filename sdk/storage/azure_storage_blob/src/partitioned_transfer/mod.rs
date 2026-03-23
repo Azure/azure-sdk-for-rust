@@ -43,13 +43,7 @@ type Operation = Pin<Box<dyn Future<Output = Result<(), azure_core::Error>>>>;
 async fn run_all_with_concurrency_limit(
     mut ops_queue: impl Stream<Item = Result<Operation, azure_core::Error>> + Unpin,
     parallel: NonZero<usize>,
-) -> Result<(), azure_core::Error>
-// where
-//     IF: IntoFuture<
-//         Output = Result<(), Err>,
-//         IntoFuture = Pin<Box<dyn Future<Output = Result<(), Err>>>>,
-//     >,
-{
+) -> Result<(), azure_core::Error> {
     let parallel = parallel.get();
 
     // if no real parallelism, take the simple option of executing ops sequentially.
