@@ -31,6 +31,8 @@ pub(crate) use cosmos_headers::request_header_names;
 pub(crate) mod effective_partition_key;
 mod murmur_hash;
 pub(crate) mod partition_key_range;
+pub(crate) mod range;
+pub(crate) mod service_identity;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;

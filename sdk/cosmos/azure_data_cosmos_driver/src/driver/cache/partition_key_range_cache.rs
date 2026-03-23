@@ -9,8 +9,7 @@
 use std::sync::Arc;
 
 use crate::models::{
-    effective_partition_key::compute_effective_partition_key,
-    partition_key_range::PkRangesResponse, ContainerReference, PartitionKey,
+    effective_partition_key::compute_effective_partition_key, ContainerReference, PartitionKey,
 };
 
 use super::{collection_routing_map::CollectionRoutingMap, AsyncCache};
@@ -176,8 +175,7 @@ impl PartitionKeyRangeCache {
                     |existing| {
                         // Only refresh if the cached value hasn't been updated
                         // by another concurrent request since we last saw it.
-                        existing
-                            .map(|m| &m.change_feed_next_if_none_match)
+                        existing.map(|m| &m.change_feed_next_if_none_match)
                             == Some(&prev_continuation)
                     },
                     || Self::fetch_and_build_routing_map(rid, previous, fetch_pk_ranges),
@@ -239,13 +237,20 @@ impl PartitionKeyRangeCache {
             all_ranges.extend(result.ranges);
         }
 
+        // Pair each range with None for ServiceIdentity (will be populated by
+        // direct-mode routing in the future).
+        let tuples: Vec<(
+            crate::models::partition_key_range::PartitionKeyRange,
+            Option<crate::models::service_identity::ServiceIdentity>,
+        )> = all_ranges.into_iter().map(|r| (r, None)).collect();
+
         // Incremental refresh: merge new ranges into the previous routing map.
         if let Some(prev) = previous_routing_map {
-            if all_ranges.is_empty() {
+            if tuples.is_empty() {
                 // No changes since last fetch (304 on first iteration).
                 return (*prev).clone();
             }
-            match prev.try_combine(all_ranges, continuation) {
+            match prev.try_combine(tuples, continuation) {
                 Ok(Some(map)) => return map,
                 Ok(None) => {
                     tracing::warn!(
@@ -264,7 +269,7 @@ impl PartitionKeyRangeCache {
         }
 
         // Full (non-incremental) creation.
-        match CollectionRoutingMap::try_create_with_continuation(all_ranges, None, continuation) {
+        match CollectionRoutingMap::try_create_with_continuation(tuples, None, continuation) {
             Ok(Some(map)) => map,
             Ok(None) => {
                 tracing::warn!("Partition key range fetch returned empty set");
@@ -285,14 +290,6 @@ impl PartitionKeyRangeCache {
     }
 }
 
-/// Parses a pkranges REST response body into partition key ranges.
-pub(crate) fn parse_pk_ranges_response(
-    body: &[u8],
-) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
-    let response: PkRangesResponse = serde_json::from_slice(body).ok()?;
-    Some(response.partition_key_ranges)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -302,11 +299,18 @@ mod tests {
         vec![PkRange {
             id: "0".into(),
             resource_id: None,
+            self_link: None,
+            etag: None,
+            timestamp: None,
             min_inclusive: "".into(),
             max_exclusive: "FF".into(),
+            rid_prefix: None,
+            throughput_fraction: 0.0,
+            target_throughput: None,
             status: Default::default(),
             lsn: 0,
             parents: None,
+            owned_archival_pk_range_ids: None,
         }]
     }
 
@@ -422,17 +426,5 @@ mod tests {
             .resolve_partition_key_range_id(&container, &pk, true, test_fetch)
             .await;
         assert_eq!(range_id.as_deref(), Some("0"));
-    }
-
-    #[test]
-    fn parse_pk_ranges_response_test() {
-        let body = br#"{
-            "PartitionKeyRanges": [
-                {"id": "0", "_rid": "rid0", "minInclusive": "", "maxExclusive": "FF"}
-            ]
-        }"#;
-        let ranges = parse_pk_ranges_response(body).unwrap();
-        assert_eq!(ranges.len(), 1);
-        assert_eq!(ranges[0].id, "0");
     }
 }
