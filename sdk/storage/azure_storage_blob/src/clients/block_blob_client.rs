@@ -10,8 +10,9 @@ use crate::{
     },
     logging::apply_storage_logging_defaults,
     models::{
-        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
+        method_options::{BlockBlobClientUploadOptions, ClientMethodOptionsExt},
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
@@ -21,27 +22,12 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, ClientMethodOptions, NoFormat, Pipeline, RequestContent, Url,
+        Body, NoFormat, Pipeline, RequestContent, Url,
     },
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
-
-/// Extension trait to clone `ClientMethodOptions` without lifetime dependencies.
-trait ClientMethodOptionsExt<'a> {
-    /// Clone the `ClientMethodOptions` with static lifetime by making the
-    /// underlying context owned.
-    fn clone_owned(&self) -> ClientMethodOptions<'static>;
-}
-
-impl<'a> ClientMethodOptionsExt<'a> for ClientMethodOptions<'a> {
-    fn clone_owned(&self) -> ClientMethodOptions<'static> {
-        ClientMethodOptions {
-            context: self.context.to_owned(),
-        }
-    }
-}
 
 impl BlockBlobClient {
     /// Creates a new BlockBlobClient, using Entra ID authentication.

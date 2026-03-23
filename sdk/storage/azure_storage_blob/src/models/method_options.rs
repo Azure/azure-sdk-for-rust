@@ -11,6 +11,21 @@ use time::OffsetDateTime;
 
 use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode};
 
+/// Extension trait to clone `ClientMethodOptions` without lifetime dependencies.
+pub(crate) trait ClientMethodOptionsExt {
+    /// Clone the `ClientMethodOptions` with static lifetime by making the
+    /// underlying context owned.
+    fn clone_owned(&self) -> ClientMethodOptions<'static>;
+}
+
+impl ClientMethodOptionsExt for ClientMethodOptions<'_> {
+    fn clone_owned(&self) -> ClientMethodOptions<'static> {
+        ClientMethodOptions {
+            context: self.context.to_owned(),
+        }
+    }
+}
+
 /// Options to be passed to `BlockBlobClient::managed_download()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientManagedDownloadOptions<'a> {
