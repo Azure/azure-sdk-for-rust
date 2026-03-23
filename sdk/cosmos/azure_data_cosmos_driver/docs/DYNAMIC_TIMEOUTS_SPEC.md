@@ -74,6 +74,12 @@ request attempt:
 | Metadata request (min)      | 100ms   | 100ms | 65s   |
 | Metadata request (max)      | 65s     | 100ms | 65s   |
 
+**Note on `min_*` values**: The `min_*` timeout fields are defined in `ConnectionPoolOptions` with
+getters and builder setters, but are **not yet consumed** outside `connection_pool.rs`. Only the
+`max_*` values are wired into the transport (e.g., `max_connect_timeout()` is passed to
+`reqwest::ClientBuilder::connect_timeout()`). The `min_*` fields exist as placeholders for the
+dynamic timeout clamping described in [§7](#7-interaction-with-connectionpooloptions-bounds).
+
 ### Transport Retry
 
 The retry loop lives in `execute_operation_pipeline()` (in `operation_pipeline.rs`), which runs a
@@ -111,9 +117,9 @@ internal defaults chosen to balance latency and reliability.
 ### Separate Mechanisms
 
 - **Request timeouts**: Escalated per retry attempt via a fixed ladder (see [§4](#4-timeout-ladders)).
-  Applied per-request through `Request::set_timeout()`.
+  Applied per-attempt via the existing `azure_core::sleep()` deadline-race mechanism.
 - **Connection timeouts**: Adaptively tuned based on observed failure rate (see
-  [§10](#10-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
+  [§9](#9-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
   `ShardedHttpTransport`.
 
 ---
@@ -156,27 +162,36 @@ Following the Java SDK pattern for `DatabaseAccount` metadata calls:
 
 ### Retry Model
 
-The operation pipeline in `execute_operation_pipeline()` already supports multiple retry attempts
-via `FailoverRetry` (default budget: 3 retries) and `SessionRetry` (default budget: 1 retry).
-Dynamic timeout escalation is indexed by the **total attempt number** (i.e.,
-`failover_retry_count + session_token_retry_count`), so timeouts escalate regardless of the retry
-reason.
+Timeout escalation operates at the **transport pipeline level**, not the operation pipeline level.
+The operation pipeline handles region failover (`FailoverRetry`) and session consistency
+(`SessionRetry`) — these retries address routing and consistency concerns, not timeout failures.
+Timeout escalation should only trigger when a request **actually times out**.
 
-With `max_failover_retries = 3`, all 3 tiers of the timeout ladder are reachable on the first 3
-attempts. Attempts beyond the ladder length saturate at the final tier (see
-[§4 Ladder Behavior](#4-timeout-ladders)).
+The transport pipeline (`execute_transport_pipeline()` in `transport_pipeline.rs`) already runs
+its own retry loop for 429 throttling and local connectivity retries. Timeout escalation is
+indexed by a **transport-level timeout retry counter** that increments only when the previous
+attempt failed due to a timeout. Non-timeout failures (e.g., 429 throttle, connection refused)
+do not advance the ladder.
 
 ### Timeout Selection per Attempt
 
-Before each attempt, the retry loop selects the appropriate timeouts from the ladders:
+Before each transport attempt, the pipeline selects the request timeout from the ladder based on
+the timeout retry count:
 
 ```rust
-fn timeout_for_attempt(attempt: usize, ladder: &[Duration]) -> Duration {
-    ladder[attempt.min(ladder.len() - 1)]
+fn timeout_for_attempt(timeout_retry_count: usize, ladder: &[Duration]) -> Duration {
+    ladder[timeout_retry_count.min(ladder.len() - 1)]
 }
 ```
 
-The selected timeout is applied to the HTTP request for that attempt.
+The ladder is selected based on the existing `PipelineType` parameter passed to the transport
+pipeline:
+
+- `PipelineType::DataPlane` → `DATAPLANE_REQUEST_TIMEOUT_LADDER`
+- `PipelineType::Metadata` → `METADATA_REQUEST_TIMEOUT_LADDER`
+
+Attempts beyond the ladder length saturate at the final tier (see
+[§4 Ladder Behavior](#4-timeout-ladders)).
 
 ### Hedging and Timeout Ladder Position
 
@@ -191,9 +206,9 @@ at the same escalated tier as the primary would waste time if the secondary regi
 
 ### Pseudocode
 
-The timeout selection integrates into the 7-stage loop in `execute_operation_pipeline()`. Between
-Stage 2 (resolve endpoint) and Stage 3 (build transport request), the attempt timeouts are
-computed and passed to `build_transport_request()` which includes them in the `TransportRequest`:
+The timeout selection integrates into the transport pipeline's retry loop in
+`execute_transport_pipeline()`. The ladder computes a per-attempt deadline that is clamped
+against the end-to-end deadline and fed into the existing `remaining_request_timeout()` mechanism:
 
 ```rust
 const DATAPLANE_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
@@ -208,45 +223,40 @@ const METADATA_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
     Duration::from_secs(20),
 ];
 
+// Inside execute_transport_pipeline():
+let ladder = match pipeline_type {
+    PipelineType::DataPlane => DATAPLANE_REQUEST_TIMEOUT_LADDER,
+    PipelineType::Metadata => METADATA_REQUEST_TIMEOUT_LADDER,
+};
+let mut timeout_retry_count = 0_usize;
+
 loop {
-    // ── STAGE 2: Resolve endpoint ──────────────────────────────────
-    let routing = resolve_endpoint(operation, &retry_state, &location);
+    // Compute per-attempt deadline from ladder
+    let attempt_timeout = timeout_for_attempt(timeout_retry_count, ladder);
+    let attempt_deadline = Instant::now() + attempt_timeout;
 
-    // ── Compute attempt timeout ────────────────────────────────────
-    let attempt = (retry_state.failover_retry_count
-        + retry_state.session_token_retry_count) as usize;
+    // Clamp against e2e deadline (e2e always wins)
+    let effective_deadline = match request.deadline {
+        Some(e2e) => Some(attempt_deadline.min(e2e)),
+        None => Some(attempt_deadline),
+    };
 
-    let request_timeout = timeout_for_attempt(
-        attempt,
-        if is_dataplane {
-            DATAPLANE_REQUEST_TIMEOUT_LADDER
-        } else {
-            METADATA_REQUEST_TIMEOUT_LADDER
-        },
-    );
+    let per_request_timeout = remaining_request_timeout(effective_deadline);
 
-    // ── STAGE 3: Build transport request ───────────────────────────
-    let transport_request = build_transport_request(
-        operation, &routing, &activity_id, execution_context,
-        deadline, request_timeout,
-    );
+    // Execute HTTP attempt with the computed timeout
+    let result = execute_http_attempt(
+        &http_request, transport, per_request_timeout, ...
+    ).await;
 
-    // ── STAGE 4: Execute transport pipeline ────────────────────────
-    let result = execute_transport_pipeline(transport_request, ...).await;
-
-    // ── STAGE 5–7: Evaluate, apply effects, act ────────────────────
-    match action {
-        OperationAction::Complete(result) => return Ok(result),
-        OperationAction::FailoverRetry { new_state, .. } => {
-            retry_state = new_state;
-            continue;
-        }
-        OperationAction::SessionRetry { new_state } => {
-            retry_state = new_state;
-            continue;
-        }
-        OperationAction::Abort { error, .. } => return Err(error),
+    // On timeout: escalate and retry (if budget allows)
+    if is_timeout_error(&result) {
+        timeout_retry_count += 1;
+        continue;
     }
+
+    // On 429 throttle: existing throttle retry logic (no ladder advance)
+    // On success or non-timeout error: return result
+    return result;
 }
 ```
 
@@ -255,18 +265,9 @@ loop {
 ## 6. Interaction with End-to-End Deadline
 
 The end-to-end operation deadline (from `EndToEndOperationLatencyPolicy`) takes precedence over the
-per-attempt timeout ladder. If the remaining time until the deadline is less than the ladder value,
-the per-attempt timeout is clamped to the remaining deadline:
-
-```rust
-let effective_request_timeout = match deadline {
-    Some(d) => {
-        let remaining = d.saturating_duration_since(Instant::now());
-        request_timeout.min(remaining)
-    }
-    None => request_timeout,
-};
-```
+per-attempt timeout ladder. The per-attempt deadline computed from the ladder is clamped against
+the e2e deadline — see [§7](#7-interaction-with-connectionpooloptions-bounds) for the full
+clamping order.
 
 If the remaining deadline is zero (or already exceeded), the retry loop exits immediately with a
 timeout error — no attempt is made. This is existing behavior and is preserved.
@@ -275,41 +276,57 @@ timeout error — no attempt is made. This is existing behavior and is preserved
 
 ## 7. Interaction with ConnectionPoolOptions Bounds
 
-The `ConnectionPoolOptions` min/max bounds still act as clamping limits on the effective timeout.
-The ladder value for a given attempt is clamped to the configured bounds:
+The `ConnectionPoolOptions` min/max bounds act as clamping limits on the ladder value **before**
+the deadline clamp is applied. The clamping order is critical — pool bounds first, deadline last:
 
 ```rust
-let effective_timeout = ladder_value
+// Step 1: Clamp ladder value to pool bounds
+let pool_clamped = ladder_value
     .max(connection_pool.min_dataplane_request_timeout())
     .min(connection_pool.max_dataplane_request_timeout());
+
+// Step 2: Compute attempt deadline
+let attempt_deadline = Instant::now() + pool_clamped;
+
+// Step 3: Clamp against e2e deadline (e2e always wins)
+let effective_deadline = match e2e_deadline {
+    Some(d) => Some(attempt_deadline.min(d)),
+    None => Some(attempt_deadline),
+};
 ```
+
+**The deadline must always be the final clamp.** If pool bounds were applied after the deadline,
+`min_dataplane_request_timeout` could produce a timeout longer than the remaining deadline
+(e.g., `min = 2s` with only `500ms` remaining).
 
 This ensures that:
 - If a user sets `max_dataplane_request_timeout` to 10s, the 3rd tier (65s) is clamped to 10s.
 - If a user sets `min_dataplane_request_timeout` to 2s, the 1st tier (6s) stays at 6s (already
   above the minimum).
+- The e2e deadline always takes precedence over both ladder values and pool bounds.
 - The existing validation bounds in `ConnectionPoolOptionsBuilder::build()` remain unchanged.
 
 ---
 
 ## 8. Implementation Details
 
-### Per-Attempt Timeout Delivery via `TransportRequest`
+### Per-Attempt Deadline via Existing `TransportRequest.deadline`
 
-The per-attempt request timeout is delivered to the transport layer as a field on the
-`TransportRequest` struct. The operation pipeline computes the timeout for each attempt and
-includes it when building the transport request via `build_transport_request()`.
+The codebase consistently uses deadlines (`Option<Instant>`) for timeout propagation, not
+durations. The transport pipeline's `remaining_request_timeout()` function computes the remaining
+budget lazily from the deadline. The timeout ladder integrates into this pattern without adding
+new fields to `TransportRequest`.
 
-The transport pipeline (`execute_transport_pipeline()`) reads the timeout from the
-`TransportRequest` and applies it to the underlying HTTP call.
+The ladder computes a per-attempt `Duration`, converts it to an `Instant` deadline, clamps it
+against the e2e deadline, and passes the result as the `TransportRequest.deadline`. The existing
+`remaining_request_timeout()` function continues to work unchanged.
 
-#### Why `TransportRequest` instead of `Context`
+#### No New Fields on `TransportRequest`
 
-The operation pipeline's 7-stage loop constructs a `TransportRequest` struct for each attempt and
-passes it to `execute_transport_pipeline()`. The pipeline `Context` is only created inside the
-transport layer — it is not visible in the operation loop. Carrying the timeout on
-`TransportRequest` keeps the data flow explicit and avoids coupling to the transport layer's
-internal `Context`.
+The existing `deadline: Option<Instant>` field already serves as the single source of truth for
+timeout enforcement. The ladder's per-attempt timeout is folded into this field at the point where
+the `TransportRequest` is constructed — no `request_timeout: Duration` field is needed, and there
+is no risk of two competing timeout sources on the same struct.
 
 #### Required Changes
 
@@ -325,36 +342,13 @@ client-level timeout on individual requests. The change is minimal and backwards
 
 **Cross-crate PR strategy**: This change touches `typespec_client_core`, which is shared across
 all Azure SDK crates. It requires a separate PR with cross-team review before the Cosmos driver
-can depend on it. The PR should be small (add field + getter/setter, update reqwest impl) and
-framed as a general-purpose feature, not Cosmos-specific — any SDK that needs per-request timeout
-overrides benefits from this.
+can depend on it. The PR should add the field + getter/setter to `Request` only — the driver
+applies the timeout via the existing `azure_core::sleep()` race mechanism.
 
 ```rust
 // In typespec_client_core::http::request::Request
-#[derive(Clone)]
-pub struct Request {
-    pub(crate) url: Url,
-    pub(crate) method: Method,
-    pub(crate) headers: Headers,
-    pub(crate) body: Body,
-    pub(crate) timeout: Option<Duration>,  // NEW — per-request timeout override
-}
-
 impl Request {
-    pub fn new(url: Url, method: Method) -> Self {
-        Self {
-            url,
-            method,
-            headers: Headers::new(),
-            body: Body::Bytes(Bytes::new()),
-            timeout: None,  // No override by default
-        }
-    }
-
     /// Returns the per-request timeout override, if set.
-    ///
-    /// When `Some`, this overrides the client-level timeout for this request only.
-    /// When `None`, the client-level timeout applies.
     pub fn timeout(&self) -> Option<Duration> {
         self.timeout
     }
@@ -366,116 +360,66 @@ impl Request {
 }
 ```
 
-**In `typespec_client_core`** — Apply the timeout in the `reqwest` `HttpClient` implementation:
-
-The `reqwest::RequestBuilder` already supports per-request timeouts via `.timeout()`. The
-`HttpClient` implementation reads the timeout from the `Request` and applies it:
-
-```rust
-// In typespec_client_core::http::clients::reqwest
-impl HttpClient for ::reqwest::Client {
-    async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
-        let url = request.url().clone();
-        let method = request.method();
-        let mut req = self.request(from_method(method), url.clone());
-
-        // Apply per-request timeout if set (overrides client-level timeout)
-        if let Some(timeout) = request.timeout() {
-            req = req.timeout(timeout);
-        }
-
-        for (name, value) in request.headers().iter() {
-            req = req.header(name.as_str(), value.as_str());
-        }
-        // ... rest unchanged ...
-    }
-}
-```
+**Timeout enforcement**: The transport pipeline currently enforces timeouts by racing
+`azure_core::sleep()` against the HTTP future. This remains the enforcement mechanism. When
+`Request::set_timeout()` becomes available in `typespec_client_core`, the sleep-race can be
+removed in favor of native per-request timeouts in the `HttpClient` implementation (e.g.,
+`reqwest::RequestBuilder::timeout()`). Until then, both mechanisms should not be active
+simultaneously to avoid double-timeout enforcement with different error types.
 
 **In `azure_data_cosmos_driver`**:
 
-1. **Add `request_timeout` to `TransportRequest`** (`components.rs`):
+1. **Compute per-attempt deadline in the transport pipeline** (`transport_pipeline.rs`):
 
 ```rust
-pub(crate) struct TransportRequest {
-    pub method: Method,
-    pub endpoint: CosmosEndpoint,
-    pub url: Url,
-    pub headers: Headers,
-    pub body: Option<Bytes>,
-    pub auth_context: AuthorizationContext,
-    pub execution_context: ExecutionContext,
-    pub deadline: Option<Instant>,
-    pub request_timeout: Duration,  // NEW
+// Ladder constants
+const DATAPLANE_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
+    Duration::from_secs(6),
+    Duration::from_secs(10),
+    Duration::from_secs(65),
+];
+
+const METADATA_REQUEST_TIMEOUT_LADDER: &[Duration] = &[
+    Duration::from_secs(5),
+    Duration::from_secs(10),
+    Duration::from_secs(20),
+];
+
+fn timeout_for_attempt(timeout_retry_count: usize, ladder: &[Duration]) -> Duration {
+    ladder[timeout_retry_count.min(ladder.len() - 1)]
 }
 ```
 
-2. **Set in `build_transport_request()`** (`operation_pipeline.rs`):
+2. **Integrate into the transport retry loop**: Before each attempt, compute the effective
+   deadline from the ladder and clamp against the e2e deadline:
 
 ```rust
-fn build_transport_request(
-    operation: &CosmosOperation,
-    routing: &RoutingDecision,
-    activity_id: &ActivityId,
-    execution_context: ExecutionContext,
-    deadline: Option<Instant>,
-    request_timeout: Duration,  // NEW parameter
-) -> azure_core::Result<TransportRequest> {
-    // ... existing logic ...
-    Ok(TransportRequest {
-        // ... existing fields ...
-        request_timeout,
-    })
-}
+let attempt_timeout = timeout_for_attempt(timeout_retry_count, ladder);
+let attempt_deadline = Instant::now() + attempt_timeout;
+let effective_deadline = match request.deadline {
+    Some(e2e) => Some(attempt_deadline.min(e2e)),
+    None => Some(attempt_deadline),
+};
+let per_request_timeout = remaining_request_timeout(effective_deadline);
 ```
 
-3. **Apply in `execute_transport_pipeline()`** (`transport_pipeline.rs`): Before calling
-   `http_client.execute_request()`, set the per-request timeout on the `azure_core::http::Request`:
-
-```rust
-// In execute_transport_pipeline(), after building the azure_core Request:
-request.set_timeout(transport_request.request_timeout);
-```
-
-4. **Integration with `ShardedHttpTransport`**: The sharded transport
-   (`sharded_transport.rs`) sends requests via per-endpoint shard pools. The transport pipeline
-   already applies `per_request_timeout` via `azure_core::sleep()` racing the HTTP future
-   (see `transport_pipeline.rs`). The `request_timeout` from the escalation ladder feeds into
-   this existing per-request timeout mechanism.
-
-### Data Structures
-
-```rust
-/// Fixed escalation ladder for timeout values across retry attempts.
-///
-/// Each entry corresponds to an attempt index (0 = initial, 1 = first retry, etc.).
-/// If the attempt index exceeds the ladder length, the last value is used.
-struct TimeoutLadder {
-    steps: &'static [Duration],
-}
-
-impl TimeoutLadder {
-    /// Returns the timeout for the given attempt, saturating at the last step.
-    fn timeout_for_attempt(&self, attempt: usize) -> Duration {
-        self.steps[attempt.min(self.steps.len() - 1)]
-    }
-}
-```
+3. **Integration with `ShardedHttpTransport`**: The sharded transport sends requests via
+   per-endpoint shard pools. The transport pipeline already enforces `per_request_timeout` via
+   `azure_core::sleep()` racing the HTTP future. The ladder-computed deadline feeds directly into
+   this existing mechanism — no changes to the sharded transport are needed.
 
 ### Diagnostic Recording
 
-The effective per-attempt timeout values are recorded in `DiagnosticsContext` for observability.
+The effective per-attempt request timeout is recorded in `DiagnosticsContext` for observability.
 This helps users understand why a retry succeeded when the initial attempt failed (e.g., "attempt 0
 timed out at 6s, attempt 1 succeeded with a 10s timeout").
 
-For each request attempt, the effective request timeout is recorded:
+The effective request timeout is recorded as a flat field directly on `RequestDiagnostics`,
+matching the established pattern for per-attempt metadata (`duration_ms`, `timed_out`, etc.):
 
 ```rust
-/// Timeout information recorded per attempt in diagnostics.
-pub(crate) struct AttemptTimeoutDiagnostics {
-    /// The effective request timeout used for this attempt (after clamping).
-    pub request_timeout: Duration,
-}
+// In RequestDiagnostics (existing struct):
+pub effective_request_timeout: Option<Duration>,
 ```
 
 This is recorded via `DiagnosticsContextBuilder::update_request()` alongside existing per-request
@@ -484,12 +428,10 @@ value after clamping by both `ConnectionPoolOptions` bounds and the end-to-end d
 
 ### Where It Lives
 
-- `TimeoutLadder` and the default ladder constants should be defined in the driver crate, likely
-  in a new module `src/driver/timeouts.rs` or inline in `src/driver/pipeline/components.rs`.
-- The retry loop in `execute_operation_pipeline()` (`operation_pipeline.rs`) is the integration
-  point — it computes the request timeout per attempt and passes it to `build_transport_request()`.
-- `AttemptTimeoutDiagnostics` lives alongside the existing diagnostics types in
-  `src/diagnostics/`.
+- The ladder constants and `timeout_for_attempt()` free function should be defined in
+  `src/driver/transport/transport_pipeline.rs` alongside the existing transport retry logic.
+- The transport pipeline's retry loop is the integration point — it computes the per-attempt
+  deadline and passes it to `remaining_request_timeout()`.
 
 ---
 
@@ -540,10 +482,18 @@ Normal state: connect_timeout = 1s
   cycle). Since >1s only matters for unusual environments, the permanent elevation is acceptable —
   the 4s overhead per connection is negligible compared to the reliability gain.
 - **Idempotent transition**: Multiple concurrent connection failures may simultaneously observe
-  the threshold exceeded. The transition is idempotent — setting `effective_connect_timeout = 5s`
-  and marking old shards unhealthy are both safe to execute multiple times. The
-  `ShardedHttpTransport` already holds a `Mutex` for shard pool management, so the transition
-  is serialized naturally.
+  the threshold exceeded. The transition uses lock-free atomics to match the sharded transport's
+  hot-path pattern — an `AtomicBool` tracks the elevated state and an `AtomicU32` tracks
+  consecutive failures. No Mutex is needed for the state transition itself:
+
+```rust
+// Per-endpoint state (lock-free hot path):
+struct EndpointShardPool {
+    connect_timeout_elevated: AtomicBool,         // false = 1s, true = 5s
+    consecutive_connect_failures: AtomicU32,       // reset on success
+    // ... existing shard management fields ...
+}
+```
 
 ### Implementation in `ShardedHttpTransport`
 
@@ -578,12 +528,19 @@ Connection timeout adaptation fits naturally into this model:
    before creating new shards.
 
 ```rust
-// In ShardedHttpTransport, per-endpoint health tracking:
-if endpoint_state.consecutive_connect_failures > 3 {
-    endpoint_state.effective_connect_timeout = Duration::from_secs(5);
-    // Mark existing shards as unhealthy for immediate reclamation.
-    endpoint_state.mark_old_shards_unhealthy();
-    // New shards will be created with the elevated timeout.
+// In ShardedHttpTransport, per-endpoint connection failure tracking:
+// (called after each connection attempt)
+fn on_connect_result(pool: &EndpointShardPool, success: bool) {
+    if success {
+        pool.consecutive_connect_failures.store(0, Ordering::Relaxed);
+    } else {
+        let prev = pool.consecutive_connect_failures.fetch_add(1, Ordering::Relaxed);
+        if prev >= 3 && !pool.connect_timeout_elevated.swap(true, Ordering::Relaxed) {
+            // First thread to flip the flag — mark old shards for eviction.
+            // New shards will be created with connect_timeout = 5s.
+            pool.mark_old_shards_for_eviction();
+        }
+    }
 }
 ```
 
