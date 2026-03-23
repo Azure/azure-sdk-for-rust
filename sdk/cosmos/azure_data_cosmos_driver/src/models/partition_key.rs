@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#![allow(dead_code)]
 
 //! Partition key types for Cosmos DB operations.
 
@@ -123,7 +124,7 @@ impl InnerPartitionKeyValue {
     }
 }
 
-fn encode_double_as_uint64(value: f64) -> u64 {
+pub(crate) fn encode_double_as_uint64(value: f64) -> u64 {
     let value_in_uint64 = u64::from_le_bytes(value.to_le_bytes());
     let mask: u64 = 0x8000_0000_0000_0000;
     if value_in_uint64 < mask {

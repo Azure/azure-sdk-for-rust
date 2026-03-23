@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#![allow(dead_code)]
 
 //! Effective partition key (EPK) computation.
 //!
@@ -8,11 +9,10 @@
 
 use crate::models::{
     murmur_hash::{murmurhash3_128, murmurhash3_32},
+    partition_key::encode_double_as_uint64,
     PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
 use std::fmt::Write;
-
-const MAX_STRING_BYTES_TO_APPEND: usize = 100;
 
 /// Minimum inclusive effective partition key (empty string).
 pub(crate) const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
@@ -101,16 +101,6 @@ fn write_number_v1_binary(value: f64, writer: &mut Vec<u8>) {
         payload <<= 7;
     }
     writer.push(byte_to_write & 0xFE);
-}
-
-fn encode_double_as_uint64(value: f64) -> u64 {
-    let value_in_uint64 = u64::from_le_bytes(value.to_le_bytes());
-    let mask: u64 = 0x8000_0000_0000_0000;
-    if value_in_uint64 < mask {
-        value_in_uint64 ^ mask
-    } else {
-        (!value_in_uint64).wrapping_add(1)
-    }
 }
 
 fn bytes_to_hex_upper(bytes: &[u8]) -> String {

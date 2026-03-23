@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#![allow(dead_code)]
 
 // MurmurHash3 implementation (public domain).
 // Ported from Cosmos DB SDK / Austin Appleby's original C++ code in SMHasher.

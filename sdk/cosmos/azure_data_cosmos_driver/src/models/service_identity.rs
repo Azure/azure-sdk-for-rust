@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Represents a service identity with federation information
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct ServiceIdentity {
     #[serde(rename = "FederationId")]
     federation_id: String,
@@ -72,10 +72,20 @@ impl fmt::Display for ServiceIdentity {
     }
 }
 
+impl PartialEq for ServiceIdentity {
+    fn eq(&self, other: &Self) -> bool {
+        self.federation_id
+            .eq_ignore_ascii_case(&other.federation_id)
+            && self.service_name.eq_ignore_ascii_case(&other.service_name)
+    }
+}
+
+impl Eq for ServiceIdentity {}
+
 impl std::hash::Hash for ServiceIdentity {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.federation_id.to_lowercase().hash(state);
-        self.service_name.as_str().to_lowercase().hash(state);
+        self.service_name.to_lowercase().hash(state);
     }
 }
 

@@ -81,7 +81,7 @@ pub(crate) struct PartitionKeyRange {
 /// Status of a partition key range
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
-pub enum PartitionKeyRangeStatus {
+pub(crate) enum PartitionKeyRangeStatus {
     #[default]
     Online,
     Splitting,
