@@ -15,7 +15,7 @@ use futures::{
 };
 
 type AzureResult<T> = azure_core::Result<T>;
-type Operation = Pin<Box<dyn Future<Output = Result<(), azure_core::Error>>>>;
+type Operation = Pin<Box<dyn Future<Output = Result<(), azure_core::Error>> + Send + 'static>>;
 
 /// Executes async operations from a queue with a concurrency limit.
 ///
