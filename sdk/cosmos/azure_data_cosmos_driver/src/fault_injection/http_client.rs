@@ -20,6 +20,17 @@ use azure_core::http::{AsyncRawResponse, HttpClient, RawResponse, Request, Statu
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+/// Result of attempting to apply a fault injection rule.
+enum ApplyResult {
+    /// Fault was injected — return this response/error to the caller.
+    Injected(azure_core::Result<AsyncRawResponse>),
+    /// Rule matched but the probability check failed.
+    ProbabilityMiss,
+    /// Rule had no error_type and no custom_response — effectively no-op.
+    /// This happens when a rule only has delay (delay was already applied).
+    NoEffect,
+}
+
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
 pub struct FaultClient {
@@ -137,7 +148,7 @@ impl FaultClient {
         server_error: &FaultInjectionResult,
         rule: &FaultInjectionRule,
         evaluations: &mut Vec<FaultInjectionEvaluation>,
-    ) -> Option<azure_core::Result<AsyncRawResponse>> {
+    ) -> ApplyResult {
         // Check probability
         if server_error.probability() < 1.0 {
             let random: f32 = rand::random();
@@ -145,7 +156,7 @@ impl FaultClient {
                 || server_error.probability() <= 0.0
                 || random >= server_error.probability()
             {
-                return None; // Don't inject fault this time
+                return ApplyResult::ProbabilityMiss;
             }
         }
 
@@ -172,7 +183,7 @@ impl FaultClient {
         // Check for custom response first (takes precedence over error injection)
         if let Some(custom) = server_error.custom_response() {
             let headers = custom.headers().clone();
-            return Some(Ok(AsyncRawResponse::from_bytes(
+            return ApplyResult::Injected(Ok(AsyncRawResponse::from_bytes(
                 custom.status_code(),
                 headers,
                 custom.body().to_vec(),
@@ -182,20 +193,20 @@ impl FaultClient {
         // Generate the appropriate error based on error type
         let error_type = match server_error.error_type() {
             Some(et) => et,
-            None => return None, // No error type set, pass through
+            None => return ApplyResult::NoEffect,
         };
 
         // Connection-level faults return simple errors with the appropriate ErrorKind.
         // Evaluations are propagated via the concurrent evaluation store for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
-                return Some(Err(azure_core::Error::with_message(
+                return ApplyResult::Injected(Err(azure_core::Error::with_message(
                     ErrorKind::Connection,
                     "Injected fault: connection error",
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
-                return Some(Err(azure_core::Error::with_message(
+                return ApplyResult::Injected(Err(azure_core::Error::with_message(
                     ErrorKind::Io,
                     "Injected fault: response timeout",
                 )));
@@ -257,7 +268,7 @@ impl FaultClient {
             message,
         );
 
-        Some(Err(error))
+        ApplyResult::Injected(Err(error))
     }
 }
 
@@ -294,16 +305,20 @@ impl HttpClient for FaultClient {
         // `apply_fault` pushes the Applied evaluation; all evaluations are then
         // stored in the concurrent evaluation store keyed by request ID.
         let fault_response = if let Some(ref rule) = matched_rule {
-            let result = self
+            match self
                 .apply_fault(rule.result(), rule, &mut evaluations)
-                .await;
-            if result.is_none() {
-                evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
-                    rule_id: rule.id().to_owned(),
-                    probability: rule.result().probability(),
-                });
+                .await
+            {
+                ApplyResult::Injected(response) => Some(response),
+                ApplyResult::ProbabilityMiss => {
+                    evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
+                        rule_id: rule.id().to_owned(),
+                        probability: rule.result().probability(),
+                    });
+                    None
+                }
+                ApplyResult::NoEffect => None,
             }
-            result
         } else {
             None
         };
@@ -351,8 +366,8 @@ mod tests {
     use super::FaultClient;
     use crate::fault_injection::{
         next_evaluation_id, take_evaluations, CustomResponseBuilder,
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-        FaultInjectionRuleBuilder, FaultOperationType,
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionEvaluation,
+        FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::{
         FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
@@ -876,11 +891,22 @@ mod tests {
         rule.disable();
 
         let fault_client = FaultClient::new(mock_client, vec![rule]);
-        let (request, _eval_id) = create_test_request();
+        let (request, eval_id) = create_test_request();
         let result = fault_client.execute_request(&request).await;
-        // The evaluation is logged via tracing - verified by the trace output
-        // For now, just verify the request still succeeds (rule is disabled)
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Request should succeed with disabled rule");
+
+        // Verify evaluation was recorded and clean up the store
+        let evals = take_evaluations(eval_id);
+        assert_eq!(
+            evals.len(),
+            1,
+            "Should have one evaluation for the disabled rule"
+        );
+        assert!(
+            matches!(&evals[0], FaultInjectionEvaluation::Disabled { rule_id } if rule_id == "disabled-rule"),
+            "Should record Disabled evaluation, got: {:?}",
+            evals[0]
+        );
     }
 
     #[tokio::test]

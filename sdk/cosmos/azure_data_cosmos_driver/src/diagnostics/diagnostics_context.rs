@@ -451,7 +451,6 @@ pub struct RequestDiagnostics {
     /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
     /// via a request-scoped concurrent map keyed by evaluation request ID.
     #[cfg(feature = "fault_injection")]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }
 
