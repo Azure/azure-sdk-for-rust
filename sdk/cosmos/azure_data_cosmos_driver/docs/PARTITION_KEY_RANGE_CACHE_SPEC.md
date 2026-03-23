@@ -909,7 +909,7 @@ invalidated. This is intentional:
 
 - Partition key ranges rarely change (only on splits).
 - Splits are detected via 410/1002 responses, which trigger explicit invalidation.
-- A TTL would add complexity and unnecessary refetches for stable collections.
+- A TTL would add complexity and unnecessary re-fetches for stable collections.
 
 ### 13.2 Empty Map Fallback
 

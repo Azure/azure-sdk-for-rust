@@ -53,7 +53,7 @@ pub(crate) struct CollectionRoutingMap {
     pub change_feed_next_if_none_match: Option<String>,
 }
 
-/// Sentinel value for invalid/unparseable partition key range IDs.
+/// Sentinel value for invalid/un-parseable partition key range IDs.
 const INVALID_PK_RANGE_ID: i32 = -1;
 
 /// Minimum inclusive effective partition key (empty string).
