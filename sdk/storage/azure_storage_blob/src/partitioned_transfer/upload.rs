@@ -54,18 +54,17 @@ async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior + 'static>(
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
 ) -> AzureResult<()> {
-    let part_size_actual = partition_size.get();
-    let num_partitions = content.len().div_ceil(part_size_actual);
-    let partitions: Vec<_> = (0..num_partitions)
-        .map(|part| {
-            let offset = part * part_size_actual;
-            let range = offset..std::cmp::min(offset + part_size_actual, content.len());
-            (offset, content.slice(range), client.clone())
-        })
-        .collect();
-    let ops = partitions.into_iter().map(|(offset, bytes, c)| {
-        Ok(c.transfer_partition(offset, Body::Bytes(bytes)) as Operation)
-    });
+    let partition_size = partition_size.get();
+    // let num_partitions = content.len().div_ceil(partition_size);
+    let ops = (0..content.len())
+        .step_by(partition_size)
+        .scan(client.clone(), |c, offset| {
+            let range = offset..std::cmp::min(offset + partition_size, content.len());
+            Some(Ok(c
+                .clone()
+                .transfer_partition(offset, content.slice(range).into())
+                as Operation))
+        });
     run_all_with_concurrency_limit(futures::stream::iter(ops), parallel).await?;
     Ok(())
 }
