@@ -162,4 +162,38 @@ mod tests {
             compute_effective_partition_key(&[pk], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
         assert_eq!(result, "2FE1BE91E90A3439635E0E9E37361EF2");
     }
+
+    #[test]
+    fn string_pk_hash_v1_produces_deterministic_output() {
+        // V1 uses MurmurHash3-32 → f64 → variable-length binary encoding → hex.
+        let pk = PartitionKeyValue::from("customer42".to_string());
+        let result =
+            compute_effective_partition_key(&[pk], PartitionKeyKind::Hash, PartitionKeyVersion::V1);
+        // Validate determinism: same input always produces same hash.
+        let pk2 = PartitionKeyValue::from("customer42".to_string());
+        let result2 =
+            compute_effective_partition_key(&[pk2], PartitionKeyKind::Hash, PartitionKeyVersion::V1);
+        assert_eq!(result, result2);
+        // The result must be a non-empty hex string.
+        assert!(!result.is_empty());
+        assert!(result.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn number_pk_hash_v1() {
+        let pk = PartitionKeyValue::from(42i64);
+        let result =
+            compute_effective_partition_key(&[pk], PartitionKeyKind::Hash, PartitionKeyVersion::V1);
+        assert!(!result.is_empty());
+        assert!(result.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn null_pk_hash_v1() {
+        let pk = PartitionKeyValue::from(None::<String>);
+        let result =
+            compute_effective_partition_key(&[pk], PartitionKeyKind::Hash, PartitionKeyVersion::V1);
+        assert!(!result.is_empty());
+        assert!(result.chars().all(|c| c.is_ascii_hexdigit()));
+    }
 }

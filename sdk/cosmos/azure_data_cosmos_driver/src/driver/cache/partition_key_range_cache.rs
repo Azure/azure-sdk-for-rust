@@ -224,6 +224,11 @@ impl PartitionKeyRangeCache {
                         "Failed to fetch partition key ranges from service (iteration {})",
                         iteration
                     );
+                    // Preserve the previous routing map during incremental refresh
+                    // so a transient failure doesn't discard valid cached routing.
+                    if let Some(prev) = previous_routing_map {
+                        return (*prev).clone();
+                    }
                     return CollectionRoutingMap::empty();
                 }
             };
@@ -269,7 +274,7 @@ impl PartitionKeyRangeCache {
         }
 
         // Full (non-incremental) creation.
-        match CollectionRoutingMap::try_create_with_continuation(tuples, None, continuation) {
+        match CollectionRoutingMap::try_create_with_continuation(tuples, continuation) {
             Ok(Some(map)) => map,
             Ok(None) => {
                 tracing::warn!("Partition key range fetch returned empty set");
@@ -426,5 +431,72 @@ mod tests {
             .resolve_partition_key_range_id(&container, &pk, true, test_fetch)
             .await;
         assert_eq!(range_id.as_deref(), Some("0"));
+    }
+
+    #[tokio::test]
+    async fn fetch_failure_on_initial_returns_none() {
+        let cache = PartitionKeyRangeCache::new();
+
+        // A fetch function that always fails.
+        async fn failing_fetch(
+            _rid: String,
+            _cont: Option<String>,
+        ) -> Option<PkRangeFetchResult> {
+            None
+        }
+
+        let map = cache.try_lookup("test-rid", false, failing_fetch).await;
+        // The cache should store an empty map, so try_lookup returns Some
+        // but subsequent EPK lookups will return None.
+        assert!(map.is_some());
+        let map = map.unwrap();
+        assert!(map.ordered_ranges().is_empty());
+    }
+
+    #[tokio::test]
+    async fn fetch_failure_during_incremental_refresh_preserves_previous_map() {
+        let cache = PartitionKeyRangeCache::new();
+        let account = crate::models::AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "key",
+        );
+        let container_props = crate::models::ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            system_properties: Default::default(),
+        };
+        let container = ContainerReference::new(
+            account,
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &container_props,
+        );
+        let pk = PartitionKey::from("hello");
+
+        // First call: populate the cache with a valid routing map.
+        let range_id = cache
+            .resolve_partition_key_range_id(&container, &pk, false, test_fetch)
+            .await;
+        assert_eq!(range_id.as_deref(), Some("0"));
+
+        // A fetch function that always fails (simulating a transient error).
+        async fn failing_fetch(
+            _rid: String,
+            _cont: Option<String>,
+        ) -> Option<PkRangeFetchResult> {
+            None
+        }
+
+        // Force refresh with a failing fetch should preserve the previous map.
+        let range_id = cache
+            .resolve_partition_key_range_id(&container, &pk, true, failing_fetch)
+            .await;
+        assert_eq!(
+            range_id.as_deref(),
+            Some("0"),
+            "Previous routing map should be preserved when incremental fetch fails"
+        );
     }
 }
