@@ -45,7 +45,7 @@ pub(crate) async fn upload<Behavior: PartitionedUploadBehavior + 'static>(
         }
     }
 
-    return client.finalize().await;
+    client.finalize().await
 }
 
 async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior + 'static>(
@@ -55,7 +55,6 @@ async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior + 'static>(
     client: Arc<Behavior>,
 ) -> AzureResult<()> {
     let partition_size = partition_size.get();
-    // let num_partitions = content.len().div_ceil(partition_size);
     let ops = (0..content.len())
         .step_by(partition_size)
         .scan(client.clone(), |c, offset| {
