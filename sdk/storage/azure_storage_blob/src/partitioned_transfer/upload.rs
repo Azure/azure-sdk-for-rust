@@ -16,10 +16,11 @@ use super::*;
 
 #[async_trait]
 pub(crate) trait PartitionedUploadBehavior {
-    async fn transfer_oneshot(&self, content: Body) -> AzureResult<()>;
+    type Output;
+    async fn transfer_oneshot(&self, content: Body) -> AzureResult<Self::Output>;
     async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
     async fn initialize(&self, content_len: usize) -> AzureResult<()>;
-    async fn finalize(&self) -> AzureResult<()>;
+    async fn finalize(&self) -> AzureResult<Self::Output>;
 }
 
 pub(crate) async fn upload<Behavior: PartitionedUploadBehavior>(
@@ -27,26 +28,24 @@ pub(crate) async fn upload<Behavior: PartitionedUploadBehavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
-) -> AzureResult<()> {
+) -> AzureResult<Behavior::Output> {
     if content.len() <= partition_size.get() {
-        client.transfer_oneshot(content).await?;
-        return Ok(());
+        return client.transfer_oneshot(content).await;
     }
 
     client.initialize(content.len()).await?;
 
     match content {
         Body::Bytes(bytes) => {
-            upload_bytes_partitions(bytes, parallel, partition_size, client).await?;
+            upload_bytes_partitions(bytes, parallel, partition_size, client.clone()).await?;
         }
         Body::SeekableStream(seekable_stream) => {
-            upload_stream_partitions(seekable_stream, parallel, partition_size, client).await?;
+            upload_stream_partitions(seekable_stream, parallel, partition_size, client.clone())
+                .await?;
         }
     }
 
-    client.finalize().await?;
-
-    Ok(())
+    return client.finalize().await;
 }
 
 async fn upload_bytes_partitions<Behavior: PartitionedUploadBehavior>(
@@ -137,6 +136,7 @@ mod tests {
 
     #[async_trait]
     impl PartitionedUploadBehavior for MockPartitionedUploadBehavior {
+        type Output = ();
         async fn transfer_oneshot(&self, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
@@ -185,14 +185,14 @@ mod tests {
         let partition_size: usize = data_size;
         let concurrency: usize = 2;
 
-        let mock = MockPartitionedUploadBehavior::new();
+        let mock = Arc::new(MockPartitionedUploadBehavior::new());
         let src_data = get_random_data(data_size);
 
         upload(
             Body::Bytes(Bytes::from(src_data.clone())),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
-            &mock,
+            mock.clone(),
         )
         .await?;
 
@@ -207,14 +207,14 @@ mod tests {
         let partition_size: usize = 50;
         let concurrency: usize = 2;
 
-        let mock = MockPartitionedUploadBehavior::new();
+        let mock = Arc::new(MockPartitionedUploadBehavior::new());
         let src_data = get_random_data(data_size);
 
         upload(
             Body::Bytes(Bytes::from(src_data.clone())),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
-            &mock,
+            mock.clone(),
         )
         .await?;
 
@@ -235,14 +235,14 @@ mod tests {
         let partition_size: usize = data_size;
         let concurrency: usize = 2;
 
-        let mock = MockPartitionedUploadBehavior::new();
+        let mock = Arc::new(MockPartitionedUploadBehavior::new());
         let src_data = get_random_data(data_size);
 
         upload(
             Body::SeekableStream(Box::new(BytesStream::new(Bytes::from(src_data.clone())))),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
-            &mock,
+            mock.clone(),
         )
         .await?;
 
@@ -257,14 +257,14 @@ mod tests {
         let partition_size: usize = 50;
         let concurrency: usize = 2;
 
-        let mock = MockPartitionedUploadBehavior::new();
+        let mock = Arc::new(MockPartitionedUploadBehavior::new());
         let src_data = get_random_data(data_size);
 
         upload(
             Body::SeekableStream(Box::new(BytesStream::new(Bytes::from(src_data.clone())))),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
-            &mock,
+            mock.clone(),
         )
         .await?;
 

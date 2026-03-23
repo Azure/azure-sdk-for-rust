@@ -30,7 +30,7 @@ use std::{num::NonZero, sync::Arc};
 
 /// Extension trait to clone `ClientMethodOptions` without lifetime dependencies.
 trait ClientMethodOptionsExt<'a> {
-    /// Clone the `ClientMethodOptions` with static lifetime by making the 
+    /// Clone the `ClientMethodOptions` with static lifetime by making the
     /// underlying context owned.
     fn clone_owned(&self) -> ClientMethodOptions<'static>;
 }
@@ -229,13 +229,7 @@ impl BlockBlobClient {
             commit_block_list_options,
         ));
         partitioned_transfer::upload(content.into(), parallel, partition_size, behavior.clone())
-            .await?;
-        behavior.result.into_inner().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "Upload completed without setting result.",
-            )
-        })
+            .await
     }
 }
 
@@ -254,7 +248,6 @@ struct BlockBlobClientUploadBehavior<'c> {
     stage_block_options: BlockBlobClientStageBlockOptions<'static>,
     commit_block_list_options: BlockBlobClientCommitBlockListOptions<'static>,
     blocks: Mutex<Vec<BlockInfo>>,
-    result: Mutex<Option<BlockBlobClientUploadResult>>,
 }
 
 impl<'c> BlockBlobClientUploadBehavior<'c> {
@@ -270,14 +263,14 @@ impl<'c> BlockBlobClientUploadBehavior<'c> {
             stage_block_options,
             commit_block_list_options,
             blocks: Mutex::new(vec![]),
-            result: Mutex::new(None),
         }
     }
 }
 
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
-    async fn transfer_oneshot(&self, content: Body) -> Result<()> {
+    type Output = BlockBlobClientUploadResult;
+    async fn transfer_oneshot(&self, content: Body) -> Result<Self::Output> {
         let content_len = content.len() as u64;
         let rsp = self
             .client
@@ -287,7 +280,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
                 Some(self.oneshot_options.clone()),
             )
             .await?;
-        *self.result.lock().await = Some(BlockBlobClientUploadResult {
+        Ok(BlockBlobClientUploadResult {
             content_md5: rsp.content_md5()?,
             content_crc64: rsp.content_crc64()?,
             encryption_key_sha256: rsp.encryption_key_sha256()?,
@@ -297,8 +290,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
             last_modified: rsp.last_modified()?,
             version_id: rsp.version_id()?,
             raw_response: rsp.to_raw_response(),
-        });
-        Ok(())
+        })
     }
 
     async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
@@ -325,7 +317,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
         Ok(())
     }
 
-    async fn finalize(&self) -> Result<()> {
+    async fn finalize(&self) -> Result<Self::Output> {
         let mut blocks = self.blocks.lock().await;
         blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
         let blocklist = BlockLookupList {
@@ -344,7 +336,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
                 Some(self.commit_block_list_options.clone()),
             )
             .await?;
-        *self.result.lock().await = Some(BlockBlobClientUploadResult {
+        Ok(BlockBlobClientUploadResult {
             content_md5: rsp.content_md5()?,
             content_crc64: rsp.content_crc64()?,
             encryption_key_sha256: rsp.encryption_key_sha256()?,
@@ -354,7 +346,6 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_> {
             last_modified: rsp.last_modified()?,
             version_id: rsp.version_id()?,
             raw_response: rsp.to_raw_response(),
-        });
-        Ok(())
+        })
     }
 }
