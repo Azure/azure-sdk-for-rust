@@ -7,9 +7,14 @@
 ## Summary
 
 A client-side ReadMany API for the driver crate (schema-agnostic, raw bytes) consumed
-by the SDK and C FFI layers. Groups items by physical partition using EPK hashing,
-dispatches single-item groups as point reads and multi-item groups as batched
-parameterized queries, executes concurrently, and aggregates results.
+by the SDK and C FFI layers. Supports two modes:
+
+- **(id, pk) mode** — fetch specific items by document ID and partition key.
+- **PK-only mode** — fetch *all* items matching a set of partition key values (no IDs).
+
+Both modes group inputs by physical partition using EPK hashing, dispatch work units
+(point reads for single-item groups in (id,pk) mode, parameterized queries otherwise),
+execute concurrently, and aggregate results.
 
 ## Motivation
 
@@ -57,7 +62,36 @@ impl ItemIdentity {
     pub fn id(&self) -> &str { &self.id }
     pub fn partition_key(&self) -> &PartitionKey { &self.partition_key }
 }
+```
 
+`ReadManyInput` unifies both modes through a single API entry point:
+
+```rust
+/// What to read: specific items by (id, pk) or all items matching PKs.
+pub enum ReadManyInput {
+    /// Fetch specific items by document ID and partition key.
+    Items(Vec<ItemIdentity>),
+    /// Fetch all items matching these partition key values (no IDs).
+    /// Always uses queries, never point reads.
+    PartitionKeys(Vec<PartitionKey>),
+}
+```
+
+```rust
+/// Options for ReadMany.
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct ReadManyOptions {
+    /// Maximum concurrent sub-operations. Default: `min(num_ranges, 32)`.
+    pub max_concurrency: Option<usize>,
+    /// Optional projection — field paths to return (e.g., `["/id", "/name"]`).
+    /// When set, queries use `SELECT c.id, c.name` instead of `SELECT *`.
+    /// Ignored for point reads (point reads always return full documents).
+    pub projections: Option<Vec<String>>,
+}
+```
+
+```rust
 /// Response from a ReadMany operation.
 #[derive(Debug)]
 pub struct ReadManyResponse {
@@ -65,7 +99,7 @@ pub struct ReadManyResponse {
     /// Order is **unspecified**.
     items: Vec<Vec<u8>>,
     request_charge: RequestCharge,
-    diagnostics: Vec<OperationDiagnostics>,
+    diagnostics: OperationDiagnostics,
     activity_id: Option<ActivityId>,
 }
 
@@ -73,22 +107,28 @@ impl ReadManyResponse {
     pub fn items(&self) -> &[Vec<u8>] { &self.items }
     pub fn into_items(self) -> Vec<Vec<u8>> { self.items }
     pub fn request_charge(&self) -> RequestCharge { self.request_charge }
+    pub fn diagnostics(&self) -> &OperationDiagnostics { &self.diagnostics }
     pub fn activity_id(&self) -> Option<&ActivityId> { self.activity_id.as_ref() }
 }
 ```
 
 ```rust
 impl CosmosDriver {
-    /// Reads multiple items by (id, partition_key).
+    /// Reads multiple items identified by (id, pk) pairs, or all items
+    /// matching a set of partition key values.
     ///
-    /// Single-item partition groups use point reads (1 RU, lowest latency).
-    /// Multi-item groups use batched parameterized queries. All execute
-    /// concurrently. Items not found are silently omitted.
+    /// In (id,pk) mode, single-item partition groups use point reads
+    /// (1 RU, lowest latency). Multi-item groups use batched parameterized
+    /// queries. In PK-only mode, all groups use queries.
+    ///
+    /// All work units execute concurrently. Items not found are silently
+    /// omitted.
     pub async fn read_many(
         &self,
         container: &ContainerReference,
-        items: Vec<ItemIdentity>,
-        options: OperationOptions,
+        input: ReadManyInput,
+        options: ReadManyOptions,
+        operation_options: OperationOptions,
     ) -> azure_core::Result<ReadManyResponse>;
 }
 ```
@@ -96,10 +136,11 @@ impl CosmosDriver {
 ### Algorithm
 
 ```text
-read_many(container, items, options)
+read_many(container, input, read_many_options, operation_options)
   │
   ├─ 1. Validate inputs
-  │     ├─ items non-empty, each id non-empty
+  │     ├─ Items mode: non-empty, each id non-empty
+  │     ├─ PK-only mode: non-empty
   │     └─ MULTI_HASH: validate PK component count
   │
   ├─ 2. Get container metadata (PK definition, container RID)
@@ -107,31 +148,41 @@ read_many(container, items, options)
   ├─ 3. Fetch partition key ranges
   │     └─ GET /dbs/{db}/colls/{coll}/pkranges
   │
-  ├─ 4. Group items by physical partition range
-  │     ├─ Compute EPK hash per item (MurmurHash3 V1/V2)
+  ├─ 4. Group inputs by physical partition range
+  │     ├─ Compute EPK hash per item/PK (MurmurHash3 V1/V2)
   │     ├─ Binary search sorted ranges → owning range
-  │     └─ HashMap<RangeId, Vec<ItemIdentity>>
+  │     ├─ Items mode: HashMap<RangeId, Vec<ItemIdentity>>
+  │     └─ PK-only mode: HashMap<RangeId, Vec<PartitionKey>>
   │
   ├─ 5. Create work units per partition group
-  │     ├─ 1 item  → PointRead (GET /docs/{id})
-  │     └─ 2+ items → Query chunks (max 1,000 per chunk)
+  │     ├─ Items mode, 1 item  → PointRead (GET /docs/{id})
+  │     ├─ Items mode, 2+ items → Query chunks (max 1,000 per chunk)
+  │     └─ PK-only mode → Query chunks (always)
   │
   ├─ 6. Build request for each work unit
   │     ├─ PointRead: GET with x-ms-documentdb-partitionkey
   │     │   404 → silently omit
-  │     └─ Query: one of three shapes (see below)
+  │     ├─ Query (Items mode): Shape 1, 2, or 3 (see below)
+  │     └─ Query (PK-only mode): Shape 4 (see below)
   │
   ├─ 7. Execute all work units concurrently
+  │     ├─ Concurrency: max_concurrency option (default min(num_ranges, 32))
   │     ├─ Paginate queries until continuation exhausted
   │     └─ On error (except 404): cancel remaining, propagate
   │
   └─ 8. Aggregate: concatenate items, sum RU, merge diagnostics
+  │     └─ Single OperationDiagnostics per response (not per sub-op)
 ```
 
 ### Query Shapes
 
-All queries use parameterized values. Shape selection depends on PK definition and
-item distribution within each chunk.
+All queries use parameterized values. Shape selection depends on the mode, PK
+definition, and item distribution within each chunk.
+
+When `projections` is set, `SELECT *` becomes `SELECT c.id, c.name, ...` with the
+requested fields. Point reads always return full documents (projections are ignored).
+
+#### (id, pk) Mode Shapes
 
 **Shape 1 — ID-Only IN** (PK path is `/id`):
 
@@ -160,6 +211,34 @@ SELECT * FROM c WHERE
   (c.id = @id0 AND c.tenantId = @t0 AND c.userId = @u0) OR
   (c.id = @id1 AND c.tenantId = @t1 AND c.userId = @u1)
 ```
+
+**PK path `/id` with pk ≠ id**: Error. When the partition key path is `/id`, the
+partition key value *must* equal the document ID. A mismatch is a caller bug — do not
+silently fall back to Shape 3.
+
+#### PK-Only Mode Shapes
+
+**Shape 4 — PK IN** (single-level PK):
+
+```sql
+SELECT * FROM c WHERE c.myPk IN (@pk0, @pk1, @pk2)
+```
+
+**Shape 4h — Hierarchical PK OR-of-Conjunctions**:
+
+```sql
+SELECT * FROM c WHERE
+  (c.tenantId = @t0 AND c.userId = @u0) OR
+  (c.tenantId = @t1 AND c.userId = @u1)
+```
+
+PK-only mode never uses point reads — there is no document ID, so a point read is
+not possible. Each partition group always produces query work units.
+
+The key optimization for PK-only mode is EPK-aware routing: each physical partition
+receives *only* the PK values whose EPK falls within that range. Without this, a
+cross-partition `WHERE c.pk IN (...)` query forces every partition to perform index
+lookups for PK values that provably cannot exist on that partition, wasting RUs.
 
 **Special cases:**
 - Null PK → `IS_NULL(c.pk)`
@@ -201,10 +280,10 @@ Response:
 
 ### EPK Hashing
 
-The SDK crate already has MurmurHash3 V1/V2 in `hash.rs`. **Recommended**: move EPK
-hashing into the driver crate — it's a pure function of PK values and PK definition
-with no SDK-layer dependencies. This lets the C FFI layer use ReadMany without
-re-implementing hashing.
+The SDK crate has MurmurHash3 V1/V2 in `murmur_hash.rs` and EPK construction logic in
+`hash.rs`. **Recommended**: move EPK hashing into the driver crate — it's a pure
+function of PK values and PK definition with no SDK-layer dependencies. This lets the
+C FFI layer use ReadMany without re-implementing hashing.
 
 ### Point Read Optimization
 
@@ -222,21 +301,24 @@ Threshold: **1 item → point read, 2+ items → query**. At 2 items, a query co
 
 ### Concurrency
 
-Work units execute concurrently via Tokio tasks. Default concurrency:
-`min(num_ranges, 32)`, configurable via `OperationOptions`. On first error (excluding
-point read 404), remaining tasks are cancelled and the error propagates.
+Work units execute concurrently via async tasks (runtime-agnostic — no direct Tokio
+dependency). Default concurrency: `min(num_ranges, 32)`, configurable via
+`ReadManyOptions::max_concurrency`. On first error (excluding point read 404),
+remaining tasks are cancelled and the error propagates.
 
 ### Error Handling
 
 | Condition | Behavior |
 |-----------|----------|
-| Empty items list | Error immediately |
-| Empty item ID | Error immediately |
+| Empty input | Error immediately |
+| Empty item ID (Items mode) | Error immediately |
+| PK path `/id` with pk ≠ id | Error immediately |
 | Multi-hash PK component mismatch | Error immediately |
 | Point read 404 | Silently omit |
 | Query returns fewer items | Silently omit missing |
-| Partition key range gone (410) | Refresh ranges, retry affected chunks |
-| Stale collection cache | Invalidate cache, retry entire operation |
+| Partition split (410/1002) | Refresh PK ranges, re-group affected items, retry |
+| Partition merge (410/1007) | Refresh PK ranges, merge groups to new range, retry |
+| Stale collection cache (410/1000) | Invalidate cache, re-fetch metadata, retry entire operation |
 | Throttling (429) | Handled by existing retry policy |
 | Other transient failure | Propagate error, cancel remaining tasks |
 
@@ -244,10 +326,15 @@ point read 404), remaining tasks are cancelled and the error propagates.
 
 - **Pagination**: Each query chunk may return continuation tokens — loop until exhausted.
 - **Chunking**: `MAX_ITEMS_PER_QUERY = 1_000` (matches Python/Go SDKs).
-- **Stale resource retry**: Wraps the entire operation. Handles partition splits (410) and
-  stale collection metadata.
-- **Diagnostics aggregation**: Merge per-operation diagnostics (RU, latency, retries,
-  regions) from all sub-operations into a single summary on the response.
+- **Stale resource retry**: Wraps the entire operation. On 410 sub-status 1002
+  (partition split) or 1007 (partition merge), refresh PK ranges, re-group only
+  the affected items into the new range(s), and retry those work units. On 410
+  sub-status 1000 (stale collection), invalidate all cached metadata and retry
+  the entire operation.
+- **Diagnostics aggregation**: A single `OperationDiagnostics` per `ReadManyResponse`
+  — not one per sub-operation. Merge RU, latency, retries, and region contacts from
+  all sub-operations into this single value. 1:1 cardinality between request and
+  diagnostics.
 - **End-to-end timeout**: If configured, applies to the entire ReadMany — not per
   sub-operation. Exceeding budget cancels remaining work units.
 - **Thread safety**: `read_many` takes `&self`. `ReadManyResponse` is `Send + Sync`.
@@ -256,18 +343,23 @@ point read 404), remaining tasks are cancelled and the error propagates.
 ## SDK API (`azure_data_cosmos`)
 
 ```rust
-pub use azure_data_cosmos_driver::models::ItemIdentity;
+pub use azure_data_cosmos_driver::models::{ItemIdentity, ReadManyInput};
 
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct ReadManyOptions {
     pub session_token: Option<SessionToken>,
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// Maximum concurrent sub-operations.
+    pub max_concurrency: Option<usize>,
+    /// Optional field-path projections (e.g., `["/id", "/name"]`).
+    pub projections: Option<Vec<String>>,
 }
 
 pub struct ReadManyResponse<T> {
     items: Vec<T>,
     request_charge: f64,
+    diagnostics: OperationDiagnostics,
     activity_id: Option<ActivityId>,
 }
 
@@ -275,40 +367,44 @@ impl<T> ReadManyResponse<T> {
     pub fn items(&self) -> &[T] { &self.items }
     pub fn into_items(self) -> Vec<T> { self.items }
     pub fn request_charge(&self) -> f64 { self.request_charge }
+    pub fn diagnostics(&self) -> &OperationDiagnostics { &self.diagnostics }
     pub fn activity_id(&self) -> Option<&ActivityId> { self.activity_id.as_ref() }
 }
 ```
 
 ```rust
 impl ContainerClient {
-    /// Reads multiple items by (id, partition_key). Single-item partition
-    /// groups use point reads; multi-item groups use batched queries.
-    /// Items not found are silently omitted. Order is unspecified.
+    /// Reads multiple items by (id, pk) pairs or by partition key values.
     ///
     /// ```rust no_run
     /// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
-    /// let items = vec![
+    /// // (id, pk) mode
+    /// let items = ReadManyInput::Items(vec![
     ///     ItemIdentity::new("item1", PartitionKey::from("pk-a")),
     ///     ItemIdentity::new("item2", PartitionKey::from("pk-b")),
-    ///     ItemIdentity::new("item3", PartitionKey::from("pk-a")),
-    /// ];
+    /// ]);
     /// let response = container.read_many::<serde_json::Value>(items, None).await?;
-    /// for item in response.items() {
-    ///     println!("{}", item);
-    /// }
+    ///
+    /// // PK-only mode — fetch all items in these partitions
+    /// let pks = ReadManyInput::PartitionKeys(vec![
+    ///     PartitionKey::from("pk-a"),
+    ///     PartitionKey::from("pk-b"),
+    /// ]);
+    /// let response = container.read_many::<serde_json::Value>(pks, None).await?;
     /// # Ok(())
     /// # }
     /// ```
     pub async fn read_many<T: DeserializeOwned>(
         &self,
-        items: Vec<ItemIdentity>,
+        input: ReadManyInput,
         options: Option<ReadManyOptions>,
     ) -> azure_core::Result<ReadManyResponse<T>>;
 }
 ```
 
-SDK flow: resolve container → build `OperationOptions` → call `driver.read_many()` →
-deserialize raw bytes into `T` → return `ReadManyResponse<T>`.
+SDK flow: resolve container → map `ReadManyInput` + `ReadManyOptions` to driver
+types → call `driver.read_many()` → deserialize raw bytes into `T` → return
+`ReadManyResponse<T>`.
 
 ## C FFI API (`azure_data_cosmos_native`)
 
@@ -325,10 +421,19 @@ typedef struct {
     double request_charge;
 } cosmos_read_many_response;
 
+// (id, pk) mode
 cosmos_error cosmos_container_read_many(
     const cosmos_container_client* client,
     const cosmos_item_identity* items,
     size_t item_count,
+    const cosmos_operation_options* options,
+    cosmos_read_many_response** out_response);
+
+// PK-only mode
+cosmos_error cosmos_container_read_many_by_partition_keys(
+    const cosmos_container_client* client,
+    const cosmos_partition_key** partition_keys,
+    size_t pk_count,
     const cosmos_operation_options* options,
     cosmos_read_many_response** out_response);
 
@@ -341,8 +446,9 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 
 | File | Action | Description |
 |------|--------|-------------|
-| `src/models/item_identity.rs` | Create | `ItemIdentity` type |
+| `src/models/item_identity.rs` | Create | `ItemIdentity`, `ReadManyInput` types |
 | `src/models/read_many_response.rs` | Create | `ReadManyResponse` type |
+| `src/models/read_many_options.rs` | Create | `ReadManyOptions` (max_concurrency, projections) |
 | `src/models/partition_key_range.rs` | Create | `PartitionKeyRange` boundaries |
 | `src/models/mod.rs` | Modify | Export new types |
 | `src/driver/read_many.rs` | Create | Core algorithm |
@@ -358,7 +464,7 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 |------|--------|-------------|
 | `src/clients/container_client.rs` | Modify | Add `read_many<T>()` |
 | `src/options/mod.rs` | Modify | Add `ReadManyOptions` |
-| `src/models/mod.rs` | Modify | Re-export `ItemIdentity`, add `ReadManyResponse<T>` |
+| `src/models/mod.rs` | Modify | Re-export `ItemIdentity`, `ReadManyInput`, add `ReadManyResponse<T>` |
 | `src/hash.rs` | Modify | Move EPK functions to driver |
 | `src/lib.rs` | Modify | Export new types |
 
@@ -376,7 +482,7 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 | ID | Test | Verifies |
 |----|------|----------|
 | U1 | `query_builder_id_only_in` | PK path `/id` → Shape 1 |
-| U2 | `query_builder_id_pk_mismatch` | PK path `/id`, pk ≠ id → Shape 3 |
+| U2 | `query_builder_id_pk_mismatch_error` | PK path `/id`, pk ≠ id → error (not Shape 3) |
 | U3 | `query_builder_single_pk` | Same PK → Shape 2 |
 | U4 | `query_builder_multi_pk` | Mixed PKs → Shape 3 |
 | U5 | `query_builder_nested_pk_path` | `/address/zip` → bracket notation |
@@ -394,6 +500,13 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 | U17 | `field_expression_nested` | `/a/b/c` → `c["a"]["b"]["c"]` |
 | U18 | `mixed_point_read_and_query` | 1+5+2 items → 1 point read + 2 queries |
 | U19 | `multi_hash_pk_component_count` | Wrong component count → error |
+| U20 | `pk_only_single_level` | PK-only → Shape 4 query |
+| U21 | `pk_only_hierarchical` | PK-only hierarchical → Shape 4h query |
+| U22 | `pk_only_no_point_reads` | PK-only mode never produces point read work units |
+| U23 | `pk_only_epk_grouping` | PK values grouped to correct physical ranges |
+| U24 | `projections_select_fields` | Projections → `SELECT c.id, c.name` |
+| U25 | `projections_ignored_for_point_reads` | Point read work units ignore projections |
+| U26 | `max_concurrency_option` | Custom max_concurrency limits parallel work units |
 
 ### Integration Tests (emulator)
 
@@ -408,11 +521,15 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 | E7 | `read_many_request_charge` | Aggregate RU > 0 |
 | E8 | `read_many_session_consistency` | Session token propagation |
 | E9 | `read_many_point_read_fallback` | Single-item groups use point read (RU check) |
-| E10 | `read_many_diagnostics_aggregated` | Merged diagnostics from all sub-ops |
+| E10 | `read_many_diagnostics_aggregated` | Single OperationDiagnostics per response |
+| E11 | `read_many_pk_only_basic` | PK-only: fetch items by PK values |
+| E12 | `read_many_pk_only_mixed_partitions` | PK-only: PKs spanning multiple physical partitions |
+| E13 | `read_many_pk_only_hierarchical` | PK-only: hierarchical PK container |
+| E14 | `read_many_projections` | Projected fields only in response |
+| E15 | `read_many_partition_split_retry` | 410/1002 → refresh ranges, retry |
 
 ## Open Questions
 
 1. **EPK hashing location**: Driver crate (recommended for C FFI reuse) or SDK crate?
 2. **Response ordering**: No guarantee (recommended, matches Go SDK). SDK can re-order.
 3. **Duplicate items**: Deduplicate at grouping stage (recommended). At most one copy returned.
-4. **Max concurrency**: `min(num_ranges, 32)` default, configurable via `OperationOptions`.
