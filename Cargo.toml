@@ -94,6 +94,7 @@ version = "0.11.0"
 
 [workspace.dependencies.azure_data_cosmos_driver]
 default-features = false
+version = "0.1.0"
 path = "sdk/cosmos/azure_data_cosmos_driver"
 
 [workspace.dependencies]
