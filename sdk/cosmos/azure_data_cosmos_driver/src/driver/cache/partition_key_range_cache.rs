@@ -149,7 +149,8 @@ impl PartitionKeyRangeCache {
     /// returns 304 Not Modified, the existing map is returned as-is.
     /// Otherwise the new ranges are merged via [`CollectionRoutingMap::try_combine`].
     ///
-    /// Returns `None` if the fetch fails or returns invalid ranges.
+    /// Returns a routing map for the collection. If the initial fetch fails or
+    /// returns invalid ranges, an empty routing map is cached and returned.
     async fn try_lookup<F, Fut>(
         &self,
         collection_rid: &str,
@@ -173,6 +174,10 @@ impl PartitionKeyRangeCache {
                 .get_or_refresh_with(
                     rid.clone(),
                     |existing| {
+                        // If there's no existing entry, we must fetch to populate the cache.
+                        if existing.is_none() {
+                            return true;
+                        }
                         // Only refresh if the cached value hasn't been updated
                         // by another concurrent request since we last saw it.
                         existing.map(|m| &m.change_feed_next_if_none_match)
@@ -241,6 +246,17 @@ impl PartitionKeyRangeCache {
             }
 
             all_ranges.extend(result.ranges);
+        }
+
+        // If we exhausted all iterations without a 304/not_modified, warn.
+        // This likely means the service is returning an unusually large number
+        // of change-feed pages and the routing map may be incomplete.
+        if !all_ranges.is_empty() && continuation.is_some() {
+            tracing::warn!(
+                "Partition key range change-feed loop reached MAX_FETCH_ITERATIONS ({}) \
+                 without receiving not_modified; routing map may be incomplete",
+                MAX_FETCH_ITERATIONS
+            );
         }
 
         // Pair each range with None for ServiceIdentity (will be populated by
