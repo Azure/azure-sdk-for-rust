@@ -168,7 +168,8 @@ read_many(container, input, read_many_options, operation_options)
   ├─ 7. Execute all work units concurrently
   │     ├─ Concurrency: max_concurrency option (default min(num_ranges, 32))
   │     ├─ Paginate queries until continuation exhausted
-  │     └─ On error (except 404): cancel remaining, propagate
+  │     ├─ On 410 response: enter retry policy (see below)
+  │     └─ On non-retryable error (except 404): cancel remaining, propagate
   │
   └─ 8. Aggregate: concatenate items, sum RU, merge diagnostics
   │     └─ Single OperationDiagnostics per response (not per sub-op)
@@ -303,8 +304,8 @@ Threshold: **1 item → point read, 2+ items → query**. At 2 items, a query co
 
 Work units execute concurrently via async tasks (runtime-agnostic — no direct Tokio
 dependency). Default concurrency: `min(num_ranges, 32)`, configurable via
-`ReadManyOptions::max_concurrency`. On first error (excluding point read 404),
-remaining tasks are cancelled and the error propagates.
+`ReadManyOptions::max_concurrency`. On first non-retryable error (excluding point read
+404 and 410 retries), remaining tasks are cancelled and the error propagates.
 
 ### Error Handling
 
@@ -322,15 +323,45 @@ remaining tasks are cancelled and the error propagates.
 | Throttling (429) | Handled by existing retry policy |
 | Other transient failure | Propagate error, cancel remaining tasks |
 
+### 410 Retry Policy
+
+A 410 (Gone) response from any sub-operation triggers a retry flow based on its
+sub-status code. Only the affected work units are retried — successfully completed
+work units are not re-executed.
+
+```text
+work unit returns 410
+  │
+  ├─ Sub-status 1002 (partition split)
+  │     ├─ The physical partition was split into two or more child ranges.
+  │     ├─ Refresh PK ranges: GET /dbs/{db}/colls/{coll}/pkranges
+  │     ├─ Re-compute EPK for each item/PK in the failed work unit
+  │     ├─ Re-group into the new child range(s)
+  │     ├─ Build new work unit(s) for each child range
+  │     └─ Retry only those new work units
+  │
+  ├─ Sub-status 1007 (partition merge)
+  │     ├─ Two or more physical partitions were merged into one.
+  │     ├─ Refresh PK ranges
+  │     ├─ Re-group items from the failed work unit into the merged range
+  │     ├─ If other in-flight work units targeted ranges that were also
+  │     │   merged, cancel them and merge their items into the new group
+  │     └─ Retry the consolidated work unit
+  │
+  └─ Sub-status 1000 (stale collection / name cache)
+        ├─ The collection was recreated or metadata is stale.
+        ├─ Invalidate all cached metadata (container RID, PK definition,
+        │   PK ranges)
+        └─ Retry the entire ReadMany operation from step 2
+```
+
+Retry limit: bounded by the driver's existing retry policy (default 3 attempts per
+sub-operation). If the retry budget is exhausted, propagate the 410 as an error.
+
 ### Additional Behaviors
 
 - **Pagination**: Each query chunk may return continuation tokens — loop until exhausted.
 - **Chunking**: `MAX_ITEMS_PER_QUERY = 1_000` (matches Python/Go SDKs).
-- **Stale resource retry**: Wraps the entire operation. On 410 sub-status 1002
-  (partition split) or 1007 (partition merge), refresh PK ranges, re-group only
-  the affected items into the new range(s), and retry those work units. On 410
-  sub-status 1000 (stale collection), invalidate all cached metadata and retry
-  the entire operation.
 - **Diagnostics aggregation**: A single `OperationDiagnostics` per `ReadManyResponse`
   — not one per sub-operation. Merge RU, latency, retries, and region contacts from
   all sub-operations into this single value. 1:1 cardinality between request and
