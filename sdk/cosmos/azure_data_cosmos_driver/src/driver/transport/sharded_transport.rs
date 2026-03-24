@@ -10,7 +10,7 @@ use std::{
         atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc, Mutex,
     },
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use arc_swap::ArcSwap;
@@ -19,6 +19,9 @@ use azure_core::{
     error::ErrorKind,
     http::{AsyncRawResponse, HttpClient, Request},
 };
+#[cfg(any(feature = "tokio", test))]
+use std::time::Duration;
+#[cfg(any(feature = "tokio", test))]
 use tracing::debug;
 use tracing::trace;
 use url::Url;
@@ -390,7 +393,10 @@ impl EndpointShardPool {
             client,
         ))
     }
+}
 
+#[cfg(any(feature = "tokio", test))]
+impl EndpointShardPool {
     fn run_health_sweep(&self) -> azure_core::Result<()> {
         let now = Instant::now();
         let threshold = self.connection_pool.http2_consecutive_failure_threshold();
@@ -581,16 +587,6 @@ impl ClientShard {
         }
     }
 
-    /// Converts a biased nanos offset to an `Instant` relative to this shard's creation time.
-    fn nanos_to_instant(&self, biased_nanos: u64) -> Instant {
-        if biased_nanos >= TIMESTAMP_BIAS_NANOS {
-            self.creation_time + Duration::from_nanos(biased_nanos - TIMESTAMP_BIAS_NANOS)
-        } else {
-            // Time before creation_time: subtract the deficit.
-            self.creation_time - Duration::from_nanos(TIMESTAMP_BIAS_NANOS - biased_nanos)
-        }
-    }
-
     /// Converts an `Instant` to a biased nanos offset from this shard's creation time.
     fn instant_to_nanos(&self, instant: Instant) -> u64 {
         if let Some(d) = instant.checked_duration_since(self.creation_time) {
@@ -673,45 +669,12 @@ impl Drop for InflightGuard<'_> {
 }
 
 impl ClientShard {
-    fn snapshot(&self) -> ClientShardHealthSnapshot {
-        let last_success_nanos = self.last_success_at_nanos.load(Ordering::Relaxed);
-        ClientShardHealthSnapshot {
-            id: self.id,
-            inflight: self.inflight(),
-            last_request_at: self
-                .nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed)),
-            last_success_at: if last_success_nanos == TIMESTAMP_NONE {
-                None
-            } else {
-                Some(self.nanos_to_instant(last_success_nanos))
-            },
-            consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
-            total_requests: self.total_requests.load(Ordering::Relaxed),
-            total_failures: self.total_failures.load(Ordering::Relaxed),
-            marked_for_eviction: self.is_marked_for_eviction(),
-        }
-    }
-
-    fn mark_for_eviction(&self) {
-        self.marked_for_eviction.store(true, Ordering::Relaxed);
-    }
-
     fn is_marked_for_eviction(&self) -> bool {
         self.marked_for_eviction.load(Ordering::Relaxed)
     }
 
     fn is_selectable(&self, excluded_shard_id: Option<u64>) -> bool {
         excluded_shard_id != Some(self.id) && !self.is_marked_for_eviction()
-    }
-
-    fn is_idle_for(&self, now: Instant, idle_timeout: Duration) -> bool {
-        if self.inflight() != 0 {
-            return false;
-        }
-
-        let last_request_at =
-            self.nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed));
-        now.duration_since(last_request_at) >= idle_timeout
     }
 
     fn transport_diagnostics(&self) -> TransportShardDiagnostics {
@@ -768,6 +731,53 @@ impl ClientShard {
     }
 }
 
+#[cfg(any(feature = "tokio", test))]
+impl ClientShard {
+    /// Converts a biased nanos offset to an `Instant` relative to this shard's creation time.
+    fn nanos_to_instant(&self, biased_nanos: u64) -> Instant {
+        if biased_nanos >= TIMESTAMP_BIAS_NANOS {
+            self.creation_time + Duration::from_nanos(biased_nanos - TIMESTAMP_BIAS_NANOS)
+        } else {
+            // Time before creation_time: subtract the deficit.
+            self.creation_time - Duration::from_nanos(TIMESTAMP_BIAS_NANOS - biased_nanos)
+        }
+    }
+
+    fn snapshot(&self) -> ClientShardHealthSnapshot {
+        let last_success_nanos = self.last_success_at_nanos.load(Ordering::Relaxed);
+        ClientShardHealthSnapshot {
+            id: self.id,
+            inflight: self.inflight(),
+            last_request_at: self
+                .nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed)),
+            last_success_at: if last_success_nanos == TIMESTAMP_NONE {
+                None
+            } else {
+                Some(self.nanos_to_instant(last_success_nanos))
+            },
+            consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
+            total_requests: self.total_requests.load(Ordering::Relaxed),
+            total_failures: self.total_failures.load(Ordering::Relaxed),
+            marked_for_eviction: self.is_marked_for_eviction(),
+        }
+    }
+
+    fn mark_for_eviction(&self) {
+        self.marked_for_eviction.store(true, Ordering::Relaxed);
+    }
+
+    fn is_idle_for(&self, now: Instant, idle_timeout: Duration) -> bool {
+        if self.inflight() != 0 {
+            return false;
+        }
+
+        let last_request_at =
+            self.nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed));
+        now.duration_since(last_request_at) >= idle_timeout
+    }
+}
+
+#[cfg(any(feature = "tokio", test))]
 #[derive(Clone, Copy, Debug)]
 struct ClientShardHealthSnapshot {
     id: u64,
@@ -780,6 +790,7 @@ struct ClientShardHealthSnapshot {
     marked_for_eviction: bool,
 }
 
+#[cfg(any(feature = "tokio", test))]
 impl ClientShardHealthSnapshot {
     fn has_recent_success(self, now: Instant, grace_period: Duration) -> bool {
         self.last_success_at
@@ -857,6 +868,7 @@ fn active_shard_count(
     needed.max(min_connections).min(selectable_count).max(1)
 }
 
+#[cfg(any(feature = "tokio", test))]
 fn pick_probe_candidate(
     snapshots: &[ClientShardHealthSnapshot],
     threshold: u32,
