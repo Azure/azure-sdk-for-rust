@@ -6,19 +6,11 @@ use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use async_trait::async_trait;
 use azure_core::{async_runtime::get_async_runtime, http::RawResponse};
-
-// Helper trait to conditionally require Send on non-WASM targets
-#[cfg(not(target_arch = "wasm32"))]
-pub trait ConditionalSend: Send {}
-#[cfg(not(target_arch = "wasm32"))]
-impl<T: Send> ConditionalSend for T {}
-
-#[cfg(target_arch = "wasm32")]
-pub trait ConditionalSend {}
-#[cfg(target_arch = "wasm32")]
-impl<T> ConditionalSend for T {}
+use std::sync::Arc;
+use tracing::debug;
 
 /// Trait defining the interface for retry handlers in Cosmos DB operations
 ///
@@ -26,8 +18,7 @@ impl<T> ConditionalSend for T {}
 /// with automatic retry capabilities. Implementations can inject custom retry policies
 /// and handle both transient failures (errors) and non-success HTTP responses.
 #[allow(dead_code)]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 pub trait RetryHandler: Send + Sync {
     /// Sends an HTTP request with automatic retry logic
     ///
@@ -57,7 +48,7 @@ pub trait RetryHandler: Send + Sync {
     ) -> azure_core::Result<RawResponse>
     where
         Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend;
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + Send;
 }
 
 /// Concrete retry handler implementation with exponential back off.
@@ -65,8 +56,9 @@ pub trait RetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler {
-    global_endpoint_manager: GlobalEndpointManager,
+pub(crate) struct BackOffRetryHandler {
+    global_endpoint_manager: Arc<GlobalEndpointManager>,
+    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl BackOffRetryHandler {
@@ -88,19 +80,26 @@ impl BackOffRetryHandler {
                 self.global_endpoint_manager.clone(),
             ))
         } else {
-            RetryPolicy::Client(ClientRetryPolicy::new(self.global_endpoint_manager.clone()))
+            RetryPolicy::Client(Box::from(ClientRetryPolicy::new(
+                self.global_endpoint_manager.clone(),
+                self.global_partition_endpoint_manager.clone(),
+                request.excluded_regions.clone(),
+            )))
         }
     }
 
-    pub fn new(global_endpoint_manager: GlobalEndpointManager) -> Self {
+    pub fn new(
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
+        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    ) -> Self {
         Self {
             global_endpoint_manager,
+            global_partition_endpoint_manager,
         }
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl RetryHandler for BackOffRetryHandler {
     /// Sends an HTTP request with automatic retry and exponential back off
     ///
@@ -117,13 +116,24 @@ impl RetryHandler for BackOffRetryHandler {
     ) -> azure_core::Result<RawResponse>
     where
         Sender: Fn(&mut CosmosRequest) -> Fut + Send + Sync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + Send,
     {
         // Get the appropriate retry policy based on the request
         let mut retry_policy = self.retry_policy_for_request(request);
 
         loop {
             retry_policy.before_send_request(request).await;
+
+            // Log the endpoint URL being used for this request
+            debug!(
+                target: "azure_data_cosmos::retry_handler",
+                "Sending request - endpoint: {:?}, region: {:?}, operation: {:?}, resource: {:?}",
+                request.request_context.location_endpoint_to_route,
+                request.request_context.region_name,
+                request.operation_type,
+                request.resource_type
+            );
+
             // Invoke the provided sender callback instead of calling inner_send_async directly
             let result = sender(request).await;
             let retry_result = retry_policy.should_retry(&result).await;

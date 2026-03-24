@@ -1,8 +1,10 @@
+use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     models::{ContainerProperties, ThroughputProperties},
     CreateContainerOptions,
 };
+use std::time::Duration;
 
 use super::MockItem;
 
@@ -34,21 +36,33 @@ pub async fn create_container_with_items(
     items: Vec<MockItem>,
     throughput: Option<ThroughputProperties>,
 ) -> azure_core::Result<ContainerClient> {
-    let properties = ContainerProperties {
-        id: "TestContainer".into(),
-        partition_key: "/partitionKey".into(),
-        ..Default::default()
-    };
-    db.create_container(
-        properties,
-        Some(CreateContainerOptions {
-            throughput,
-            ..Default::default()
-        }),
-    )
-    .await?;
+    let properties = ContainerProperties::new("TestContainer", "/partitionKey".into());
 
-    let container_client = db.container_client("TestContainer");
+    // Retry on 429 errors
+    loop {
+        match db
+            .create_container(
+                properties.clone(),
+                throughput.clone().map(|throughput| {
+                    CreateContainerOptions::default().with_throughput(throughput)
+                }),
+            )
+            .await
+        {
+            Ok(_) => break,
+            Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
+                println!("Create container got 429 (Too Many Requests). Retrying...");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+            Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+                // Container already exists, continue
+                break;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+
+    let container_client = db.container_client("TestContainer").await;
 
     for item in items {
         container_client

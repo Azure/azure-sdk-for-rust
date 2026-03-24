@@ -13,7 +13,7 @@ use azure_core::{
 use azure_core_amqp::{
     error::Result, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpSessionApis as _,
 };
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
@@ -416,8 +416,7 @@ mod tests {
         }
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(
             &self,

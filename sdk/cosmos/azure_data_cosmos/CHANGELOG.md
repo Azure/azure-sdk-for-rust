@@ -1,19 +1,54 @@
 # Release History
 
-## 0.30.0 (Unreleased)
+## 0.32.0 (Unreleased)
+
+### Breaking Changes
+
+- Added `tokio` feature to `default` features.
+- Changed `default_ttl` and `analytical_storage_ttl` fields on `ContainerProperties` from `Option<Duration>` to `TimeToLive`, a new enum with variants `Forever`, `NoDefault`, and `Seconds(u32)`, to correctly handle the `-1` wire value (TTL enabled with no default expiration).
+
+## 0.31.0 (2026-02-25)
+
+### Features Added
+
+- Added `with_excluded_regions` to `ItemOptions` for additional regional routing options. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
+- Added `effective_preferred_regions` to the client, ensuring multi-region accounts use all regions for cross-regional availability without supplying regional preferences to their client. ([#3602](https://github.com/Azure/azure-sdk-for-rust/pull/3602))
+- Added basic multi-region writes support. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482) and [#3495](https://github.com/Azure/azure-sdk-for-rust/pull/3495))
+- Added new `CosmosResponse` that wraps `azure_core::Response` for all operations except queries. ([#3622](https://github.com/Azure/azure-sdk-for-rust/pull/3622))
+- Added transactional batch support for executing multiple operations atomically within the same partition key. ([#3664](https://github.com/Azure/azure-sdk-for-rust/pull/3664))
+- Added fault injection support for testing cosmosdb clients in disaster scenarios. Fault injection is behind the feature flag `fault_injection`. ([#3599](https://github.com/Azure/azure-sdk-for-rust/pull/3599))
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Removed `ContainerClient::patch_item`, `PatchDocument`, and `PatchOperation` temporarily to redesign the PATCH API for safe idempotency. Use a Read/Modify/Replace model with ETag-based optimistic concurrency instead.
+- Changed return type of query methods from `FeedPager<T>` (an alias for `ItemIterator<FeedPage<T>, String>`) to `FeedItemIterator<T>`, which implements `Stream<Item = Result<T>>` and provides `into_pages()` for page-level access. ([#3515](https://github.com/Azure/azure-sdk-for-rust/pull/3515))
+- Introduced `CosmosClientBuilder` for constructing `CosmosClient` instances, replacing constructor-based API. Removed `consistency_level`, `priority`, `throughput_bucket`, `excluded_regions`, `SessionRetryOptions`, triggers, and `IndexingDirective` from options. Simplified `CosmosAccountReference` to take `CosmosAccountEndpoint` directly. Made option struct fields private with getters and `with_*` setters. ([#3744](https://github.com/Azure/azure-sdk-for-rust/pull/3744))
+- Removed `with_application_preferred_regions` API. Use `with_application_region` to set the Azure region the app is executing in (or the closest region to the actual location you're running in); the SDK generates preferred regions by geographic proximity. ([#3796](https://github.com/Azure/azure-sdk-for-rust/pull/3796))
+- Made `CosmosClientBuilder::build()` and `DatabaseClient::container_client()` async to prepare for future cache population (account, collection, partition key range caches).
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+### Other Changes
+
+- Added default HTTP client timeouts and added retries for connection errors. ([#3752](https://github.com/Azure/azure-sdk-for-rust/pull/3752))
+- Retry policies now retry reads on all non-whitelisted status codes and retry service unavailable errors across all applicable endpoints. ([#3728](https://github.com/Azure/azure-sdk-for-rust/pull/3728))
+
+## 0.30.0 (2026-01-21)
 
 ### Features Added
 
 - Added GlobalEndpointManager, LocationCache to support Cross Regional Retry.
 - Added `continuation_token` to `PagerOptions` for methods that return a `Pager`.
+- Added `throughput_bucket`, `priority`, and `custom_headers` to different request options. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482))
+- Added several new options to `QueryOptions`. ([#3482](https://github.com/Azure/azure-sdk-for-rust/pull/3482))
 
 ### Breaking Changes
 
 - Removed `Pager::with_continuation_token()` for methods that return a `Pager`.
 
-### Bugs Fixed
-
 ### Other Changes
+
+- Added `ALLOWED_COSMOS_HEADERS` for use in default logging policy. ([#3554](https://github.com/Azure/azure-sdk-for-rust/pull/3554))
 
 ## 0.29.0 (2025-11-10)
 

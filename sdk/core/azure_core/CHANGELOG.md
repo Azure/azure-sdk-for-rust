@@ -1,9 +1,55 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.34.0 (Unreleased)
 
 ### Features Added
 
+### Breaking Changes
+
+- Added `tokio` feature to `default` features.
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.33.0 (2026-03-05)
+
+### Features Added
+
+- Added `ErrorKind::Connection` for connection errors.
+- Added `QueryBuilder`, `DEFAULT_ALLOWED_HEADER_NAMES`, `DEFAULT_ALLOWED_QUERY_PARAMETERS`, and `REDACTED_PATTERN` to `azure_core::http`.
+- Added `request_header!`, `request_option!`, and `request_query!` macros.
+- Added `SecretBytes` to `azure_core::credentials` for securely passing byte secrets without printing them in `Debug` or `Display` output.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+## 0.32.0 (2026-02-10)
+
+### Features Added
+
+- Added `PagerContinuation` for `Pager` continuation.
+- Added `PollerContinuation` for `Poller` continuation.
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Changed paging APIs to use `PagerContinuation` and non-generic `PagerState`/`PagerResult` types.
+- Changed polling APIs to use `PollerContinuation` and non-generic `PollerState`/`PollerResult` types.
+- Renamed `PagerOptions::continuation_token` to `continuation`.
+- Renamed `Pager::continuation_token` to `continuation`.
+- Renamed `Pager::into_continuation_token` to `into_continuation`.
+- Renamed `PageIterator::continuation_token` to `continuation`.
+- Renamed `PageIterator::into_continuation_token` to `into_continuation`.
+- `Pager` callbacks must now return `Result`.
+
+## 0.31.0 (2026-01-16)
+
+### Features Added
+
+- Added `Body::take()`.
 - Added `continuation_token` to `PagerOptions`.
 - Added extensible request authorization and authentication challenge handling to `BearerTokenAuthorizationPolicy`.
   - `OnRequest`, `OnChallenge`, and `Authorizer` traits define callbacks for these features.
@@ -17,14 +63,15 @@
 - Added type parameter `C` to `Pager` declaration, defaulting to `Url` so it can be elided in most existing declarations.
 - Changed `Pager::from_callback` to take a `PagerOptions` as the second parameter rather than a `Context` parameter.
 - Changed `Pager::from_callback` to `Pager::new` which now requires the caller to return a `Pin<Box<dyn Future>>`.
+- Changed `Poller::from_callback` to `Poller::new` which now requires the caller to return a `Pin<Box<dyn Future>>`.
+- Changed `PollerResult::next` field to `PollerResult::continuation_token`.
+- Changed `PollerState` generic parameter from `N` to `C`.
 - Moved `BearerTokenAuthorizationPolicy` into `azure_core::http::policies::auth`.
 - Removed `ItemIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
 - Removed `PageIterator::with_continuation_token()`. Pass a continuation token to `PagerOptions::continuation_token` instead.
 - Removed `Pager::from_stream`.
-
-### Bugs Fixed
-
-### Other Changes
+- Removed `Poller::from_stream`.
+- Renamed `BoxedFuture` to `PagerResultFuture` in `pager` module.
 
 ## 0.30.1 (2025-11-09)
 

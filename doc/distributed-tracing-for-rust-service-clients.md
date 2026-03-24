@@ -4,9 +4,9 @@
 
 There are three core constructs which are used in distributed tracing:
 
-* Tracer Providers
-* Tracers
-* Spans
+- Tracer Providers
+- Tracers
+- Spans
 
 ### Tracer Provider
 
@@ -16,10 +16,10 @@ The job of a "Tracer Provider" is to be a factory for tracers. It is the "gatewa
 
 A "tracer" is a factory for "Spans". A `Tracer` is configured with three parameters:
 
-* `namespace` - the "namespace" for the service client. The namespace for all azure services are listed [on this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
-* `package name` - this is typically the Cargo package name for the service client (`env!("CARGO_PKG_NAME")`)
-* `package version` - this is typically the version of the Cargo package for the service client (`env!("CARGO_PKG_VERSION")`)
-* `Schema Url` - this is typically the OpenTelemetry schema version - if not provided, a default schema version is used.
+- `namespace` - the "namespace" for the service client. The namespace for all azure services are listed [on this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
+- `package name` - this is typically the Cargo package name for the service client (`env!("CARGO_PKG_NAME")`)
+- `package version` - this is typically the version of the Cargo package for the service client (`env!("CARGO_PKG_VERSION")`)
+- `Schema Url` - this is typically the OpenTelemetry schema version - if not provided, a default schema version is used.
 
 #### Note
 
@@ -27,39 +27,39 @@ Custom Schema Url support is not currently implemented.
 
 Tracers have two mechanisms for creating spans:
 
-* Create a new child span from a parent span.
-* Create a new child span from the "current" span (where the "current" span is tracer implementation specific).
+- Create a new child span from a parent span.
+- Create a new child span from the "current" span (where the "current" span is tracer implementation specific).
 
 ### Span
 
 A "Span" is a unit of tracing. Each span has the following attributes:
 
-* "name" - the "name" of the span. For public APIs, this is typically the name of the public API, for HTTP request, it is typically the HTTP verb.
-* "kind" - HTTP spans come in several flavours:
-  * Internal - the "default" for span kinds.
-  * Client - represents a client application - HTTP request spans are "Client" spans.
-  * Server - represents a server - Azure SDK clients will never use these.
-  * Producer - represents a messaging (Event Hubs and Service Bus) message producer.
-  * Consumer - represents a message consumer.
-* "status" - A span status is either "Unset" or "Error" - OpenTelemetry defines a status of "Ok" in addition to these, but it is reserved for client applications.
-* "attributes" - the attributes on a span describe the span. Attributes include:
-  * "az.namespace" - the namespace of a request.
-  * "url.full" - the full (sanitized) URL for an HTTP request
-  * "server.address" - the DNS address of the HTTP server
-  * "http.request.method" - the HTTP method used for the request ("GET", "PUT" etc).
+- "name" - the "name" of the span. For public APIs, this is typically the name of the public API, for HTTP request, it is typically the HTTP verb.
+- "kind" - HTTP spans come in several flavours:
+  - Internal - the "default" for span kinds.
+  - Client - represents a client application - HTTP request spans are "Client" spans.
+  - Server - represents a server - Azure SDK clients will never use these.
+  - Producer - represents a messaging (Event Hubs and Service Bus) message producer.
+  - Consumer - represents a message consumer.
+- "status" - A span status is either "Unset" or "Error" - OpenTelemetry defines a status of "Ok" in addition to these, but it is reserved for client applications.
+- "attributes" - the attributes on a span describe the span. Attributes include:
+  - "az.namespace" - the namespace of a request.
+  - "url.full" - the full (sanitized) URL for an HTTP request
+  - "server.address" - the DNS address of the HTTP server
+  - "http.request.method" - the HTTP method used for the request ("GET", "PUT" etc).
 
 ## Azure Distributed Tracing requirements
 
 Azure's distributed tracing requirements are laid out in a number of documents:
 
-* [Azure Distributed Tracing Conventions](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md)
-* [Azure Distributed Tracing Implementation](https://github.com/Azure/azure-sdk/blob/main/docs/general/implementation.md#distributed-tracing)
-* [Open Telemetry HTTP Span Conventions](https://opentelemetry.io/docs/specs/semconv/http/http-spans/)
+- [Azure Distributed Tracing Conventions](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md)
+- [Azure Distributed Tracing Implementation](https://github.com/Azure/azure-sdk/blob/main/docs/general/implementation.md#distributed-tracing)
+- [Open Telemetry HTTP Span Conventions](https://opentelemetry.io/docs/specs/semconv/http/http-spans/)
 
 Looking at each document, the following two requirements for distributed tracing clients fall out:
 
-1) Each public API (service client function) needs to have a span with the `az.namespace` attribute added - the az.attribute (as defined above). [See this for more information](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md#public-api-calls).
-1) Each HTTP request needs to have a span with the same `az.namespace` attribute and a number of other attributes derived from the HTTP operation. [See this for more information](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md#http-client-spans). The HTTP request span should be a child of a public API span if possible.
+1. Each public API (service client function) needs to have a span with the `az.namespace` attribute added - the az.attribute (as defined above). [See this for more information](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md#public-api-calls).
+2. Each HTTP request needs to have a span with the same `az.namespace` attribute and a number of other attributes derived from the HTTP operation. [See this for more information](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md#http-client-spans). The HTTP request span should be a child of a public API span if possible.
 
 Implementations are allowed to skip adding the `az.namespace` attribute but it is strongly discouraged.
 
@@ -75,9 +75,9 @@ In addition, [certain service clients](https://github.com/Azure/azure-sdk/blob/m
 
 Given this architecture, it implies that each service client needs the following:
 
-1) A struct field named `tracer` which is an `Arc<dyn Tracing::Tracer>` which holds the tracing implementation specific tracer.
-2) Code in the service client's `new` function which instantiates a `tracer` from the `TracerProvider` configured in the service client options. The primary function of this tracer is to provide the value for the `az.namespace` attribute for both the public API spans and the HTTP request spans.
-3) Code in each service client public API which instantiates a public API span.
+1. A struct field named `tracer` which is an `Arc<dyn Tracing::Tracer>` which holds the tracing implementation specific tracer.
+2. Code in the service client's `new` function which instantiates a `tracer` from the `TracerProvider` configured in the service client options. The primary function of this tracer is to provide the value for the `az.namespace` attribute for both the public API spans and the HTTP request spans.
+3. Code in each service client public API which instantiates a public API span.
 
 For the Rust implementation, if a tracer provider is configured, ALL http operations will have HTTP request spans created regardless of whether the public API spans are created.
 
@@ -95,20 +95,20 @@ When an `azure_core::http::Pipeline` is constructed, if the client options inclu
 
 ### PublicApiInstrumentationPolicy
 
-1) If the pipeline context has a `Arc<dyn Span>` attached to the context, then the public API policy will simply call the next policy in the pipeline, because a span in the pipeline indicates that this API call is  a nested API call.
-1) If the context does not have a `PublicApiInstrumentationInformation` attached to it, the policy  will call the next policy in the pipeline, otherwise the policy will:
-   1) Look for an `Arc<dyn Tracer>` attached to the context. If one is found, it uses that tracer, otherwise it uses a tracer attached to the policy.
-   1) Create a span with a name matching the `name` in the [`PublicApiInstrumentationInformation`] structure and attributes from the attributes attached to the `PublicApiInstrumentationInformation`. It will also add the `az.namespace` attribute to the span if the tracer has a namespace associated with it (this will typically only be the case for tracers attached to the context).
-   1) Once the span has been created, the policy will attach the newly created span to the context so other policies in the pipeline (specifically the `RequestInstrumentationPolicy` can use this span).
-1) Once the span has been created, the policy calls the next policy in the pipeline.
-1) After the remaining policies in the pipeline have run, the policy inspects the `Result` of the pipeline execution and sets the `error.type` attribute and the span status based on the `Result` of the operation.
+1. If the pipeline context has a `Arc<dyn Span>` attached to the context, then the public API policy will simply call the next policy in the pipeline, because a span in the pipeline indicates that this API call is  a nested API call.
+2. If the context does not have a `PublicApiInstrumentationInformation` attached to it, the policy  will call the next policy in the pipeline, otherwise the policy will:
+   1. Look for an `Arc<dyn Tracer>` attached to the context. If one is found, it uses that tracer, otherwise it uses a tracer attached to the policy.
+   2. Create a span with a name matching the `name` in the [`PublicApiInstrumentationInformation`] structure and attributes from the attributes attached to the `PublicApiInstrumentationInformation`. It will also add the `az.namespace` attribute to the span if the tracer has a namespace associated with it (this will typically only be the case for tracers attached to the context).
+   3. Once the span has been created, the policy will attach the newly created span to the context so other policies in the pipeline (specifically the `RequestInstrumentationPolicy` can use this span).
+3. Once the span has been created, the policy calls the next policy in the pipeline.
+4. After the remaining policies in the pipeline have run, the policy inspects the `Result` of the pipeline execution and sets the `error.type` attribute and the span status based on the `Result` of the operation.
 
 ### RequestInstrumentationPolicy
 
 The `RequestInstrumentationPolicy` will do the following:
 
-1) If the `Context` parameter for the  `RequestInstrumentationPolicy` contains a `Tracer` value, then the `RequestInstrumentationPolicy` will use that `Tracer` value to create the span, otherwise it will use the pre-configured tracer from when the policy was created.
-2) If the `Context` parameter for the `RequestInstrumentationPolicy` contains a `Span` value, then the policy will use that span as the parent span for the newly created HTTP request span, otherwise it will create a new span.
+1. If the `Context` parameter for the  `RequestInstrumentationPolicy` contains a `Tracer` value, then the `RequestInstrumentationPolicy` will use that `Tracer` value to create the span, otherwise it will use the pre-configured tracer from when the policy was created.
+2. If the `Context` parameter for the `RequestInstrumentationPolicy` contains a `Span` value, then the policy will use that span as the parent span for the newly created HTTP request span, otherwise it will create a new span.
 
 This design means that even if a service public API is not fully instrumented with a `Tracer` or a `Span`, it will still generate some HTTP request traces.
 
@@ -122,10 +122,10 @@ NOTE: These attributes are only for client library development and are not inten
 
 Those macros are:
 
-* `#[tracing::client]` - applied to each service client `struct` declaration.
-* `#[tracing::new]` - applied to each service client "constructor" function.
-* `#[tracing::function]` - applied to each service client "public API".
-* `#[tracing::subclient]` - applied to a subclient "constructor" function.
+- `#[tracing::client]` - applied to each service client `struct` declaration.
+- `#[tracing::new]` - applied to each service client "constructor" function.
+- `#[tracing::function]` - applied to each service client "public API".
+- `#[tracing::subclient]` - applied to a subclient "constructor" function.
 
 ### `#[tracing::client]`
 
@@ -349,10 +349,10 @@ value = <any Rust expression>
 
 This means that the following are valid parameters for `tracing::function`:
 
-* `#[tracing::function("MyServiceClient.MyApi")]` - specifies a public API name.
-* `#[tracing::function("Name", attributes = (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
-* `#[tracing::function("Name", attributes = (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
-* `#[tracing::function("Name", attributes = ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
+- `#[tracing::function("MyServiceClient.MyApi")]` - specifies a public API name.
+- `#[tracing::function("Name", attributes = (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
+- `#[tracing::function("Name", attributes = (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
+- `#[tracing::function("Name", attributes = ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
 
 This allows a generator to pass in simple attribute annotations to the public API spans created by the pipeline.
 

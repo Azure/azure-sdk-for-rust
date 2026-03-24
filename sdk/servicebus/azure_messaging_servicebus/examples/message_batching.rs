@@ -218,7 +218,7 @@ async fn batching_with_properties(
     sender: &azure_messaging_servicebus::Sender,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut batch = sender.create_message_batch(None).await?;
-    let batch_id = uuid::Uuid::new_v4().to_string();
+    let batch_id = azure_core::Uuid::new_v4().to_string();
 
     println!("  🏷️  Creating batch with ID: {}", batch_id);
 

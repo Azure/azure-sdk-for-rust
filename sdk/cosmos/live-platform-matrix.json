@@ -1,0 +1,35 @@
+{
+  "displayNames": {},
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      },
+      "windows": {
+        "OSVmImage": "env:WINDOWSVMIMAGE",
+        "Pool": "env:WINDOWSPOOL"
+      },
+      "macos": {
+        "OSVmImage": "env:MACVMIMAGE",
+        "Pool": "env:MACPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "Account Settings": {
+      "Eventual SingleWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual' }"
+      },
+      "Session SingleWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
+      },
+      "Strong SingleWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; }"
+      },
+      "Session MultiWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; testCategory = 'multi_write'; enableMultipleRegions = $true }"
+      }
+    }
+  },
+  "include": []
+}

@@ -3,177 +3,112 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::DatabaseProperties,
-    pipeline::{AuthorizationPolicy, CosmosPipeline},
-    resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
+    cosmos_request::CosmosRequest,
+    models::{CosmosResponse, DatabaseProperties},
+    operation_context::OperationType,
+    pipeline::GatewayPipeline,
+    resource_context::ResourceLink,
+    routing::{
+        global_endpoint_manager::GlobalEndpointManager,
+        global_partition_endpoint_manager::GlobalPartitionEndpointManager,
+    },
+    CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
-use azure_core::{
-    credentials::TokenCredential,
-    http::{response::Response, Url},
-};
+use azure_core::http::{Context, Url};
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-#[cfg(feature = "key_auth")]
-use azure_core::credentials::Secret;
-use azure_core::http::RetryOptions;
+pub use super::cosmos_client_builder::CosmosClientBuilder;
 
 /// Client for Azure Cosmos DB.
+///
+/// Use [`CosmosClientBuilder`] to create instances of this client.
+///
+/// # Examples
+///
+/// Using Entra ID authentication:
+///
+/// ```rust,no_run
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+/// use std::sync::Arc;
+///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+/// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+///     .parse()
+///     .unwrap();
+/// let account = CosmosAccountReference::with_credential(endpoint, credential);
+/// let client = CosmosClient::builder()
+///     .build(account)
+///     .await?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// Using key authentication (requires `key_auth` feature):
+///
+/// ```rust,no_run,ignore
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+/// use azure_core::credentials::Secret;
+///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+///     .parse()
+///     .unwrap();
+/// let account = CosmosAccountReference::with_master_key(
+///     endpoint,
+///     Secret::from("my_account_key"),
+/// );
+/// let client = CosmosClient::builder()
+///     .build(account)
+///     .await?;
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    databases_link: ResourceLink,
-    pipeline: Arc<CosmosPipeline>,
+    pub(crate) databases_link: ResourceLink,
+    pub(crate) pipeline: Arc<GatewayPipeline>,
+    pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
+    pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 impl CosmosClient {
-    /// Creates a new CosmosClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Cosmos DB account, for example `https://myaccount.documents.azure.com/`.
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
+    /// Creates a new [`CosmosClientBuilder`] for constructing a `CosmosClient`.
     ///
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use std::sync::Arc;
-    /// use azure_data_cosmos::CosmosClient;
+    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
     ///
-    /// let credential = azure_identity::DeveloperToolsCredential::new(None).unwrap();
-    /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-    /// ```
-    pub fn new(
-        endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<CosmosClientOptions>,
-    ) -> azure_core::Result<Self> {
-        let options = options.unwrap_or_default();
-        let mut client_options = options.client_options;
-        client_options.retry = RetryOptions::none();
-
-        let pipeline_core = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            client_options,
-            Vec::new(),
-            vec![Arc::new(AuthorizationPolicy::from_token_credential(
-                credential,
-            ))],
-            None,
-        );
-
-        let global_endpoint_manager = GlobalEndpointManager::new(
-            endpoint.parse()?,
-            options.application_preferred_regions,
-            pipeline_core.clone(),
-        );
-
-        let pipeline = Arc::new(CosmosPipeline::new(
-            endpoint.parse()?,
-            pipeline_core,
-            global_endpoint_manager,
-        ));
-
-        Ok(Self {
-            databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline,
-        })
-    }
-
-    /// Creates a new CosmosClient, using key authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Cosmos DB account, for example `https://myaccount.documents.azure.com/`.
-    /// * `key` - The key to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// use azure_data_cosmos::CosmosClient;
-    /// use azure_core::credentials::Secret;
-    ///
-    /// let client = CosmosClient::with_key("https://myaccount.documents.azure.com/", Secret::from("my_key"), None).unwrap();
-    /// ```
-    #[cfg(feature = "key_auth")]
-    pub fn with_key(
-        endpoint: &str,
-        key: Secret,
-        options: Option<CosmosClientOptions>,
-    ) -> azure_core::Result<Self> {
-        let options = options.unwrap_or_default();
-        let mut client_options = options.client_options;
-        client_options.retry = RetryOptions::none();
-
-        let pipeline_core = azure_core::http::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            client_options,
-            Vec::new(),
-            vec![Arc::new(AuthorizationPolicy::from_shared_key(key))],
-            None,
-        );
-
-        let global_endpoint_manager = GlobalEndpointManager::new(
-            endpoint.parse()?,
-            options.application_preferred_regions,
-            pipeline_core.clone(),
-        );
-
-        let pipeline = Arc::new(CosmosPipeline::new(
-            endpoint.parse()?,
-            pipeline_core,
-            global_endpoint_manager.clone(),
-        ));
-
-        Ok(Self {
-            databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline,
-        })
-    }
-
-    /// Creates a new CosmosClient, using a connection string.
-    ///
-    /// # Arguments
-    ///
-    /// * `connection_string` - the connection string to use for the client, e.g. `AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey`
-    /// * `options` - Optional configuration for the client.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// use azure_data_cosmos::CosmosClient;
-    /// use azure_core::credentials::Secret;
-    ///
-    /// let client = CosmosClient::with_connection_string(
-    ///     Secret::from("AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey"),
-    ///     None)
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
+    ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
+    /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+    ///     .parse()
     ///     .unwrap();
+    /// let account = CosmosAccountReference::with_credential(endpoint, credential);
+    /// let client = CosmosClient::builder()
+    ///     .build(account)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
     /// ```
-    #[cfg(feature = "key_auth")]
-    pub fn with_connection_string(
-        connection_string: Secret,
-        options: Option<CosmosClientOptions>,
-    ) -> Result<Self, azure_core::Error> {
-        let connection_str = crate::ConnectionString::try_from(&connection_string)?;
-        let endpoint = connection_str.account_endpoint;
-        let key = connection_str.account_key;
-
-        Self::with_key(endpoint.as_str(), key, options)
+    pub fn builder() -> CosmosClientBuilder {
+        CosmosClientBuilder::new()
     }
-
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     ///
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id)
+        DatabaseClient::new(
+            self.pipeline.clone(),
+            id,
+            self.global_endpoint_manager.clone(),
+            self.global_partition_endpoint_manager.clone(),
+        )
     }
 
     /// Gets the endpoint of the database account this client is connected to.
@@ -208,18 +143,16 @@ impl CosmosClient {
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
-        options: Option<QueryDatabasesOptions<'_>>,
-    ) -> azure_core::Result<FeedPager<DatabaseProperties>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.databases_link);
-
-        self.pipeline.send_query_request(
-            options.method_options.context,
-            query.into(),
-            url,
+        _options: Option<QueryDatabasesOptions>,
+    ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
+        crate::query::executor::QueryExecutor::new(
+            self.pipeline.clone(),
             self.databases_link.clone(),
-            |_| Ok(()),
+            Context::default(),
+            query.into(),
+            azure_core::http::headers::Headers::new(),
         )
+        .into_stream()
     }
 
     /// Creates a new database.
@@ -233,8 +166,8 @@ impl CosmosClient {
     pub async fn create_database(
         &self,
         id: &str,
-        options: Option<CreateDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response<DatabaseProperties>> {
+        options: Option<CreateDatabaseOptions>,
+    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
 
         #[derive(Serialize)]
@@ -244,12 +177,10 @@ impl CosmosClient {
 
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
-                .headers(&options.throughput)
+                .request_headers(&options.throughput)
                 .json(&RequestBody { id })
                 .build()?;
 
-        self.pipeline
-            .send(cosmos_request, options.method_options.context)
-            .await
+        self.pipeline.send(cosmos_request, Context::default()).await
     }
 }

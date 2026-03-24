@@ -5,13 +5,14 @@
 
 mod common;
 
-use azure_core::time::Duration;
+use azure_core::{
+    time::{Duration, OffsetDateTime},
+    Uuid,
+};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_servicebus::{Message, ServiceBusClient};
 use common::{get_queue_name, get_servicebus_namespace};
 use std::error::Error;
-use time::OffsetDateTime;
-use uuid::Uuid;
 
 #[recorded::test(live)]
 async fn test_scheduled_message_send(ctx: TestContext) -> Result<(), Box<dyn Error>> {

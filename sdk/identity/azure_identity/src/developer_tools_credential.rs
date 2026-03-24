@@ -21,6 +21,9 @@ use std::{
 #[derive(Clone, Debug, Default)]
 pub struct DeveloperToolsCredentialOptions {
     /// An implementation of [`Executor`] to run commands asynchronously.
+    ///
+    /// If `None`, one is created using [`crate::process::new_executor`]; alternatively,
+    /// you can supply your own implementation using a different asynchronous runtime.
     pub executor: Option<Arc<dyn Executor>>,
 }
 
@@ -42,7 +45,7 @@ impl DeveloperToolsCredential {
     /// Creates a new instance of `DeveloperToolsCredential`.
     ///
     /// # Arguments
-    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    /// * `options`: Options for configuring the credential. If `None`, the credential uses its default options.
     pub fn new(
         options: Option<DeveloperToolsCredentialOptions>,
     ) -> azure_core::Result<Arc<DeveloperToolsCredential>> {
@@ -225,9 +228,10 @@ mod tests {
         assert_eq!(mock1.call_count(), 1);
         assert_eq!(mock2.call_count(), 1);
         assert_eq!(mock3.call_count(), 1);
-        assert!(error_msg.contains("mock1 failed"));
-        assert!(error_msg.contains("mock2 failed"));
-        assert!(error_msg.contains("mock3 failed"));
+        assert_eq!(
+            "Multiple errors were encountered while attempting to authenticate:\nmock1 failed\nmock2 failed\nmock3 failed",
+            error_msg
+        );
     }
 
     #[tokio::test]
@@ -242,7 +246,14 @@ mod tests {
             .get_token(&["scope"], None)
             .await
             .expect_err("expected error");
-        assert!(err.to_string().contains("something went wrong"));
+        assert_eq!(
+            "Multiple errors were encountered while attempting to authenticate:\n\
+             AzureCliCredential authentication failed. other error error: something went wrong\n\
+             To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azure-cli - other error error: something went wrong - something went wrong\n\
+             AzureDeveloperCliCredential authentication failed. other error error: something went wrong\n\
+             To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#azd - other error error: something went wrong - something went wrong",
+            err.to_string()
+        );
         assert_eq!(
             2,
             executor.call_count(),

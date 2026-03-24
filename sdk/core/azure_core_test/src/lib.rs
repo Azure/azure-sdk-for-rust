@@ -21,7 +21,6 @@ pub use proxy::{matchers::*, sanitizers::*};
 pub use recording::*;
 use std::path::{Path, PathBuf};
 
-#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 const ASSETS_FILE: &str = "assets.json";
 
 /// Context information required by recorded client library tests.
@@ -122,37 +121,26 @@ impl TestContext {
     /// # Panics
     ///
     /// Panics if the [`TestContext::crate_dir()`] is not rooted within a Git repository.
-    pub(crate) fn test_recording_assets_file(
-        &self,
-        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] mode: TestMode,
-    ) -> Option<String> {
-        #[cfg(target_arch = "wasm32")]
-        {
-            None
+    pub(crate) fn test_recording_assets_file(&self, mode: TestMode) -> Option<String> {
+        if mode == TestMode::Live {
+            return None;
         }
-
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            if mode == TestMode::Live {
-                return None;
+        let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
+            Ok(path) => path,
+            Err(_) if mode == TestMode::Record => {
+                return Path::new("sdk")
+                    .join(self.service_dir)
+                    .join(ASSETS_FILE)
+                    .as_path()
+                    .to_str()
+                    .map(String::from);
             }
-            let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
-                Ok(path) => path,
-                Err(_) if mode == TestMode::Record => {
-                    return Path::new("sdk")
-                        .join(self.service_dir)
-                        .join(ASSETS_FILE)
-                        .as_path()
-                        .to_str()
-                        .map(String::from);
-                }
-                Err(err) => panic!("{err}"),
-            };
-            path.strip_prefix(self.repo_dir)
-                .expect("not rooted within repo")
-                .to_str()
-                .map(String::from)
-        }
+            Err(err) => panic!("{err}"),
+        };
+        path.strip_prefix(self.repo_dir)
+            .expect("not rooted within repo")
+            .to_str()
+            .map(String::from)
     }
 
     /// Gets the recording file of the current test.

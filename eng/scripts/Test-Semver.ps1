@@ -7,6 +7,7 @@ param(
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
+  [string]$Toolchain = 'stable',
   [switch]$IgnoreCgManifestVersion
 )
 
@@ -48,23 +49,26 @@ if (!$IgnoreCgManifestVersion) {
   $versionParams = Get-VersionParamsFromCgManifest cargo-semver-checks
 }
 
-LogGroupStart "cargo install cargo-semver-checks --locked $($versionParams -join ' ')"
-Write-Host "cargo install cargo-semver-checks --locked $($versionParams -join ' ')"
-cargo install cargo-semver-checks --locked @versionParams
-LogGroupEnd
+Invoke-LoggedCommand "cargo install cargo-semver-checks --locked $($versionParams -join ' ')" -GroupOutput
 
-$packageParams = @()
+$finalExitCode = 0
 foreach ($packageName in $outputPackageNames) {
-  $packageParams += "--package"
-  $packageParams += $packageName
+  $output = Invoke-LoggedCommand "cargo +$Toolchain semver-checks --package $packageName" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
+  if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
+    LogWarning "$packageName base version is a placeholder and will be ignored"
+    continue
+  }
+
+  if ($output -match 'error: no crates with library targets selected') {
+    LogWarning "$packageName is not a lib crate and will be ignored"
+    continue
+  }
+
+  $finalExitCode = $finalExitCode -bor $LASTEXITCODE
+  $output | Write-Host
 }
 
-LogGroupStart "cargo semver-checks $($packageParams -join ' ')"
-Write-Host "cargo semver-checks $($packageParams -join ' ')"
-cargo semver-checks @packageParams
-LogGroupEnd
-
-if ($LASTEXITCODE -ne 0) {
+if ($finalExitCode) {
   LogError "SemVer checks failed"
-  exit $LASTEXITCODE
+  exit $finalExitCode
 }

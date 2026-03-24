@@ -2,19 +2,20 @@
 // Licensed under the MIT License.
 
 use async_trait::async_trait;
-use azure_core::http::{
-    headers::CLIENT_REQUEST_ID,
-    policies::{Policy, PolicyResult},
-    Context, Request,
+use azure_core::{
+    http::{
+        headers::CLIENT_REQUEST_ID,
+        policies::{Policy, PolicyResult},
+        Context, Request,
+    },
+    Uuid,
 };
 use std::sync::Arc;
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct StorageHeadersPolicy;
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for StorageHeadersPolicy {
     async fn send(
         &self,

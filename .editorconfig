@@ -10,7 +10,7 @@ trim_trailing_whitespace = true
 [*.bicep]
 indent_size = 2
 
-[*.json]
+[*.{json,markdownlintrc}]
 indent_size = 2
 
 [*.ps1]

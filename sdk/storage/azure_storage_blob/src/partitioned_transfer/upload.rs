@@ -4,17 +4,15 @@
 use azure_core::http::Body;
 use bytes::Bytes;
 
-#[cfg(not(target_arch = "wasm32"))]
+use async_trait::async_trait;
 use azure_core::stream::SeekableStream;
-#[cfg(not(target_arch = "wasm32"))]
 use futures::StreamExt;
 
-#[cfg(not(target_arch = "wasm32"))]
 use crate::streams::partitioned_stream::PartitionedStream;
 
 use super::*;
 
-#[async_trait::async_trait]
+#[async_trait]
 pub(crate) trait PartitionedUploadBehavior {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()>;
     async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
@@ -39,7 +37,6 @@ pub(crate) async fn upload(
         Body::Bytes(bytes) => {
             upload_bytes_partitions(bytes, parallel, partition_size, client).await?;
         }
-        #[cfg(not(target_arch = "wasm32"))]
         Body::SeekableStream(seekable_stream) => {
             upload_stream_partitions(seekable_stream, parallel, partition_size, client).await?;
         }
@@ -69,7 +66,6 @@ async fn upload_bytes_partitions(
     Ok(())
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 async fn upload_stream_partitions(
     content: Box<dyn SeekableStream>,
     parallel: NonZero<usize>,
@@ -109,7 +105,6 @@ mod tests {
     #[derive(Debug, Clone, Copy)]
     enum BodyType {
         Bytes,
-        #[cfg(not(target_arch = "wasm32"))]
         SeekableStream,
     }
 
@@ -135,12 +130,11 @@ mod tests {
         }
     }
 
-    #[async_trait::async_trait]
+    #[async_trait]
     impl PartitionedUploadBehavior for MockPartitionedUploadBehavior {
         async fn transfer_oneshot(&self, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
-                #[cfg(not(target_arch = "wasm32"))]
                 Body::SeekableStream(_) => BodyType::SeekableStream,
             };
             let bytes = content.collect_bytes().await?;
@@ -153,7 +147,6 @@ mod tests {
         async fn transfer_partition(&self, offset: usize, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
-                #[cfg(not(target_arch = "wasm32"))]
                 Body::SeekableStream(_) => BodyType::SeekableStream,
             };
             let bytes = content.collect_bytes().await?;
@@ -232,7 +225,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(target_arch = "wasm32"))]
     async fn one_shot_stream_when_within_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
         let partition_size: usize = data_size;
@@ -255,7 +247,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(target_arch = "wasm32"))]
     async fn partition_stream_when_over_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
         let partition_size: usize = 50;

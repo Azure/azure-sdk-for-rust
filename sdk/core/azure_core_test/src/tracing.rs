@@ -13,7 +13,7 @@ use azure_core::{
     },
     Uuid,
 };
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use std::{
     borrow::Cow,
     collections::HashMap,

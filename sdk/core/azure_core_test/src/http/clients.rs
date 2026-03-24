@@ -71,8 +71,7 @@ impl<C> fmt::Debug for MockHttpClient<C> {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl<C> HttpClient for MockHttpClient<C>
 where
     C: FnMut(&Request) -> BoxFuture<'_, Result<AsyncRawResponse>> + Send + Sync,

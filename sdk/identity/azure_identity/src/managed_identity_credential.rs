@@ -45,7 +45,7 @@ impl ManagedIdentityCredential {
     /// Creates a new instance of `ManagedIdentityCredential`.
     ///
     /// # Arguments
-    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    /// * `options`: Options for configuring the credential. If `None`, the credential uses its default options.
     ///
     pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
@@ -91,8 +91,7 @@ impl ManagedIdentityCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for ManagedIdentityCredential {
     async fn get_token(
         &self,

@@ -1,20 +1,93 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::slice;
+use std::{
+    slice,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
+use async_trait::async_trait;
 use azure_core::{
-    http::{Body, ClientOptions, NoFormat, RequestContent, Response},
+    http::StatusCode,
+    http::{
+        policies::{Policy, PolicyResult},
+        AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
+    },
     Bytes, Result,
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
-    BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
-    BlobServiceClientOptions,
+    models::{
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
+        EncryptionAlgorithmType,
+    },
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
+    BlobServiceClient, BlobServiceClientOptions,
 };
 use bytes::BytesMut;
 use futures::{AsyncRead, AsyncReadExt};
+
+pub const KB: usize = 1024;
+pub const MB: usize = KB * 1024;
+pub const GB: usize = MB * 1024;
+
+/// Returns a valid customer-provided key tuple used by blob encryption tests.
+pub fn get_cpk() -> (EncryptionAlgorithmType, String, String) {
+    (
+        EncryptionAlgorithmType::Aes256,
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=".to_string(),
+        "Yw3NKWbEM2aRElRIu7JbT/QSpJxzLbLIq8G4WBvXEN0=".to_string(),
+    )
+}
+
+/// Returns a second valid customer-provided key tuple for mismatch testing.
+pub fn get_cpk_2() -> (EncryptionAlgorithmType, String, String) {
+    (
+        EncryptionAlgorithmType::Aes256,
+        "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=".to_string(),
+        "riFsLvUkejeCwTXvonmj5M3GEJQnD10r5YxiBLemEsk=".to_string(),
+    )
+}
+
+/// Returns the encryption scope name provisioned in test-resources.bicep.
+pub fn get_valid_encryption_scope() -> String {
+    "testscope".to_string()
+}
+
+/// Returns an encryption scope name that should not exist in test accounts.
+pub fn get_invalid_encryption_scope() -> String {
+    "invalid-encryption-scope-for-tests".to_string()
+}
+
+/// Returns a base64-encoded value that is valid but intentionally not the SHA-256 hash of
+/// any test key.
+///
+/// Used to verify that the service rejects mismatched key hashes.
+pub fn invalid_key_sha256() -> String {
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".to_string()
+}
+
+/// Returns a [`BlockLookupList`] that stages the given block ID from the latest block list.
+///
+/// Used by block blob tests to finalize a staged block into a committed blob.
+pub fn block_lookup(block_id: Vec<u8>) -> BlockLookupList {
+    BlockLookupList {
+        committed: Some(Vec::new()),
+        latest: Some(vec![block_id]),
+        uncommitted: Some(Vec::new()),
+    }
+}
+
+/// Asserts the error status for invalid encryption configuration requests.
+pub fn assert_bad_request_or_conflict(status: Option<StatusCode>) {
+    assert!(matches!(
+        status,
+        Some(StatusCode::BadRequest | StatusCode::Conflict)
+    ));
+}
 
 /// Specifies which storage account to use for testing.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -122,7 +195,7 @@ pub async fn get_container_client(
         Some(container_client_options),
     )?;
     if create {
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
     }
     Ok(container_client)
 }
@@ -138,27 +211,56 @@ pub async fn create_test_blob(
     blob_client: &BlobClient,
     data: Option<RequestContent<Bytes, NoFormat>>,
     options: Option<BlockBlobClientUploadOptions<'_>>,
-) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
+) -> Result<BlockBlobClientUploadResult> {
     match data {
-        Some(content) => {
-            blob_client
-                .upload(content.clone(), true, content.body().len() as u64, options)
-                .await
-        }
+        Some(content) => blob_client.upload(content, options).await,
         None => {
             blob_client
-                .upload(
-                    RequestContent::from(b"hello rusty world".to_vec()),
-                    true,
-                    17,
-                    options,
-                )
+                .upload(RequestContent::from(b"hello rusty world".to_vec()), options)
                 .await
         }
     }
 }
 
-#[async_trait::async_trait]
+pub trait ClientOptionsExt {
+    fn with_per_call_policy(self, policy: Arc<dyn Policy + 'static>) -> Self;
+    fn with_per_try_policy(self, policy: Arc<dyn Policy + 'static>) -> Self;
+}
+impl ClientOptionsExt for BlobServiceClientOptions {
+    fn with_per_call_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_call_policies.push(policy);
+        self
+    }
+
+    fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_try_policies.push(policy);
+        self
+    }
+}
+impl ClientOptionsExt for BlobContainerClientOptions {
+    fn with_per_call_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_call_policies.push(policy);
+        self
+    }
+
+    fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_try_policies.push(policy);
+        self
+    }
+}
+impl ClientOptionsExt for BlobClientOptions {
+    fn with_per_call_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_call_policies.push(policy);
+        self
+    }
+
+    fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
+        self.client_options.per_try_policies.push(policy);
+        self
+    }
+}
+
+#[async_trait]
 pub trait AsyncReadTestExt {
     async fn read_into_spare_capacity(
         &mut self,
@@ -166,7 +268,7 @@ pub trait AsyncReadTestExt {
     ) -> futures::io::Result<usize>;
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
     async fn read_into_spare_capacity(
         &mut self,
@@ -191,17 +293,16 @@ impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 pub trait BodyTestExt {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes>;
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl BodyTestExt for Body {
     async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
         match self {
             Body::Bytes(bytes) => Ok(bytes.clone()),
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(seekable_stream) => {
                 seekable_stream.reset().await?;
                 let mut bytes = BytesMut::with_capacity(seekable_stream.len());
@@ -210,5 +311,113 @@ impl BodyTestExt for Body {
                 Ok(bytes.freeze())
             }
         }
+    }
+}
+
+pub struct AssertionScope {
+    counter: Arc<AtomicUsize>,
+}
+
+impl Drop for AssertionScope {
+    fn drop(&mut self) {
+        self.counter.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+type Check<T> = Arc<dyn Fn(&T) -> Result<()> + Send + Sync>;
+type Predicate<T> = Arc<dyn Fn(&T) -> bool + Send + Sync>;
+
+pub mod predicates {
+    use azure_core::http::Request;
+
+    pub fn is_stage_block_request(request: &Request) -> bool {
+        if let Some(url_query) = request.url().query() {
+            url_query.contains("comp=block") && !url_query.contains("blocklist")
+        } else {
+            false
+        }
+    }
+}
+
+pub struct TestPolicy {
+    request_scope_counter: Arc<AtomicUsize>,
+    response_scope_counter: Arc<AtomicUsize>,
+    on_request: Check<Request>,
+    on_response: Check<AsyncRawResponse>,
+}
+
+impl TestPolicy {
+    pub fn new(
+        on_request: Option<Check<Request>>,
+        on_response: Option<Check<AsyncRawResponse>>,
+    ) -> Self {
+        TestPolicy {
+            request_scope_counter: Arc::new(AtomicUsize::new(0)),
+            response_scope_counter: Arc::new(AtomicUsize::new(0)),
+            on_request: on_request.unwrap_or(Arc::new(|_| Ok(()))),
+            on_response: on_response.unwrap_or(Arc::new(|_| Ok(()))),
+        }
+    }
+
+    pub fn count_requests(count: Arc<AtomicUsize>, predicate: Option<Predicate<Request>>) -> Self {
+        Self::new(
+            match predicate {
+                Some(pred) => Some(Arc::new(move |request| {
+                    if pred(request) {
+                        count.fetch_add(1, Ordering::Relaxed);
+                    }
+                    Ok(())
+                })),
+                None => Some(Arc::new(move |_| {
+                    count.fetch_add(1, Ordering::Relaxed);
+                    Ok(())
+                })),
+            },
+            None,
+        )
+    }
+
+    /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
+    pub fn check_request_scope(&self) -> AssertionScope {
+        self.request_scope_counter.fetch_add(1, Ordering::Relaxed);
+        AssertionScope {
+            counter: self.request_scope_counter.clone(),
+        }
+    }
+
+    /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
+    pub fn check_response_scope(&self) -> AssertionScope {
+        self.response_scope_counter.fetch_add(1, Ordering::Relaxed);
+        AssertionScope {
+            counter: self.response_scope_counter.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl Policy for TestPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        if self.request_scope_counter.load(Ordering::Relaxed) > 0 {
+            (self.on_request)(request)?;
+        }
+        let response = next[0].send(ctx, request, &next[1..]).await?;
+        if self.response_scope_counter.load(Ordering::Relaxed) > 0 {
+            (self.on_response)(&response)?;
+        }
+        Ok(response)
+    }
+}
+
+impl std::fmt::Debug for TestPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(std::any::type_name::<TestPolicy>())
+            .field("check_request_counter", &self.request_scope_counter)
+            .field("check_response_counter", &self.response_scope_counter)
+            .finish()
     }
 }

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{RequestContent, StatusCode};
+use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     format_page_range,
@@ -51,7 +51,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(1024, content_length.unwrap());
     assert_eq!(BlobType::PageBlob, blob_type.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -66,7 +66,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data.clone()),
             512,
             format_page_range(0, 512)?,
@@ -82,7 +82,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(512, content_length.unwrap());
     assert_eq!(data, response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -97,7 +97,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data),
             512,
             format_page_range(0, 512)?,
@@ -106,7 +106,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     page_blob_client
-        .clear_page(format_page_range(0, 512)?, None)
+        .clear_pages(format_page_range(0, 512)?, None)
         .await?;
 
     // Assert
@@ -117,7 +117,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(512, content_length.unwrap());
     assert_eq!(vec![0; 512], response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -134,7 +134,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 1024];
     let response = page_blob_client
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data.clone()),
             1024,
             format_page_range(0, 1024)?,
@@ -147,7 +147,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     page_blob_client.resize(1024, None).await?;
     page_blob_client
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data.clone()),
             1024,
             format_page_range(0, 1024)?,
@@ -165,7 +165,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(512, content_length.unwrap());
     assert_eq!(vec![b'A'; 512], response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -212,12 +212,11 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
     let blob_sequence_number = response.blob_sequence_number()?;
     assert_eq!(8, blob_sequence_number.unwrap());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
 #[recorded::test]
-#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/3441"]
 async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -232,7 +231,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     page_blob_client_1.create(512, None).await?;
     let data_b = vec![b'B'; 512];
     page_blob_client_1
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data_b.clone()),
             512,
             format_page_range(0, 512)?,
@@ -243,7 +242,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     page_blob_client_2.create(1024, None).await?;
     let mut data_a = vec![b'A'; 512];
     page_blob_client_2
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data_a.clone()),
             512,
             format_page_range(0, 512)?,
@@ -269,7 +268,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     data_a.extend(&data_b);
     assert_eq!(data_a, response_body.collect().await?.to_vec());
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
     Ok(())
 }
 
@@ -293,7 +292,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Non-Empty Page Range Scenario
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(
+        .upload_pages(
             RequestContent::from(data.clone()),
             512,
             format_page_range(0, 512)?,
@@ -309,6 +308,46 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         assert_eq!(511, range.end.unwrap());
     }
 
-    container_client.delete_container(None).await?;
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_create_page_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let page_blob_client = blob_client.page_blob_client();
+
+    // Create with Content Headers
+    // Note: blob_content_md5 is validated against actual content on create and is excluded
+    // here; it is tested as stored metadata via set_properties in blob_client tests.
+    // Use a single cache-control directive to avoid service-side reordering.
+    page_blob_client
+        .create(
+            512,
+            Some(PageBlobClientCreateOptions {
+                blob_cache_control: Some("no-cache".to_string()),
+                blob_content_disposition: Some("inline".to_string()),
+                blob_content_encoding: Some("identity".to_string()),
+                blob_content_language: Some("ja-JP".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert Content Headers Roundtrip
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("no-cache".to_string()), props.cache_control()?);
+    assert_eq!(Some("inline".to_string()), props.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("ja-JP".to_string()), props.content_language()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+
+    container_client.delete(None).await?;
     Ok(())
 }

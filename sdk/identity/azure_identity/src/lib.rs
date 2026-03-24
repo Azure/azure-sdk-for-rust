@@ -6,9 +6,7 @@
 #![warn(missing_docs)]
 
 mod app_service_managed_identity_credential;
-#[cfg(not(target_arch = "wasm32"))]
 mod azure_cli_credential;
-#[cfg(not(target_arch = "wasm32"))]
 mod azure_developer_cli_credential;
 mod azure_pipelines_credential;
 mod cache;
@@ -16,29 +14,23 @@ mod client_assertion_credential;
 #[cfg(feature = "client_certificate")]
 mod client_certificate_credential;
 mod client_secret_credential;
-#[cfg(not(target_arch = "wasm32"))]
 mod developer_tools_credential;
 mod env;
 mod imds_managed_identity_credential;
 mod managed_identity_credential;
-#[cfg(not(target_arch = "wasm32"))]
 mod process;
 mod virtual_machine_managed_identity_credential;
 mod workload_identity_credential;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub use azure_cli_credential::*;
-#[cfg(not(target_arch = "wasm32"))]
 pub use azure_developer_cli_credential::*;
 pub use azure_pipelines_credential::*;
 pub use client_assertion_credential::*;
 #[cfg(feature = "client_certificate")]
 pub use client_certificate_credential::*;
 pub use client_secret_credential::*;
-#[cfg(not(target_arch = "wasm32"))]
 pub use developer_tools_credential::*;
 pub use managed_identity_credential::*;
-#[cfg(not(target_arch = "wasm32"))]
 pub use process::{new_executor, Executor};
 pub use workload_identity_credential::*;
 
@@ -61,9 +53,9 @@ use std::borrow::Cow;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
-struct EntraIdErrorResponse {
+struct EntraIdErrorResponse<'a> {
     error_codes: Vec<i32>,
-    error_description: String,
+    error_description: &'a str,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -77,11 +69,11 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-fn deserialize<T>(res: &RawResponse) -> Result<T>
+fn deserialize<'a, T>(res: &'a RawResponse) -> Result<T>
 where
-    T: serde::de::DeserializeOwned,
+    T: serde::Deserialize<'a>,
 {
-    res.body().json()
+    serde_json::from_slice(res.body().as_ref()).map_err(Into::into)
 }
 
 fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
@@ -94,7 +86,7 @@ fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
         ));
     }
 
-    let error_response: EntraIdErrorResponse = deserialize(&response)?;
+    let error_response: EntraIdErrorResponse<'_> = deserialize(&response)?;
     let error_code = if error_response.error_codes.is_empty() {
         None
     } else {
@@ -107,13 +99,15 @@ fn handle_entra_response(response: RawResponse) -> Result<AccessToken> {
                 .join(","),
         )
     };
+    let error_description = error_response.error_description.to_owned();
+
     Err(Error::new(
         ErrorKind::HttpResponse {
             status,
             error_code,
             raw_response: Some(Box::new(response)),
         },
-        error_response.error_description,
+        error_description,
     ))
 }
 
@@ -176,7 +170,12 @@ fn authentication_error(credential_name: &str, err: Error) -> Error {
         stringify!(WorkloadIdentityCredential) => "#workload",
         _ => "",
     };
-    let mut message = format!("{credential_name} authentication failed. {err}");
+    const WHITESPACE: &[char; 3] = &['\t', '\x0c', ' '];
+
+    let err_str = err.to_string();
+    let err_str = err_str.trim_matches(WHITESPACE);
+    let separator = if err_str.starts_with('\n') { "" } else { " " };
+    let mut message = format!("{credential_name} authentication failed.{separator}{err_str}");
     if !link_fragment.is_empty() {
         message.push_str(TSG_LINK_ERROR_TEXT);
         message.push_str(link_fragment);
@@ -191,7 +190,6 @@ fn test_validate_not_empty() {
     assert!(validate_not_empty("not empty", "it's not empty").is_ok());
 }
 
-#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn validate_scope(scope: &str) -> Result<()> {
     if scope.is_empty()
         || !scope.chars().all(|c| {
@@ -215,7 +213,6 @@ fn test_validate_scope() {
     assert!(validate_scope("http://vault.azure.net").is_ok());
 }
 
-#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn validate_subscription(subscription: &str) -> Result<()> {
     if subscription.is_empty()
         || !subscription
@@ -270,7 +267,7 @@ mod tests {
     use azure_core::{
         cloud::{CloudConfiguration, CustomConfiguration},
         error::ErrorKind,
-        http::{headers::Headers, AsyncRawResponse, Request, StatusCode},
+        http::{headers::Headers, AsyncRawResponse, RawResponse, Request, StatusCode},
         Bytes, Error, Result,
     };
     use std::{
@@ -472,5 +469,31 @@ mod tests {
         let cloud = CloudConfiguration::Custom(config);
         let err = get_authority_host(None, Some(&cloud)).unwrap_err();
         assert!(err.to_string().contains("HTTPS"));
+    }
+
+    #[test]
+    fn entra_error() {
+        let response = RawResponse::from_bytes(
+            StatusCode::BadRequest,
+            Headers::default(),
+            Bytes::from_static(br#"{"error_codes":[123,456],"error_description":"bad news"}"#),
+        );
+
+        let err = handle_entra_response(response).unwrap_err();
+        match err.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response,
+            } => {
+                assert_eq!(*status, StatusCode::BadRequest);
+                assert_eq!(error_code.as_deref(), Some("123,456"));
+                assert!(raw_response.is_some());
+            }
+            other => panic!("unexpected error kind: {other:?}"),
+        }
+
+        let inner = err.into_inner().expect("expected inner error");
+        assert_eq!(inner.to_string(), "bad news");
     }
 }

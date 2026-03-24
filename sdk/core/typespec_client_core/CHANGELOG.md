@@ -1,18 +1,43 @@
 # Release History
 
-## 0.10.0 (Unreleased)
+## 0.13.0 (Unreleased)
 
 ### Features Added
 
-- Added `Request::body_mut()`.
-- Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
-- Sort query parameters lexicographically in `QueryBuilder`.
-
 ### Breaking Changes
+
+- Added `tokio` feature to `default` features.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.12.0 (2026-03-05)
+
+### Features Added
+
+- Added `ErrorKind::Connection` for connection errors.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- Removed `tracing::FutureExt` and `tracing::WithContext`.
+
+## 0.11.0 (2026-02-10)
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+
+## 0.10.0 (2026-01-16)
+
+### Features Added
+
+- Added `Body::take()`.
+- Added `Request::body_mut()`.
+- Added `UrlExt::set_query_pair()` to simplify overwriting query parameter key values.
+- Sort query parameters lexicographically in `QueryBuilder`.
 
 ## 0.9.1 (2025-11-09)
 

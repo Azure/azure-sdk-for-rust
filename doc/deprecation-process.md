@@ -10,21 +10,21 @@ Note that a deprecated crate is a signal to users that they are strongly encoura
 
 The overall approach for Rust crates is:
 
--   Add deprecation attributes to public APIs in the code to provide compile-time warnings
--   Update the `README.md` file with a deprecation disclaimer
--   Update the `CHANGELOG.md` file to document the deprecation
--   Add deprecation metadata to `Cargo.toml`
--   Publish a new release to crates.io
--   Update the API reference documentation to show the deprecated status
--   Eventually yank the crate from crates.io if the service is fully retired
+- Add deprecation attributes to public APIs in the code to provide compile-time warnings
+- Update the `README.md` file with a deprecation disclaimer
+- Update the `CHANGELOG.md` file to document the deprecation
+- Add deprecation metadata to `Cargo.toml`
+- Publish a new release to crates.io
+- Update the API reference documentation to show the deprecated status
+- Eventually yank the crate from crates.io if the service is fully retired
 
 ## Pre-deprecation: Blog Post
 
 If applicable, consider adding a post to the [Azure Blog](https://devblogs.microsoft.com/azure-sdk/) stating that:
 
--   A new crate is available which replaces the old crate
--   The old crate is scheduled to be deprecated on a specific date
--   Guidance on adjusting code to use the new crate
+- A new crate is available which replaces the old crate
+- The old crate is scheduled to be deprecated on a specific date
+- Guidance on adjusting code to use the new crate
 
 Reach out to the Rust Azure SDK PM if you have any questions about creating a blog post.
 
@@ -36,13 +36,13 @@ Clone the `azure-sdk-for-rust` repository and update the following files of your
 
 A disclaimer should be added indicating the end-of-life date (EOLDate) of the crate and directing to a replacement crate and migration guide as necessary.
 
--   The EOLDate should be in the format `MM-DD-YYYY`.
-    -   If there is no replacement crate, the crate EOLDate should be the service retirement date.
-    -   If there is a replacement crate, the EOLDate should be the same as the deprecation release date of the old crate in the `CHANGELOG.md`.
-    -   Service retirement dates MAY be listed in the [Azure Services Retirement Workbook](https://aka.ms/servicesretirementworkbook), where retiring feature says 'Entire service'.
--   The link to the replacement crate should be a crates.io link: `https://crates.io/crates/azure_new_crate`.
--   The link to the migration guide should be a link in the format `https://aka.ms/azsdk/rust/migrate/new-crate`. To create this aka.ms link, follow the "How to create aka.ms links" section [here](https://dev.azure.com/azure-sdk/internal/_wiki/wikis/internal.wiki/233/Azure-SDK-AKA.ms-Links?anchor=how-to-create-aka.ms-links).
-    -   NOTE: You may decide to postpone or skip writing a migration guide based on download numbers (found on [crates.io](https://crates.io/), [lib.rs](https://lib.rs/), etc.) and internal knowledge of the usage of the crate.
+- The EOLDate should be in the format `MM-DD-YYYY`.
+  - If there is no replacement crate, the crate EOLDate should be the service retirement date.
+  - If there is a replacement crate, the EOLDate should be the same as the deprecation release date of the old crate in the `CHANGELOG.md`.
+  - Service retirement dates MAY be listed in the [Azure Services Retirement Workbook](https://aka.ms/servicesretirementworkbook), where retiring feature says 'Entire service'.
+- The link to the replacement crate should be a crates.io link: `https://crates.io/crates/azure_new_crate`.
+- The link to the migration guide should be a link in the format `https://aka.ms/azsdk/rust/migrate/new-crate`. To create this aka.ms link, follow the ["How to create aka.ms links" section](https://dev.azure.com/azure-sdk/internal/_wiki/wikis/internal.wiki/233/Azure-SDK-AKA.ms-Links?anchor=how-to-create-aka.ms-links).
+  - NOTE: You may decide to postpone or skip writing a migration guide based on download numbers (found on [crates.io](https://crates.io/), [lib.rs](https://lib.rs/), etc.) and internal knowledge of the usage of the crate.
 
 Replace ALL existing text with a disclaimer in the following format:
 
@@ -86,13 +86,13 @@ For additional support, open a new issue in the [Issues](https://github.com/micr
 
 ### CHANGELOG.md and Cargo.toml version
 
--   Update the version in the crate's `Cargo.toml` file to the next patch version if the crate has had a stable release, or the next pre-release version if the crate has only been in pre-release. For example:
+- Update the version in the crate's `Cargo.toml` file to the next patch version if the crate has had a stable release, or the next pre-release version if the crate has only been in pre-release. For example:
 
-    -   If a stable version WAS NEVER RELEASED and the last released version was 1.0.0-beta.1, the new version should be 1.0.0-beta.2.
-    -   If a stable version HAS BEEN RELEASED and the last released version was 1.2.3-beta.1, the new version should be 1.2.4.
-    -   If the last released version was 1.2.3, the new version should be 1.2.4.
+  - If a stable version WAS NEVER RELEASED and the last released version was 1.0.0-beta.1, the new version should be 1.0.0-beta.2.
+  - If a stable version HAS BEEN RELEASED and the last released version was 1.2.3-beta.1, the new version should be 1.2.4.
+  - If the last released version was 1.2.3, the new version should be 1.2.4.
 
--   In `CHANGELOG.md`, add the new version with the same disclaimer as in the `README.md`, along with a release date. No other changes/features added/breaking changes should be included for this version. For example:
+- In `CHANGELOG.md`, add the new version with the same disclaimer as in the `README.md`, along with a release date. No other changes/features added/breaking changes should be included for this version. For example:
 
 ```markdown
 ## 1.2.4 (2024-03-31)
@@ -120,8 +120,8 @@ For the main crate-level documentation, add a deprecation notice:
 
 ### CI Configuration
 
--   Ensure the crate is listed in the workspace CI configuration so that the artifact is generated for release.
--   Consider adding the crate to a "deprecated" group in CI configurations to reduce unnecessary checks while still allowing security updates.
+- Ensure the crate is listed in the workspace CI configuration so that the artifact is generated for release.
+- Consider adding the crate to a "deprecated" group in CI configurations to reduce unnecessary checks while still allowing security updates.
 
 ## Step 2: Resolve all open issues/PRs corresponding to the crate
 
@@ -165,7 +165,7 @@ Check to make sure that the new version of the crate has been published on crate
 
 After the deprecated version has been published and sufficient time has passed (typically 12 months), consider removing the crate from the main branch:
 
--   Append a note to the `README.md` deprecation message stating the crate has been removed from the main branch, with links to the latest release tag and crate on crates.io.
+- Append a note to the `README.md` deprecation message stating the crate has been removed from the main branch, with links to the latest release tag and crate on crates.io.
 
 ```markdown
 # Microsoft Azure SDK for Rust
@@ -178,13 +178,13 @@ Crate source code and samples have been removed from the `main` branch and can b
 If you have any questions, please open a [GitHub Issue](https://github.com/Azure/azure-sdk-for-rust/issues) or contact the team.
 ```
 
--   Delete all files in the crate directory EXCEPT for the README.md at the crate directory root.
--   Remove the crate from the workspace `Cargo.toml` members list.
--   Remove the crate from any CI configuration files.
--   Create a new PR targeting the `main` branch of the repository.
--   Post the PR in the review channel for Rust.
--   Once the PR has been approved by codeowner, merge.
--   You're responsible for fixing any CI issues related to this PR.
+- Delete all files in the crate directory EXCEPT for the README.md at the crate directory root.
+- Remove the crate from the workspace `Cargo.toml` members list.
+- Remove the crate from any CI configuration files.
+- Create a new PR targeting the `main` branch of the repository.
+- Post the PR in the review channel for Rust.
+- Once the PR has been approved by codeowner, merge.
+- You're responsible for fixing any CI issues related to this PR.
 
 ## Step 6: Update API Documentation
 
@@ -194,16 +194,16 @@ The deprecated crate will automatically show deprecation warnings on docs.rs. No
 
 ### Update Azure SDK package resource
 
--   Create your own fork of the [azure-sdk](https://github.com/Azure/azure-sdk) repo and clone it, if you haven't already.
--   Create a branch in your local copy of the repo: `git checkout -b rust/azure_my_crate_deprecation`
--   Open the `_data/releases/latest/rust-packages.csv` file.
--   Find the entry for your crate and update the following fields:
-    -   `EOLDate`: In MM/DD/YYYY format. If the SDK deprecation is due to a service retirement, this date should match the service final retirement date. If there is a replacement crate, this should match the release date of the deprecated crate.
-    -   `Support`: Change the value to `deprecated`.
-    -   `Replace`: If it exists, set the value to the name of the Azure SDK for Rust crate meant to replace the crate being deprecated. If not, set the value to `NA`.
-    -   `ReplaceGuide`: If it exists, link to a migration guide in the following format: `aka.ms/azsdk/rust/migrate/<crate>`. If not, set the value to `NA`.
--   Note: If you are deprecating multiple crates, please wait until all deprecated crates have been published and update all entries necessary in one PR.
--   Create a PR to push these changes. Checks will run to notify the repo owners to review your commit.
+- Create your own fork of the [azure-sdk](https://github.com/Azure/azure-sdk) repo and clone it, if you haven't already.
+- Create a branch in your local copy of the repo: `git checkout -b rust/azure_my_crate_deprecation`
+- Open the `_data/releases/latest/rust-packages.csv` file.
+- Find the entry for your crate and update the following fields:
+  - `EOLDate`: In MM/DD/YYYY format. If the SDK deprecation is due to a service retirement, this date should match the service final retirement date. If there is a replacement crate, this should match the release date of the deprecated crate.
+  - `Support`: Change the value to `deprecated`.
+  - `Replace`: If it exists, set the value to the name of the Azure SDK for Rust crate meant to replace the crate being deprecated. If not, set the value to `NA`.
+  - `ReplaceGuide`: If it exists, link to a migration guide in the following format: `aka.ms/azsdk/rust/migrate/<crate>`. If not, set the value to `NA`.
+- Note: If you are deprecating multiple crates, please wait until all deprecated crates have been published and update all entries necessary in one PR.
+- Create a PR to push these changes. Checks will run to notify the repo owners to review your commit.
 
 ### Yank the crate on crates.io
 
@@ -221,13 +221,13 @@ Note: Yanking does not remove the crate from the index entirely, but prevents ne
 
 Review and update any Azure documentation that references the deprecated crate:
 
--   These will be on the MS Learn page
--   Search for mentions of the deprecated crate in Azure documentation
--   Update examples and tutorials to use the replacement crate
--   Add migration guidance where appropriate
+- These will be on the MS Learn page
+- Search for mentions of the deprecated crate in Azure documentation
+- Update examples and tutorials to use the replacement crate
+- Add migration guidance where appropriate
 
 ## Additional Resources
 
--   [Azure SDK for Rust Guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)
--   [Cargo Book - Publishing on crates.io](https://doc.rust-lang.org/cargo/reference/publishing.html)
--   [RFC 1270 - Deprecation](https://github.com/rust-lang/rfcs/blob/master/text/1270-deprecation.md)
+- [Azure SDK for Rust Guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)
+- [Cargo Book - Publishing on crates.io](https://doc.rust-lang.org/cargo/reference/publishing.html)
+- [RFC 1270 - Deprecation](https://github.com/rust-lang/rfcs/blob/master/text/1270-deprecation.md)

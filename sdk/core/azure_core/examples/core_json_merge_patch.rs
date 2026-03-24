@@ -4,7 +4,16 @@
 use azure_core::{http::Transport, Value};
 use example::{setup, ExampleClient, ExampleClientOptions};
 
-/// This example demonstrates deserializing a standard Azure error response to get more details.
+/// This sample demonstrates how to update a resource and send it back in a [JSON merge patch](https://www.rfc-editor.org/rfc/rfc7396).
+///
+/// Basically,
+///
+/// * Property values are updated to new values in the request body.
+/// * Property values set to an explicit `null` are deleted or unset.
+/// * Missing properties are not changed.
+/// * Arrays are replaced entirely by the contents of the array in the request body.
+///
+/// You can deserialize a response payload into a [`Value`] and change values or even set to an explicit [`Value::Null`] as shown below.
 async fn example_json_merge_patch() -> Result<(), Box<dyn std::error::Error>> {
     let mut options = ExampleClientOptions::default();
 
@@ -22,6 +31,7 @@ async fn example_json_merge_patch() -> Result<(), Box<dyn std::error::Error>> {
 
     // Change the description and update tags.
     resource["description"] = "an updated foo".into();
+    resource["optional"] = Value::Null;
     if let Some(tags) = resource["tags"].as_object_mut() {
         tags["test"] = true.into();
         tags.insert("version".into(), 1.into());
@@ -35,6 +45,7 @@ async fn example_json_merge_patch() -> Result<(), Box<dyn std::error::Error>> {
 
     assert_eq!(resource.id.as_deref(), Some("foo"));
     assert_eq!(resource.description.as_deref(), Some("an updated foo"));
+    assert_eq!(resource.optional, None);
 
     let tags = resource.tags.expect("expected tags");
     assert_eq!(tags["test"], Value::Bool(true));
@@ -75,6 +86,7 @@ mod example {
             let mut resource = json!({
                 "id": "foo",
                 "description": "just a foo",
+                "optional": "set",
                 "tags": {
                     "test": false
                 }
@@ -137,6 +149,8 @@ mod example {
     pub struct Resource {
         pub id: Option<String>,
         pub description: Option<String>,
+        // We want to serialize an explicit null.
+        pub optional: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<HashMap<String, Value>>,
     }

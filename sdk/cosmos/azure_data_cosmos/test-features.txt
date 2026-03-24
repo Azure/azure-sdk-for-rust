@@ -1,2 +1,0 @@
-key_auth
-preview_query_engine

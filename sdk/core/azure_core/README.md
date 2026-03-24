@@ -36,6 +36,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 <!-- CLIENT COMMON BAR -->
 
 [Client options](#configuring-service-clients-using-clientoptions) |
+[Sending an HTTP request body](#sending-an-http-request-body) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
 [Handling errors](#handling-errors) |
 [Iterating through pages of resources](#consuming-service-methods-returning-pagert) |
@@ -56,8 +57,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
-- `tokio`: enables and sets `tokio` as the default async runtime.
-- `wasm_bindgen`: enables the async runtime for WASM.
+- `tokio` (default): enables and sets `tokio` as the default async runtime.
 - `xml`: enables XML support.
 
 ### Enabling dependencies' features
@@ -74,19 +74,19 @@ will unify features e.g., you can add `reqwest`'s `system-proxy` feature without
 [dependencies]
 azure_identity = "1"
 azure_security_keyvault_secrets = "1"
-reqwest = { version = "0.12.23", features = ["system-proxy"] }
+reqwest = { version = "0.13.1", features = ["system-proxy"] }
 ```
 
-Similarly, you can choose to support `reqwest::Client` but use `rustls-tls` with a different TLS provider by disabling our default features
-and adding only what you need, such as our `reqwest` feature just to enable the `HttpClient` trait implementation on `reqwest::Client` and
-add a dependency on `reqwest` with the feature you want:
+Similarly, you can choose to support `reqwest::Client` but use a different TLS provider by disabling our default features and adding
+only what you need. For example, adding our `reqwest` feature to enable the `HttpClient` trait implementation on `reqwest::Client` and
+a dependency on `reqwest` with the feature you want:
 
 ```toml
 [dependencies]
 azure_core = { version = "1", default-features = false, features = ["reqwest"] }
 azure_identity = { version = "1", default-features = false }
 azure_security_keyvault_secrets = { version = "1", default-features = false }
-reqwest = { version = "0.12.23", features = ["rustls-tls-webpki-roots"] }
+reqwest = { version = "0.13.1", features = ["rustls"] }
 ```
 
 You could even completely replace `reqwest` and provide your own `HttpClient` implementation. See [an example](#other-http-client) below.
@@ -126,6 +126,36 @@ let client = SecretClient::new(
     Some(options),
 )?;
 ```
+
+### Sending an HTTP request body
+
+_Service clients_ have methods that can be used to call Azure services. We refer to these client methods as _service methods_.
+Some service clients have methods have parameters for required path components, query string parameters, or request bodies.
+You can serialize request bodies from a model or from a formatted string such as raw JSON.
+
+Using the `client` we instantiated above:
+
+```rust ignore request
+use azure_security_keyvault_secrets::models::UpdateSecretPropertiesParameters;
+use std::collections::HashMap;
+
+let tags = HashMap::from([
+    ("classification".into(), "example".into()),
+]);
+#[allow(clippy::needless_update)]
+let parameters = UpdateSecretPropertiesParameters {
+    content_type: Some("text/plain".into()),
+    secret_attributes: None, // No change
+    tags: Some(tags),
+    ..Default::default()
+};
+
+client.update_secret_properties("secret-name", parameters.try_into()?, None).await?;
+```
+
+**NOTE:** Service models and other structs that can be created by the caller are not attributed with `#[non_exhaustive]` to allow struct initialization.
+To mitigate breaking changes should fields be added, we recommend using the [struct update syntax](https://doc.rust-lang.org/book/ch05-01-defining-structs.html#creating-instances-with-struct-update-syntax) with `Default` even if you assign all fields.
+You can attribute the struct initialization, module, or crate to ignore `clippy::needless_update` as shown above.
 
 ### Accessing HTTP response details using `Response<T>`
 
@@ -558,7 +588,6 @@ use azure_security_keyvault_secrets::SecretClientOptions;
 
 let client = Arc::new(
     ::reqwest::ClientBuilder::new()
-        // Note that reqwest does not support `pool_max_idle_per_host` on WASM.
         .pool_max_idle_per_host(0)
         .build()?,
 );

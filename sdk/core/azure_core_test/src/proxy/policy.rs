@@ -31,8 +31,7 @@ pub struct RecordingPolicy {
     pub options: RwLock<RecordingOptions>,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl Policy for RecordingPolicy {
     async fn send(
         &self,

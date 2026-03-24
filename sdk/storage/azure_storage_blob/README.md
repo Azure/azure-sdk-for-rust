@@ -106,8 +106,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     blob_client
         .upload(
             RequestContent::from(data.to_vec()), // data
-            false,                               // overwrite
-            u64::try_from(data.len())?,          // content length
             None,                                // upload options
         )
         .await?;

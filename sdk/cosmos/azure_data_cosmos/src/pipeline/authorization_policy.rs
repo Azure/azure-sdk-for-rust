@@ -10,6 +10,7 @@
 #[cfg_attr(not(feature = "key_auth"), allow(unused_imports))]
 use azure_core::{
     credentials::{Secret, TokenCredential},
+    fmt::SafeDebug,
     http::{
         headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
         policies::{Policy, PolicyResult},
@@ -28,7 +29,8 @@ use crate::utils::url_encode;
 const AZURE_VERSION: &str = "2020-07-15";
 const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
 
-#[derive(Debug, Clone)]
+#[derive(SafeDebug, Clone)]
+#[safe(false)]
 enum Credential {
     /// The credential is an Entra ID token.
     Token(Arc<dyn TokenCredential>),
@@ -38,8 +40,9 @@ enum Credential {
     PrimaryKey(Secret),
 }
 
-#[derive(Debug, Clone)]
-pub struct AuthorizationPolicy {
+#[derive(SafeDebug, Clone)]
+#[safe(true)]
+pub(crate) struct AuthorizationPolicy {
     credential: Credential,
 }
 
@@ -58,8 +61,7 @@ impl AuthorizationPolicy {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
@@ -154,8 +156,7 @@ mod tests {
     #[derive(Debug)]
     struct TestTokenCredential(String);
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl TokenCredential for TestTokenCredential {
         async fn get_token(
             &self,
@@ -264,8 +265,7 @@ mod tests {
             captured_scopes: Arc<Mutex<Vec<Vec<String>>>>,
         }
 
-        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        #[async_trait::async_trait]
         impl TokenCredential for ScopeCapturingCredential {
             async fn get_token(
                 &self,

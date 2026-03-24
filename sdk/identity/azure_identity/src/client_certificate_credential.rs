@@ -7,7 +7,7 @@ use crate::{
 };
 use azure_core::{
     base64,
-    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
+    credentials::{AccessToken, Secret, SecretBytes, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
@@ -30,13 +30,11 @@ use openssl::{
 use std::sync::Arc;
 use url::form_urlencoded;
 
-/// Refresh time to use in seconds.
-const DEFAULT_REFRESH_TIME: i64 = 300;
+const DEFAULT_ASSERTION_LIFETIME: i64 = 300;
 
 const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CERTIFICATE_CHAIN";
 
-/// Provides options to configure how the Identity library makes authentication
-/// requests to Azure Active Directory.
+/// Options for constructing a new [`ClientCertificateCredential`].
 #[derive(Clone, Debug, Default)]
 pub struct ClientCertificateCredentialOptions {
     /// Options for the credential's HTTP pipeline.
@@ -49,11 +47,7 @@ pub struct ClientCertificateCredentialOptions {
     pub(crate) env: Option<Env>,
 }
 
-/// Enables authentication to Azure Active Directory using a client certificate that
-/// was generated for an App Registration.
-///
-/// In order to use subject name validation `send_cert_chain` option must be set to true
-/// The certificate is expected to be in base64 encoded PKCS12 format.
+/// Authenticates an application with a certificate.
 #[derive(Debug)]
 pub struct ClientCertificateCredential {
     client_id: String,
@@ -66,10 +60,17 @@ pub struct ClientCertificateCredential {
 
 impl ClientCertificateCredential {
     /// Create a new `ClientCertificateCredential`.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The tenant (directory) ID of the service principal.
+    /// - `client_id`: The client (application) ID of the service principal.
+    /// - `certificate`: The PKCS12 certificate bytes with its RSA private key.
+    /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
+    ///
     pub fn new(
         tenant_id: String,
         client_id: String,
-        certificate: impl Into<Secret>,
+        certificate: SecretBytes,
         options: Option<ClientCertificateCredentialOptions>,
     ) -> azure_core::Result<Arc<ClientCertificateCredential>> {
         validate_tenant_id(&tenant_id)?;
@@ -77,12 +78,8 @@ impl ClientCertificateCredential {
 
         let options = options.unwrap_or_default();
 
-        let cert_bytes = base64::decode(certificate.into().secret())
-            .with_context_fn(ErrorKind::Credential, || {
-                "failed to decode base64 certificate data"
-            })?;
-
-        let (key, cert, ca_chain) = parse_certificate(&cert_bytes, options.password.as_ref())?;
+        let (key, cert, ca_chain) =
+            parse_certificate(certificate.bytes(), options.password.as_ref())?;
         let thumbprint = cert
             .digest(MessageDigest::sha1())
             .with_context(ErrorKind::Credential, "failed to compute thumbprint")?
@@ -159,7 +156,7 @@ impl ClientCertificateCredential {
     ) -> azure_core::Result<AccessToken> {
         let uuid = Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
-        let expiry_time = current_time + DEFAULT_REFRESH_TIME;
+        let expiry_time = current_time + DEFAULT_ASSERTION_LIFETIME;
         let payload = format!(
             r#"{{"aud":"{}","exp":{},"iss": "{}", "jti": "{}", "nbf": {}, "sub": "{}"}}"#,
             self.endpoint, expiry_time, self.client_id, uuid, current_time, self.client_id
@@ -211,7 +208,7 @@ impl ClientCertificateCredential {
     }
 }
 
-/// Parse a base64-encoded PKCS12 certificate into key, certificate, and optional CA chain.
+/// Parse a PKCS12 certificate into key, certificate, and optional CA chain.
 fn parse_certificate(
     cert_bytes: &[u8],
     password: Option<&Secret>,
@@ -263,8 +260,7 @@ fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     ))
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for ClientCertificateCredential {
     async fn get_token(
         &self,
@@ -289,6 +285,7 @@ mod tests {
     use super::*;
     use crate::{client_assertion_credential::tests::is_valid_request, tests::*};
     use azure_core::{
+        credentials::SecretBytes,
         http::{
             headers::Headers,
             policies::{Policy, PolicyResult},
@@ -302,13 +299,12 @@ mod tests {
         sync::{Arc, LazyLock},
     };
 
-    static TEST_CERT: LazyLock<String> = LazyLock::new(|| {
-        let pfx = std::fs::read(concat!(
+    static TEST_CERT: LazyLock<Vec<u8>> = LazyLock::new(|| {
+        std::fs::read(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/tests/certificate.pfx"
         ))
-        .expect("failed to read test certificate");
-        base64::encode(pfx)
+        .expect("failed to read test certificate")
     });
 
     #[derive(Debug, Clone)]
@@ -319,9 +315,8 @@ mod tests {
     }
 
     impl VerifyAssertionPolicy {
-        fn new(certificate: String, expect_x5c: bool) -> Self {
-            let pfx = base64::decode(certificate).expect("base64 encoding");
-            let (_, cert, _) = parse_certificate(&pfx, None).expect("valid certificate");
+        fn new(certificate: &[u8], expect_x5c: bool) -> Self {
+            let (_, cert, _) = parse_certificate(certificate, None).expect("valid certificate");
             let public_key = cert.public_key().expect("public key");
             let cert_der = cert.to_der().expect("valid certificate");
             Self {
@@ -332,8 +327,7 @@ mod tests {
         }
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    #[async_trait::async_trait]
     impl Policy for VerifyAssertionPolicy {
         async fn send(
             &self,
@@ -431,7 +425,7 @@ mod tests {
             let credential = ClientCertificateCredential::new(
                 FAKE_TENANT_ID.to_string(),
                 FAKE_CLIENT_ID.to_string(),
-                Secret::new(TEST_CERT.to_string()),
+                SecretBytes::from(TEST_CERT.as_slice()),
                 Some(ClientCertificateCredentialOptions {
                     client_options: ClientOptions {
                         transport: Some(Transport::new(Arc::new(sts))),
@@ -469,7 +463,7 @@ mod tests {
         let credential = ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_slice().into(),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
@@ -519,14 +513,11 @@ mod tests {
         let credential = ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_slice().into(),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
-                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(
-                        TEST_CERT.to_string(),
-                        false,
-                    ))],
+                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(&TEST_CERT, false))],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -560,7 +551,7 @@ mod tests {
         ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            "not a certificate".to_string(),
+            b"not a certificate".as_slice().into(),
             None,
         )
         .expect_err("invalid certificate");
@@ -571,7 +562,7 @@ mod tests {
         ClientCertificateCredential::new(
             "not a valid tenant".to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_slice().into(),
             None,
         )
         .expect_err("invalid tenant ID");
@@ -582,7 +573,7 @@ mod tests {
         ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_slice().into(),
             None,
         )
         .expect("valid credential")
@@ -603,14 +594,11 @@ mod tests {
         let credential = ClientCertificateCredential::new(
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
-            TEST_CERT.to_string(),
+            TEST_CERT.as_slice().into(),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
-                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(
-                        TEST_CERT.to_string(),
-                        true,
-                    ))],
+                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(&TEST_CERT, true))],
                     ..Default::default()
                 },
                 env: Some(Env::from(

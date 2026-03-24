@@ -1,0 +1,1 @@
+../../azure_security_keyvault_keys/src/authorizer.rs

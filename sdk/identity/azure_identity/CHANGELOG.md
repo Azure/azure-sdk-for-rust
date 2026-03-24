@@ -1,6 +1,6 @@
 # Release History
 
-## 0.31.0 (Unreleased)
+## 0.34.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,30 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.33.0 (2026-03-09)
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- `ClientCertificateCredential::new()` now takes `SecretBytes` instead of `Secret` for the `certificate` parameter. Pass the raw PKCS12 bytes wrapped in `SecretBytes` instead of a base64-encoded string wrapped in `Secret`.
+
+## 0.32.0 (2026-02-11)
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+
+### Bugs Fixed
+
+- Removed redundant content and extraneous JSON from `Azure[Developer]CliCredential` error messages
+
+## 0.31.0 (2026-01-21)
+
+### Breaking Changes
+
+- Removed unused `additionally_allowed_tenants` and `disable_instance_discovery` options for `AzureCliCredential` and `ClientAssertionCredential`.
+- Changed the type of the `certificate` parameter of `ClientCertificateCredential::new()` from `impl Into<Secret>` to `Secret`.
 
 ## 0.30.0 (2025-11-11)
 

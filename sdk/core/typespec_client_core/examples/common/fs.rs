@@ -13,6 +13,7 @@ use tokio::{
 use tracing::debug;
 use typespec_client_core::{
     error::Result,
+    http::{Body, RequestContent},
     stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
 };
 
@@ -132,8 +133,7 @@ impl FileStream {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl SeekableStream for FileStream {
     /// Seek to the specified offset into the file and reset the number of bytes to read
     ///
@@ -175,32 +175,26 @@ impl futures::io::AsyncRead for FileStream {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-mod convert {
-    use super::FileStream;
-    use typespec_client_core::http::{Body, RequestContent};
-
-    impl From<&FileStream> for Body {
-        fn from(stream: &FileStream) -> Self {
-            Body::SeekableStream(Box::new(stream.clone()))
-        }
+impl From<&FileStream> for Body {
+    fn from(stream: &FileStream) -> Self {
+        Body::SeekableStream(Box::new(stream.clone()))
     }
+}
 
-    impl From<FileStream> for Body {
-        fn from(stream: FileStream) -> Self {
-            Body::SeekableStream(Box::new(stream))
-        }
+impl From<FileStream> for Body {
+    fn from(stream: FileStream) -> Self {
+        Body::SeekableStream(Box::new(stream))
     }
+}
 
-    impl<T, F> From<&FileStream> for RequestContent<T, F> {
-        fn from(stream: &FileStream) -> Self {
-            Body::from(stream).into()
-        }
+impl<T, F> From<&FileStream> for RequestContent<T, F> {
+    fn from(stream: &FileStream) -> Self {
+        Body::from(stream).into()
     }
+}
 
-    impl<T, F> From<FileStream> for RequestContent<T, F> {
-        fn from(stream: FileStream) -> Self {
-            Body::from(stream).into()
-        }
+impl<T, F> From<FileStream> for RequestContent<T, F> {
+    fn from(stream: FileStream) -> Self {
+        Body::from(stream).into()
     }
 }

@@ -20,11 +20,11 @@ struct BackgroundProcessor {
 }
 
 impl BackgroundProcessor {
-    async fn new(processor: Arc<EventProcessor>) -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(Self {
+    fn new(processor: Arc<EventProcessor>) -> Self {
+        Self {
             background_task: AsyncMutex::new(None),
-            processor: processor.clone(),
-        })
+            processor,
+        }
     }
 
     async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let processor = EventProcessor::builder()
         .build(consumer, checkpoint_store)
         .await?;
-    let background_processor = BackgroundProcessor::new(processor.clone()).await?;
+    let background_processor = BackgroundProcessor::new(processor.clone());
 
     background_processor
         .start()
