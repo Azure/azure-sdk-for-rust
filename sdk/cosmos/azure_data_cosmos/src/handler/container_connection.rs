@@ -119,7 +119,6 @@ impl ContainerConnection {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::cosmos_request::CosmosRequest;
     use crate::operation_context::OperationType;
     use crate::resource_context::{ResourceLink, ResourceType};
