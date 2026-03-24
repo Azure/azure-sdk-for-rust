@@ -84,10 +84,6 @@ pub enum ReadManyInput {
 pub struct ReadManyOptions {
     /// Maximum concurrent sub-operations. Default: `min(num_ranges, 32)`.
     pub max_concurrency: Option<usize>,
-    /// Optional projection — field paths to return (e.g., `["/id", "/name"]`).
-    /// When set, queries use `SELECT c.id, c.name` instead of `SELECT *`.
-    /// Ignored for point reads (point reads always return full documents).
-    pub projections: Option<Vec<String>>,
 }
 ```
 
@@ -179,9 +175,6 @@ read_many(container, input, read_many_options, operation_options)
 
 All queries use parameterized values. Shape selection depends on the mode, PK
 definition, and item distribution within each chunk.
-
-When `projections` is set, `SELECT *` becomes `SELECT c.id, c.name, ...` with the
-requested fields. Point reads always return full documents (projections are ignored).
 
 #### (id, pk) Mode Shapes
 
@@ -383,8 +376,6 @@ pub struct ReadManyOptions {
     pub custom_headers: HashMap<HeaderName, HeaderValue>,
     /// Maximum concurrent sub-operations.
     pub max_concurrency: Option<usize>,
-    /// Optional field-path projections (e.g., `["/id", "/name"]`).
-    pub projections: Option<Vec<String>>,
 }
 
 pub struct ReadManyResponse<T> {
@@ -479,7 +470,7 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 |------|--------|-------------|
 | `src/models/item_identity.rs` | Create | `ItemIdentity`, `ReadManyInput` types |
 | `src/models/read_many_response.rs` | Create | `ReadManyResponse` type |
-| `src/models/read_many_options.rs` | Create | `ReadManyOptions` (max_concurrency, projections) |
+| `src/models/read_many_options.rs` | Create | `ReadManyOptions` (max_concurrency) |
 | `src/models/partition_key_range.rs` | Create | `PartitionKeyRange` boundaries |
 | `src/models/mod.rs` | Modify | Export new types |
 | `src/driver/read_many.rs` | Create | Core algorithm |
@@ -535,9 +526,7 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 | U21 | `pk_only_hierarchical` | PK-only hierarchical → Shape 4h query |
 | U22 | `pk_only_no_point_reads` | PK-only mode never produces point read work units |
 | U23 | `pk_only_epk_grouping` | PK values grouped to correct physical ranges |
-| U24 | `projections_select_fields` | Projections → `SELECT c.id, c.name` |
-| U25 | `projections_ignored_for_point_reads` | Point read work units ignore projections |
-| U26 | `max_concurrency_option` | Custom max_concurrency limits parallel work units |
+| U24 | `max_concurrency_option` | Custom max_concurrency limits parallel work units |
 
 ### Integration Tests (emulator)
 
@@ -556,11 +545,14 @@ void cosmos_read_many_response_free(cosmos_read_many_response* response);
 | E11 | `read_many_pk_only_basic` | PK-only: fetch items by PK values |
 | E12 | `read_many_pk_only_mixed_partitions` | PK-only: PKs spanning multiple physical partitions |
 | E13 | `read_many_pk_only_hierarchical` | PK-only: hierarchical PK container |
-| E14 | `read_many_projections` | Projected fields only in response |
-| E15 | `read_many_partition_split_retry` | 410/1002 → refresh ranges, retry |
+| E14 | `read_many_partition_split_retry` | 410/1002 → refresh ranges, retry |
 
 ## Open Questions
 
 1. **EPK hashing location**: Driver crate (recommended for C FFI reuse) or SDK crate?
 2. **Response ordering**: No guarantee (recommended, matches Go SDK). SDK can re-order.
 3. **Duplicate items**: Deduplicate at grouping stage (recommended). At most one copy returned.
+4. **Projections**: Allow callers to specify field paths (`SELECT c.id, c.name` instead of
+   `SELECT *`)? Could significantly reduce RU and bandwidth for large documents, but adds
+   API complexity and only applies to query work units (point reads always return full
+   documents). Ship without and add later, or include in v1?
