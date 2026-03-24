@@ -133,12 +133,6 @@ impl<T: SeekableStream + AsyncSeek> SeekableStream for FileStream<T> {
     }
 }
 
-impl From<super::FileReader> for FileStream<super::FileReader> {
-    fn from(reader: super::FileReader) -> Self {
-        Self::new(reader)
-    }
-}
-
 #[cfg(feature = "tokio")]
 impl From<super::tokio::FileReader> for FileStream<super::tokio::FileReader> {
     fn from(reader: super::tokio::FileReader) -> Self {
