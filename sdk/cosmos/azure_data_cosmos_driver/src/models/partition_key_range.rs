@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![allow(dead_code)]
 
 use crate::models::range::Range;
 use serde::{Deserialize, Serialize};

@@ -86,22 +86,7 @@ impl InnerPartitionKeyValue {
             InnerPartitionKeyValue::Bool(false) => writer.push(component::BOOL_FALSE),
             InnerPartitionKeyValue::Infinity => writer.push(component::INFINITY),
             InnerPartitionKeyValue::Number(n) => {
-                writer.push(component::NUMBER);
-                let mut payload = encode_double_as_uint64(n.value());
-                writer.push((payload >> 56) as u8);
-                payload <<= 8;
-                let mut first = true;
-                let mut byte_to_write: u8 = 0;
-                while payload != 0 {
-                    if !first {
-                        writer.push(byte_to_write);
-                    } else {
-                        first = false;
-                    }
-                    byte_to_write = ((payload >> 56) as u8) | 0x01;
-                    payload <<= 7;
-                }
-                writer.push(byte_to_write & 0xFE);
+                write_number_v1_binary(n.value(), writer);
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
@@ -132,6 +117,29 @@ pub(crate) fn encode_double_as_uint64(value: f64) -> u64 {
     } else {
         (!value_in_uint64).wrapping_add(1)
     }
+}
+
+/// Encode a number using V1 binary encoding (variable-length ordering-preserving).
+///
+/// Shared between [`InnerPartitionKeyValue::write_for_binary_encoding_v1`] and
+/// the EPK V1 hash computation in [`effective_partition_key`](super::effective_partition_key).
+pub(crate) fn write_number_v1_binary(value: f64, writer: &mut Vec<u8>) {
+    writer.push(component::NUMBER);
+    let mut payload = encode_double_as_uint64(value);
+    writer.push((payload >> 56) as u8);
+    payload <<= 8;
+    let mut first = true;
+    let mut byte_to_write: u8 = 0;
+    while payload != 0 {
+        if !first {
+            writer.push(byte_to_write);
+        } else {
+            first = false;
+        }
+        byte_to_write = ((payload >> 56) as u8) | 0x01;
+        payload <<= 7;
+    }
+    writer.push(byte_to_write & 0xFE);
 }
 
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {

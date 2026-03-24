@@ -14,6 +14,7 @@
 mod account_metadata_cache;
 mod async_cache;
 mod async_lazy;
+#[allow(dead_code)]
 mod collection_routing_map;
 mod container_cache;
 #[allow(dead_code)]

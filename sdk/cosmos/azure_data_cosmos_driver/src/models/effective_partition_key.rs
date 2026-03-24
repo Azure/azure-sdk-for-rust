@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![allow(dead_code)]
 
 //! Effective partition key (EPK) computation.
 //!
@@ -9,7 +8,7 @@
 
 use crate::models::{
     murmur_hash::{murmurhash3_128, murmurhash3_32},
-    partition_key::encode_double_as_uint64,
+    partition_key::write_number_v1_binary,
     PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
 use std::fmt::Write;
@@ -81,26 +80,6 @@ fn effective_partition_key_hash_v1(pk_values: &[PartitionKeyValue]) -> String {
     }
 
     bytes_to_hex_upper(&buffer)
-}
-
-/// Encode a number using V1 binary encoding (variable-length ordering-preserving).
-fn write_number_v1_binary(value: f64, writer: &mut Vec<u8>) {
-    writer.push(0x05); // NUMBER marker
-    let mut payload = encode_double_as_uint64(value);
-    writer.push((payload >> 56) as u8);
-    payload <<= 8;
-    let mut first = true;
-    let mut byte_to_write: u8 = 0;
-    while payload != 0 {
-        if !first {
-            writer.push(byte_to_write);
-        } else {
-            first = false;
-        }
-        byte_to_write = ((payload >> 56) as u8) | 0x01;
-        payload <<= 7;
-    }
-    writer.push(byte_to_write & 0xFE);
 }
 
 fn bytes_to_hex_upper(bytes: &[u8]) -> String {

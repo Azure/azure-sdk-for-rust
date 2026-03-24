@@ -28,10 +28,15 @@ mod resource_reference;
 mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
+#[allow(dead_code)]
 pub(crate) mod effective_partition_key;
+#[allow(dead_code)]
 mod murmur_hash;
+#[allow(dead_code)]
 pub(crate) mod partition_key_range;
+#[allow(dead_code)]
 pub(crate) mod range;
+#[allow(dead_code)]
 pub(crate) mod service_identity;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};

@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![allow(dead_code)]
 
 //! Collection routing map: maps effective partition keys to partition key ranges.
 //!
@@ -197,7 +196,11 @@ impl CollectionRoutingMap {
         };
 
         let range = &self.ordered_ranges[idx];
-        if range.to_range().contains(&epk.to_string()) {
+        // Direct &str comparison avoids allocations on the hot path
+        // (to_range() + contains() would clone min/max strings).
+        let min_ok = range.min_inclusive.as_str() <= epk;
+        let max_ok = epk < range.max_exclusive.as_str();
+        if min_ok && max_ok {
             Some(range)
         } else {
             None
