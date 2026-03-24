@@ -683,7 +683,7 @@ impl CosmosDriver {
         operation_options: &'a OperationOptions,
     ) -> RuntimeOptionsView<'a> {
         RuntimeOptionsView::new(
-            Some(Arc::new(self.runtime.env_options().clone())),
+            Some(Arc::clone(self.runtime.env_options())),
             Some(self.runtime.runtime_options()),
             Some(self.options.runtime_options().clone()),
             Some(operation_options.runtime()),

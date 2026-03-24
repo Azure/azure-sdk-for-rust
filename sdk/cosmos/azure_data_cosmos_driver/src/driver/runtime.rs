@@ -102,7 +102,7 @@ pub struct CosmosDriverRuntime {
     http_client_factory: Arc<dyn HttpClientFactory>,
 
     /// Environment-level runtime options, populated once from env vars at build time.
-    env_options: RuntimeOptions,
+    env_options: Arc<RuntimeOptions>,
 
     /// User-provided runtime-level default options, swappable via interior mutability.
     ///
@@ -221,7 +221,7 @@ impl CosmosDriverRuntime {
     }
 
     /// Returns the environment-level runtime options (populated from env vars at build time).
-    pub fn env_options(&self) -> &RuntimeOptions {
+    pub fn env_options(&self) -> &Arc<RuntimeOptions> {
         &self.env_options
     }
 
@@ -231,7 +231,12 @@ impl CosmosDriverRuntime {
     /// In-flight readers are unaffected by concurrent calls to
     /// [`set_runtime_options`](Self::set_runtime_options).
     pub fn runtime_options(&self) -> Arc<RuntimeOptions> {
-        self.runtime_options.read().unwrap().clone()
+        // Poisoning is safe to ignore: the write side is an atomic Arc swap with no
+        // multi-step mutation, so the value is always in a consistent state.
+        self.runtime_options
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     /// Replaces the runtime-level default options atomically.
@@ -239,7 +244,10 @@ impl CosmosDriverRuntime {
     /// In-flight operations that already obtained a snapshot via
     /// [`runtime_options`](Self::runtime_options) are unaffected.
     pub fn set_runtime_options(&self, options: RuntimeOptions) {
-        *self.runtime_options.write().unwrap() = Arc::new(options);
+        *self
+            .runtime_options
+            .write()
+            .unwrap_or_else(|e| e.into_inner()) = Arc::new(options);
     }
 
     /// Returns the computed user agent string.
@@ -675,7 +683,7 @@ impl CosmosDriverRuntimeBuilder {
             connection_pool,
             bootstrap_transport,
             http_client_factory,
-            env_options: RuntimeOptions::from_env(),
+            env_options: Arc::new(RuntimeOptions::from_env()),
             runtime_options: RwLock::new(Arc::new(self.runtime_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
