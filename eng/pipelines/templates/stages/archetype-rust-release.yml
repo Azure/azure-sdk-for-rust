@@ -132,11 +132,6 @@ stages:
                       Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
                     displayName: 'Copy crate for ESRP'
 
-                  - task: UseNode@1
-                    displayName: 'Install Node.js'
-                    inputs:
-                      version: '20.x'
-
                   - task: EsrpRelease@11
                     displayName: 'ESRP Release'
                     inputs:
