@@ -60,6 +60,9 @@ static NEXT_EVALUATION_ID: AtomicU64 = AtomicU64::new(0);
 /// **Contract**: Every `store_evaluations()` call must be paired with exactly one
 /// `take_evaluations()` call using the same request ID. Failure to call
 /// `take_evaluations()` (e.g., due to a panic) will leak the entry.
+///
+/// TODO(#4022): Replace this global store with pipeline-level context when the
+/// driver has its own HTTP pipeline with a custom context object.
 static EVALUATION_STORE: std::sync::LazyLock<Mutex<HashMap<u64, Vec<FaultInjectionEvaluation>>>> =
     std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
 
