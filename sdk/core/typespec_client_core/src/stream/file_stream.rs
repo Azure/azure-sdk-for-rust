@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{SeekableStream, DEFAULT_BUFFER_SIZE};
-use futures::io::{AsyncBufRead, AsyncRead, AsyncSeek};
+use futures::io::{AsyncRead, AsyncSeek};
 use std::{
     fmt, io,
     pin::Pin,
@@ -13,7 +13,7 @@ use std::{
 ///
 /// `FileStream<T>` wraps an inner reader `T` and provides internal buffering
 /// (like [`std::io::BufReader`]) along with implementations of
-/// [`AsyncRead`], [`AsyncBufRead`], and [`AsyncSeek`].
+/// [`AsyncRead`] and [`AsyncSeek`].
 ///
 /// Use [`FileStream::new`] to create a stream with the default buffer size
 /// ([`DEFAULT_BUFFER_SIZE`]), or chain [`FileStream::with_buffer_size`] to
@@ -62,31 +62,6 @@ impl<T: AsyncRead + AsyncSeek> FileStream<T> {
 impl<T: AsyncRead + AsyncSeek> fmt::Debug for FileStream<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("FileStream").finish_non_exhaustive()
-    }
-}
-
-impl<T: AsyncRead + AsyncSeek + Unpin> AsyncBufRead for FileStream<T> {
-    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-        let this = self.get_mut();
-        if this.pos >= this.filled {
-            // Buffer is consumed; refill from the inner stream.
-            this.pos = 0;
-            this.filled = 0;
-            let stream = Pin::new(&mut this.stream);
-            match stream.poll_read(cx, &mut this.buf) {
-                Poll::Ready(Ok(n)) => {
-                    this.filled = n;
-                }
-                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
-                Poll::Pending => return Poll::Pending,
-            }
-        }
-        Poll::Ready(Ok(&this.buf[this.pos..this.filled]))
-    }
-
-    fn consume(self: Pin<&mut Self>, amt: usize) {
-        let this = self.get_mut();
-        this.pos = std::cmp::min(this.pos + amt, this.filled);
     }
 }
 
