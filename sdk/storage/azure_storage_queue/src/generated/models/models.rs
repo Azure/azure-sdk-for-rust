@@ -64,6 +64,57 @@ pub struct CorsRule {
     pub max_age_in_seconds: Option<i32>,
 }
 
+/// The error response.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct Error {
+    /// The error code.
+    #[serde(rename = "Code", skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+
+    /// Copy source error code
+    #[serde(
+        rename = "CopySourceErrorCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub copy_source_error_code: Option<String>,
+
+    /// Copy source error message
+    #[serde(
+        rename = "CopySourceErrorMessage",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub copy_source_error_message: Option<String>,
+
+    /// Copy source status code
+    #[serde(
+        rename = "CopySourceStatusCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub copy_source_status_code: Option<i32>,
+
+    /// The error code.
+    #[serde(rename = "errorCode", skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+
+    /// The error message.
+    #[serde(rename = "Message", skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+
+    /// The error code for the copy source.
+    #[serde(
+        rename = "xMsCopySourceErrorCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub x_ms_copy_source_error_code: Option<String>,
+
+    /// The status code for the copy source.
+    #[serde(
+        rename = "xMsCopySourceStatusCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub x_ms_copy_source_status_code: Option<i32>,
+}
+
 /// Geo-Replication information for the Secondary Storage Service
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]

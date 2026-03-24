@@ -85,7 +85,8 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// Creates a new queue under the specified account. If the queue with the same name already exists, the operation fails.
+    /// Creates a new queue under the specified account. If a queue with the same name already exists, the operation succeeds
+    /// when the metadata is identical and returns 204; if the metadata differs, the operation returns 409.
     ///
     /// # Arguments
     ///
@@ -117,7 +118,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[201],
+                        success_codes: &[201, 204],
                     },
                     ..Default::default()
                 }),
@@ -603,11 +604,14 @@ impl QueueClient {
     }
 }
 
+/// Default value for [`QueueClientOptions::version`].
+pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+
 impl Default for QueueClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
+            version: String::from(DEFAULT_VERSION),
         }
     }
 }

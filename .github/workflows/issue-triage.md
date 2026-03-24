@@ -25,7 +25,6 @@ network:
     - release-assets.githubusercontent.com
     - telemetry.enterprise.githubcopilot.com
   blocked:
-    - github.com
     - registry.npmjs.org
 
 safe-outputs:
