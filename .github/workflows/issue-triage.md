@@ -21,9 +21,8 @@ network:
     - api.github.com
     - api.githubcopilot.com
     - api.individual.githubcopilot.com
+    - github
     - host.docker.internal
-    - raw.githubusercontent.com
-    - release-assets.githubusercontent.com
     - telemetry.enterprise.githubcopilot.com
   blocked:
     - registry.npmjs.org
@@ -44,7 +43,7 @@ tools:
     lockdown: false
     # Allow the agent to read issue content from any author,
     # including external users with no repo affiliation.
-    repos: [azure/azure-sdk-for-rust]
+    allowed-repos: [azure/azure-sdk-for-rust]
     min-integrity: none
 
 timeout-minutes: 10
