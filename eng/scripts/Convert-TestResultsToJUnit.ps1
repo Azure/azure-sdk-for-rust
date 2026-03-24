@@ -61,25 +61,31 @@ if (!$cargo2junitPath) {
 }
 
 $succeeded = $true
+$commandOutputDir = ([System.IO.Path]::Combine($OutputDirectory, "cargo2junit-errors"))
+if (!(Test-Path $commandOutputDir)) {
+  New-Item -ItemType Directory -Path $commandOutputDir | Out-Null
+}
+
 Write-Host "`nConverting $($jsonFiles.Count) JSON file(s) to JUnit XML..."
 foreach ($jsonFile in $jsonFiles) {
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile.Name)
   $junitFile = ([System.IO.Path]::Combine($OutputDirectory, "$baseName.xml"))
+  $stderrFile = ([System.IO.Path]::Combine($commandOutputDir, "$baseName-stderr.txt"))
 
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
-  $output = Get-Content $jsonFile.FullName | cargo2junit 2>&1
-  $exitCode = $LASTEXITCODE
 
-  # Separate stdout from stderr (native command stderr lines are ErrorRecord objects)
-  $stdout = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
-  $stderr = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
-
-  # Write converted output to the JUnit file
-  $stdout | Set-Content $junitFile
+  $proc = Start-Process cargo2junit `
+    -Wait `
+    -PassThru `
+    -RedirectStandardInput $jsonFile.FullName `
+    -RedirectStandardOutput $junitFile `
+    -RedirectStandardError $stderrFile
+  $exitCode = $proc.ExitCode
+  $stderr = @(Get-Content $stderrFile)
 
   # Always print stderr so it appears in CI logs for debugging
   foreach ($line in $stderr) {
-    Write-Host "  stderr: $line"
+    Write-Host "    stderr: $line"
   }
 
   if ($exitCode) {
