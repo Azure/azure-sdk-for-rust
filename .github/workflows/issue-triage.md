@@ -10,6 +10,7 @@ on:
   issues:
     types: [opened]
   reaction: eyes
+  roles: all
 
 permissions: read-all
 
@@ -33,7 +34,7 @@ safe-outputs:
   add-comment:
 
 tools:
-  bash: true
+  bash: false
   web-fetch:
   github:
     toolsets: [issues, pull_requests]
@@ -41,6 +42,10 @@ tools:
     # reading issues, pull requests and comments from 3rd-parties
     # If in a private repo this has no particular effect.
     lockdown: false
+    # Allow the agent to read issue content from any author,
+    # including external users with no repo affiliation.
+    repos: [azure/azure-sdk-for-rust]
+    min-integrity: none
 
 timeout-minutes: 10
 source: githubnext/agentics/workflows/issue-triage.md@8e6d7c86bba37371d2d0eee1a23563db3e561eb5
