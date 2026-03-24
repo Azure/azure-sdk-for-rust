@@ -3,8 +3,9 @@
 
 //! Asynchronous streams.
 
-mod async_stream;
 mod bytes_stream;
+mod file_reader;
+mod file_stream;
 #[cfg(feature = "tokio")]
 pub mod tokio;
 
@@ -12,8 +13,9 @@ use crate::{
     error::{Error, ErrorKind, Result},
     Bytes,
 };
-pub use async_stream::*;
 pub use bytes_stream::*;
+pub use file_reader::*;
+pub use file_stream::*;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
 use std::{pin::Pin, task::Context};
 

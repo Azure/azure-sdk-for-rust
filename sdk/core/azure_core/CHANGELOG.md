@@ -4,9 +4,9 @@
 
 ### Features Added
 
-- Added `AsyncStream` type that implements `SeekableStream` for any `AsyncRead + AsyncSeek` type.
+- Added `FileStream<T>` buffered stream adapter implementing `AsyncRead`, `AsyncBufRead`, `AsyncSeek`, and `SeekableStream`.
+- Added `FileReader` wrapping `std::fs::File` with async I/O via the configured `AsyncRuntime`.
 - Implemented `futures::io::AsyncSeek` for `BytesStream`.
-- Added `FileStream` type that implements `SeekableStream` for `tokio::fs::File` (behind `tokio` feature).
 - Added `Body::try_clone()` which returns `Some` for `Bytes` bodies and `None` for `SeekableStream` bodies.
 - Added `Request::try_clone()` which returns `None` if the body is a `SeekableStream`.
 
