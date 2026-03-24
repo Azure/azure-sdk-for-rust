@@ -396,7 +396,7 @@ impl CosmosDriverRuntime {
 
 /// Builder for creating [`CosmosDriverRuntime`].
 ///
-/// Use [`RuntimeOptions::builder()`] to create runtime options, then pass them
+/// Use `RuntimeOptionsBuilder` to create runtime options, then pass them
 /// to this builder via [`with_runtime_options()`](Self::with_runtime_options).
 ///
 /// # User Agent
@@ -450,7 +450,7 @@ impl CosmosDriverRuntimeBuilder {
 
     /// Sets the runtime options (defaults for operations).
     ///
-    /// Use [`RuntimeOptions::builder()`] to create the runtime options.
+    /// Use `RuntimeOptionsBuilder` to create the runtime options.
     pub fn with_runtime_options(mut self, options: RuntimeOptions) -> Self {
         self.runtime_options = Some(options);
         self
