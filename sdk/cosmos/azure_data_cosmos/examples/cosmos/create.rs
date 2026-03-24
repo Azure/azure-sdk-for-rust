@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::error::Error;
+use std::{borrow::Cow, error::Error};
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
@@ -145,7 +145,9 @@ impl CreateCommand {
 
                         ContainerProperties::new(
                             id.expect("the ID is required when not using '--json'"),
-                            PartitionKeyDefinition::new(partition_key),
+                            PartitionKeyDefinition::new(
+                                partition_key.into_iter().map(Cow::Owned).collect(),
+                            ),
                         )
                     }
                 };
