@@ -80,7 +80,7 @@ fn safe_debug_enum_empty_struct() {
     assert_eq!(format!("{x:?}"), r#"EmptyStruct"#);
 }
 
-#[test]
+#[cfg_attr(not(feature = "debug"), test)]
 fn safe_debug_mostly_safe_struct() {
     let x = MostlySafeStruct {
         name: "Kelly Smith",
