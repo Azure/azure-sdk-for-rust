@@ -17,6 +17,7 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { version = "0.32.0", default-features = false }
+base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }

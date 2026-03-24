@@ -5,6 +5,7 @@
 
 use crate::models::{ActivityId, ETag, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 /// Standard Cosmos DB request header names.
 ///
@@ -99,9 +100,11 @@ pub struct CosmosResponseHeaders {
     /// Cosmos substatus code (`x-ms-substatus`).
     pub substatus: Option<SubStatusCode>,
 
-    /// Index utilization metrics as a JSON string (`x-ms-cosmos-index-utilization`).
+    /// Index utilization metrics as a decoded JSON string (`x-ms-cosmos-index-utilization`).
     ///
-    /// Only populated when the `x-ms-cosmos-populateindexmetrics` request header is set.
+    /// The service returns this header as a base64-encoded JSON string. This field
+    /// contains the decoded JSON. Only populated when the
+    /// `x-ms-cosmos-populateindexmetrics` request header is set.
     pub index_metrics: Option<String>,
 
     /// Query execution metrics (`x-ms-documentdb-query-metrics`).
@@ -126,7 +129,8 @@ impl CosmosResponseHeaders {
     /// Extracts Cosmos headers from HTTP response headers.
     ///
     /// This parses standard Cosmos headers into typed fields for easy access.
-    pub(crate) fn from_headers(headers: &Headers) -> Self {
+    /// The `index_metrics` field is base64-decoded from the raw header value.
+    pub fn from_headers(headers: &Headers) -> Self {
         Self {
             activity_id: headers
                 .get_optional_str(&response_header_names::ACTIVITY_ID)
@@ -152,13 +156,34 @@ impl CosmosResponseHeaders {
                 .and_then(SubStatusCode::from_header_value),
             index_metrics: headers
                 .get_optional_str(&response_header_names::INDEX_METRICS)
-                .map(|s| s.to_owned()),
+                .and_then(|s| match STANDARD.decode(s) {
+                    Ok(bytes) => match String::from_utf8(bytes) {
+                        Ok(s) => Some(s),
+                        Err(e) => {
+                            tracing::warn!(
+                                header = "x-ms-cosmos-index-utilization",
+                                error = %e,
+                                "Failed to UTF-8 decode index metrics after base64 decode"
+                            );
+                            None
+                        }
+                    },
+                    Err(e) => {
+                        tracing::warn!(
+                            header = "x-ms-cosmos-index-utilization",
+                            error = %e,
+                            "Failed to base64-decode index metrics header"
+                        );
+                        None
+                    }
+                }),
             query_metrics: headers
                 .get_optional_str(&response_header_names::QUERY_METRICS)
                 .map(|s| s.to_owned()),
             server_duration_ms: headers
                 .get_optional_str(&response_header_names::SERVER_DURATION_MS)
-                .and_then(|s| s.parse::<f64>().ok()),
+                .and_then(|s| s.parse::<f64>().ok())
+                .filter(|v| v.is_finite()),
             lsn: headers
                 .get_optional_str(&response_header_names::LSN)
                 .and_then(|s| s.parse().ok()),
@@ -183,7 +208,8 @@ mod tests {
         headers.insert("x-ms-item-count", "10");
         headers.insert(
             "x-ms-cosmos-index-utilization",
-            r#"{"UtilizedSingleIndexes":[]}"#,
+            // base64 of r#"{"UtilizedSingleIndexes":[]}"#
+            "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
         );
         headers.insert(
             "x-ms-documentdb-query-metrics",
@@ -226,6 +252,27 @@ mod tests {
         );
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
+    }
+
+    #[test]
+    fn non_finite_server_duration_returns_none() {
+        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity"] {
+            let mut headers = Headers::new();
+            headers.insert("x-ms-request-duration-ms", value);
+            let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+            assert!(
+                cosmos_headers.server_duration_ms.is_none(),
+                "Expected None for '{value}'"
+            );
+        }
+    }
+
+    #[test]
+    fn invalid_base64_index_metrics_returns_none() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-cosmos-index-utilization", "not-valid-base64!!!");
+        let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+        assert!(cosmos_headers.index_metrics.is_none());
     }
 
     #[test]

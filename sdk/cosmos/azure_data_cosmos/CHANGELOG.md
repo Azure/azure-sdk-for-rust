@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `activity_id()`, `index_metrics()`, `query_metrics()`, and `server_duration_ms()` convenience methods to `CosmosResponse<T>` for access to additional response metadata.
+- Added `activity_id()`, `index_metrics()`, `query_metrics()`, and `server_duration_ms()` convenience methods to `CosmosResponse<T>` for access to additional response metadata. The `index_metrics()` method base64-decodes the raw header value to return valid JSON.
 
 ### Breaking Changes
 

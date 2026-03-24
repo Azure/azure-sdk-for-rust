@@ -10,6 +10,7 @@ use azure_core::http::{
     response::Response,
     StatusCode,
 };
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::de::DeserializeOwned;
 
 /// A response from a Cosmos DB operation.
@@ -92,11 +93,34 @@ impl<T> CosmosResponse<T> {
         self.get_optional_header_str(&crate::constants::ACTIVITY_ID)
     }
 
-    /// Returns the index utilization metrics as a JSON string, if available.
+    /// Returns the index utilization metrics as a decoded JSON string, if available.
     ///
-    /// Only populated when the request included the `x-ms-cosmos-populateindexmetrics` header.
-    pub fn index_metrics(&self) -> Option<&str> {
+    /// The service returns this header as a base64-encoded JSON string. This method
+    /// returns the decoded JSON. Only populated when the request included the
+    /// `x-ms-cosmos-populateindexmetrics` header.
+    pub fn index_metrics(&self) -> Option<String> {
         self.get_optional_header_str(&crate::constants::INDEX_METRICS)
+            .and_then(|s| match STANDARD.decode(s) {
+                Ok(bytes) => match String::from_utf8(bytes) {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        tracing::warn!(
+                            header = "x-ms-cosmos-index-utilization",
+                            error = %e,
+                            "Failed to UTF-8 decode index metrics after base64 decode"
+                        );
+                        None
+                    }
+                },
+                Err(e) => {
+                    tracing::warn!(
+                        header = "x-ms-cosmos-index-utilization",
+                        error = %e,
+                        "Failed to base64-decode index metrics header"
+                    );
+                    None
+                }
+            })
     }
 
     /// Returns the query execution metrics, if available.
@@ -111,6 +135,7 @@ impl<T> CosmosResponse<T> {
     pub fn server_duration_ms(&self) -> Option<f64> {
         self.get_optional_header_str(&crate::constants::REQUEST_DURATION_MS)
             .and_then(|s| s.parse::<f64>().ok())
+            .filter(|v| v.is_finite())
     }
 
     /// Deserializes the response body without consuming the response.
@@ -160,6 +185,16 @@ mod tests {
             StatusCode::Ok,
             Headers::new(),
             Bytes::from(body.to_string()),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        CosmosResponse::new(typed_response, create_mock_request())
+    }
+
+    fn create_response_with_headers(headers: Headers) -> CosmosResponse<TestModel> {
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id":"test","value":1}"#),
         );
         let typed_response: Response<TestModel> = raw_response.into();
         CosmosResponse::new(typed_response, create_mock_request())
@@ -229,5 +264,75 @@ mod tests {
             "Expected missing field error, got: {}",
             error_message
         );
+    }
+
+    #[test]
+    fn activity_id_returns_header_value() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-activity-id", "abc-123-def");
+        let response = create_response_with_headers(headers);
+        assert_eq!(response.activity_id(), Some("abc-123-def"));
+    }
+
+    #[test]
+    fn index_metrics_decodes_base64() {
+        let mut headers = Headers::new();
+        // base64 of r#"{"UtilizedSingleIndexes":[]}"#
+        headers.insert(
+            "x-ms-cosmos-index-utilization",
+            "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
+        );
+        let response = create_response_with_headers(headers);
+        assert_eq!(
+            response.index_metrics().as_deref(),
+            Some(r#"{"UtilizedSingleIndexes":[]}"#)
+        );
+    }
+
+    #[test]
+    fn query_metrics_returns_raw_string() {
+        let mut headers = Headers::new();
+        headers.insert(
+            "x-ms-documentdb-query-metrics",
+            "totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01",
+        );
+        let response = create_response_with_headers(headers);
+        assert_eq!(
+            response.query_metrics(),
+            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
+        );
+    }
+
+    #[test]
+    fn server_duration_ms_returns_parsed_value() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-request-duration-ms", "4.56");
+        let response = create_response_with_headers(headers);
+        assert!((response.server_duration_ms().unwrap() - 4.56).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn server_duration_ms_rejects_non_finite() {
+        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity"] {
+            let mut headers = Headers::new();
+            headers.insert("x-ms-request-duration-ms", value);
+            let response = create_response_with_headers(headers);
+            assert!(
+                response.server_duration_ms().is_none(),
+                "Expected None for '{value}'"
+            );
+        }
+    }
+
+    #[test]
+    fn missing_headers_return_none() {
+        let response = create_response_with_headers(Headers::new());
+        assert!(response.activity_id().is_none());
+        assert!(response.index_metrics().is_none());
+        assert!(response.query_metrics().is_none());
+        assert!(response.server_duration_ms().is_none());
+        assert!(response.request_charge().is_none());
+        assert!(response.session_token().is_none());
+        assert!(response.etag().is_none());
     }
 }
