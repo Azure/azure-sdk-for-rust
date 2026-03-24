@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `FileStream<T>` buffered stream adapter implementing `AsyncRead`, `AsyncBufRead`, `AsyncSeek`, and `SeekableStream`.
+- Added `FileStream<T>` buffered stream adapter implementing `AsyncRead`, `AsyncSeek`, and `SeekableStream`.
 - Added `FileReader` wrapping `std::fs::File` with async I/O via the configured `AsyncRuntime`.
 - Implemented `futures::io::AsyncSeek` for `BytesStream`.
 - Added `Body::try_clone()` which returns `Some` for `Bytes` bodies and `None` for `SeekableStream` bodies.
