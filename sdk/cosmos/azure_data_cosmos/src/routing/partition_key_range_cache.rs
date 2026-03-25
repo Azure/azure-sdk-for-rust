@@ -148,6 +148,13 @@ impl PartitionKeyRangeCache {
             )
             .await;
 
+        if let Err(ref e) = routing_map {
+            tracing::warn!(
+                collection_rid,
+                error = %e,
+                "Failed to fetch routing map for collection"
+            );
+        }
         Ok(routing_map.ok())
     }
 
@@ -193,7 +200,7 @@ impl PartitionKeyRangeCache {
             let pk_range_link = self
                 .database_link
                 .feed(ResourceType::Containers)
-                .item(collection_rid)
+                .item_by_rid(collection_rid)
                 .feed(ResourceType::PartitionKeyRanges);
             let response = self
                 .execute_partition_key_range_read_change_feed(
@@ -676,5 +683,62 @@ mod tests {
         let range = create_mock_partition_key_range("0", "", "FF");
         assert!(range.target_throughput.is_some());
         assert_eq!(range.target_throughput.unwrap(), 1000.0);
+    }
+
+    // Tests verifying that the pkranges resource link uses item_by_rid() so that
+    // collection RIDs (which are base64-encoded and can contain '=', '+', '/') are
+    // not URL-percent-encoded. Using item() would encode '=' to '%3D', causing 404s.
+
+    #[test]
+    fn pkranges_link_rid_with_equals_is_not_encoded() {
+        // RIDs like "pLLZAIuPigw=" contain '=' which item() would encode to '%3D'.
+        // item_by_rid() must preserve it as-is.
+        let collection_rid = "pLLZAIuPigw=";
+        let database_link = ResourceLink::root(ResourceType::Databases).item("perfdb");
+        let pk_range_link = database_link
+            .feed(ResourceType::Containers)
+            .item_by_rid(collection_rid)
+            .feed(ResourceType::PartitionKeyRanges);
+
+        // Correct: '=' preserved, not encoded to '%3D'
+        assert_eq!(
+            "dbs/perfdb/colls/pLLZAIuPigw=/pkranges",
+            pk_range_link.path()
+        );
+    }
+
+    #[test]
+    fn pkranges_link_item_encodes_equals_incorrectly() {
+        // Demonstrates the bug: item() URL-encodes '=' to '%3D', producing a path
+        // that Cosmos DB cannot find (404).
+        let collection_rid = "pLLZAIuPigw=";
+        let database_link = ResourceLink::root(ResourceType::Databases).item("perfdb");
+        let pk_range_link_wrong = database_link
+            .feed(ResourceType::Containers)
+            .item(collection_rid)
+            .feed(ResourceType::PartitionKeyRanges);
+
+        // Wrong: '=' is encoded to '%3D', causing 404 from Cosmos DB
+        assert!(
+            pk_range_link_wrong.path().contains("%3D"),
+            "item() should URL-encode '=' to '%3D'"
+        );
+        assert_eq!(
+            "dbs/perfdb/colls/pLLZAIuPigw%3D/pkranges",
+            pk_range_link_wrong.path()
+        );
+    }
+
+    #[test]
+    fn pkranges_link_rid_with_plus_is_not_encoded() {
+        // RIDs may also contain '+' (base64 char). item_by_rid() must preserve it.
+        let collection_rid = "AB+CD/EF==";
+        let database_link = ResourceLink::root(ResourceType::Databases).item("mydb");
+        let pk_range_link = database_link
+            .feed(ResourceType::Containers)
+            .item_by_rid(collection_rid)
+            .feed(ResourceType::PartitionKeyRanges);
+
+        assert_eq!("dbs/mydb/colls/AB+CD/EF==/pkranges", pk_range_link.path());
     }
 }
