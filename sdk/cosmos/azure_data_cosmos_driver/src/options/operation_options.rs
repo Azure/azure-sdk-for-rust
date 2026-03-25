@@ -74,13 +74,6 @@ impl OperationOptions {
         &mut self.runtime
     }
 
-    /// Creates effective runtime options by merging with a base.
-    ///
-    /// Operation-level settings take precedence over the base settings.
-    pub fn effective_runtime(&self, base: &RuntimeOptions) -> RuntimeOptions {
-        self.runtime.merge_with_base(base)
-    }
-
     /// Sets the trigger options for this operation.
     pub fn with_triggers(mut self, triggers: TriggerOptions) -> Self {
         self.triggers = Some(triggers);

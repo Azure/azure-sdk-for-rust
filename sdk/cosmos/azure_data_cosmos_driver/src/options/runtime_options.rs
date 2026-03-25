@@ -3,15 +3,9 @@
 
 //! Runtime-configurable options shared across environment, driver, and operation levels.
 
-// Note: `std::sync::RwLock` is used intentionally here instead of `tokio::sync::RwLock`
-// because `RuntimeOptions` may be read from synchronous contexts (e.g., builder construction,
-// configuration merging). The lock is held only briefly for reads/writes of option values,
-// so contention is minimal. Using `std::sync::RwLock` also avoids coupling the crate to a
-// specific async runtime (tokio), which is important for runtime-agnostic design.
-use std::{
-    sync::{Arc, RwLock},
-    time::Duration,
-};
+use std::time::Duration;
+
+use azure_data_cosmos_macros::CosmosOptions;
 
 use crate::{
     models::ThroughputControlGroupName,
@@ -24,9 +18,16 @@ use crate::{
 /// Runtime-configurable options that can be set at environment, driver, or operation level.
 ///
 /// These options follow a hierarchy where operation-level settings override driver-level,
-/// which in turn override environment-level defaults.
+/// which in turn override runtime-level, which override environment-level defaults.
+///
+/// The `#[derive(CosmosOptions)]` macro generates:
+/// - [`RuntimeOptionsView`] — snapshot view for resolving across layers
+/// - [`RuntimeOptionsBuilder`] — fluent builder for constructing options
+/// - `Default` — all fields `None`
+/// - `from_env()` / `from_env_vars()` — environment variable loading
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime, account, operation))]
 #[non_exhaustive]
-#[derive(Clone, Debug, Default)]
 pub struct RuntimeOptions {
     /// Throughput control group name for rate limiting.
     pub throughput_control_group_name: Option<ThroughputControlGroupName>,
@@ -39,12 +40,16 @@ pub struct RuntimeOptions {
     /// Regions to exclude from routing.
     pub excluded_regions: Option<ExcludedRegions>,
     /// Read consistency strategy for read operations.
+    #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
     /// Content response on write setting.
+    #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
     /// Maximum operation-level failover retries.
+    #[option(env = "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT")]
     pub max_failover_retry_count: Option<u32>,
     /// Maximum operation-level session retries.
+    #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
     /// Endpoint unavailability TTL used by routing state.
     pub endpoint_unavailability_ttl: Option<Duration>,
@@ -56,278 +61,6 @@ pub struct RuntimeOptions {
     /// session consistency is not needed.
     pub session_capturing_disabled: Option<bool>,
 }
-
-impl RuntimeOptions {
-    /// Creates a new empty runtime options.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Returns a builder for creating runtime options.
-    ///
-    /// Use this to construct a new `RuntimeOptions` with specific values.
-    pub fn builder() -> RuntimeOptionsBuilder {
-        RuntimeOptionsBuilder::default()
-    }
-
-    /// Returns a builder initialized with this instance's values.
-    ///
-    /// Use this to create a modified copy of the current options.
-    pub fn to_builder(&self) -> RuntimeOptionsBuilder {
-        RuntimeOptionsBuilder::from_options(self.clone())
-    }
-
-    /// Merges this options with a base, returning a new options where
-    /// `self` values take precedence over `base` values.
-    pub fn merge_with_base(&self, base: &RuntimeOptions) -> RuntimeOptions {
-        RuntimeOptions {
-            throughput_control_group_name: self
-                .throughput_control_group_name
-                .clone()
-                .or_else(|| base.throughput_control_group_name.clone()),
-            dedicated_gateway_options: self
-                .dedicated_gateway_options
-                .clone()
-                .or_else(|| base.dedicated_gateway_options.clone()),
-            diagnostics_thresholds: self
-                .diagnostics_thresholds
-                .clone()
-                .or_else(|| base.diagnostics_thresholds.clone()),
-            end_to_end_latency_policy: self
-                .end_to_end_latency_policy
-                .clone()
-                .or_else(|| base.end_to_end_latency_policy.clone()),
-            excluded_regions: self
-                .excluded_regions
-                .clone()
-                .or_else(|| base.excluded_regions.clone()),
-            read_consistency_strategy: self
-                .read_consistency_strategy
-                .or(base.read_consistency_strategy),
-            content_response_on_write: self
-                .content_response_on_write
-                .or(base.content_response_on_write),
-            max_failover_retry_count: self
-                .max_failover_retry_count
-                .or(base.max_failover_retry_count),
-            max_session_retry_count: self
-                .max_session_retry_count
-                .or(base.max_session_retry_count),
-            endpoint_unavailability_ttl: self
-                .endpoint_unavailability_ttl
-                .or(base.endpoint_unavailability_ttl),
-            session_capturing_disabled: self
-                .session_capturing_disabled
-                .or(base.session_capturing_disabled),
-        }
-    }
-}
-
-/// Builder for creating [`RuntimeOptions`].
-///
-/// # Example
-///
-/// ```
-/// use azure_data_cosmos_driver::options::{RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite};
-///
-/// let options = RuntimeOptionsBuilder::new()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
-///     .build();
-///
-/// // Or modify an existing instance
-/// let modified = options.to_builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
-///     .build();
-/// ```
-#[non_exhaustive]
-#[derive(Clone, Debug, Default)]
-pub struct RuntimeOptionsBuilder {
-    options: RuntimeOptions,
-}
-
-impl RuntimeOptionsBuilder {
-    /// Creates a new builder with default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Creates a builder from existing runtime options.
-    pub fn from_options(options: RuntimeOptions) -> Self {
-        Self { options }
-    }
-
-    /// Sets the throughput control group name.
-    pub fn with_throughput_control_group_name(mut self, name: ThroughputControlGroupName) -> Self {
-        self.options.throughput_control_group_name = Some(name);
-        self
-    }
-
-    /// Sets the dedicated gateway options.
-    pub fn with_dedicated_gateway_options(mut self, options: DedicatedGatewayOptions) -> Self {
-        self.options.dedicated_gateway_options = Some(options);
-        self
-    }
-
-    /// Sets the diagnostics thresholds.
-    pub fn with_diagnostics_thresholds(mut self, thresholds: DiagnosticsThresholds) -> Self {
-        self.options.diagnostics_thresholds = Some(thresholds);
-        self
-    }
-
-    /// Sets the end-to-end latency policy.
-    pub fn with_end_to_end_latency_policy(
-        mut self,
-        policy: EndToEndOperationLatencyPolicy,
-    ) -> Self {
-        self.options.end_to_end_latency_policy = Some(policy);
-        self
-    }
-
-    /// Sets the excluded regions.
-    pub fn with_excluded_regions(mut self, regions: ExcludedRegions) -> Self {
-        self.options.excluded_regions = Some(regions);
-        self
-    }
-
-    /// Sets the read consistency strategy.
-    pub fn with_read_consistency_strategy(mut self, strategy: ReadConsistencyStrategy) -> Self {
-        self.options.read_consistency_strategy = Some(strategy);
-        self
-    }
-
-    /// Sets the content response on write setting.
-    pub fn with_content_response_on_write(mut self, value: ContentResponseOnWrite) -> Self {
-        self.options.content_response_on_write = Some(value);
-        self
-    }
-
-    /// Sets max operation-level failover retries.
-    pub fn with_max_failover_retry_count(mut self, value: u32) -> Self {
-        self.options.max_failover_retry_count = Some(value);
-        self
-    }
-
-    /// Sets max operation-level session retries.
-    pub fn with_max_session_retry_count(mut self, value: u32) -> Self {
-        self.options.max_session_retry_count = Some(value);
-        self
-    }
-
-    /// Sets endpoint unavailability TTL.
-    pub fn with_endpoint_unavailability_ttl(mut self, value: Duration) -> Self {
-        self.options.endpoint_unavailability_ttl = Some(value);
-        self
-    }
-
-    /// Disables session token capturing.
-    ///
-    /// When `true`, the driver will not capture or resolve session tokens.
-    /// Defaults to `false` (session capturing is enabled).
-    pub fn with_session_capturing_disabled(mut self, value: bool) -> Self {
-        self.options.session_capturing_disabled = Some(value);
-        self
-    }
-
-    /// Builds the [`RuntimeOptions`].
-    pub fn build(self) -> RuntimeOptions {
-        self.options
-    }
-}
-
-/// Thread-safe wrapper for runtime options.
-///
-/// Provides interior mutability for runtime configuration changes.
-/// Used by `EnvironmentOptions` and `DriverOptions` to allow runtime modification
-/// of default settings.
-#[derive(Clone, Debug, Default)]
-pub struct SharedRuntimeOptions(Arc<RwLock<RuntimeOptions>>);
-
-impl SharedRuntimeOptions {
-    /// Creates a new empty shared runtime options.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Creates shared runtime options from existing runtime options.
-    pub fn from_options(options: RuntimeOptions) -> Self {
-        Self(Arc::new(RwLock::new(options)))
-    }
-
-    /// Returns a snapshot of the current runtime options.
-    ///
-    /// If the lock is poisoned (a thread panicked while holding it), this
-    /// recovers the inner data via [`std::sync::PoisonError::into_inner`] rather than
-    /// propagating the panic.
-    pub fn snapshot(&self) -> RuntimeOptions {
-        self.0
-            .read()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone()
-    }
-
-    /// Acquires a write guard, recovering from a poisoned lock if necessary.
-    fn write_guard(&self) -> std::sync::RwLockWriteGuard<'_, RuntimeOptions> {
-        self.0
-            .write()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-    }
-
-    /// Sets the throughput control group name.
-    pub fn set_throughput_control_group_name(&self, name: Option<ThroughputControlGroupName>) {
-        self.write_guard().throughput_control_group_name = name;
-    }
-
-    /// Sets the dedicated gateway options.
-    pub fn set_dedicated_gateway_options(&self, options: Option<DedicatedGatewayOptions>) {
-        self.write_guard().dedicated_gateway_options = options;
-    }
-
-    /// Sets the diagnostics thresholds.
-    pub fn set_diagnostics_thresholds(&self, thresholds: Option<DiagnosticsThresholds>) {
-        self.write_guard().diagnostics_thresholds = thresholds;
-    }
-
-    /// Sets the end-to-end latency policy.
-    pub fn set_end_to_end_latency_policy(&self, policy: Option<EndToEndOperationLatencyPolicy>) {
-        self.write_guard().end_to_end_latency_policy = policy;
-    }
-
-    /// Sets the excluded regions.
-    pub fn set_excluded_regions(&self, regions: Option<ExcludedRegions>) {
-        self.write_guard().excluded_regions = regions;
-    }
-
-    /// Sets the read consistency strategy.
-    pub fn set_read_consistency_strategy(&self, strategy: Option<ReadConsistencyStrategy>) {
-        self.write_guard().read_consistency_strategy = strategy;
-    }
-
-    /// Sets the content response on write setting.
-    pub fn set_content_response_on_write(&self, value: Option<ContentResponseOnWrite>) {
-        self.write_guard().content_response_on_write = value;
-    }
-
-    /// Sets maximum failover retries.
-    pub fn set_max_failover_retry_count(&self, value: Option<u32>) {
-        self.write_guard().max_failover_retry_count = value;
-    }
-
-    /// Sets maximum session retries.
-    pub fn set_max_session_retry_count(&self, value: Option<u32>) {
-        self.write_guard().max_session_retry_count = value;
-    }
-
-    /// Sets endpoint unavailability TTL.
-    pub fn set_endpoint_unavailability_ttl(&self, value: Option<Duration>) {
-        self.write_guard().endpoint_unavailability_ttl = value;
-    }
-
-    /// Sets whether session token capturing is disabled.
-    pub fn set_session_capturing_disabled(&self, value: Option<bool>) {
-        self.write_guard().session_capturing_disabled = value;
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -341,7 +74,7 @@ mod tests {
 
     #[test]
     fn builder_creates_options() {
-        let options = RuntimeOptions::builder()
+        let options = RuntimeOptionsBuilder::new()
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
@@ -352,75 +85,80 @@ mod tests {
     }
 
     #[test]
-    fn to_builder_creates_modified_copy() {
-        let original = RuntimeOptions::builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
-            .with_read_consistency_strategy(ReadConsistencyStrategy::Eventual)
-            .build();
+    fn view_resolves_across_layers() {
+        use std::sync::Arc;
 
-        let modified = original
-            .to_builder()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
-            .build();
-
-        // Modified value changed
-        assert_eq!(
-            modified.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
-        );
-        // Unmodified value preserved
-        assert_eq!(
-            modified.read_consistency_strategy,
-            Some(ReadConsistencyStrategy::Eventual)
-        );
-        // Original unchanged
-        assert_eq!(
-            original.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
-        );
-    }
-
-    #[test]
-    fn merge_with_base() {
-        let base = RuntimeOptions {
-            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+        let env = Arc::new(RuntimeOptions {
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
+            max_failover_retry_count: Some(3),
             ..Default::default()
-        };
+        });
 
-        let override_opts = RuntimeOptions {
+        let runtime = Arc::new(RuntimeOptions {
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            ..Default::default()
+        });
+
+        let account = Arc::new(RuntimeOptions {
+            max_failover_retry_count: Some(5),
+            ..Default::default()
+        });
+
+        let operation = RuntimeOptions {
             content_response_on_write: Some(ContentResponseOnWrite::Disabled),
             ..Default::default()
         };
 
-        let merged = override_opts.merge_with_base(&base);
+        let view =
+            RuntimeOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
-        // Override takes precedence
+        // Operation overrides runtime
         assert_eq!(
-            merged.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Disabled)
         );
-        // Base value used when override is None
+        // Account overrides env
+        assert_eq!(view.max_failover_retry_count(), Some(&5));
+        // Falls through to env
         assert_eq!(
-            merged.read_consistency_strategy,
-            Some(ReadConsistencyStrategy::Eventual)
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::Eventual)
         );
+        // Not set anywhere
+        assert!(view.excluded_regions().is_none());
     }
 
     #[test]
-    fn shared_runtime_options_snapshot() {
-        let shared = SharedRuntimeOptions::new();
+    fn from_env_vars_parses_known_vars() {
+        let options = RuntimeOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY" => Ok("Session".to_string()),
+            "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
+            "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
+            "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
 
-        // Initially empty
-        assert!(shared.snapshot().content_response_on_write.is_none());
-
-        // Modify
-        shared.set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
-
-        // Verify change
         assert_eq!(
-            shared.snapshot().content_response_on_write,
+            options.read_consistency_strategy,
+            Some(ReadConsistencyStrategy::Session)
+        );
+        assert_eq!(
+            options.content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
+        assert_eq!(options.max_failover_retry_count, Some(7));
+        assert_eq!(options.max_session_retry_count, Some(3));
+        // Fields without env annotation remain None
+        assert!(options.excluded_regions.is_none());
+    }
+
+    #[test]
+    fn from_env_vars_returns_none_for_missing_vars() {
+        let options = RuntimeOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
+
+        assert!(options.read_consistency_strategy.is_none());
+        assert!(options.content_response_on_write.is_none());
+        assert!(options.max_failover_retry_count.is_none());
+        assert!(options.max_session_retry_count.is_none());
     }
 }
