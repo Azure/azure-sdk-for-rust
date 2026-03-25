@@ -9,7 +9,6 @@ use crate::pipeline::GatewayPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::collection_routing_map::CollectionRoutingMap;
-use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
@@ -28,7 +27,6 @@ const PAGE_SIZE_STRING: &str = "-1";
 pub(crate) struct PartitionKeyRangeCache {
     routing_map_cache: AsyncCache<String, CollectionRoutingMap>,
     pipeline: Arc<GatewayPipeline>,
-    container_cache: Arc<ContainerCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
     database_link: ResourceLink,
 }
@@ -43,7 +41,6 @@ impl PartitionKeyRangeCache {
     pub fn new(
         pipeline: Arc<GatewayPipeline>,
         database_link: ResourceLink,
-        container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
         // No TTL-based expiry is needed.
@@ -51,7 +48,6 @@ impl PartitionKeyRangeCache {
         Self {
             routing_map_cache,
             pipeline,
-            container_cache,
             endpoint_manager,
             database_link,
         }

@@ -26,23 +26,69 @@
 //!   decorator that wraps created clients with fault injection.
 
 mod condition;
+mod evaluation;
 mod fault_injecting_factory;
 mod http_client;
 mod result;
 mod rule;
 
+use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 
 use crate::models::{OperationType, ResourceType};
 
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
+pub use evaluation::FaultInjectionEvaluation;
 pub(crate) use fault_injecting_factory::FaultInjectingHttpClientFactory;
 pub use http_client::FaultClient;
 pub use result::{
     CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
 };
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
+
+/// Counter for generating unique evaluation request IDs.
+static NEXT_EVALUATION_ID: AtomicU64 = AtomicU64::new(0);
+
+/// Storage for fault injection evaluations keyed by request ID.
+///
+/// Written by [`FaultClient`] during `execute_request()`, read by the transport
+/// pipeline in `finalize_http_attempt()`.
+///
+/// **Contract**: Every `store_evaluations()` call must be paired with exactly one
+/// `take_evaluations()` call using the same request ID. Failure to call
+/// `take_evaluations()` (e.g., due to a panic) will leak the entry.
+///
+/// TODO(#4022): Replace this global store with pipeline-level context when the
+/// driver has its own HTTP pipeline with a custom context object.
+static EVALUATION_STORE: std::sync::LazyLock<Mutex<HashMap<u64, Vec<FaultInjectionEvaluation>>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Generates a unique evaluation request ID.
+pub(crate) fn next_evaluation_id() -> u64 {
+    // Uniqueness is guaranteed by the atomic increment itself;
+    // no memory ordering with other operations is needed.
+    NEXT_EVALUATION_ID.fetch_add(1, Ordering::Relaxed)
+}
+
+/// Stores evaluations for a request ID.
+pub(crate) fn store_evaluations(request_id: u64, evaluations: Vec<FaultInjectionEvaluation>) {
+    EVALUATION_STORE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(request_id, evaluations);
+}
+
+/// Takes (removes and returns) evaluations for a request ID.
+pub(crate) fn take_evaluations(request_id: u64) -> Vec<FaultInjectionEvaluation> {
+    EVALUATION_STORE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&request_id)
+        .unwrap_or_default()
+}
 
 /// Represents different server error types that can be injected for fault testing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

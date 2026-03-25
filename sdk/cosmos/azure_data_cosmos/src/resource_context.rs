@@ -244,6 +244,7 @@ impl ResourceLink {
     ///
     /// The resource link path follows the pattern `dbs/{db_id}/colls/{container_id}/...`.
     /// Returns `None` if the path does not contain a container segment.
+    #[allow(dead_code)] // Used by tests; useful for future resource link parsing
     pub fn container_id(&self) -> Option<String> {
         let path = self.unencoded_path();
         let segments: Vec<&str> = path.split('/').collect();

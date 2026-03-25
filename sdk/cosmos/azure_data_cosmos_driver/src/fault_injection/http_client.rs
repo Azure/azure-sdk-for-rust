@@ -6,9 +6,10 @@
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
+use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
 use crate::models::cosmos_headers::fault_injection_header_names::{
-    FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+    FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
 };
 use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
@@ -18,6 +19,17 @@ use azure_core::http::headers::Headers;
 use azure_core::http::{AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+/// Result of attempting to apply a fault injection rule.
+enum ApplyResult {
+    /// Fault was injected — return this response/error to the caller.
+    Injected(azure_core::Result<AsyncRawResponse>),
+    /// Rule matched but the probability check failed.
+    ProbabilityMiss,
+    /// Rule had no error_type and no custom_response — effectively no-op.
+    /// This happens when a rule only has delay (delay was already applied).
+    NoEffect,
+}
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
 #[derive(Debug)]
@@ -38,36 +50,56 @@ impl FaultClient {
     }
 
     /// Checks if a rule is currently applicable based on timing constraints.
-    fn is_rule_applicable(&self, rule: &FaultInjectionRule) -> bool {
+    /// Returns `None` if applicable, or `Some(evaluation)` with the skip reason.
+    fn evaluate_applicability(
+        &self,
+        rule: &FaultInjectionRule,
+    ) -> Option<FaultInjectionEvaluation> {
         let now = Instant::now();
 
         if !rule.is_enabled() {
-            return false;
+            return Some(FaultInjectionEvaluation::Disabled {
+                rule_id: rule.id().to_owned(),
+            });
         }
 
         if let Some(start_time) = rule.start_time() {
             if now < start_time {
-                return false;
+                return Some(FaultInjectionEvaluation::BeforeStartTime {
+                    rule_id: rule.id().to_owned(),
+                });
             }
         }
 
         if let Some(end_time) = rule.end_time() {
             if now >= end_time {
-                return false;
+                return Some(FaultInjectionEvaluation::AfterEndTime {
+                    rule_id: rule.id().to_owned(),
+                });
             }
         }
 
         if let Some(hit_limit) = rule.hit_limit() {
-            if rule.hit_count() >= hit_limit {
-                return false;
+            let hit_count = rule.hit_count();
+            if hit_count >= hit_limit {
+                return Some(FaultInjectionEvaluation::HitLimitExhausted {
+                    rule_id: rule.id().to_owned(),
+                    hit_count,
+                    hit_limit,
+                });
             }
         }
 
-        true
+        None // Rule is applicable
     }
 
     /// Checks if the request matches the rule's condition.
-    fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
+    /// Returns `None` if it matches, or `Some(evaluation)` with the mismatch reason.
+    fn evaluate_condition(
+        &self,
+        request: &Request,
+        rule: &FaultInjectionRule,
+    ) -> Option<FaultInjectionEvaluation> {
         let condition = rule.condition();
 
         if let Some(expected_op) = condition.operation_type() {
@@ -76,23 +108,29 @@ impl FaultClient {
                 .get_optional_str(&FAULT_INJECTION_OPERATION)
                 .and_then(|s| s.parse::<FaultOperationType>().ok());
             if request_op != Some(expected_op) {
-                return false;
+                return Some(FaultInjectionEvaluation::OperationMismatch {
+                    rule_id: rule.id().to_owned(),
+                });
             }
         }
 
         if let Some(region) = condition.region() {
             if !request.url().as_str().contains(region.as_str()) {
-                return false;
+                return Some(FaultInjectionEvaluation::RegionMismatch {
+                    rule_id: rule.id().to_owned(),
+                });
             }
         }
 
         if let Some(container_id) = condition.container_id() {
             if !request.url().as_str().contains(container_id) {
-                return false;
+                return Some(FaultInjectionEvaluation::ContainerMismatch {
+                    rule_id: rule.id().to_owned(),
+                });
             }
         }
 
-        true
+        None // Condition matches
     }
 
     /// Applies the fault injection result and returns an error or modifies the response.
@@ -100,11 +138,17 @@ impl FaultClient {
     /// This method handles the full fault lifecycle: probability check, delay application,
     /// and fault response generation. If the probability check fails, no fault is injected
     /// and no delay is applied.
+    ///
+    /// When a fault is injected, pushes an `Applied` evaluation to the provided
+    /// `evaluations` list. The caller (`execute_request`) stores these in the
+    /// concurrent evaluation store keyed by request ID, which the transport
+    /// pipeline reads via `take_evaluations()`.
     async fn apply_fault(
         &self,
         server_error: &FaultInjectionResult,
         rule: &FaultInjectionRule,
-    ) -> Option<azure_core::Result<AsyncRawResponse>> {
+        evaluations: &mut Vec<FaultInjectionEvaluation>,
+    ) -> ApplyResult {
         // Check probability
         if server_error.probability() < 1.0 {
             let random: f32 = rand::random();
@@ -112,13 +156,18 @@ impl FaultClient {
                 || server_error.probability() <= 0.0
                 || random >= server_error.probability()
             {
-                return None; // Don't inject fault this time
+                return ApplyResult::ProbabilityMiss;
             }
         }
 
         // Probability check passed — count this as a hit.
         rule.increment_hit_count();
         let rule_id = rule.id();
+
+        // Record that the rule was applied before serializing evaluations.
+        evaluations.push(FaultInjectionEvaluation::Applied {
+            rule_id: rule_id.to_owned(),
+        });
 
         // Apply delay if configured (only when fault is actually injected).
         if let Some(delay) = server_error.delay() {
@@ -133,9 +182,8 @@ impl FaultClient {
 
         // Check for custom response first (takes precedence over error injection)
         if let Some(custom) = server_error.custom_response() {
-            let mut headers = custom.headers().clone();
-            headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
-            return Some(Ok(AsyncRawResponse::from_bytes(
+            let headers = custom.headers().clone();
+            return ApplyResult::Injected(Ok(AsyncRawResponse::from_bytes(
                 custom.status_code(),
                 headers,
                 custom.body().to_vec(),
@@ -145,20 +193,20 @@ impl FaultClient {
         // Generate the appropriate error based on error type
         let error_type = match server_error.error_type() {
             Some(et) => et,
-            None => return None, // No error type set, pass through
+            None => return ApplyResult::NoEffect,
         };
 
         // Connection-level faults return simple errors with the appropriate ErrorKind.
-        // HTTP-level faults produce synthetic error responses.
+        // Evaluations are propagated via the concurrent evaluation store for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
-                return Some(Err(azure_core::Error::with_message(
+                return ApplyResult::Injected(Err(azure_core::Error::with_message(
                     ErrorKind::Connection,
                     "Injected fault: connection error",
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
-                return Some(Err(azure_core::Error::with_message(
+                return ApplyResult::Injected(Err(azure_core::Error::with_message(
                     ErrorKind::Io,
                     "Injected fault: response timeout",
                 )));
@@ -209,7 +257,6 @@ impl FaultClient {
         if let Some(ss) = sub_status {
             headers.insert(SUBSTATUS.clone(), ss.value().to_string());
         }
-        headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
         let raw_response = Box::new(RawResponse::from_bytes(status_code, headers, vec![]));
 
         let error = azure_core::Error::with_message(
@@ -221,26 +268,80 @@ impl FaultClient {
             message,
         );
 
-        Some(Err(error))
+        ApplyResult::Injected(Err(error))
     }
 }
 
 #[async_trait]
 impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
-        // Find applicable rule
-        let matched_rule = self
-            .rules
-            .iter()
-            .find(|rule| self.is_rule_applicable(rule) && self.matches_condition(request, rule))
-            .cloned();
+        let mut evaluations: Vec<FaultInjectionEvaluation> = Vec::new();
+        let mut matched_rule: Option<Arc<FaultInjectionRule>> = None;
 
-        // Apply the fault if we found an applicable rule
+        for rule in self.rules.iter() {
+            // Check applicability (timing, enabled, hit limit)
+            if let Some(skip_reason) = self.evaluate_applicability(rule) {
+                evaluations.push(skip_reason);
+                continue;
+            }
+
+            // Check condition match (operation, region, container)
+            if let Some(mismatch) = self.evaluate_condition(request, rule) {
+                evaluations.push(mismatch);
+                continue;
+            }
+
+            // Rule is applicable and matches — use it (first match wins)
+            if matched_rule.is_none() {
+                matched_rule = Some(Arc::clone(rule));
+            } else {
+                evaluations.push(FaultInjectionEvaluation::Superseded {
+                    rule_id: rule.id().to_owned(),
+                });
+            }
+        }
+
+        // Apply the fault if we found a matching rule.
+        // `apply_fault` pushes the Applied evaluation; all evaluations are then
+        // stored in the concurrent evaluation store keyed by request ID.
         let fault_response = if let Some(ref rule) = matched_rule {
-            self.apply_fault(rule.result(), rule).await
+            match self
+                .apply_fault(rule.result(), rule, &mut evaluations)
+                .await
+            {
+                ApplyResult::Injected(response) => Some(response),
+                ApplyResult::ProbabilityMiss => {
+                    evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
+                        rule_id: rule.id().to_owned(),
+                        probability: rule.result().probability(),
+                    });
+                    None
+                }
+                ApplyResult::NoEffect => None,
+            }
         } else {
             None
         };
+
+        // Log evaluations at trace level
+        if !evaluations.is_empty() {
+            tracing::trace!(
+                evaluations = ?evaluations,
+                "fault injection rule evaluation"
+            );
+        }
+
+        // Store evaluations keyed by the request ID set by the transport pipeline.
+        if !evaluations.is_empty() {
+            if let Some(id_str) = request
+                .headers()
+                .get_optional_str(&FAULT_INJECTION_REQUEST_ID)
+            {
+                if let Ok(id) = id_str.parse::<u64>() {
+                    super::store_evaluations(id, evaluations);
+                }
+            }
+        }
 
         if let Some(fault_response) = fault_response {
             fault_response
@@ -250,6 +351,9 @@ impl HttpClient for FaultClient {
             clean_request
                 .headers_mut()
                 .remove(FAULT_INJECTION_OPERATION.clone());
+            clean_request
+                .headers_mut()
+                .remove(FAULT_INJECTION_REQUEST_ID.clone());
 
             // No fault injection, proceed with actual request
             self.inner.execute_request(&clean_request).await
@@ -261,11 +365,12 @@ impl HttpClient for FaultClient {
 mod tests {
     use super::FaultClient;
     use crate::fault_injection::{
-        CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
+        next_evaluation_id, take_evaluations, CustomResponseBuilder,
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionEvaluation,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::{
-        FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+        FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
     };
     use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
@@ -312,11 +417,16 @@ mod tests {
         }
     }
 
-    fn create_test_request() -> Request {
-        Request::new(
+    fn create_test_request() -> (Request, u64) {
+        let mut request = Request::new(
             Url::parse("https://test.cosmos.azure.com/dbs/testdb").unwrap(),
             Method::Get,
-        )
+        );
+        let eval_id = next_evaluation_id();
+        request
+            .headers_mut()
+            .insert(FAULT_INJECTION_REQUEST_ID.clone(), eval_id.to_string());
+        (request, eval_id)
     }
 
     #[tokio::test]
@@ -337,7 +447,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request without operation type header shouldn't match
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
         let result = fault_client.execute_request(&request).await;
 
         assert!(result.is_ok());
@@ -349,7 +459,7 @@ mod tests {
         let mock_client = Arc::new(MockHttpClient::new());
         let fault_client = FaultClient::new(mock_client.clone(), vec![]);
 
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
         let result = fault_client.execute_request(&request).await;
 
         assert!(result.is_ok());
@@ -368,7 +478,7 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         // First two requests should hit the fault
         let result1 = fault_client.execute_request(&request).await;
@@ -395,7 +505,7 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         // Request should pass through because start_time is in the future
         let result = fault_client.execute_request(&request).await;
@@ -413,7 +523,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
 
@@ -438,7 +548,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
 
@@ -462,7 +572,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         // Delay-only should pass through to actual request after delay
         let start = std::time::Instant::now();
@@ -497,7 +607,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "westus", should pass through
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
         let result = fault_client.execute_request(&request).await;
 
         assert!(result.is_ok());
@@ -521,7 +631,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "my-container", should pass through
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
         let result = fault_client.execute_request(&request).await;
 
         assert!(result.is_ok());
@@ -541,7 +651,7 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         // First request should hit the fault
         let result1 = fault_client.execute_request(&request).await;
@@ -602,26 +712,16 @@ mod tests {
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
             let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
-            let request = create_test_request();
+            let (request, _eval_id) = create_test_request();
 
             let result = fault_client.execute_request(&request).await;
             assert!(result.is_err(), "{:?} should produce an error", error_type);
 
             let err = result.unwrap_err();
             if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
-                // All HTTP-level faults should have a raw_response with x-ms-fault-injected header
                 let response = raw_response
                     .as_ref()
                     .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
-
-                // Verify x-ms-fault-injected header is present
-                let fault_header = response.headers().get_optional_str(&FAULT_INJECTED);
-                assert_eq!(
-                    fault_header,
-                    Some("substatus-rule"),
-                    "{:?} should have x-ms-fault-injected header",
-                    error_type
-                );
 
                 match expected_substatus {
                     Some(expected) => {
@@ -663,7 +763,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
         assert!(result.is_err(), "should produce an error");
@@ -687,7 +787,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         let result = fault_client.execute_request(&request).await;
         assert!(result.is_err(), "should produce an error");
@@ -716,7 +816,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, _eval_id) = create_test_request();
 
         let response = fault_client.execute_request(&request).await;
         assert!(response.is_ok(), "custom response should succeed");
@@ -743,7 +843,7 @@ mod tests {
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
-        let mut request = create_test_request();
+        let (mut request, _eval_id) = create_test_request();
         request
             .headers_mut()
             .insert(FAULT_INJECTION_OPERATION.clone(), "ReadItem");
@@ -757,7 +857,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn custom_response_includes_fault_injected_header() {
+    async fn custom_response_evaluation_propagated() {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let result = FaultInjectionResultBuilder::new()
@@ -770,17 +870,165 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("header-test-rule", result).build();
 
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
-        let request = create_test_request();
+        let (request, eval_id) = create_test_request();
 
         let response = fault_client.execute_request(&request).await;
         assert!(response.is_ok());
 
-        let raw = response.unwrap();
-        let fault_header = raw.headers().get_optional_str(&FAULT_INJECTED);
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "header-test-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluation_records_disabled_rule() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = Arc::new(FaultInjectionRuleBuilder::new("disabled-rule", error).build());
+        rule.disable();
+
+        let fault_client = FaultClient::new(mock_client, vec![rule]);
+        let (request, eval_id) = create_test_request();
+        let result = fault_client.execute_request(&request).await;
+        assert!(result.is_ok(), "Request should succeed with disabled rule");
+
+        // Verify evaluation was recorded and clean up the store
+        let evals = take_evaluations(eval_id);
         assert_eq!(
-            fault_header,
-            Some("header-test-rule"),
-            "custom response should include x-ms-fault-injected header"
+            evals.len(),
+            1,
+            "Should have one evaluation for the disabled rule"
         );
+        assert!(
+            matches!(&evals[0], FaultInjectionEvaluation::Disabled { rule_id } if rule_id == "disabled-rule"),
+            "Should record Disabled evaluation, got: {:?}",
+            evals[0]
+        );
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_http_fault() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("test-rule", error).build();
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        let (request, eval_id) = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "test-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_connection_error() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ConnectionError)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("conn-rule", error).build();
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        let (request, eval_id) = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "conn-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_response_timeout() {
+        let mock_client = Arc::new(MockHttpClient::new());
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeout)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("timeout-rule", error).build();
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        let (request, eval_id) = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 1);
+        assert!(evals[0].was_applied());
+        assert_eq!(evals[0].rule_id(), "timeout-rule");
+    }
+
+    #[tokio::test]
+    async fn evaluations_include_disabled_and_superseded() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let error1 = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let error2 = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::InternalServerError)
+            .build();
+        let error3 = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::Timeout)
+            .build();
+
+        let rule1 = Arc::new(FaultInjectionRuleBuilder::new("disabled-rule", error1).build());
+        rule1.disable();
+        let rule2 = Arc::new(FaultInjectionRuleBuilder::new("active-rule", error2).build());
+        let rule3 = Arc::new(FaultInjectionRuleBuilder::new("superseded-rule", error3).build());
+
+        let fault_client = FaultClient::new(mock_client, vec![rule1, rule2, rule3]);
+        let (request, eval_id) = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 3);
+
+        // Iteration order: Disabled first, then Superseded (third rule), then Applied (second rule).
+        assert!(matches!(
+            &evals[0],
+            super::FaultInjectionEvaluation::Disabled { rule_id } if rule_id == "disabled-rule"
+        ));
+        assert!(matches!(
+            &evals[1],
+            super::FaultInjectionEvaluation::Superseded { rule_id } if rule_id == "superseded-rule"
+        ));
+        assert!(matches!(
+            &evals[2],
+            super::FaultInjectionEvaluation::Applied { rule_id } if rule_id == "active-rule"
+        ));
+    }
+
+    #[tokio::test]
+    async fn evaluations_propagated_for_no_match() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::CreateItem)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("no-match-rule", error)
+            .with_condition(condition)
+            .build();
+
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+
+        // Request without matching operation header
+        let (request, eval_id) = create_test_request();
+        let _ = fault_client.execute_request(&request).await;
+
+        let evals = take_evaluations(eval_id);
+        assert_eq!(evals.len(), 1);
+        assert!(matches!(
+            &evals[0],
+            super::FaultInjectionEvaluation::OperationMismatch { rule_id } if rule_id == "no-match-rule"
+        ));
     }
 }

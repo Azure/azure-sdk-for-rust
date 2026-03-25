@@ -92,6 +92,11 @@ path = "sdk/identity/azure_identity"
 path = "sdk/storage/azure_storage_blob"
 version = "0.11.0"
 
+[workspace.dependencies.azure_data_cosmos_driver]
+default-features = false
+version = "0.1.0"
+path = "sdk/cosmos/azure_data_cosmos_driver"
+
 [workspace.dependencies]
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
