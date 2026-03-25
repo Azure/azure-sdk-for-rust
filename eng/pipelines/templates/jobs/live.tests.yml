@@ -101,6 +101,12 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
+  - pwsh: |
+      Write-Host "##vso[task.setvariable variable=RUST_LOG]trace"
+      Write-Host "##vso[task.setvariable variable=Logging__LogLevel__Default]Debug"
+    displayName: 'Enable Verbose Logging'
+    condition: eq(variables['System.Debug'], 'true')
+
   - ${{ if parameters.UseFederatedAuth }}:
     - task: AzurePowerShell@5
       displayName: "Test Packages - Federated Auth"
