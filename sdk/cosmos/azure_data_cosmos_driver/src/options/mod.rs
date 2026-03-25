@@ -4,7 +4,18 @@
 //! Configuration options for the Cosmos DB driver.
 //!
 //! This module contains types for configuring driver instances and individual operations.
-//! Options follow a three-level hierarchy: Runtime → Driver → Operation.
+//! Options follow a four-level hierarchy with layered resolution:
+//!
+//! **Environment → Runtime → Account (Driver) → Operation** (lowest to highest priority)
+//!
+//! [`RuntimeOptions`] is the central option group that participates in all layers.
+//! It uses `#[derive(CosmosOptions)]` to generate:
+//! - [`RuntimeOptionsView`] — snapshot view for resolving options across layers
+//! - [`RuntimeOptionsBuilder`] — fluent builder for constructing options
+//! - `from_env()` — environment variable loading
+//!
+//! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
+//! initialization time and do not participate in per-operation layered resolution.
 
 mod connection_pool;
 mod dedicated_gateway;
@@ -38,7 +49,7 @@ pub use policies::{
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
-pub use runtime_options::{RuntimeOptions, RuntimeOptionsBuilder, SharedRuntimeOptions};
+pub use runtime_options::{RuntimeOptions, RuntimeOptionsBuilder, RuntimeOptionsView};
 pub use throughput_control::{
     ThroughputControlGroupKey, ThroughputControlGroupOptions,
     ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,
