@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{Bytes, SeekableStream};
+use crate::http::Body;
 use futures::{
     io::{AsyncRead, AsyncSeek},
     stream::Stream,
@@ -49,6 +50,12 @@ impl fmt::Debug for BytesStream {
 impl From<Bytes> for BytesStream {
     fn from(bytes: Bytes) -> Self {
         Self::new(bytes)
+    }
+}
+
+impl From<BytesStream> for Body {
+    fn from(stream: BytesStream) -> Self {
+        Body::SeekableStream(Box::new(stream))
     }
 }
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{SeekableStream, DEFAULT_BUFFER_SIZE};
+use crate::http::Body;
 use futures::io::{AsyncRead, AsyncSeek};
 use std::{
     fmt, io,
@@ -56,6 +57,12 @@ impl<T: AsyncRead + AsyncSeek> FileStream<T> {
     fn discard_buffer(&mut self) {
         self.pos = 0;
         self.filled = 0;
+    }
+}
+
+impl<T: SeekableStream + AsyncSeek + Clone + 'static> From<FileStream<T>> for Body {
+    fn from(stream: FileStream<T>) -> Self {
+        Body::SeekableStream(Box::new(stream))
     }
 }
 
@@ -144,13 +151,6 @@ impl<T: SeekableStream + AsyncSeek + Clone> SeekableStream for FileStream<T> {
 
     fn buffer_size(&self) -> usize {
         self.buf.len()
-    }
-}
-
-#[cfg(feature = "tokio")]
-impl From<super::tokio::FileReader> for FileStream<super::tokio::FileReader> {
-    fn from(reader: super::tokio::FileReader) -> Self {
-        Self::new(reader)
     }
 }
 

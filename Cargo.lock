@@ -544,6 +544,7 @@ dependencies = [
  "azure_identity",
  "azure_storage_blob_test",
  "bytes",
+ "clap",
  "futures",
  "opentelemetry",
  "opentelemetry-stdout",

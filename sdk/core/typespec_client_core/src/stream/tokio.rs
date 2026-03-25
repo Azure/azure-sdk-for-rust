@@ -43,6 +43,12 @@ impl From<File> for FileReader {
     }
 }
 
+impl From<FileReader> for super::FileStream<FileReader> {
+    fn from(reader: FileReader) -> Self {
+        Self::new(reader)
+    }
+}
+
 impl fmt::Debug for FileReader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("FileReader").finish_non_exhaustive()

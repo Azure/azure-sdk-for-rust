@@ -142,6 +142,7 @@ impl PartialEq for Body {
 ///
 /// A pipeline request is composed by a destination (uri), a method, a collection of headers and a
 /// body. Policies are expected to enrich the request by mutating it.
+#[derive(Clone)]
 pub struct Request {
     pub(crate) url: Url,
     pub(crate) method: Method,
@@ -255,17 +256,6 @@ impl Request {
     }
 }
 
-impl Clone for Request {
-    fn clone(&self) -> Self {
-        Self {
-            url: self.url.clone(),
-            method: self.method,
-            headers: self.headers.clone(),
-            body: self.body.clone(),
-        }
-    }
-}
-
 impl fmt::Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Request")
@@ -282,7 +272,7 @@ impl fmt::Debug for Request {
 ///
 /// This allows callers to pass a model to serialize or raw content to client methods.
 #[cfg(feature = "json")]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RequestContent<T, F = JsonFormat> {
     body: Body,
     phantom: PhantomData<(T, F)>,
@@ -296,15 +286,6 @@ pub struct RequestContent<T, F = JsonFormat> {
 pub struct RequestContent<T, F> {
     body: Body,
     phantom: PhantomData<(T, F)>,
-}
-
-impl<T, F> Clone for RequestContent<T, F> {
-    fn clone(&self) -> Self {
-        Self {
-            body: self.body.clone(),
-            phantom: PhantomData,
-        }
-    }
 }
 
 impl<T, F> RequestContent<T, F> {
