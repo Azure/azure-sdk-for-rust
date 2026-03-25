@@ -13,6 +13,7 @@ use crate::{
     Bytes,
 };
 pub use bytes_stream::*;
+use dyn_clone::DynClone;
 pub use file_stream::*;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
 use std::{pin::Pin, task::Context};
@@ -22,7 +23,7 @@ pub const DEFAULT_BUFFER_SIZE: usize = 1024 * 64;
 
 /// Enable a type implementing `AsyncRead` to be consumed as if it were a `Stream` of `Bytes`.
 #[async_trait::async_trait]
-pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync {
+pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + DynClone + Send + Sync {
     /// Resets the stream position to the beginning.
     async fn reset(&mut self) -> Result<()>;
 
@@ -39,6 +40,8 @@ pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync {
         DEFAULT_BUFFER_SIZE
     }
 }
+
+dyn_clone::clone_trait_object!(SeekableStream);
 
 impl Stream for dyn SeekableStream {
     type Item = Result<Bytes>;

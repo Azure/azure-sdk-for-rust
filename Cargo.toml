@@ -92,6 +92,7 @@ version = "0.11.0"
 
 [workspace.dependencies]
 async-lock = "3.4"
+dyn-clone = "1.0"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
 base64 = "0.22"

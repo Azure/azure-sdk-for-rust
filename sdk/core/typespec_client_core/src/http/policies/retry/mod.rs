@@ -258,7 +258,8 @@ mod test {
         RetryOptions, Url,
     };
     use ::time::macros::datetime;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
 
     const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
     const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
@@ -273,7 +274,7 @@ mod test {
     #[async_trait]
     impl Policy for StatusResponder {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
-            let mut count = self.request_count.lock().unwrap();
+            let mut count = self.request_count.lock().await;
             *count += 1;
             Ok(AsyncRawResponse::from_bytes(
                 self.status,
@@ -378,7 +379,7 @@ mod test {
 
             assert_eq!(
                 retries + 1,
-                *count.lock().unwrap(),
+                *count.lock().await,
                 "Policy should retry {status}"
             );
         }
@@ -398,7 +399,7 @@ mod test {
         assert_eq!(response.status(), StatusCode::Unauthorized);
         assert_eq!(
             1,
-            *count.lock().unwrap(),
+            *count.lock().await,
             "Policy shouldn't retry after receiving a response whose status isn't in RETRY_STATUSES"
         );
     }
@@ -424,7 +425,7 @@ mod test {
             assert_eq!(response.status(), StatusCode::Gone);
             assert_eq!(
                 2,
-                *count.lock().unwrap(),
+                *count.lock().await,
                 "Policy should retry status in specified list"
             );
 
@@ -443,7 +444,7 @@ mod test {
             assert_eq!(response.status(), StatusCode::TooManyRequests);
             assert_eq!(
                 1,
-                *count.lock().unwrap(),
+                *count.lock().await,
                 "Policy should not retry status not in custom retry list"
             );
         }
@@ -487,7 +488,7 @@ mod test {
                 assert_eq!(result.status(), status);
                 assert_eq!(
                     2,
-                    *count.lock().unwrap(),
+                    *count.lock().await,
                     "Policy should retry {status} when given an empty list of status codes"
                 );
             }
@@ -510,5 +511,95 @@ mod test {
         })
         .to_policy(RetryHeaders::default(), empty);
         test_retries_for_default_statuses(retry_policy).await;
+    }
+
+    #[tokio::test]
+    async fn retry_sends_same_body() {
+        use crate::{http::request::Body, stream::BytesStream, Bytes};
+        use futures::io::AsyncReadExt;
+
+        /// Policy that reads the actual body on each attempt (advancing the
+        /// stream position for seekable streams), captures the bytes, then
+        /// returns a retryable status so the retry policy will reset the body.
+        #[derive(Debug)]
+        struct BodyCapture {
+            bodies: Arc<Mutex<Vec<Bytes>>>,
+        }
+
+        #[async_trait]
+        impl Policy for BodyCapture {
+            async fn send(
+                &self,
+                _: &Context,
+                request: &mut Request,
+                _: &[Arc<dyn Policy>],
+            ) -> PolicyResult {
+                let body_bytes = match request.body_mut() {
+                    Body::Bytes(bytes) => bytes.clone(),
+                    Body::SeekableStream(stream) => {
+                        let mut buf = Vec::new();
+                        stream.read_to_end(&mut buf).await.unwrap();
+                        Bytes::from(buf)
+                    }
+                };
+                self.bodies.lock().await.push(body_bytes);
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::InternalServerError,
+                    Headers::new(),
+                    "",
+                ))
+            }
+        }
+
+        let retries = 2u32;
+        let retry_policy = RetryOptions::fixed(FixedRetryOptions {
+            delay: Duration::nanoseconds(1),
+            max_retries: retries,
+            ..Default::default()
+        })
+        .to_policy(RetryHeaders::default(), DEFAULT_RETRY_STATUS_CODES);
+        let url = Url::parse("http://localhost").unwrap();
+        let ctx = Context::new();
+
+        // Bytes body: content must be identical on every attempt.
+        let expected = Bytes::from_static(b"test body content");
+        let mut request = Request::new(url.clone(), Method::Post);
+        request.set_body(expected.clone());
+
+        let bodies = Arc::new(Mutex::new(Vec::new()));
+        let next: Vec<Arc<dyn Policy>> = vec![Arc::new(BodyCapture {
+            bodies: bodies.clone(),
+        })];
+        let _ = retry_policy.send(&ctx, &mut request, &next).await;
+
+        let captured = bodies.lock().await;
+        assert_eq!(captured.len(), (retries + 1) as usize);
+        for (i, body) in captured.iter().enumerate() {
+            assert_eq!(body, &expected, "Bytes body differs on attempt {i}");
+        }
+
+        // SeekableStream body: the retry policy must reset the stream so each
+        // attempt reads the same bytes even though the previous read consumed
+        // the stream.
+        let expected = Bytes::from_static(b"stream body content");
+        let mut request = Request::new(url.clone(), Method::Post);
+        request.set_body(Body::SeekableStream(Box::new(BytesStream::new(
+            expected.clone(),
+        ))));
+
+        let bodies = Arc::new(Mutex::new(Vec::new()));
+        let next: Vec<Arc<dyn Policy>> = vec![Arc::new(BodyCapture {
+            bodies: bodies.clone(),
+        })];
+        let _ = retry_policy.send(&ctx, &mut request, &next).await;
+
+        let captured = bodies.lock().await;
+        assert_eq!(captured.len(), (retries + 1) as usize);
+        for (i, body) in captured.iter().enumerate() {
+            assert_eq!(
+                body, &expected,
+                "SeekableStream body differs on attempt {i}"
+            );
+        }
     }
 }

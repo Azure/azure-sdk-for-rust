@@ -3,27 +3,41 @@
 
 //! Asynchronous stream support for `tokio`.
 use crate::stream::SeekableStream;
-use futures::io::AsyncSeekExt as _;
 use std::{
     fmt, io,
     pin::Pin,
+    sync::Arc,
     task::{Context, Poll},
 };
 use tokio::{
     fs::File,
-    io::{AsyncRead, AsyncSeek, ReadBuf},
+    io::{AsyncRead, AsyncSeek, AsyncSeekExt as _, ReadBuf},
+    sync::Mutex,
 };
 
 /// Wraps a [`File`] as a [`futures::io::AsyncRead`] and [`futures::io::AsyncSeek`] adapter.
+///
+/// # Warning
+///
+/// Clones share the underlying file position and should only be used with read-only files.
 pub struct FileReader {
-    file: File,
+    file: Arc<Mutex<File>>,
     seeking: bool,
+}
+
+impl Clone for FileReader {
+    fn clone(&self) -> Self {
+        Self {
+            file: self.file.clone(),
+            seeking: false,
+        }
+    }
 }
 
 impl From<File> for FileReader {
     fn from(file: File) -> Self {
         Self {
-            file,
+            file: Arc::new(Mutex::new(file)),
             seeking: false,
         }
     }
@@ -38,7 +52,8 @@ impl fmt::Debug for FileReader {
 #[async_trait::async_trait]
 impl SeekableStream for FileReader {
     async fn reset(&mut self) -> crate::Result<()> {
-        self.seek(io::SeekFrom::Start(0)).await?;
+        let mut file = self.file.lock().await;
+        file.seek(io::SeekFrom::Start(0)).await?;
         Ok(())
     }
 
@@ -49,12 +64,8 @@ impl SeekableStream for FileReader {
     /// This may be inaccurate if the file is writable since it may be updated after getting the length.
     /// This is best used on files opened read-only.
     async fn len(&self) -> usize {
-        // We can't seek on &self, so use the file metadata instead.
-        self.file
-            .metadata()
-            .await
-            .map(|m| m.len() as usize)
-            .unwrap_or(0)
+        let file = self.file.lock().await;
+        file.metadata().await.map(|m| m.len() as usize).unwrap_or(0)
     }
 }
 
@@ -64,9 +75,17 @@ impl futures::io::AsyncRead for FileReader {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let this = Pin::new(&mut self.get_mut().file);
-        let mut buf = ReadBuf::new(buf);
-        AsyncRead::poll_read(this, cx, &mut buf).map(|r| r.map(|()| buf.filled().len()))
+        let this = self.get_mut();
+        let mut guard = match this.file.try_lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                cx.waker().wake_by_ref();
+                return Poll::Pending;
+            }
+        };
+        let pinned = Pin::new(&mut *guard);
+        let mut read_buf = ReadBuf::new(buf);
+        AsyncRead::poll_read(pinned, cx, &mut read_buf).map(|r| r.map(|()| read_buf.filled().len()))
     }
 }
 
@@ -77,11 +96,18 @@ impl futures::io::AsyncSeek for FileReader {
         pos: io::SeekFrom,
     ) -> Poll<io::Result<u64>> {
         let this = self.get_mut();
+        let mut guard = match this.file.try_lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                cx.waker().wake_by_ref();
+                return Poll::Pending;
+            }
+        };
         if !this.seeking {
-            AsyncSeek::start_seek(Pin::new(&mut this.file), pos)?;
+            AsyncSeek::start_seek(Pin::new(&mut *guard), pos)?;
             this.seeking = true;
         }
-        let result = AsyncSeek::poll_complete(Pin::new(&mut this.file), cx);
+        let result = AsyncSeek::poll_complete(Pin::new(&mut *guard), cx);
         if result.is_ready() {
             this.seeking = false;
         }

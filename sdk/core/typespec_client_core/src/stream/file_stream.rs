@@ -65,6 +65,20 @@ impl<T: AsyncRead + AsyncSeek> fmt::Debug for FileStream<T> {
     }
 }
 
+/// # Warning
+///
+/// Clones share the underlying stream. This type should only be used with read-only streams.
+impl<T: AsyncRead + AsyncSeek + Clone> Clone for FileStream<T> {
+    fn clone(&self) -> Self {
+        Self {
+            stream: self.stream.clone(),
+            buf: self.buf.clone(),
+            pos: self.pos,
+            filled: self.filled,
+        }
+    }
+}
+
 impl<T: AsyncRead + AsyncSeek + Unpin> AsyncRead for FileStream<T> {
     fn poll_read(
         self: Pin<&mut Self>,
@@ -118,7 +132,7 @@ impl<T: AsyncSeek + AsyncRead + Unpin> AsyncSeek for FileStream<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: SeekableStream + AsyncSeek> SeekableStream for FileStream<T> {
+impl<T: SeekableStream + AsyncSeek + Clone> SeekableStream for FileStream<T> {
     async fn reset(&mut self) -> crate::Result<()> {
         self.discard_buffer();
         self.stream.reset().await

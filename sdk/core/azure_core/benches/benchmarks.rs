@@ -84,8 +84,8 @@ fn http_transport_test(c: &mut Criterion) {
     // Benchmark GET and POST requests
     c.bench_function("http_transport_get_async", |b| {
         b.to_async(&rt).iter(|| async {
-            let mut req = Request::new(Url::parse("https://localhost").unwrap(), Method::Get);
-            let _ = mock_client.execute_request(&mut req).await;
+            let req = Request::new(Url::parse("https://localhost").unwrap(), Method::Get);
+            let _ = mock_client.execute_request(&req).await;
             black_box(());
         });
     });
@@ -94,7 +94,7 @@ fn http_transport_test(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             let mut req = Request::new(Url::parse("https://localhost").unwrap(), Method::Post);
             req.set_body("test body");
-            let _ = mock_client.execute_request(&mut req).await;
+            let _ = mock_client.execute_request(&req).await;
             black_box(());
         });
     });

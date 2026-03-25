@@ -17,6 +17,7 @@ use crate::{
 };
 #[cfg(any(feature = "json", feature = "xml"))]
 use crate::{time::OffsetDateTime, Value};
+use dyn_clone::clone_box;
 #[cfg(any(feature = "json", feature = "xml"))]
 use serde::Serialize;
 #[cfg(any(feature = "json", feature = "xml"))]
@@ -69,20 +70,18 @@ impl Body {
         }
     }
 
-    /// Attempts to clone the body.
-    ///
-    /// Returns `Some` for `Bytes` bodies (which are cheap to clone) and
-    /// `None` for `SeekableStream` bodies.
-    pub fn try_clone(&self) -> Option<Body> {
-        match self {
-            Body::Bytes(bytes) => Some(Body::Bytes(bytes.clone())),
-            Body::SeekableStream(_) => None,
-        }
-    }
-
     #[cfg(test)]
     fn from_static(value: &'static [u8]) -> Self {
         Self::Bytes(Bytes::from_static(value))
+    }
+}
+
+impl Clone for Body {
+    fn clone(&self) -> Self {
+        match self {
+            Body::Bytes(bytes) => Body::Bytes(bytes.clone()),
+            Body::SeekableStream(stream) => Body::SeekableStream(clone_box(stream.as_ref())),
+        }
     }
 }
 
@@ -254,17 +253,16 @@ impl Request {
     pub fn add_mandatory_header<T: Header>(&mut self, item: &T) {
         self.insert_header(item.name(), item.value());
     }
+}
 
-    /// Attempts to clone the request.
-    ///
-    /// Returns `None` if the body is a `SeekableStream` (which cannot be cloned).
-    pub fn try_clone(&self) -> Option<Request> {
-        Some(Request {
+impl Clone for Request {
+    fn clone(&self) -> Self {
+        Self {
             url: self.url.clone(),
             method: self.method,
             headers: self.headers.clone(),
-            body: self.body.try_clone()?,
-        })
+            body: self.body.clone(),
+        }
     }
 }
 
@@ -303,10 +301,7 @@ pub struct RequestContent<T, F> {
 impl<T, F> Clone for RequestContent<T, F> {
     fn clone(&self) -> Self {
         Self {
-            body: self
-                .body
-                .try_clone()
-                .expect("RequestContent body is always Bytes"),
+            body: self.body.clone(),
             phantom: PhantomData,
         }
     }
