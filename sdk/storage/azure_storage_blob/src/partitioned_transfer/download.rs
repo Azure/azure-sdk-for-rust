@@ -23,7 +23,7 @@ use bytes::{Bytes, BytesMut};
 use futures::{
     channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
     future::Either,
-    SinkExt, TryStream,
+    SinkExt, StreamExt, TryStream,
 };
 
 use crate::models::{drains::SequentialBoundedDrain, http_ranges::ContentRange};
