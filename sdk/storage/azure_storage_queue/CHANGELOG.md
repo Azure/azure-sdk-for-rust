@@ -1,6 +1,12 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.5.0 (Unreleased)
+
+### Bugs Fixed
+
+- Fixed `QueueClient::create()` to treat `204 No Content` as a success response when a queue already exists with identical metadata.
+
+## 0.4.0 (2026-03-11)
 
 ### Features Added
 
@@ -21,8 +27,6 @@
 ### Bugs Fixed
 
 - Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Queue Storage client.
-
-### Other Changes
 
 ## 0.3.0 (2026-02-11)
 

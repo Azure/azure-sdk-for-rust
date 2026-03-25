@@ -42,28 +42,28 @@ rust-version = "1.88"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/core/typespec"
-version = "0.13.0"
+version = "0.14.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/core/typespec_client_core"
-version = "0.12.0"
+version = "0.13.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.12.0"
+version = "0.13.0"
 path = "sdk/core/typespec_macros"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "0.33.0"
+version = "0.34.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_macros]
-version = "0.7.0"
+version = "0.8.0"
 path = "sdk/core/azure_core_macros"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.12.0"
+version = "0.13.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_messaging_eventhubs]
@@ -88,7 +88,7 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
-version = "0.10.0"
+version = "0.11.0"
 
 [workspace.dependencies]
 async-lock = "3.4"
@@ -136,7 +136,7 @@ serde_test = "1"
 serial_test = "3.3"
 sha2 = { version = "0.10" }
 syn = { version = "2.0.115", features = ["full"] }
-tar = { version = "0.4.44", default-features = false }
+tar = { version = "0.4.45", default-features = false }
 thiserror = "2.0"
 time = { version = "0.3.47", features = [
   "serde-well-known",
@@ -150,7 +150,7 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3"
 url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
-zip = { version = "7.4.0", default-features = false, features = ["deflate"] }
+zip = { version = "8.2", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"

@@ -5,7 +5,10 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{error::ErrorKind, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{
+        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
+        PerfTestOptionKind,
+    },
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
@@ -20,17 +23,13 @@ pub struct ListBlobTest {
 impl ListBlobTest {
     fn create_list_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
-            let count: Option<&String> = runner.try_get_test_arg("count")?;
-
-            println!("ListBlobTest with count: {:?}", count);
-            let count = count.expect("count argument is mandatory").parse::<u32>()?;
-            println!("Parsed count: {}", count);
-
-            let endpoint: Option<&String> = runner.try_get_test_arg("endpoint")?;
+            let endpoint: Option<String> = runner.try_get_test_arg("endpoint")?;
 
             Ok(Box::new(ListBlobTest {
-                count,
-                endpoint: endpoint.cloned(),
+                count: runner
+                    .try_get_test_arg("count")?
+                    .expect("count argument is mandatory"),
+                endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
@@ -49,6 +48,7 @@ impl ListBlobTest {
                     short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
+                    option_type: PerfTestOptionKind::Uint32,
                     ..Default::default()
                 },
                 PerfTestOption {
@@ -98,7 +98,7 @@ impl PerfTest for ListBlobTest {
             let body = vec![0u8; 1024 * 1024]; // 1 MB blob
             let body_bytes = Bytes::from(body);
 
-            let _result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
+            let _result = blob_client.upload(body_bytes.into(), None).await?;
         }
 
         Ok(())

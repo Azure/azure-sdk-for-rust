@@ -1,11 +1,33 @@
 # Release History
 
-## 0.10.0 (Unreleased)
+## 0.11.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
+### Bugs Fixed
+
+### Other Changes
+
+## 0.10.1 (2026-03-18)
+
+### Bugs Fixed
+
+- `BlobClient::managed_download()` and `BlobClientManagedDownloadOptions` were unintentionally exported in 0.10.0. The method now panics unconditionally; this API will be removed in a future release.
+- Updated minimum dependency versions to incorporate a fix for TLS 1.3 data corruption on Windows when uploading large payloads ([schannel-rs#121](https://github.com/steffengy/schannel-rs/pull/121)).
+
+## 0.10.0 (2026-03-11)
+
+### Breaking Changes
+
+- Revised `upload()` on `BlockBlobClient` and `BlobClient` with the following breaking changes:
+  - Now uses our managed upload logic for optimal performance in single-shot and multi-part transfers.
+  - Removed the `content_length` parameter.
+  - `BlobClient::upload()` removed the `overwrite` parameter; it now **overwrites by default**. Use `BlobClientUploadOptions::with_if_not_exists()` to prevent overwriting an existing blob.
+  - `BlockBlobClient::upload()` accepts `BlockBlobClientUploadOptions`; `BlobClient::upload()` accepts `BlobClientUploadOptions` (a re-export of the same type).
+  - Returns `Result<BlockBlobClientUploadResult>` (or `Result<BlobClientUploadResult>` via `BlobClient`) instead of `Result<Response<BlockBlobClientUploadInternalResult, NoFormat>>`.
+  - Changed `BlockBlobClientUploadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
 - Changed `if_match`, `if_none_match`, `source_if_match`, and `source_if_none_match` fields in all method option structs from `Option<String>` to `Option<Etag>`.
 - Changed `BlobProperties::etag` and `ContainerProperties::etag` from `Option<String>` to `Option<Etag>`.
 - Renamed `ContainerItem.delete` to `ContainerItem.deleted`.
@@ -16,8 +38,6 @@
 ### Bugs Fixed
 
 - Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Blob Storage client.
-
-### Other Changes
 
 ## 0.9.0 (2026-02-11)
 

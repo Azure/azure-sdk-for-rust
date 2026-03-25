@@ -2,21 +2,22 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{headers::CONTENT_TYPE, RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        method_options::BlockBlobClientManagedUploadOptions, BlobClientDownloadResultHeaders,
+        method_options::BlockBlobClientUploadOptions, BlobClientDownloadResultHeaders,
+        BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
         BlockListType, BlockLookupList,
     },
     BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
-    StorageAccount, TestPolicy, KB, MB,
+    block_lookup, create_test_blob, get_blob_name, get_container_client, predicates,
+    ClientOptionsExt, StorageAccount, TestPolicy, KB, MB,
 };
 use bytes::{BufMut, BytesMut};
 use std::{
@@ -345,7 +346,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 }
 
 #[recorded::test(live)]
-async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
         stage_block_count.clone(),
@@ -374,7 +375,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         (8, 31, 34),
     ] {
         stage_block_count.store(0, Ordering::Relaxed);
-        let options = BlockBlobClientManagedUploadOptions {
+        let options = BlockBlobClientUploadOptions {
             parallel: Some(NonZero::new(parallel).unwrap()),
             partition_size: Some(NonZero::new(partition_size).unwrap()),
             ..Default::default()
@@ -382,7 +383,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         {
             let _scope = count_policy.check_request_scope();
             block_blob_client
-                .managed_upload(bytes.clone().into(), Some(options))
+                .upload(bytes.clone().into(), Some(options))
                 .await?;
         }
         assert_eq!(
@@ -410,7 +411,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
@@ -429,13 +430,13 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let bytes: Bytes = data.to_vec().into();
 
     request_count.store(0, Ordering::Relaxed);
-    let options = BlockBlobClientManagedUploadOptions {
+    let options = BlockBlobClientUploadOptions {
         ..Default::default()
     };
     {
         let _scope = count_policy.check_request_scope();
         block_blob_client
-            .managed_upload(bytes.clone().into(), Some(options))
+            .upload(bytes.clone().into(), Some(options))
             .await?;
     }
     assert_eq!(
@@ -453,7 +454,7 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
         stage_block_count.clone(),
@@ -486,9 +487,7 @@ async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     stage_block_count.store(0, Ordering::Relaxed);
     {
         let _scope = count_policy.check_request_scope();
-        block_blob_client
-            .managed_upload(bytes.clone().into(), None)
-            .await?;
+        block_blob_client.upload(bytes.clone().into(), None).await?;
     }
     assert_eq!(
         blob_client
@@ -504,5 +503,59 @@ async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         expected_stage_block_count
     );
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_commit_block_list_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+    let block_id = b"block-1".to_vec();
+    let content = b"commit-block-list-content-headers";
+    let md5: Vec<u8> = (0u8..16).collect();
+
+    // Stage Block
+    block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content.to_vec()),
+            None,
+        )
+        .await?;
+
+    // Commit Block List with Content Headers
+    // Note: blob_content_md5 on commit_block_list is stored metadata (not validated against
+    // actual content), so an arbitrary value can be used to verify roundtrip behavior.
+    block_blob_client
+        .commit_block_list(
+            block_lookup(block_id).try_into()?,
+            Some(BlockBlobClientCommitBlockListOptions {
+                blob_cache_control: Some("max-age=600".to_string()),
+                blob_content_disposition: Some("inline".to_string()),
+                blob_content_encoding: Some("identity".to_string()),
+                blob_content_language: Some("de-DE".to_string()),
+                blob_content_md5: Some(md5.clone()),
+                blob_content_type: Some("application/json".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert Content Headers Roundtrip
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("max-age=600".to_string()), props.cache_control()?);
+    assert_eq!(Some("inline".to_string()), props.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("de-DE".to_string()), props.content_language()?);
+    assert_eq!(Some(md5), props.content_md5()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/json".to_string()), content_type);
+
+    container_client.delete(None).await?;
     Ok(())
 }

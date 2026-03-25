@@ -38,7 +38,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 workspace = true
 
 [features]
-default = ["hmac_rust", "reqwest"]
+default = ["azure_core/default", "hmac_rust", "reqwest"]
 reqwest = ["dep:reqwest", "azure_core/reqwest"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
