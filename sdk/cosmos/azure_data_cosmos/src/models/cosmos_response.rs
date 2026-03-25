@@ -93,6 +93,7 @@ impl<T> CosmosResponse<T> {
     /// to populate a cache) while still returning the original response to the
     /// caller. The underlying `Bytes` body is reference-counted so the clone
     /// is cheap.
+    #[allow(dead_code)] // Useful utility for future cache population scenarios
     pub(crate) fn deserialize_body<U: DeserializeOwned>(&self) -> azure_core::Result<U> {
         self.response.body().json()
     }

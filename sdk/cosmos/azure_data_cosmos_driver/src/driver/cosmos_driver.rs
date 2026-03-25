@@ -7,14 +7,14 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{CosmosEndpoint, LocationStateStore},
+    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
-        ThroughputControlGroupSnapshot,
+        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
+        RuntimeOptionsView, ThroughputControlGroupSnapshot,
     },
 };
 use arc_swap::ArcSwap;
@@ -46,7 +46,7 @@ use super::{
 #[derive(Debug)]
 pub struct CosmosDriver {
     /// Reference to the parent runtime.
-    runtime: CosmosDriverRuntime,
+    runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
     options: DriverOptions,
     /// Per-account transport (created after HTTP/2 probe during initialization).
@@ -56,10 +56,8 @@ pub struct CosmosDriver {
     transport: Arc<ArcSwap<CosmosTransport>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
-    /// Resolved default for max failover retries (from env or hardcoded default).
-    default_max_failover_retries: u32,
-    /// Resolved default for max session retries (from env or None = compute at operation time).
-    default_max_session_retries: Option<u32>,
+    /// Session token cache for session consistency.
+    session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
     /// Operations check this flag to fail fast if the driver is used before
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
@@ -530,7 +528,7 @@ impl CosmosDriver {
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
-    pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
+    pub(crate) fn new(runtime: Arc<CosmosDriverRuntime>, options: DriverOptions) -> Self {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
@@ -541,11 +539,11 @@ impl CosmosDriver {
         let transport: Arc<ArcSwap<CosmosTransport>> =
             Arc::new(ArcSwap::from(Arc::clone(runtime.bootstrap_transport())));
 
-        let runtime_for_callback = runtime.clone();
+        let runtime_for_callback = Arc::clone(&runtime);
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
         let refresh_callback = Arc::new(move || {
-            let runtime = runtime_for_callback.clone();
+            let runtime = Arc::clone(&runtime_for_callback);
             let account = account_for_callback.clone();
             let transport_holder = Arc::clone(&transport_for_callback);
             let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
@@ -556,10 +554,13 @@ impl CosmosDriver {
             fut
         });
 
-        let endpoint_unavailability_ttl = runtime
+        // Resolve endpoint_unavailability_ttl from driver → runtime layers, then
+        // fall back to env var. The env_options layer is skipped because this field
+        // has no #[option(env)] annotation on RuntimeOptions.
+        let endpoint_unavailability_ttl = options
             .runtime_options()
-            .snapshot()
             .endpoint_unavailability_ttl
+            .or(runtime.runtime_options().endpoint_unavailability_ttl)
             .unwrap_or_else(|| {
                 std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
                     .ok()
@@ -577,34 +578,12 @@ impl CosmosDriver {
             endpoint_unavailability_ttl,
         ));
 
-        let default_max_failover_retries = runtime
-            .runtime_options()
-            .snapshot()
-            .max_failover_retry_count
-            .unwrap_or_else(|| {
-                std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
-                    .ok()
-                    .and_then(|v| v.parse::<u32>().ok())
-                    .unwrap_or(3)
-            });
-
-        let default_max_session_retries = runtime
-            .runtime_options()
-            .snapshot()
-            .max_session_retry_count
-            .or_else(|| {
-                std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
-                    .ok()
-                    .and_then(|v| v.parse::<u32>().ok())
-            });
-
         Self {
-            runtime: runtime.clone(),
+            runtime,
             options,
             transport,
             location_state_store,
-            default_max_failover_retries,
-            default_max_session_retries,
+            session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
         }
     }
@@ -692,53 +671,39 @@ impl CosmosDriver {
         Ok(())
     }
 
-    /// Computes the effective runtime options by merging operation, driver, and runtime options.
+    /// Constructs a [`RuntimeOptionsView`] for resolving options across all layers.
     ///
-    /// The merge order is (highest to lowest priority):
+    /// The view resolves options in priority order (highest first):
     /// 1. `OperationOptions` - operation-specific overrides
     /// 2. `DriverOptions` - driver-level defaults
     /// 3. `CosmosDriverRuntime` - global defaults
-    ///
-    /// For each property in `RuntimeOptions`, the first defined value is used.
-    pub fn effective_runtime_options(
+    /// 4. Environment - env vars read at startup
+    pub fn runtime_options_view<'a>(
         &self,
-        operation_options: &OperationOptions,
-    ) -> RuntimeOptions {
-        // Start with operation-level options (highest priority)
-        let operation_runtime = operation_options.runtime();
-
-        // Get driver-level options
-        let driver_runtime = self.options.runtime_options().snapshot();
-
-        // Get runtime-level options (lowest priority)
-        let global_runtime = self.runtime.runtime_options().snapshot();
-
-        // Merge: operation -> driver -> runtime
-        // First merge operation with driver
-        let merged = operation_runtime.merge_with_base(&driver_runtime);
-        // Then merge result with runtime defaults
-        merged.merge_with_base(&global_runtime)
+        operation_options: &'a OperationOptions,
+    ) -> RuntimeOptionsView<'a> {
+        RuntimeOptionsView::new(
+            Some(Arc::clone(self.runtime.env_options())),
+            Some(self.runtime.runtime_options()),
+            Some(self.options.runtime_options().clone()),
+            Some(operation_options.runtime()),
+        )
     }
 
     /// Computes the effective throughput control group for an operation.
     ///
     /// Resolution order (first match wins):
-    /// 1. Explicit group name from effective runtime options + operation's container
+    /// 1. Explicit group name from the resolved runtime options + operation's container
     /// 2. Default group for the operation's container
     ///
     /// Returns `None` if no applicable control group is found.
-    ///
-    /// # Parameters
-    ///
-    /// - `effective_options`: The merged runtime options (use `effective_runtime_options()`)
-    /// - `container`: The container reference for the operation
     pub(crate) fn effective_throughput_control_group(
         &self,
-        effective_options: &RuntimeOptions,
+        effective_options: &RuntimeOptionsView<'_>,
         container: &ContainerReference,
     ) -> Option<ThroughputControlGroupSnapshot> {
         // First, check if an explicit group name is specified in options
-        if let Some(group_name) = &effective_options.throughput_control_group_name {
+        if let Some(group_name) = effective_options.throughput_control_group_name() {
             if let Some(group) = self
                 .runtime
                 .get_throughput_control_group(container, group_name)
@@ -822,16 +787,8 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        // Step 1: Derive effective runtime options
-        let mut effective_options = self.effective_runtime_options(&options);
-
-        // Fill in resolved defaults for retry counts (env vars read once at construction).
-        if effective_options.max_failover_retry_count.is_none() {
-            effective_options.max_failover_retry_count = Some(self.default_max_failover_retries);
-        }
-        if effective_options.max_session_retry_count.is_none() {
-            effective_options.max_session_retry_count = self.default_max_session_retries;
-        }
+        // Step 1: Build the runtime options view for layered resolution.
+        let effective_options = self.runtime_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
@@ -878,6 +835,10 @@ impl CosmosDriver {
         );
         diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
         diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
+        if self.runtime.fault_injection_enabled() {
+            #[cfg(feature = "fault_injection")]
+            diagnostics_builder.set_fault_injection_enabled(true);
+        }
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -913,6 +874,10 @@ impl CosmosDriver {
             pipeline_type,
             transport_security,
             diagnostics_builder,
+            &self.session_manager,
+            account_properties
+                .user_consistency_policy
+                .default_consistency_level,
         )
         .await
     }
@@ -1033,7 +998,8 @@ mod tests {
         driver::CosmosDriverRuntimeBuilder,
         models::AccountReference,
         options::{
-            ContentResponseOnWrite, CorrelationId, RuntimeOptions, UserAgentSuffix, WorkloadId,
+            ContentResponseOnWrite, CorrelationId, RuntimeOptionsBuilder, UserAgentSuffix,
+            WorkloadId,
         },
     };
 
@@ -1154,9 +1120,14 @@ mod tests {
     #[tokio::test]
     async fn default_runtime_options() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let snapshot = runtime.runtime_options().snapshot();
-        assert!(snapshot.throughput_control_group_name.is_none());
-        assert!(snapshot.content_response_on_write.is_none());
+        assert!(runtime
+            .runtime_options()
+            .throughput_control_group_name
+            .is_none());
+        assert!(runtime
+            .runtime_options()
+            .content_response_on_write
+            .is_none());
         // user_agent is always available with base prefix
         assert!(runtime
             .user_agent()
@@ -1170,7 +1141,7 @@ mod tests {
 
     #[tokio::test]
     async fn builder_sets_runtime_options() {
-        let opts = RuntimeOptions::builder()
+        let opts = RuntimeOptionsBuilder::new()
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
@@ -1180,9 +1151,8 @@ mod tests {
             .await
             .unwrap();
 
-        let snapshot = runtime.runtime_options().snapshot();
         assert_eq!(
-            snapshot.content_response_on_write,
+            runtime.runtime_options().content_response_on_write,
             Some(ContentResponseOnWrite::Disabled)
         );
     }
@@ -1323,21 +1293,18 @@ mod tests {
         // Initially none
         assert!(runtime
             .runtime_options()
-            .snapshot()
             .content_response_on_write
             .is_none());
 
-        // Modify at runtime
-        runtime
-            .runtime_options()
-            .set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+        // Replace runtime options atomically
+        let new_opts = RuntimeOptionsBuilder::new()
+            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+            .build();
+        runtime.set_runtime_options(new_opts);
 
         // Now set
         assert_eq!(
-            runtime
-                .runtime_options()
-                .snapshot()
-                .content_response_on_write,
+            runtime.runtime_options().content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
     }
@@ -1347,7 +1314,7 @@ mod tests {
         // Runtime has ENABLED
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
-                RuntimeOptions::builder()
+                RuntimeOptionsBuilder::new()
                     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
                     .build(),
             )
@@ -1358,7 +1325,7 @@ mod tests {
         // Driver has DISABLED
         let driver_options = DriverOptions::builder(test_account())
             .with_runtime_options(
-                RuntimeOptions::builder()
+                RuntimeOptionsBuilder::new()
                     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
                     .build(),
             )
@@ -1368,19 +1335,19 @@ mod tests {
 
         // Operation has no override - should get driver's DISABLED
         let op_options = OperationOptions::new();
-        let effective = driver.effective_runtime_options(&op_options);
+        let view = driver.runtime_options_view(&op_options);
         assert_eq!(
-            effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Disabled)
         );
 
         // Operation overrides to ENABLED - should get ENABLED
         let op_options =
             OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
-        let effective = driver.effective_runtime_options(&op_options);
+        let view = driver.runtime_options_view(&op_options);
         assert_eq!(
-            effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Enabled)
         );
     }
 
@@ -1389,7 +1356,7 @@ mod tests {
         // Runtime has ENABLED
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
-                RuntimeOptions::builder()
+                RuntimeOptionsBuilder::new()
                     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
                     .build(),
             )
@@ -1404,10 +1371,10 @@ mod tests {
 
         // Operation has no override - should fall back to runtime's ENABLED
         let op_options = OperationOptions::new();
-        let effective = driver.effective_runtime_options(&op_options);
+        let view = driver.runtime_options_view(&op_options);
         assert_eq!(
-            effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Enabled)
         );
     }
 

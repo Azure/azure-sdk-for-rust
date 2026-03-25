@@ -37,6 +37,33 @@ impl From<ContentResponseOnWrite> for bool {
     }
 }
 
+impl std::str::FromStr for ContentResponseOnWrite {
+    type Err = azure_core::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "true" | "enabled" => Ok(Self::Enabled),
+            "false" | "disabled" => Ok(Self::Disabled),
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "Unknown content response on write value: '{}'. Expected 'true'/'false' or 'enabled'/'disabled'",
+                    s
+                ),
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for ContentResponseOnWrite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Enabled => f.write_str("Enabled"),
+            Self::Disabled => f.write_str("Disabled"),
+        }
+    }
+}
+
 /// Configuration for end-to-end operation latency policy.
 ///
 /// Specifies the maximum time an operation can take, including all retries.

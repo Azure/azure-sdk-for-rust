@@ -1,17 +1,22 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HTTP client wrapper that evaluates fault injection rules on each request.
+
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
-use crate::constants::{self, SubStatusCode};
+use crate::models::cosmos_headers::fault_injection_header_names::{
+    FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+};
+use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
+use crate::models::SubStatusCode;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
-use azure_core::http::{
-    headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
-};
-use std::sync::{Arc, Mutex};
+use azure_core::http::headers::Headers;
+use azure_core::http::{AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// Custom implementation of an HTTP client that injects faults for testing purposes.
@@ -20,7 +25,7 @@ pub struct FaultClient {
     /// The inner HTTP client to which requests are delegated.
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
-    rules: Arc<Mutex<Vec<Arc<FaultInjectionRule>>>>,
+    rules: Arc<Vec<Arc<FaultInjectionRule>>>,
 }
 
 impl FaultClient {
@@ -28,7 +33,7 @@ impl FaultClient {
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
         Self {
             inner,
-            rules: Arc::new(Mutex::new(rules)),
+            rules: Arc::new(rules),
         }
     }
 
@@ -36,25 +41,23 @@ impl FaultClient {
     fn is_rule_applicable(&self, rule: &FaultInjectionRule) -> bool {
         let now = Instant::now();
 
-        // Check if the rule is enabled
         if !rule.is_enabled() {
             return false;
         }
 
-        // Check if the rule has started
-        if now < rule.start_time {
-            return false;
+        if let Some(start_time) = rule.start_time() {
+            if now < start_time {
+                return false;
+            }
         }
 
-        // Check if the rule has expired
-        if let Some(end_time) = rule.end_time {
+        if let Some(end_time) = rule.end_time() {
             if now >= end_time {
                 return false;
             }
         }
 
-        // Check if we've exceeded the hit limit on the rule
-        if let Some(hit_limit) = rule.hit_limit {
+        if let Some(hit_limit) = rule.hit_limit() {
             if rule.hit_count() >= hit_limit {
                 return false;
             }
@@ -65,57 +68,46 @@ impl FaultClient {
 
     /// Checks if the request matches the rule's condition.
     fn matches_condition(&self, request: &Request, rule: &FaultInjectionRule) -> bool {
-        let condition = &rule.condition;
-        let mut matches = true;
+        let condition = rule.condition();
 
-        // Check operation type if specified
-        if let Some(expected_op) = condition.operation_type {
+        if let Some(expected_op) = condition.operation_type() {
             let request_op = request
                 .headers()
-                .get_optional_str(&constants::FAULT_INJECTION_OPERATION)
+                .get_optional_str(&FAULT_INJECTION_OPERATION)
                 .and_then(|s| s.parse::<FaultOperationType>().ok());
-
-            match request_op {
-                Some(op) if op == expected_op => {
-                    // Operation type matches, continue checking other conditions
-                }
-                _ => {
-                    // Operation type doesn't match or header not present
-                    matches = false;
-                }
+            if request_op != Some(expected_op) {
+                return false;
             }
         }
 
-        // Check region if specified
-        if let Some(region) = &condition.region {
+        if let Some(region) = condition.region() {
             if !request.url().as_str().contains(region.as_str()) {
-                matches = false;
+                return false;
             }
         }
 
-        // Check container ID if specified
-        if let Some(container_id) = &condition.container_id {
+        if let Some(container_id) = condition.container_id() {
             if !request.url().as_str().contains(container_id) {
-                matches = false;
+                return false;
             }
         }
 
-        matches
+        true
     }
 
     /// Applies the fault injection result and returns an error or modifies the response.
+    ///
+    /// This method handles the full fault lifecycle: probability check, delay application,
+    /// and fault response generation. If the probability check fails, no fault is injected
+    /// and no delay is applied.
     async fn apply_fault(
         &self,
         server_error: &FaultInjectionResult,
+        rule: &FaultInjectionRule,
     ) -> Option<azure_core::Result<AsyncRawResponse>> {
         // Check probability
         if server_error.probability() < 1.0 {
-            // Use a simple time-based pseudo-random check
-            let nanos = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .subsec_nanos();
-            let random = (nanos % 1000) as f32 / 1000.0;
+            let random: f32 = rand::random();
             if !server_error.probability().is_finite()
                 || server_error.probability() <= 0.0
                 || random >= server_error.probability()
@@ -124,17 +116,34 @@ impl FaultClient {
             }
         }
 
+        // Probability check passed — count this as a hit.
+        rule.increment_hit_count();
+        let rule_id = rule.id();
+
+        // Apply delay if configured (only when fault is actually injected).
+        if let Some(delay) = server_error.delay() {
+            if delay > Duration::ZERO {
+                let delay = azure_core::time::Duration::try_from(delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO);
+                azure_core::async_runtime::get_async_runtime()
+                    .sleep(delay)
+                    .await;
+            }
+        }
+
         // Check for custom response first (takes precedence over error injection)
-        if let Some(ref custom) = server_error.custom_response {
+        if let Some(custom) = server_error.custom_response() {
+            let mut headers = custom.headers().clone();
+            headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
             return Some(Ok(AsyncRawResponse::from_bytes(
-                custom.status_code,
-                custom.headers.clone(),
-                custom.body.clone(),
+                custom.status_code(),
+                headers,
+                custom.body().to_vec(),
             )));
         }
 
         // Generate the appropriate error based on error type
-        let error_type = match server_error.error_type {
+        let error_type = match server_error.error_type() {
             Some(et) => et,
             None => return None, // No error type set, pass through
         };
@@ -196,17 +205,18 @@ impl FaultClient {
             ),
         };
 
-        let raw_response = sub_status.map(|ss| {
-            let mut headers = Headers::new();
-            headers.insert(constants::SUB_STATUS, ss.to_string());
-            Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
-        });
+        let mut headers = Headers::new();
+        if let Some(ss) = sub_status {
+            headers.insert(SUBSTATUS.clone(), ss.value().to_string());
+        }
+        headers.insert(FAULT_INJECTED.clone(), rule_id.to_owned());
+        let raw_response = Box::new(RawResponse::from_bytes(status_code, headers, vec![]));
 
         let error = azure_core::Error::with_message(
             ErrorKind::HttpResponse {
                 status: status_code,
                 error_code: Some("Injected Fault".to_string()),
-                raw_response,
+                raw_response: Some(raw_response),
             },
             message,
         );
@@ -218,75 +228,51 @@ impl FaultClient {
 #[async_trait]
 impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
-        // Find applicable rule and clone the result if needed
-        let fault_result: Option<FaultInjectionResult> = {
-            let rules = self.rules.lock().unwrap();
-            let mut applicable_rule_index: Option<usize> = None;
+        // Find applicable rule
+        let matched_rule = self
+            .rules
+            .iter()
+            .find(|rule| self.is_rule_applicable(rule) && self.matches_condition(request, rule))
+            .cloned();
 
-            for (index, rule) in rules.iter().enumerate() {
-                if self.is_rule_applicable(rule) && self.matches_condition(request, rule) {
-                    applicable_rule_index = Some(index);
-                    break;
-                }
-            }
-
-            // Apply fault if we found an applicable rule
-            if let Some(index) = applicable_rule_index {
-                let rule = &rules[index];
-                rule.increment_hit_count();
-                Some(rule.result.clone())
-            } else {
-                None
-            }
-        };
-
-        // Apply the fault outside the lock
-        let fault_response = if let Some(ref result) = fault_result {
-            self.apply_fault(result).await
+        // Apply the fault if we found an applicable rule
+        let fault_response = if let Some(ref rule) = matched_rule {
+            self.apply_fault(rule.result(), rule).await
         } else {
             None
         };
 
-        let resp = if let Some(fault_response) = fault_response {
+        if let Some(fault_response) = fault_response {
             fault_response
         } else {
             // Clone the request and remove fault injection headers before forwarding
             let mut clean_request = request.clone();
             clean_request
                 .headers_mut()
-                .remove(constants::FAULT_INJECTION_OPERATION);
+                .remove(FAULT_INJECTION_OPERATION.clone());
 
-            // No fault injection or delay-only fault, proceed with actual request
+            // No fault injection, proceed with actual request
             self.inner.execute_request(&clean_request).await
-        };
-
-        // Apply delay after the request is sent
-        if let Some(result) = fault_result {
-            if result.delay > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(result.delay)
-                    .unwrap_or(azure_core::time::Duration::ZERO);
-                azure_core::async_runtime::get_async_runtime()
-                    .sleep(delay)
-                    .await;
-            }
         }
-
-        resp
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::FaultClient;
-    use crate::constants::{SubStatusCode, SUB_STATUS};
     use crate::fault_injection::{
-        CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
+        CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::regions;
+    use crate::models::cosmos_headers::fault_injection_header_names::{
+        FAULT_INJECTED, FAULT_INJECTION_OPERATION,
+    };
+    use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
+    use crate::models::SubStatusCode;
+    use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
-    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Method, Request, Url};
+    use azure_core::http::{AsyncRawResponse, HttpClient, Method, Request, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -499,7 +485,7 @@ mod tests {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_region(regions::WEST_US)
+            .with_region(Region::WEST_US)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -623,28 +609,40 @@ mod tests {
 
             let err = result.unwrap_err();
             if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind() {
+                // All HTTP-level faults should have a raw_response with x-ms-fault-injected header
+                let response = raw_response
+                    .as_ref()
+                    .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
+
+                // Verify x-ms-fault-injected header is present
+                let fault_header = response.headers().get_optional_str(&FAULT_INJECTED);
+                assert_eq!(
+                    fault_header,
+                    Some("substatus-rule"),
+                    "{:?} should have x-ms-fault-injected header",
+                    error_type
+                );
+
                 match expected_substatus {
                     Some(expected) => {
-                        let response = raw_response.as_ref().unwrap_or_else(|| {
-                            panic!("{:?} should have a raw_response with substatus", error_type)
-                        });
                         let actual: u32 = response
                             .headers()
-                            .get_as::<u32, std::num::ParseIntError>(&SUB_STATUS)
+                            .get_as::<u32, std::num::ParseIntError>(&SUBSTATUS)
                             .unwrap_or_else(|_| {
                                 panic!("{:?} should have x-ms-substatus header", error_type)
                             });
                         assert_eq!(
-                            SubStatusCode::from(actual),
+                            SubStatusCode::new(actual),
                             expected,
                             "{:?}: substatus mismatch",
                             error_type
                         );
                     }
                     None => {
+                        let substatus_header = response.headers().get_optional_str(&SUBSTATUS);
                         assert!(
-                            raw_response.is_none(),
-                            "{:?} should not have a raw_response",
+                            substatus_header.is_none(),
+                            "{:?} should not have x-ms-substatus header",
                             error_type
                         );
                     }
@@ -709,11 +707,11 @@ mod tests {
 
         let body = b"{\"id\": \"test-account\"}".to_vec();
         let result = FaultInjectionResultBuilder::new()
-            .with_custom_response(CustomResponse {
-                status_code: azure_core::http::StatusCode::Ok,
-                headers: Headers::new(),
-                body: body.clone(),
-            })
+            .with_custom_response(
+                CustomResponseBuilder::new(azure_core::http::StatusCode::Ok)
+                    .with_body(body.clone())
+                    .build(),
+            )
             .build();
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
@@ -727,5 +725,62 @@ mod tests {
         assert_eq!(raw.status(), azure_core::http::StatusCode::Ok);
         // Request should NOT be forwarded to inner client
         assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn execute_request_with_matching_operation_header() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::ReadItem)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("op-match-rule", error)
+            .with_condition(condition)
+            .build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+
+        let mut request = create_test_request();
+        request
+            .headers_mut()
+            .insert(FAULT_INJECTION_OPERATION.clone(), "ReadItem");
+
+        let result = fault_client.execute_request(&request).await;
+        assert!(
+            result.is_err(),
+            "should inject fault for matching operation"
+        );
+        assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn custom_response_includes_fault_injected_header() {
+        let mock_client = Arc::new(MockHttpClient::new());
+
+        let result = FaultInjectionResultBuilder::new()
+            .with_custom_response(
+                CustomResponseBuilder::new(azure_core::http::StatusCode::Ok)
+                    .with_body(b"test")
+                    .build(),
+            )
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("header-test-rule", result).build();
+
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+        let request = create_test_request();
+
+        let response = fault_client.execute_request(&request).await;
+        assert!(response.is_ok());
+
+        let raw = response.unwrap();
+        let fault_header = raw.headers().get_optional_str(&FAULT_INJECTED);
+        assert_eq!(
+            fault_header,
+            Some("header-test-rule"),
+            "custom response should include x-ms-fault-injected header"
+        );
     }
 }
