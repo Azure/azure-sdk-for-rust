@@ -59,7 +59,6 @@ jobs:
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
   - pwsh: |
-      Write-Host "##vso[task.setvariable variable=RUST_LOG]trace"
       Write-Host "##vso[task.setvariable variable=Logging__LogLevel__Default]Debug"
     displayName: 'Enable Verbose Logging'
     condition: eq(variables['System.Debug'], 'true')
@@ -104,6 +103,12 @@ jobs:
       condition: and(succeededOrFailed(), eq(variables['System.Debug'], 'true'))
 
     - pwsh: |
-        curl http://localhost:5000/Audit/Logs | Write-Host
+        try {
+          $response = Invoke-WebRequest -Uri 'http://localhost:5000/Audit/Logs' -UseBasicParsing -ErrorAction Stop
+          Write-Host $response.Content
+        } catch {
+          Write-Host "Failed to retrieve Test Proxy Audit Logs from http://localhost:5000/Audit/Logs"
+          Write-Host $_
+        }
       displayName: 'Dump Test Proxy Audit Logs'
       condition: and(succeededOrFailed(), eq(variables['System.Debug'], 'true'))
