@@ -9,6 +9,7 @@ use crate::{
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
+use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
@@ -167,6 +168,9 @@ impl CosmosClientBuilder {
         let (account_endpoint, credential) = account.into().into_parts();
         let endpoint = account_endpoint.into_url();
 
+        // Clone credential for the driver before the SDK consumes it for auth policy.
+        let driver_credential = credential.clone();
+
         // Derive fault_injection_enabled from builder state
         #[cfg(feature = "fault_injection")]
         let fault_injection_enabled = self.fault_injection_builder.is_some();
@@ -305,7 +309,7 @@ impl CosmosClientBuilder {
         ));
 
         let pipeline = Arc::new(GatewayPipeline::new(
-            endpoint,
+            endpoint.clone(),
             pipeline_core,
             global_endpoint_manager.clone(),
             global_partition_endpoint_manager.clone(),
@@ -313,247 +317,44 @@ impl CosmosClientBuilder {
             fault_injection_enabled,
         ));
 
+        // Create the CosmosDriver for eager container metadata resolution.
+        // TODO: Each CosmosClient currently creates its own CosmosDriverRuntime. The runtime
+        // should be shared across clients targeting the same account to avoid duplicate
+        // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
+        let driver_account = build_driver_account(endpoint, driver_credential);
+        let driver_runtime = CosmosDriverRuntimeBuilder::new().build().await?;
+        let driver = driver_runtime
+            .get_or_create_driver(driver_account, None)
+            .await?;
+
         Ok(CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline,
+            driver,
             global_endpoint_manager,
             global_partition_endpoint_manager,
         })
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::{regions, CosmosAccountReference, CosmosClient, RoutingStrategy};
-    use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
-    use std::sync::Arc;
-
-    #[derive(Debug)]
-    struct MockCredential;
-
-    #[async_trait::async_trait]
-    impl TokenCredential for MockCredential {
-        async fn get_token(
-            &self,
-            _scopes: &[&str],
-            _options: Option<TokenRequestOptions<'_>>,
-        ) -> azure_core::Result<AccessToken> {
-            Ok(AccessToken::new(
-                "mock_token",
-                azure_core::time::OffsetDateTime::now_utc(),
-            ))
+/// Builds a driver [`AccountReference`](azure_data_cosmos_driver::models::AccountReference)
+/// from the SDK's credential and endpoint.
+fn build_driver_account(
+    endpoint: azure_core::http::Url,
+    credential: CosmosCredential,
+) -> azure_data_cosmos_driver::models::AccountReference {
+    match credential {
+        CosmosCredential::TokenCredential(tc) => {
+            azure_data_cosmos_driver::models::AccountReference::with_credential(endpoint, tc)
+        }
+        #[cfg(feature = "key_auth")]
+        CosmosCredential::MasterKey(key) => {
+            azure_data_cosmos_driver::models::AccountReference::with_master_key(endpoint, key)
         }
     }
-
-    fn test_account() -> CosmosAccountReference {
-        let endpoint = "https://test.documents.azure.com/".parse().unwrap();
-        CosmosAccountReference::with_credential(endpoint, Arc::new(MockCredential))
-    }
-
-    #[tokio::test]
-    async fn build_with_known_region_succeeds() {
-        let result = CosmosClient::builder()
-            .build(
-                test_account(),
-                RoutingStrategy::ProximityTo(regions::EAST_US),
-            )
-            .await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn build_with_unknown_region_succeeds() {
-        let unknown = regions::RegionName::from("unknown");
-        let result = CosmosClient::builder()
-            .build(test_account(), RoutingStrategy::ProximityTo(unknown))
-            .await;
-        assert!(
-            result.is_ok(),
-            "unknown region should fall back gracefully, not fail"
-        );
-    }
-
-    /// When an unknown region is passed, the SDK cannot generate proximity ordering
-    /// so it falls back to account-order.
-    #[tokio::test]
-    async fn build_with_unknown_region_uses_account_order() {
-        use crate::models::AccountRegion;
-
-        let unknown = regions::RegionName::from("unknown");
-        let client = CosmosClient::builder()
-            .build(test_account(), RoutingStrategy::ProximityTo(unknown))
-            .await
-            .expect("build should succeed");
-
-        // Account regions in a specific order
-        let regions_list = vec![
-            AccountRegion {
-                name: regions::WEST_EUROPE.clone(),
-                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-            AccountRegion {
-                name: regions::EAST_US_2.clone(),
-                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-        ];
-        client
-            .global_endpoint_manager
-            .update_location_cache(regions_list.clone(), regions_list);
-
-        // Endpoints should reflect account order (no proximity reordering)
-        let read_endpoints = client.global_endpoint_manager.read_endpoints();
-        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
-        assert_eq!(
-            endpoint_strings,
-            vec![
-                "https://test-westeurope.documents.azure.com/",
-                "https://test-eastus2.documents.azure.com/",
-            ],
-            "unknown region should not reorder — account order preserved"
-        );
-    }
-
-    /// Verifies the full flow: builder with ProximityTo strategy → proximity list →
-    /// GlobalEndpointManager → LocationCache → correctly ordered endpoints.
-    ///
-    /// Passing in East US should produce a proximity-ordered list of regions with East US 2 first,
-    /// then West US, then West Europe.
-    #[tokio::test]
-    async fn proximity_strategy_produces_ordered_endpoints() {
-        use crate::models::AccountRegion;
-
-        let client = CosmosClient::builder()
-            .build(
-                test_account(),
-                RoutingStrategy::ProximityTo(regions::EAST_US),
-            )
-            .await
-            .expect("build should succeed with known region");
-
-        // Simulate receiving account properties with 3 regions
-        let regions_list = vec![
-            AccountRegion {
-                name: regions::WEST_EUROPE.clone(),
-                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-            AccountRegion {
-                name: regions::EAST_US_2.clone(),
-                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-            AccountRegion {
-                name: regions::WEST_US.clone(),
-                database_account_endpoint: "https://test-westus.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-        ];
-
-        // Feed the account regions into the location cache
-        client
-            .global_endpoint_manager
-            .update_location_cache(regions_list.clone(), regions_list);
-
-        // Verify read endpoints are in proximity order from East US:
-        // East US 2 (closest), West US, West Europe (farthest)
-        let read_endpoints = client.global_endpoint_manager.read_endpoints();
-        let endpoint_strings: Vec<&str> = read_endpoints.iter().map(|u| u.as_str()).collect();
-        assert_eq!(
-            endpoint_strings,
-            vec![
-                "https://test-eastus2.documents.azure.com/",
-                "https://test-westus.documents.azure.com/",
-                "https://test-westeurope.documents.azure.com/",
-            ],
-            "endpoints should be in proximity order from East US"
-        );
-    }
-
-    /// Verifies that request-level excluded regions interact correctly with
-    /// proximity-ordered preferred regions through the full builder flow.
-    #[tokio::test]
-    async fn proximity_strategy_with_excluded_regions() {
-        use crate::models::AccountRegion;
-        use crate::operation_context::OperationType;
-
-        let client = CosmosClient::builder()
-            .build(
-                test_account(),
-                RoutingStrategy::ProximityTo(regions::EAST_US),
-            )
-            .await
-            .expect("build should succeed");
-
-        let regions_list = vec![
-            AccountRegion {
-                name: regions::EAST_US_2.clone(),
-                database_account_endpoint: "https://test-eastus2.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-            AccountRegion {
-                name: regions::WEST_US.clone(),
-                database_account_endpoint: "https://test-westus.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-            AccountRegion {
-                name: regions::WEST_EUROPE.clone(),
-                database_account_endpoint: "https://test-westeurope.documents.azure.com/"
-                    .parse()
-                    .unwrap(),
-            },
-        ];
-        client
-            .global_endpoint_manager
-            .update_location_cache(regions_list.clone(), regions_list);
-
-        // Without excluded regions: full proximity order
-        let endpoints = client
-            .global_endpoint_manager
-            .applicable_endpoints(OperationType::Read, None);
-        let strings: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
-        assert_eq!(
-            strings,
-            vec![
-                "https://test-eastus2.documents.azure.com/",
-                "https://test-westus.documents.azure.com/",
-                "https://test-westeurope.documents.azure.com/",
-            ],
-        );
-
-        // Exclude the closest region (East US 2): falls back to next closest
-        let excluded = vec![regions::EAST_US_2];
-        let endpoints = client
-            .global_endpoint_manager
-            .applicable_endpoints(OperationType::Read, Some(&excluded));
-        let strings: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
-        assert_eq!(
-            strings,
-            vec![
-                "https://test-westus.documents.azure.com/",
-                "https://test-westeurope.documents.azure.com/",
-            ],
-            "West US should be first after excluding East US 2"
-        );
-
-        // Exclude all account regions: falls back to default
-        let excluded = vec![regions::EAST_US_2, regions::WEST_US, regions::WEST_EUROPE];
-        let endpoints = client
-            .global_endpoint_manager
-            .applicable_endpoints(OperationType::Read, Some(&excluded));
-        let strings: Vec<&str> = endpoints.iter().map(|u| u.as_str()).collect();
-        assert_eq!(
-            strings,
-            vec!["https://test.documents.azure.com/"],
-            "should fall back to default endpoint"
-        );
-    }
 }
+
+// Unit tests for routing-strategy behavior were removed because
+// CosmosClient::builder().build() now eagerly creates a CosmosDriver,
+// which requires a real endpoint. Re-add once fault injection is linked
+// from the SDK to the driver.

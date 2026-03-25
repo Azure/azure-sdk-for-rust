@@ -44,9 +44,10 @@
         "eastusstg",
         "enablecrosspartition",
         "enablepreview",
-        "euap",
         "EUAP",
+        "euap",
         "euclidian",
+        "evals",
         "fabianm",
         "failback",
         "failovers",
@@ -76,6 +77,7 @@
         "MEMORYSTATUSEX",
         "moka",
         "msvc",
+        "multihash",
         "murmurhash",
         "myaccount",
         "mycoll",
@@ -91,8 +93,8 @@
         "northeurope",
         "norwayeast",
         "norwaywest",
-        "Nway",
         "NWAY",
+        "Nway",
         "OTel",
         "othercoll",
         "pageins",
@@ -103,8 +105,8 @@
         "perfdb",
         "perfresults",
         "PIDS",
-        "PKRANGE",
         "Pkrange",
+        "PKRANGE",
         "pkranges",
         "pksysdocs",
         "pluggable",
@@ -193,8 +195,5 @@
                 "rust-custom"
             ]
         }
-    ],
-    "words": [
-        "evals"
     ]
 }

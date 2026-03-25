@@ -24,7 +24,7 @@ use super::env::{
 
 /// A test client that provides access to a Cosmos DB driver for testing.
 pub struct DriverTestClient {
-    runtime: CosmosDriverRuntime,
+    runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
 }
 

@@ -45,13 +45,11 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             let created_properties = container_client.read(None).await?.into_model()?;
 
             assert_eq!(&properties.id, &created_properties.id);
+            assert_eq!(1, created_properties.partition_key.paths().len());
+            assert_eq!("/id", created_properties.partition_key.paths()[0].as_ref());
             assert_eq!(
-                vec![String::from("/id")],
-                created_properties.partition_key.paths
-            );
-            assert_eq!(
-                PartitionKeyKind::new(PartitionKeyKind::HASH),
-                created_properties.partition_key.kind
+                PartitionKeyKind::Hash,
+                created_properties.partition_key.kind()
             );
             let indexing_policy = created_properties
                 .indexing_policy
@@ -81,7 +79,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             }
             assert_eq!(vec![properties.id.clone()], ids);
 
-            let container_client = db_client.container_client(&properties.id).await;
+            let container_client = db_client.container_client(&properties.id).await?;
             let mut updated_indexing_policy = IndexingPolicy::default();
             updated_indexing_policy.automatic = false;
             updated_indexing_policy.indexing_mode = Some(IndexingMode::None);
@@ -159,17 +157,16 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
             let created_properties = container_client.read(None).await?.into_model()?;
 
             assert_eq!(&properties.id, &created_properties.id);
+            let paths: Vec<&str> = created_properties
+                .partition_key
+                .paths()
+                .iter()
+                .map(|p| p.as_ref())
+                .collect();
+            assert_eq!(vec!["/parent", "/child", "/grandchild"], paths);
             assert_eq!(
-                vec![
-                    String::from("/parent"),
-                    String::from("/child"),
-                    String::from("/grandchild")
-                ],
-                created_properties.partition_key.paths
-            );
-            assert_eq!(
-                PartitionKeyKind::new(PartitionKeyKind::MULTI_HASH),
-                created_properties.partition_key.kind
+                PartitionKeyKind::MultiHash,
+                created_properties.partition_key.kind()
             );
 
             Ok(())
