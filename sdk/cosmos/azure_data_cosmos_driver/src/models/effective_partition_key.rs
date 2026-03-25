@@ -11,36 +11,71 @@ use crate::models::{
     partition_key::write_number_v1_binary,
     PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
+use std::fmt;
 use std::fmt::Write;
 
-/// Minimum inclusive effective partition key (empty string).
-pub(crate) const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
-
-/// Maximum exclusive effective partition key ("FF").
-pub(crate) const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
-
-/// Computes the effective partition key string from partition key values.
+/// A newtype wrapping the hex-encoded effective partition key string.
 ///
-/// This determines which partition key range a given partition key maps to.
-pub(crate) fn compute_effective_partition_key(
-    pk_values: &[PartitionKeyValue],
-    kind: PartitionKeyKind,
-    version: PartitionKeyVersion,
-) -> String {
-    if pk_values.is_empty() {
-        return MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string();
-    }
-    if pk_values.len() == 1 && pk_values[0].is_infinity() {
-        return MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string();
+/// An `EffectivePartitionKey` is the result of hashing a [`PartitionKey`](crate::models::PartitionKey)
+/// into a hex string that determines which partition key range owns a given item.
+/// Using a newtype ensures callers cannot accidentally pass an arbitrary string
+/// where an EPK is expected.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) struct EffectivePartitionKey(String);
+
+impl EffectivePartitionKey {
+    /// Returns the minimum EPK (empty string), representing the start of the EPK space.
+    pub fn min() -> Self {
+        Self(String::new())
     }
 
-    match kind {
-        PartitionKeyKind::Hash => match version {
-            PartitionKeyVersion::V1 => effective_partition_key_hash_v1(pk_values),
-            PartitionKeyVersion::V2 => effective_partition_key_hash_v2(pk_values),
-        },
-        // Range partitioning is legacy; fall through to V2 as a reasonable default.
-        _ => effective_partition_key_hash_v2(pk_values),
+    /// Returns the maximum exclusive EPK ("FF"), representing the upper bound of the EPK space.
+    pub fn max() -> Self {
+        Self("FF".to_string())
+    }
+
+    /// Returns a reference to the inner string.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Computes the effective partition key from partition key values.
+    ///
+    /// This hashes the given values according to the partition key kind and version,
+    /// producing the EPK that determines which partition key range owns a given item.
+    pub fn compute(
+        pk_values: &[PartitionKeyValue],
+        kind: PartitionKeyKind,
+        version: PartitionKeyVersion,
+    ) -> Self {
+        if pk_values.is_empty() {
+            return Self::min();
+        }
+        if pk_values.len() == 1 && pk_values[0].is_infinity() {
+            return Self::max();
+        }
+
+        let hex = match kind {
+            PartitionKeyKind::Hash => match version {
+                PartitionKeyVersion::V1 => effective_partition_key_hash_v1(pk_values),
+                PartitionKeyVersion::V2 => effective_partition_key_hash_v2(pk_values),
+            },
+            // Range partitioning is legacy; fall through to V2 as a reasonable default.
+            _ => effective_partition_key_hash_v2(pk_values),
+        };
+        Self::from(hex)
+    }
+}
+
+impl fmt::Display for EffectivePartitionKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl From<String> for EffectivePartitionKey {
+    fn from(s: String) -> Self {
+        Self(s)
     }
 }
 
@@ -104,19 +139,16 @@ mod tests {
     #[test]
     fn empty_pk_returns_min() {
         let result =
-            compute_effective_partition_key(&[], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
-        assert_eq!(result, MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY);
+            EffectivePartitionKey::compute(&[], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
+        assert_eq!(result, EffectivePartitionKey::min());
     }
 
     #[test]
     fn infinity_pk_returns_max() {
         let inf = PartitionKeyValue::infinity();
-        let result = compute_effective_partition_key(
-            &[inf],
-            PartitionKeyKind::Hash,
-            PartitionKeyVersion::V2,
-        );
-        assert_eq!(result, MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY);
+        let result =
+            EffectivePartitionKey::compute(&[inf], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
+        assert_eq!(result, EffectivePartitionKey::max());
     }
 
     /// V2 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
@@ -196,12 +228,17 @@ mod tests {
         ];
 
         for (component, expected) in &cases {
-            let actual = compute_effective_partition_key(
+            let actual = EffectivePartitionKey::compute(
                 std::slice::from_ref(component),
                 PartitionKeyKind::Hash,
                 PartitionKeyVersion::V2,
             );
-            assert_eq!(&actual, expected, "V2 mismatch for {:?}", component);
+            assert_eq!(
+                actual.as_str(),
+                *expected,
+                "V2 mismatch for {:?}",
+                component
+            );
         }
     }
 
@@ -216,12 +253,12 @@ mod tests {
         ];
         let expected = "3032DECBE2AB1768D8E0AEDEA35881DF";
 
-        let actual = compute_effective_partition_key(
+        let actual = EffectivePartitionKey::compute(
             &components,
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(actual, expected);
+        assert_eq!(actual.as_str(), expected);
     }
 
     /// V1 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
@@ -289,26 +326,53 @@ mod tests {
         ];
 
         for (component, expected) in &cases {
-            let actual = compute_effective_partition_key(
+            let actual = EffectivePartitionKey::compute(
                 std::slice::from_ref(component),
                 PartitionKeyKind::Hash,
                 PartitionKeyVersion::V1,
             );
-            assert_eq!(&actual, expected, "V1 mismatch for {:?}", component);
+            assert_eq!(
+                actual.as_str(),
+                *expected,
+                "V1 mismatch for {:?}",
+                component
+            );
         }
     }
 }
 
 /// Cross-SDK baseline tests using the same XML datasets as the Go SDK.
 ///
-/// These tests validate the core hash computation and encoding building blocks
-/// against a shared baseline, ensuring cross-language consistency.
+/// These tests operate at two levels:
+///
+/// 1. **Full production pipeline** ([`EffectivePartitionKey::compute`]):
+///    For values representable as [`PartitionKeyValue`] in non-multi-hash cases,
+///    the test calls `EffectivePartitionKey::compute` to exercise the complete
+///    PK → EPK pipeline (encoding, hashing, V2 masking, V1 binary encoding).
+///    V2 results are compared against the Go baseline hash with top-2-bit masking
+///    applied.  V1 results cannot be directly compared to Go's V1 hash format
+///    (which is a zero-padded 32-bit hash, not the full V1 EPK), so the V1
+///    pipeline is exercised for correctness and separately checked by the
+///    `effective_partition_key_hash_v1` unit test.
+///
+/// 2. **Raw MurmurHash baseline** (encoding + hash, no masking/truncation):
+///    Verifies that the byte encoding of each value type and the MurmurHash
+///    implementation match the cross-SDK baselines.  These use the canonical
+///    byte encoding (without V1 100-byte string truncation or V2 top-2-bit
+///    masking) so that the raw hash outputs are comparable across SDKs.
+///    Edge-case values that [`PartitionKeyValue`] cannot represent (Undefined,
+///    NaN, ±Infinity, −0.0) are encoded directly at this level only.
 ///
 /// See: <https://github.com/Azure/azure-sdk-for-go/blob/main/sdk/data/azcosmos/internal/epk/epk_test.go>
 #[cfg(test)]
 mod baseline_tests {
     use crate::models::murmur_hash::{murmurhash3_128, murmurhash3_32};
+    use crate::models::{PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
+    use quick_xml::events::Event;
+    use quick_xml::Reader;
     use std::fmt::Write;
+
+    use super::EffectivePartitionKey;
 
     // Embed XML test data within the test module so it's absent from product binaries.
     const SINGLETONS_XML: &str =
@@ -319,20 +383,28 @@ mod baseline_tests {
         include_str!("../../testdata/PartitionKeyHashBaselineTest.Strings.xml");
     const LISTS_XML: &str = include_str!("../../testdata/PartitionKeyHashBaselineTest.Lists.xml");
 
-    // -- Value representation (matches Go's `parseValues`) --
+    // -- Parsed value: delegates to real PartitionKeyValue where possible --
 
-    enum TestValue {
+    /// A parsed baseline test value.
+    ///
+    /// Normal values are stored as real `PartitionKeyValue` and use the production
+    /// encoding path.  Edge-case values that `PartitionKeyValue` cannot represent
+    /// (Undefined, NaN, ±Infinity, -0.0) are handled with minimal inline encoding.
+    enum ParsedValue {
+        /// A value representable as a real `PartitionKeyValue`.
+        Value(PartitionKeyValue),
+        /// The Undefined sentinel (byte `0x00`).  Not a valid partition key value
+        /// in the production pipeline.
         Undefined,
-        Null,
-        Bool(bool),
-        Number(f64),
-        String(String),
+        /// A number that `PartitionKeyValue` would normalize or reject:
+        /// NaN, ±Infinity, and -0.0.  Encoded as raw float bytes.
+        RawNumber(f64),
     }
 
     /// Parse the XML `PartitionKeyValue` field into test values, matching Go's `parseValues`.
-    fn parse_values(raw: &str) -> Vec<TestValue> {
+    fn parse_values(raw: &str) -> Vec<ParsedValue> {
         if raw == "UNDEFINED" {
-            return vec![TestValue::Undefined];
+            return vec![ParsedValue::Undefined];
         }
         if raw.starts_with('[') && raw.ends_with(']') {
             let inner = &raw[1..raw.len() - 1];
@@ -344,29 +416,87 @@ mod baseline_tests {
         vec![parse_single_json_value(raw)]
     }
 
-    fn parse_single_json_value(raw: &str) -> TestValue {
+    fn parse_single_json_value(raw: &str) -> ParsedValue {
         match raw {
-            "null" => TestValue::Null,
-            "true" => TestValue::Bool(true),
-            "false" => TestValue::Bool(false),
+            "null" => ParsedValue::Value(PartitionKeyValue::from(None::<String>)),
+            "true" => ParsedValue::Value(PartitionKeyValue::from(true)),
+            "false" => ParsedValue::Value(PartitionKeyValue::from(false)),
             s if s.starts_with('"') && s.ends_with('"') => {
                 let inner = &s[1..s.len() - 1];
                 match inner {
-                    // Use .NET's NaN bit pattern so the hash matches the baseline.
-                    "NaN" => TestValue::Number(f64::from_bits(0xFFF8000000000000)),
-                    "-Infinity" => TestValue::Number(f64::NEG_INFINITY),
-                    "Infinity" => TestValue::Number(f64::INFINITY),
-                    _ => TestValue::String(inner.to_string()),
+                    // Non-finite floats: PartitionKeyValue requires FiniteF64,
+                    // so encode them directly.  Use .NET's NaN bit pattern so the
+                    // hash matches the baseline.
+                    "NaN" => ParsedValue::RawNumber(f64::from_bits(0xFFF8000000000000)),
+                    "-Infinity" => ParsedValue::RawNumber(f64::NEG_INFINITY),
+                    "Infinity" => ParsedValue::RawNumber(f64::INFINITY),
+                    _ => ParsedValue::Value(PartitionKeyValue::from(inner.to_string())),
                 }
             }
-            _ => TestValue::Number(
-                raw.parse()
-                    .unwrap_or_else(|e| panic!("failed to parse number '{raw}': {e}")),
-            ),
+            _ => {
+                let n: f64 = raw
+                    .parse()
+                    .unwrap_or_else(|e| panic!("failed to parse number '{raw}': {e}"));
+                // FiniteF64 normalizes -0.0 to +0.0 which changes the hash,
+                // so route negative zero through RawNumber.
+                if n == 0.0 && n.is_sign_negative() {
+                    ParsedValue::RawNumber(n)
+                } else {
+                    ParsedValue::Value(PartitionKeyValue::from(n))
+                }
+            }
         }
     }
 
-    // -- XML parsing --
+    // -- Encoding: delegates to real PartitionKeyValue methods --
+
+    /// Encode a value for the V1 raw hash baseline (canonical byte encoding).
+    ///
+    /// For [`ParsedValue::Value`], this delegates to the production
+    /// [`PartitionKeyValue::write_for_hashing_v2`] and fixes up the string
+    /// suffix byte from `0xFF` to `0x00`.  We cannot use the production
+    /// [`PartitionKeyValue::write_for_hashing_v1`] here because it truncates
+    /// strings at 100 bytes, whereas the cross-SDK baselines use the full
+    /// canonical encoding (no truncation) so that the raw hash outputs are
+    /// comparable.  Non-string types produce identical bytes for V1 and V2.
+    ///
+    /// The production V1 pipeline (with truncation) is tested separately via
+    /// [`EffectivePartitionKey::compute`] in `run_baseline`.
+    fn encode_v1(pv: &ParsedValue, buf: &mut Vec<u8>) {
+        match pv {
+            ParsedValue::Value(v) => {
+                let start = buf.len();
+                v.write_for_hashing_v2(buf);
+                // String encoding: [0x08] [bytes…] [0xFF].
+                // V1 baseline uses suffix 0x00 instead of 0xFF.
+                if buf.len() > start + 1 && buf[start] == 0x08 {
+                    *buf.last_mut().unwrap() = 0x00;
+                }
+            }
+            ParsedValue::Undefined => buf.push(0x00),
+            ParsedValue::RawNumber(f) => {
+                buf.push(0x05); // NUMBER marker
+                buf.extend_from_slice(&f.to_le_bytes());
+            }
+        }
+    }
+
+    /// Encode a value for the V2 raw hash baseline.
+    ///
+    /// Normal values use the production [`PartitionKeyValue::write_for_hashing_v2`]
+    /// method; edge-cases are encoded inline.
+    fn encode_v2(pv: &ParsedValue, buf: &mut Vec<u8>) {
+        match pv {
+            ParsedValue::Value(v) => v.write_for_hashing_v2(buf),
+            ParsedValue::Undefined => buf.push(0x00),
+            ParsedValue::RawNumber(f) => {
+                buf.push(0x05); // NUMBER marker
+                buf.extend_from_slice(&f.to_le_bytes());
+            }
+        }
+    }
+
+    // -- XML parsing using quick_xml --
 
     struct BaselineResult {
         description: String,
@@ -376,88 +506,79 @@ mod baseline_tests {
     }
 
     fn parse_baseline_xml(xml: &str) -> Vec<BaselineResult> {
+        let mut reader = Reader::from_str(xml);
         let mut results = Vec::new();
-        for block in xml.split("<Result>").skip(1) {
-            let end = block
-                .find("</Result>")
-                .expect("malformed XML: missing </Result>");
-            let block = &block[..end];
+        let mut current_tag = String::new();
+        let mut desc = String::new();
+        let mut pk_val = String::new();
+        let mut v1 = String::new();
+        let mut v2 = String::new();
+        let mut in_result = false;
 
-            let desc = extract_tag(block, "Description").expect("missing <Description>");
-            let pk_val =
-                extract_tag(block, "PartitionKeyValue").expect("missing <PartitionKeyValue>");
-            let v1 =
-                extract_tag(block, "PartitionKeyHashV1").expect("missing <PartitionKeyHashV1>");
-            let v2 =
-                extract_tag(block, "PartitionKeyHashV2").expect("missing <PartitionKeyHashV2>");
-
-            results.push(BaselineResult {
-                description: desc.to_string(),
-                partition_key_value: pk_val.to_string(),
-                v1_hash: v1.to_string(),
-                v2_hash: v2.to_string(),
-            });
+        loop {
+            match reader.read_event() {
+                Ok(Event::Start(ref e)) => {
+                    let qname = e.name();
+                    let name = std::str::from_utf8(qname.as_ref()).unwrap();
+                    match name {
+                        "Result" => {
+                            in_result = true;
+                            desc.clear();
+                            pk_val.clear();
+                            v1.clear();
+                            v2.clear();
+                        }
+                        _ if in_result => {
+                            current_tag = name.to_string();
+                        }
+                        _ => {}
+                    }
+                }
+                Ok(Event::Text(ref e)) if in_result => {
+                    let text = e.unescape().unwrap();
+                    match current_tag.as_str() {
+                        "Description" => desc.push_str(&text),
+                        "PartitionKeyValue" => pk_val.push_str(&text),
+                        "PartitionKeyHashV1" => v1.push_str(&text),
+                        "PartitionKeyHashV2" => v2.push_str(&text),
+                        _ => {}
+                    }
+                }
+                Ok(Event::End(ref e)) => {
+                    let qname = e.name();
+                    let name = std::str::from_utf8(qname.as_ref()).unwrap();
+                    if name == "Result" {
+                        in_result = false;
+                        results.push(BaselineResult {
+                            description: desc.clone(),
+                            partition_key_value: pk_val.clone(),
+                            v1_hash: v1.clone(),
+                            v2_hash: v2.clone(),
+                        });
+                    }
+                    current_tag.clear();
+                }
+                Ok(Event::Eof) => break,
+                Err(e) => panic!(
+                    "XML parse error at position {}: {e}",
+                    reader.error_position()
+                ),
+                _ => {}
+            }
         }
+
         results
     }
 
-    fn extract_tag<'a>(xml: &'a str, tag: &str) -> Option<&'a str> {
-        let open = format!("<{tag}>");
-        let close = format!("</{tag}>");
-        let start = xml.find(&open)? + open.len();
-        let end = xml[start..].find(&close)? + start;
-        Some(&xml[start..end])
-    }
-
-    // -- Hash computation matching Go SDK functions --
-
-    /// Byte markers for partition key value encoding (same as Go constants).
-    mod component {
-        pub const UNDEFINED: u8 = 0x00;
-        pub const NULL: u8 = 0x01;
-        pub const BOOL_FALSE: u8 = 0x02;
-        pub const BOOL_TRUE: u8 = 0x03;
-        pub const NUMBER: u8 = 0x05;
-        pub const STRING: u8 = 0x08;
-    }
-
-    /// Encode a value for V1 hashing (string suffix = 0x00, no truncation).
-    /// Matches Go's `writeForHashing`.
-    fn encode_for_v1(value: &TestValue, buf: &mut Vec<u8>) {
-        encode_core(value, 0x00, buf);
-    }
-
-    /// Encode a value for V2 hashing (string suffix = 0xFF, no truncation).
-    /// Matches Go's `writeForHashingV2`.
-    fn encode_for_v2(value: &TestValue, buf: &mut Vec<u8>) {
-        encode_core(value, 0xFF, buf);
-    }
-
-    fn encode_core(value: &TestValue, string_suffix: u8, buf: &mut Vec<u8>) {
-        match value {
-            TestValue::Undefined => buf.push(component::UNDEFINED),
-            TestValue::Null => buf.push(component::NULL),
-            TestValue::Bool(false) => buf.push(component::BOOL_FALSE),
-            TestValue::Bool(true) => buf.push(component::BOOL_TRUE),
-            TestValue::Number(f) => {
-                buf.push(component::NUMBER);
-                buf.extend_from_slice(&f.to_le_bytes());
-            }
-            TestValue::String(s) => {
-                buf.push(component::STRING);
-                buf.extend_from_slice(s.as_bytes());
-                buf.push(string_suffix);
-            }
-        }
-    }
+    // -- Hash computation --
 
     /// Compute V1 hash matching Go's `ComputeV1`:
     /// per-component MurmurHash3-32, formatted as 24 zero hex chars + 8 hex hash chars.
-    fn compute_v1_baseline(values: &[TestValue]) -> String {
+    fn compute_v1_baseline(values: &[ParsedValue]) -> String {
         let mut result = String::new();
         for v in values {
             let mut buf = Vec::new();
-            encode_for_v1(v, &mut buf);
+            encode_v1(v, &mut buf);
             let hash = murmurhash3_32(&buf, 0);
             write!(&mut result, "000000000000000000000000{hash:08X}").unwrap();
         }
@@ -466,21 +587,21 @@ mod baseline_tests {
 
     /// Compute V2 single-hash matching Go's `ComputeV2Hash`:
     /// all components concatenated, MurmurHash3-128, reversed bytes, uppercase hex.
-    fn compute_v2_hash_baseline(values: &[TestValue]) -> String {
+    fn compute_v2_hash_baseline(values: &[ParsedValue]) -> String {
         let mut buf = Vec::new();
         for v in values {
-            encode_for_v2(v, &mut buf);
+            encode_v2(v, &mut buf);
         }
         hash128_to_epk(&buf)
     }
 
     /// Compute V2 multi-hash matching Go's `ComputeV2MultiHash`:
     /// per-component MurmurHash3-128, concatenated.
-    fn compute_v2_multi_hash_baseline(values: &[TestValue]) -> String {
+    fn compute_v2_multi_hash_baseline(values: &[ParsedValue]) -> String {
         let mut result = String::new();
         for v in values {
             let mut buf = Vec::new();
-            encode_for_v2(v, &mut buf);
+            encode_v2(v, &mut buf);
             result.push_str(&hash128_to_epk(&buf));
         }
         result
@@ -503,6 +624,16 @@ mod baseline_tests {
 
     // -- Test runner --
 
+    /// Derives the expected V2 EPK from a Go baseline V2 hash.
+    ///
+    /// The Go baseline V2 hash is the raw reversed MurmurHash3-128.  The Rust
+    /// EPK pipeline clears the top two bits: `byte[0] &= 0x3F`.
+    fn apply_v2_masking(raw_v2_hash: &str) -> String {
+        let first_byte = u8::from_str_radix(&raw_v2_hash[..2], 16).unwrap();
+        let masked = first_byte & 0x3F;
+        format!("{masked:02X}{}", &raw_v2_hash[2..])
+    }
+
     fn run_baseline(xml: &str, multi_hash: bool) {
         let cases = parse_baseline_xml(xml);
         assert!(!cases.is_empty(), "no test cases parsed from XML");
@@ -510,6 +641,60 @@ mod baseline_tests {
         for tc in &cases {
             let values = parse_values(&tc.partition_key_value);
 
+            // --- Full production pipeline (EffectivePartitionKey::compute) ---
+            //
+            // For values representable as PartitionKeyValue (no edge-cases), run
+            // the complete PK → EPK pipeline.  Multi-hash (hierarchical PK) uses
+            // per-component hashing which is a different scheme than what
+            // `compute` produces, so full-pipeline assertions are limited to
+            // single-hash cases.
+            if !multi_hash && values.iter().all(|v| matches!(v, ParsedValue::Value(_))) {
+                let pk_values: Vec<PartitionKeyValue> = values
+                    .iter()
+                    .map(|v| match v {
+                        ParsedValue::Value(v) => v.clone(),
+                        _ => unreachable!(),
+                    })
+                    .collect();
+
+                // V2: EffectivePartitionKey::compute produces the Go V2 hash
+                // with top-2-bit masking applied.
+                let v2_epk = EffectivePartitionKey::compute(
+                    &pk_values,
+                    PartitionKeyKind::Hash,
+                    PartitionKeyVersion::V2,
+                );
+                let expected_v2 = apply_v2_masking(&tc.v2_hash);
+                assert_eq!(
+                    v2_epk.as_str(),
+                    expected_v2,
+                    "V2 full pipeline mismatch for {} (value: {})",
+                    tc.description,
+                    tc.partition_key_value,
+                );
+
+                // V1: Exercise the production V1 pipeline (with 100-byte string
+                // truncation and binary EPK encoding).  The V1 EPK format
+                // differs from Go's V1 hash format, so we verify the pipeline
+                // completes and produces a non-empty hex string.
+                let v1_epk = EffectivePartitionKey::compute(
+                    &pk_values,
+                    PartitionKeyKind::Hash,
+                    PartitionKeyVersion::V1,
+                );
+                assert!(
+                    !v1_epk.as_str().is_empty(),
+                    "V1 full pipeline produced empty EPK for {} (value: {})",
+                    tc.description,
+                    tc.partition_key_value,
+                );
+            }
+
+            // --- Cross-SDK raw hash baseline ---
+            //
+            // Verifies byte encoding + MurmurHash correctness against the same
+            // baselines used by Go, .NET, Java, and Python SDKs.  Uses canonical
+            // encoding (no V1 truncation, no V2 masking) so raw hashes match.
             let actual_v1 = compute_v1_baseline(&values);
             assert_eq!(
                 actual_v1, tc.v1_hash,

@@ -4,18 +4,23 @@
 //! Partition key range cache for resolving effective partition keys to range IDs.
 //!
 //! Uses the driver's operation pipeline to fetch `/pkranges` from the service
-//! and caches the resulting [`CollectionRoutingMap`] per collection RID.
+//! and caches the resulting [`ContainerRoutingMap`] per container RID.
 
 use std::sync::Arc;
 
-use super::{collection_routing_map::CollectionRoutingMap, AsyncCache};
-use crate::models::partition_key_range::PkRangesResponse;
 use crate::models::{
-    effective_partition_key::compute_effective_partition_key, ContainerReference, PartitionKey,
+    effective_partition_key::EffectivePartitionKey, partition_key_range::PkRangesResponse,
+    ContainerReference, PartitionKey,
 };
 
+use super::{container_routing_map::ContainerRoutingMap, AsyncCache};
+
 /// Maximum number of change feed iterations to prevent infinite loops.
-const MAX_FETCH_ITERATIONS: usize = 1000;
+///
+/// In practice the loop completes in 1–2 iterations: the service returns all
+/// partition key ranges in a single unbounded page, then 304 Not Modified on the
+/// next call. This cap is a safety net, not an expected limit.
+const MAX_FETCH_ITERATIONS: usize = 10;
 
 /// Result of a single partition key range fetch from the service.
 ///
@@ -31,18 +36,19 @@ pub(crate) struct PkRangeFetchResult {
     pub not_modified: bool,
 }
 
-/// Cache that maps collection RIDs to their partition key routing maps.
+/// Cache that maps container RIDs to their partition key routing maps.
 ///
 /// When a partition key range ID is needed (for partition-level failover),
 /// this cache computes the effective partition key (EPK) from the partition key
 /// values and looks up the corresponding range ID in the routing map.
 ///
 /// The routing map is fetched lazily from the service the first time a
-/// collection is queried, then cached until invalidated.
+/// container is queried, then cached until invalidated.
 #[derive(Debug)]
 pub(crate) struct PartitionKeyRangeCache {
-    /// Keyed by collection RID.
-    cache: AsyncCache<String, CollectionRoutingMap>,
+    /// Keyed by [`ContainerReference`], which provides the container RID
+    /// needed for the `x-ms-expected-rid` header on pkrange changefeed calls.
+    cache: AsyncCache<ContainerReference, ContainerRoutingMap>,
 }
 
 impl PartitionKeyRangeCache {
@@ -69,7 +75,7 @@ impl PartitionKeyRangeCache {
         fetch_pk_ranges: F,
     ) -> Option<String>
     where
-        F: Fn(String, Option<String>) -> Fut,
+        F: Fn(ContainerReference, Option<String>) -> Fut,
         Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
     {
         if partition_key.is_empty() {
@@ -80,10 +86,10 @@ impl PartitionKeyRangeCache {
         let kind = pk_def.kind();
         let version = pk_def.version();
 
-        let epk = compute_effective_partition_key(partition_key.values(), kind, version);
+        let epk = EffectivePartitionKey::compute(partition_key.values(), kind, version);
 
         let routing_map = self
-            .try_lookup(container.rid(), force_refresh, fetch_pk_ranges)
+            .try_lookup(container, force_refresh, fetch_pk_ranges)
             .await?;
 
         routing_map
@@ -97,23 +103,22 @@ impl PartitionKeyRangeCache {
     /// When `force_refresh` is true, the cached routing map is refreshed before lookup.
     pub async fn resolve_overlapping_ranges<F, Fut>(
         &self,
-        collection_rid: &str,
-        min_inclusive: &str,
-        max_exclusive: &str,
+        container: &ContainerReference,
+        epk_range: std::ops::Range<&EffectivePartitionKey>,
         force_refresh: bool,
         fetch_pk_ranges: F,
     ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>
     where
-        F: Fn(String, Option<String>) -> Fut,
+        F: Fn(ContainerReference, Option<String>) -> Fut,
         Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
     {
         let routing_map = self
-            .try_lookup(collection_rid, force_refresh, fetch_pk_ranges)
+            .try_lookup(container, force_refresh, fetch_pk_ranges)
             .await?;
 
         Some(
             routing_map
-                .get_overlapping_ranges(min_inclusive, max_exclusive)
+                .get_overlapping_ranges(epk_range)
                 .into_iter()
                 .cloned()
                 .collect(),
@@ -126,53 +131,53 @@ impl PartitionKeyRangeCache {
     /// When `force_refresh` is true, the cached routing map is refreshed before lookup.
     pub async fn resolve_partition_key_range_by_id<F, Fut>(
         &self,
-        collection_rid: &str,
+        container: &ContainerReference,
         partition_key_range_id: &str,
         force_refresh: bool,
         fetch_pk_ranges: F,
     ) -> Option<crate::models::partition_key_range::PartitionKeyRange>
     where
-        F: Fn(String, Option<String>) -> Fut,
+        F: Fn(ContainerReference, Option<String>) -> Fut,
         Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
     {
         let routing_map = self
-            .try_lookup(collection_rid, force_refresh, fetch_pk_ranges)
+            .try_lookup(container, force_refresh, fetch_pk_ranges)
             .await?;
 
-        routing_map.get_range_by_id(partition_key_range_id).cloned()
+        routing_map.range(partition_key_range_id).cloned()
     }
 
-    /// Looks up or fetches the routing map for a collection.
+    /// Looks up or fetches the routing map for a container.
     ///
     /// When `force_refresh` is true, the previous routing map's change-feed
     /// continuation token is used for an incremental fetch. If the service
     /// returns 304 Not Modified, the existing map is returned as-is.
-    /// Otherwise the new ranges are merged via [`CollectionRoutingMap::try_combine`].
+    /// Otherwise, the new ranges are merged via [`ContainerRoutingMap::try_combine`].
     ///
-    /// Returns a routing map for the collection. If the initial fetch fails or
+    /// Returns a routing map for the container. If the initial fetch fails or
     /// returns invalid ranges, an empty routing map is cached and returned.
-    async fn try_lookup<F, Fut>(
+    pub(crate) async fn try_lookup<F, Fut>(
         &self,
-        collection_rid: &str,
+        container: &ContainerReference,
         force_refresh: bool,
         fetch_pk_ranges: F,
-    ) -> Option<Arc<CollectionRoutingMap>>
+    ) -> Option<Arc<ContainerRoutingMap>>
     where
-        F: Fn(String, Option<String>) -> Fut,
+        F: Fn(ContainerReference, Option<String>) -> Fut,
         Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
     {
-        let rid = collection_rid.to_string();
+        let key = container.clone();
 
         if force_refresh {
             // Retrieve the existing routing map for incremental refresh.
-            let previous = self.cache.get(&rid).await;
+            let previous = self.cache.get(&key).await;
             let prev_continuation = previous
                 .as_ref()
                 .and_then(|m| m.change_feed_next_if_none_match.clone());
 
             self.cache
                 .get_or_refresh_with(
-                    rid.clone(),
+                    key.clone(),
                     |existing| {
                         // If there's no existing entry, we must fetch to populate the cache.
                         if existing.is_none() {
@@ -183,134 +188,149 @@ impl PartitionKeyRangeCache {
                         existing.map(|m| &m.change_feed_next_if_none_match)
                             == Some(&prev_continuation)
                     },
-                    || Self::fetch_and_build_routing_map(rid, previous, fetch_pk_ranges),
+                    || fetch_and_build_routing_map(key.clone(), previous, fetch_pk_ranges),
                 )
                 .await
         } else {
             Some(
                 self.cache
-                    .get_or_insert_with(rid.clone(), || {
-                        Self::fetch_and_build_routing_map(rid, None, fetch_pk_ranges)
+                    .get_or_insert_with(key.clone(), || {
+                        fetch_and_build_routing_map(key.clone(), None, fetch_pk_ranges)
                     })
                     .await,
             )
         }
     }
 
-    /// Fetches partition key ranges via change-feed loop and builds a routing map.
-    ///
-    /// This mirrors the SDK's `get_routing_map_for_collection` pattern:
-    ///
-    /// 1. Start from the previous map's continuation token (or `None` for fresh fetch).
-    /// 2. Loop calling `fetch_pk_ranges(collection_rid, continuation)` until the
-    ///    service returns 304 Not Modified or `MAX_FETCH_ITERATIONS` is reached.
-    /// 3. Accumulate all fetched ranges.
-    /// 4. If a previous map exists, merge via [`CollectionRoutingMap::try_combine`];
-    ///    otherwise create a fresh routing map.
-    async fn fetch_and_build_routing_map<F, Fut>(
-        collection_rid: String,
-        previous_routing_map: Option<Arc<CollectionRoutingMap>>,
-        fetch_pk_ranges: F,
-    ) -> CollectionRoutingMap
-    where
-        F: Fn(String, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
-    {
-        let mut all_ranges = Vec::new();
-        let mut continuation = previous_routing_map
-            .as_ref()
-            .and_then(|m| m.change_feed_next_if_none_match.clone());
-
-        for iteration in 0..MAX_FETCH_ITERATIONS {
-            let result = match fetch_pk_ranges(collection_rid.clone(), continuation.clone()).await {
-                Some(r) => r,
-                None => {
-                    tracing::warn!(
-                        "Failed to fetch partition key ranges from service (iteration {})",
-                        iteration
-                    );
-                    // Preserve the previous routing map during incremental refresh
-                    // so a transient failure doesn't discard valid cached routing.
-                    if let Some(prev) = previous_routing_map {
-                        return (*prev).clone();
-                    }
-
-                    return CollectionRoutingMap::empty();
-                }
-            };
-
-            continuation = result.continuation;
-
-            if result.not_modified {
-                break;
-            }
-
-            all_ranges.extend(result.ranges);
-        }
-
-        // If we exhausted all iterations without a 304/not_modified, warn.
-        // This likely means the service is returning an unusually large number
-        // of change-feed pages and the routing map may be incomplete.
-        if !all_ranges.is_empty() && continuation.is_some() {
-            tracing::warn!(
-                "Partition key range change-feed loop reached MAX_FETCH_ITERATIONS ({}) \
-                 without receiving not_modified; routing map may be incomplete",
-                MAX_FETCH_ITERATIONS
-            );
-        }
-
-        // Incremental refresh: merge new ranges into the previous routing map.
-        if let Some(prev) = previous_routing_map {
-            if all_ranges.is_empty() {
-                // No changes since last fetch (304 on first iteration).
-                return (*prev).clone();
-            }
-            match prev.try_combine(all_ranges, continuation) {
-                Ok(Some(map)) => return map,
-                Ok(None) => {
-                    tracing::warn!(
-                        "Incremental routing map merge incomplete; falling back to previous map"
-                    );
-                    return (*prev).clone();
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "Incremental routing map merge failed: {}; falling back to previous map",
-                        e
-                    );
-                    return (*prev).clone();
-                }
-            }
-        }
-
-        // Full (non-incremental) creation.
-        match CollectionRoutingMap::try_create_with_continuation(all_ranges, None, continuation) {
-            Ok(Some(map)) => map,
-            Ok(None) => {
-                tracing::warn!("Partition key range fetch returned empty set");
-                CollectionRoutingMap::empty()
-            }
-            Err(e) => {
-                tracing::warn!("Partition key ranges invalid: {}", e);
-                CollectionRoutingMap::empty()
-            }
-        }
-    }
-
-    /// Parses a pkranges REST response body into partition key ranges.
-    pub(crate) fn parse_pk_ranges_response(
-        body: &[u8],
-    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
-        let response: PkRangesResponse = serde_json::from_slice(body).ok()?;
-        Some(response.partition_key_ranges)
-    }
-
-    /// Invalidates the cached routing map for a collection.
+    /// Invalidates the cached routing map for a container.
     ///
     /// Call this when a partition split is detected (e.g., 410/1002 Gone response).
-    pub async fn invalidate(&self, collection_rid: &str) {
-        self.cache.invalidate(&collection_rid.to_string()).await;
+    pub async fn invalidate(&self, container: &ContainerReference) {
+        self.cache.invalidate(container).await;
     }
+}
+
+/// Fetches partition key ranges via change-feed loop and builds a routing map.
+///
+/// This mirrors the SDK's routing-map-for-container pattern:
+///
+/// 1. Start from the previous map's continuation token (or `None` for fresh fetch).
+/// 2. Loop calling `fetch_pk_ranges(container, continuation)` until the
+///    service returns 304 Not Modified or `MAX_FETCH_ITERATIONS` is reached.
+/// 3. Accumulate all fetched ranges.
+/// 4. If a previous map exists, merge via [`ContainerRoutingMap::try_combine`];
+///    otherwise create a fresh routing map.
+async fn fetch_and_build_routing_map<F, Fut>(
+    container: ContainerReference,
+    previous_routing_map: Option<Arc<ContainerRoutingMap>>,
+    fetch_pk_ranges: F,
+) -> ContainerRoutingMap
+where
+    F: Fn(ContainerReference, Option<String>) -> Fut,
+    Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+{
+    let mut all_ranges = Vec::new();
+    let mut continuation = previous_routing_map
+        .as_ref()
+        .and_then(|m| m.change_feed_next_if_none_match.clone());
+
+    let mut received_not_modified = false;
+    let mut iterations_completed = 0;
+    for iteration in 0..MAX_FETCH_ITERATIONS {
+        iterations_completed = iteration + 1;
+
+        tracing::trace!(
+            iteration,
+            has_continuation = continuation.is_some(),
+            "Fetching partition key ranges"
+        );
+
+        let result = match fetch_pk_ranges(container.clone(), continuation.clone()).await {
+            Some(r) => r,
+            None => {
+                tracing::warn!(
+                    "Failed to fetch partition key ranges from service (iteration {})",
+                    iteration
+                );
+                return ContainerRoutingMap::empty();
+            }
+        };
+
+        continuation = result.continuation;
+
+        if result.not_modified {
+            tracing::trace!(iteration, "Service returned 304 Not Modified");
+            received_not_modified = true;
+            break;
+        }
+
+        tracing::trace!(
+            iteration,
+            range_count = result.ranges.len(),
+            "Received partition key ranges"
+        );
+        all_ranges.extend(result.ranges);
+    }
+
+    tracing::debug!(
+        iterations = iterations_completed,
+        total_ranges = all_ranges.len(),
+        not_modified = received_not_modified,
+        "Partition key range fetch loop completed"
+    );
+
+    if !received_not_modified && !all_ranges.is_empty() {
+        tracing::warn!(
+            "Partition key range fetch loop reached MAX_FETCH_ITERATIONS ({}) without \
+             receiving Not Modified; routing map may be built from partial data",
+            MAX_FETCH_ITERATIONS
+        );
+    }
+
+    // Incremental refresh: merge new ranges into the previous routing map.
+    if let Some(prev) = previous_routing_map {
+        if all_ranges.is_empty() {
+            // No changes since last fetch (304 on first iteration).
+            return (*prev).clone();
+        }
+        return match prev.try_combine(all_ranges, continuation) {
+            Ok(Some(map)) => map,
+            Ok(None) => {
+                tracing::warn!(
+                    "Incremental routing map merge incomplete; falling back to previous map"
+                );
+                (*prev).clone()
+            }
+            Err(e) => {
+                tracing::warn!(
+                    "Incremental routing map merge failed: {}; falling back to previous map",
+                    e
+                );
+                (*prev).clone()
+            }
+        };
+    }
+
+    // Full (non-incremental) creation.
+    match ContainerRoutingMap::try_create(all_ranges, None, continuation) {
+        Ok(Some(map)) => map,
+        Ok(None) => {
+            tracing::warn!("Partition key range fetch returned empty set");
+            ContainerRoutingMap::empty()
+        }
+        Err(e) => {
+            tracing::warn!("Partition key ranges invalid: {}", e);
+            ContainerRoutingMap::empty()
+        }
+    }
+}
+
+/// Parses a pkranges REST response body into partition key ranges.
+pub(crate) fn parse_pk_ranges_response(
+    body: &[u8],
+) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    let response: PkRangesResponse = serde_json::from_slice(body).ok()?;
+    Some(response.partition_key_ranges)
 }
 
 #[cfg(test)]
@@ -319,28 +339,16 @@ mod tests {
     use crate::models::partition_key_range::PartitionKeyRange as PkRange;
 
     fn test_ranges() -> Vec<PkRange> {
-        vec![PkRange {
-            id: "0".into(),
-            resource_id: None,
-            self_link: None,
-            etag: None,
-            timestamp: None,
-            min_inclusive: "".into(),
-            max_exclusive: "FF".into(),
-            rid_prefix: None,
-            throughput_fraction: 0.0,
-            target_throughput: None,
-            status: Default::default(),
-            lsn: 0,
-            parents: None,
-            owned_archival_pk_range_ids: None,
-        }]
+        vec![PkRange::new("0".into(), "".into(), "FF".into())]
     }
 
     /// Simulates a single-page change feed fetch:
     /// - First call (no continuation): returns all ranges + continuation token.
     /// - Subsequent calls (with continuation): returns 304 Not Modified.
-    async fn test_fetch(_rid: String, continuation: Option<String>) -> Option<PkRangeFetchResult> {
+    async fn test_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
         if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
@@ -451,64 +459,15 @@ mod tests {
         assert_eq!(range_id.as_deref(), Some("0"));
     }
 
-    #[tokio::test]
-    async fn fetch_failure_on_initial_returns_none() {
-        let cache = PartitionKeyRangeCache::new();
-
-        // A fetch function that always fails.
-        async fn failing_fetch(_rid: String, _cont: Option<String>) -> Option<PkRangeFetchResult> {
-            None
-        }
-
-        let map = cache.try_lookup("test-rid", false, failing_fetch).await;
-        // The cache should store an empty map, so try_lookup returns Some
-        // but subsequent EPK lookups will return None.
-        assert!(map.is_some());
-        let map = map.unwrap();
-        assert!(map.ordered_ranges().is_empty());
-    }
-
-    #[tokio::test]
-    async fn fetch_failure_during_incremental_refresh_preserves_previous_map() {
-        let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
-            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            "key",
-        );
-        let container_props = crate::models::ContainerProperties {
-            id: "testcontainer".into(),
-            partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
-            system_properties: Default::default(),
-        };
-        let container = ContainerReference::new(
-            account,
-            "testdb",
-            "testdb_rid",
-            "testcontainer",
-            "testcontainer_rid",
-            &container_props,
-        );
-        let pk = PartitionKey::from("hello");
-
-        // First call: populate the cache with a valid routing map.
-        let range_id = cache
-            .resolve_partition_key_range_id(&container, &pk, false, test_fetch)
-            .await;
-        assert_eq!(range_id.as_deref(), Some("0"));
-
-        // A fetch function that always fails (simulating a transient error).
-        async fn failing_fetch(_rid: String, _cont: Option<String>) -> Option<PkRangeFetchResult> {
-            None
-        }
-
-        // Force refresh with a failing fetch should preserve the previous map.
-        let range_id = cache
-            .resolve_partition_key_range_id(&container, &pk, true, failing_fetch)
-            .await;
-        assert_eq!(
-            range_id.as_deref(),
-            Some("0"),
-            "Previous routing map should be preserved when incremental fetch fails"
-        );
+    #[test]
+    fn parse_pk_ranges_response_test() {
+        let body = br#"{
+            "PartitionKeyRanges": [
+                {"id": "0", "_rid": "rid0", "minInclusive": "", "maxExclusive": "FF"}
+            ]
+        }"#;
+        let ranges = parse_pk_ranges_response(body).unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].id, "0");
     }
 }

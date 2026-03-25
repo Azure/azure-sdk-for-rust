@@ -1,13 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Collection routing map: maps effective partition keys to partition key ranges.
+//! Container routing map: maps effective partition keys to partition key ranges.
 //!
 //! The routing map stores a sorted list of partition key ranges (by `min_inclusive`)
 //! and uses binary search to find which range owns a given effective partition key.
 
+use crate::models::effective_partition_key::EffectivePartitionKey;
 use crate::models::partition_key_range::{PartitionKeyRange, PartitionKeyRangeStatus};
+use crate::models::ETag;
 use std::collections::{HashMap, HashSet};
+use std::ops::Range;
 
 /// Error returned when partition key range validation fails.
 #[derive(Debug)]
@@ -32,12 +35,12 @@ impl std::fmt::Display for RoutingMapError {
 
 impl std::error::Error for RoutingMapError {}
 
-/// A sorted routing map for a single collection.
+/// A sorted routing map for a single container.
 ///
-/// Holds all partition key ranges for a collection, sorted by `min_inclusive`,
+/// Holds all partition key ranges for a container, sorted by `min_inclusive`,
 /// enabling O(log n) lookup of which range owns a given effective partition key.
 #[derive(Debug, Clone)]
-pub(crate) struct CollectionRoutingMap {
+pub(crate) struct ContainerRoutingMap {
     /// O(1) lookup by range ID.
     range_by_id: HashMap<String, PartitionKeyRange>,
     /// Sorted by `min_inclusive` for binary search.
@@ -47,7 +50,7 @@ pub(crate) struct CollectionRoutingMap {
     /// Highest non-offline partition key range ID (used for split detection).
     highest_non_offline_pk_range_id: i32,
     /// ETag for incremental change feed refresh.
-    pub etag: Option<String>,
+    pub etag: Option<ETag>,
     /// Continuation token for incremental change feed fetches.
     pub change_feed_next_if_none_match: Option<String>,
 }
@@ -55,12 +58,7 @@ pub(crate) struct CollectionRoutingMap {
 /// Sentinel value for invalid/un-parseable partition key range IDs.
 const INVALID_PK_RANGE_ID: i32 = -1;
 
-/// Minimum inclusive effective partition key (empty string).
-const MIN_EPK: &str = "";
-/// Maximum exclusive effective partition key.
-const MAX_EPK: &str = "FF";
-
-impl CollectionRoutingMap {
+impl ContainerRoutingMap {
     /// Creates an empty routing map that will fail all lookups.
     ///
     /// Used as a fallback when the service is unreachable or returns invalid data.
@@ -75,7 +73,8 @@ impl CollectionRoutingMap {
         }
     }
 
-    /// Creates a routing map from a list of partition key ranges (without service identity).
+    /// Creates a routing map from a list of partition key ranges with an
+    /// optional change feed continuation token.
     ///
     /// Returns `Ok(Some(...))` on success.
     /// Returns `Ok(None)` if the input is empty.
@@ -84,16 +83,7 @@ impl CollectionRoutingMap {
     /// or do not cover the full [`""`, `"FF"`) EPK space.
     pub fn try_create(
         ranges: Vec<PartitionKeyRange>,
-        etag: Option<String>,
-    ) -> Result<Option<Self>, RoutingMapError> {
-        Self::try_create_with_continuation(ranges, etag, None)
-    }
-
-    /// Creates a routing map from a list of partition key ranges with an
-    /// optional change feed continuation token.
-    pub fn try_create_with_continuation(
-        ranges: Vec<PartitionKeyRange>,
-        etag: Option<String>,
+        etag: Option<ETag>,
         change_feed_next_if_none_match: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
         if ranges.is_empty() {
@@ -112,54 +102,18 @@ impl CollectionRoutingMap {
             .filter(|r| !gone.contains(&r.id))
             .collect();
 
-        // Sort by min_inclusive.
-        filtered.sort_by(|a, b| a.min_inclusive.cmp(&b.min_inclusive));
-
-        // Validate completeness: first range starts at "" and last ends at "FF",
-        // and each range's max_exclusive == next range's min_inclusive.
-        match filtered.first() {
-            Some(r) if r.min_inclusive != MIN_EPK => {
-                return Err(RoutingMapError::IncompleteRanges);
-            }
-            None => return Ok(None),
-            _ => {}
-        }
-        match filtered.last() {
-            Some(r) if r.max_exclusive != MAX_EPK => {
-                return Err(RoutingMapError::IncompleteRanges);
-            }
-            _ => {}
-        }
-        for i in 0..filtered.len() - 1 {
-            let prev_max = &filtered[i].max_exclusive;
-            let next_min = &filtered[i + 1].min_inclusive;
-            match prev_max.cmp(next_min) {
-                std::cmp::Ordering::Greater => return Err(RoutingMapError::OverlappingRanges),
-                std::cmp::Ordering::Less => return Err(RoutingMapError::IncompleteRanges),
-                std::cmp::Ordering::Equal => {}
-            }
+        if filtered.is_empty() {
+            return Ok(None);
         }
 
-        let range_by_id: HashMap<String, PartitionKeyRange> =
-            filtered.iter().map(|r| (r.id.clone(), r.clone())).collect();
-
-        let ordered_ranges: Vec<PartitionKeyRange> = filtered;
-
-        let highest_non_offline_pk_range_id = ordered_ranges
-            .iter()
-            .filter_map(|r| {
-                if r.status != PartitionKeyRangeStatus::Offline {
-                    r.id.parse::<i32>().ok()
-                } else {
-                    None
-                }
-            })
-            .max()
-            .unwrap_or(INVALID_PK_RANGE_ID);
+        // Sort by min_inclusive (uses Ord implementation on PartitionKeyRange).
+        filtered.sort();
+        let (highest_non_offline_pk_range_id, range_by_id) =
+            Self::validate_and_build_index(&filtered)?;
 
         Ok(Some(Self {
             range_by_id,
-            ordered_ranges,
+            ordered_ranges: filtered,
             gone_ranges: gone,
             highest_non_offline_pk_range_id,
             etag,
@@ -170,32 +124,27 @@ impl CollectionRoutingMap {
     /// Finds the partition key range that contains the given effective partition key.
     ///
     /// Returns `None` if no range is found (should not happen for a valid routing map).
-    pub fn get_range_by_effective_partition_key(&self, epk: &str) -> Option<&PartitionKeyRange> {
+    pub fn get_range_by_effective_partition_key(
+        &self,
+        epk: &EffectivePartitionKey,
+    ) -> Option<&PartitionKeyRange> {
         if self.ordered_ranges.is_empty() {
             return None;
         }
 
+        let epk_str = epk.as_str();
+
         // Special case: the minimum EPK is always in the first range.
-        if epk == MIN_EPK {
+        if epk_str.is_empty() {
             return Some(&self.ordered_ranges[0]);
         }
 
-        // Binary search: find the rightmost range whose min_inclusive <= epk.
-        // We search for the insertion point of epk among the min_inclusive values.
-        let idx = match self
-            .ordered_ranges
-            .binary_search_by(|r| r.min_inclusive.as_str().cmp(epk))
-        {
-            Ok(i) => i,               // Exact match on min_inclusive.
-            Err(i) if i > 0 => i - 1, // epk falls between ranges[i-1] and ranges[i].
-            Err(_) => 0,              // Before the first range (shouldn't happen).
-        };
+        let idx = self.find_range_index(epk_str);
 
         let range = &self.ordered_ranges[idx];
-        // Direct &str comparison avoids allocations on the hot path
-        // (to_range() + contains() would clone min/max strings).
-        let min_ok = range.min_inclusive.as_str() <= epk;
-        let max_ok = epk < range.max_exclusive.as_str();
+        // Direct &str comparison avoids allocations on the hot path.
+        let min_ok = range.min_inclusive.as_str() <= epk_str;
+        let max_ok = epk_str < range.max_exclusive.as_str();
         if min_ok && max_ok {
             Some(range)
         } else {
@@ -204,12 +153,12 @@ impl CollectionRoutingMap {
     }
 
     /// Looks up a range by its ID.
-    pub fn get_range_by_id(&self, id: &str) -> Option<&PartitionKeyRange> {
+    pub fn range(&self, id: &str) -> Option<&PartitionKeyRange> {
         self.range_by_id.get(id)
     }
 
-    /// Returns all ordered partition key ranges.
-    pub fn ordered_ranges(&self) -> &[PartitionKeyRange] {
+    /// Returns all partition key ranges, sorted by `min_inclusive`.
+    pub fn ranges(&self) -> &[PartitionKeyRange] {
         &self.ordered_ranges
     }
 
@@ -220,41 +169,33 @@ impl CollectionRoutingMap {
 
     /// Returns all partition key ranges that overlap with the given EPK range.
     ///
-    /// The range is `[min_inclusive, max_exclusive)`.
+    /// The input range is `[start, end)` (inclusive start, exclusive end),
+    /// matching the semantics of [`std::ops::Range`].
     pub fn get_overlapping_ranges(
         &self,
-        min_inclusive: &str,
-        max_exclusive: &str,
+        epk_range: Range<&EffectivePartitionKey>,
     ) -> Vec<&PartitionKeyRange> {
         if self.ordered_ranges.is_empty() {
             return Vec::new();
         }
 
-        // Binary search for the first range that could overlap.
-        // We need the rightmost range whose min_inclusive <= min_inclusive of the query.
-        let start_idx = match self
-            .ordered_ranges
-            .binary_search_by(|r| r.min_inclusive.as_str().cmp(min_inclusive))
-        {
-            Ok(i) => i,
-            Err(i) if i > 0 => i - 1,
-            Err(_) => 0,
-        };
+        let min_str = epk_range.start.as_str();
+        let max_str = epk_range.end.as_str();
 
-        let mut result = Vec::new();
-        for range in &self.ordered_ranges[start_idx..] {
-            // If this range's min_inclusive >= max_exclusive, no more overlaps possible.
-            if range.min_inclusive.as_str() >= max_exclusive {
-                break;
-            }
-            // A range overlaps if its max_exclusive > query min AND its min_inclusive < query max.
-            if range.max_exclusive.as_str() > min_inclusive
-                && range.min_inclusive.as_str() < max_exclusive
-            {
-                result.push(range);
-            }
-        }
-        result
+        // Because ordered_ranges is sorted AND contiguous (no gaps/overlaps),
+        // the overlapping ranges form a contiguous slice. We binary-search for
+        // both the start and end indices to get O(log n) total.
+
+        // Start: rightmost range whose min_inclusive <= query min.
+        let start_idx = self.find_range_index(min_str);
+
+        // End: first range whose min_inclusive >= query max (all ranges from
+        // start_idx up to but not including this index overlap the query).
+        let end_idx = self.ordered_ranges[start_idx..]
+            .partition_point(|r| r.min_inclusive.as_str() < max_str)
+            + start_idx;
+
+        self.ordered_ranges[start_idx..end_idx].iter().collect()
     }
 
     /// Returns the highest partition key range ID that is not offline.
@@ -305,31 +246,78 @@ impl CollectionRoutingMap {
             }
         }
 
-        // Sort by min_inclusive.
+        // Sort by min_inclusive (uses Ord implementation on PartitionKeyRange).
         let mut sorted: Vec<PartitionKeyRange> = merged.into_values().collect();
-        sorted.sort_by(|a, b| a.min_inclusive.cmp(&b.min_inclusive));
+        sorted.sort();
 
-        let ordered_ranges: Vec<PartitionKeyRange> = sorted.to_vec();
-
-        // Validate completeness.
-        if ordered_ranges.is_empty() || !Self::is_complete_range_set(&ordered_ranges) {
+        // Validate contiguity: gaps mean we need a full refresh (Ok(None)),
+        // overlaps are always an error.
+        if sorted.is_empty() {
             return Ok(None);
         }
+        let (highest_non_offline_pk_range_id, range_by_id) =
+            match Self::validate_and_build_index(&sorted) {
+                Ok(result) => result,
+                Err(RoutingMapError::IncompleteRanges) => return Ok(None),
+                Err(e) => return Err(e),
+            };
 
-        // Check for overlaps and gaps.
-        for i in 0..ordered_ranges.len() - 1 {
-            let prev_max = &ordered_ranges[i].max_exclusive;
-            let next_min = &ordered_ranges[i + 1].min_inclusive;
-            match prev_max.cmp(next_min) {
-                std::cmp::Ordering::Greater => return Err(RoutingMapError::OverlappingRanges),
-                std::cmp::Ordering::Less => return Ok(None), // Incomplete — need full refresh
+        Ok(Some(Self {
+            range_by_id,
+            ordered_ranges: sorted,
+            gone_ranges: combined_gone,
+            highest_non_offline_pk_range_id,
+            etag: self.etag.clone(),
+            change_feed_next_if_none_match,
+        }))
+    }
+
+    /// Binary-searches `ordered_ranges` for the rightmost range whose
+    /// `min_inclusive <= epk`.
+    ///
+    /// Callers must ensure `ordered_ranges` is non-empty and `epk` is non-empty.
+    fn find_range_index(&self, epk: &str) -> usize {
+        match self
+            .ordered_ranges
+            .binary_search_by(|r| r.min_inclusive.as_str().cmp(epk))
+        {
+            Ok(i) => i,               // Exact match on min_inclusive.
+            Err(i) if i > 0 => i - 1, // epk falls between ranges[i-1] and ranges[i].
+            Err(_) => unreachable!("EPK before first range; constructor guarantees full coverage"),
+        }
+    }
+
+    /// Validates that a non-empty sorted slice of ranges forms a contiguous,
+    /// complete partition of the EPK space `["", "FF")`, then builds the
+    /// by-ID index and computes the highest non-offline range ID.
+    ///
+    /// Returns `Ok((highest_id, range_by_id))` on success.
+    /// Returns `Err(OverlappingRanges)` if any range's min is less than the
+    /// previous range's max.
+    /// Returns `Err(IncompleteRanges)` if there are gaps or the ranges don't
+    /// cover the full `["", "FF")` interval.
+    fn validate_and_build_index(
+        sorted: &[PartitionKeyRange],
+    ) -> Result<(i32, HashMap<String, PartitionKeyRange>), RoutingMapError> {
+        let min_epk = EffectivePartitionKey::min();
+        let max_epk = EffectivePartitionKey::max();
+        let mut expected_min = min_epk.as_str();
+        for range in sorted {
+            match range.min_inclusive.as_str().cmp(expected_min) {
+                std::cmp::Ordering::Greater => return Err(RoutingMapError::IncompleteRanges),
+                std::cmp::Ordering::Less => return Err(RoutingMapError::OverlappingRanges),
                 std::cmp::Ordering::Equal => {}
             }
+            expected_min = range.max_exclusive.as_str();
+        }
+        if expected_min != max_epk.as_str() {
+            return Err(RoutingMapError::IncompleteRanges);
         }
 
         let range_by_id: HashMap<String, PartitionKeyRange> =
-            sorted.into_iter().map(|r| (r.id.clone(), r)).collect();
-        let highest = ordered_ranges
+            sorted.iter().map(|r| (r.id.clone(), r.clone())).collect();
+
+        let highest_non_offline_pk_range_id = sorted
             .iter()
             .filter_map(|r| {
                 if r.status != PartitionKeyRangeStatus::Offline {
@@ -341,30 +329,17 @@ impl CollectionRoutingMap {
             .max()
             .unwrap_or(INVALID_PK_RANGE_ID);
 
-        Ok(Some(Self {
-            range_by_id,
-            ordered_ranges,
-            gone_ranges: combined_gone,
-            highest_non_offline_pk_range_id: highest,
-            etag: self.etag.clone(),
-            change_feed_next_if_none_match,
-        }))
-    }
-
-    /// Checks whether a sorted slice of ranges covers the full EPK space.
-    fn is_complete_range_set(sorted: &[PartitionKeyRange]) -> bool {
-        match (sorted.first(), sorted.last()) {
-            (Some(first), Some(last)) => {
-                first.min_inclusive == MIN_EPK && last.max_exclusive == MAX_EPK
-            }
-            _ => false,
-        }
+        Ok((highest_non_offline_pk_range_id, range_by_id))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn epk(s: &str) -> EffectivePartitionKey {
+        EffectivePartitionKey::from(s.to_string())
+    }
 
     fn make_range(
         id: &str,
@@ -404,75 +379,99 @@ mod tests {
 
     #[test]
     fn create_single_range() {
-        let map = CollectionRoutingMap::try_create(single_range(), None)
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
             .unwrap()
             .unwrap();
-        assert_eq!(map.ordered_ranges().len(), 1);
+        let ranges = map.ranges();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].id, "0");
+        assert_eq!(ranges[0].min_inclusive, "");
+        assert_eq!(ranges[0].max_exclusive, "FF");
     }
 
     #[test]
     fn create_three_ranges() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
-        assert_eq!(map.ordered_ranges().len(), 3);
+        let ids: Vec<&str> = map.ranges().iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["1", "2", "3"]);
+        assert_eq!(map.ranges()[0].min_inclusive, "");
+        assert_eq!(map.ranges()[0].max_exclusive, "3F");
+        assert_eq!(map.ranges()[1].min_inclusive, "3F");
+        assert_eq!(map.ranges()[1].max_exclusive, "7F");
+        assert_eq!(map.ranges()[2].min_inclusive, "7F");
+        assert_eq!(map.ranges()[2].max_exclusive, "FF");
     }
 
     #[test]
     fn lookup_in_single_range() {
-        let map = CollectionRoutingMap::try_create(single_range(), None)
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
             .unwrap()
             .unwrap();
-        let r = map.get_range_by_effective_partition_key("7A").unwrap();
+        let r = map
+            .get_range_by_effective_partition_key(&epk("7A"))
+            .unwrap();
         assert_eq!(r.id, "0");
     }
 
     #[test]
     fn lookup_in_three_ranges() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
 
         // epk "" → range 1
-        let r = map.get_range_by_effective_partition_key("").unwrap();
+        let r = map.get_range_by_effective_partition_key(&epk("")).unwrap();
         assert_eq!(r.id, "1");
 
         // epk "20" → range 1
-        let r = map.get_range_by_effective_partition_key("20").unwrap();
+        let r = map
+            .get_range_by_effective_partition_key(&epk("20"))
+            .unwrap();
         assert_eq!(r.id, "1");
 
         // epk "3F" → range 2 (min_inclusive of range 2)
-        let r = map.get_range_by_effective_partition_key("3F").unwrap();
+        let r = map
+            .get_range_by_effective_partition_key(&epk("3F"))
+            .unwrap();
         assert_eq!(r.id, "2");
 
         // epk "50" → range 2
-        let r = map.get_range_by_effective_partition_key("50").unwrap();
+        let r = map
+            .get_range_by_effective_partition_key(&epk("50"))
+            .unwrap();
         assert_eq!(r.id, "2");
 
         // epk "7F" → range 3
-        let r = map.get_range_by_effective_partition_key("7F").unwrap();
+        let r = map
+            .get_range_by_effective_partition_key(&epk("7F"))
+            .unwrap();
         assert_eq!(r.id, "3");
 
         // epk "A0" → range 3
-        let r = map.get_range_by_effective_partition_key("A0").unwrap();
+        let r = map
+            .get_range_by_effective_partition_key(&epk("A0"))
+            .unwrap();
         assert_eq!(r.id, "3");
     }
 
     #[test]
     fn lookup_by_id() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
-        assert!(map.get_range_by_id("1").is_some());
-        assert!(map.get_range_by_id("2").is_some());
-        assert!(map.get_range_by_id("3").is_some());
-        assert!(map.get_range_by_id("0").is_none()); // gone parent
+        let r = map.range("2").unwrap();
+        assert_eq!(r.id, "2");
+        assert_eq!(r.min_inclusive, "3F");
+        assert_eq!(r.max_exclusive, "7F");
+        assert!(map.range("0").is_none()); // gone parent
     }
 
     #[test]
     fn incomplete_range_returns_error() {
         let ranges = vec![make_range("0", "", "7F", None)];
-        let result = CollectionRoutingMap::try_create(ranges, None);
+        let result = ContainerRoutingMap::try_create(ranges, None, None);
         assert!(matches!(result, Err(RoutingMapError::IncompleteRanges)));
     }
 
@@ -482,7 +481,7 @@ mod tests {
             make_range("0", "", "80", None),
             make_range("1", "7F", "FF", None), // Overlaps with range 0
         ];
-        let result = CollectionRoutingMap::try_create(ranges, None);
+        let result = ContainerRoutingMap::try_create(ranges, None, None);
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
     }
 
@@ -491,17 +490,18 @@ mod tests {
         let mut ranges = three_ranges();
         // Add the parent range "0" which should be filtered out.
         ranges.push(make_range("0", "", "FF", None));
-        let map = CollectionRoutingMap::try_create(ranges, None)
+        let map = ContainerRoutingMap::try_create(ranges, None, None)
             .unwrap()
             .unwrap();
         // Parent "0" should be filtered out, leaving 3 child ranges.
-        assert_eq!(map.ordered_ranges().len(), 3);
-        assert!(map.get_range_by_id("0").is_none());
+        let ids: Vec<&str> = map.ranges().iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["1", "2", "3"]);
+        assert!(map.range("0").is_none());
     }
 
     #[test]
     fn is_gone_tracks_parent_ranges() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
         // "0" is listed as a parent in all three child ranges.
@@ -513,47 +513,47 @@ mod tests {
 
     #[test]
     fn get_overlapping_ranges_full_span() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
         // Query the full EPK space — should return all ranges.
-        let overlapping = map.get_overlapping_ranges("", "FF");
-        assert_eq!(overlapping.len(), 3);
+        let overlapping = map.get_overlapping_ranges(&epk("")..&epk("FF"));
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["1", "2", "3"]);
     }
 
     #[test]
     fn get_overlapping_ranges_partial() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
         // Query [30, 50) — overlaps range 1 (max "3F" > "30") and range 2 (min "3F" < "50").
-        let overlapping = map.get_overlapping_ranges("30", "50");
-        assert_eq!(overlapping.len(), 2);
-        assert_eq!(overlapping[0].id, "1");
-        assert_eq!(overlapping[1].id, "2");
+        let overlapping = map.get_overlapping_ranges(&epk("30")..&epk("50"));
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["1", "2"]);
     }
 
     #[test]
     fn get_overlapping_ranges_single() {
-        let map = CollectionRoutingMap::try_create(three_ranges(), None)
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
         // Query [40, 50) — only range 2 [3F, 7F).
-        let overlapping = map.get_overlapping_ranges("40", "50");
-        assert_eq!(overlapping.len(), 1);
-        assert_eq!(overlapping[0].id, "2");
+        let overlapping = map.get_overlapping_ranges(&epk("40")..&epk("50"));
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["2"]);
     }
 
     #[test]
     fn empty_input_returns_none() {
-        let result = CollectionRoutingMap::try_create(vec![], None).unwrap();
+        let result = ContainerRoutingMap::try_create(vec![], None, None).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn try_combine_split_produces_valid_map() {
         // Start with a single range covering the full EPK space.
-        let map = CollectionRoutingMap::try_create(single_range(), None)
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
             .unwrap()
             .unwrap();
 
@@ -569,21 +569,20 @@ mod tests {
             .unwrap();
 
         // Parent "0" should be gone, two child ranges remain.
-        assert_eq!(merged.ordered_ranges().len(), 2);
+        let ids: Vec<&str> = merged.ranges().iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["1", "2"]);
         assert!(merged.is_gone("0"));
-        assert!(!merged.is_gone("1"));
-        assert!(!merged.is_gone("2"));
         // EPK lookup should work on the merged map.
         assert_eq!(
             merged
-                .get_range_by_effective_partition_key("30")
+                .get_range_by_effective_partition_key(&epk("30"))
                 .unwrap()
                 .id,
             "1"
         );
         assert_eq!(
             merged
-                .get_range_by_effective_partition_key("A0")
+                .get_range_by_effective_partition_key(&epk("A0"))
                 .unwrap()
                 .id,
             "2"
@@ -592,7 +591,7 @@ mod tests {
 
     #[test]
     fn try_combine_incomplete_returns_none() {
-        let map = CollectionRoutingMap::try_create(single_range(), None)
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
             .unwrap()
             .unwrap();
 
@@ -605,7 +604,7 @@ mod tests {
 
     #[test]
     fn try_combine_overlapping_returns_error() {
-        let map = CollectionRoutingMap::try_create(single_range(), None)
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
             .unwrap()
             .unwrap();
 

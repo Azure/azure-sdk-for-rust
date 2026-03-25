@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::models::range::Range;
+use crate::models::range::EpkRange;
+use crate::models::ETag;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -23,7 +24,7 @@ pub(crate) struct PartitionKeyRange {
 
     /// Gets the entity tag associated with the resource
     #[serde(rename = "_etag", skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    pub etag: Option<ETag>,
 
     /// Gets the last modified timestamp associated with the resource
     #[serde(rename = "_ts", skip_serializing_if = "Option::is_none")]
@@ -109,11 +110,11 @@ impl PartitionKeyRange {
         }
     }
 
-    /// Converts this PartitionKeyRange to a Range<String>
-    pub fn to_range(&self) -> Range<String> {
-        Range {
-            min: self.min_inclusive.clone(),
-            max: self.max_exclusive.clone(),
+    /// Returns a view of this partition key range as an `EpkRange<&str>`.
+    pub fn as_range(&self) -> EpkRange<&str> {
+        EpkRange {
+            min: &self.min_inclusive,
+            max: &self.max_exclusive,
             is_min_inclusive: true,
             is_max_inclusive: false,
         }
@@ -143,6 +144,22 @@ impl PartialEq for PartitionKeyRange {
 }
 
 impl Eq for PartitionKeyRange {}
+
+/// Orders partition key ranges by `min_inclusive`.
+///
+/// This ordering determines the position of a range in the sorted routing map,
+/// enabling binary search over partition key ranges.
+impl PartialOrd for PartitionKeyRange {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PartitionKeyRange {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.min_inclusive.cmp(&other.min_inclusive)
+    }
+}
 
 // Implement a Manual Hash for PartitionKeyRange, because only the ID, RID,
 // and min/max should be considered for equality/hashing.
@@ -177,10 +194,10 @@ mod tests {
     }
 
     #[test]
-    fn to_range() {
+    fn as_range() {
         let pkr = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
 
-        let range = pkr.to_range();
+        let range = pkr.as_range();
         assert_eq!(range.min, "00");
         assert_eq!(range.max, "FF");
         assert!(range.is_min_inclusive);
@@ -226,10 +243,11 @@ mod tests {
 
     #[test]
     fn range_overlap() {
-        let range1: Range<String> = Range::new("00".to_string(), "50".to_string(), true, false);
-        let range2 = Range::new("40".to_string(), "80".to_string(), true, false);
-        let range3 = Range::new("60".to_string(), "90".to_string(), true, false);
-        assert!(Range::check_overlapping(&range1, &range2));
-        assert!(!Range::check_overlapping(&range1, &range3));
+        let range1: EpkRange<String> =
+            EpkRange::new("00".to_string(), "50".to_string(), true, false);
+        let range2 = EpkRange::new("40".to_string(), "80".to_string(), true, false);
+        let range3 = EpkRange::new("60".to_string(), "90".to_string(), true, false);
+        assert!(EpkRange::check_overlapping(&range1, &range2));
+        assert!(!EpkRange::check_overlapping(&range1, &range3));
     }
 }
