@@ -4,13 +4,18 @@
 //! Asynchronous streams.
 
 mod bytes_stream;
+mod file_reader;
+mod file_stream;
+#[cfg(feature = "tokio")]
+pub mod tokio;
 
 use crate::{
     error::{Error, ErrorKind, Result},
     Bytes,
 };
 pub use bytes_stream::*;
-use dyn_clone::DynClone;
+pub use file_reader::*;
+pub use file_stream::*;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
 use std::{pin::Pin, task::Context};
 
@@ -19,16 +24,16 @@ pub const DEFAULT_BUFFER_SIZE: usize = 1024 * 64;
 
 /// Enable a type implementing `AsyncRead` to be consumed as if it were a `Stream` of `Bytes`.
 #[async_trait::async_trait]
-pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + DynClone {
+pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync {
     /// Resets the stream position to the beginning.
     async fn reset(&mut self) -> Result<()>;
 
     /// Returns the total length of the stream in bytes.
-    fn len(&self) -> usize;
+    async fn len(&self) -> usize;
 
     /// Returns `true` if the stream is empty.
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+    async fn is_empty(&self) -> bool {
+        self.len().await == 0
     }
 
     /// Returns the size of the buffer to use when reading from the stream.
@@ -36,8 +41,6 @@ pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + Dy
         DEFAULT_BUFFER_SIZE
     }
 }
-
-dyn_clone::clone_trait_object!(SeekableStream);
 
 impl Stream for dyn SeekableStream {
     type Item = Result<Bytes>;

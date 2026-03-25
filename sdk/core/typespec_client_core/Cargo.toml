@@ -14,7 +14,6 @@ keywords = []
 async-trait.workspace = true
 base64.workspace = true
 bytes.workspace = true
-dyn-clone.workspace = true
 futures.workspace = true
 gloo-timers = { workspace = true, optional = true }
 pin-project.workspace = true
@@ -61,7 +60,7 @@ reqwest_deflate = ["reqwest", "reqwest/deflate"]
 reqwest_gzip = ["reqwest", "reqwest/gzip"]
 reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
-tokio = ["tokio/sync", "tokio/time"]
+tokio = ["tokio/fs", "tokio/sync", "tokio/time"]
 xml = [
   "dep:serde_json",
   "typespec/xml",

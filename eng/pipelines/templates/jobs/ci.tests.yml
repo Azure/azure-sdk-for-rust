@@ -58,6 +58,10 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
+  - pwsh: |
+      Write-Host "##vso[task.setvariable variable=Logging__LogLevel__Default]Debug"
+    displayName: Set Proxy Log Level    
+
   - ${{ if eq(parameters.TestProxy, true) }}:
     - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
 
@@ -95,4 +99,9 @@ jobs:
         # $(Build.SourcesDirectory)/test-proxy.log is the hardcoded output log location for the test-proxy-tool.yml
         cat $(Build.SourcesDirectory)/test-proxy.log
       displayName: 'Dump Test Proxy logs'
+      condition: and(succeededOrFailed(), eq(variables['System.Debug'], 'true'))
+
+    - pwsh: |
+        curl http://localhost:5000/Audit/Logs | Write-Host
+      displayName: 'Dump Test Proxy Audit Log'
       condition: and(succeededOrFailed(), eq(variables['System.Debug'], 'true'))

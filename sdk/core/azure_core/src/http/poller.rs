@@ -408,7 +408,7 @@ where
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
-    ///     let mut req = req.clone();
+    ///     let mut req = req.try_clone().unwrap();
     ///     Box::pin(async move {
     ///         if let PollerState::More(continuation) = operation_state {
     ///             // Use the continuation to get the next URL for polling
@@ -889,8 +889,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -973,9 +973,9 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
                     let raw_response = client
-                        .execute_request(&req)
+                        .execute_request(&mut req)
                         .await?
                         .try_into_raw_response()
                         .await?;
@@ -1061,9 +1061,9 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
                     let raw_response = client
-                        .execute_request(&req)
+                        .execute_request(&mut req)
                         .await?
                         .try_into_raw_response()
                         .await?;
@@ -1154,8 +1154,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -1259,11 +1259,11 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new(
+                    let mut req = Request::new(
                         "https://example.com/operations/op1".parse().unwrap(),
                         Method::Get,
                     );
-                    let raw_response = client.execute_request(&req).await?;
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -1288,12 +1288,13 @@ mod tests {
                                     response,
                                     target: Box::new(move || {
                                         Box::pin(async move {
-                                            let target_req = Request::new(
+                                            let mut target_req = Request::new(
                                                 target_url.parse().unwrap(),
                                                 Method::Get,
                                             );
-                                            let target_response =
-                                                client_clone.execute_request(&target_req).await?;
+                                            let target_response = client_clone
+                                                .execute_request(&mut target_req)
+                                                .await?;
                                             let (target_status, target_headers, target_body) =
                                                 target_response.deconstruct();
                                             let target_bytes = target_body.collect().await?;
@@ -1384,8 +1385,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -1473,8 +1474,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -1562,8 +1563,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -1673,8 +1674,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 
@@ -1788,8 +1789,8 @@ mod tests {
             move |_, _| {
                 let client = mock_client.clone();
                 Box::pin(async move {
-                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let mut req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&mut req).await?;
                     let (status, headers, body) = raw_response.deconstruct();
                     let bytes = body.collect().await?;
 

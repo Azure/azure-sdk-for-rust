@@ -26,12 +26,12 @@ pub(crate) async fn upload(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    if content.len() <= partition_size.get() {
+    if content.len().await <= partition_size.get() {
         client.transfer_oneshot(content).await?;
         return Ok(());
     }
 
-    client.initialize(content.len()).await?;
+    client.initialize(content.len().await).await?;
 
     match content {
         Body::Bytes(bytes) => {
@@ -72,17 +72,17 @@ async fn upload_stream_partitions(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    let partitions =
-        PartitionedStream::new(content, partition_size).scan(0, |enumerated_bytes, result| {
-            match result {
-                Ok(bytes) => {
-                    let offset = *enumerated_bytes;
-                    *enumerated_bytes += bytes.len();
-                    future::ready(Some(Ok((offset, bytes))))
-                }
-                Err(e) => future::ready(Some(Err(e))),
+    let partitions = PartitionedStream::new(content, partition_size).await.scan(
+        0,
+        |enumerated_bytes, result| match result {
+            Ok(bytes) => {
+                let offset = *enumerated_bytes;
+                *enumerated_bytes += bytes.len();
+                future::ready(Some(Ok((offset, bytes))))
             }
-        });
+            Err(e) => future::ready(Some(Err(e))),
+        },
+    );
     let ops = partitions
         .map_ok(|(offset, bytes)| move || client.transfer_partition(offset, Body::Bytes(bytes)));
     run_all_with_concurrency_limit(ops, parallel).await?;

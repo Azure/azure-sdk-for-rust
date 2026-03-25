@@ -4,9 +4,21 @@
 
 ### Features Added
 
+- Added `FileStream<T>` buffered stream adapter implementing `AsyncRead`, `AsyncSeek`, and `SeekableStream`.
+- Added `FileReader` wrapping `std::fs::File` with async I/O via the configured `AsyncRuntime`.
+- Implemented `futures::io::AsyncSeek` for `BytesStream`.
+- Added `Body::try_clone()` which returns `Some` for `Bytes` bodies and `None` for `SeekableStream` bodies.
+- Added `Request::try_clone()` which returns `None` if the body is a `SeekableStream`.
+
 ### Breaking Changes
 
 - Added `tokio` feature to `default` features.
+- Removed `DynClone` supertrait from `SeekableStream`.
+- `SeekableStream::len()` and `SeekableStream::is_empty()` are now async.
+- `Body::len()` and `Body::is_empty()` are now async.
+- `Body` no longer implements `Clone`. Use `Body::try_clone()` instead.
+- `Request` no longer implements `Clone`. Use `Request::try_clone()` instead.
+- `HttpClient::execute_request()` now takes `&mut Request` instead of `&Request`.
 
 ### Bugs Fixed
 

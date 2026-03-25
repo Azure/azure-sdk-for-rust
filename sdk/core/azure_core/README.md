@@ -492,7 +492,7 @@ impl Default for Agent {
 
 #[async_trait::async_trait]
 impl HttpClient for Agent {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+    async fn execute_request(&self, request: &mut Request) -> azure_core::Result<AsyncRawResponse> {
         let request: ::http::request::Request<Vec<u8>> = todo!("convert our request into their request");
         let response = self
             .0

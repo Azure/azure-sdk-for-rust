@@ -398,7 +398,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
+        async fn execute_request(&self, request: &mut Request) -> Result<AsyncRawResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {
