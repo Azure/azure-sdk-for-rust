@@ -156,53 +156,6 @@ where
     }
 }
 
-/// Comparer for Range that compares by minimum value
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct MinComparer;
-
-impl MinComparer {
-    /// Compares two ranges by their minimum bounds
-    pub fn compare<T>(left: &Range<T>, right: &Range<T>) -> Ordering
-    where
-        T: Ord + Clone,
-    {
-        let result = left.min.cmp(&right.min);
-        if result != Ordering::Equal || left.is_min_inclusive == right.is_min_inclusive {
-            return result;
-        }
-
-        if left.is_min_inclusive {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
-    }
-}
-
-/// Comparer for Range that compares by maximum value
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct MaxComparer;
-
-impl MaxComparer {
-    /// Compares two ranges by their maximum bounds
-    pub fn compare<T>(left: &Range<T>, right: &Range<T>) -> Ordering
-    where
-        T: Ord + Clone,
-    {
-        let result = left.max.cmp(&right.max);
-
-        if result != Ordering::Equal || left.is_max_inclusive == right.is_max_inclusive {
-            return result;
-        }
-
-        if left.is_max_inclusive {
-            Ordering::Greater
-        } else {
-            Ordering::Less
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -296,33 +249,6 @@ mod tests {
 
         let range2 = Range::new(5, 15, false, true);
         assert_eq!(format!("{}", range2), "(5,15]");
-    }
-
-    #[test]
-    fn min_comparer() {
-        let range1 = Range::new(10, 20, true, false);
-        let range2 = Range::new(15, 25, true, false);
-        let range3 = Range::new(10, 30, false, false);
-
-        assert_eq!(MinComparer::compare(&range1, &range2), Ordering::Less);
-        assert_eq!(MinComparer::compare(&range2, &range1), Ordering::Greater);
-
-        // Same min, but different inclusiveness
-        assert_eq!(MinComparer::compare(&range1, &range3), Ordering::Less);
-    }
-
-    #[test]
-    fn max_comparer() {
-        let range1 = Range::new(10, 20, true, false);
-        let range2 = Range::new(15, 25, true, false);
-        let range3 = Range::new(5, 20, true, true);
-
-        assert_eq!(MaxComparer::compare(&range1, &range2), Ordering::Less);
-        assert_eq!(MaxComparer::compare(&range2, &range1), Ordering::Greater);
-
-        // Same max, but different inclusiveness
-        assert_eq!(MaxComparer::compare(&range1, &range3), Ordering::Less);
-        assert_eq!(MaxComparer::compare(&range3, &range1), Ordering::Greater);
     }
 
     #[test]

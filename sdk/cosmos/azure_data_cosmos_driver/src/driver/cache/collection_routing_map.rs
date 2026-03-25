@@ -7,7 +7,6 @@
 //! and uses binary search to find which range owns a given effective partition key.
 
 use crate::models::partition_key_range::{PartitionKeyRange, PartitionKeyRangeStatus};
-use crate::models::service_identity::ServiceIdentity;
 use std::collections::{HashMap, HashSet};
 
 /// Error returned when partition key range validation fails.
@@ -39,8 +38,8 @@ impl std::error::Error for RoutingMapError {}
 /// enabling O(log n) lookup of which range owns a given effective partition key.
 #[derive(Debug, Clone)]
 pub(crate) struct CollectionRoutingMap {
-    /// O(1) lookup by range ID, with optional service identity for direct-mode routing.
-    range_by_id: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)>,
+    /// O(1) lookup by range ID.
+    range_by_id: HashMap<String, PartitionKeyRange>,
     /// Sorted by `min_inclusive` for binary search.
     ordered_ranges: Vec<PartitionKeyRange>,
     /// Set of partition key range IDs that have been split (gone).
@@ -87,14 +86,13 @@ impl CollectionRoutingMap {
         ranges: Vec<PartitionKeyRange>,
         etag: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
-        let tuples = ranges.into_iter().map(|r| (r, None)).collect();
-        Self::try_create_with_continuation(tuples, etag, None)
+        Self::try_create_with_continuation(ranges, etag, None)
     }
 
-    /// Creates a routing map from a list of partition key ranges with optional
-    /// service identities and an optional change feed continuation token.
+    /// Creates a routing map from a list of partition key ranges with an
+    /// optional change feed continuation token.
     pub fn try_create_with_continuation(
-        ranges: Vec<(PartitionKeyRange, Option<ServiceIdentity>)>,
+        ranges: Vec<PartitionKeyRange>,
         etag: Option<String>,
         change_feed_next_if_none_match: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
@@ -105,36 +103,36 @@ impl CollectionRoutingMap {
         // Filter out "gone" (parent) ranges that were split.
         let gone: HashSet<String> = ranges
             .iter()
-            .filter_map(|(r, _)| r.parents.as_ref())
+            .filter_map(|r| r.parents.as_ref())
             .flat_map(|parents| parents.iter().cloned())
             .collect();
 
-        let mut filtered: Vec<(PartitionKeyRange, Option<ServiceIdentity>)> = ranges
+        let mut filtered: Vec<PartitionKeyRange> = ranges
             .into_iter()
-            .filter(|(r, _)| !gone.contains(&r.id))
+            .filter(|r| !gone.contains(&r.id))
             .collect();
 
         // Sort by min_inclusive.
-        filtered.sort_by(|a, b| a.0.min_inclusive.cmp(&b.0.min_inclusive));
+        filtered.sort_by(|a, b| a.min_inclusive.cmp(&b.min_inclusive));
 
         // Validate completeness: first range starts at "" and last ends at "FF",
         // and each range's max_exclusive == next range's min_inclusive.
         match filtered.first() {
-            Some((r, _)) if r.min_inclusive != MIN_EPK => {
+            Some(r) if r.min_inclusive != MIN_EPK => {
                 return Err(RoutingMapError::IncompleteRanges);
             }
             None => return Ok(None),
             _ => {}
         }
         match filtered.last() {
-            Some((r, _)) if r.max_exclusive != MAX_EPK => {
+            Some(r) if r.max_exclusive != MAX_EPK => {
                 return Err(RoutingMapError::IncompleteRanges);
             }
             _ => {}
         }
         for i in 0..filtered.len() - 1 {
-            let prev_max = &filtered[i].0.max_exclusive;
-            let next_min = &filtered[i + 1].0.min_inclusive;
+            let prev_max = &filtered[i].max_exclusive;
+            let next_min = &filtered[i + 1].min_inclusive;
             match prev_max.cmp(next_min) {
                 std::cmp::Ordering::Greater => return Err(RoutingMapError::OverlappingRanges),
                 std::cmp::Ordering::Less => return Err(RoutingMapError::IncompleteRanges),
@@ -142,12 +140,10 @@ impl CollectionRoutingMap {
             }
         }
 
-        let range_by_id: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)> = filtered
-            .iter()
-            .map(|(r, si)| (r.id.clone(), (r.clone(), si.clone())))
-            .collect();
+        let range_by_id: HashMap<String, PartitionKeyRange> =
+            filtered.iter().map(|r| (r.id.clone(), r.clone())).collect();
 
-        let ordered_ranges: Vec<PartitionKeyRange> = filtered.into_iter().map(|(r, _)| r).collect();
+        let ordered_ranges: Vec<PartitionKeyRange> = filtered;
 
         let highest_non_offline_pk_range_id = ordered_ranges
             .iter()
@@ -209,12 +205,7 @@ impl CollectionRoutingMap {
 
     /// Looks up a range by its ID.
     pub fn get_range_by_id(&self, id: &str) -> Option<&PartitionKeyRange> {
-        self.range_by_id.get(id).map(|(r, _)| r)
-    }
-
-    /// Looks up the service identity for a partition key range by its ID.
-    pub fn get_service_identity_by_id(&self, id: &str) -> Option<&ServiceIdentity> {
-        self.range_by_id.get(id).and_then(|(_, si)| si.as_ref())
+        self.range_by_id.get(id)
     }
 
     /// Returns all ordered partition key ranges.
@@ -289,38 +280,36 @@ impl CollectionRoutingMap {
     /// incomplete (caller should do a full refresh), or `Err` on overlap.
     pub fn try_combine(
         &self,
-        new_ranges: Vec<(PartitionKeyRange, Option<ServiceIdentity>)>,
+        new_ranges: Vec<PartitionKeyRange>,
         change_feed_next_if_none_match: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
         // Accumulate all gone (parent) range IDs.
         let mut combined_gone: HashSet<String> = new_ranges
             .iter()
-            .filter_map(|(r, _)| r.parents.as_ref())
+            .filter_map(|r| r.parents.as_ref())
             .flat_map(|parents| parents.iter().cloned())
             .collect();
         combined_gone.extend(self.gone_ranges.iter().cloned());
 
         // Merge range maps: start from existing (excluding gone), then add new (excluding gone).
-        let mut merged: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)> = self
+        let mut merged: HashMap<String, PartitionKeyRange> = self
             .range_by_id
             .iter()
             .filter(|(id, _)| !combined_gone.contains(*id))
-            .map(|(id, (r, si))| (id.clone(), (r.clone(), si.clone())))
+            .map(|(id, r)| (id.clone(), r.clone()))
             .collect();
 
-        for (range, service_identity) in new_ranges {
+        for range in new_ranges {
             if !combined_gone.contains(&range.id) {
-                merged.insert(range.id.clone(), (range, service_identity));
+                merged.insert(range.id.clone(), range);
             }
         }
 
         // Sort by min_inclusive.
-        let mut sorted: Vec<(PartitionKeyRange, Option<ServiceIdentity>)> =
-            merged.into_values().collect();
-        sorted.sort_by(|a, b| a.0.min_inclusive.cmp(&b.0.min_inclusive));
+        let mut sorted: Vec<PartitionKeyRange> = merged.into_values().collect();
+        sorted.sort_by(|a, b| a.min_inclusive.cmp(&b.min_inclusive));
 
-        let ordered_ranges: Vec<PartitionKeyRange> =
-            sorted.iter().map(|(r, _)| r.clone()).collect();
+        let ordered_ranges: Vec<PartitionKeyRange> = sorted.to_vec();
 
         // Validate completeness.
         if ordered_ranges.is_empty() || !Self::is_complete_range_set(&ordered_ranges) {
@@ -338,10 +327,8 @@ impl CollectionRoutingMap {
             }
         }
 
-        let range_by_id: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)> = sorted
-            .into_iter()
-            .map(|(r, si)| (r.id.clone(), (r, si)))
-            .collect();
+        let range_by_id: HashMap<String, PartitionKeyRange> =
+            sorted.into_iter().map(|r| (r.id.clone(), r)).collect();
         let highest = ordered_ranges
             .iter()
             .filter_map(|r| {
@@ -572,8 +559,8 @@ mod tests {
 
         // Simulate a split: range "0" splits into "1" [, 7F) and "2" [7F, FF).
         let new_ranges = vec![
-            (make_range("1", "", "7F", Some(vec!["0".into()])), None),
-            (make_range("2", "7F", "FF", Some(vec!["0".into()])), None),
+            make_range("1", "", "7F", Some(vec!["0".into()])),
+            make_range("2", "7F", "FF", Some(vec!["0".into()])),
         ];
 
         let merged = map
@@ -610,7 +597,7 @@ mod tests {
             .unwrap();
 
         // Only one child range — the merged set has a gap [7F, FF).
-        let new_ranges = vec![(make_range("1", "", "7F", Some(vec!["0".into()])), None)];
+        let new_ranges = vec![make_range("1", "", "7F", Some(vec!["0".into()]))];
 
         let result = map.try_combine(new_ranges, Some("etag".into())).unwrap();
         assert!(result.is_none(), "Incomplete merge should return None");
@@ -624,8 +611,8 @@ mod tests {
 
         // Two children that overlap: [, 80) and [7F, FF) — "80" > "7F".
         let new_ranges = vec![
-            (make_range("1", "", "80", Some(vec!["0".into()])), None),
-            (make_range("2", "7F", "FF", Some(vec!["0".into()])), None),
+            make_range("1", "", "80", Some(vec!["0".into()])),
+            make_range("2", "7F", "FF", Some(vec!["0".into()])),
         ];
 
         let result = map.try_combine(new_ranges, Some("etag".into()));

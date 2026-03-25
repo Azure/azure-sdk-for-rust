@@ -26,7 +26,7 @@ pub(crate) const QUERY_ENABLE_CROSS_PARTITION: HeaderName =
 /// of [`Into<PartitionKey>`] will handle it for you.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub struct PartitionKeyValue(InnerPartitionKeyValue);
+pub(crate) struct PartitionKeyValue(InnerPartitionKeyValue);
 
 // We don't want to expose the implementation details of PartitionKeyValue, so we use
 // this inner private enum to store the data.
@@ -171,6 +171,29 @@ impl PartitionKeyValue {
     /// Returns `true` if this value is the special Infinity sentinel.
     pub(crate) fn is_infinity(&self) -> bool {
         matches!(self.0, InnerPartitionKeyValue::Infinity)
+    }
+
+    /// Returns a truncated copy of this value for V1 binary encoding.
+    ///
+    /// String values longer than [`MAX_STRING_BYTES_TO_APPEND`] bytes are truncated
+    /// so that `write_for_binary_encoding_v1` sees them as "short" and appends the
+    /// `0x00` terminator, matching how the hashing step truncates strings.
+    pub(crate) fn truncated_for_v1_encoding(&self) -> PartitionKeyValue {
+        match &self.0 {
+            InnerPartitionKeyValue::String(s) if s.len() > MAX_STRING_BYTES_TO_APPEND => {
+                InnerPartitionKeyValue::String(Cow::Owned(
+                    s[..MAX_STRING_BYTES_TO_APPEND].to_string(),
+                ))
+                .into()
+            }
+            _ => self.clone(),
+        }
+    }
+
+    /// Creates the special Infinity sentinel value, used for EPK boundary calculations.
+    #[cfg(test)]
+    pub(crate) fn infinity() -> Self {
+        InnerPartitionKeyValue::Infinity.into()
     }
 }
 
@@ -357,7 +380,10 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity => {
                     // Internal sentinel — should never appear in a user-facing partition key.
-                    unreachable!("Infinity is not a valid partition key value for serialization");
+                    return Err(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        "Infinity is not a valid partition key value for serialization",
+                    ));
                 }
             }
 

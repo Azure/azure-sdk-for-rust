@@ -197,9 +197,25 @@ mod tests {
     }
 
     #[test]
+    fn murmurhash3_128_string() {
+        let bytes = b"sample-test";
+        let h = murmurhash3_128(bytes, 0);
+        assert_eq!(low64(h), 9863137013172825203);
+        assert_eq!(high64(h), 15859947107521786564);
+    }
+
+    #[test]
     fn murmurhash3_32_known_value() {
         // Known hash value for "hello" with seed 0.
         let h = murmurhash3_32(b"hello", 0);
         assert_eq!(h, 613153351);
+    }
+
+    #[test]
+    fn murmurhash3_32_float() {
+        let value: f64 = 374.0;
+        let bytes = value.to_le_bytes();
+        let h = murmurhash3_32(&bytes, 0);
+        assert_eq!(h, 3717946798);
     }
 }

@@ -60,32 +60,33 @@ owns that key. The `PartitionKeyRangeCache` provides this resolution layer.
 ## 2. Architectural Overview
 
 ```text
-┌──────────────────────────────────────────────────────────────────────┐
-│                        Caller (Operation Pipeline)                   │
-│                                                                      │
-│  resolve_partition_key_range_id(container, pk, fetch_fn)             │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                     PartitionKeyRangeCache                           │
-│                                                                      │
-│  1. Guard: pk.is_empty() → None (cross-partition)                    │
-│  2. Compute EPK from pk values + container's PK definition           │
-│  3. Lookup routing map from AsyncCache<String, CollectionRoutingMap>  │
-│     ├── Cache hit  → use existing routing map                        │
-│     └── Cache miss → invoke fetch_pk_ranges(collection_rid)          │
-│  4. Binary search the routing map for the EPK                        │
-│  5. Return range ID (or None)                                        │
-└──────────────────────────────────────────────────────────────────────┘
-                           │
-            ┌──────────────┼──────────────┐
-            ▼              ▼              ▼
-  ┌──────────────┐  ┌────────────┐  ┌────────────────────┐
-  │ EPK Engine   │  │ AsyncCache │  │ CollectionRouting   │
-  │ (murmur hash │  │ (per-key   │  │ Map (sorted ranges  │
-  │  V1 / V2)   │  │  lazy I/O) │  │  + binary search)   │
-  └──────────────┘  └────────────┘  └────────────────────┘
++---------------------------------------------------------------------+
+|                       Caller (Operation Pipeline)                   |
+|                                                                     |
+|  resolve_partition_key_range_id(container, pk, fetch_fn)            |
++---------------------------+-----------------------------------------+
+                            |
+                            v
++---------------------------------------------------------------------+
+|                    PartitionKeyRangeCache                           |
+|                                                                     |
+|  1. Guard: pk.is_empty() -> None (cross-partition)                  |
+|  2. Compute EPK from pk values + container's PK definition          |
+|  3. Lookup routing map from AsyncCache<String,CollectionRoutingMap> |
+|     +-- Cache hit  -> use existing routing map                      |
+|     +-- Cache miss -> invoke fetch_pk_ranges(collection_rid)        |
+|  4. Binary search the routing map for the EPK                       |
+|     +-- O(log n) where n = number of partition key ranges           |
+|  5. Return range ID (or None)                                       |
++---------------------------------------------------------------------+
+                            |
+             +--------------+--------------+
+             v              v              v
+  +--------------+  +------------+  +--------------------+
+  | EPK Engine   |  | AsyncCache |  | CollectionRouting  |
+  | (murmur hash |  | (per-key   |  | Map (sorted ranges |
+  |  V1 / V2)    |  |  lazy I/O) |  |  + binary search)  |
+  +--------------+  +------------+  +--------------------+
 ```
 
 ### Layer Separation
@@ -95,7 +96,6 @@ owns that key. The `PartitionKeyRangeCache` provides this resolution layer.
 | EPK hashing | `compute_effective_partition_key` | `models/effective_partition_key.rs` |
 | Range abstraction | `Range<T>` | `models/range.rs` |
 | Range model | `PartitionKeyRange` | `models/partition_key_range.rs` |
-| Service identity | `ServiceIdentity` | `models/service_identity.rs` |
 | Routing map | `CollectionRoutingMap` | `driver/cache/collection_routing_map.rs` |
 | Caching + orchestration | `PartitionKeyRangeCache` | `driver/cache/partition_key_range_cache.rs` |
 | Async primitives | `AsyncCache`, `AsyncLazy` | `driver/cache/async_cache.rs`, `async_lazy.rs` |
@@ -265,7 +265,7 @@ lookups. It is defined in `driver/cache/collection_routing_map.rs`.
 
 ```rust
 pub(crate) struct CollectionRoutingMap {
-    range_by_id: HashMap<String, (PartitionKeyRange, Option<ServiceIdentity>)>, // O(1) ID + service identity lookup
+    range_by_id: HashMap<String, PartitionKeyRange>,     // O(1) ID lookup
     ordered_ranges: Vec<PartitionKeyRange>,              // sorted by min_inclusive
     gone_ranges: HashSet<String>,                        // IDs of split (gone) parents
     highest_non_offline_pk_range_id: i32,                // for split detection
@@ -273,18 +273,6 @@ pub(crate) struct CollectionRoutingMap {
     pub change_feed_next_if_none_match: Option<String>,  // continuation token for change feed
 }
 ```
-
-The `range_by_id` HashMap stores each range alongside its optional `ServiceIdentity`,
-which identifies the service replica responsible for that partition. This is used for
-direct-mode routing. The identity is `None` when fetched via gateway mode (the
-current default) and populated when the driver has direct connectivity information.
-
-**`ServiceIdentity` comparison semantics:** `ServiceIdentity` uses manual
-`PartialEq`/`Eq` and `Hash` implementations with **case-insensitive** comparison on
-`federation_id` and `service_name` (via `eq_ignore_ascii_case` for equality and
-`to_lowercase()` for hashing). The `is_master_service` field is intentionally
-excluded from equality and hashing. This matches the .NET SDK behavior where service
-identities from different response casing variations are treated as equivalent.
 
 `PartitionKeyRange` provides a `to_range()` method that converts it to a
 `Range<String>` (from `models/range.rs`) with `is_min_inclusive: true` and
@@ -304,19 +292,16 @@ pub(crate) enum RoutingMapError {
 }
 ```
 
-`try_create(Vec<PartitionKeyRange>, etag)` is a convenience wrapper that pairs each
-range with `None` for `ServiceIdentity` and delegates to `try_create_with_continuation`.
-The full constructor takes `Vec<(PartitionKeyRange, Option<ServiceIdentity>)>`:
+`try_create(Vec<PartitionKeyRange>, etag)` delegates to `try_create_with_continuation`:
 
 ```text
 try_create(ranges, etag) → Result<Option<Self>, RoutingMapError>
 │
-├── Wrap each range as (range, None) → tuples
-└── try_create_with_continuation(tuples, etag, None)
+└── try_create_with_continuation(ranges, etag, None)
 
-try_create_with_continuation(tuples, etag, continuation) → Result<Option<Self>, RoutingMapError>
+try_create_with_continuation(ranges, etag, continuation) → Result<Option<Self>, RoutingMapError>
 │
-├── tuples.is_empty()?  → Ok(None)
+├── ranges.is_empty()?  → Ok(None)
 │
 ├── Collect "gone" parent IDs
 │   └── Union of all `parents` arrays across ranges
@@ -334,7 +319,7 @@ try_create_with_continuation(tuples, etag, continuation) → Result<Option<Self>
 │
 ├── Compute highest_non_offline_pk_range_id from non-Offline ranges
 │
-└── Build HashMap<id, (range, service_identity)> + HashSet<gone> + return Ok(Some(Self))
+└── Build HashMap<id, range> + HashSet<gone> + return Ok(Some(Self))
 ```
 
 **Key behaviors:**
@@ -378,13 +363,12 @@ The final `contains` check uses `PartitionKeyRange::to_range()` to convert to a
 
 | Method | Description |
 |--------|-------------|
-| `get_range_by_id(id)` | O(1) lookup by range ID via the HashMap (extracts the `PartitionKeyRange` from the stored tuple). |
-| `get_service_identity_by_id(id)` | O(1) lookup of the `ServiceIdentity` for a range ID. Returns `None` if no identity is associated. |
+| `get_range_by_id(id)` | O(1) lookup by range ID via the HashMap. |
 | `ordered_ranges()` | Returns the sorted slice of all ranges. |
 | `is_gone(id)` | Returns `true` if the given range ID has been split (is in the gone set). |
 | `get_overlapping_ranges(min, max)` | Returns all ranges overlapping the `[min, max)` EPK interval via binary search. |
 | `highest_non_offline_pk_range_id()` | Returns the highest parsed range ID among non-Offline ranges (for split detection). |
-| `try_combine(new_ranges, continuation)` | Merges incrementally-fetched `Vec<(PartitionKeyRange, Option<ServiceIdentity>)>` into this map. |
+| `try_combine(new_ranges, continuation)` | Merges incrementally-fetched `Vec<PartitionKeyRange>` into this map. |
 | `empty()` | Creates an empty routing map (fallback for error paths). |
 
 ---
@@ -423,10 +407,7 @@ fetch_and_build_routing_map(rid, previous=None, fetch_fn)
 │   ├── result.not_modified? → break
 │   └── all_ranges.extend(result.ranges)
 │
-├── Convert all_ranges to tuples: Vec<(PartitionKeyRange, Option<ServiceIdentity>)>
-│   └── Each range paired with None (ServiceIdentity populated externally)
-│
-└── try_create_with_continuation(tuples, None, continuation) → map
+└── try_create_with_continuation(all_ranges, None, continuation) → map
 ```
 
 ### 6.3 Cache Hit (Steady State)
@@ -764,7 +745,7 @@ obtain:
 | Invalidation | O(1) amortized | None |
 
 **Memory per collection:** `r × sizeof(PartitionKeyRange)` in the sorted vec +
-`r × (sizeof(PartitionKeyRange) + sizeof(Option<ServiceIdentity>))` in the HashMap.
+`r × sizeof(PartitionKeyRange)` in the HashMap.
 For a typical collection with ~100 ranges, this is negligible.
 
 ---
@@ -866,7 +847,7 @@ This section compares the Rust driver `PartitionKeyRangeCache` and
 | **`TryCombine` incremental merge** | ✅ | ✅ | ✅ | ✅ |
 | **Gone parent filtering** | ✅ | ✅ | ✅ | ✅ |
 | **`IsGone(rangeId)` check** | ✅ | ✅ | ✅ | ❌ |
-| **`ServiceIdentity` per range** | ✅ `Tuple<PKRange, ServiceIdentity>` | ✅ `ImmutablePair<PKRange, IServerIdentity>` | ✅ `(PKRange, Option<ServiceIdentity>)` | ❌ |
+| **`ServiceIdentity` per range** | ✅ `Tuple<PKRange, ServiceIdentity>` | ✅ `ImmutablePair<PKRange, IServerIdentity>` | ❌ (not needed) | ❌ |
 | **`CollectionUniqueId` on map** | ✅ | ✅ | ❌ | ❌ |
 | **Separate `orderedRanges` as `Range<String>`** | ✅ | ✅ | Partial (`to_range()` converts on demand) | ❌ |
 | **Completeness validation** | ✅ (throws on gaps/overlap) | ✅ (throws) | ✅ (returns `Err(RoutingMapError)`) | ✅ |
@@ -916,7 +897,7 @@ This section compares the Rust driver `PartitionKeyRangeCache` and
 | # | Gap | Impact | Notes |
 |---|-----|--------|-------|
 | G4 | `Result` return type for `resolve_*` | Callers cannot distinguish fetch failure from EPK miss | Future: change `Option` → `Result<Option<_>>` |
-| G6 | ~~No `ServiceIdentity` per range~~ | ✅ Resolved | `range_by_id` stores `(PartitionKeyRange, Option<ServiceIdentity>)` tuples |
+| G6 | No `ServiceIdentity` per range | Not needed | Service identity is not required for the driver's current routing model |
 | G7 | No `CollectionUniqueId` on routing map | Minor — collection RID serves as external key | Consider for diagnostics |
 | N1 | `useLengthAwareRangeComparer` | .NET-only; handles hex strings of different lengths | Low priority |
 
@@ -933,7 +914,6 @@ designated successor (see §14). The SDK cache is being deprecated.
 | Change feed incremental refresh | ✅ | ✅ | Driver has full change-feed loop + `try_combine` |
 | `isGone` check | ✅ | ❌ | Driver only |
 | `highest_non_offline_pk_range_id` | ✅ | ❌ | Driver only |
-| `ServiceIdentity` per range | ✅ | ❌ | Driver stores `(PartitionKeyRange, Option<ServiceIdentity>)` |
 | Range status model | ✅ | ❌ | Driver has `PartitionKeyRangeStatus` enum |
 | Error propagation | Partial (Option) | ✅ | Driver still returns `Option`; future → `Result` |
 | Transport decoupled | ✅ (callback) | ❌ (pipeline) | Driver's callback is more testable |
@@ -1019,7 +999,6 @@ The following SDK capabilities have been ported to the driver cache:
 | Distinct `OverlappingRanges` vs `IncompleteRanges` errors | `RoutingMapError` | ✅ Implemented |
 | Change-feed incremental fetch loop (If-None-Match/304) | `fetch_and_build_routing_map` | ✅ Implemented |
 | ETag-based `should_force_refresh` | `try_lookup` predicate | ✅ Implemented |
-| `ServiceIdentity` per range | `CollectionRoutingMap::range_by_id` | ✅ Implemented |
 | `PkRangeFetchResult` callback protocol | `cache/mod.rs` | ✅ Implemented |
 
 ### Remaining Work

@@ -36,8 +36,6 @@ mod murmur_hash;
 pub(crate) mod partition_key_range;
 #[allow(dead_code)]
 pub(crate) mod range;
-#[allow(dead_code)]
-pub(crate) mod service_identity;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
@@ -50,7 +48,8 @@ pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
 pub use etag::{ETag, Precondition};
-pub use partition_key::{PartitionKey, PartitionKeyValue};
+pub use partition_key::PartitionKey;
+pub(crate) use partition_key::PartitionKeyValue;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
