@@ -31,6 +31,8 @@ safe-outputs:
   add-labels:
     max: 5
   add-comment:
+  noop:
+    report-as-issue: false
 
 tools:
   bash: false
