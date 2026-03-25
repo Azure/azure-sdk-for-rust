@@ -148,6 +148,13 @@ impl PartitionKeyRangeCache {
             )
             .await;
 
+        if let Err(ref e) = routing_map {
+            tracing::warn!(
+                collection_rid,
+                error = %e,
+                "Failed to fetch routing map for collection"
+            );
+        }
         Ok(routing_map.ok())
     }
 
@@ -193,7 +200,7 @@ impl PartitionKeyRangeCache {
             let pk_range_link = self
                 .database_link
                 .feed(ResourceType::Containers)
-                .item(collection_rid)
+                .item_by_rid(collection_rid)
                 .feed(ResourceType::PartitionKeyRanges);
             let response = self
                 .execute_partition_key_range_read_change_feed(
