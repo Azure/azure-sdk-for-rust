@@ -202,6 +202,15 @@ impl FromStr for FeedRange {
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
 
+        // Cosmos DB always uses [min, max) semantics. Reject ranges with unexpected inclusivity
+        // to prevent subtly incorrect containment/overlap checks.
+        if !json.range.is_min_inclusive || json.range.is_max_inclusive {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+            ));
+        }
+
         Ok(Self {
             min_inclusive: json.range.min,
             max_exclusive: json.range.max,
@@ -232,6 +241,13 @@ impl<'de> Deserialize<'de> for FeedRange {
         D: serde::Deserializer<'de>,
     {
         let json = FeedRangeJson::deserialize(deserializer)?;
+
+        if !json.range.is_min_inclusive || json.range.is_max_inclusive {
+            return Err(serde::de::Error::custom(
+                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+            ));
+        }
+
         Ok(Self {
             min_inclusive: json.range.min,
             max_exclusive: json.range.max,

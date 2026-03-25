@@ -771,25 +771,9 @@ impl ContainerClient {
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
 
-        // Resolve physical partition ranges from the routing map.
-        let container_properties = self
-            .container_connection
-            .resolve_container_properties(&self.container_id)
-            .await?;
-        let collection_rid = container_properties
-            .system_properties
-            .resource_id
-            .as_deref()
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "container properties missing '_rid'",
-                )
-            })?;
-
         let routing_map = self
             .container_connection
-            .resolve_routing_map(collection_rid, options.force_refresh())
+            .resolve_routing_map(options.force_refresh())
             .await?
             .ok_or_else(|| {
                 azure_core::Error::with_message(
@@ -836,31 +820,15 @@ impl ContainerClient {
     ) -> azure_core::Result<FeedRange> {
         let partition_key = partition_key.into();
 
-        // Resolve container properties to get the partition key definition.
-        let container_properties = self
-            .container_connection
-            .resolve_container_properties(&self.container_id)
-            .await?;
-        let pk_def = &container_properties.partition_key;
-        let collection_rid = container_properties
-            .system_properties
-            .resource_id
-            .as_deref()
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "container properties missing '_rid'",
-                )
-            })?;
-
-        // Hash the partition key to its EPK.
-        let pk_version = pk_def.version.unwrap_or(2) as u8;
-        let epk = partition_key.get_hashed_partition_key_string(pk_def.kind.clone(), pk_version);
+        // Get partition key definition from the eagerly-resolved container reference.
+        let pk_def = self.container_connection.partition_key_definition();
+        let pk_version = pk_def.version().value() as u8;
+        let epk = partition_key.get_hashed_partition_key_string(pk_def.kind(), pk_version);
 
         // Look up the physical partition range containing this EPK.
         let routing_map = self
             .container_connection
-            .resolve_routing_map(collection_rid, false)
+            .resolve_routing_map(false)
             .await?
             .ok_or_else(|| {
                 azure_core::Error::with_message(
