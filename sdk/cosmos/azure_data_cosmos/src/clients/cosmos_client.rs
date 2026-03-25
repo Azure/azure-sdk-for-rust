@@ -15,6 +15,7 @@ use crate::{
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
+use azure_data_cosmos_driver::CosmosDriver;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -70,6 +71,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 pub struct CosmosClient {
     pub(crate) databases_link: ResourceLink,
     pub(crate) pipeline: Arc<GatewayPipeline>,
+    pub(crate) driver: Arc<CosmosDriver>,
     pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
     pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -106,6 +108,7 @@ impl CosmosClient {
         DatabaseClient::new(
             self.pipeline.clone(),
             id,
+            self.driver.clone(),
             self.global_endpoint_manager.clone(),
             self.global_partition_endpoint_manager.clone(),
         )
