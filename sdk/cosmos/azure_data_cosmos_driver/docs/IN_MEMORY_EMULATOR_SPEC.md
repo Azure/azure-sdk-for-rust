@@ -1,7 +1,7 @@
 # In-Memory Emulator Specification for `azure_data_cosmos_driver`
 
 **Status**: Draft
-**Date**: 2026-03-16 (last updated 2026-03-23)
+**Date**: 2026-03-16 (last updated 2026-03-25)
 **Authors**: (team)
 
 ---
@@ -28,6 +28,9 @@
 18. [Module & File Layout](#18-module--file-layout)
 19. [Usage API & Public API Surface](#19-usage-api--public-api-surface)
 20. [Open Questions (Resolved)](#20-open-questions-resolved)
+21. [Throughput Throttling](#21-throughput-throttling)
+22. [V2 Vector-Clock Session Tokens](#22-v2-vector-clock-session-tokens)
+23. [Partition Split & Merge](#23-partition-split--merge)
 
 ---
 
@@ -60,7 +63,6 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 - Change feed.
 - Stored procedures / triggers / UDFs.
 - Cross-partition feed reads (`ReadFeed`).
-- Throughput / offer management.
 
 ---
 
@@ -73,7 +75,7 @@ the same pattern as `fault_injection` in `azure_data_cosmos`.
 
 ```toml
 [features]
-in_memory_emulator = []   # empty feature — enables module, no extra deps
+in_memory_emulator = ["dep:tokio"]   # enables module, implies tokio for async replication/split/merge
 ```
 
 ### Module Declaration (lib.rs)
@@ -140,11 +142,12 @@ that verify retry/failover behavior against the in-memory store.
 
 `VirtualAccountConfig` configures the emulated Cosmos DB account:
 
-- **Regions**: Ordered list of `VirtualRegion` (name + gateway URL). First is hub.
+- **Regions**: Ordered list of `VirtualRegion` (name + gateway URL + region_id). First is hub.
 - **Write mode**: Single-write (one designated write region) or multi-write (all regions).
 - **Consistency**: Default consistency level (Session, Strong, Eventual, etc.).
 - **Replication**: Configurable delay range `[min_lag, max_lag]` (default 20–50ms random).
 - **RU model**: Configurable RU charging rates per size bucket.
+- **Throttling**: Optional per-partition throughput enforcement (429/3200 when exceeded).
 
 ### Replication Config
 
@@ -199,15 +202,19 @@ EmulatorStore
         ├── databases: RwLock<HashMap<String, DatabaseMetadata>>
         └── containers: RwLock<HashMap<(String, String), ContainerState>>
             └── ContainerState
-                ├── metadata: ContainerMetadata         # id, _rid, PK definition, etc.
+                ├── metadata: ContainerMetadata         # id, _rid, PK definition, throughput, etc.
+                ├── next_partition_id: AtomicU32         # Counter for split/merge child IDs
                 └── physical_partitions: Vec<PhysicalPartition>
                     └── PhysicalPartition
                         ├── id: u32                     # Partition key range ID
                         ├── epk_range: (Epk, Epk)       # [min_inclusive, max_exclusive)
                         ├── lsn: AtomicU64              # Per-partition LSN counter
+                        ├── vector_clock_version: AtomicU64  # Topology version (incremented on merge)
                         ├── documents: RwLock<BTreeMap<Epk, BTreeMap<String, StoredDocument>>>
-                        │                                 # Epk → item id → document
-                        └── session_state: SessionState # Forced-unavailability flag, etc.
+                        ├── session_state: SessionState # Forced-unavailability flag
+                        ├── parents: Vec<u32>           # Parent partition IDs (after split/merge)
+                        ├── locked_until: RwLock<Option<Instant>>  # Split/merge lock
+                        └── throughput_tracker: Option<ThroughputTracker>  # Per-partition RU budget
 ```
 
 ### Resource Metadata
@@ -224,15 +231,16 @@ EmulatorStore
 
 **ContainerMetadata**: Stores the container-level system properties and configuration.
 
-| Field             | Type                     | Description                                                                                        |
-| ----------------- | ------------------------ | -------------------------------------------------------------------------------------------------- |
-| `id`              | `String`                 | User-assigned container name                                                                       |
-| `_rid`            | `String`                 | Hierarchical RID (8 bytes, base64-encoded); encodes parent db (4B) + collection (4B, high bit set) |
-| `_ts`             | `u64`                    | Last-modified timestamp (Unix epoch seconds)                                                       |
-| `_self`           | `String`                 | Self-link: `dbs/{db_rid}/colls/{coll_rid}/`                                                        |
-| `_etag`           | `String`                 | Quoted UUID                                                                                        |
-| `partition_key`   | `PartitionKeyDefinition` | Paths, kind (Hash/Range), version                                                                  |
-| `partition_count` | `u32`                    | Number of physical partitions (default 4)                                                          |
+| Field                       | Type                     | Description                                                                                        |
+| --------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------- |
+| `id`                        | `String`                 | User-assigned container name                                                                       |
+| `_rid`                      | `String`                 | Hierarchical RID (8 bytes, base64-encoded); encodes parent db (4B) + collection (4B, high bit set) |
+| `_ts`                       | `u64`                    | Last-modified timestamp (Unix epoch seconds)                                                       |
+| `_self`                     | `String`                 | Self-link: `dbs/{db_rid}/colls/{coll_rid}/`                                                        |
+| `_etag`                     | `String`                 | Quoted UUID                                                                                        |
+| `partition_key`             | `PartitionKeyDefinition` | Paths, kind (Hash/Range), version                                                                  |
+| `partition_count`           | `u32`                    | Number of physical partitions (default 4)                                                          |
+| `provisioned_throughput_ru` | `Option<u32>`            | Provisioned RU/s (None = no limit; minimum 400 when set)                                           |
 
 **PartitionKeyRangeMetadata**: Stores per-partition-key-range metadata, exposed via the
 `/dbs/{db}/colls/{coll}/pkranges` feed. Each physical partition has a corresponding
@@ -248,10 +256,11 @@ EmulatorStore
 | `_lsn`                | `u64`         | Current LSN of this partition                                                                                           |
 | `min_inclusive`       | `Epk`         | Lower EPK bound (inclusive), e.g. `Epk::MIN`                                                                            |
 | `max_exclusive`       | `Epk`         | Upper EPK bound (exclusive), e.g. `Epk::MAX`                                                                            |
-| `status`              | `String`      | Always `"online"` (Phase 1 — no splits)                                                                                 |
-| `parents`             | `Vec<String>` | Empty (no split history in Phase 1)                                                                                     |
+| `status`              | `String`      | `"online"` (or absent during split/merge lock)                                                                          |
+| `parents`             | `Vec<String>` | Parent partition IDs after split/merge (empty for initial partitions)                                                   |
 | `rid_prefix`          | `u32`         | Partition-local RID prefix for document allocation                                                                      |
 | `throughput_fraction` | `f64`         | `1.0 / partition_count`                                                                                                 |
+| `vectorClockVersion`  | `u64`         | Topology version (0 initially; incremented on merge, preserved on split)                                                |
 
 The PKRanges feed is served at `GET /dbs/{db}/colls/{coll}/pkranges` and returns all
 ranges for the container. When used as a change feed (with `A-IM: Incremental feed` and
@@ -273,7 +282,8 @@ if the ETag matches (no topology change).
       "ridPrefix": 0,
       "throughputFraction": 0.25,
       "status": "online",
-      "parents": []
+      "parents": [],
+      "vectorClockVersion": 0
     }
   ],
   "_rid": "...",
@@ -641,17 +651,18 @@ body regardless of this header.
 
 ### Required Response Headers
 
-| Header                | Source                                                         |
-| --------------------- | -------------------------------------------------------------- |
-| `x-ms-activity-id`    | Echo from request or generate UUID                             |
-| `x-ms-request-charge` | Computed per RU model                                          |
-| `x-ms-session-token`  | `{pkrange_id}:-1#{lsn}` format (composite for multi-partition) |
-| `etag`                | Stored/generated ETag                                          |
-| `content-type`        | `application/json`                                             |
-| `date`                | Current UTC (RFC 1123)                                         |
-| `x-ms-version`        | `2020-07-15`                                                   |
-| `x-ms-substatus`      | Only on specific errors (1002, 3, etc.)                        |
-| `x-ms-item-count`     | `1` for point reads                                            |
+| Header                | Source                                                               |
+| --------------------- | -------------------------------------------------------------------- |
+| `x-ms-activity-id`    | Echo from request or generate UUID                                   |
+| `x-ms-request-charge` | Computed per RU model                                                |
+| `x-ms-session-token`  | V2 format: `{pkrangeId}:{version}#{globalLSN}#{regionId}={localLSN}` |
+| `etag`                | Stored/generated ETag                                                |
+| `content-type`        | `application/json`                                                   |
+| `date`                | Current UTC (RFC 1123)                                               |
+| `x-ms-version`        | `2020-07-15`                                                         |
+| `x-ms-substatus`      | Only on specific errors (1002, 3, 1007, 3200, etc.)                  |
+| `x-ms-item-count`     | `1` for point reads                                                  |
+| `x-ms-retry-after-ms` | Only on 429/3200 throttle responses (milliseconds to wait)           |
 
 ### Error Response Body
 
@@ -670,32 +681,56 @@ body regardless of this header.
 ### LSN Model
 
 - Each **physical partition** in each region has an `AtomicU64` LSN counter.
+- Each **physical partition** also has an `AtomicU64` **vector clock version** (starts at 0).
 - **Only writes advance LSN** (increment by 1). Reads never change LSN.
 - Replication applies source LSN via `fetch_max` — target does not independently increment.
 - A container with N physical partitions has N independent LSN counters per region.
 
-### Session Token Format
+### Session Token Format (V2)
+
+The emulator emits V2 vector-clock session tokens:
 
 ```text
-{pkrange_id}:-1#{lsn}
+{pkrange_id}:{version}#{globalLSN}#{regionId}={localLSN}
 ```
 
-Where `pkrange_id` is the physical partition's partition key range ID (0, 1, 2, ...).
-Each physical partition independently tracks its own LSN, so a container with 4 partitions
-could produce session tokens like `0:-1#5`, `1:-1#3`, `2:-1#12`, `3:-1#0`.
+Where:
+- `pkrange_id` — physical partition's partition key range ID (0, 1, 2, …)
+- `version` — vector clock version (topology version; incremented on merge)
+- `globalLSN` — the partition's current LSN at the time of the operation
+- `regionId` — numeric ID of the region that performed the operation
+- `localLSN` — same as `globalLSN` (per-region tracking; always matches `globalLSN` for
+  the writing region)
+
+Example: `0:0#5#0=5` means partition 0, version 0, LSN 5, region 0 at LSN 5.
 
 Composite session tokens (multiple partition key ranges in one token, separated by `,`)
-are supported for response headers: `0:-1#5,1:-1#3,2:-1#12,3:-1#0`.
+are supported for response headers: `0:0#5#0=5,1:0#3#0=3`.
+
+### V1 Backward Compatibility
+
+The emulator accepts V1 tokens (`{pkrangeId}:-1#{lsn}`) on incoming requests for backward
+compatibility. V1 tokens are parsed as version=0, globalLSN=lsn, no region progress.
 
 ### Session Consistency Enforcement
 
 When account consistency is `Session` and request includes `x-ms-session-token`:
 
-1. Parse the token to extract the partition key range ID and requested LSN.
+1. Parse the token to extract partition key range ID, version, and globalLSN.
 2. Identify the target physical partition (by EPK hash of the partition key).
-3. If the token's `pkrange_id` matches the target partition and
-   `requested_lsn > partition_lsn` → 404/1002 (ReadSessionNotAvailable).
-4. Otherwise proceed normally.
+3. **Version check**: if the token's version > partition's current version → 404/1002.
+   Higher version means a topology change (merge) that hasn't been observed yet.
+4. **LSN check**: if same version and token's globalLSN > partition's current LSN →
+   404/1002 (ReadSessionNotAvailable).
+5. Otherwise proceed normally.
+
+### Vector Clock Version
+
+- **Split**: does NOT change vector_clock_version. Child partitions inherit the parent's
+  version.
+- **Merge**: increments vector_clock_version by 1 on the child partition
+  (`max(parent_versions) + 1`).
+- **Region add/remove**: would increment version (not yet implemented).
 
 ### Forced Session Unavailability
 
@@ -750,6 +785,11 @@ RuChargingModel {
 }
 ```
 
+### Throughput Enforcement
+
+See [Section 21 — Throughput Throttling](#21-throughput-throttling) for per-partition
+RU/s enforcement with 429/3200 responses.
+
 ---
 
 ## 12. Multi-Region Emulation
@@ -782,6 +822,8 @@ RuChargingModel {
 | Write forbidden (SWR)      | 403    | 3          |
 | Bad request                | 400    | —          |
 | Unsupported operation      | 501    | —          |
+| Throughput exceeded        | 429    | 3200       |
+| Split/merge in progress    | 410    | 1007       |
 
 ### Programmable Hooks
 
@@ -791,13 +833,19 @@ store.force_session_not_available(region, partition_key);
 
 // Pauses all replication TO the target region. Writes to other regions continue to
 // execute and accumulate, but are not delivered to the paused region.
-// While paused, reads in the target region may return stale data or 404/1002 if
-// session tokens reference LSNs that haven't been replicated yet.
 store.pause_replication(target_region);
 
 // Delivers all accumulated writes to the target region in LSN order, then resumes
-// normal replication flow. The target region's LSN is advanced to catch up.
+// normal replication flow.
 store.resume_replication(target_region);
+
+// Splits a physical partition into two children. During min_lock_duration (plus doc
+// redistribution time), operations on the partition return 410/1007.
+store.split_partition(db_id, coll_id, partition_id, min_lock_duration);
+
+// Merges two adjacent physical partitions into one child. During min_lock_duration
+// (plus doc merge time), operations on both partitions return 410/1007.
+store.merge_partitions(db_id, coll_id, partition_id_a, partition_id_b, min_lock_duration);
 ```
 
 #### Pause/Resume Semantics
@@ -963,7 +1011,7 @@ Differences are classified as:
 - Status code matches expected.
 - All required response headers present (see Section 8).
 - ETag format is valid (quoted string).
-- Session token format matches `{pkrange_id}:-1#{lsn}`.
+- Session token format matches V2: `{pkrange_id}:{version}#{globalLSN}#{regionId}={localLSN}`.
 - RU charge is positive and within expected range for document size.
 - Document body contains all system properties on reads/writes.
 
@@ -1005,6 +1053,14 @@ pause_resume_replication.
 **Control Plane**: create_database, read_database, delete_database_cascades,
 create_container_with_pk, read_container, delete_container_cascades,
 create_container_missing_pk_400, read_nonexistent_database_404.
+
+**Throttling**: throttle_429_3200_when_exceeds_budget, throttle_disabled_no_429,
+container_creation_min_400.
+
+**Split & Merge**: split_creates_two_children, split_locked_returns_410_1007,
+split_preserves_vector_clock_version, merge_adjacent_partitions,
+merge_increments_vector_clock_version, session_token_uses_v2_format,
+read_after_split_succeeds.
 
 ---
 
@@ -1055,7 +1111,9 @@ tests/
     ├── point_operations.rs                   # CRUD happy path tests
     ├── error_cases.rs                        # 404, 409, 412, 404/1002 tests
     ├── multi_region.rs                       # Write forbidden, replication, account props
-    └── control_plane.rs                      # Database/container CRUD, PK extraction
+    ├── control_plane.rs                      # Database/container CRUD, PK extraction
+    ├── throttling.rs                         # 429/3200 throughput throttling tests
+    └── split_merge.rs                        # Partition split/merge, 410/1007, V2 tokens
 ```
 
 ---
@@ -1143,6 +1201,12 @@ store.pause_replication("West US");
 
 // Resume replication — delivers all accumulated writes, then resumes normal flow
 store.resume_replication("West US");
+
+// Split partition 0 into two children (min 100ms lock before doc redistribution)
+store.split_partition("testdb", "testcoll", 0, Duration::from_millis(100));
+
+// Merge partitions 0 and 1 into one child (min 100ms lock before doc merge)
+store.merge_partitions("testdb", "testcoll", 0, 1, Duration::from_millis(100));
 ```
 
 ### Custom RU Charging
@@ -1167,7 +1231,9 @@ store.create_container_with_config(
     "testdb",
     "testcoll",
     PartitionKeyDefinition::new(vec!["/pk"]),
-    ContainerConfig::new().with_partition_count(8),
+    ContainerConfig::new()
+        .with_partition_count(8)
+        .with_throughput(4000), // 4000 RU/s → 500 RU/s per partition
 );
 ```
 
@@ -1177,17 +1243,17 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
 
 #### Configuration Types
 
-| Type                     | Description                                                    |
-| ------------------------ | -------------------------------------------------------------- |
-| `Epk`                    | Newtype for effective partition key (hex-encoded hash string)  |
-| `VirtualAccountConfig`   | Root config: regions, write mode, consistency, replication, RU |
-| `VirtualRegion`          | Region name + gateway URL                                      |
-| `WriteMode`              | `Single` (one write region) or `Multi` (all regions write)     |
-| `ConsistencyLevel`       | `Session`, `Strong`, `BoundedStaleness`, `Eventual`            |
-| `ReplicationConfig`      | Replication delay: `immediate()`, `fixed(d)`, `range(min,max)` |
-| `RuChargingModel`        | Configurable RU rates per operation type and document size     |
-| `ContainerConfig`        | Per-container overrides (partition count, etc.)                |
-| `PartitionKeyDefinition` | Partition key paths, kind, version                             |
+| Type                     | Description                                                                |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `Epk`                    | Newtype for effective partition key (hex-encoded hash string)              |
+| `VirtualAccountConfig`   | Root config: regions, write mode, consistency, replication, RU, throttling |
+| `VirtualRegion`          | Region name + gateway URL + region_id                                      |
+| `WriteMode`              | `Single` (one write region) or `Multi` (all regions write)                 |
+| `ConsistencyLevel`       | `Session`, `Strong`, `BoundedStaleness`, `Eventual`                        |
+| `ReplicationConfig`      | Replication delay: `immediate()`, `fixed(d)`, `range(min,max)`             |
+| `RuChargingModel`        | Configurable RU rates per operation type and document size                 |
+| `ContainerConfig`        | Per-container overrides (partition count, throughput)                      |
+| `PartitionKeyDefinition` | Partition key paths, kind, version                                         |
 
 #### Core Types
 
@@ -1206,6 +1272,8 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
 | `force_session_not_available(region, pk)`                      | One-shot 404/1002 on next read        |
 | `pause_replication(target_region)`                             | Stop replication to target            |
 | `resume_replication(target_region)`                            | Resume + drain accumulated writes     |
+| `split_partition(db, coll, partition_id, min_lock_duration)`   | Split partition into two children     |
+| `merge_partitions(db, coll, id_a, id_b, min_lock_duration)`    | Merge two adjacent partitions         |
 
 ---
 
@@ -1241,3 +1309,188 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
    own `RwLock`, allowing concurrent reads and exclusive writes within a partition. Operations
    on different physical partitions execute concurrently without contention.
    See [Section 5 — Concurrency Model](#concurrency-model).
+
+---
+
+## 21. Throughput Throttling
+
+### Design
+
+Throughput enforcement is **per-partition**, matching the Cosmos DB service model where
+container throughput is evenly distributed across physical partitions. Each partition
+gets `container_throughput_ru / partition_count` RU/s.
+
+Throughput is always stored and distributed when configured. **Enforcement** (returning
+429/3200 when the budget is exceeded) is controlled by a separate toggle:
+
+```rust
+let config = VirtualAccountConfig::new(regions)
+    .with_throttling_enabled(true); // Without this, RU is tracked but never enforced
+```
+
+### Container Configuration
+
+```rust
+ContainerConfig::new()
+    .with_partition_count(4)
+    .with_throughput(4000) // 4000 RU/s total → 1000 RU/s per partition
+```
+
+Minimum provisioned throughput is 400 RU/s (panics on lower values).
+
+### Per-Partition Tracking
+
+Each `PhysicalPartition` has an optional `ThroughputTracker` that:
+
+1. Maintains an `AtomicU64` accumulator for consumed RU in the current second window
+2. Resets the accumulator when the timestamp crosses a second boundary
+3. On each operation: computes RU charge → attempts to consume → returns 429/3200 if
+   the partition's per-second budget (`container_ru / partition_count`) is exceeded
+
+### Throttle Response
+
+- **Status**: 429 Too Many Requests
+- **Substatus**: 3200 (RUBudgetExceeded)
+- **Header**: `x-ms-retry-after-ms` with retry delay in milliseconds
+- Throttle checks happen **after** the RU charge is computed but **before** the
+  operation modifies the store (for writes)
+
+### Interaction with Split/Merge
+
+When partitions are split or merged, child partitions get new `ThroughputTracker`
+instances with the per-partition budget recalculated from the container's total
+throughput and the new partition count.
+
+---
+
+## 22. V2 Vector-Clock Session Tokens
+
+### Wire Format
+
+The emulator emits V2 vector-clock session tokens following the real Cosmos DB format:
+
+```text
+{pkrangeId}:{version}#{globalLSN}#{regionId}={localLSN}
+```
+
+This matches the `VectorSessionToken` format used by the driver's own session token
+infrastructure (`models/vector_session_token.rs`).
+
+### Region IDs
+
+Each `VirtualRegion` has a `region_id: u64` field. By default, region IDs are 0 (and
+can be explicitly set via `with_region_id(id)`). The region ID is included in every
+session token emitted by operations in that region.
+
+### Version Semantics
+
+The `vector_clock_version` field on `PhysicalPartition` tracks the topology version:
+
+| Event                      | Version Change                         |
+| -------------------------- | -------------------------------------- |
+| Initial partition creation | 0                                      |
+| Split                      | Preserved (child = parent version)     |
+| Merge                      | Incremented (child = max(parents) + 1) |
+| Region add/remove          | Would increment (not yet implemented)  |
+
+### Session Consistency Check (V2-Aware)
+
+When validating session tokens on reads:
+
+1. **Version mismatch**: if token version > partition version → 404/1002.
+   The client has seen a newer topology that this partition hasn't caught up to.
+2. **Same version, LSN mismatch**: if token globalLSN > partition LSN → 404/1002.
+3. **Token version < partition version**: proceed normally (the partition has moved
+   forward via merge; the client's older token is still valid).
+
+### Backward Compatibility
+
+V1 tokens (`{pkrangeId}:-1#{lsn}`) are accepted on incoming requests. They are parsed
+as version=0, globalLSN=lsn, with no region progress.
+
+---
+
+## 23. Partition Split & Merge
+
+### Overview
+
+The emulator supports programmatic simulation of partition splits and merges, enabling
+tests to verify the driver's handling of topology changes (PKRange cache invalidation,
+session token resolution, retry on 410/1007).
+
+### Split
+
+Triggered via test hook:
+
+```rust
+store.split_partition("testdb", "testcoll", partition_id, min_lock_duration);
+```
+
+#### Behavior
+
+1. **Lock**: The parent partition is locked in all regions. During the lock period
+   (at least `min_lock_duration`, plus the time needed for doc redistribution), all
+   operations targeting the partition return **410/1007** (CompletingSplitOrMerge).
+2. **Wait**: The emulator waits for `min_lock_duration` before proceeding.
+3. **Split**: After the wait, the parent's EPK range is divided at the midpoint.
+   Two child partitions are created with:
+   - **IDs**: Next available from the container's `AtomicU32` counter
+   - **EPK ranges**: `[parent_min, midpoint)` and `[midpoint, parent_max)`
+   - **LSN**: `parent_lsn + 1` (both children start with same LSN)
+   - **Vector clock version**: Same as parent (split does NOT change version)
+   - **Documents**: Redistributed to children based on their EPK
+   - **Parents**: `[parent_id]`
+4. **Cleanup**: Parent partition is removed. Lock is cleared.
+
+### Merge
+
+Triggered via test hook:
+
+```rust
+store.merge_partitions("testdb", "testcoll", id_a, id_b, min_lock_duration);
+```
+
+#### Behavior
+
+1. **Validation**: The two partitions must be adjacent (the first's `epk_max` must
+   equal the second's `epk_min`).
+2. **Lock**: Both parent partitions are locked in all regions. Operations return
+   **410/1007** during the lock period.
+3. **Wait**: The emulator waits for `min_lock_duration` before proceeding.
+4. **Merge**: A single child partition is created with:
+   - **ID**: Next available from the container's counter
+   - **EPK range**: Union of both parents `[lower_min, upper_max)`
+   - **LSN**: `1` (restarts)
+   - **Vector clock version**: `max(parent_versions) + 1` (merge DOES increment version)
+   - **Documents**: Merged from both parents
+   - **Parents**: `[id_a, id_b]`
+5. **Cleanup**: Both parent partitions are removed. Lock is cleared.
+
+### Lock Duration Semantics
+
+The `min_lock_duration` parameter is a **floor** — the actual lock lasts at least that
+long, plus the time needed for the doc redistribution/merge work. This is implemented
+by setting `locked_until` to `now + min_lock_duration + large_buffer`, then clearing
+the lock once the work completes.
+
+This allows tests to:
+- Use `Duration::ZERO` for instant split/merge in fast tests
+- Use `Duration::from_millis(500)` to test that the driver retries on 410/1007 during
+  the lock window
+
+### PKRanges Feed After Split/Merge
+
+The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
+- Child partitions include their `parents` list (e.g., `["0"]` after split, `["0", "1"]`
+  after merge)
+- `vectorClockVersion` reflects the current version
+- Parent partitions are no longer present
+
+### Impact on Session Tokens
+
+- **After split**: Session tokens for the parent partition are no longer valid. The driver
+  must resolve them via the `parents` field of the child partitions. The vector clock
+  version is unchanged, so version-based comparisons work correctly.
+- **After merge**: The child partition has an incremented vector clock version. Session
+  tokens from either parent (with lower version) are treated as older topology and
+  proceed normally (version < child version → valid).
