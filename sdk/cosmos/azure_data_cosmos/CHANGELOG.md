@@ -4,7 +4,10 @@
 
 ### Features Added
 
-- Added `activity_id()`, `index_metrics()`, `query_metrics()`, and `server_duration_ms()` convenience methods to `CosmosResponse<T>` for access to additional response metadata. The `index_metrics()` method base64-decodes the raw header value to return valid JSON.
+- Added `CosmosResponse<T, M>` with a second generic parameter for operation-specific metadata: `ItemMetadata` (point operations), `QueryMetadata` (queries), and `ResourceMetadata` (resource management).
+- Added `CosmosDiagnostics` type accessible via `diagnostics()` on `CosmosResponse` and `FeedPage`, providing `activity_id()` and `server_duration_ms()`.
+- Added `FeedPage<T, QueryMetadata>` with typed `index_metrics()` and `query_metrics()` accessors. The `index_metrics()` method base64-decodes the raw header value to return valid JSON.
+- Added `request_charge()`, `session_token()`, and `etag()` convenience methods to `FeedPage`.
 - Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
 
 ### Breaking Changes
@@ -19,7 +22,6 @@
 - Fixes Circuit Breaker Failover Logic for Multi-Master Writes on 403/3. ([#3861](https://github.com/Azure/azure-sdk-for-rust/pull/3861))
 
 ### Other Changes
-
 
 ## 0.31.0 (2026-02-25)
 

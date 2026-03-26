@@ -66,7 +66,6 @@ pub struct ChangeFeedMetadata {
 pub struct ReadManyMetadata {
     // TBD
 }
-```
 
 /// Metadata for resource management operations (databases, containers, throughput).
 ///
@@ -78,7 +77,7 @@ pub struct ResourceMetadata {}
 ### What goes where
 
 | Field | Location | Rationale |
-|-------|----------|-----------|
+| ----- | -------- | --------- |
 | `diagnostics()` | `CosmosResponse` | Universal — all operations |
 | `request_charge()` | `CosmosResponse` | Universal — all operations report RU |
 | `session_token()` | `CosmosResponse` | Universal — session consistency |
@@ -101,7 +100,7 @@ operation's metadata type. If it's meaningful across all operations, it stays on
 **Point operations → `CosmosResponse<T, ItemMetadata>`:**
 
 | Method | Return |
-|--------|--------|
+| ------ | ------ |
 | `read_item<T>()` | `CosmosResponse<T, ItemMetadata>` |
 | `create_item()` | `CosmosResponse<(), ItemMetadata>` |
 | `replace_item()` | `CosmosResponse<(), ItemMetadata>` |
@@ -111,7 +110,7 @@ operation's metadata type. If it's meaningful across all operations, it stays on
 **Resource operations → `CosmosResponse<T, ResourceMetadata>`:**
 
 | Method | Return |
-|--------|--------|
+| ------ | ------ |
 | `create_database()` | `CosmosResponse<DatabaseProperties, ResourceMetadata>` |
 | `read()` (container) | `CosmosResponse<ContainerProperties, ResourceMetadata>` |
 | `replace()` (container) | `CosmosResponse<ContainerProperties, ResourceMetadata>` |
@@ -122,7 +121,7 @@ operation's metadata type. If it's meaningful across all operations, it stays on
 **Query operations → `FeedPage<T, QueryMetadata>`:**
 
 | Method | Return |
-|--------|--------|
+| ------ | ------ |
 | `query_items<T>()` | `FeedItemIterator<T, QueryMetadata>` yielding `FeedPage<T, QueryMetadata>` |
 | `query_containers()` | `FeedItemIterator<ContainerProperties, QueryMetadata>` |
 | `query_databases()` | `FeedItemIterator<DatabaseProperties, QueryMetadata>` |
@@ -130,7 +129,7 @@ operation's metadata type. If it's meaningful across all operations, it stays on
 **Future operations:**
 
 | Method | Return |
-|--------|--------|
+| ------ | ------ |
 | `change_feed<T>()` | `FeedPage<T, ChangeFeedMetadata>` |
 | `read_many<T>()` | `FeedPage<T, ReadManyMetadata>` |
 
@@ -222,6 +221,7 @@ pub struct FeedPageIterator<T: Send, M: Send> { ... }
 ### Usage
 
 **Point operation:**
+
 ```rust
 let response = container.read_item::<MyItem>("id", pk, None).await?;
 let charge = response.request_charge();
@@ -229,6 +229,7 @@ let etag = response.etag();  // Only available on ItemResponse / CosmosResponse<
 ```
 
 **Query:**
+
 ```rust
 let mut pages = container.query_items::<MyItem>(query, pk, Some(options))?.into_pages();
 while let Some(page) = pages.next().await {
@@ -240,6 +241,7 @@ while let Some(page) = pages.next().await {
 ```
 
 **Compile-time safety:**
+
 ```rust
 // This doesn't compile — no index_metrics on point operations:
 let response = container.read_item::<MyItem>("id", pk, None).await?;

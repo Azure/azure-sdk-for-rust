@@ -16,7 +16,7 @@ cargo add azure_data_cosmos
 
 ### Prerequisites
 
-* An [Azure subscription] or free Azure Cosmos DB trial account.
+- An [Azure subscription] or free Azure Cosmos DB trial account.
 
 Note: If you don't have an Azure subscription, create a free account before you begin.
 You can Try Azure Cosmos DB for free without an Azure subscription, free of charge and commitments, or create an Azure Cosmos DB free tier account, with the first 400 RU/s and 5 GB of storage for free. You can also use the Azure Cosmos DB Emulator with a URI of <https://localhost:8081>. For the key to use with the emulator, see [how to develop with the emulator](https://learn.microsoft.com/azure/cosmos-db/how-to-develop-emulator).
@@ -25,9 +25,9 @@ You can Try Azure Cosmos DB for free without an Azure subscription, free of char
 
 You can create an Azure Cosmos DB account using:
 
-* [Azure Portal](https://portal.azure.com).
-* [Azure CLI](https://learn.microsoft.com/cli/azure).
-* [Azure ARM](https://learn.microsoft.com/azure/cosmos-db/quick-create-template).
+- [Azure Portal](https://portal.azure.com).
+- [Azure CLI](https://learn.microsoft.com/cli/azure).
+- [Azure ARM](https://learn.microsoft.com/azure/cosmos-db/quick-create-template).
 
 #### Authenticate the client
 
@@ -37,8 +37,8 @@ In order to interact with the Azure Cosmos DB service you'll need to create an i
 
 The following section provides several code snippets covering some of the most common Azure Cosmos DB NoSQL API tasks, including:
 
-* [Create Client](#create-cosmos-db-client "Create Cosmos DB client")
-* [CRUD operation on Items](#crud-operation-on-items "CRUD operation on Items")
+- [Create Client](#create-cosmos-db-client "Create Cosmos DB client")
+- [CRUD operation on Items](#crud-operation-on-items "CRUD operation on Items")
 
 ### Create Cosmos DB Client
 
@@ -127,10 +127,10 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
 ## Next steps
 
-* [Resource Model of Azure Cosmos DB Service](https://learn.microsoft.com/azure/cosmos-db/sql-api-resources)
-* [Azure Cosmos DB Resource URI](https://learn.microsoft.com/rest/api/documentdb/documentdb-resource-uri-syntax-for-rest)
-* [Partitioning](https://learn.microsoft.com/azure/cosmos-db/partition-data)
-* [Using emulator](https://github.com/Azure/azure-documentdb-dotnet/blob/master/docs/documentdb-nosql-local-emulator.md)
+- [Resource Model of Azure Cosmos DB Service](https://learn.microsoft.com/azure/cosmos-db/sql-api-resources)
+- [Azure Cosmos DB Resource URI](https://learn.microsoft.com/rest/api/documentdb/documentdb-resource-uri-syntax-for-rest)
+- [Partitioning](https://learn.microsoft.com/azure/cosmos-db/partition-data)
+- [Using emulator](https://github.com/Azure/azure-documentdb-dotnet/blob/master/docs/documentdb-nosql-local-emulator.md)
 
 ### Provide feedback
 

@@ -32,7 +32,7 @@ pub struct FeedPage<T, M = QueryMetadata> {
     continuation: Option<String>,
 
     /// Parsed Cosmos-specific response headers.
-    cosmos_headers: CosmosResponseHeaders,
+    headers: CosmosResponseHeaders,
 
     /// Operation-specific metadata.
     metadata: M,
@@ -47,14 +47,14 @@ impl<T, M> FeedPage<T, M> {
     pub(crate) fn new(
         items: Vec<T>,
         continuation: Option<String>,
-        cosmos_headers: CosmosResponseHeaders,
+        headers: CosmosResponseHeaders,
         metadata: M,
     ) -> Self {
-        let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
+        let diagnostics = CosmosDiagnostics::from_headers(&headers);
         Self {
             items,
             continuation,
-            cosmos_headers,
+            headers,
             metadata,
             diagnostics,
         }
@@ -66,8 +66,15 @@ impl<T, M> FeedPage<T, M> {
     }
 
     /// Consumes the page and returns a vector of the items.
+    ///
+    /// This is essentially shorthand for `self.deconstruct().0`.
     pub fn into_items(self) -> Vec<T> {
         self.items
+    }
+
+    /// Deconstructs the page into its components.
+    pub fn deconstruct(self) -> (Vec<T>, Option<String>, CosmosResponseHeaders, M) {
+        (self.items, self.continuation, self.headers, self.metadata)
     }
 
     /// Gets the continuation token for the next page of results, if any.
@@ -77,15 +84,12 @@ impl<T, M> FeedPage<T, M> {
 
     /// Returns the request charge (RU consumption) for this page, if available.
     pub fn request_charge(&self) -> Option<f64> {
-        self.cosmos_headers
-            .request_charge
-            .as_ref()
-            .map(|rc| rc.value())
+        self.headers.request_charge.as_ref().map(|rc| rc.value())
     }
 
     /// Returns the session token from this page, if available.
     pub fn session_token(&self) -> Option<SessionToken> {
-        self.cosmos_headers
+        self.headers
             .session_token
             .as_ref()
             .map(|st| SessionToken::from(st.as_str().to_string()))
@@ -153,15 +157,15 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
         let continuation = response
             .headers()
             .get_optional_string(&constants::CONTINUATION);
-        let cosmos_headers = response.cosmos_headers.clone();
-        let metadata = QueryMetadata::from_headers(&cosmos_headers);
-        let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
+        let headers = response.cosmos_headers.clone();
+        let metadata = QueryMetadata::from_headers(&headers);
+        let diagnostics = CosmosDiagnostics::from_headers(&headers);
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self {
             items: body.items,
             continuation,
-            cosmos_headers,
+            headers,
             metadata,
             diagnostics,
         })
