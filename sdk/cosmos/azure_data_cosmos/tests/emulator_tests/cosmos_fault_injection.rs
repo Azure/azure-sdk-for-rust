@@ -945,3 +945,79 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     )
     .await
 }
+
+/// Verifies that partition key range resolution actually executes during item operations.
+///
+/// This test uses fault injection to inject a transient error on the first pkranges
+/// ReadFeed request, proving that the SDK's pkrange fetch code path is exercised.
+/// After the fault is consumed (hit limit = 1), subsequent operations should succeed
+/// normally with client-side partition key routing.
+#[tokio::test]
+pub async fn fault_injection_pkrange_readfeed_is_exercised() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("pkrange-readfeed-fault", server_error)
+            .with_condition(condition)
+            .with_hit_limit(1) // Only fail the first attempt
+            .build(),
+    );
+
+    let rule_handle = Arc::clone(&rule);
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+
+    TestClient::run_with_unique_db(
+        async move |run_context, db_client| {
+            let container_id = format!("PkRangeTest-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            // Create an item — this triggers partition key range resolution.
+            container_client.create_item(&pk, &item, None).await?;
+
+            // The fault rule should have been hit during the pkrange fetch.
+            assert!(
+                rule_handle.hit_count() >= 1,
+                "Expected the MetadataPartitionKeyRanges fault rule to be hit at least once during pkrange resolution, but hit_count was {}",
+                rule_handle.hit_count()
+            );
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // Read the item back — should succeed, proving pkrange resolution works end-to-end.
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+            assert!(
+                result.is_ok(),
+                "read should succeed after pkrange resolution: {:?}",
+                result.err()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+    )
+    .await
+}
