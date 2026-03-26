@@ -232,11 +232,11 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 "expected request charge on feed page"
             );
             assert!(
-                page.activity_id().is_some(),
+                page.diagnostics().activity_id().is_some(),
                 "expected activity ID on feed page"
             );
             assert!(
-                page.server_duration_ms().is_some(),
+                page.diagnostics().server_duration_ms().is_some(),
                 "expected server_duration_ms on feed page"
             );
 

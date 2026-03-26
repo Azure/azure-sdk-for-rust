@@ -245,6 +245,7 @@ mod tests {
         headers.insert(
             "x-ms-cosmos-index-utilization",
             // base64 of r#"{"UtilizedSingleIndexes":[]}"#
+            // cspell:disable-next-line
             "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
         );
         headers.insert(

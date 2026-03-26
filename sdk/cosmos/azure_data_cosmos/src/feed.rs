@@ -11,7 +11,7 @@ use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
     constants,
-    models::{CosmosResponse, QueryMetadata},
+    models::{CosmosDiagnostics, CosmosResponse, QueryMetadata},
     SessionToken,
 };
 
@@ -36,6 +36,9 @@ pub struct FeedPage<T, M = QueryMetadata> {
 
     /// Operation-specific metadata.
     metadata: M,
+
+    /// Diagnostics for this page.
+    diagnostics: CosmosDiagnostics,
 }
 
 impl<T, M> FeedPage<T, M> {
@@ -47,11 +50,13 @@ impl<T, M> FeedPage<T, M> {
         cosmos_headers: CosmosResponseHeaders,
         metadata: M,
     ) -> Self {
+        let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
         Self {
             items,
             continuation,
             cosmos_headers,
             metadata,
+            diagnostics,
         }
     }
 
@@ -86,14 +91,12 @@ impl<T, M> FeedPage<T, M> {
             .map(|st| SessionToken::from(st.as_str().to_string()))
     }
 
-    /// Returns the activity ID for request correlation, if available.
-    pub fn activity_id(&self) -> Option<&str> {
-        self.cosmos_headers.activity_id.as_ref().map(|a| a.as_str())
-    }
-
-    /// Returns the server-side request processing duration in milliseconds, if available.
-    pub fn server_duration_ms(&self) -> Option<f64> {
-        self.cosmos_headers.server_duration_ms
+    /// Returns the diagnostics for this page.
+    ///
+    /// Provides access to the activity ID, server-side duration, and other
+    /// diagnostic information for debugging and performance analysis.
+    pub fn diagnostics(&self) -> &CosmosDiagnostics {
+        &self.diagnostics
     }
 
     /// Returns the operation-specific metadata.
@@ -152,6 +155,7 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
             .get_optional_string(&constants::CONTINUATION);
         let cosmos_headers = response.cosmos_headers.clone();
         let metadata = QueryMetadata::from_headers(&cosmos_headers);
+        let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self {
@@ -159,6 +163,7 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
             continuation,
             cosmos_headers,
             metadata,
+            diagnostics,
         })
     }
 }

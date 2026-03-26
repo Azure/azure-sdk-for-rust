@@ -68,20 +68,20 @@ fn assert_response<T>(
         "expected session token to be present"
     );
     assert!(
-        response.activity_id().is_some(),
+        response.diagnostics().activity_id().is_some(),
         "expected activity ID to be present"
     );
     assert!(
-        !response.activity_id().unwrap().is_empty(),
+        !response.diagnostics().activity_id().unwrap().is_empty(),
         "expected activity ID to be non-empty"
     );
     // Server duration is returned by the Cosmos DB service on all operations
     assert!(
-        response.server_duration_ms().is_some(),
+        response.diagnostics().server_duration_ms().is_some(),
         "expected server_duration_ms to be present"
     );
     assert!(
-        response.server_duration_ms().unwrap() >= 0.0,
+        response.diagnostics().server_duration_ms().unwrap() >= 0.0,
         "expected server_duration_ms to be non-negative"
     );
 }

@@ -100,6 +100,8 @@
         "pageins",
         "pageouts",
         "partitionkey",
+        "populateindexmetrics",
+        "populatequerymetrics",
         "partitionkeyrangeid",
         "perfcontainer",
         "perfdb",

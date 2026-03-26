@@ -4,7 +4,7 @@
 //! Provides the [`CosmosResponse`] type for wrapping responses from Cosmos DB operations.
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::ItemMetadata;
+use crate::models::{CosmosDiagnostics, ItemMetadata};
 use crate::SessionToken;
 use azure_core::http::{
     headers::{HeaderName, Headers},
@@ -34,17 +34,21 @@ pub struct CosmosResponse<T, M = ()> {
     pub(crate) cosmos_headers: CosmosResponseHeaders,
     /// Operation-specific metadata.
     metadata: M,
+    /// Diagnostics for this operation.
+    diagnostics: CosmosDiagnostics,
 }
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
     pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
         let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+        let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
         Self {
             response,
             request,
             cosmos_headers,
             metadata: (),
+            diagnostics,
         }
     }
 }
@@ -63,6 +67,7 @@ impl<T, M> CosmosResponse<T, M> {
             request: self.request,
             cosmos_headers: self.cosmos_headers,
             metadata,
+            diagnostics: self.diagnostics,
         }
     }
 
@@ -121,14 +126,12 @@ impl<T, M> CosmosResponse<T, M> {
             .map(|st| SessionToken::from(st.as_str().to_string()))
     }
 
-    /// Returns the activity ID for request correlation, if available.
-    pub fn activity_id(&self) -> Option<&str> {
-        self.cosmos_headers.activity_id.as_ref().map(|a| a.as_str())
-    }
-
-    /// Returns the server-side request processing duration in milliseconds, if available.
-    pub fn server_duration_ms(&self) -> Option<f64> {
-        self.cosmos_headers.server_duration_ms
+    /// Returns the diagnostics for this operation.
+    ///
+    /// Provides access to the activity ID, server-side duration, and other
+    /// diagnostic information for debugging and performance analysis.
+    pub fn diagnostics(&self) -> &CosmosDiagnostics {
+        &self.diagnostics
     }
 
     /// Returns the operation-specific metadata.
@@ -277,7 +280,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert("x-ms-activity-id", "abc-123-def");
         let response = create_response_with_headers(headers);
-        assert_eq!(response.activity_id(), Some("abc-123-def"));
+        assert_eq!(response.diagnostics().activity_id(), Some("abc-123-def"));
     }
 
     #[test]
@@ -285,7 +288,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert("x-ms-request-duration-ms", "4.56");
         let response = create_response_with_headers(headers);
-        assert!((response.server_duration_ms().unwrap() - 4.56).abs() < f64::EPSILON);
+        assert!((response.diagnostics().server_duration_ms().unwrap() - 4.56).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -295,7 +298,7 @@ mod tests {
             headers.insert("x-ms-request-duration-ms", value);
             let response = create_response_with_headers(headers);
             assert!(
-                response.server_duration_ms().is_none(),
+                response.diagnostics().server_duration_ms().is_none(),
                 "Expected None for '{value}'"
             );
         }
@@ -304,8 +307,8 @@ mod tests {
     #[test]
     fn missing_headers_return_none() {
         let response = create_response_with_headers(Headers::new());
-        assert!(response.activity_id().is_none());
-        assert!(response.server_duration_ms().is_none());
+        assert!(response.diagnostics().activity_id().is_none());
+        assert!(response.diagnostics().server_duration_ms().is_none());
         assert!(response.request_charge().is_none());
         assert!(response.session_token().is_none());
     }
@@ -331,6 +334,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert(
             "x-ms-cosmos-index-utilization",
+            // cspell:disable-next-line
             "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
         );
         headers.insert(
