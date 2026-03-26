@@ -22,15 +22,15 @@
 12. [Multi-Region Emulation](#12-multi-region-emulation)
 13. [Error Emulation](#13-error-emulation)
 14. [Supported Control-Plane Operations](#14-supported-control-plane-operations)
-15. [Unsupported Operations](#15-unsupported-operations)
-16. [Validation Test Framework](#16-validation-test-framework)
-17. [Allowlisted Header Variance](#17-allowlisted-header-variance)
-18. [Module & File Layout](#18-module--file-layout)
-19. [Usage API & Public API Surface](#19-usage-api--public-api-surface)
-20. [Open Questions (Resolved)](#20-open-questions-resolved)
-21. [Throughput Throttling](#21-throughput-throttling)
-22. [V2 Vector-Clock Session Tokens](#22-v2-vector-clock-session-tokens)
-23. [Partition Split & Merge](#23-partition-split--merge)
+15. [Throughput Throttling](#15-throughput-throttling)
+16. [V2 Vector-Clock Session Tokens](#16-v2-vector-clock-session-tokens)
+17. [Partition Split & Merge](#17-partition-split--merge)
+18. [Unsupported Operations](#18-unsupported-operations)
+19. [Validation Test Framework](#19-validation-test-framework)
+20. [Allowlisted Header Variance](#20-allowlisted-header-variance)
+21. [Module & File Layout](#21-module--file-layout)
+22. [Usage API & Public API Surface](#22-usage-api--public-api-surface)
+23. [Open Questions (Resolved)](#23-open-questions-resolved)
 
 ---
 
@@ -787,7 +787,7 @@ RuChargingModel {
 
 ### Throughput Enforcement
 
-See [Section 21 — Throughput Throttling](#21-throughput-throttling) for per-partition
+See [Section 15 — Throughput Throttling](#15-throughput-throttling) for per-partition
 RU/s enforcement with 429/3200 responses.
 
 ---
@@ -889,13 +889,198 @@ Partition key values are resolved by:
 
 ---
 
-## 15. Unsupported Operations
+## 15. Throughput Throttling
+
+### Design
+
+Throughput enforcement is **per-partition**, matching the Cosmos DB service model where
+container throughput is evenly distributed across physical partitions. Each partition
+gets `container_throughput_ru / partition_count` RU/s.
+
+Throughput is always stored and distributed when configured. **Enforcement** (returning
+429/3200 when the budget is exceeded) is controlled by a separate toggle:
+
+```rust
+let config = VirtualAccountConfig::new(regions)
+    .with_throttling_enabled(true); // Without this, RU is tracked but never enforced
+```
+
+### Container Configuration
+
+```rust
+ContainerConfig::new()
+    .with_partition_count(4)
+    .with_throughput(4000) // 4000 RU/s total → 1000 RU/s per partition
+```
+
+Minimum provisioned throughput is 400 RU/s (panics on lower values).
+
+### Per-Partition Tracking
+
+Each `PhysicalPartition` has an optional `ThroughputTracker` that:
+
+1. Maintains an `AtomicU64` accumulator for consumed RU in the current second window
+2. Resets the accumulator when the timestamp crosses a second boundary
+3. On each operation: computes RU charge → attempts to consume → returns 429/3200 if
+   the partition's per-second budget (`container_ru / partition_count`) is exceeded
+
+### Throttle Response
+
+- **Status**: 429 Too Many Requests
+- **Substatus**: 3200 (RUBudgetExceeded)
+- **Header**: `x-ms-retry-after-ms` with retry delay in milliseconds
+- Throttle checks happen **after** the RU charge is computed but **before** the
+  operation modifies the store (for writes)
+
+### Interaction with Split/Merge
+
+When partitions are split or merged, child partitions get new `ThroughputTracker`
+instances with the per-partition budget recalculated from the container's total
+throughput and the new partition count.
+
+---
+
+## 16. V2 Vector-Clock Session Tokens
+
+### Wire Format
+
+The emulator emits V2 vector-clock session tokens following the real Cosmos DB format:
+
+```text
+{pkrangeId}:{version}#{globalLSN}#{regionId}={localLSN}
+```
+
+This matches the `VectorSessionToken` format used by the driver's own session token
+infrastructure (`models/vector_session_token.rs`).
+
+### Region IDs
+
+Each `VirtualRegion` has a `region_id: u64` field. By default, region IDs are 0 (and
+can be explicitly set via `with_region_id(id)`). The region ID is included in every
+session token emitted by operations in that region.
+
+### Version Semantics
+
+The `vector_clock_version` field on `PhysicalPartition` tracks the topology version:
+
+| Event                      | Version Change                         |
+| -------------------------- | -------------------------------------- |
+| Initial partition creation | 0                                      |
+| Split                      | Preserved (child = parent version)     |
+| Merge                      | Incremented (child = max(parents) + 1) |
+| Region add/remove          | Would increment (not yet implemented)  |
+
+### Session Consistency Check (V2-Aware)
+
+When validating session tokens on reads:
+
+1. **Version mismatch**: if token version > partition version → 404/1002.
+   The client has seen a newer topology that this partition hasn't caught up to.
+2. **Same version, LSN mismatch**: if token globalLSN > partition LSN → 404/1002.
+3. **Token version < partition version**: proceed normally (the partition has moved
+   forward via merge; the client's older token is still valid).
+
+### Backward Compatibility
+
+V1 tokens (`{pkrangeId}:-1#{lsn}`) are accepted on incoming requests. They are parsed
+as version=0, globalLSN=lsn, with no region progress.
+
+---
+
+## 17. Partition Split & Merge
+
+### Overview
+
+The emulator supports programmatic simulation of partition splits and merges, enabling
+tests to verify the driver's handling of topology changes (PKRange cache invalidation,
+session token resolution, retry on 410/1007).
+
+### Split
+
+Triggered via test hook:
+
+```rust
+store.split_partition("testdb", "testcoll", partition_id, min_lock_duration);
+```
+
+#### Behavior
+
+1. **Lock**: The parent partition is locked in all regions. During the lock period
+   (at least `min_lock_duration`, plus the time needed for doc redistribution), all
+   operations targeting the partition return **410/1007** (CompletingSplitOrMerge).
+2. **Wait**: The emulator waits for `min_lock_duration` before proceeding.
+3. **Split**: After the wait, the parent's EPK range is divided at the midpoint.
+   Two child partitions are created with:
+   - **IDs**: Next available from the container's `AtomicU32` counter
+   - **EPK ranges**: `[parent_min, midpoint)` and `[midpoint, parent_max)`
+   - **LSN**: `parent_lsn + 1` (both children start with same LSN)
+   - **Vector clock version**: Same as parent (split does NOT change version)
+   - **Documents**: Redistributed to children based on their EPK
+   - **Parents**: `[parent_id]`
+4. **Cleanup**: Parent partition is removed. Lock is cleared.
+
+### Merge
+
+Triggered via test hook:
+
+```rust
+store.merge_partitions("testdb", "testcoll", id_a, id_b, min_lock_duration);
+```
+
+#### Behavior
+
+1. **Validation**: The two partitions must be adjacent (the first's `epk_max` must
+   equal the second's `epk_min`).
+2. **Lock**: Both parent partitions are locked in all regions. Operations return
+   **410/1007** during the lock period.
+3. **Wait**: The emulator waits for `min_lock_duration` before proceeding.
+4. **Merge**: A single child partition is created with:
+   - **ID**: Next available from the container's counter
+   - **EPK range**: Union of both parents `[lower_min, upper_max)`
+   - **LSN**: `1` (restarts)
+   - **Vector clock version**: `max(parent_versions) + 1` (merge DOES increment version)
+   - **Documents**: Merged from both parents
+   - **Parents**: `[id_a, id_b]`
+5. **Cleanup**: Both parent partitions are removed. Lock is cleared.
+
+### Lock Duration Semantics
+
+The `min_lock_duration` parameter is a **floor** — the actual lock lasts at least that
+long, plus the time needed for the doc redistribution/merge work. This is implemented
+by setting `locked_until` to `now + min_lock_duration + large_buffer`, then clearing
+the lock once the work completes.
+
+This allows tests to:
+- Use `Duration::ZERO` for instant split/merge in fast tests
+- Use `Duration::from_millis(500)` to test that the driver retries on 410/1007 during
+  the lock window
+
+### PKRanges Feed After Split/Merge
+
+The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
+- Child partitions include their `parents` list (e.g., `["0"]` after split, `["0", "1"]`
+  after merge)
+- `vectorClockVersion` reflects the current version
+- Parent partitions are no longer present
+
+### Impact on Session Tokens
+
+- **After split**: Session tokens for the parent partition are no longer valid. The driver
+  must resolve them via the `parents` field of the child partitions. The vector clock
+  version is unchanged, so version-based comparisons work correctly.
+- **After merge**: The child partition has an incremented vector clock version. Session
+  tokens from either parent (with lower version) are treated as older topology and
+  proceed normally (version < child version → valid).
+
+---
+
+## 18. Unsupported Operations
 
 Queries, Batch, Bulk, Patch return **501 Not Implemented** with descriptive error body.
 
 ---
 
-## 16. Validation Test Framework
+## 19. Validation Test Framework
 
 ### Design
 
@@ -1002,7 +1187,7 @@ Differences are classified as:
 | `MATCH`               | Values identical                                 | None                     |
 | `VALUE_VARIES`        | Both present, values differ as expected          | None                     |
 | `VALUE_MISMATCH`      | Values differ unexpectedly                       | Warning                  |
-| `MISSING_IN_EMULATOR` | Header/field present in live, absent in emulator | Allowed (see Section 16) |
+| `MISSING_IN_EMULATOR` | Header/field present in live, absent in emulator | Allowed (see Section 19) |
 | `EXTRA_IN_EMULATOR`   | Present in emulator, absent in live              | Warning                  |
 
 ### Test Categories and Assertions
@@ -1064,7 +1249,7 @@ read_after_split_succeeds.
 
 ---
 
-## 17. Allowlisted Header Variance
+## 20. Allowlisted Header Variance
 
 **Default rule**: All response headers must have **identical values** between the emulator
 and a live Cosmos DB account. Diff tests will fail for any header value mismatch.
@@ -1087,7 +1272,7 @@ between emulator and live (with a documented explanation).
 
 ---
 
-## 18. Module & File Layout
+## 21. Module & File Layout
 
 ```text
 src/in_memory_emulator/
@@ -1118,7 +1303,7 @@ tests/
 
 ---
 
-## 19. Usage API & Public API Surface
+## 22. Usage API & Public API Surface
 
 ### Overview
 
@@ -1277,7 +1462,7 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
 
 ---
 
-## 20. Open Questions (Resolved)
+## 23. Open Questions (Resolved)
 
 1. ~~**Control-plane stubs**: Should the emulator support in-memory database/container
    create/delete?~~ **Resolved** — full CRUD is implemented with PK definition enforcement.
@@ -1309,188 +1494,3 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
    own `RwLock`, allowing concurrent reads and exclusive writes within a partition. Operations
    on different physical partitions execute concurrently without contention.
    See [Section 5 — Concurrency Model](#concurrency-model).
-
----
-
-## 21. Throughput Throttling
-
-### Design
-
-Throughput enforcement is **per-partition**, matching the Cosmos DB service model where
-container throughput is evenly distributed across physical partitions. Each partition
-gets `container_throughput_ru / partition_count` RU/s.
-
-Throughput is always stored and distributed when configured. **Enforcement** (returning
-429/3200 when the budget is exceeded) is controlled by a separate toggle:
-
-```rust
-let config = VirtualAccountConfig::new(regions)
-    .with_throttling_enabled(true); // Without this, RU is tracked but never enforced
-```
-
-### Container Configuration
-
-```rust
-ContainerConfig::new()
-    .with_partition_count(4)
-    .with_throughput(4000) // 4000 RU/s total → 1000 RU/s per partition
-```
-
-Minimum provisioned throughput is 400 RU/s (panics on lower values).
-
-### Per-Partition Tracking
-
-Each `PhysicalPartition` has an optional `ThroughputTracker` that:
-
-1. Maintains an `AtomicU64` accumulator for consumed RU in the current second window
-2. Resets the accumulator when the timestamp crosses a second boundary
-3. On each operation: computes RU charge → attempts to consume → returns 429/3200 if
-   the partition's per-second budget (`container_ru / partition_count`) is exceeded
-
-### Throttle Response
-
-- **Status**: 429 Too Many Requests
-- **Substatus**: 3200 (RUBudgetExceeded)
-- **Header**: `x-ms-retry-after-ms` with retry delay in milliseconds
-- Throttle checks happen **after** the RU charge is computed but **before** the
-  operation modifies the store (for writes)
-
-### Interaction with Split/Merge
-
-When partitions are split or merged, child partitions get new `ThroughputTracker`
-instances with the per-partition budget recalculated from the container's total
-throughput and the new partition count.
-
----
-
-## 22. V2 Vector-Clock Session Tokens
-
-### Wire Format
-
-The emulator emits V2 vector-clock session tokens following the real Cosmos DB format:
-
-```text
-{pkrangeId}:{version}#{globalLSN}#{regionId}={localLSN}
-```
-
-This matches the `VectorSessionToken` format used by the driver's own session token
-infrastructure (`models/vector_session_token.rs`).
-
-### Region IDs
-
-Each `VirtualRegion` has a `region_id: u64` field. By default, region IDs are 0 (and
-can be explicitly set via `with_region_id(id)`). The region ID is included in every
-session token emitted by operations in that region.
-
-### Version Semantics
-
-The `vector_clock_version` field on `PhysicalPartition` tracks the topology version:
-
-| Event                      | Version Change                         |
-| -------------------------- | -------------------------------------- |
-| Initial partition creation | 0                                      |
-| Split                      | Preserved (child = parent version)     |
-| Merge                      | Incremented (child = max(parents) + 1) |
-| Region add/remove          | Would increment (not yet implemented)  |
-
-### Session Consistency Check (V2-Aware)
-
-When validating session tokens on reads:
-
-1. **Version mismatch**: if token version > partition version → 404/1002.
-   The client has seen a newer topology that this partition hasn't caught up to.
-2. **Same version, LSN mismatch**: if token globalLSN > partition LSN → 404/1002.
-3. **Token version < partition version**: proceed normally (the partition has moved
-   forward via merge; the client's older token is still valid).
-
-### Backward Compatibility
-
-V1 tokens (`{pkrangeId}:-1#{lsn}`) are accepted on incoming requests. They are parsed
-as version=0, globalLSN=lsn, with no region progress.
-
----
-
-## 23. Partition Split & Merge
-
-### Overview
-
-The emulator supports programmatic simulation of partition splits and merges, enabling
-tests to verify the driver's handling of topology changes (PKRange cache invalidation,
-session token resolution, retry on 410/1007).
-
-### Split
-
-Triggered via test hook:
-
-```rust
-store.split_partition("testdb", "testcoll", partition_id, min_lock_duration);
-```
-
-#### Behavior
-
-1. **Lock**: The parent partition is locked in all regions. During the lock period
-   (at least `min_lock_duration`, plus the time needed for doc redistribution), all
-   operations targeting the partition return **410/1007** (CompletingSplitOrMerge).
-2. **Wait**: The emulator waits for `min_lock_duration` before proceeding.
-3. **Split**: After the wait, the parent's EPK range is divided at the midpoint.
-   Two child partitions are created with:
-   - **IDs**: Next available from the container's `AtomicU32` counter
-   - **EPK ranges**: `[parent_min, midpoint)` and `[midpoint, parent_max)`
-   - **LSN**: `parent_lsn + 1` (both children start with same LSN)
-   - **Vector clock version**: Same as parent (split does NOT change version)
-   - **Documents**: Redistributed to children based on their EPK
-   - **Parents**: `[parent_id]`
-4. **Cleanup**: Parent partition is removed. Lock is cleared.
-
-### Merge
-
-Triggered via test hook:
-
-```rust
-store.merge_partitions("testdb", "testcoll", id_a, id_b, min_lock_duration);
-```
-
-#### Behavior
-
-1. **Validation**: The two partitions must be adjacent (the first's `epk_max` must
-   equal the second's `epk_min`).
-2. **Lock**: Both parent partitions are locked in all regions. Operations return
-   **410/1007** during the lock period.
-3. **Wait**: The emulator waits for `min_lock_duration` before proceeding.
-4. **Merge**: A single child partition is created with:
-   - **ID**: Next available from the container's counter
-   - **EPK range**: Union of both parents `[lower_min, upper_max)`
-   - **LSN**: `1` (restarts)
-   - **Vector clock version**: `max(parent_versions) + 1` (merge DOES increment version)
-   - **Documents**: Merged from both parents
-   - **Parents**: `[id_a, id_b]`
-5. **Cleanup**: Both parent partitions are removed. Lock is cleared.
-
-### Lock Duration Semantics
-
-The `min_lock_duration` parameter is a **floor** — the actual lock lasts at least that
-long, plus the time needed for the doc redistribution/merge work. This is implemented
-by setting `locked_until` to `now + min_lock_duration + large_buffer`, then clearing
-the lock once the work completes.
-
-This allows tests to:
-- Use `Duration::ZERO` for instant split/merge in fast tests
-- Use `Duration::from_millis(500)` to test that the driver retries on 410/1007 during
-  the lock window
-
-### PKRanges Feed After Split/Merge
-
-The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
-- Child partitions include their `parents` list (e.g., `["0"]` after split, `["0", "1"]`
-  after merge)
-- `vectorClockVersion` reflects the current version
-- Parent partitions are no longer present
-
-### Impact on Session Tokens
-
-- **After split**: Session tokens for the parent partition are no longer valid. The driver
-  must resolve them via the `parents` field of the child partitions. The vector clock
-  version is unchanged, so version-based comparisons work correctly.
-- **After merge**: The child partition has an incremented vector clock version. Session
-  tokens from either parent (with lower version) are treated as older topology and
-  proceed normally (version < child version → valid).
