@@ -22,7 +22,10 @@ use crate::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{OperationOptions, ReadConsistencyStrategy, RuntimeOptionsView},
+    options::{
+        CrossLayerOperationOptionsView, OperationOptions, ReadConsistencyStrategy,
+        RuntimeOptionsView, SessionRetryOptionsView,
+    },
 };
 
 use super::{
@@ -45,8 +48,9 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    options: &OperationOptions,
+    _options: &OperationOptions,
     effective_options: &RuntimeOptionsView<'_>,
+    cross_layer_options: &CrossLayerOperationOptionsView<'_>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -58,6 +62,7 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
+    session_retry_options: &SessionRetryOptionsView<'_>,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -71,13 +76,13 @@ pub(crate) async fn execute_operation_pipeline(
         .session_capturing_disabled()
         .copied()
         .unwrap_or(false);
-    let read_consistency_strategy = effective_options
+    let read_consistency_strategy = cross_layer_options
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
-    let max_session_retries = effective_options
+    let max_session_retries = session_retry_options
         .max_session_retry_count()
         .copied()
         .unwrap_or_else(|| {
@@ -97,7 +102,7 @@ pub(crate) async fn execute_operation_pipeline(
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,
         location_snapshot.account.multiple_write_locations_enabled,
-        effective_options
+        cross_layer_options
             .excluded_regions()
             .map(|r| r.0.clone())
             .unwrap_or_default(),
@@ -151,7 +156,10 @@ pub(crate) async fn execute_operation_pipeline(
             deadline,
             session_consistency_active
                 .then(|| {
-                    session_manager.resolve_session_token(operation, options.session_token_ref())
+                    session_manager.resolve_session_token(
+                        operation,
+                        operation.request_headers().session_token.as_ref(),
+                    )
                 })
                 .flatten(),
         )?;

@@ -17,7 +17,7 @@ use crate::{models::AccountReference, options::RuntimeOptions};
 /// ```
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use azure_data_cosmos_driver::options::{
-///     DriverOptions, DriverOptionsBuilder, RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite,
+///     DriverOptions, DriverOptionsBuilder, RuntimeOptions, RuntimeOptionsBuilder,
 /// };
 /// use url::Url;
 ///
@@ -27,7 +27,7 @@ use crate::{models::AccountReference, options::RuntimeOptions};
 /// );
 ///
 /// let runtime = RuntimeOptionsBuilder::new()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+///     .with_max_failover_retry_count(5)
 ///     .build();
 ///
 /// let options = DriverOptionsBuilder::new(account)
@@ -100,7 +100,7 @@ impl DriverOptionsBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::options::{ContentResponseOnWrite, RuntimeOptionsBuilder};
+    use crate::options::RuntimeOptionsBuilder;
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -116,25 +116,19 @@ mod tests {
         let options = DriverOptionsBuilder::new(account.clone()).build();
 
         assert_eq!(options.account(), &account);
-        assert!(options
-            .runtime_options()
-            .content_response_on_write
-            .is_none());
+        assert!(options.runtime_options().max_failover_retry_count.is_none());
     }
 
     #[test]
     fn builder_sets_runtime_options() {
         let runtime = RuntimeOptionsBuilder::new()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .with_max_failover_retry_count(5)
             .build();
 
         let options = DriverOptionsBuilder::new(test_account())
             .with_runtime_options(runtime)
             .build();
 
-        assert_eq!(
-            options.runtime_options().content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
-        );
+        assert_eq!(options.runtime_options().max_failover_retry_count, Some(5));
     }
 }

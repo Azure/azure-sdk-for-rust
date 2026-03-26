@@ -18,9 +18,8 @@
 //! initialization time and do not participate in per-operation layered resolution.
 
 mod connection_pool;
-mod dedicated_gateway;
+mod cross_layer_operation_options;
 mod diagnostics_options;
-mod diagnostics_thresholds;
 mod driver_options;
 mod env_parsing;
 mod identity;
@@ -29,32 +28,36 @@ mod policies;
 mod priority;
 mod read_consistency;
 mod region;
+mod retry_options;
 mod runtime_options;
+mod session_retry_options;
 mod throughput_control;
-mod triggers;
 
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
-pub use dedicated_gateway::DedicatedGatewayOptions;
+pub use cross_layer_operation_options::{
+    CrossLayerOperationOptions, CrossLayerOperationOptionsBuilder, CrossLayerOperationOptionsView,
+};
 pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
-pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
+pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
 pub use operation_options::OperationOptions;
 pub use policies::{
     ContentResponseOnWrite, EmulatorServerCertValidation, EndToEndOperationLatencyPolicy,
-    ExcludedRegions, QuotaInfoEnabled, ScriptLoggingEnabled,
+    ExcludedRegions,
 };
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
+pub use retry_options::{RetryOptions, RetryOptionsBuilder, RetryOptionsView};
 pub use runtime_options::{RuntimeOptions, RuntimeOptionsBuilder, RuntimeOptionsView};
+pub use session_retry_options::{
+    SessionRetryOptions, SessionRetryOptionsBuilder, SessionRetryOptionsView,
+};
 pub use throughput_control::{
     ThroughputControlGroupKey, ThroughputControlGroupOptions,
     ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,
     ThroughputControlGroupSnapshot, ThroughputTarget,
 };
-pub use triggers::TriggerOptions;
-
-pub(crate) use env_parsing::parse_duration_millis_from_env;
