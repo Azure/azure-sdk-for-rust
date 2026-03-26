@@ -19,14 +19,17 @@ use azure_core::{
     stream::BytesStream,
     Error,
 };
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use futures::{
     channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
     future::Either,
-    SinkExt, TryStream,
+    stream, SinkExt, StreamExt,
 };
 
-use crate::models::{drains::SequentialBoundedDrain, http_ranges::ContentRange};
+use crate::models::{
+    drains::SequentialBoundedDrain, http_ranges::ContentRange, response_ext::AsyncResponseBodyExt,
+    slice::SendSlice,
+};
 
 use super::*;
 
@@ -156,6 +159,117 @@ where
     Ok(Box::pin(stream))
 }
 
+pub(crate) async fn download_into<Behavior>(
+    mut buffer: &mut [u8],
+    range: Option<Range<usize>>,
+    parallel: NonZero<usize>,
+    partition_size: NonZero<usize>,
+    client: Arc<Behavior>,
+) -> AzureResult<usize>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    let parallel = parallel.get();
+    let partition_size = partition_size.get();
+
+    // Outer bound estimate of the resource range that will be downloaded. The actual download
+    // range will never exceed these bounds, but it may be smaller, based on the actual size
+    // of the remote resource.
+    let max_download_range = range.unwrap_or(0..usize::MAX);
+    if max_download_range.is_empty() {
+        todo!("download into")
+    }
+
+    let initial_response = download_with_empty_blob_safety(
+        client.as_ref(),
+        max_download_range.start
+            ..min(
+                max_download_range.end,
+                max_download_range.start.saturating_add(partition_size),
+            ),
+    )
+    .await?;
+
+    let mut stats =
+        force_analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
+    if stats.overall_download_range.len() > buffer.len() {
+        return Err(Error::with_message(
+            ErrorKind::Other,
+            format!(
+                "Buffer with length {} cannot fit payload with length {}.",
+                buffer.len(),
+                stats.overall_download_range.len()
+            ),
+        ));
+    }
+
+    // if no real parallelism, take the simple option of executing downloads sequentially.
+    // The "true" implementation can't handle parallel < 2.
+    if parallel == 1 {
+        // sequence the initial response with a stream that fetches responses for each subsequent range
+        let all_responses = stream::once(future::ready(Ok(initial_response))).chain(
+            stream::iter(stats.remaining_download_ranges).scan(client, async |client, range| {
+                Some(client.transfer_range(Some(range)).await)
+            }),
+        );
+
+        let mut total_written = 0;
+        while let Some(response) = all_responses.try_next().await? {
+            let written = response.into_body().collect_into(buffer).await?;
+            buffer = &mut buffer[written..];
+            total_written += written;
+        }
+        return Ok(total_written);
+    }
+
+    let mut tasks = Vec::with_capacity(parallel);
+    // channel for download workers to send results to their coordinator.
+    let (tx, mut rx) = mpsc::unbounded();
+
+    // Start collecting the body of the initial download.
+    // Special-cased since we already have the response for it.
+    // SAFETY: Ensure mutable reference safety for the created SendSlice
+    unsafe {
+        let init_dst;
+        (init_dst, buffer) = buffer.split_at_mut(stats.initial_download_range.len());
+        let init_dst = SendSlice::from_raw(init_dst.as_mut_ptr(), init_dst.len());
+        tasks.push(start_initial_download_into_task(
+            initial_response,
+            init_dst,
+            tx.clone(),
+        ));
+    }
+
+    // Download all remaining ranges, parallel-many at a time
+    while let Some(range) = stats.remaining_download_ranges.pop_front() {
+        // If at parallel limit, wait for a slot to open
+        while tasks.len() >= parallel {
+            // SAFETY: guarantee parallel > 1
+            (_, _, tasks) = future::select_all(tasks).await;
+        }
+        // ensure success of completed tasks
+        while let Ok(worker_result) = rx.try_recv() {
+            worker_result?
+        }
+
+        // SAFETY: Ensure mutable reference safety for the created SendSlice
+        unsafe {
+            let dst;
+            (dst, buffer) = buffer.split_at_mut(range.len());
+            let dst = SendSlice::from_raw(dst.as_mut_ptr(), dst.len());
+            tasks.push(start_download_into_task(
+                client.clone(),
+                dst,
+                range,
+                tx.clone(),
+            ));
+        }
+    }
+    future::join_all(tasks).await;
+
+    Ok(0)
+}
+
 /// Race awaiting a message vs checking if tasks have completed successfully,
 /// until either message is received or a task failure is found.
 ///
@@ -193,31 +307,8 @@ async fn await_message_while_joining_workers<T>(
     Ok((message_fut.await.map_err(on_recv_err)?, task_bucket))
 }
 
-async fn download_range_to_bytes(
-    client: Arc<impl PartitionedDownloadBehavior>,
-    range: Range<usize>,
-) -> AzureResult<Bytes> {
-    let mut dst = vec![0u8; range.len()];
-    let count = client
-        .transfer_range(Some(range))
-        .await?
-        .into_body()
-        .collect_into(&mut dst)
-        .await?;
-    dst.truncate(count);
-    Ok(dst.into())
-}
-
-async fn collect_into<S: TryStream<Ok = Bytes> + Unpin>(
-    mut stream: S,
-    mut destination: BytesMut,
-) -> Result<Bytes, S::Error> {
-    while let Some(bytes) = stream.try_next().await? {
-        destination.extend_from_slice(&bytes);
-    }
-    Ok(destination.freeze())
-}
-
+/// Spawns a worker to take the given raw response and stream it into a buffer.
+/// That buffer result is then sent through sender with chunk index 0.
 fn start_initial_download_task(
     initial_response: AsyncRawResponse,
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
@@ -225,17 +316,41 @@ fn start_initial_download_task(
     partition_size: usize,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
-        let res = collect_into(
-            initial_response.into_body(),
-            BytesMut::with_capacity(partition_size),
-        )
-        .await
-        .map(|bytes| (0usize, bytes));
+        let mut dst = vec![0u8; partition_size];
+        let res = initial_response
+            .into_body()
+            .collect_into(&mut dst)
+            .await
+            // this is the initial download task, it's chunk index is 0
+            .map(|_| (0usize, dst.into()));
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
         let _send_res = sender.send(res).await;
     }))
 }
 
+/// Spawns a worker to take the given raw response and stream it into the given buffer.
+/// The success result is then sent through sender.
+///
+/// If the body does not *exactly* fill the buffer, an error will be sent instead.
+///
+/// # Safety
+/// Caller must ensure the slice represented by `buffer` is unused elsewhere until the returned future completes.
+unsafe fn start_initial_download_into_task(
+    initial_response: AsyncRawResponse,
+    mut buffer: SendSlice<u8>,
+    mut sender: UnboundedSender<Result<(), Error>>,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = initial_response
+            .into_body()
+            .collect_into_exact(buffer.as_mut_slice())
+            .await;
+        let _send_res = sender.send(res).await;
+    }))
+}
+
+/// Spawns a worker to request the given range and stream it into a buffer.
+/// That buffer result is then sent through sender with the given chunk index.
 fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'static>(
     client: Arc<Behavior>,
     range: Range<usize>,
@@ -244,10 +359,49 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
     chunk_idx: usize,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
-        let res = download_range_to_bytes(client, range)
-            .await
-            .map(|bytes| (chunk_idx, bytes));
+        let mut dst = vec![0u8; range.len()];
+        let res = async {
+            client
+                .transfer_range(Some(range))
+                .await?
+                .into_body()
+                .collect_into(&mut dst)
+                .await
+        }
+        .await;
+        if let Ok(count) = res {
+            dst.truncate(count);
+        }
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
+        let _send_res = sender.send(res.map(|_| (chunk_idx, dst.into()))).await;
+    }))
+}
+
+/// Spawns a worker to request the given range and stream it into the given buffer.
+/// The success result is then sent through sender.
+///
+/// If the body does not *exactly* fill the buffer, an error will be sent instead.
+///
+/// # Safety
+/// Caller must ensure the slice represented by `buffer` is unused elsewhere until the returned future completes.
+unsafe fn start_download_into_task<
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+>(
+    client: Arc<Behavior>,
+    mut buffer: SendSlice<u8>,
+    range: Range<usize>,
+    mut sender: UnboundedSender<Result<(), Error>>,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = async {
+            client
+                .transfer_range(Some(range))
+                .await?
+                .into_body()
+                .collect_into_exact(buffer.as_mut_slice())
+                .await
+        }
+        .await;
         let _send_res = sender.send(res).await;
     }))
 }
@@ -319,6 +473,23 @@ fn analyze_initial_response(
         }
         _ => Ok(None),
     }
+}
+
+fn force_analyze_initial_response(
+    initial_response: &AsyncRawResponse,
+    partition_len: usize,
+    max_range_end: usize,
+) -> AzureResult<InitialResponseAnalysis> {
+    analyze_initial_response(initial_response, partition_len, max_range_end)?.ok_or_else(|| {
+        Error::with_message(
+            ErrorKind::Other,
+            "Missing content-range header in initial response.",
+        )
+    })
+}
+
+unsafe fn remove_lifetime(slice: &mut [u8]) -> &mut [u8] {
+    std::slice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len())
 }
 
 trait DownloadRangeFuture: Future + Send {}
