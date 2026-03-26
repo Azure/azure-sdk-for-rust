@@ -5,6 +5,7 @@ use std::{
     cmp::min,
     collections::VecDeque,
     ops::Range,
+    pin::pin,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -22,7 +23,7 @@ use azure_core::{
 use bytes::Bytes;
 use futures::{
     channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
-    future::Either,
+    future::{self, Either},
     stream, SinkExt, StreamExt,
 };
 
@@ -207,11 +208,12 @@ where
     // The "true" implementation can't handle parallel < 2.
     if parallel == 1 {
         // sequence the initial response with a stream that fetches responses for each subsequent range
-        let all_responses = stream::once(future::ready(Ok(initial_response))).chain(
-            stream::iter(stats.remaining_download_ranges).scan(client, async |client, range| {
-                Some(client.transfer_range(Some(range)).await)
+        let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
+            stream::iter(stats.remaining_download_ranges).then(|range| {
+                let client = client.clone();
+                async move { client.transfer_range(Some(range)).await }
             }),
-        );
+        ));
 
         let mut total_written = 0;
         while let Some(response) = all_responses.try_next().await? {
