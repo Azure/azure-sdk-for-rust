@@ -787,11 +787,20 @@ mod tests {
         let client = MockHttpClient::new(move |actual| {
             let count = request_count_clone.fetch_add(1, Ordering::SeqCst);
             async move {
+                // Validate that the request body is a seekable stream of the expected size
+                // on every attempt. This ties the test to the original byte content length
+                // so a broken reset that swaps in a different body length will fail.
                 assert!(
                     matches!(actual.body(), Body::SeekableStream(_)),
                     "body is a SeekableStream"
                 );
-                assert_eq!(actual.body().len().await, b"test data".len());
+                let expected_body = b"test data";
+                let body_len = actual.body().len().await.expect("body length");
+                assert_eq!(
+                    body_len,
+                    expected_body.len(),
+                    "body length should match the original request body on every attempt"
+                );
 
                 if count == 0 {
                     Ok(AsyncRawResponse::from_bytes(

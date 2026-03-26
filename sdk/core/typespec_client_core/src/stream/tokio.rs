@@ -69,9 +69,9 @@ impl SeekableStream for FileReader {
     ///
     /// This may be inaccurate if the file is writable since it may be updated after getting the length.
     /// This is best used on files opened read-only.
-    async fn len(&self) -> usize {
+    async fn len(&self) -> crate::Result<usize> {
         let file = self.file.lock().await;
-        file.metadata().await.map(|m| m.len() as usize).unwrap_or(0)
+        Ok(file.metadata().await.map(|m| m.len() as usize)?)
     }
 }
 

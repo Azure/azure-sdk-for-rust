@@ -305,7 +305,7 @@ impl BodyTestExt for Body {
             Body::Bytes(bytes) => Ok(bytes.clone()),
             Body::SeekableStream(seekable_stream) => {
                 seekable_stream.reset().await?;
-                let mut bytes = BytesMut::with_capacity(seekable_stream.len().await);
+                let mut bytes = BytesMut::with_capacity(seekable_stream.len().await?);
                 while seekable_stream.read_into_spare_capacity(&mut bytes).await? != 0 {}
                 seekable_stream.reset().await?;
                 Ok(bytes.freeze())

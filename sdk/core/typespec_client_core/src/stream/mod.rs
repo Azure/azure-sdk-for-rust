@@ -28,11 +28,11 @@ pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + DynClone + Send 
     async fn reset(&mut self) -> Result<()>;
 
     /// Returns the total length of the stream in bytes.
-    async fn len(&self) -> usize;
+    async fn len(&self) -> Result<usize>;
 
     /// Returns `true` if the stream is empty.
-    async fn is_empty(&self) -> bool {
-        self.len().await == 0
+    async fn is_empty(&self) -> Result<bool> {
+        Ok(self.len().await? == 0)
     }
 
     /// Returns the size of the buffer to use when reading from the stream.

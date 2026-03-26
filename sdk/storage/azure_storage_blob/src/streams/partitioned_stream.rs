@@ -19,17 +19,20 @@ pub(crate) struct PartitionedStream {
 }
 
 impl PartitionedStream {
-    pub(crate) async fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
+    pub(crate) async fn new(
+        inner: Box<dyn SeekableStream>,
+        partition_len: NonZero<usize>,
+    ) -> AzureResult<Self> {
         let partition_len = partition_len.get();
-        let total_len = inner.len().await;
-        Self {
+        let total_len = inner.len().await?;
+        Ok(Self {
             buf: BytesMut::with_capacity(std::cmp::min(partition_len, total_len)),
             inner,
             partition_len,
             total_len,
             total_read: 0,
             inner_complete: false,
-        }
+        })
     }
 }
 
@@ -116,7 +119,7 @@ mod tests {
                     Box::new(BytesStream::new(data.clone())),
                     NonZero::new(part_len).unwrap(),
                 )
-                .await;
+                .await?;
 
                 let parts: Vec<_> = stream.try_collect().await?;
 
@@ -140,7 +143,7 @@ mod tests {
                         Box::new(BytesStream::new(data.clone())),
                         NonZero::new(part_len).unwrap(),
                     )
-                    .await;
+                    .await?;
 
                     let parts: Vec<_> = stream.try_collect().await?;
 
@@ -168,7 +171,7 @@ mod tests {
                 Box::new(BytesStream::new(data.clone())),
                 NonZero::new(len).unwrap(),
             )
-            .await;
+            .await?;
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -187,7 +190,7 @@ mod tests {
                 Box::new(BytesStream::new(data.clone())),
                 NonZero::new(part_len).unwrap(),
             )
-            .await;
+            .await?;
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -205,7 +208,7 @@ mod tests {
                 Box::new(BytesStream::new(data.clone())),
                 NonZero::new(part_len).unwrap(),
             )
-            .await;
+            .await?;
 
             assert!(stream.try_next().await?.is_none());
         }

@@ -177,8 +177,8 @@ where
         Ok(())
     }
 
-    async fn len(&self) -> usize {
-        LENGTH
+    async fn len(&self) -> azure_core::Result<usize> {
+        Ok(LENGTH)
     }
 }
 

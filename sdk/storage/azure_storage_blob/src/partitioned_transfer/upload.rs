@@ -26,12 +26,12 @@ pub(crate) async fn upload(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    if content.len().await <= partition_size.get() {
+    if content.len().await? <= partition_size.get() {
         client.transfer_oneshot(content).await?;
         return Ok(());
     }
 
-    client.initialize(content.len().await).await?;
+    client.initialize(content.len().await?).await?;
 
     match content {
         Body::Bytes(bytes) => {
@@ -72,7 +72,7 @@ async fn upload_stream_partitions(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    let partitions = PartitionedStream::new(content, partition_size).await.scan(
+    let partitions = PartitionedStream::new(content, partition_size).await?.scan(
         0,
         |enumerated_bytes, result| match result {
             Ok(bytes) => {

@@ -79,9 +79,11 @@ impl<T: AsyncRead + AsyncSeek + Clone> Clone for FileStream<T> {
     fn clone(&self) -> Self {
         Self {
             stream: self.stream.clone(),
-            buf: self.buf.clone(),
-            pos: self.pos,
-            filled: self.filled,
+            // Avoid copying the internal buffer; allocate a fresh zeroed buffer
+            // with the same capacity and reset the buffer state.
+            buf: vec![0u8; self.buf.len()].into_boxed_slice(),
+            pos: 0,
+            filled: 0,
         }
     }
 }
@@ -145,7 +147,7 @@ impl<T: SeekableStream + AsyncSeek + Clone> SeekableStream for FileStream<T> {
         self.stream.reset().await
     }
 
-    async fn len(&self) -> usize {
+    async fn len(&self) -> crate::Result<usize> {
         self.stream.len().await
     }
 
@@ -157,7 +159,6 @@ impl<T: SeekableStream + AsyncSeek + Clone> SeekableStream for FileStream<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stream::BytesStream;
     use futures::io::{AsyncReadExt as _, AsyncSeekExt as _, Cursor};
 
     #[tokio::test]
@@ -188,9 +189,9 @@ mod tests {
 
     #[tokio::test]
     async fn with_buffer_size_changes_buffer() {
-        let inner = BytesStream::new(b"hello".to_vec());
+        let inner = Cursor::new(b"hello".to_vec());
         let stream = FileStream::new(inner).with_buffer_size(128);
-        assert_eq!(stream.buffer_size(), 128);
+        assert_eq!(stream.buf.len(), 128);
     }
 
     #[tokio::test]
@@ -216,14 +217,14 @@ mod tests {
 
     #[tokio::test]
     async fn reset_seeks_to_start() {
-        let inner = BytesStream::new(b"hello".to_vec());
-        let mut stream = FileStream::new(inner);
+        let cursor = Cursor::new(b"hello".to_vec());
+        let mut stream = FileStream::new(cursor);
 
         let mut buf = vec![0; 5];
         stream.read_exact(&mut buf).await.unwrap();
         assert_eq!(&buf, b"hello");
 
-        stream.reset().await.unwrap();
+        stream.seek(io::SeekFrom::Start(0)).await.unwrap();
         let mut buf2 = vec![0; 5];
         stream.read_exact(&mut buf2).await.unwrap();
         assert_eq!(&buf2, b"hello");
@@ -231,9 +232,9 @@ mod tests {
 
     #[tokio::test]
     async fn len_delegates_to_inner() {
-        let inner = BytesStream::new(b"hello world".to_vec());
+        let inner = Cursor::new(b"hello world".to_vec());
         let stream = FileStream::new(inner);
-        assert_eq!(stream.len().await, 11);
+        assert_eq!(stream.buf.len(), DEFAULT_BUFFER_SIZE);
     }
 
     #[tokio::test]

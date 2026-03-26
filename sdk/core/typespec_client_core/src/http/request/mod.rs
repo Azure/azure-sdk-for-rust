@@ -37,16 +37,16 @@ pub enum Body {
 
 impl Body {
     /// Returns the length of the body in bytes.
-    pub async fn len(&self) -> usize {
+    pub async fn len(&self) -> crate::Result<usize> {
         match self {
-            Body::Bytes(bytes) => bytes.len(),
+            Body::Bytes(bytes) => Ok(bytes.len()),
             Body::SeekableStream(stream) => stream.len().await,
         }
     }
 
     /// Returns `true` if the body is empty.
-    pub async fn is_empty(&self) -> bool {
-        self.len().await == 0
+    pub async fn is_empty(&self) -> crate::Result<bool> {
+        Ok(self.len().await? == 0)
     }
 
     /// Resets the body to the beginning, if it is a seekable stream.
@@ -112,6 +112,11 @@ where
 }
 
 impl From<&Body> for Bytes {
+    /// Converts to `Bytes` from a [`&Body`](Body) type.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `value` is a [`Body::SeekableStream`].
     fn from(value: &Body) -> Self {
         match value {
             Body::Bytes(bytes) => bytes.clone(),
@@ -730,7 +735,7 @@ mod tests {
             _ => panic!("expected Bytes"),
         };
 
-        assert!(body.is_empty().await);
+        assert!(body.is_empty().await.unwrap());
     }
 
     #[tokio::test]
@@ -756,6 +761,6 @@ mod tests {
             _ => panic!("expected SeekableStream"),
         }
 
-        assert!(body.is_empty().await);
+        assert!(body.is_empty().await.unwrap());
     }
 }
