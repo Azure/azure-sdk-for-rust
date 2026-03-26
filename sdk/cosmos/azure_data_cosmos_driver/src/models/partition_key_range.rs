@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::models::effective_partition_key::EffectivePartitionKey;
 use crate::models::range::EpkRange;
 use crate::models::ETag;
 use serde::{Deserialize, Serialize};
@@ -32,11 +33,11 @@ pub(crate) struct PartitionKeyRange {
 
     /// Represents the minimum possible value of a PartitionKeyRange (inclusive)
     #[serde(rename = "minInclusive")]
-    pub min_inclusive: String,
+    pub min_inclusive: EffectivePartitionKey,
 
     /// Represents maximum exclusive value of a PartitionKeyRange
     #[serde(rename = "maxExclusive")]
-    pub max_exclusive: String,
+    pub max_exclusive: EffectivePartitionKey,
 
     /// Resource ID prefix
     #[serde(rename = "ridPrefix", skip_serializing_if = "Option::is_none")]
@@ -91,15 +92,19 @@ pub(crate) enum PartitionKeyRangeStatus {
 
 impl PartitionKeyRange {
     /// Creates a new PartitionKeyRange with required fields
-    pub fn new(id: String, min_inclusive: String, max_exclusive: String) -> Self {
+    pub fn new(
+        id: String,
+        min_inclusive: impl Into<EffectivePartitionKey>,
+        max_exclusive: impl Into<EffectivePartitionKey>,
+    ) -> Self {
         Self {
             id,
             resource_id: None,
             self_link: None,
             etag: None,
             timestamp: None,
-            min_inclusive,
-            max_exclusive,
+            min_inclusive: min_inclusive.into(),
+            max_exclusive: max_exclusive.into(),
             rid_prefix: None,
             throughput_fraction: 0.0,
             target_throughput: None,
@@ -110,8 +115,8 @@ impl PartitionKeyRange {
         }
     }
 
-    /// Returns a view of this partition key range as an `EpkRange<&str>`.
-    pub fn as_range(&self) -> EpkRange<&str> {
+    /// Returns a view of this partition key range as an `EpkRange<&EffectivePartitionKey>`.
+    pub fn as_range(&self) -> EpkRange<&EffectivePartitionKey> {
         EpkRange {
             min: &self.min_inclusive,
             max: &self.max_exclusive,
@@ -186,29 +191,29 @@ mod tests {
 
     #[test]
     fn partition_key_range_creation() {
-        let pkr = PartitionKeyRange::new("1".to_string(), "".to_string(), "FF".to_string());
+        let pkr = PartitionKeyRange::new("1".to_string(), "", "FF");
 
         assert_eq!(pkr.id, "1");
-        assert_eq!(pkr.min_inclusive, "");
-        assert_eq!(pkr.max_exclusive, "FF");
+        assert_eq!(pkr.min_inclusive.as_str(), "");
+        assert_eq!(pkr.max_exclusive.as_str(), "FF");
     }
 
     #[test]
     fn as_range() {
-        let pkr = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
+        let pkr = PartitionKeyRange::new("1".to_string(), "00", "FF");
 
         let range = pkr.as_range();
-        assert_eq!(range.min, "00");
-        assert_eq!(range.max, "FF");
+        assert_eq!(range.min.as_str(), "00");
+        assert_eq!(range.max.as_str(), "FF");
         assert!(range.is_min_inclusive);
         assert!(!range.is_max_inclusive);
     }
 
     #[test]
     fn equality_check() {
-        let pkr1 = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
+        let pkr1 = PartitionKeyRange::new("1".to_string(), "00", "FF");
 
-        let mut pkr2 = PartitionKeyRange::new("1".to_string(), "00".to_string(), "FF".to_string());
+        let mut pkr2 = PartitionKeyRange::new("1".to_string(), "00", "FF");
 
         assert_eq!(pkr1, pkr2);
 
@@ -224,8 +229,8 @@ mod tests {
             self_link: None,
             etag: None,
             timestamp: Some(1234567890),
-            min_inclusive: "".to_string(),
-            max_exclusive: "FF".to_string(),
+            min_inclusive: EffectivePartitionKey::from(""),
+            max_exclusive: EffectivePartitionKey::from("FF"),
             rid_prefix: Some(42),
             throughput_fraction: 0.5,
             target_throughput: Some(1000.0),

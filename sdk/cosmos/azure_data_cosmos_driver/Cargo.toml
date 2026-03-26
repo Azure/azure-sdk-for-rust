@@ -37,7 +37,7 @@ uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
-quick-xml = "0.37"
+quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
   "rt-multi-thread",

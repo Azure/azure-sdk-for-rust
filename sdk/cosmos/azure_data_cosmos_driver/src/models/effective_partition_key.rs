@@ -11,6 +11,7 @@ use crate::models::{
     partition_key::write_number_v1_binary,
     PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Write;
 
@@ -20,7 +21,8 @@ use std::fmt::Write;
 /// into a hex string that determines which partition key range owns a given item.
 /// Using a newtype ensures callers cannot accidentally pass an arbitrary string
 /// where an EPK is expected.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub(crate) struct EffectivePartitionKey(String);
 
 impl EffectivePartitionKey {
@@ -73,9 +75,33 @@ impl fmt::Display for EffectivePartitionKey {
     }
 }
 
+impl PartialEq<str> for EffectivePartitionKey {
+    fn eq(&self, other: &str) -> bool {
+        self.0 == other
+    }
+}
+
+impl PartialEq<&str> for EffectivePartitionKey {
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
+
 impl From<String> for EffectivePartitionKey {
     fn from(s: String) -> Self {
         Self(s)
+    }
+}
+
+impl From<&str> for EffectivePartitionKey {
+    fn from(s: &str) -> Self {
+        Self(s.to_owned())
+    }
+}
+
+impl AsRef<str> for EffectivePartitionKey {
+    fn as_ref(&self) -> &str {
+        &self.0
     }
 }
 
@@ -535,7 +561,7 @@ mod baseline_tests {
                     }
                 }
                 Ok(Event::Text(ref e)) if in_result => {
-                    let text = e.unescape().unwrap();
+                    let text = String::from_utf8(e.to_vec()).unwrap();
                     match current_tag.as_str() {
                         "Description" => desc.push_str(&text),
                         "PartitionKeyValue" => pk_val.push_str(&text),

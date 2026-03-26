@@ -339,7 +339,7 @@ mod tests {
     use crate::models::partition_key_range::PartitionKeyRange as PkRange;
 
     fn test_ranges() -> Vec<PkRange> {
-        vec![PkRange::new("0".into(), "".into(), "FF".into())]
+        vec![PkRange::new("0".into(), "", "FF")]
     }
 
     /// Simulates a single-page change feed fetch:
