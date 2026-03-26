@@ -946,26 +946,26 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     .await
 }
 
-/// Verifies that partition key range resolution actually executes during item operations.
+/// Verifies that the pkranges request uses the correct URL and returns 200.
 ///
-/// This test uses fault injection to inject a transient error on the first pkranges
-/// ReadFeed request, proving that the SDK's pkrange fetch code path is exercised.
-/// After the fault is consumed (hit limit = 1), subsequent operations should succeed
-/// normally with client-side partition key routing.
+/// Uses a "spy" fault injection rule with no error or custom response. The rule
+/// matches `MetadataPartitionKeyRanges` requests but lets them pass through to the
+/// real service, recording the response status code. This proves:
+/// 1. The pkranges code path is exercised (`hit_count >= 1`).
+/// 2. The service returns 200 (the URL uses name-based addressing, not mixed RID).
+/// 3. The item operation succeeds end-to-end with correct partition key routing.
 #[tokio::test]
-pub async fn fault_injection_pkrange_readfeed_is_exercised() -> Result<(), Box<dyn Error>> {
-    let server_error = FaultInjectionResultBuilder::new()
-        .with_error(FaultInjectionErrorType::ServiceUnavailable)
-        .build();
+pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn Error>> {
+    // Spy rule: no error, no custom response → passthrough with status recording.
+    let spy_result = FaultInjectionResultBuilder::new().build();
 
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("pkrange-readfeed-fault", server_error)
+        FaultInjectionRuleBuilder::new("pkrange-spy", spy_result)
             .with_condition(condition)
-            .with_hit_limit(1) // Only fail the first attempt
             .build(),
     );
 
@@ -976,7 +976,7 @@ pub async fn fault_injection_pkrange_readfeed_is_exercised() -> Result<(), Box<d
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
             let container_id = format!("PkRangeTest-{}", Uuid::new_v4());
-            let container_client = run_context
+            let _container_client = run_context
                 .create_container_with_throughput(
                     db_client,
                     ContainerProperties::new(container_id.clone(), "/partition_key".into()),
@@ -987,32 +987,33 @@ pub async fn fault_injection_pkrange_readfeed_is_exercised() -> Result<(), Box<d
             let unique_id = Uuid::new_v4().to_string();
             let item = create_test_item(&unique_id);
             let pk = format!("Partition-{}", unique_id);
-            let item_id = format!("Item-{}", unique_id);
 
-            // Create an item — this triggers partition key range resolution.
-            container_client.create_item(&pk, &item, None).await?;
-
-            // The fault rule should have been hit during the pkrange fetch.
-            assert!(
-                rule_handle.hit_count() >= 1,
-                "Expected the MetadataPartitionKeyRanges fault rule to be hit at least once during pkrange resolution, but hit_count was {}",
-                rule_handle.hit_count()
-            );
-
+            // Use the fault client so the spy rule is in the HTTP pipeline.
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            // Read the item back — should succeed, proving pkrange resolution works end-to-end.
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            // Create an item — this triggers partition key range resolution
+            // through the fault client's pipeline where the spy rule can observe.
+            fault_container_client
+                .create_item(&pk, &item, None)
+                .await?;
+
+            // The spy rule should have been hit during the pkrange fetch.
             assert!(
-                result.is_ok(),
-                "read should succeed after pkrange resolution: {:?}",
-                result.err()
+                rule_handle.hit_count() >= 1,
+                "Expected the MetadataPartitionKeyRanges spy rule to be hit at least once, but hit_count was {}",
+                rule_handle.hit_count()
+            );
+
+            // Verify the pkranges request returned 200 from the service.
+            let statuses = rule_handle.passthrough_statuses();
+            assert!(
+                statuses.iter().any(|s| *s == StatusCode::Ok),
+                "Expected pkranges request to return 200, got: {:?}",
+                statuses
             );
 
             Ok(())

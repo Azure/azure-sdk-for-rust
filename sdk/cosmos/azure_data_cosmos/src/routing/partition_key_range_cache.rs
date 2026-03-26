@@ -85,16 +85,16 @@ impl PartitionKeyRangeCache {
     pub async fn resolve_partition_key_range_by_id(
         &self,
         collection_name: &str,
-        collection_resource_id: &str,
+        collection_rid: &str,
         partition_key_range_id: &str,
         force_refresh: bool,
     ) -> Option<PartitionKeyRange> {
-        let mut routing_map = self.try_lookup(collection_name, collection_resource_id, None).await.ok()?;
+        let mut routing_map = self.try_lookup(collection_name, collection_rid, None).await.ok()?;
 
         if force_refresh {
             if let Some(previous) = routing_map.clone() {
                 routing_map = self
-                    .try_lookup(collection_name, collection_resource_id, Some(previous))
+                    .try_lookup(collection_name, collection_rid, Some(previous))
                     .await
                     .ok()?;
             }
@@ -105,7 +105,7 @@ impl PartitionKeyRangeCache {
             None => {
                 info!(
                     "Routing Map Null for collection: {}, PartitionKeyRangeId: {}, forceRefresh: {}",
-                    collection_resource_id,
+                    collection_rid,
                     partition_key_range_id,
                     force_refresh
                 );
