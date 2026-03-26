@@ -12,7 +12,7 @@ pub(crate) struct SendSlice<T> {
 unsafe impl<T> Send for SendSlice<T> {}
 
 impl<T> SendSlice<T> {
-    pub(crate) fn from_raw(ptr: *mut T, len: usize) -> Self {
+    pub fn from_raw(ptr: *mut T, len: usize) -> Self {
         Self { ptr, len }
     }
 
@@ -20,7 +20,11 @@ impl<T> SendSlice<T> {
     ///
     /// # Safety
     /// The caller must ensure borrow safety is respected.
-    pub(crate) unsafe fn as_mut_slice(&mut self) -> &mut [T] {
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [T] {
         std::slice::from_raw_parts_mut(self.ptr, self.len)
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
     }
 }

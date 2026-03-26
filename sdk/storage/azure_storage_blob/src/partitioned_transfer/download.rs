@@ -28,7 +28,9 @@ use futures::{
 };
 
 use crate::models::{
-    drains::SequentialBoundedDrain, http_ranges::ContentRange, response_ext::AsyncResponseBodyExt,
+    drains::{SequentialBoundedDrain, UnorderedFuturesDrain},
+    http_ranges::ContentRange,
+    response_ext::AsyncResponseBodyExt,
     slice::SendSlice,
 };
 
@@ -178,7 +180,7 @@ where
     // of the remote resource.
     let max_download_range = range.unwrap_or(0..usize::MAX);
     if max_download_range.is_empty() {
-        todo!("download into")
+        return Ok(0);
     }
 
     let initial_response = download_with_empty_blob_safety(
@@ -205,7 +207,7 @@ where
     }
 
     // if no real parallelism, take the simple option of executing downloads sequentially.
-    // The "true" implementation can't handle parallel < 2.
+    // no worker spawning.
     if parallel == 1 {
         // sequence the initial response with a stream that fetches responses for each subsequent range
         let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
@@ -224,7 +226,7 @@ where
         return Ok(total_written);
     }
 
-    let mut tasks = Vec::with_capacity(parallel);
+    let mut tasks = UnorderedFuturesDrain::with_capacity(parallel);
     // channel for download workers to send results to their coordinator.
     let (tx, mut rx) = mpsc::unbounded();
 
@@ -242,17 +244,37 @@ where
         ));
     }
 
+    // tracking of completed work
+    let mut received_result_count = 0;
+    let mut bytes_copied = 0;
+    let mut consume_available_messages = || {
+        loop {
+            match rx.try_recv() {
+                Ok(worker_result) => {
+                    bytes_copied += worker_result?;
+                    received_result_count += 1;
+                }
+                Err(mpsc::TryRecvError::Empty) => break,
+                Err(mpsc::TryRecvError::Closed) => Err(Error::with_message(
+                    ErrorKind::Other,
+                    "Download incomplete. Premature channel close.",
+                ))?,
+            }
+        }
+        Ok::<(), Error>(())
+    };
+
     // Download all remaining ranges, parallel-many at a time
     while let Some(range) = stats.remaining_download_ranges.pop_front() {
         // If at parallel limit, wait for a slot to open
         while tasks.len() >= parallel {
-            // SAFETY: guarantee parallel > 1
-            (_, _, tasks) = future::select_all(tasks).await;
+            if let Some(result) = tasks.next().await {
+                result.map_err(map_spawned_task_error)?;
+            } else {
+                break;
+            }
         }
-        // ensure success of completed tasks
-        while let Ok(worker_result) = rx.try_recv() {
-            worker_result?
-        }
+        consume_available_messages()?;
 
         // SAFETY: Ensure mutable reference safety for the created SendSlice
         unsafe {
@@ -267,9 +289,19 @@ where
             ));
         }
     }
-    future::join_all(tasks).await;
 
-    Ok(0)
+    // wait on all remaining tasks, failing fast on error
+    while let Some(join_result) = tasks.next().await {
+        join_result.map_err(map_spawned_task_error)?;
+        consume_available_messages()?;
+    }
+
+    // final validation of work done
+    if tasks.total_completed() != received_result_count {
+        todo!("error")
+    } else {
+        Ok(bytes_copied)
+    }
 }
 
 /// Race awaiting a message vs checking if tasks have completed successfully,
@@ -299,7 +331,7 @@ async fn await_message_while_joining_workers<T>(
                 return Ok((message.map_err(on_recv_err)?, task_select.into_inner()));
             }
             Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
-                completed_task.map_err(|e| Error::with_message(ErrorKind::Other, e.to_string()))?;
+                completed_task.map_err(map_spawned_task_error)?;
                 task_bucket = remaining_tasks;
                 message_fut = m_fut;
             }
@@ -331,7 +363,7 @@ fn start_initial_download_task(
 }
 
 /// Spawns a worker to take the given raw response and stream it into the given buffer.
-/// The success result is then sent through sender.
+/// A result of the number of bytes written is then sent through sender.
 ///
 /// If the body does not *exactly* fill the buffer, an error will be sent instead.
 ///
@@ -340,13 +372,14 @@ fn start_initial_download_task(
 unsafe fn start_initial_download_into_task(
     initial_response: AsyncRawResponse,
     mut buffer: SendSlice<u8>,
-    mut sender: UnboundedSender<Result<(), Error>>,
+    mut sender: UnboundedSender<Result<usize, Error>>,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
         let res = initial_response
             .into_body()
             .collect_into_exact(buffer.as_mut_slice())
-            .await;
+            .await
+            .map(|_| buffer.len());
         let _send_res = sender.send(res).await;
     }))
 }
@@ -392,7 +425,7 @@ unsafe fn start_download_into_task<
     client: Arc<Behavior>,
     mut buffer: SendSlice<u8>,
     range: Range<usize>,
-    mut sender: UnboundedSender<Result<(), Error>>,
+    mut sender: UnboundedSender<Result<usize, Error>>,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
         let res = async {
@@ -403,7 +436,8 @@ unsafe fn start_download_into_task<
                 .collect_into_exact(buffer.as_mut_slice())
                 .await
         }
-        .await;
+        .await
+        .map(|_| buffer.len());
         let _send_res = sender.send(res).await;
     }))
 }
@@ -490,8 +524,8 @@ fn force_analyze_initial_response(
     })
 }
 
-unsafe fn remove_lifetime(slice: &mut [u8]) -> &mut [u8] {
-    std::slice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len())
+fn map_spawned_task_error(err: Box<dyn std::error::Error + Send>) -> Error {
+    Error::with_message(ErrorKind::Other, err.to_string())
 }
 
 trait DownloadRangeFuture: Future + Send {}
