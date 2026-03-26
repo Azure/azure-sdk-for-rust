@@ -262,13 +262,16 @@ impl HttpClient for FaultClient {
             // No fault injection or delay-only fault, proceed with actual request
             let result = self.inner.execute_request(&clean_request).await;
 
-            // Record response status only for true spy rules (no error_type
-            // and no custom_response). This excludes probability-skipped faults
-            // which also fall through to the real request.
+            // Record response status only for true spy rules: no error_type,
+            // no custom_response, and no delay. This excludes probability-skipped
+            // faults and any rule that injected a delay.
             if let (Some(rule), Some(ref fr), Ok(ref response)) =
                 (&matched_rule, &fault_result, &result)
             {
-                if fr.error_type.is_none() && fr.custom_response.is_none() {
+                if fr.error_type.is_none()
+                    && fr.custom_response.is_none()
+                    && fr.delay == Duration::ZERO
+                {
                     rule.record_passthrough_status(response.status());
                 }
             }

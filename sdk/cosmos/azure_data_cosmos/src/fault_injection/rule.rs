@@ -29,7 +29,7 @@ pub struct FaultInjectionRule {
     pub id: String,
     /// Whether the rule is currently enabled.
     enabled: AtomicBool,
-    /// Number of times the rule has been matched and applied.
+    /// Number of times the rule has been matched (including matches where no fault was injected).
     hit_count: AtomicU32,
     /// HTTP status codes of responses for matched requests that passed through without fault injection.
     passthrough_statuses: Mutex<Vec<StatusCode>>,
