@@ -117,7 +117,7 @@ internal defaults chosen to balance latency and reliability.
 ### Separate Mechanisms
 
 - **Request timeouts**: Escalated per retry attempt via a fixed ladder (see [§4](#4-timeout-ladders)).
-  Applied per-attempt via the existing `azure_core::sleep()` deadline-race mechanism.
+  Applied per-attempt by setting `reqwest::RequestBuilder::timeout()` directly in the transport.
 - **Connection timeouts**: Adaptively tuned based on observed failure rate (see
   [§9](#9-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
   `ShardedHttpTransport`.
@@ -139,6 +139,11 @@ slightly longer timeout resolves the issue. If 10s was not enough, the problem i
 backend-side (e.g., cross-partition query fan-out, throttled partition) and needs the full timeout
 budget. An intermediate step would just delay the inevitable success or failure without adding
 signal. The 65s value matches `max_dataplane_request_timeout`.
+
+**Future: Thin client (Gateway 2.0) ladder**: When thin client mode is implemented, data plane
+operations can use a tighter ladder of **6s → 6s → 10s**. The gateway performs server-side
+retries on behalf of the client within the first 6s window, so a second attempt at 6s is
+appropriate before escalating to 10s.
 
 ### Metadata Request Timeout Ladder
 
@@ -300,6 +305,7 @@ let effective_deadline = match e2e_deadline {
 (e.g., `min = 2s` with only `500ms` remaining).
 
 This ensures that:
+
 - If a user sets `max_dataplane_request_timeout` to 10s, the 3rd tier (65s) is clamped to 10s.
 - If a user sets `min_dataplane_request_timeout` to 2s, the 1st tier (6s) stays at 6s (already
   above the minimum).
@@ -328,48 +334,78 @@ timeout enforcement. The ladder's per-attempt timeout is folded into this field 
 the `TransportRequest` is constructed — no `request_timeout: Duration` field is needed, and there
 is no risk of two competing timeout sources on the same struct.
 
-#### Required Changes
+#### No Cross-Crate Changes Required
 
-**In `typespec_client_core`** — Add an optional per-request timeout to `Request`:
+The driver already builds `reqwest::Client` instances directly via `HttpClientFactory` and has
+full control over the HTTP layer. Per-request timeout enforcement is handled entirely within the
+driver — no changes to `typespec_client_core` or `azure_core` are needed.
 
-The `Request` struct (`typespec_client_core::http::request::Request`) currently has no timeout
-field. Per-request timeouts are needed so that callers (like the Cosmos driver) can override the
-client-level timeout on individual requests. The change is minimal and backwards-compatible:
+The approach:
 
-- The new field is `Option<Duration>` defaulting to `None` — existing callers are unaffected.
-- `Request` already derives `Clone`; `Option<Duration>` is `Clone + Copy`, so no breakage.
-- `Debug` is manually implemented for `Request` and would include the new field.
+1. The `reqwest::Client` is built **without** a client-level `timeout()` (or with a very high
+   safety ceiling). Instead, the per-attempt timeout from the ladder is applied directly on each
+   `reqwest::RequestBuilder::timeout()` call before sending. This gives the transport full
+   per-request control without any `typespec_client_core` changes.
+2. The transport pipeline computes the ladder timeout for each attempt, clamps it to pool bounds
+   and the e2e deadline, then passes it to the transport dispatch layer which applies it via
+   `reqwest::RequestBuilder::timeout()`.
+3. The e2e deadline is enforced separately and always takes precedence.
 
-**Cross-crate PR strategy**: This change touches `typespec_client_core`, which is shared across
-all Azure SDK crates. It requires a separate PR with cross-team review before the Cosmos driver
-can depend on it. The PR should add the field + getter/setter to `Request` only — the driver
-applies the timeout via the existing `azure_core::sleep()` race mechanism.
+This works because the driver builds `reqwest::Client` instances directly via `HttpClientFactory`
+and controls the full HTTP dispatch path. The `reqwest::RequestBuilder::timeout()` method
+overrides the client-level timeout for a single request — this is a reqwest-native feature that
+requires no changes to `typespec_client_core`, `azure_core`, or the `HttpClient` trait.
+
+### Timeout Control via Options Hierarchy
+
+User-facing timeout control is provided through the driver's options containers.
+The timeout ladder is internal behavior — users influence it indirectly via bounds and deadlines:
+
+**User-Facing Options:**
+
+- **`ConnectionPoolOptions`** (client-level, set once at driver creation)
+  - `max_dataplane_request_timeout` (default 6s) — clamps ladder max
+  - `min_dataplane_request_timeout` (default 100ms) — clamps ladder min
+  - `max_metadata_request_timeout` (default 65s) — clamps ladder max
+  - `min_metadata_request_timeout` (default 100ms) — clamps ladder min
+- **`RuntimeOptions`** (inheritable: driver-level → operation-level)
+  - `end_to_end_latency_policy` — overall operation deadline
+    (set via `DriverOptions` or overridden per-operation via
+    `OperationOptions.with_end_to_end_latency_policy()`)
+
+**Internal Driver Behavior:**
+
+- Timeout ladder computes per-attempt `Duration` from constants
+- Clamps to `ConnectionPoolOptions` min/max bounds ([§7](#7-interaction-with-connectionpooloptions-bounds))
+- Clamps against e2e deadline ([§6](#6-interaction-with-end-to-end-deadline)) — e2e always wins
+- Enforced via `reqwest::RequestBuilder::timeout()` per request
+- `reqwest::Client` built without a client-level timeout (or high safety ceiling)
+  so per-request timeouts have full control
+
+#### Example: User sets a 10s per-request max and 30s e2e timeout
 
 ```rust
-// In typespec_client_core::http::request::Request
-impl Request {
-    /// Returns the per-request timeout override, if set.
-    pub fn timeout(&self) -> Option<Duration> {
-        self.timeout
-    }
+// Client-level: cap per-request timeout at 10s
+let pool = ConnectionPoolOptions::builder()
+    .with_max_dataplane_request_timeout(Duration::from_secs(10))
+    .build()?;
 
-    /// Sets a per-request timeout that overrides the client-level timeout.
-    pub fn set_timeout(&mut self, timeout: Duration) {
-        self.timeout = Some(timeout);
-    }
-}
+// Operation-level: 30s overall budget
+let options = OperationOptions::new()
+    .with_end_to_end_latency_policy(
+        EndToEndOperationLatencyPolicy::new(Duration::from_secs(30))
+    );
+
+// Internal behavior (not user-visible):
+// Attempt 0: ladder says 6s  → clamped to min(6s, 10s) = 6s  → reqwest timeout = 6s
+// Attempt 1: ladder says 10s → clamped to min(10s, 10s) = 10s → reqwest timeout = 10s
+// Attempt 2: ladder says 65s → clamped to min(65s, 10s) = 10s → reqwest timeout = 10s
+// All attempts also subject to the 30s e2e deadline.
 ```
 
-**Timeout enforcement**: The transport pipeline currently enforces timeouts by racing
-`azure_core::sleep()` against the HTTP future. This remains the enforcement mechanism. When
-`Request::set_timeout()` becomes available in `typespec_client_core`, the sleep-race can be
-removed in favor of native per-request timeouts in the `HttpClient` implementation (e.g.,
-`reqwest::RequestBuilder::timeout()`). Until then, both mechanisms should not be active
-simultaneously to avoid double-timeout enforcement with different error types.
+#### Required Changes (driver-internal only)
 
-**In `azure_data_cosmos_driver`**:
-
-1. **Compute per-attempt deadline in the transport pipeline** (`transport_pipeline.rs`):
+1. **Compute per-attempt timeout in the transport pipeline** (`transport_pipeline.rs`):
 
 ```rust
 // Ladder constants
@@ -390,23 +426,45 @@ fn timeout_for_attempt(timeout_retry_count: usize, ladder: &[Duration]) -> Durat
 }
 ```
 
-2. **Integrate into the transport retry loop**: Before each attempt, compute the effective
-   deadline from the ladder and clamp against the e2e deadline:
+1. **Integrate into the transport retry loop**: Before each attempt, compute the effective
+   per-request timeout from the ladder, clamp to pool bounds and e2e deadline:
 
 ```rust
 let attempt_timeout = timeout_for_attempt(timeout_retry_count, ladder);
-let attempt_deadline = Instant::now() + attempt_timeout;
-let effective_deadline = match request.deadline {
-    Some(e2e) => Some(attempt_deadline.min(e2e)),
-    None => Some(attempt_deadline),
+let clamped = attempt_timeout
+    .max(connection_pool.min_dataplane_request_timeout())
+    .min(connection_pool.max_dataplane_request_timeout());
+
+// Clamp against e2e deadline (e2e always wins)
+let effective_timeout = match request.deadline {
+    Some(e2e) => {
+        let remaining = e2e.saturating_duration_since(Instant::now());
+        clamped.min(remaining)
+    }
+    None => clamped,
 };
-let per_request_timeout = remaining_request_timeout(effective_deadline);
 ```
 
-3. **Integration with `ShardedHttpTransport`**: The sharded transport sends requests via
-   per-endpoint shard pools. The transport pipeline already enforces `per_request_timeout` via
-   `azure_core::sleep()` racing the HTTP future. The ladder-computed deadline feeds directly into
-   this existing mechanism — no changes to the sharded transport are needed.
+1. **Apply per-request timeout via reqwest** (`sharded_transport.rs` / transport dispatch):
+   Before sending each request, apply the ladder-computed timeout directly on the
+   `reqwest::RequestBuilder`:
+
+```rust
+// In the transport dispatch layer, before sending:
+let mut req = client.request(method, url);
+req = req.timeout(effective_timeout);  // Per-request override
+// ... headers, body, send ...
+```
+
+   This bypasses the `azure_core::http::HttpClient` trait (which doesn't support per-request
+   timeouts) and uses reqwest's native per-request timeout directly. The
+   `HttpClientFactory::build()` should omit the client-level `builder.timeout()` call (or set
+   it to a high safety ceiling) so the per-request timeout has full control.
+
+1. **Integration with `ShardedHttpTransport`**: The sharded transport dispatches requests
+   through its shard pool. The per-request timeout from the ladder is passed to the dispatch
+   method and applied via `reqwest::RequestBuilder::timeout()` on the selected shard's client.
+   No changes to the shard health or pool management logic are needed.
 
 ### Diagnostic Recording
 
@@ -564,16 +622,16 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
 
 | Operation Type   | Request Timeout Ladder | Connection Timeout |
 |------------------|------------------------|--------------------|
-| QueryPlan        | 0.5s, 5s, 10s         | 45s                |
-| AddressRefresh   | 0.5s, 5s, 10s         | 45s                |
-| Database Account | 5s, 10s, 20s          | 45s                |
-| Other HTTP calls | 60s, 60s, 60s         | 45s                |
+| QueryPlan        | 0.5s, 5s, 10s          | 45s                |
+| AddressRefresh   | 0.5s, 5s, 10s          | 45s                |
+| Database Account | 5s, 10s, 20s           | 45s                |
+| Other HTTP calls | 60s, 60s, 60s          | 45s                |
 
 **Direct mode (TCP):**
 
-| Operation Type | Request Timeout | Connection Timeout |
-|----------------|-----------------|---------------------|
-| All TCP calls  | 5s (fixed)      | 5s (fixed)          |
+| Operation Type | Request Timeout    | Connection Timeout |
+|----------------|--------------------|--------------------|
+| All TCP calls  | 5s (fixed)         | 5s (fixed)         |
 
 ### This Spec (Rust Driver)
 
@@ -583,6 +641,7 @@ From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
 | Metadata     | 5s, 10s, 20s           |
 
 **Differences from Java SDK:**
+
 - Rust data plane uses 6s/10s/65s; Java direct mode uses a flat 5s.
 - Java gateway "Other HTTP calls" use a flat 60s; Rust data plane starts lower (6s).
 - Connection timeouts: Java uses a flat 45s (gateway) / 5s (direct). Rust uses an adaptive
