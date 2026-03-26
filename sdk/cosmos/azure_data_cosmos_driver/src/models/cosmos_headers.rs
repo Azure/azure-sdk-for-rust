@@ -131,8 +131,8 @@ pub struct CosmosResponseHeaders {
 
     /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
     ///
-    /// Non-finite values are filtered during parsing and will be `None`.
-    pub(crate) server_duration_ms: Option<f64>,
+    /// Non-finite and negative values are filtered during parsing and will be `None`.
+    pub server_duration_ms: Option<f64>,
 
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
@@ -156,11 +156,6 @@ impl CosmosResponseHeaders {
     /// Creates an empty `CosmosResponseHeaders`.
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Returns the server-side request processing duration in milliseconds, if available.
-    pub fn server_duration_ms(&self) -> Option<f64> {
-        self.server_duration_ms
     }
 
     /// Extracts Cosmos headers from HTTP response headers.
@@ -222,7 +217,7 @@ impl CosmosResponseHeaders {
             server_duration_ms: headers
                 .get_optional_str(&response_header_names::SERVER_DURATION_MS)
                 .and_then(|s| s.parse::<f64>().ok())
-                .filter(|v| v.is_finite()),
+                .filter(|v| v.is_finite() && *v >= 0.0),
             lsn: headers
                 .get_optional_str(&response_header_names::LSN)
                 .and_then(|s| s.parse().ok()),
@@ -296,18 +291,18 @@ mod tests {
             cosmos_headers.query_metrics.as_deref(),
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
         );
-        assert!((cosmos_headers.server_duration_ms().unwrap() - 4.56).abs() < f64::EPSILON);
+        assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
     }
 
     #[test]
     fn non_finite_server_duration_returns_none() {
-        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity"] {
+        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity", "-1.0"] {
             let mut headers = Headers::new();
             headers.insert("x-ms-request-duration-ms", value);
             let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
             assert!(
-                cosmos_headers.server_duration_ms().is_none(),
+                cosmos_headers.server_duration_ms.is_none(),
                 "Expected None for '{value}'"
             );
         }
@@ -333,10 +328,10 @@ mod tests {
             substatus: Some(SubStatusCode::new(1002)),
             index_metrics: Some(r#"{"metrics":"data"}"#.to_string()),
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
+            server_duration_ms: Some(4.56),
             lsn: Some(100),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
-            ..Default::default()
         };
 
         assert_eq!(
@@ -367,7 +362,7 @@ mod tests {
         assert!(headers.substatus.is_none());
         assert!(headers.index_metrics.is_none());
         assert!(headers.query_metrics.is_none());
-        assert!(headers.server_duration_ms().is_none());
+        assert!(headers.server_duration_ms.is_none());
         assert!(headers.lsn.is_none());
     }
 

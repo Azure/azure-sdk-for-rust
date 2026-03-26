@@ -74,21 +74,8 @@ impl<T, M> FeedPage<T, M> {
     }
 
     /// Consumes the page and returns a vector of the items.
-    ///
-    /// This is essentially shorthand for `self.deconstruct().0`.
     pub fn into_items(self) -> Vec<T> {
         self.items
-    }
-
-    /// Deconstructs the page into its components.
-    pub fn deconstruct(self) -> (Vec<T>, Option<String>, Headers, M, CosmosDiagnostics) {
-        (
-            self.items,
-            self.continuation,
-            self.raw_headers,
-            self.metadata,
-            self.diagnostics,
-        )
     }
 
     /// Gets the continuation token for the next page of results, if any.

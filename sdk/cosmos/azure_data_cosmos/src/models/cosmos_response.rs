@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn server_duration_ms_rejects_non_finite() {
-        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity"] {
+        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity", "-1.0"] {
             let mut headers = Headers::new();
             headers.insert("x-ms-request-duration-ms", value);
             let response = create_response_with_headers(headers);

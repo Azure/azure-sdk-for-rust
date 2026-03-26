@@ -23,7 +23,7 @@ impl CosmosDiagnostics {
     pub(crate) fn from_headers(headers: &CosmosResponseHeaders) -> Self {
         Self {
             activity_id: headers.activity_id.as_ref().map(|a| a.as_str().to_owned()),
-            server_duration_ms: headers.server_duration_ms(),
+            server_duration_ms: headers.server_duration_ms,
         }
     }
 
