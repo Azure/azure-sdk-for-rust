@@ -12,7 +12,8 @@
 mod account_reference;
 mod activity_id;
 mod connection_string;
-mod cosmos_headers;
+mod consistency_level;
+pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
@@ -22,13 +23,17 @@ mod finite_f64;
 pub(crate) use finite_f64::FiniteF64;
 mod partition_key;
 mod request_charge;
-mod resource_id;
+pub(crate) mod resource_id;
 mod resource_reference;
 mod user_agent;
+pub(crate) mod vector_session_token;
+
+pub(crate) use cosmos_headers::request_header_names;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
+pub(crate) use consistency_level::DefaultConsistencyLevel;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
@@ -55,6 +60,7 @@ use std::borrow::Cow;
 /// Returned by database read/query operations and used when creating databases.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct DatabaseProperties {
     /// Unique identifier for the database within the account.
     pub id: Cow<'static, str>,
@@ -71,6 +77,7 @@ impl DatabaseProperties {}
 /// Returned by container read/query operations and used when creating/updating containers.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct ContainerProperties {
     /// Unique identifier for the container within the database.
     pub id: Cow<'static, str>,
@@ -88,20 +95,41 @@ pub(crate) struct ContainerProperties {
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// List of partition key paths (e.g., `["/tenantId"]` for single partition key).
     paths: Vec<Cow<'static, str>>,
 
-    /// Partition key version (1 for single, 2 for hierarchical).
-    #[serde(default = "default_pk_version")]
-    version: PartitionKeyVersion,
-
     /// Partition key kind (Hash is the standard).
     #[serde(default)]
     kind: PartitionKeyKind,
+
+    /// Partition key version (1 for single, 2 for hierarchical).
+    #[serde(default = "default_pk_version")]
+    version: PartitionKeyVersion,
 }
 
 impl PartitionKeyDefinition {
+    /// Creates a new [`PartitionKeyDefinition`] from the provided partition key paths.
+    ///
+    /// The [`PartitionKeyKind`] is inferred automatically:
+    /// - [`PartitionKeyKind::Hash`] for a single path
+    /// - [`PartitionKeyKind::MultiHash`] for multiple paths (hierarchical partition keys)
+    ///
+    /// The version defaults to [`PartitionKeyVersion::V2`].
+    pub fn new(paths: Vec<Cow<'static, str>>) -> Self {
+        let kind = if paths.len() > 1 {
+            PartitionKeyKind::MultiHash
+        } else {
+            PartitionKeyKind::Hash
+        };
+        Self {
+            paths,
+            kind,
+            version: PartitionKeyVersion::V2,
+        }
+    }
+
     /// Returns the partition key paths.
     pub fn paths(&self) -> &[Cow<'static, str>] {
         &self.paths
@@ -115,6 +143,59 @@ impl PartitionKeyDefinition {
     /// Returns the partition key kind.
     pub fn kind(&self) -> PartitionKeyKind {
         self.kind
+    }
+}
+
+/// Creates a single-path [`PartitionKeyDefinition`] from a string slice.
+///
+/// # Examples
+///
+/// ```
+/// use azure_data_cosmos_driver::models::PartitionKeyDefinition;
+///
+/// let pk_def: PartitionKeyDefinition = "/tenantId".into();
+/// assert_eq!(pk_def.paths()[0].as_ref(), "/tenantId");
+/// ```
+impl From<&str> for PartitionKeyDefinition {
+    fn from(value: &str) -> Self {
+        Self::new(vec![Cow::from(value.to_string())])
+    }
+}
+
+/// Creates a single-path [`PartitionKeyDefinition`] from a [`String`].
+impl From<String> for PartitionKeyDefinition {
+    fn from(value: String) -> Self {
+        Self::new(vec![Cow::from(value)])
+    }
+}
+
+/// Creates a two-path (hierarchical) [`PartitionKeyDefinition`] from a tuple.
+///
+/// # Examples
+///
+/// ```
+/// use azure_data_cosmos_driver::models::{PartitionKeyDefinition, PartitionKeyKind};
+///
+/// let pk_def: PartitionKeyDefinition = ("/tenantId", "/userId").into();
+/// assert_eq!(pk_def.paths().len(), 2);
+/// assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+/// ```
+impl<S1: Into<String>, S2: Into<String>> From<(S1, S2)> for PartitionKeyDefinition {
+    fn from(value: (S1, S2)) -> Self {
+        Self::new(vec![Cow::from(value.0.into()), Cow::from(value.1.into())])
+    }
+}
+
+/// Creates a three-path (hierarchical) [`PartitionKeyDefinition`] from a tuple.
+impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
+    for PartitionKeyDefinition
+{
+    fn from(value: (S1, S2, S3)) -> Self {
+        Self::new(vec![
+            Cow::from(value.0.into()),
+            Cow::from(value.1.into()),
+            Cow::from(value.2.into()),
+        ])
     }
 }
 
@@ -168,9 +249,11 @@ impl From<PartitionKeyVersion> for u32 {
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum PartitionKeyKind {
-    /// Hash partitioning (standard).
+    /// Hash partitioning (standard, single partition key path).
     #[default]
     Hash,
+    /// Multi-path (hierarchical) partition keys.
+    MultiHash,
     /// Range partitioning (legacy).
     Range,
 }
@@ -627,5 +710,74 @@ mod tests {
         assert_eq!(parsed.paths()[0].as_ref(), "/pk");
         assert_eq!(parsed.version(), PartitionKeyVersion::V2);
         assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_new_single_path() {
+        let pk_def = PartitionKeyDefinition::new(vec![Cow::from("/tenantId")]);
+        assert_eq!(pk_def.paths().len(), 1);
+        assert_eq!(pk_def.paths()[0].as_ref(), "/tenantId");
+        assert_eq!(pk_def.kind(), PartitionKeyKind::Hash);
+        assert_eq!(pk_def.version(), PartitionKeyVersion::V2);
+    }
+
+    #[test]
+    fn partition_key_definition_new_multi_path() {
+        let pk_def =
+            PartitionKeyDefinition::new(vec![Cow::from("/tenantId"), Cow::from("/userId")]);
+        assert_eq!(pk_def.paths().len(), 2);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_str() {
+        let pk_def: PartitionKeyDefinition = "/pk".into();
+        assert_eq!(pk_def.paths().len(), 1);
+        assert_eq!(pk_def.paths()[0].as_ref(), "/pk");
+        assert_eq!(pk_def.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_string() {
+        let pk_def: PartitionKeyDefinition = String::from("/pk").into();
+        assert_eq!(pk_def.paths().len(), 1);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_pair() {
+        let pk_def: PartitionKeyDefinition = ("/a", "/b").into();
+        assert_eq!(pk_def.paths().len(), 2);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_triple() {
+        let pk_def: PartitionKeyDefinition = ("/a", "/b", "/c").into();
+        assert_eq!(pk_def.paths().len(), 3);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+    }
+
+    #[test]
+    fn partition_key_kind_multihash_serde() {
+        let json = r#"{"paths":["/a","/b"],"kind":"MultiHash","version":2}"#;
+        let parsed: PartitionKeyDefinition = serde_json::from_str(json).unwrap();
+        assert_eq!(parsed.kind(), PartitionKeyKind::MultiHash);
+        assert_eq!(parsed.paths().len(), 2);
+
+        let serialized = serde_json::to_string(&parsed).unwrap();
+        assert_eq!(serialized, json);
+    }
+
+    #[test]
+    fn partition_key_definition_round_trip_serde() {
+        let pk_def: PartitionKeyDefinition = "/partitionKey".into();
+        let json = serde_json::to_string(&pk_def).unwrap();
+        assert_eq!(
+            json,
+            r#"{"paths":["/partitionKey"],"kind":"Hash","version":2}"#
+        );
+        let parsed: PartitionKeyDefinition = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, pk_def);
     }
 }

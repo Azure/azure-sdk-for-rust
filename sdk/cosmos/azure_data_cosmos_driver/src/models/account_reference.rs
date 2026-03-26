@@ -160,7 +160,7 @@ pub struct AccountReference {
     credential: Credential,
 }
 
-// Manual PartialEq implementation because AuthOptions contains Arc<dyn TokenCredential>
+// Manual PartialEq implementation because Credential contains Arc<dyn TokenCredential>
 // which doesn't implement PartialEq. We compare by endpoint only.
 impl PartialEq for AccountReference {
     fn eq(&self, other: &Self) -> bool {

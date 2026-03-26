@@ -10,7 +10,7 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
+use azure_data_cosmos::models::{ContainerProperties, CosmosResponse, ItemMetadata};
 use azure_data_cosmos::{ItemOptions, PartitionKey};
 use framework::get_effective_hub_endpoint;
 use framework::TestClient;
@@ -34,9 +34,9 @@ struct TestItem {
 
 /// Helper function to assert common response properties.
 /// Verifies status code, that request charge is present and positive, endpoint is correct,
-/// and that session token and activity ID are present.
+/// and that session token, activity ID, and server duration are present.
 fn assert_response<T>(
-    response: &CosmosResponse<T>,
+    response: &CosmosResponse<T, ItemMetadata>,
     expected_status: StatusCode,
     expected_endpoint: &str,
     read_operation: bool,
@@ -67,6 +67,23 @@ fn assert_response<T>(
         response.session_token().is_some(),
         "expected session token to be present"
     );
+    assert!(
+        response.activity_id().is_some(),
+        "expected activity ID to be present"
+    );
+    assert!(
+        !response.activity_id().unwrap().is_empty(),
+        "expected activity ID to be non-empty"
+    );
+    // Server duration is returned by the Cosmos DB service on all operations
+    assert!(
+        response.server_duration_ms().is_some(),
+        "expected server_duration_ms to be present"
+    );
+    assert!(
+        response.server_duration_ms().unwrap() >= 0.0,
+        "expected server_duration_ms to be non-negative"
+    );
 }
 
 async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
@@ -79,7 +96,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await;
+    let container_client = db_client.container_client(&container_id).await?;
 
     Ok(container_client)
 }

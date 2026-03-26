@@ -12,7 +12,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 /// All names are lowercase as required by [`HeaderName`]. The azure_core [`Headers`]
 /// type normalizes header names to lowercase on insertion, so lookups are case-sensitive
 /// but will always match since both sides are lowercase.
-mod request_header_names {
+pub(crate) mod request_header_names {
     use azure_core::http::headers::HeaderName;
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
@@ -20,7 +20,7 @@ mod request_header_names {
 }
 
 /// Standard Cosmos DB response header names.
-mod response_header_names {
+pub(crate) mod response_header_names {
     use azure_core::http::headers::HeaderName;
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
@@ -34,6 +34,22 @@ mod response_header_names {
     pub static QUERY_METRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-query-metrics");
     pub static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
     pub static LSN: HeaderName = HeaderName::from_static("lsn");
+    pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
+    pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
+}
+
+/// Header names used by the fault injection framework.
+#[cfg(feature = "fault_injection")]
+pub(crate) mod fault_injection_header_names {
+    use azure_core::http::headers::HeaderName;
+
+    /// Operation type header set on requests for fault injection rule matching.
+    pub static FAULT_INJECTION_OPERATION: HeaderName =
+        HeaderName::from_static("x-ms-fault-injection-operation");
+    /// Header carrying the evaluation request ID for correlating FaultClient evaluations
+    /// with the transport pipeline's diagnostics context.
+    pub static FAULT_INJECTION_REQUEST_ID: HeaderName =
+        HeaderName::from_static("x-ms-fault-injection-request-id");
 }
 
 /// Cosmos request headers for operation-level customization.
@@ -118,6 +134,20 @@ pub struct CosmosResponseHeaders {
 
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
+
+    /// Owner full name / alternate content path (`x-ms-alt-content-path`).
+    ///
+    /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
+    /// Will be used for container identity validation in follow-up work.
+    #[allow(dead_code)] // Used in follow-up PR for container identity validation
+    pub(crate) owner_full_name: Option<String>,
+
+    /// Owner resource ID / content path (`x-ms-content-path`).
+    ///
+    /// Contains the RID of the owning collection. Will be used for
+    /// RID mismatch validation in container-recreate detection.
+    #[allow(dead_code)] // Used in follow-up PR for RID validation
+    pub(crate) owner_id: Option<String>,
 }
 
 impl CosmosResponseHeaders {
@@ -187,6 +217,12 @@ impl CosmosResponseHeaders {
             lsn: headers
                 .get_optional_str(&response_header_names::LSN)
                 .and_then(|s| s.parse().ok()),
+            owner_full_name: headers
+                .get_optional_str(&response_header_names::OWNER_FULL_NAME)
+                .map(|s| s.to_owned()),
+            owner_id: headers
+                .get_optional_str(&response_header_names::OWNER_ID)
+                .map(|s| s.to_owned()),
         }
     }
 }
@@ -289,6 +325,8 @@ mod tests {
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
             server_duration_ms: Some(4.56),
             lsn: Some(100),
+            owner_full_name: Some("dbs/db1/colls/c1".to_string()),
+            owner_id: Some("rid1".to_string()),
         };
 
         assert_eq!(

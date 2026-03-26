@@ -3,27 +3,21 @@
 
 //! Driver-level configuration options.
 
-use crate::{
-    models::AccountReference,
-    options::{RuntimeOptions, SharedRuntimeOptions},
-};
+use std::sync::Arc;
+
+use crate::{models::AccountReference, options::RuntimeOptions};
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
 /// A driver represents a connection to a specific Cosmos DB account. It inherits
-/// environment-level defaults but can override them with driver-specific settings.
-///
-/// # Thread Safety
-///
-/// The runtime options can be modified at runtime via the `runtime_options()` accessor.
-/// Changes are thread-safe and will be applied to subsequent operations.
+/// runtime-level defaults but can override them with driver-specific settings.
 ///
 /// # Example
 ///
 /// ```
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use azure_data_cosmos_driver::options::{
-///     DriverOptions, DriverOptionsBuilder, RuntimeOptions, ContentResponseOnWrite,
+///     DriverOptions, DriverOptionsBuilder, RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite,
 /// };
 /// use url::Url;
 ///
@@ -32,24 +26,21 @@ use crate::{
 ///     "my-master-key",
 /// );
 ///
-/// let runtime = RuntimeOptions::builder()
+/// let runtime = RuntimeOptionsBuilder::new()
 ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
 ///     .build();
 ///
 /// let options = DriverOptionsBuilder::new(account)
 ///     .with_runtime_options(runtime)
 ///     .build();
-///
-/// // Later, modify defaults at runtime
-/// options.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct DriverOptions {
     /// The Cosmos DB account reference (required).
     account: AccountReference,
-    /// Thread-safe runtime options for operation options at the driver level.
-    runtime_options: SharedRuntimeOptions,
+    /// Driver-level runtime options, wrapped in Arc for cheap cloning and snapshot sharing.
+    runtime_options: Arc<RuntimeOptions>,
 }
 
 impl DriverOptions {
@@ -65,18 +56,16 @@ impl DriverOptions {
         &self.account
     }
 
-    /// Returns the thread-safe runtime options.
-    ///
-    /// Use this to modify default operation options at runtime.
-    pub fn runtime_options(&self) -> &SharedRuntimeOptions {
+    /// Returns the driver-level runtime options.
+    pub fn runtime_options(&self) -> &Arc<RuntimeOptions> {
         &self.runtime_options
     }
 }
 
 /// Builder for creating [`DriverOptions`].
 ///
-/// Use [`RuntimeOptions::builder()`] to create runtime options, then pass them
-/// to this builder via [`with_runtime_options()`](Self::with_runtime_options).
+/// Use [`RuntimeOptionsBuilder`](super::RuntimeOptionsBuilder) to create runtime options,
+/// then pass them to this builder via [`with_runtime_options()`](Self::with_runtime_options).
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct DriverOptionsBuilder {
@@ -94,8 +83,6 @@ impl DriverOptionsBuilder {
     }
 
     /// Sets the runtime options (defaults for operations).
-    ///
-    /// Use [`RuntimeOptions::builder()`] to create the runtime options.
     pub fn with_runtime_options(mut self, options: RuntimeOptions) -> Self {
         self.runtime_options = Some(options);
         self
@@ -105,9 +92,7 @@ impl DriverOptionsBuilder {
     pub fn build(self) -> DriverOptions {
         DriverOptions {
             account: self.account,
-            runtime_options: SharedRuntimeOptions::from_options(
-                self.runtime_options.unwrap_or_default(),
-            ),
+            runtime_options: Arc::new(self.runtime_options.unwrap_or_default()),
         }
     }
 }
@@ -115,7 +100,7 @@ impl DriverOptionsBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::options::ContentResponseOnWrite;
+    use crate::options::{ContentResponseOnWrite, RuntimeOptionsBuilder};
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -133,14 +118,13 @@ mod tests {
         assert_eq!(options.account(), &account);
         assert!(options
             .runtime_options()
-            .snapshot()
             .content_response_on_write
             .is_none());
     }
 
     #[test]
     fn builder_sets_runtime_options() {
-        let runtime = RuntimeOptions::builder()
+        let runtime = RuntimeOptionsBuilder::new()
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
@@ -148,36 +132,9 @@ mod tests {
             .with_runtime_options(runtime)
             .build();
 
-        let snapshot = options.runtime_options().snapshot();
         assert_eq!(
-            snapshot.content_response_on_write,
+            options.runtime_options().content_response_on_write,
             Some(ContentResponseOnWrite::Disabled)
-        );
-    }
-
-    #[test]
-    fn runtime_modification() {
-        let options = DriverOptionsBuilder::new(test_account()).build();
-
-        // Initially none
-        assert!(options
-            .runtime_options()
-            .snapshot()
-            .content_response_on_write
-            .is_none());
-
-        // Modify at runtime
-        options
-            .runtime_options()
-            .set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
-
-        // Now set
-        assert_eq!(
-            options
-                .runtime_options()
-                .snapshot()
-                .content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
         );
     }
 }

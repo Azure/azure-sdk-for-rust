@@ -4,7 +4,7 @@
 use crate::{
     clients::DatabaseClient,
     cosmos_request::CosmosRequest,
-    models::{CosmosResponse, DatabaseProperties},
+    models::{CosmosResponse, DatabaseProperties, ResourceMetadata},
     operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::ResourceLink,
@@ -15,6 +15,7 @@ use crate::{
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
+use azure_data_cosmos_driver::CosmosDriver;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -70,6 +71,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 pub struct CosmosClient {
     pub(crate) databases_link: ResourceLink,
     pub(crate) pipeline: Arc<GatewayPipeline>,
+    pub(crate) driver: Arc<CosmosDriver>,
     pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
     pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -106,6 +108,7 @@ impl CosmosClient {
         DatabaseClient::new(
             self.pipeline.clone(),
             id,
+            self.driver.clone(),
             self.global_endpoint_manager.clone(),
             self.global_partition_endpoint_manager.clone(),
         )
@@ -167,7 +170,7 @@ impl CosmosClient {
         &self,
         id: &str,
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
+    ) -> azure_core::Result<CosmosResponse<DatabaseProperties, ResourceMetadata>> {
         let options = options.unwrap_or_default();
 
         #[derive(Serialize)]
@@ -181,6 +184,9 @@ impl CosmosClient {
                 .json(&RequestBody { id })
                 .build()?;
 
-        self.pipeline.send(cosmos_request, Context::default()).await
+        self.pipeline
+            .send(cosmos_request, Context::default())
+            .await
+            .map(|r| r.map_metadata(ResourceMetadata::from_headers))
     }
 }

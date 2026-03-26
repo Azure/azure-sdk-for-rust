@@ -1,0 +1,146 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+# cSpell:ignore noui noexplorer disableratelimiting enableaadauthentication partitioncount LASTEXITCODE TEAMPROJECTID
+
+# Load common ES scripts
+. "$PSScriptRoot\..\..\..\..\eng\common\scripts\common.ps1"
+
+# Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
+$global:LASTEXITCODE = 0
+
+# Append COSMOS_RUSTFLAGS (from test-resources.bicep) to RUSTFLAGS if present
+if ($env:COSMOS_RUSTFLAGS) {
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) $($env:COSMOS_RUSTFLAGS)"
+    Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
+}
+
+# Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
+if ($env:AZURE_COSMOS_CONNECTION_STRING) {
+    Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
+    return
+}
+
+$IsAzDo = ($null -ne $env:SYSTEM_TEAMPROJECTID)
+if ($IsAzDo) {
+    # We only run Cosmos DB tests on Windows agents in Azure DevOps
+    if ($IsWindows) {
+        $env:AZURE_COSMOS_TEST_MODE = "required"
+    } else {
+        $env:AZURE_COSMOS_TEST_MODE = "skipped"
+        Write-Host "Skipping Cosmos DB Emulator setup on non-Windows Azure DevOps agents."
+        return
+    }
+}
+
+
+if ($IsWindows) {
+    # Check for emulator in known locations
+    $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
+    if ($null -ne $EmulatorPath) {
+        Write-Host "Found Cosmos DB Emulator at '$EmulatorPath'. Skipping Cosmos DB Emulator install."
+    } else {
+        LogGroupStart "Installing Cosmos DB Emulator"
+        & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
+            -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
+            -Stage "Install"
+        LogGroupEnd
+    }
+
+    LogGroupStart "Launching Cosmos DB Emulator"
+    & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
+        -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
+        -Emulator:$EmulatorPath `
+        -Stage "Launch"
+    LogGroupEnd
+
+    # Probe the emulator endpoint to verify it is responding
+    LogGroupStart "Probing Cosmos DB Emulator endpoint"
+    $emulatorUrl = "https://localhost:8081/"
+    $maxProbeRetries = 30
+    $probeRetry = 0
+    $emulatorReady = $false
+    while (-not $emulatorReady -and $probeRetry -lt $maxProbeRetries) {
+        try {
+            $response = Invoke-WebRequest -Uri $emulatorUrl -SkipCertificateCheck -UseBasicParsing -ErrorAction Stop
+            Write-Host "Emulator responded with status $($response.StatusCode)."
+            $emulatorReady = $true
+        } catch {
+             $response = $_.Exception.Response
+             if ($null -ne $response -and $null -ne $response.StatusCode) {
+                 $statusCode = $response.StatusCode.value__
+                 if ($statusCode -ge 400 -and $statusCode -lt 500) {
+                     # 4xx means the emulator is up but rejecting unauthenticated requests
+                     Write-Host "Emulator responded with status $statusCode (expected auth failure). Emulator is ready."
+                     $emulatorReady = $true
+                     continue
+                 }
+             }
+             # No HTTP response or non-4xx status: treat as retryable failure
+             $probeRetry++
+             Write-Host "[Retry: $probeRetry/$maxProbeRetries] Emulator not yet responding. Exception: $($_.Exception.Message)"
+             Start-Sleep -Seconds 5
+        }
+    }
+    if (-not $emulatorReady) {
+        LogError "Cosmos DB Emulator failed to respond at $emulatorUrl after $maxProbeRetries retries."
+        exit 1
+    }
+    LogGroupEnd
+
+    # Set environment variables for the tests
+    $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
+    Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+} elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
+    Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
+
+    # Check if the emulator is already running
+    $existingContainer = docker ps --filter "name=cosmosdb-emulator-test" --format "{{.Names}}"
+    if ($existingContainer -eq "cosmosdb-emulator-test") {
+        Write-Host "Cosmos DB Emulator container is already running."
+    } else {
+        LogGroupStart "Starting Cosmos DB Emulator in Docker"
+        # Start Cosmos DB Emulator in Docker
+        $containerName = "cosmosdb-emulator-test"
+        Invoke-LoggedCommand "docker run -d -e AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1 -e AZURE_COSMOS_EMULATOR_ARGS=`"/noexplorer /noui /disableratelimiting /enableaadauthentication`" -e AZURE_COSMOS_EMULATOR_PARTITION_COUNT=50 -p 8081:8081 -p 10250:10250 -p 10251:10251 -p 10252:10252 -p 10253:10253 -p 10254:10254 --name $containerName mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator"
+
+        # Wait for the emulator to be ready by polling the logs for a line with only "Started" on it
+        $maxRetries = 30
+        $retryCount = 0
+        $emulatorStarted = $false
+        while (-not $emulatorStarted -and $retryCount -lt $maxRetries) {
+            $logs = docker logs $containerName 2>&1
+
+            $lastLine = $logs | Select-Object -Last 1
+            if ($lastLine -match "^\s*Started\s*$") {
+                $emulatorStarted = $true
+                Write-Host "Cosmos DB Emulator started successfully."
+                break
+            } elseif ($lastLine -match "^\s*Started (\d+/\d+) partitions\s*$") {
+                $partitionsStarted = $matches[1]
+                Write-Host "[Retry: $retryCount/$maxRetries] Emulator still starting, $partitionsStarted partitions started."
+            } else {
+                Write-Host "[Retry: $retryCount/$maxRetries] Emulator still starting"
+            }
+            $retryCount++
+            Start-Sleep -Seconds 5
+        }
+
+        if (-not $emulatorStarted) {
+            throw "Cosmos DB Emulator failed to start within the expected time."
+        }
+
+        LogGroupEnd
+    }
+
+    # Set environment variables for the tests
+    $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
+    Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+
+    Write-Host "Cosmos DB Emulator is running in Docker."
+} else {
+    # We're running a local build or we're on a macOS agent.
+    # We can't run the emulator on the macOS agent, and we don't want to fail local builds because the emulator isn't installed.
+    Write-Host "Cosmos DB Emulator is not available on this platform. Skipping test setup."
+}

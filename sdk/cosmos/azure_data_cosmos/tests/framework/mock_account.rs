@@ -24,7 +24,30 @@ pub fn mock_database_account_response(
     readable: &[RegionName],
     multi_write: bool,
 ) -> CustomResponse {
-    let body = mock_database_account_json("test", writable, readable, multi_write);
+    mock_database_account_response_for_account("test", writable, readable, multi_write)
+}
+
+/// Builds a [`CustomResponse`] with a valid `AccountProperties` JSON payload
+/// using the given account name for endpoint URLs.
+///
+/// Use this when testing against a real Cosmos DB account so that the
+/// regional endpoint URLs in the mock response (e.g.,
+/// `https://{account_name}-{region}.documents.azure.com:443/`) resolve
+/// correctly.
+///
+/// # Arguments
+///
+/// * `account_name` - The Cosmos DB account name (e.g., `"myaccount"`).
+/// * `writable` - Regions that accept writes.
+/// * `readable` - Regions that accept reads.
+/// * `multi_write` - Whether multi-write (multi-master) is enabled.
+pub fn mock_database_account_response_for_account(
+    account_name: &str,
+    writable: &[RegionName],
+    readable: &[RegionName],
+    multi_write: bool,
+) -> CustomResponse {
+    let body = mock_database_account_json(account_name, writable, readable, multi_write);
     CustomResponse {
         status_code: StatusCode::Ok,
         headers: Headers::new(),

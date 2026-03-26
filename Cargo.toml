@@ -92,11 +92,18 @@ path = "sdk/identity/azure_identity"
 path = "sdk/storage/azure_storage_blob"
 version = "0.11.0"
 
+[workspace.dependencies.azure_data_cosmos_driver]
+default-features = false
+version = "0.1.0"
+path = "sdk/cosmos/azure_data_cosmos_driver"
+
 [workspace.dependencies]
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
 base64 = "0.22"
+arc-swap = "1.7"
+azure_data_cosmos_macros = { version = "0.1.0", path = "sdk/cosmos/azure_data_cosmos_macros" }
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
@@ -113,6 +120,7 @@ flate2 = "1.1.9"
 futures = "0.3"
 getrandom = { version = "0.4" }
 gloo-timers = { version = "0.3" }
+h2 = "0.4.13"
 hdrhistogram = "7.5"
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }
@@ -142,7 +150,7 @@ serial_test = "3.3"
 sha2 = { version = "0.10" }
 syn = { version = "2.0.115", features = ["full"] }
 sysinfo = "0.33"
-tar = { version = "0.4.44", default-features = false }
+tar = { version = "0.4.45", default-features = false }
 thiserror = "2.0"
 time = { version = "0.3.47", features = [
   "serde-well-known",

@@ -4,19 +4,24 @@
 //! Cosmos DB driver instance.
 
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, PipelineType, TransportSecurity},
-    driver::routing::{CosmosEndpoint, LocationStateStore},
+    diagnostics::{
+        DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
+    },
+    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        DiagnosticsOptions, DriverOptions, OperationOptions, RuntimeOptions,
-        ThroughputControlGroupSnapshot,
+        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
+        RuntimeOptionsView, ThroughputControlGroupSnapshot,
     },
 };
+use arc_swap::ArcSwap;
 use azure_core::http::Request;
 use futures::future::BoxFuture;
+use std::error::Error as _;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -24,7 +29,7 @@ use super::{
     cache::AccountRegion,
     transport::{
         cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
-        AuthorizationContext,
+        AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -41,32 +46,187 @@ use super::{
 #[derive(Debug)]
 pub struct CosmosDriver {
     /// Reference to the parent runtime.
-    runtime: CosmosDriverRuntime,
+    runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    /// Per-account transport (created after HTTP/2 probe during initialization).
+    /// Wrapped in `Arc<ArcSwap<...>>` so the metadata refresh callback can
+    /// re-probe the HTTP version and swap the transport atomically.
+    /// Reads are lock-free (no cache-line contention between readers).
+    transport: Arc<ArcSwap<CosmosTransport>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
-    /// Resolved default for max failover retries (from env or hardcoded default).
-    default_max_failover_retries: u32,
-    /// Resolved default for max session retries (from env or None = compute at operation time).
-    default_max_session_retries: Option<u32>,
+    /// Session token cache for session consistency.
+    session_manager: SessionManager,
+    /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
+    /// Operations check this flag to fail fast if the driver is used before
+    /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
+    /// before returning, so this guard only catches misuse.
+    initialized: AtomicBool,
 }
 
 impl CosmosDriver {
+    #[cfg(feature = "reqwest")]
+    fn has_explicit_http2_incompatibility(error: &azure_core::Error) -> bool {
+        let mut source = error.source();
+        while let Some(cause) = source {
+            if let Some(h2_error) = cause.downcast_ref::<h2::Error>() {
+                return matches!(
+                    h2_error.reason(),
+                    Some(
+                        h2::Reason::HTTP_1_1_REQUIRED
+                            | h2::Reason::PROTOCOL_ERROR
+                            | h2::Reason::FRAME_SIZE_ERROR
+                    )
+                );
+            }
+            source = cause.source();
+        }
+        false
+    }
+
+    #[cfg(not(feature = "reqwest"))]
+    fn has_explicit_http2_incompatibility(_error: &azure_core::Error) -> bool {
+        false
+    }
+
+    fn should_downgrade_http2(
+        current_version: TransportHttpVersion,
+        error: &azure_core::Error,
+        http2_allowed: bool,
+    ) -> bool {
+        http2_allowed
+            && matches!(current_version, TransportHttpVersion::Http2)
+            && Self::has_explicit_http2_incompatibility(error)
+    }
+
+    fn alternate_http_version(current_version: TransportHttpVersion) -> TransportHttpVersion {
+        match current_version {
+            TransportHttpVersion::Http2 => TransportHttpVersion::Http11,
+            TransportHttpVersion::Http11 => TransportHttpVersion::Http2,
+        }
+    }
+
+    fn build_metadata_transport_for_version(
+        connection_pool: &ConnectionPoolOptions,
+        http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        version: TransportHttpVersion,
+        endpoint: &AccountEndpoint,
+    ) -> azure_core::Result<(
+        CosmosTransport,
+        super::transport::adaptive_transport::AdaptiveTransport,
+    )> {
+        let transport =
+            CosmosTransport::with_factory(connection_pool.clone(), http_client_factory, version)?;
+        let metadata_transport = transport.get_metadata_transport(endpoint)?;
+        Ok((transport, metadata_transport))
+    }
+
+    async fn fetch_account_properties_with_version(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        version: TransportHttpVersion,
+    ) -> azure_core::Result<(super::cache::AccountProperties, CosmosTransport)> {
+        let endpoint = AccountEndpoint::from(account);
+        let (transport, metadata_transport) = Self::build_metadata_transport_for_version(
+            runtime.connection_pool(),
+            Arc::clone(runtime.http_client_factory()),
+            version,
+            &endpoint,
+        )?;
+        let user_agent = Self::user_agent_header(runtime);
+        let props = Self::fetch_account_properties_with_transport(
+            &metadata_transport,
+            account,
+            &user_agent,
+        )
+        .await?;
+        Ok((props, transport))
+    }
+
+    /// Fetches account properties using the bootstrap transport.
+    ///
+    /// This is used during initialization (before the per-account transport exists).
     async fn fetch_account_properties_with_runtime(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let transport = runtime.transport();
+        let transport = runtime.bootstrap_transport();
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
-        let user_agent = runtime.user_agent().as_str();
+        let user_agent =
+            azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned());
+        Self::fetch_account_properties_with_transport(&metadata_transport, account, &user_agent)
+            .await
+    }
 
+    /// Probes the gateway's HTTP version and returns the negotiated version.
+    ///
+    /// Tries HTTP/2-only first. If that fails with an explicit HTTP/2
+    /// incompatibility signal, falls back to HTTP/1.1 using the same
+    /// emulator-aware metadata transport selection as the steady-state path.
+    ///
+    /// Callers that need to force HTTP/1.1 can disable HTTP/2 in
+    /// [`crate::options::ConnectionPoolOptionsBuilder::with_is_http2_allowed`].
+    /// The returned version is used to create the per-account `CosmosTransport`.
+    async fn probe_http_version(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
+        if !runtime.connection_pool().is_http2_allowed() {
+            // User explicitly disabled HTTP/2 — skip the probe.
+            let (props, _) = Self::fetch_account_properties_with_version(
+                runtime,
+                account,
+                TransportHttpVersion::Http11,
+            )
+            .await?;
+            return Ok((TransportHttpVersion::Http11, props));
+        }
+
+        // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
+        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+            Ok(props) => {
+                tracing::trace!(
+                    endpoint = %AccountEndpoint::from(account),
+                    "HTTP/2 probe succeeded; using HTTP/2 transport"
+                );
+                Ok((TransportHttpVersion::Http2, props))
+            }
+            Err(error)
+                if Self::should_downgrade_http2(
+                    TransportHttpVersion::Http2,
+                    &error,
+                    runtime.connection_pool().is_http2_allowed(),
+                ) =>
+            {
+                tracing::warn!(
+                    endpoint = %AccountEndpoint::from(account),
+                    error = %error,
+                    "HTTP/2 probe failed with protocol incompatibility; falling back to HTTP/1.1"
+                );
+
+                let (props, _) = Self::fetch_account_properties_with_version(
+                    runtime,
+                    account,
+                    TransportHttpVersion::Http11,
+                )
+                .await?;
+                Ok((TransportHttpVersion::Http11, props))
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Fetches account properties using a specific adaptive transport.
+    async fn fetch_account_properties_with_transport(
+        transport: &super::transport::adaptive_transport::AdaptiveTransport,
+        account: &AccountReference,
+        user_agent: &azure_core::http::headers::HeaderValue,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let endpoint = AccountEndpoint::from(account);
         let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
-        cosmos_headers::apply_cosmos_headers(
-            &mut request,
-            &azure_core::http::headers::HeaderValue::from(user_agent.to_owned()),
-        );
+        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request_signing::sign_request(
             &mut request,
             account.auth(),
@@ -78,9 +238,15 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = metadata_transport.send(&request).await?;
+        let response = transport.send(&request).await?;
         let raw = response.try_into_raw_response().await?;
-        Self::parse_account_properties_payload(raw.body())
+        let props = Self::parse_account_properties_payload(raw.body())?;
+        tracing::info!(
+            endpoint = %endpoint,
+            write_region = ?props.write_region(),
+            "AccountProperties retrieved successfully"
+        );
+        Ok(props)
     }
 
     fn parse_account_properties_payload(
@@ -88,6 +254,10 @@ impl CosmosDriver {
     ) -> azure_core::Result<super::cache::AccountProperties> {
         serde_json::from_slice(payload)
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
+    }
+
+    fn user_agent_header(runtime: &CosmosDriverRuntime) -> azure_core::http::headers::HeaderValue {
+        azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned())
     }
 
     fn endpoint_for_write_region(
@@ -111,7 +281,150 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        Self::fetch_account_properties_with_runtime(&self.runtime, account).await
+        Self::refresh_account_properties(&self.runtime, account, &self.transport).await
+    }
+
+    /// Fetches account properties using the current per-account transport.
+    ///
+    /// Uses the existing transport for the refresh.
+    ///
+    /// - **HTTP/1.1 success**: opportunistically re-probes HTTP/2 and upgrades
+    ///   the transport on success.
+    /// - **HTTP/2 incompatibility failure**: falls back to HTTP/1.1 and swaps
+    ///   the transport.
+    /// - **Other transport failure with HTTP/2**: re-probes fully (may discover
+    ///   the gateway now requires HTTP/1.1).
+    ///
+    /// This avoids creating transient transport infrastructure on every refresh
+    /// cycle. A fresh probe only occurs when the driver is currently pinned to
+    /// HTTP/1.1 or when the active transport actually fails, both of which are
+    /// expected to be rare in steady-state operation.
+    async fn refresh_account_properties(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let current_transport = transport_holder.load_full();
+        let current_version = current_transport.negotiated_version();
+        let endpoint = AccountEndpoint::from(account);
+        let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
+
+        let user_agent = Self::user_agent_header(runtime);
+        match Self::fetch_account_properties_with_transport(
+            &metadata_transport,
+            account,
+            &user_agent,
+        )
+        .await
+        {
+            Ok(props) => {
+                Self::maybe_restore_http2_after_refresh(
+                    runtime,
+                    account,
+                    transport_holder,
+                    current_version,
+                    &endpoint,
+                )
+                .await;
+                Ok(props)
+            }
+            Err(error) => {
+                Self::handle_refresh_failure(
+                    runtime,
+                    account,
+                    transport_holder,
+                    current_version,
+                    &endpoint,
+                    error,
+                )
+                .await
+            }
+        }
+    }
+
+    async fn maybe_restore_http2_after_refresh(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        current_version: TransportHttpVersion,
+        endpoint: &AccountEndpoint,
+    ) {
+        if !matches!(current_version, TransportHttpVersion::Http11)
+            || !runtime.connection_pool().is_http2_allowed()
+        {
+            return;
+        }
+
+        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+            Ok(_) => match CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http2,
+            ) {
+                Ok(transport) => {
+                    transport_holder.store(Arc::new(transport));
+                    tracing::info!(
+                        endpoint = %endpoint,
+                        "Metadata refresh restored HTTP/2 transport after successful probe"
+                    );
+                }
+                Err(error) => {
+                    tracing::warn!(
+                        endpoint = %endpoint,
+                        %error,
+                        "HTTP/2 probe succeeded after metadata refresh, but recreating the HTTP/2 transport failed"
+                    );
+                }
+            },
+            Err(error) => {
+                tracing::debug!(
+                    endpoint = %endpoint,
+                    %error,
+                    "Metadata refresh succeeded over HTTP/1.1; HTTP/2 reprobe failed, keeping HTTP/1.1 transport"
+                );
+            }
+        }
+    }
+
+    /// Handles a metadata refresh failure by re-probing the HTTP version.
+    ///
+    /// If the error indicates explicit HTTP/2 incompatibility, falls back to
+    /// the alternate version directly. Otherwise, performs a full version probe
+    /// to determine whether the gateway's protocol support has changed.
+    async fn handle_refresh_failure(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        current_version: TransportHttpVersion,
+        endpoint: &AccountEndpoint,
+        error: azure_core::Error,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        if Self::should_downgrade_http2(
+            current_version,
+            &error,
+            runtime.connection_pool().is_http2_allowed(),
+        ) {
+            // Explicit HTTP/2 incompatibility — try the alternate version.
+            let fallback_version = Self::alternate_http_version(current_version);
+            tracing::warn!(
+                endpoint = %endpoint,
+                current = ?current_version,
+                fallback = ?fallback_version,
+                error = %error,
+                "Metadata refresh failed with protocol incompatibility; falling back to alternate HTTP version"
+            );
+
+            let (props, fallback_transport) =
+                Self::fetch_account_properties_with_version(runtime, account, fallback_version)
+                    .await?;
+
+            transport_holder.store(Arc::new(fallback_transport));
+
+            return Ok(props);
+        }
+
+        // Not a protocol incompatibility — propagate the original error.
+        Err(error)
     }
 
     async fn fetch_container_by_name(
@@ -215,27 +528,39 @@ impl CosmosDriver {
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
-    pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
+    pub(crate) fn new(runtime: Arc<CosmosDriverRuntime>, options: DriverOptions) -> Self {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
-        let runtime_clone = runtime.clone();
-        let account_clone = account.clone();
+        // Shared transport holder — used by both the driver and the refresh callback.
+        // ArcSwap provides lock-free reads on the hot path (every operation)
+        // and only incurs overhead on writes (transport swap, ~every 5 min).
+        let transport: Arc<ArcSwap<CosmosTransport>> =
+            Arc::new(ArcSwap::from(Arc::clone(runtime.bootstrap_transport())));
+
+        let runtime_for_callback = Arc::clone(&runtime);
+        let account_for_callback = account.clone();
+        let transport_for_callback = Arc::clone(&transport);
         let refresh_callback = Arc::new(move || {
-            let runtime = runtime_clone.clone();
-            let account = account_clone.clone();
+            let runtime = Arc::clone(&runtime_for_callback);
+            let account = account_for_callback.clone();
+            let transport_holder = Arc::clone(&transport_for_callback);
             let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
                 Box::pin(async move {
-                    CosmosDriver::fetch_account_properties_with_runtime(&runtime, &account).await
+                    CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+                        .await
                 });
             fut
         });
 
-        let endpoint_unavailability_ttl = runtime
+        // Resolve endpoint_unavailability_ttl from driver → runtime layers, then
+        // fall back to env var. The env_options layer is skipped because this field
+        // has no #[option(env)] annotation on RuntimeOptions.
+        let endpoint_unavailability_ttl = options
             .runtime_options()
-            .snapshot()
             .endpoint_unavailability_ttl
+            .or(runtime.runtime_options().endpoint_unavailability_ttl)
             .unwrap_or_else(|| {
                 std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
                     .ok()
@@ -253,33 +578,13 @@ impl CosmosDriver {
             endpoint_unavailability_ttl,
         ));
 
-        let default_max_failover_retries = runtime
-            .runtime_options()
-            .snapshot()
-            .max_failover_retry_count
-            .unwrap_or_else(|| {
-                std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
-                    .ok()
-                    .and_then(|v| v.parse::<u32>().ok())
-                    .unwrap_or(3)
-            });
-
-        let default_max_session_retries = runtime
-            .runtime_options()
-            .snapshot()
-            .max_session_retry_count
-            .or_else(|| {
-                std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
-                    .ok()
-                    .and_then(|v| v.parse::<u32>().ok())
-            });
-
         Self {
             runtime,
             options,
+            transport,
             location_state_store,
-            default_max_failover_retries,
-            default_max_session_retries,
+            session_manager: SessionManager::new(),
+            initialized: AtomicBool::new(false),
         }
     }
 
@@ -298,26 +603,54 @@ impl CosmosDriver {
         &self.options
     }
 
-    /// Eagerly primes the account metadata cache.
+    /// Returns the current per-account transport.
     ///
-    /// Fetches account properties from the service and caches them so that
-    /// regional endpoint information is available before the first
-    /// [`execute_operation`](Self::execute_operation) call. This avoids
-    /// cold-start latency on the first data-plane operation.
+    /// Lock-free via `ArcSwap::load_full()` — returns a cloned `Arc` with no
+    /// reader-counter contention between concurrent callers.
+    fn transport(&self) -> Arc<CosmosTransport> {
+        self.transport.load_full()
+    }
+
+    /// Eagerly primes the account metadata cache and creates the per-account transport.
+    ///
+    /// Performs an HTTP/2 probe to detect protocol support, then creates the
+    /// appropriate transport (sharded HTTP/2 or unsharded HTTP/1.1). Also caches
+    /// the account properties for regional endpoint resolution.
     ///
     /// This method is called automatically by
-    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver)
-    /// on a best-effort basis. Callers may invoke it again to retry if the
-    /// initial attempt failed (the result is idempotent).
-    ///
-    /// Returns an error if the account is unreachable.
+    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
+    /// Callers may invoke it again to retry if the initial attempt failed
+    /// (the result is idempotent).
+    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, err)]
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
+
+        // Probe HTTP version and fetch account properties in one step.
+        let (negotiated_version, properties) =
+            Self::probe_http_version(&self.runtime, account).await?;
+
+        tracing::info!(
+            endpoint = %account_endpoint,
+            version = ?negotiated_version,
+            "HTTP version negotiated for account"
+        );
+
+        // Cache the properties.
         self.runtime
             .account_metadata_cache()
-            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
+            .get_or_fetch(account_endpoint, || async { Ok(properties) })
             .await?;
+
+        // Create the per-account transport with the negotiated version.
+        let new_transport = Arc::new(CosmosTransport::with_factory(
+            self.runtime.connection_pool().clone(),
+            Arc::clone(self.runtime.http_client_factory()),
+            negotiated_version,
+        )?);
+
+        self.transport.store(new_transport);
+        self.initialized.store(true, Ordering::Release);
         Ok(())
     }
 
@@ -338,53 +671,39 @@ impl CosmosDriver {
         Ok(())
     }
 
-    /// Computes the effective runtime options by merging operation, driver, and runtime options.
+    /// Constructs a [`RuntimeOptionsView`] for resolving options across all layers.
     ///
-    /// The merge order is (highest to lowest priority):
+    /// The view resolves options in priority order (highest first):
     /// 1. `OperationOptions` - operation-specific overrides
     /// 2. `DriverOptions` - driver-level defaults
     /// 3. `CosmosDriverRuntime` - global defaults
-    ///
-    /// For each property in `RuntimeOptions`, the first defined value is used.
-    pub fn effective_runtime_options(
+    /// 4. Environment - env vars read at startup
+    pub fn runtime_options_view<'a>(
         &self,
-        operation_options: &OperationOptions,
-    ) -> RuntimeOptions {
-        // Start with operation-level options (highest priority)
-        let operation_runtime = operation_options.runtime();
-
-        // Get driver-level options
-        let driver_runtime = self.options.runtime_options().snapshot();
-
-        // Get runtime-level options (lowest priority)
-        let global_runtime = self.runtime.runtime_options().snapshot();
-
-        // Merge: operation -> driver -> runtime
-        // First merge operation with driver
-        let merged = operation_runtime.merge_with_base(&driver_runtime);
-        // Then merge result with runtime defaults
-        merged.merge_with_base(&global_runtime)
+        operation_options: &'a OperationOptions,
+    ) -> RuntimeOptionsView<'a> {
+        RuntimeOptionsView::new(
+            Some(Arc::clone(self.runtime.env_options())),
+            Some(self.runtime.runtime_options()),
+            Some(self.options.runtime_options().clone()),
+            Some(operation_options.runtime()),
+        )
     }
 
     /// Computes the effective throughput control group for an operation.
     ///
     /// Resolution order (first match wins):
-    /// 1. Explicit group name from effective runtime options + operation's container
+    /// 1. Explicit group name from the resolved runtime options + operation's container
     /// 2. Default group for the operation's container
     ///
     /// Returns `None` if no applicable control group is found.
-    ///
-    /// # Parameters
-    ///
-    /// - `effective_options`: The merged runtime options (use `effective_runtime_options()`)
-    /// - `container`: The container reference for the operation
     pub(crate) fn effective_throughput_control_group(
         &self,
-        effective_options: &RuntimeOptions,
+        effective_options: &RuntimeOptionsView<'_>,
         container: &ContainerReference,
     ) -> Option<ThroughputControlGroupSnapshot> {
         // First, check if an explicit group name is specified in options
-        if let Some(group_name) = &effective_options.throughput_control_group_name {
+        if let Some(group_name) = effective_options.throughput_control_group_name() {
             if let Some(group) = self
                 .runtime
                 .get_throughput_control_group(container, group_name)
@@ -446,21 +765,30 @@ impl CosmosDriver {
     /// # Ok(())
     /// # }
     /// ```
+    #[tracing::instrument(level = tracing::Level::DEBUG, name = "operation", skip_all, fields(
+        runtime = self.runtime.id(),
+        operation_type = ?operation.operation_type(),
+        resource = %operation.resource_reference(),
+    ), err)]
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
-        // Step 1: Derive effective runtime options
-        let mut effective_options = self.effective_runtime_options(&options);
+        if !self.initialized.load(Ordering::Acquire) {
+            let endpoint = AccountEndpoint::from(self.options.account());
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                ),
+            ));
+        }
+        tracing::debug!("operation started");
 
-        // Fill in resolved defaults for retry counts (env vars read once at construction).
-        if effective_options.max_failover_retry_count.is_none() {
-            effective_options.max_failover_retry_count = Some(self.default_max_failover_retries);
-        }
-        if effective_options.max_session_retry_count.is_none() {
-            effective_options.max_session_retry_count = self.default_max_session_retries;
-        }
+        // Step 1: Build the runtime options view for layered resolution.
+        let effective_options = self.runtime_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
@@ -496,7 +824,7 @@ impl CosmosDriver {
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
         // Step 5: Select the adaptive transport context for the chosen pipeline
-        let transport = self.runtime.transport();
+        let transport = self.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
@@ -507,6 +835,10 @@ impl CosmosDriver {
         );
         diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
         diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
+        if self.runtime.fault_injection_enabled() {
+            #[cfg(feature = "fault_injection")]
+            diagnostics_builder.set_fault_injection_enabled(true);
+        }
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -534,7 +866,7 @@ impl CosmosDriver {
             &options,
             &effective_options,
             self.location_state_store.as_ref(),
-            transport,
+            &transport,
             &endpoint,
             auth,
             &user_agent,
@@ -542,6 +874,10 @@ impl CosmosDriver {
             pipeline_type,
             transport_security,
             diagnostics_builder,
+            &self.session_manager,
+            account_properties
+                .user_consistency_policy
+                .default_consistency_level,
         )
         .await
     }
@@ -648,18 +984,131 @@ impl CosmosDriver {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
+    use std::sync::Mutex;
+
+    use async_trait::async_trait;
+    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Request, StatusCode};
+
     use url::Url;
+
+    use azure_core::error::ErrorKind;
 
     use crate::{
         driver::CosmosDriverRuntimeBuilder,
         models::AccountReference,
         options::{
-            ContentResponseOnWrite, CorrelationId, RuntimeOptions, UserAgentSuffix, WorkloadId,
+            ContentResponseOnWrite, CorrelationId, RuntimeOptionsBuilder, UserAgentSuffix,
+            WorkloadId,
         },
     };
 
     use super::*;
     use crate::options::Region;
+    use crate::{
+        driver::transport::http_client_factory::{
+            HttpClientConfig, HttpClientFactory, HttpVersionPolicy,
+        },
+        options::ConnectionPoolOptions,
+    };
+
+    const ACCOUNT_PROPERTIES_PAYLOAD: &str = r#"{
+        "_self": "",
+        "id": "test",
+        "_rid": "test.documents.azure.com",
+        "media": "//media/",
+        "addresses": "//addresses/",
+        "_dbs": "//dbs/",
+        "writableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "readableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "enableMultipleWriteLocations": false,
+        "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+        "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+        "queryEngineConfiguration": "{}"
+    }"#;
+
+    fn signed_test_account(url: &str) -> AccountReference {
+        AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+    }
+
+    #[derive(Clone, Debug)]
+    enum ResponsePlan {
+        Success,
+        Http2Incompatible,
+    }
+
+    #[derive(Debug)]
+    struct ScriptedClient {
+        plan: ResponsePlan,
+    }
+
+    #[async_trait]
+    impl HttpClient for ScriptedClient {
+        async fn execute_request(
+            &self,
+            _request: &Request,
+        ) -> azure_core::Result<AsyncRawResponse> {
+            match self.plan {
+                ResponsePlan::Success => Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    ACCOUNT_PROPERTIES_PAYLOAD.as_bytes(),
+                )),
+                ResponsePlan::Http2Incompatible => Err(azure_core::Error::with_error(
+                    ErrorKind::Io,
+                    h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+                    "http2 not supported",
+                )),
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    struct ScriptedFactory {
+        configs: Mutex<Vec<HttpClientConfig>>,
+        plans: Mutex<VecDeque<ResponsePlan>>,
+    }
+
+    impl ScriptedFactory {
+        fn new(plans: impl IntoIterator<Item = ResponsePlan>) -> Self {
+            Self {
+                configs: Mutex::new(Vec::new()),
+                plans: Mutex::new(plans.into_iter().collect()),
+            }
+        }
+
+        fn configs(&self) -> Vec<HttpClientConfig> {
+            self.configs.lock().expect("config lock poisoned").clone()
+        }
+    }
+
+    impl HttpClientFactory for ScriptedFactory {
+        fn build(
+            &self,
+            _connection_pool: &ConnectionPoolOptions,
+            config: HttpClientConfig,
+        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+            self.configs
+                .lock()
+                .expect("config lock poisoned")
+                .push(config);
+
+            let plan = self
+                .plans
+                .lock()
+                .expect("plan lock poisoned")
+                .pop_front()
+                .unwrap_or(ResponsePlan::Success);
+
+            Ok(Arc::new(ScriptedClient { plan }))
+        }
+    }
 
     fn test_account() -> AccountReference {
         AccountReference::with_master_key(
@@ -671,9 +1120,14 @@ mod tests {
     #[tokio::test]
     async fn default_runtime_options() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let snapshot = runtime.runtime_options().snapshot();
-        assert!(snapshot.throughput_control_group_name.is_none());
-        assert!(snapshot.content_response_on_write.is_none());
+        assert!(runtime
+            .runtime_options()
+            .throughput_control_group_name
+            .is_none());
+        assert!(runtime
+            .runtime_options()
+            .content_response_on_write
+            .is_none());
         // user_agent is always available with base prefix
         assert!(runtime
             .user_agent()
@@ -687,7 +1141,7 @@ mod tests {
 
     #[tokio::test]
     async fn builder_sets_runtime_options() {
-        let opts = RuntimeOptions::builder()
+        let opts = RuntimeOptionsBuilder::new()
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .build();
 
@@ -697,9 +1151,8 @@ mod tests {
             .await
             .unwrap();
 
-        let snapshot = runtime.runtime_options().snapshot();
         assert_eq!(
-            snapshot.content_response_on_write,
+            runtime.runtime_options().content_response_on_write,
             Some(ContentResponseOnWrite::Disabled)
         );
     }
@@ -840,21 +1293,18 @@ mod tests {
         // Initially none
         assert!(runtime
             .runtime_options()
-            .snapshot()
             .content_response_on_write
             .is_none());
 
-        // Modify at runtime
-        runtime
-            .runtime_options()
-            .set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+        // Replace runtime options atomically
+        let new_opts = RuntimeOptionsBuilder::new()
+            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+            .build();
+        runtime.set_runtime_options(new_opts);
 
         // Now set
         assert_eq!(
-            runtime
-                .runtime_options()
-                .snapshot()
-                .content_response_on_write,
+            runtime.runtime_options().content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
     }
@@ -864,7 +1314,7 @@ mod tests {
         // Runtime has ENABLED
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
-                RuntimeOptions::builder()
+                RuntimeOptionsBuilder::new()
                     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
                     .build(),
             )
@@ -875,7 +1325,7 @@ mod tests {
         // Driver has DISABLED
         let driver_options = DriverOptions::builder(test_account())
             .with_runtime_options(
-                RuntimeOptions::builder()
+                RuntimeOptionsBuilder::new()
                     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
                     .build(),
             )
@@ -885,19 +1335,19 @@ mod tests {
 
         // Operation has no override - should get driver's DISABLED
         let op_options = OperationOptions::new();
-        let effective = driver.effective_runtime_options(&op_options);
+        let view = driver.runtime_options_view(&op_options);
         assert_eq!(
-            effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Disabled)
         );
 
         // Operation overrides to ENABLED - should get ENABLED
         let op_options =
             OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
-        let effective = driver.effective_runtime_options(&op_options);
+        let view = driver.runtime_options_view(&op_options);
         assert_eq!(
-            effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Enabled)
         );
     }
 
@@ -906,7 +1356,7 @@ mod tests {
         // Runtime has ENABLED
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
             .with_runtime_options(
-                RuntimeOptions::builder()
+                RuntimeOptionsBuilder::new()
                     .with_content_response_on_write(ContentResponseOnWrite::Enabled)
                     .build(),
             )
@@ -921,10 +1371,10 @@ mod tests {
 
         // Operation has no override - should fall back to runtime's ENABLED
         let op_options = OperationOptions::new();
-        let effective = driver.effective_runtime_options(&op_options);
+        let view = driver.runtime_options_view(&op_options);
         assert_eq!(
-            effective.content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Enabled)
         );
     }
 
@@ -1032,5 +1482,249 @@ mod tests {
 
         assert!(properties.write_region().is_none());
         assert!(properties.readable_regions().is_empty());
+    }
+
+    #[test]
+    #[cfg(feature = "reqwest")]
+    fn http2_reason_http11_required_triggers_http11_downgrade() {
+        let error = azure_core::Error::with_error(
+            ErrorKind::Io,
+            h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+            "http2 not supported",
+        );
+
+        assert!(CosmosDriver::should_downgrade_http2(
+            TransportHttpVersion::Http2,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn connection_error_without_http2_signal_does_not_trigger_downgrade() {
+        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            TransportHttpVersion::Http2,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn io_error_without_http2_signal_does_not_trigger_downgrade() {
+        let error = azure_core::Error::with_message(ErrorKind::Io, "socket reset");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            TransportHttpVersion::Http2,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn http11_errors_do_not_trigger_probe_back_to_http2() {
+        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            TransportHttpVersion::Http11,
+            &error,
+            true,
+        ));
+    }
+
+    #[test]
+    fn downgrade_requires_http2_to_be_enabled() {
+        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+
+        assert!(!CosmosDriver::should_downgrade_http2(
+            TransportHttpVersion::Http2,
+            &error,
+            false,
+        ));
+    }
+
+    #[test]
+    fn alternate_http_version_switches_between_http11_and_http2() {
+        assert_eq!(
+            CosmosDriver::alternate_http_version(TransportHttpVersion::Http11),
+            TransportHttpVersion::Http2
+        );
+        assert_eq!(
+            CosmosDriver::alternate_http_version(TransportHttpVersion::Http2),
+            TransportHttpVersion::Http11
+        );
+    }
+
+    #[test]
+    fn build_metadata_transport_for_version_uses_emulator_transport_selection() {
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_emulator_server_cert_validation(
+                crate::options::EmulatorServerCertValidation::DangerousDisabled,
+            )
+            .build()
+            .unwrap();
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+        ]));
+        let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
+
+        let _ = CosmosDriver::build_metadata_transport_for_version(
+            &connection_pool,
+            factory.clone(),
+            TransportHttpVersion::Http11,
+            &endpoint,
+        )
+        .unwrap();
+
+        assert!(factory.configs().iter().any(|config| {
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
+        }));
+    }
+
+    #[tokio::test]
+    async fn probe_http_version_falls_back_to_http11_for_emulator_accounts() {
+        // The bootstrap_metadata_only transport eagerly builds 2 unsharded
+        // clients (metadata + dataplane) during runtime construction.
+        // The emulator probe then lazily builds a sharded client for the
+        // insecure emulator transport, and the HTTP/1.1 fallback builds
+        // additional clients.
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Success,           // bootstrap metadata (eager, unused)
+            ResponsePlan::Success,           // bootstrap dataplane (eager, unused)
+            ResponsePlan::Http2Incompatible, // emulator insecure transport shard
+            ResponsePlan::Success,           // fallback HTTP/1.1 metadata
+            ResponsePlan::Success,           // fallback HTTP/1.1 dataplane
+            ResponsePlan::Success,           // fallback emulator insecure metadata
+        ]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_emulator_server_cert_validation(
+                        crate::options::EmulatorServerCertValidation::DangerousDisabled,
+                    )
+                    .build()
+                    .unwrap(),
+            )
+            .with_http_client_factory(factory.clone())
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://localhost:8081/");
+
+        let (version, properties) = CosmosDriver::probe_http_version(&runtime, &account)
+            .await
+            .unwrap();
+
+        assert_eq!(version, TransportHttpVersion::Http11);
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        assert!(factory.configs().iter().any(|config| {
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
+        }));
+    }
+
+    #[tokio::test]
+    async fn refresh_account_properties_restores_http2_after_http11_success() {
+        let factory = Arc::new(ScriptedFactory::new([ResponsePlan::Success]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http11,
+            )
+            .unwrap(),
+        );
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
+
+        let properties =
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+                .await
+                .unwrap();
+
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        assert_eq!(
+            transport_holder.load().negotiated_version(),
+            TransportHttpVersion::Http2
+        );
+    }
+
+    #[tokio::test]
+    async fn refresh_account_properties_keeps_http11_when_http2_reprobe_fails() {
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Http2Incompatible,
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+        ]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http11,
+            )
+            .unwrap(),
+        );
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
+
+        let properties =
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+                .await
+                .unwrap();
+
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        assert_eq!(
+            transport_holder.load().negotiated_version(),
+            TransportHttpVersion::Http11
+        );
+    }
+
+    #[tokio::test]
+    async fn refresh_account_properties_downgrades_to_http11_after_http2_incompatibility() {
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+            ResponsePlan::Http2Incompatible,
+            ResponsePlan::Success,
+            ResponsePlan::Success,
+        ]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http2,
+            )
+            .unwrap(),
+        );
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
+
+        let properties =
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+                .await
+                .unwrap();
+
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        assert_eq!(
+            transport_holder.load().negotiated_version(),
+            TransportHttpVersion::Http11
+        );
     }
 }

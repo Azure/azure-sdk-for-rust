@@ -3,15 +3,17 @@
 
 use std::{pin::Pin, task};
 
-use azure_core::http::{
-    headers::Headers,
-    pager::{PagerContinuation, PagerResult},
-};
+use azure_core::http::pager::{PagerContinuation, PagerResult};
+use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 use futures::stream::BoxStream;
 use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
-use crate::{constants, models::CosmosResponse};
+use crate::{
+    constants,
+    models::{CosmosResponse, QueryMetadata},
+    SessionToken,
+};
 
 /// Represents a single page of results from a Cosmos DB feed.
 ///
@@ -22,26 +24,34 @@ use crate::{constants, models::CosmosResponse};
 /// They may also produce results that don't directly correlate to specific HTTP responses (as in the case of cross-partition queries).
 /// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
 #[derive(Debug)]
-pub struct FeedPage<T> {
+pub struct FeedPage<T, M = QueryMetadata> {
     /// The items in the response.
     items: Vec<T>,
 
     /// The continuation token for the next page of results.
     continuation: Option<String>,
 
-    /// Response headers from the server for this page of results.
-    /// In a cross-partition query, these headers may be missing on some pages.
-    headers: Headers,
+    /// Parsed Cosmos-specific response headers.
+    cosmos_headers: CosmosResponseHeaders,
+
+    /// Operation-specific metadata.
+    metadata: M,
 }
 
-impl<T> FeedPage<T> {
+impl<T, M> FeedPage<T, M> {
     /// Creates a new `FeedPage` instance.
     #[allow(dead_code)]
-    pub(crate) fn new(items: Vec<T>, continuation: Option<String>, headers: Headers) -> Self {
+    pub(crate) fn new(
+        items: Vec<T>,
+        continuation: Option<String>,
+        cosmos_headers: CosmosResponseHeaders,
+        metadata: M,
+    ) -> Self {
         Self {
             items,
             continuation,
-            headers,
+            cosmos_headers,
+            metadata,
         }
     }
 
@@ -51,15 +61,8 @@ impl<T> FeedPage<T> {
     }
 
     /// Consumes the page and returns a vector of the items.
-    ///
-    /// This is essentially shorthand for `self.deconstruct().0`.
     pub fn into_items(self) -> Vec<T> {
         self.items
-    }
-
-    /// Deconstructs the page into its components.
-    pub fn deconstruct(self) -> (Vec<T>, Option<String>, Headers) {
-        (self.items, self.continuation, self.headers)
     }
 
     /// Gets the continuation token for the next page of results, if any.
@@ -67,14 +70,59 @@ impl<T> FeedPage<T> {
         self.continuation.as_deref()
     }
 
-    /// Gets any headers returned by the server for this page of results.
-    pub fn headers(&self) -> &Headers {
-        &self.headers
+    /// Returns the request charge (RU consumption) for this page, if available.
+    pub fn request_charge(&self) -> Option<f64> {
+        self.cosmos_headers
+            .request_charge
+            .as_ref()
+            .map(|rc| rc.value())
+    }
+
+    /// Returns the session token from this page, if available.
+    pub fn session_token(&self) -> Option<SessionToken> {
+        self.cosmos_headers
+            .session_token
+            .as_ref()
+            .map(|st| SessionToken::from(st.as_str().to_string()))
+    }
+
+    /// Returns the activity ID for request correlation, if available.
+    pub fn activity_id(&self) -> Option<&str> {
+        self.cosmos_headers.activity_id.as_ref().map(|a| a.as_str())
+    }
+
+    /// Returns the server-side request processing duration in milliseconds, if available.
+    pub fn server_duration_ms(&self) -> Option<f64> {
+        self.cosmos_headers.server_duration_ms
+    }
+
+    /// Returns the operation-specific metadata.
+    pub fn metadata(&self) -> &M {
+        &self.metadata
     }
 }
 
-impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
-    fn from(value: FeedPage<T>) -> Self {
+impl<T> FeedPage<T, QueryMetadata> {
+    /// Returns the index utilization metrics as a decoded JSON string, if available.
+    ///
+    /// The service returns this header as a base64-encoded JSON string. This method
+    /// returns the decoded JSON. Only populated when the request included the
+    /// `x-ms-cosmos-populateindexmetrics` header.
+    pub fn index_metrics(&self) -> Option<&str> {
+        self.metadata.index_metrics()
+    }
+
+    /// Returns the query execution metrics, if available.
+    ///
+    /// The value is a semicolon-delimited string of key=value pairs.
+    /// Only populated when the request included the `x-ms-documentdb-populatequerymetrics` header.
+    pub fn query_metrics(&self) -> Option<&str> {
+        self.metadata.query_metrics()
+    }
+}
+
+impl<T, M> From<FeedPage<T, M>> for PagerResult<FeedPage<T, M>> {
+    fn from(value: FeedPage<T, M>) -> Self {
         let continuation = value.continuation.clone();
         match continuation {
             Some(continuation) => PagerResult::More {
@@ -95,18 +143,22 @@ pub(crate) struct FeedBody<T> {
     pub(crate) items: Vec<T>,
 }
 
-impl<T: DeserializeOwned> FeedPage<T> {
+impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
     pub(crate) async fn from_response(
         response: CosmosResponse<FeedBody<T>>,
     ) -> azure_core::Result<Self> {
-        let headers = response.headers().clone();
-        let continuation = headers.get_optional_string(&constants::CONTINUATION);
+        let continuation = response
+            .headers()
+            .get_optional_string(&constants::CONTINUATION);
+        let cosmos_headers = response.cosmos_headers.clone();
+        let metadata = QueryMetadata::from_headers(&cosmos_headers);
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self {
             items: body.items,
             continuation,
-            headers,
+            cosmos_headers,
+            metadata,
         })
     }
 }
@@ -189,7 +241,12 @@ mod tests {
     use futures::StreamExt;
 
     fn create_test_page<T>(items: Vec<T>, continuation: Option<String>) -> FeedPage<T> {
-        FeedPage::new(items, continuation, Headers::new())
+        FeedPage::new(
+            items,
+            continuation,
+            CosmosResponseHeaders::default(),
+            QueryMetadata::default(),
+        )
     }
 
     #[tokio::test]

@@ -4,32 +4,66 @@
 //! Provides the [`CosmosResponse`] type for wrapping responses from Cosmos DB operations.
 
 use crate::cosmos_request::CosmosRequest;
+use crate::models::ItemMetadata;
 use crate::SessionToken;
 use azure_core::http::{
     headers::{HeaderName, Headers},
     response::Response,
     StatusCode,
 };
-use base64::{engine::general_purpose::STANDARD, Engine as _};
+use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 use serde::de::DeserializeOwned;
 
 /// A response from a Cosmos DB operation.
 ///
 /// This wraps the underlying Azure Core typed response and provides convenient access
 /// to headers, status code, the original request, and Cosmos-specific response metadata.
+///
+/// The type parameter `M` carries operation-specific metadata (e.g. [`ItemMetadata`],
+/// [`QueryMetadata`](crate::models::QueryMetadata),
+/// [`ResourceMetadata`](crate::models::ResourceMetadata)).
+/// It defaults to `()` for internal use where no metadata is needed.
 #[derive(Debug)]
-pub struct CosmosResponse<T> {
+pub struct CosmosResponse<T, M = ()> {
     /// The underlying typed HTTP response.
     response: Response<T>,
     /// The final request used to fulfill the operation.
     #[allow(dead_code)]
     request: CosmosRequest,
+    /// Parsed Cosmos-specific response headers.
+    pub(crate) cosmos_headers: CosmosResponseHeaders,
+    /// Operation-specific metadata.
+    metadata: M,
 }
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
     pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
-        Self { response, request }
+        let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+        Self {
+            response,
+            request,
+            cosmos_headers,
+            metadata: (),
+        }
+    }
+}
+
+impl<T, M> CosmosResponse<T, M> {
+    /// Transforms this response's metadata by applying a closure to the parsed
+    /// Cosmos response headers, producing a new `CosmosResponse` with a
+    /// different metadata type.
+    pub(crate) fn map_metadata<N>(
+        self,
+        f: impl FnOnce(&CosmosResponseHeaders) -> N,
+    ) -> CosmosResponse<T, N> {
+        let metadata = f(&self.cosmos_headers);
+        CosmosResponse {
+            response: self.response,
+            request: self.request,
+            cosmos_headers: self.cosmos_headers,
+            metadata,
+        }
     }
 
     /// Returns the HTTP status code of the response.
@@ -73,69 +107,33 @@ impl<T> CosmosResponse<T> {
 
     /// Returns the request charge (RU consumption) for this operation, if available.
     pub fn request_charge(&self) -> Option<f64> {
-        self.get_optional_header_str(&crate::constants::REQUEST_CHARGE)
-            .and_then(|s| s.parse::<f64>().ok())
+        self.cosmos_headers
+            .request_charge
+            .as_ref()
+            .map(|rc| rc.value())
     }
 
     /// Returns the session token from this response, if available.
     pub fn session_token(&self) -> Option<SessionToken> {
-        self.get_optional_header_str(&crate::constants::SESSION_TOKEN)
-            .map(|s| SessionToken::from(s.to_string()))
-    }
-
-    /// Returns the ETag from this response, if available.
-    pub fn etag(&self) -> Option<&str> {
-        self.get_optional_header_str(&azure_core::http::headers::ETAG)
+        self.cosmos_headers
+            .session_token
+            .as_ref()
+            .map(|st| SessionToken::from(st.as_str().to_string()))
     }
 
     /// Returns the activity ID for request correlation, if available.
     pub fn activity_id(&self) -> Option<&str> {
-        self.get_optional_header_str(&crate::constants::ACTIVITY_ID)
-    }
-
-    /// Returns the index utilization metrics as a decoded JSON string, if available.
-    ///
-    /// The service returns this header as a base64-encoded JSON string. This method
-    /// returns the decoded JSON. Only populated when the request included the
-    /// `x-ms-cosmos-populateindexmetrics` header.
-    pub fn index_metrics(&self) -> Option<String> {
-        self.get_optional_header_str(&crate::constants::INDEX_METRICS)
-            .and_then(|s| match STANDARD.decode(s) {
-                Ok(bytes) => match String::from_utf8(bytes) {
-                    Ok(s) => Some(s),
-                    Err(e) => {
-                        tracing::warn!(
-                            header = "x-ms-cosmos-index-utilization",
-                            error = %e,
-                            "Failed to UTF-8 decode index metrics after base64 decode"
-                        );
-                        None
-                    }
-                },
-                Err(e) => {
-                    tracing::warn!(
-                        header = "x-ms-cosmos-index-utilization",
-                        error = %e,
-                        "Failed to base64-decode index metrics header"
-                    );
-                    None
-                }
-            })
-    }
-
-    /// Returns the query execution metrics, if available.
-    ///
-    /// The value is a semicolon-delimited string of key=value pairs.
-    /// Only populated when the request included the `x-ms-documentdb-populatequerymetrics` header.
-    pub fn query_metrics(&self) -> Option<&str> {
-        self.get_optional_header_str(&crate::constants::QUERY_METRICS)
+        self.cosmos_headers.activity_id.as_ref().map(|a| a.as_str())
     }
 
     /// Returns the server-side request processing duration in milliseconds, if available.
     pub fn server_duration_ms(&self) -> Option<f64> {
-        self.get_optional_header_str(&crate::constants::REQUEST_DURATION_MS)
-            .and_then(|s| s.parse::<f64>().ok())
-            .filter(|v| v.is_finite())
+        self.cosmos_headers.server_duration_ms
+    }
+
+    /// Returns the operation-specific metadata.
+    pub fn metadata(&self) -> &M {
+        &self.metadata
     }
 
     /// Deserializes the response body without consuming the response.
@@ -144,15 +142,23 @@ impl<T> CosmosResponse<T> {
     /// to populate a cache) while still returning the original response to the
     /// caller. The underlying `Bytes` body is reference-counted so the clone
     /// is cheap.
+    #[allow(dead_code)] // Useful utility for future cache population scenarios
     pub(crate) fn deserialize_body<U: DeserializeOwned>(&self) -> azure_core::Result<U> {
         self.response.body().json()
     }
 }
 
-impl<T: DeserializeOwned> CosmosResponse<T> {
+impl<T: DeserializeOwned, M> CosmosResponse<T, M> {
     /// Deserializes the response body into a model type.
     pub fn into_model(self) -> azure_core::Result<T> {
         self.response.into_body().json()
+    }
+}
+
+impl<T> CosmosResponse<T, ItemMetadata> {
+    /// Returns the ETag from this response, if available.
+    pub fn etag(&self) -> Option<&str> {
+        self.metadata.etag()
     }
 }
 
@@ -275,35 +281,6 @@ mod tests {
     }
 
     #[test]
-    fn index_metrics_decodes_base64() {
-        let mut headers = Headers::new();
-        // base64 of r#"{"UtilizedSingleIndexes":[]}"#
-        headers.insert(
-            "x-ms-cosmos-index-utilization",
-            "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
-        );
-        let response = create_response_with_headers(headers);
-        assert_eq!(
-            response.index_metrics().as_deref(),
-            Some(r#"{"UtilizedSingleIndexes":[]}"#)
-        );
-    }
-
-    #[test]
-    fn query_metrics_returns_raw_string() {
-        let mut headers = Headers::new();
-        headers.insert(
-            "x-ms-documentdb-query-metrics",
-            "totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01",
-        );
-        let response = create_response_with_headers(headers);
-        assert_eq!(
-            response.query_metrics(),
-            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
-        );
-    }
-
-    #[test]
     fn server_duration_ms_returns_parsed_value() {
         let mut headers = Headers::new();
         headers.insert("x-ms-request-duration-ms", "4.56");
@@ -328,11 +305,53 @@ mod tests {
     fn missing_headers_return_none() {
         let response = create_response_with_headers(Headers::new());
         assert!(response.activity_id().is_none());
-        assert!(response.index_metrics().is_none());
-        assert!(response.query_metrics().is_none());
         assert!(response.server_duration_ms().is_none());
         assert!(response.request_charge().is_none());
         assert!(response.session_token().is_none());
-        assert!(response.etag().is_none());
+    }
+
+    #[test]
+    fn map_metadata_produces_item_metadata_with_etag() {
+        let mut headers = Headers::new();
+        headers.insert("etag", "\"some-etag\"");
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let response = response.map_metadata(ItemMetadata::from_headers);
+        assert_eq!(response.etag(), Some("\"some-etag\""));
+    }
+
+    #[test]
+    fn map_metadata_index_and_query_metrics() {
+        use crate::models::QueryMetadata;
+        let mut headers = Headers::new();
+        headers.insert(
+            "x-ms-cosmos-index-utilization",
+            "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
+        );
+        headers.insert(
+            "x-ms-documentdb-query-metrics",
+            "totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01",
+        );
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let response = response.map_metadata(QueryMetadata::from_headers);
+        assert_eq!(
+            response.metadata().index_metrics(),
+            Some(r#"{"UtilizedSingleIndexes":[]}"#)
+        );
+        assert_eq!(
+            response.metadata().query_metrics(),
+            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
+        );
     }
 }
