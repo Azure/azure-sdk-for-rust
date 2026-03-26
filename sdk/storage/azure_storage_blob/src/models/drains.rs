@@ -122,7 +122,11 @@ impl<F: Future + Unpin> UnorderedFuturesDrain<F> {
         }
         if self.futures.len() == 1 {
             return match self.futures.pop() {
-                Some(fut) => Some(fut.await),
+                Some(fut) => {
+                    let output = fut.await;
+                    self.total_completed += 1;
+                    Some(output)
+                }
                 None => None,
             };
         }
