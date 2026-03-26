@@ -56,8 +56,8 @@ impl<T, M> FeedPage<T, M> {
         raw_headers: Headers,
         headers: CosmosResponseHeaders,
         metadata: M,
+        diagnostics: CosmosDiagnostics,
     ) -> Self {
-        let diagnostics = CosmosDiagnostics::from_headers(&headers);
         Self {
             items,
             continuation,
@@ -81,8 +81,14 @@ impl<T, M> FeedPage<T, M> {
     }
 
     /// Deconstructs the page into its components.
-    pub fn deconstruct(self) -> (Vec<T>, Option<String>, Headers) {
-        (self.items, self.continuation, self.raw_headers)
+    pub fn deconstruct(self) -> (Vec<T>, Option<String>, Headers, M, CosmosDiagnostics) {
+        (
+            self.items,
+            self.continuation,
+            self.raw_headers,
+            self.metadata,
+            self.diagnostics,
+        )
     }
 
     /// Gets the continuation token for the next page of results, if any.
@@ -171,6 +177,7 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
         let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
         let cosmos_headers = response.cosmos_headers().clone();
         let metadata = QueryMetadata::from_headers(&cosmos_headers);
+        let diagnostics = response.diagnostics().clone();
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self::new(
@@ -179,6 +186,7 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
             raw_headers,
             cosmos_headers,
             metadata,
+            diagnostics,
         ))
     }
 }
@@ -272,6 +280,7 @@ mod tests {
             Headers::new(),
             CosmosResponseHeaders::default(),
             QueryMetadata::default(),
+            CosmosDiagnostics::default(),
         )
     }
 

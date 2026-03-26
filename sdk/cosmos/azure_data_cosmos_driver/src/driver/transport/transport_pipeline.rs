@@ -687,7 +687,7 @@ fn map_http_response_payload(
         if let Some(token) = cosmos_headers.session_token.clone() {
             req.with_session_token(token.to_string());
         }
-        if let Some(duration) = cosmos_headers.server_duration_ms {
+        if let Some(duration) = cosmos_headers.server_duration_ms() {
             req.with_server_duration_ms(duration);
         }
     });

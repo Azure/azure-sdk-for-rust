@@ -13,7 +13,7 @@ use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 /// It will be expanded to include full driver diagnostics (retry tracking,
 /// regions contacted, pipeline events) once the SDK pipeline is ported to the
 /// driver's transport pipeline.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CosmosDiagnostics {
     activity_id: Option<String>,
     server_duration_ms: Option<f64>,
@@ -23,7 +23,7 @@ impl CosmosDiagnostics {
     pub(crate) fn from_headers(headers: &CosmosResponseHeaders) -> Self {
         Self {
             activity_id: headers.activity_id.as_ref().map(|a| a.as_str().to_owned()),
-            server_duration_ms: headers.server_duration_ms,
+            server_duration_ms: headers.server_duration_ms(),
         }
     }
 
@@ -99,5 +99,35 @@ pub struct ResourceMetadata {}
 impl ResourceMetadata {
     pub(crate) fn from_headers(_headers: &CosmosResponseHeaders) -> Self {
         Self {}
+    }
+}
+
+/// Metadata specific to transactional batch operations.
+///
+/// Structurally identical to [`ItemMetadata`] but kept separate because batch-level
+/// ETags have different semantics than single-item ETags, and the types may diverge
+/// in the future.
+///
+/// Note: The batch-level ETag differs from a single-item ETag. It represents
+/// the ETag for the entire batch operation, not an individual item's concurrency token.
+/// Use individual `TransactionalBatchOperationResult` entries for per-item ETags.
+#[derive(Debug, Clone, Default)]
+pub struct BatchMetadata {
+    etag: Option<String>,
+}
+
+impl BatchMetadata {
+    pub(crate) fn from_headers(headers: &CosmosResponseHeaders) -> Self {
+        Self {
+            etag: headers.etag.as_ref().map(|e| e.as_str().to_owned()),
+        }
+    }
+
+    /// Returns the batch-level ETag, if available.
+    ///
+    /// This is the ETag for the entire batch operation, not an individual item's
+    /// concurrency token.
+    pub fn etag(&self) -> Option<&str> {
+        self.etag.as_deref()
     }
 }

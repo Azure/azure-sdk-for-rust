@@ -4,7 +4,7 @@
 //! Provides the [`CosmosResponse`] type for wrapping responses from Cosmos DB operations.
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::{CosmosDiagnostics, ItemMetadata};
+use crate::models::{BatchMetadata, CosmosDiagnostics, ItemMetadata};
 use crate::SessionToken;
 use azure_core::http::{
     headers::{HeaderName, Headers},
@@ -165,6 +165,16 @@ impl<T: DeserializeOwned, M> CosmosResponse<T, M> {
 
 impl<T> CosmosResponse<T, ItemMetadata> {
     /// Returns the ETag from this response, if available.
+    pub fn etag(&self) -> Option<&str> {
+        self.metadata.etag()
+    }
+}
+
+impl<T> CosmosResponse<T, BatchMetadata> {
+    /// Returns the batch-level ETag from this response, if available.
+    ///
+    /// This is the ETag for the entire batch operation, not an individual item's
+    /// concurrency token.
     pub fn etag(&self) -> Option<&str> {
         self.metadata.etag()
     }
@@ -331,6 +341,22 @@ mod tests {
         let response = CosmosResponse::new(typed_response, create_mock_request());
         let response = response.map_metadata(ItemMetadata::from_headers);
         assert_eq!(response.etag(), Some("\"some-etag\""));
+    }
+
+    #[test]
+    fn map_metadata_produces_batch_metadata_with_etag() {
+        use crate::models::BatchMetadata;
+        let mut headers = Headers::new();
+        headers.insert("etag", "\"batch-etag\"");
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let response = response.map_metadata(BatchMetadata::from_headers);
+        assert_eq!(response.etag(), Some("\"batch-etag\""));
     }
 
     #[test]

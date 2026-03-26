@@ -4,7 +4,8 @@
 use crate::{
     clients::OffersClient,
     models::{
-        ContainerProperties, CosmosResponse, ItemMetadata, ResourceMetadata, ThroughputProperties,
+        BatchMetadata, ContainerProperties, CosmosResponse, ItemMetadata, ResourceMetadata,
+        ThroughputProperties,
     },
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
@@ -738,7 +739,7 @@ impl ContainerClient {
         &self,
         batch: TransactionalBatch,
         options: Option<BatchOptions>,
-    ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse, ItemMetadata>> {
+    ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse, BatchMetadata>> {
         let options = options.unwrap_or_default();
         let partition_key = batch.partition_key().clone();
 
@@ -752,6 +753,6 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
-            .map(|r| r.map_metadata(ItemMetadata::from_headers))
+            .map(|r| r.map_metadata(BatchMetadata::from_headers))
     }
 }

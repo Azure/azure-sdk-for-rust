@@ -31,7 +31,7 @@ pub use account_reference::CosmosAccountReference;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::CosmosResponse;
-pub use models::{CosmosDiagnostics, ItemMetadata, QueryMetadata, ResourceMetadata};
+pub use models::{BatchMetadata, CosmosDiagnostics, ItemMetadata, QueryMetadata, ResourceMetadata};
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;

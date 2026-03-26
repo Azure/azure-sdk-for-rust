@@ -130,7 +130,9 @@ pub struct CosmosResponseHeaders {
     pub query_metrics: Option<String>,
 
     /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
-    pub server_duration_ms: Option<f64>,
+    ///
+    /// Non-finite values are filtered during parsing and will be `None`.
+    pub(crate) server_duration_ms: Option<f64>,
 
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
@@ -156,10 +158,17 @@ impl CosmosResponseHeaders {
         Self::default()
     }
 
+    /// Returns the server-side request processing duration in milliseconds, if available.
+    pub fn server_duration_ms(&self) -> Option<f64> {
+        self.server_duration_ms
+    }
+
     /// Extracts Cosmos headers from HTTP response headers.
     ///
     /// This parses standard Cosmos headers into typed fields for easy access.
     /// The `index_metrics` field is base64-decoded from the raw header value.
+    ///
+    /// This is part of the public API to allow cross-crate access from `azure_data_cosmos`.
     pub fn from_headers(headers: &Headers) -> Self {
         Self {
             activity_id: headers
@@ -287,7 +296,7 @@ mod tests {
             cosmos_headers.query_metrics.as_deref(),
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
         );
-        assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
+        assert!((cosmos_headers.server_duration_ms().unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
     }
 
@@ -298,7 +307,7 @@ mod tests {
             headers.insert("x-ms-request-duration-ms", value);
             let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
             assert!(
-                cosmos_headers.server_duration_ms.is_none(),
+                cosmos_headers.server_duration_ms().is_none(),
                 "Expected None for '{value}'"
             );
         }
@@ -324,10 +333,10 @@ mod tests {
             substatus: Some(SubStatusCode::new(1002)),
             index_metrics: Some(r#"{"metrics":"data"}"#.to_string()),
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
-            server_duration_ms: Some(4.56),
             lsn: Some(100),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
+            ..Default::default()
         };
 
         assert_eq!(
@@ -358,7 +367,7 @@ mod tests {
         assert!(headers.substatus.is_none());
         assert!(headers.index_metrics.is_none());
         assert!(headers.query_metrics.is_none());
-        assert!(headers.server_duration_ms.is_none());
+        assert!(headers.server_duration_ms().is_none());
         assert!(headers.lsn.is_none());
     }
 

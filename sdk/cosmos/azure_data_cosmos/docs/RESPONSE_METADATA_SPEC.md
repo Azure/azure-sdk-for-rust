@@ -78,12 +78,10 @@ pub struct ResourceMetadata {}
 
 | Field | Location | Rationale |
 | ----- | -------- | --------- |
-| `diagnostics()` | `CosmosResponse` | Universal — all operations |
-| `request_charge()` | `CosmosResponse` | Universal — all operations report RU |
-| `session_token()` | `CosmosResponse` | Universal — session consistency |
-| `activity_id()` | `CosmosResponse` | Universal — request correlation |
-| `server_duration_ms()` | `CosmosResponse` | Universal — server processing time |
-| `headers()` | `CosmosResponse` | Universal — raw header access |
+| `diagnostics()` | `CosmosResponse`, `FeedPage` | Universal — contains `activity_id()` and `server_duration_ms()` |
+| `request_charge()` | `CosmosResponse`, `FeedPage` | Universal — all operations report RU |
+| `session_token()` | `CosmosResponse`, `FeedPage` | Universal — session consistency |
+| `headers()` | `CosmosResponse`, `FeedPage` | Universal — raw header access |
 | `status()` | `CosmosResponse` | Universal — HTTP status |
 | `etag()` | `ItemMetadata` | Point-op specific — concurrency control |
 | `index_metrics()` | `QueryMetadata` | Query-only — opt-in via request header |
@@ -106,6 +104,12 @@ operation's metadata type. If it's meaningful across all operations, it stays on
 | `replace_item()` | `CosmosResponse<(), ItemMetadata>` |
 | `upsert_item()` | `CosmosResponse<(), ItemMetadata>` |
 | `delete_item()` | `CosmosResponse<(), ItemMetadata>` |
+
+**Batch operations → `CosmosResponse<T, BatchMetadata>`:**
+
+| Method | Return |
+| ------ | ------ |
+| `execute_transactional_batch()` | `CosmosResponse<TransactionalBatchResponse, BatchMetadata>` |
 
 **Resource operations → `CosmosResponse<T, ResourceMetadata>`:**
 
@@ -146,6 +150,7 @@ pub struct CosmosResponse<T, M = ()> {
     request: CosmosRequest,
     cosmos_headers: CosmosResponseHeaders,
     metadata: M,
+    diagnostics: CosmosDiagnostics,
 }
 ```
 
@@ -157,20 +162,29 @@ impl<T, M> CosmosResponse<T, M> {
     pub fn headers(&self) -> &Headers;
     pub fn request_charge(&self) -> Option<f64>;
     pub fn session_token(&self) -> Option<SessionToken>;
-    pub fn activity_id(&self) -> Option<&str>;
-    pub fn server_duration_ms(&self) -> Option<f64>;
-    // Future: pub fn diagnostics(&self) -> &DiagnosticsContext;
+    pub fn diagnostics(&self) -> &CosmosDiagnostics;
 
     /// Access the operation-specific metadata.
     pub fn metadata(&self) -> &M;
 }
 ```
 
+`activity_id()` and `server_duration_ms()` are accessed via `diagnostics()`:
+
+```rust
+response.diagnostics().activity_id()
+response.diagnostics().server_duration_ms()
+```
+
 Operation-specific accessors are on constrained impls:
 
 ```rust
 impl<T> CosmosResponse<T, ItemMetadata> {
-    pub fn etag(&self) -> Option<&str> { self.metadata.etag.as_deref() }
+    pub fn etag(&self) -> Option<&str> { self.metadata.etag() }
+}
+
+impl<T> CosmosResponse<T, BatchMetadata> {
+    pub fn etag(&self) -> Option<&str> { self.metadata.etag() }
 }
 ```
 

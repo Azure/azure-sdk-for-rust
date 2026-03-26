@@ -17,7 +17,9 @@ pub(crate) use account_properties::*;
 pub use container_properties::*;
 pub use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
-pub use response_metadata::{CosmosDiagnostics, ItemMetadata, QueryMetadata, ResourceMetadata};
+pub use response_metadata::{
+    BatchMetadata, CosmosDiagnostics, ItemMetadata, QueryMetadata, ResourceMetadata,
+};
 pub use throughput_properties::*;
 
 // Re-export partition key and container reference types from the driver crate.
