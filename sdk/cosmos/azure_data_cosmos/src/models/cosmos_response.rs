@@ -31,7 +31,7 @@ pub struct CosmosResponse<T, M = ()> {
     #[allow(dead_code)]
     request: CosmosRequest,
     /// Parsed Cosmos-specific response headers.
-    pub(crate) cosmos_headers: CosmosResponseHeaders,
+    cosmos_headers: CosmosResponseHeaders,
     /// Operation-specific metadata.
     metadata: M,
     /// Diagnostics for this operation.
@@ -79,6 +79,11 @@ impl<T, M> CosmosResponse<T, M> {
     /// Returns a reference to all response headers.
     pub fn headers(&self) -> &Headers {
         self.response.headers()
+    }
+
+    /// Returns a reference to the parsed Cosmos-specific response headers.
+    pub(crate) fn cosmos_headers(&self) -> &CosmosResponseHeaders {
+        &self.cosmos_headers
     }
 
     /// Gets an optional header value as a string by name.

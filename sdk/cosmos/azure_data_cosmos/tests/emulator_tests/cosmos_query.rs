@@ -239,6 +239,10 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 page.diagnostics().server_duration_ms().is_some(),
                 "expected server_duration_ms on feed page"
             );
+            assert!(
+                page.session_token().is_some(),
+                "expected session token on feed page"
+            );
 
             Ok(())
         },

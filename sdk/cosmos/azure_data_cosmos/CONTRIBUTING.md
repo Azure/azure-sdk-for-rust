@@ -1,6 +1,6 @@
 <!-- cSpell:ignore WL6WTRCUBG -->
 
-# Contributing to the Azure Cosmos DB SDK for Rust
+# Contributing to the Azure Cosmos DB SDK for Rust.
 
 First, review the Azure Core SDK Contributing guide: [CONTRIBUTING.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md)
 
@@ -23,9 +23,9 @@ This indicates that the test proxy failed to find a recorded interaction for the
 The test proxy behavior is controlled by the `AZURE_TEST_MODE` environment variable.
 It can have one of three values:
 
-- `playback` (this is the default if the variable is empty or unset): The test proxy will only use recorded HTTP interactions.
-- `record`: The test proxy will forward HTTP requests to the actual service and record the interactions for future playback.
-- `live`: The test proxy will forward HTTP requests to the actual service, but will not record the interactions.
+* `playback` (this is the default if the variable is empty or unset): The test proxy will only use recorded HTTP interactions.
+* `record`: The test proxy will forward HTTP requests to the actual service and record the interactions for future playback.
+* `live`: The test proxy will forward HTTP requests to the actual service, but will not record the interactions.
 
 When adding a new test, you should set `AZURE_TEST_MODE=record` to have the test proxy record the HTTP interactions.
 The HTTP recordings will be saved to the `.assets/WL6WTRCUBG` folder (this folder name is used by all tests in `sdk/cosmos`).

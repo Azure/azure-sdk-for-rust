@@ -3,7 +3,10 @@
 
 use std::{pin::Pin, task};
 
-use azure_core::http::pager::{PagerContinuation, PagerResult};
+use azure_core::http::{
+    headers::Headers,
+    pager::{PagerContinuation, PagerResult},
+};
 use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 use futures::stream::BoxStream;
 use futures::Stream;
@@ -24,12 +27,15 @@ use crate::{
 /// They may also produce results that don't directly correlate to specific HTTP responses (as in the case of cross-partition queries).
 /// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
 #[derive(Debug)]
-pub struct FeedPage<T, M = QueryMetadata> {
+pub struct FeedPage<T, M = ()> {
     /// The items in the response.
     items: Vec<T>,
 
     /// The continuation token for the next page of results.
     continuation: Option<String>,
+
+    /// Raw HTTP response headers.
+    raw_headers: Headers,
 
     /// Parsed Cosmos-specific response headers.
     headers: CosmosResponseHeaders,
@@ -47,6 +53,7 @@ impl<T, M> FeedPage<T, M> {
     pub(crate) fn new(
         items: Vec<T>,
         continuation: Option<String>,
+        raw_headers: Headers,
         headers: CosmosResponseHeaders,
         metadata: M,
     ) -> Self {
@@ -54,6 +61,7 @@ impl<T, M> FeedPage<T, M> {
         Self {
             items,
             continuation,
+            raw_headers,
             headers,
             metadata,
             diagnostics,
@@ -73,13 +81,18 @@ impl<T, M> FeedPage<T, M> {
     }
 
     /// Deconstructs the page into its components.
-    pub fn deconstruct(self) -> (Vec<T>, Option<String>, CosmosResponseHeaders, M) {
-        (self.items, self.continuation, self.headers, self.metadata)
+    pub fn deconstruct(self) -> (Vec<T>, Option<String>, Headers) {
+        (self.items, self.continuation, self.raw_headers)
     }
 
     /// Gets the continuation token for the next page of results, if any.
     pub fn continuation(&self) -> Option<&str> {
         self.continuation.as_deref()
+    }
+
+    /// Gets any headers returned by the server for this page of results.
+    pub fn headers(&self) -> &Headers {
+        &self.raw_headers
     }
 
     /// Returns the request charge (RU consumption) for this page, if available.
@@ -154,21 +167,19 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
     pub(crate) async fn from_response(
         response: CosmosResponse<FeedBody<T>>,
     ) -> azure_core::Result<Self> {
-        let continuation = response
-            .headers()
-            .get_optional_string(&constants::CONTINUATION);
-        let headers = response.cosmos_headers.clone();
-        let metadata = QueryMetadata::from_headers(&headers);
-        let diagnostics = CosmosDiagnostics::from_headers(&headers);
+        let raw_headers = response.headers().clone();
+        let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
+        let cosmos_headers = response.cosmos_headers().clone();
+        let metadata = QueryMetadata::from_headers(&cosmos_headers);
         let body: FeedBody<T> = response.into_model()?;
 
-        Ok(Self {
-            items: body.items,
+        Ok(Self::new(
+            body.items,
             continuation,
-            headers,
+            raw_headers,
+            cosmos_headers,
             metadata,
-            diagnostics,
-        })
+        ))
     }
 }
 
@@ -178,14 +189,14 @@ impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
 #[pin_project::pin_project]
 pub struct FeedItemIterator<T: Send> {
     #[pin]
-    pages: BoxStream<'static, azure_core::Result<FeedPage<T>>>,
+    pages: BoxStream<'static, azure_core::Result<FeedPage<T, QueryMetadata>>>,
     current: Option<std::vec::IntoIter<T>>,
 }
 
 impl<T: Send> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
     pub(crate) fn new(
-        stream: impl Stream<Item = azure_core::Result<FeedPage<T>>> + Send + 'static,
+        stream: impl Stream<Item = azure_core::Result<FeedPage<T, QueryMetadata>>> + Send + 'static,
     ) -> Self {
         Self {
             pages: Box::pin(stream),
@@ -231,10 +242,12 @@ impl<T: Send> Stream for FeedItemIterator<T> {
     }
 }
 
-pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<FeedPage<T>>>);
+pub struct FeedPageIterator<T: Send>(
+    BoxStream<'static, azure_core::Result<FeedPage<T, QueryMetadata>>>,
+);
 
 impl<T: Send> Stream for FeedPageIterator<T> {
-    type Item = azure_core::Result<FeedPage<T>>;
+    type Item = azure_core::Result<FeedPage<T, QueryMetadata>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -249,10 +262,14 @@ mod tests {
     use super::*;
     use futures::StreamExt;
 
-    fn create_test_page<T>(items: Vec<T>, continuation: Option<String>) -> FeedPage<T> {
+    fn create_test_page<T>(
+        items: Vec<T>,
+        continuation: Option<String>,
+    ) -> FeedPage<T, QueryMetadata> {
         FeedPage::new(
             items,
             continuation,
+            Headers::new(),
             CosmosResponseHeaders::default(),
             QueryMetadata::default(),
         )

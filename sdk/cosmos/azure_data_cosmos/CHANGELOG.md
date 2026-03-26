@@ -12,6 +12,11 @@
 
 ### Breaking Changes
 
+- `CosmosResponse<T>` now takes an optional second type parameter `M` for operation-specific metadata. Client methods return `CosmosResponse<T, ItemMetadata>`, `CosmosResponse<T, ResourceMetadata>`, etc.
+- `etag()` on `CosmosResponse` is now only available when `M = ItemMetadata` (point operations). Use `response.metadata().etag()` for generic access.
+- `activity_id()` and `server_duration_ms()` moved from `CosmosResponse` and `FeedPage` to `CosmosDiagnostics`, accessed via `response.diagnostics().activity_id()`.
+- `FeedPage::deconstruct()` now returns `(Vec<T>, Option<String>, Headers)`.
+- `FeedPage` gains a second type parameter `M`. Query operations return `FeedPage<T, QueryMetadata>`.
 - Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RoutingStrategy` parameter on `build()`. Use `RoutingStrategy::ProximityTo(region)` to specify the application region. Also removed `CosmosClientOptions::with_application_region()`. ([#3889](https://github.com/Azure/azure-sdk-for-rust/pull/3889))
 - Changed `default_ttl` and `analytical_storage_ttl` fields on `ContainerProperties` from `Option<Duration>` to `TimeToLive`, a new enum with variants `Forever`, `NoDefault`, and `Seconds(u32)`, to correctly handle the `-1` wire value (TTL enabled with no default expiration).
 - `DatabaseClient::container_client()` now returns `azure_core::Result<ContainerClient>`, eagerly resolving container metadata (RID, partition key definition) at construction time. ([#4005](https://github.com/Azure/azure-sdk-for-rust/pull/4005))

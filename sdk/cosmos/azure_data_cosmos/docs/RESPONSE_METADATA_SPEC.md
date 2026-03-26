@@ -122,9 +122,9 @@ operation's metadata type. If it's meaningful across all operations, it stays on
 
 | Method | Return |
 | ------ | ------ |
-| `query_items<T>()` | `FeedItemIterator<T, QueryMetadata>` yielding `FeedPage<T, QueryMetadata>` |
-| `query_containers()` | `FeedItemIterator<ContainerProperties, QueryMetadata>` |
-| `query_databases()` | `FeedItemIterator<DatabaseProperties, QueryMetadata>` |
+| `query_items<T>()` | `FeedItemIterator<T>` yielding `FeedPage<T, QueryMetadata>` |
+| `query_containers()` | `FeedItemIterator<ContainerProperties>` |
+| `query_databases()` | `FeedItemIterator<DatabaseProperties>` |
 
 **Future operations:**
 
@@ -211,11 +211,12 @@ impl<T> FeedPage<T, QueryMetadata> {
 }
 ```
 
-`FeedItemIterator` and `FeedPageIterator` also carry the `M` param:
+`FeedItemIterator` and `FeedPageIterator` do not carry the `M` param. They always
+yield `FeedPage<T, QueryMetadata>` since all current feed operations are queries:
 
 ```rust
-pub struct FeedItemIterator<T: Send, M: Send> { ... }
-pub struct FeedPageIterator<T: Send, M: Send> { ... }
+pub struct FeedItemIterator<T: Send> { ... }
+pub struct FeedPageIterator<T: Send> { ... }
 ```
 
 ### Usage
