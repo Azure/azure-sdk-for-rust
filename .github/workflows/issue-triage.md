@@ -16,21 +16,20 @@ permissions: read-all
 
 network:
   allowed:
-    - api.business.githubcopilot.com
-    - api.enterprise.githubcopilot.com
-    - api.github.com
-    - api.githubcopilot.com
-    - api.individual.githubcopilot.com
     - github
-    - host.docker.internal
-    - telemetry.enterprise.githubcopilot.com
+    - threat-detection
   blocked:
     - registry.npmjs.org
 
 safe-outputs:
   add-labels:
-    max: 5
+    max: 7
+  remove-labels:
+    max: 7
   add-comment:
+    max: 1
+  assign-to-user:
+    max: 1
   noop:
     report-as-issue: false
 
