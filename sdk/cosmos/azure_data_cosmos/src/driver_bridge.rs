@@ -93,8 +93,8 @@ mod tests {
     use super::*;
     use azure_core::http::headers::HeaderName;
     use azure_data_cosmos_driver::models::{
-        ActivityId, CosmosResponseHeaders, ETag, RequestCharge,
-        SessionToken as DriverSessionToken, SubStatusCode,
+        ActivityId, CosmosResponseHeaders, ETag, RequestCharge, SessionToken as DriverSessionToken,
+        SubStatusCode,
     };
 
     fn make_headers_all_some() -> CosmosResponseHeaders {
