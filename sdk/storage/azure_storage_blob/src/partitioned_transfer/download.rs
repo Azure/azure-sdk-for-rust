@@ -490,28 +490,43 @@ fn analyze_initial_response(
     partition_len: usize,
     max_range_end: usize,
 ) -> AzureResult<Option<InitialResponseAnalysis>> {
-    let content_range = match initial_response
+    if let Some(content_range) = initial_response
         .headers()
         .get_optional_as::<ContentRange, _>(&"content-range".into())?
     {
-        Some(content_range) => content_range,
-        None => return Ok(None),
-    };
-    match (content_range.range, content_range.total_len) {
-        (Some(received_range), Some(resource_len)) => {
+        if let (Some(received_range), Some(resource_len)) =
+            (content_range.range, content_range.total_len)
+        {
             let remainder_start = received_range.1;
             let remainder_end = min(max_range_end, resource_len);
-            Ok(Some(InitialResponseAnalysis {
+            return Ok(Some(InitialResponseAnalysis {
                 overall_download_range: received_range.0..remainder_end,
                 initial_download_range: received_range.0..received_range.1,
                 remaining_download_ranges: (remainder_start..remainder_end)
                     .step_by(partition_len)
                     .map(|i| i..min(i.saturating_add(partition_len), remainder_end))
                     .collect(),
-            }))
+            }));
         }
-        _ => Ok(None),
     }
+    if let Some(content_length) = initial_response
+        .headers()
+        .get_optional_as::<usize, _>(&"content-length".into())?
+    {
+        return if content_length == 0 {
+            Ok(Some(InitialResponseAnalysis {
+                overall_download_range: 0..0,
+                initial_download_range: 0..0,
+                remaining_download_ranges: Default::default(),
+            }))
+        } else {
+            Err(Error::with_message(
+                ErrorKind::Other,
+                "Unexpected response headers.",
+            ))
+        };
+    }
+    Ok(None)
 }
 
 fn map_spawned_task_error(err: Box<dyn std::error::Error + Send>) -> Error {
@@ -526,7 +541,10 @@ mod tests {
     use std::cmp::min;
 
     use azure_core::{
-        http::{headers::Headers, StatusCode},
+        http::{
+            headers::{Header, Headers},
+            StatusCode,
+        },
         stream::BytesStream,
     };
 
@@ -582,6 +600,15 @@ mod tests {
                 sleep(Duration::from_millis(millis)).await
             }
 
+            struct ContentLength(usize);
+            impl Header for ContentLength {
+                fn name(&self) -> azure_core::http::headers::HeaderName {
+                    "content-length".into()
+                }
+                fn value(&self) -> azure_core::http::headers::HeaderValue {
+                    self.0.to_string().into()
+                }
+            }
             let mut headers = Headers::new();
             match (requested_range, self.data.len()) {
                 (Some(range), data_len) => {
@@ -598,6 +625,7 @@ mod tests {
                         range: Some((range.start, range.end - 1)),
                         total_len: Some(self.data.len()),
                     })?;
+                    headers.add(ContentLength(range.len()));
                     let range = range.start..range.end;
                     Ok(AsyncRawResponse::new(
                         StatusCode::PartialContent,
@@ -610,6 +638,7 @@ mod tests {
                         range: None,
                         total_len: None,
                     })?;
+                    headers.add(ContentLength(0));
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
@@ -621,6 +650,7 @@ mod tests {
                         range: Some((0, data_len - 1)),
                         total_len: Some(data_len),
                     })?;
+                    headers.add(ContentLength(data_len));
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
