@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use crate::{models::AccountReference, options::RuntimeOptions};
+use crate::{models::AccountReference, options::OperationOptions};
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -17,7 +17,8 @@ use crate::{models::AccountReference, options::RuntimeOptions};
 /// ```
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use azure_data_cosmos_driver::options::{
-///     DriverOptions, DriverOptionsBuilder, RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite,
+///     DriverOptions, DriverOptionsBuilder,
+///     OperationOptions, OperationOptionsBuilder,
 /// };
 /// use url::Url;
 ///
@@ -26,12 +27,13 @@ use crate::{models::AccountReference, options::RuntimeOptions};
 ///     "my-master-key",
 /// );
 ///
-/// let runtime = RuntimeOptionsBuilder::new()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+/// let operation = OperationOptionsBuilder::new()
+///     .with_max_failover_retry_count(5)
+///     .with_max_session_retry_count(3)
 ///     .build();
 ///
 /// let options = DriverOptionsBuilder::new(account)
-///     .with_runtime_options(runtime)
+///     .with_operation_options(operation)
 ///     .build();
 /// ```
 #[non_exhaustive]
@@ -39,8 +41,8 @@ use crate::{models::AccountReference, options::RuntimeOptions};
 pub struct DriverOptions {
     /// The Cosmos DB account reference (required).
     account: AccountReference,
-    /// Driver-level runtime options, wrapped in Arc for cheap cloning and snapshot sharing.
-    runtime_options: Arc<RuntimeOptions>,
+    /// Driver-level operation options (e.g., consistency, excluded regions, failover, session retry).
+    operation_options: Arc<OperationOptions>,
 }
 
 impl DriverOptions {
@@ -56,21 +58,21 @@ impl DriverOptions {
         &self.account
     }
 
-    /// Returns the driver-level runtime options.
-    pub fn runtime_options(&self) -> &Arc<RuntimeOptions> {
-        &self.runtime_options
+    /// Returns the driver-level operation options.
+    pub fn operation_options(&self) -> &Arc<OperationOptions> {
+        &self.operation_options
     }
 }
 
 /// Builder for creating [`DriverOptions`].
 ///
-/// Use [`RuntimeOptionsBuilder`](super::RuntimeOptionsBuilder) to create runtime options,
-/// then pass them to this builder via [`with_runtime_options()`](Self::with_runtime_options).
+/// Use [`OperationOptionsBuilder`](super::OperationOptionsBuilder) to create operation options,
+/// then pass them to this builder via [`with_operation_options()`](Self::with_operation_options).
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct DriverOptionsBuilder {
     account: AccountReference,
-    runtime_options: Option<RuntimeOptions>,
+    operation_options: Option<OperationOptions>,
 }
 
 impl DriverOptionsBuilder {
@@ -78,13 +80,13 @@ impl DriverOptionsBuilder {
     pub fn new(account: AccountReference) -> Self {
         Self {
             account,
-            runtime_options: None,
+            operation_options: None,
         }
     }
 
-    /// Sets the runtime options (defaults for operations).
-    pub fn with_runtime_options(mut self, options: RuntimeOptions) -> Self {
-        self.runtime_options = Some(options);
+    /// Sets the operation options (e.g., consistency, excluded regions, failover, session retry).
+    pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
+        self.operation_options = Some(options);
         self
     }
 
@@ -92,7 +94,7 @@ impl DriverOptionsBuilder {
     pub fn build(self) -> DriverOptions {
         DriverOptions {
             account: self.account,
-            runtime_options: Arc::new(self.runtime_options.unwrap_or_default()),
+            operation_options: Arc::new(self.operation_options.unwrap_or_default()),
         }
     }
 }
@@ -100,7 +102,7 @@ impl DriverOptionsBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::options::{ContentResponseOnWrite, RuntimeOptionsBuilder};
+    use crate::options::OperationOptionsBuilder;
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -117,24 +119,56 @@ mod tests {
 
         assert_eq!(options.account(), &account);
         assert!(options
-            .runtime_options()
-            .content_response_on_write
+            .operation_options()
+            .read_consistency_strategy
+            .is_none());
+        assert!(options
+            .operation_options()
+            .max_failover_retry_count
+            .is_none());
+        assert!(options
+            .operation_options()
+            .max_session_retry_count
             .is_none());
     }
 
     #[test]
-    fn builder_sets_runtime_options() {
-        let runtime = RuntimeOptionsBuilder::new()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+    fn builder_sets_operation_options() {
+        let operation = OperationOptionsBuilder::new()
+            .with_max_failover_retry_count(5)
+            .with_max_session_retry_count(3)
             .build();
 
         let options = DriverOptionsBuilder::new(test_account())
-            .with_runtime_options(runtime)
+            .with_operation_options(operation)
             .build();
 
         assert_eq!(
-            options.runtime_options().content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            options.operation_options().max_failover_retry_count,
+            Some(5)
         );
+        assert_eq!(options.operation_options().max_session_retry_count, Some(3));
+    }
+
+    #[test]
+    fn builder_sets_all_options() {
+        let operation = OperationOptionsBuilder::new()
+            .with_max_failover_retry_count(5)
+            .with_max_session_retry_count(2)
+            .build();
+
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_operation_options(operation)
+            .build();
+
+        assert_eq!(
+            options.operation_options().max_failover_retry_count,
+            Some(5)
+        );
+        assert_eq!(options.operation_options().max_session_retry_count, Some(2));
+        assert!(options
+            .operation_options()
+            .read_consistency_strategy
+            .is_none());
     }
 }
