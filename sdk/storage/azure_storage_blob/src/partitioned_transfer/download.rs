@@ -174,137 +174,162 @@ where
 {
     let parallel = parallel.get();
     let partition_size = partition_size.get();
-
-    // Outer bound estimate of the resource range that will be downloaded. The actual download
-    // range will never exceed these bounds, but it may be smaller, based on the actual size
-    // of the remote resource.
-    let max_download_range = range.unwrap_or(0..usize::MAX);
-    if max_download_range.is_empty() {
-        return Ok(0);
-    }
-
-    let initial_response = download_with_empty_blob_safety(
-        client.as_ref(),
-        max_download_range.start
-            ..min(
-                max_download_range.end,
-                max_download_range.start.saturating_add(partition_size),
-            ),
-    )
-    .await?;
-
-    let mut stats =
-        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?
-            .ok_or_else(|| {
-                Error::with_message(ErrorKind::Other, "Missing necessary response headers.")
-            })?;
-    if stats.overall_download_range.len() > buffer.len() {
-        return Err(Error::with_message(
-            ErrorKind::Other,
-            format!(
-                "Buffer with length {} cannot fit payload with length {}.",
-                buffer.len(),
-                stats.overall_download_range.len()
-            ),
-        ));
-    }
-
-    // if no real parallelism, take the simple option of executing downloads sequentially.
-    // no worker spawning.
-    if parallel == 1 {
-        // sequence the initial response with a stream that fetches responses for each subsequent range
-        let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
-            stream::iter(stats.remaining_download_ranges).then(|range| {
-                let client = client.clone();
-                async move { client.transfer_range(Some(range)).await }
-            }),
-        ));
-
-        let mut total_written = 0;
-        while let Some(response) = all_responses.try_next().await? {
-            let written = response.into_body().collect_into(buffer).await?;
-            buffer = &mut buffer[written..];
-            total_written += written;
-        }
-        return Ok(total_written);
-    }
-
     let mut tasks = UnorderedFuturesDrain::with_capacity(parallel);
-    // channel for download workers to send results to their coordinator.
-    let (tx, mut rx) = mpsc::unbounded();
 
-    // Start collecting the body of the initial download.
-    // Special-cased since we already have the response for it.
-    // SAFETY: Ensure mutable reference safety for the created SendSlice
-    unsafe {
-        let init_dst;
-        (init_dst, buffer) = buffer.split_at_mut(stats.initial_download_range.len());
-        let init_dst = SendSlice::from_raw(init_dst.as_mut_ptr(), init_dst.len());
-        tasks.push(start_initial_download_into_task(
-            initial_response,
-            init_dst,
-            tx.clone(),
-        ));
-    }
-
-    // tracking of completed work
-    let mut received_result_count = 0;
-    let mut bytes_copied = 0;
-    let mut consume_available_messages = || {
-        loop {
-            match rx.try_recv() {
-                Ok(worker_result) => {
-                    bytes_copied += worker_result?;
-                    received_result_count += 1;
-                }
-                Err(mpsc::TryRecvError::Empty) => break,
-                Err(mpsc::TryRecvError::Closed) => Err(Error::with_message(
-                    ErrorKind::Other,
-                    "Download incomplete. Premature channel close.",
-                ))?,
-            }
+    // SAFETY: This function includes unsafe code that sends slices of `buffer` to other worker threads.
+    // Those threads MUST ALL terminate before this function returns.
+    // We accomplish this by emulating a try-finally block. The ENTIRE implementation is wrapped in a
+    // closure and it's awaited result stored, allowing idiomatic `?` error returns to be assigned to
+    // that result, rather than exit this whole function. Before returning that result, ensure ALL
+    // tasks in `tasks` are joined.
+    let overall_result = async {
+        // Outer bound estimate of the resource range that will be downloaded. The actual download
+        // range will never exceed these bounds, but it may be smaller, based on the actual size
+        // of the remote resource.
+        let max_download_range = range.unwrap_or(0..usize::MAX);
+        if max_download_range.is_empty() {
+            return Ok(0);
         }
-        Ok::<(), Error>(())
-    };
 
-    // Download all remaining ranges, parallel-many at a time
-    while let Some(range) = stats.remaining_download_ranges.pop_front() {
-        // If at parallel limit, wait for a slot to open
-        while tasks.len() >= parallel {
-            if let Some(result) = tasks.next().await {
-                result.map_err(map_spawned_task_error)?;
-            } else {
-                break;
-            }
+        let initial_response = download_with_empty_blob_safety(
+            client.as_ref(),
+            max_download_range.start
+                ..min(
+                    max_download_range.end,
+                    max_download_range.start.saturating_add(partition_size),
+                ),
+        )
+        .await?;
+
+        let mut stats =
+            analyze_initial_response(&initial_response, partition_size, max_download_range.end)?
+                .ok_or_else(|| {
+                    Error::with_message(ErrorKind::Other, "Missing necessary response headers.")
+                })?;
+        if stats.overall_download_range.len() > buffer.len() {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                format!(
+                    "Buffer with length {} cannot fit payload with length {}.",
+                    buffer.len(),
+                    stats.overall_download_range.len()
+                ),
+            ));
         }
-        consume_available_messages()?;
 
-        // SAFETY: Ensure mutable reference safety for the created SendSlice
+        // if no real parallelism, take the simple option of executing downloads sequentially.
+        // no worker spawning.
+        if parallel == 1 {
+            // sequence the initial response with a stream that fetches responses for each subsequent range
+            let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
+                stream::iter(stats.remaining_download_ranges).then(|range| {
+                    let client = client.clone();
+                    async move { client.transfer_range(Some(range)).await }
+                }),
+            ));
+
+            let mut total_written = 0;
+            while let Some(response) = all_responses.try_next().await? {
+                let written = response.into_body().collect_into(buffer).await?;
+                buffer = &mut buffer[written..];
+                total_written += written;
+            }
+            return Ok(total_written);
+        }
+
+        // channel for download workers to send results to their coordinator.
+        let (tx, mut rx) = mpsc::unbounded();
+
+        // Start collecting the body of the initial download.
+        // Special-cased since we already have the response for it.
+
+        // SAFETY: Ensure mutable reference safety for the SendSlice created from `buffer`.
+        // This memory address is being sent to a separate worker thread. That worker thread CANNOT
+        // live longer than the lifetime of `buffer`, and therefore MUST be cleaned up before
+        // this function returns. Storing those worker references in `tasks` allows this function
+        // to guarantee that cleanup at the end.
         unsafe {
-            let dst;
-            (dst, buffer) = buffer.split_at_mut(range.len());
-            let dst = SendSlice::from_raw(dst.as_mut_ptr(), dst.len());
-            tasks.push(start_download_into_task(
-                client.clone(),
-                dst,
-                range,
+            let init_dst;
+            (init_dst, buffer) = buffer.split_at_mut(stats.initial_download_range.len());
+            let init_dst = SendSlice::from_raw(init_dst.as_mut_ptr(), init_dst.len());
+            tasks.push(start_initial_download_into_task(
+                initial_response,
+                init_dst,
                 tx.clone(),
             ));
         }
-    }
 
-    // wait on all remaining tasks, failing fast on error
-    while let Some(join_result) = tasks.next().await {
-        join_result.map_err(map_spawned_task_error)?;
-        consume_available_messages()?;
-    }
+        // tracking of completed work
+        let mut received_result_count = 0;
+        let mut bytes_copied = 0;
+        let mut consume_available_messages = || {
+            loop {
+                match rx.try_recv() {
+                    Ok(worker_result) => {
+                        bytes_copied += worker_result?;
+                        received_result_count += 1;
+                    }
+                    Err(mpsc::TryRecvError::Empty) => break,
+                    Err(mpsc::TryRecvError::Closed) => Err(Error::with_message(
+                        ErrorKind::Other,
+                        "Download incomplete. Premature channel close.",
+                    ))?,
+                }
+            }
+            Ok::<(), Error>(())
+        };
 
-    // final validation of work done
-    if tasks.total_completed() != received_result_count {
-        todo!("error")
-    } else {
-        Ok(bytes_copied)
+        // Download all remaining ranges, parallel-many at a time
+        while let Some(range) = stats.remaining_download_ranges.pop_front() {
+            // If at parallel limit, wait for a slot to open
+            while tasks.len() >= parallel {
+                if let Some(result) = tasks.next().await {
+                    result.map_err(map_spawned_task_error)?;
+                } else {
+                    break;
+                }
+            }
+            consume_available_messages()?;
+
+            // SAFETY: Ensure mutable reference safety for the SendSlice created from `buffer`.
+            // This memory address is being sent to a separate worker thread. That worker thread CANNOT
+            // live longer than the lifetime of `buffer`, and therefore MUST be cleaned up before
+            // this function returns. Storing those worker references in `tasks` allows this function
+            // to guarantee that cleanup at the end.
+            unsafe {
+                let dst;
+                (dst, buffer) = buffer.split_at_mut(range.len());
+                let dst = SendSlice::from_raw(dst.as_mut_ptr(), dst.len());
+                tasks.push(start_download_into_task(
+                    client.clone(),
+                    dst,
+                    range,
+                    tx.clone(),
+                ));
+            }
+        }
+
+        // wait on all remaining tasks, failing fast on error
+        while let Some(join_result) = tasks.next().await {
+            join_result.map_err(map_spawned_task_error)?;
+            consume_available_messages()?;
+        }
+
+        // final validation of work done
+        if tasks.total_completed() != received_result_count {
+            todo!("error")
+        } else {
+            Ok(bytes_copied)
+        }
     }
+    .await;
+
+    // SAFETY: This is where we prevent any tasks from living beyond this method return,
+    // guaranteeing no references to `buffer` exist.
+    // TODO: Implement aborting spawned runtime workers.
+    tasks.join_all().await;
+
+    overall_result
 }
 
 /// Race awaiting a message vs checking if tasks have completed successfully,
