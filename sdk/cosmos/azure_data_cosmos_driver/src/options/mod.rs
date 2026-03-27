@@ -9,7 +9,7 @@
 //! **Environment → Runtime → Account (Driver) → Operation** (lowest to highest priority)
 //!
 //! [`OperationOptions`] is the single option group for all layered configuration.
-//! It uses `#[derive(CosmosOptions)]` to generate a [`OperationOptionsView`],
+//! It uses `#[derive(CosmosOptions)]` to generate an [`OperationOptionsView`],
 //! [`OperationOptionsBuilder`], `Default`, and `from_env()` constructors.
 //!
 //! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
