@@ -116,8 +116,10 @@ pub(crate) async fn execute_operation_pipeline(
             "attempt",
             attempt = attempt,
             context = tracing::field::Empty
-        )
-        .entered();
+        );
+        // Enter the span for sync work but drop the guard before the first
+        // `.await` so the future remains `Send` (`EnteredSpan` is `!Send`).
+        let attempt_guard = attempt_span.enter();
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -169,6 +171,9 @@ pub(crate) async fn execute_operation_pipeline(
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
+        // Drop the span guard before the first `.await` to keep the future `Send`.
+        drop(attempt_guard);
+
         let result = execute_transport_pipeline(
             transport_request,
             &TransportPipelineContext {

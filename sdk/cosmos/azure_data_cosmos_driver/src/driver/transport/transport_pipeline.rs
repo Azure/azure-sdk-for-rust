@@ -195,8 +195,10 @@ pub(crate) async fn execute_transport_pipeline(
             "transport_attempt",
             attempt = attempt,
             outcome = tracing::field::Empty
-        )
-        .entered();
+        );
+        // Enter the span for sync work but drop the guard before the first
+        // `.await` so the future remains `Send` (`Entered` is `!Send`).
+        let attempt_guard = attempt_span.enter();
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
@@ -254,6 +256,9 @@ pub(crate) async fn execute_transport_pipeline(
 
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
+
+        // Drop the span guard before the first `.await` to keep the future `Send`.
+        drop(attempt_guard);
 
         // Sign the request
         if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
