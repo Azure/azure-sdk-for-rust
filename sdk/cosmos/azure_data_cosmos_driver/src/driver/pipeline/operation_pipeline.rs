@@ -46,6 +46,7 @@ use crate::driver::transport::{
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -144,6 +145,7 @@ pub(crate) async fn execute_operation_pipeline(
         let transport_request = build_transport_request(
             operation,
             options,
+            custom_headers,
             &routing,
             activity_id,
             execution_context,
@@ -409,7 +411,8 @@ fn endpoint_is_available(
 /// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
-    options: &OperationOptions,
+    options: &OperationOptionsView<'_>,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     routing: &RoutingDecision,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
@@ -443,7 +446,7 @@ fn build_transport_request(
     // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
     // pattern where custom headers are added before SDK headers).
     let mut headers = azure_core::http::headers::Headers::new();
-    if let Some(custom) = options.custom_headers_ref() {
+    if let Some(custom) = custom_headers {
         for (name, value) in custom {
             headers.insert(name.clone(), value.clone());
         }
@@ -584,7 +587,6 @@ mod tests {
             DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
             SystemProperties,
         },
-        options::OperationOptions,
     };
 
     fn test_account() -> AccountReference {
@@ -633,7 +635,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
-            &OperationOptions::new(),
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -652,7 +654,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
-            &OperationOptions::new(),
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -671,7 +673,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
-            &OperationOptions::new(),
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -695,7 +697,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
-            &OperationOptions::new(),
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Retry,
@@ -727,7 +729,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
-            &OperationOptions::new(),
+            None,
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -756,7 +758,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
-            &OperationOptions::new(),
+            None,
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,

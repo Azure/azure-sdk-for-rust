@@ -12,10 +12,7 @@ use azure_core::{
     Bytes,
 };
 use azure_data_cosmos_driver::{
-    models::{
-        CosmosResponse as DriverResponse, CosmosResponseHeaders, ETag, Precondition,
-        SessionToken as DriverSessionToken,
-    },
+    models::{CosmosResponse as DriverResponse, CosmosResponseHeaders},
     options::{ExcludedRegions, OperationOptions, Region},
 };
 
@@ -76,26 +73,16 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
 
 /// Translates SDK [`ItemOptions`] into driver [`OperationOptions`].
 pub(crate) fn item_options_to_operation_options(options: &ItemOptions) -> OperationOptions {
-    let mut driver_options = OperationOptions::new();
-
-    if let Some(session_token) = options.session_token() {
-        driver_options =
-            driver_options.with_session_token(DriverSessionToken::new(session_token.to_string()));
-    }
-
-    if let Some(etag) = options.if_match_etag() {
-        driver_options =
-            driver_options.with_etag_condition(Precondition::if_match(ETag::new(etag.to_string())));
-    }
-
-    if !options.custom_headers().is_empty() {
-        driver_options = driver_options.with_custom_headers(options.custom_headers().clone());
-    }
+    let mut driver_options = OperationOptions::default();
 
     if let Some(regions) = options.excluded_regions() {
         let driver_regions =
             ExcludedRegions(regions.iter().map(|r| Region::new(r.to_string())).collect());
-        driver_options = driver_options.with_excluded_regions(driver_regions);
+        driver_options.excluded_regions = Some(driver_regions);
+    }
+
+    if !options.custom_headers().is_empty() {
+        driver_options = driver_options.with_custom_headers(options.custom_headers().clone());
     }
 
     driver_options
@@ -106,8 +93,8 @@ mod tests {
     use super::*;
     use azure_core::http::headers::HeaderName;
     use azure_data_cosmos_driver::models::{
-        ActivityId, CosmosResponseHeaders, RequestCharge, SessionToken as DriverSessionToken,
-        SubStatusCode,
+        ActivityId, CosmosResponseHeaders, ETag, RequestCharge,
+        SessionToken as DriverSessionToken, SubStatusCode,
     };
 
     fn make_headers_all_some() -> CosmosResponseHeaders {
@@ -158,25 +145,6 @@ mod tests {
     }
 
     #[test]
-    fn options_session_token() {
-        let options = ItemOptions::default().with_session_token("my-session".to_string().into());
-        let driver_opts = item_options_to_operation_options(&options);
-
-        assert_eq!(
-            driver_opts.session_token_ref().map(|t| t.as_str()),
-            Some("my-session"),
-        );
-    }
-
-    #[test]
-    fn options_if_match_etag() {
-        let options = ItemOptions::default().with_if_match_etag("\"etag-123\"".into());
-        let driver_opts = item_options_to_operation_options(&options);
-
-        assert!(driver_opts.etag_condition_ref().is_some());
-    }
-
-    #[test]
     fn options_custom_headers() {
         let mut custom = std::collections::HashMap::new();
         custom.insert(
@@ -204,7 +172,8 @@ mod tests {
         let driver_opts = item_options_to_operation_options(&options);
 
         let regions = driver_opts
-            .excluded_regions_ref()
+            .excluded_regions
+            .as_ref()
             .expect("excluded regions should be set");
         assert_eq!(regions.0.len(), 2);
     }
@@ -214,9 +183,7 @@ mod tests {
         let options = ItemOptions::default();
         let driver_opts = item_options_to_operation_options(&options);
 
-        assert!(driver_opts.session_token_ref().is_none());
-        assert!(driver_opts.etag_condition_ref().is_none());
         assert!(driver_opts.custom_headers_ref().is_none());
-        assert!(driver_opts.excluded_regions_ref().is_none());
+        assert!(driver_opts.excluded_regions.is_none());
     }
 }

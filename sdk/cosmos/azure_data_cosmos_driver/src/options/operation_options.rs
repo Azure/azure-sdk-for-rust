@@ -3,13 +3,11 @@
 
 //! Operation options that participate in runtime/account/operation resolution.
 
+use std::collections::HashMap;
 use std::time::Duration;
 
-use azure_data_cosmos_macros::CosmosOptions;
-
-use std::collections::HashMap;
-
 use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_data_cosmos_macros::CosmosOptions;
 
 use crate::{
     models::ThroughputControlGroupName,
@@ -30,46 +28,6 @@ use crate::{
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
-    // Shared runtime options (can be set at environment/driver/operation level)
-    runtime: RuntimeOptions,
-
-    // Operation-specific options (not shared with environment/driver)
-    session_token: Option<SessionToken>,
-    partition_key: Option<PartitionKey>,
-    quota_info_enabled: Option<QuotaInfoEnabled>,
-    priority_level: Option<PriorityLevel>,
-
-    // Just read operations
-    etag_condition: Option<Precondition>,
-
-    // Just write operations
-    triggers: Option<TriggerOptions>,
-
-    // Only StoredProc executions
-    script_logging_enabled: Option<ScriptLoggingEnabled>,
-
-    // Additional headers beyond those natively supported by the driver.
-    // May be removed in the future as we analyze exactly what options are needed.
-    custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
-}
-
-impl OperationOptions {
-    /// Creates a new empty `OperationOptions`.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Returns the embedded runtime options.
-    ///
-    /// These are the options shared with environment and driver levels.
-    pub fn runtime(&self) -> &RuntimeOptions {
-        &self.runtime
-    }
-
-    /// Returns a mutable reference to the embedded runtime options.
-    pub fn runtime_mut(&mut self) -> &mut RuntimeOptions {
-        &mut self.runtime
-    }
     /// Read consistency strategy for read operations.
     #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
@@ -105,6 +63,23 @@ impl OperationOptions {
     /// Maximum operation-level session retries for 404/1002 errors.
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
+
+    // Additional headers beyond those natively supported by the driver.
+    // May be removed in the future as we analyze exactly what options are needed.
+    custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
+}
+
+impl OperationOptions {
+    /// Sets additional headers to include in the request.
+    pub fn with_custom_headers(mut self, headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = Some(headers);
+        self
+    }
+
+    /// Gets the custom headers.
+    pub fn custom_headers_ref(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
+        self.custom_headers.as_ref()
+    }
 }
 
 #[cfg(test)]
@@ -222,16 +197,5 @@ mod tests {
         assert!(options.excluded_regions.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
-    }
-
-    /// Sets additional headers to include in the request.
-    pub fn with_custom_headers(mut self, headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = Some(headers);
-        self
-    }
-
-    /// Gets the custom headers.
-    pub fn custom_headers_ref(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
-        self.custom_headers.as_ref()
     }
 }
