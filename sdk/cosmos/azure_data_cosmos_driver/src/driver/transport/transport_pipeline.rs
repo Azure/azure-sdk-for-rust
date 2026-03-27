@@ -14,7 +14,6 @@
 use std::time::{Duration, Instant};
 
 use azure_core::error::ErrorKind;
-use azure_core::http::Request;
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
@@ -29,7 +28,8 @@ use crate::{
 
 use super::{
     adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
-    infer_request_sent_status, request_signing::sign_request, sharded_transport::EndpointKey,
+    cosmos_transport_client::CosmosHttpRequest, infer_request_sent_status,
+    request_signing::sign_request, sharded_transport::EndpointKey,
 };
 
 use crate::driver::pipeline::components::{
@@ -231,17 +231,13 @@ pub(crate) async fn execute_transport_pipeline(
         }
 
         // Build HTTP request from TransportRequest
-        let mut http_request = Request::new(request.url.clone(), request.method);
-
-        // Copy headers from TransportRequest
-        for (name, value) in request.headers.iter() {
-            http_request.insert_header(name.clone(), value.clone());
-        }
-
-        // Set body
-        if let Some(body) = &request.body {
-            http_request.set_body(body.clone());
-        }
+        let mut http_request = CosmosHttpRequest {
+            url: request.url.clone(),
+            method: request.method,
+            headers: request.headers.clone(),
+            body: request.body.clone(),
+            timeout: None,
+        };
 
         let per_request_timeout = remaining_request_timeout(request.deadline);
         // TODO(azure_core): Apply per-request timeout directly on Request/HttpClient
@@ -284,7 +280,7 @@ pub(crate) async fn execute_transport_pipeline(
             use crate::fault_injection::next_evaluation_id;
             use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REQUEST_ID;
             let id = next_evaluation_id();
-            http_request.headers_mut().insert(
+            http_request.headers.insert(
                 FAULT_INJECTION_REQUEST_ID.clone(),
                 azure_core::http::headers::HeaderValue::from(id.to_string()),
             );
@@ -390,7 +386,7 @@ fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult 
 }
 
 async fn execute_http_attempt(
-    http_request: &Request,
+    http_request: &CosmosHttpRequest,
     transport: &AdaptiveTransport,
     per_request_timeout: Option<Duration>,
     request_handle: RequestHandle,
@@ -452,7 +448,7 @@ async fn execute_http_attempt(
 }
 
 async fn execute_http_attempt_future(
-    http_request: &Request,
+    http_request: &CosmosHttpRequest,
     transport: &AdaptiveTransport,
     excluded_shard_id: Option<u64>,
     endpoint_key: &EndpointKey,
@@ -468,28 +464,16 @@ async fn execute_http_attempt_future(
         .await;
 
     match dispatch.result {
-        Ok(response) => {
-            let status_code = response.status();
-            let headers = response.headers().clone();
-            match response.try_into_raw_response().await {
-                Ok(raw) => HttpAttemptResult::Response {
-                    status_code,
-                    headers,
-                    body: raw.body().to_vec(),
-                    shard_id: dispatch.shard_id,
-                    shard_diagnostics: dispatch.shard_diagnostics,
-                },
-                Err(error) => HttpAttemptResult::Error {
-                    error,
-                    headers_received: true,
-                    shard_id: dispatch.shard_id,
-                    shard_diagnostics: dispatch.shard_diagnostics,
-                },
-            }
-        }
-        Err(error) => HttpAttemptResult::Error {
-            error,
-            headers_received: false,
+        Ok(response) => HttpAttemptResult::Response {
+            status_code: azure_core::http::StatusCode::from(response.status),
+            headers: response.headers,
+            body: response.body,
+            shard_id: dispatch.shard_id,
+            shard_diagnostics: dispatch.shard_diagnostics,
+        },
+        Err(transport_err) => HttpAttemptResult::Error {
+            error: transport_err.error,
+            headers_received: transport_err.request_sent == RequestSentStatus::Sent,
             shard_id: dispatch.shard_id,
             shard_diagnostics: dispatch.shard_diagnostics,
         },

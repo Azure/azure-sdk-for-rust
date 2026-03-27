@@ -5,12 +5,9 @@
 //!
 //! This replaces `CosmosHeadersPolicy` from the old policy-chain pipeline.
 
-use azure_core::http::{
-    headers::{HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE, USER_AGENT},
-    Request,
-};
+use azure_core::http::headers::{HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE, USER_AGENT};
 
-use super::COSMOS_API_VERSION;
+use super::{cosmos_transport_client::CosmosHttpRequest, COSMOS_API_VERSION};
 
 const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
@@ -24,20 +21,22 @@ const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 ///
 /// Sets `x-ms-version`, `x-ms-cosmos-sdk-supportedcapabilities`, `Content-Type`,
 /// `Accept`, `Cache-Control`, and `User-Agent`.
-pub(crate) fn apply_cosmos_headers(request: &mut Request, user_agent: &HeaderValue) {
-    let headers = request.headers_mut();
-
-    headers.insert(VERSION, HeaderValue::from_static(COSMOS_API_VERSION));
-    headers.insert(
+pub(crate) fn apply_cosmos_headers(request: &mut CosmosHttpRequest, user_agent: &HeaderValue) {
+    request
+        .headers
+        .insert(VERSION, HeaderValue::from_static(COSMOS_API_VERSION));
+    request.headers.insert(
         SDK_SUPPORTED_CAPABILITIES,
         HeaderValue::from_static(SUPPORTED_CAPABILITIES_VALUE),
     );
 
-    if headers.get_optional_str(&CONTENT_TYPE).is_none() {
-        headers.insert(CONTENT_TYPE, APPLICATION_JSON.clone());
+    if request.headers.get_optional_str(&CONTENT_TYPE).is_none() {
+        request
+            .headers
+            .insert(CONTENT_TYPE, APPLICATION_JSON.clone());
     }
 
-    headers.insert(ACCEPT, APPLICATION_JSON.clone());
-    headers.insert(CACHE_CONTROL, NO_CACHE.clone());
-    headers.insert(USER_AGENT, user_agent.clone());
+    request.headers.insert(ACCEPT, APPLICATION_JSON.clone());
+    request.headers.insert(CACHE_CONTROL, NO_CACHE.clone());
+    request.headers.insert(USER_AGENT, user_agent.clone());
 }

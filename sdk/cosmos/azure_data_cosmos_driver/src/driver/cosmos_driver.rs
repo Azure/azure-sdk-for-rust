@@ -18,7 +18,6 @@ use crate::{
     },
 };
 use arc_swap::ArcSwap;
-use azure_core::http::Request;
 use futures::future::BoxFuture;
 use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -225,7 +224,13 @@ impl CosmosDriver {
         user_agent: &azure_core::http::headers::HeaderValue,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
+        let mut request = super::transport::cosmos_transport_client::CosmosHttpRequest {
+            url: endpoint.join_path("/"),
+            method: azure_core::http::Method::Get,
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            timeout: None,
+        };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request_signing::sign_request(
             &mut request,
@@ -238,9 +243,8 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = transport.send(&request).await?;
-        let raw = response.try_into_raw_response().await?;
-        let props = Self::parse_account_properties_payload(raw.body())?;
+        let response = transport.send(&request).await.map_err(|e| e.error)?;
+        let props = Self::parse_account_properties_payload(&response.body)?;
         tracing::info!(
             endpoint = %endpoint,
             write_region = ?props.write_region(),

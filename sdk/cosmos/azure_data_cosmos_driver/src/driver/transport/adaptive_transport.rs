@@ -5,12 +5,12 @@
 
 use std::{fmt, sync::Arc};
 
-use azure_core::http::{AsyncRawResponse, Request};
-
 use crate::diagnostics::{TransportHttpVersion, TransportKind};
 
 use super::{
-    cosmos_transport_client::CosmosTransportClient,
+    cosmos_transport_client::{
+        CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
+    },
     http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
     sharded_transport::{EndpointKey, ShardedHttpTransport, TransportDispatch},
 };
@@ -95,16 +95,24 @@ impl AdaptiveTransport {
 
     /// Sends an HTTP request through the underlying transport.
     #[tracing::instrument(level = tracing::Level::TRACE, skip_all, err, fields(
-        method = %request.method(),
-        url = %request.url(),
+        method = %request.method,
+        url = %request.url,
     ))]
-    pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+    pub(crate) async fn send(
+        &self,
+        request: &CosmosHttpRequest,
+    ) -> Result<CosmosHttpResponse, TransportError> {
         match self {
-            Self::Gateway(client) => {
-                super::cosmos_transport_client::bridge_send(client.as_ref(), request).await
-            }
+            Self::Gateway(client) => client.send(request).await,
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
-                let endpoint_key = EndpointKey::try_from(request.url())?;
+                let endpoint_key = EndpointKey::try_from(&request.url).map_err(|e| {
+                    TransportError::new(
+                        e,
+                        crate::diagnostics::RequestSentStatus::NotSent,
+                        false,
+                        false,
+                    )
+                })?;
                 transport
                     .send(request, None, &endpoint_key, None)
                     .await
@@ -115,14 +123,14 @@ impl AdaptiveTransport {
 
     pub(crate) async fn send_with_dispatch(
         &self,
-        request: &Request,
+        request: &CosmosHttpRequest,
         excluded_shard_id: Option<u64>,
         endpoint_key: &EndpointKey,
         preferred_shard_id: Option<u64>,
     ) -> TransportDispatch {
         match self {
             Self::Gateway(client) => TransportDispatch {
-                result: super::cosmos_transport_client::bridge_send(client.as_ref(), request).await,
+                result: client.send(request).await,
                 shard_id: None,
                 shard_diagnostics: None,
             },

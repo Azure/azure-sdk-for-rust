@@ -5,15 +5,14 @@
 //!
 //! This replaces `AuthorizationPolicy` from the old policy-chain pipeline.
 
-use azure_core::http::{
-    headers::{HeaderName, HeaderValue, AUTHORIZATION},
-    Request,
-};
+use azure_core::http::headers::{HeaderName, HeaderValue, AUTHORIZATION};
 use azure_core::time::{self, OffsetDateTime};
 
 use crate::models::Credential;
 
-use super::{generate_authorization, AuthorizationContext};
+use super::{
+    cosmos_transport_client::CosmosHttpRequest, generate_authorization, AuthorizationContext,
+};
 
 const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 
@@ -22,7 +21,7 @@ const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 /// Computes the HMAC-SHA256 signature (master key) or obtains an AAD token,
 /// then sets both `x-ms-date` and `Authorization` headers.
 pub(crate) async fn sign_request(
-    request: &mut Request,
+    request: &mut CosmosHttpRequest,
     credential: &Credential,
     auth_context: &AuthorizationContext,
 ) -> azure_core::Result<()> {
@@ -30,8 +29,12 @@ pub(crate) async fn sign_request(
 
     let auth = generate_authorization(credential, auth_context, &date_string).await?;
 
-    request.insert_header(MS_DATE, HeaderValue::from(date_string));
-    request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
+    request
+        .headers
+        .insert(MS_DATE, HeaderValue::from(date_string));
+    request
+        .headers
+        .insert(AUTHORIZATION, HeaderValue::from(auth));
 
     Ok(())
 }
