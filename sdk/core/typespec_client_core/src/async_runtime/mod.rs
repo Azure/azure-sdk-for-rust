@@ -166,13 +166,13 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 /// ```
 /// use typespec_client_core::async_runtime::{
 ///     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
-/// use std::sync::Arc;
+/// use std::{pin::Pin, sync::Arc};
 /// use futures::FutureExt;
 ///
 /// struct CustomRuntime;
 ///
 /// impl AsyncRuntime for CustomRuntime {
-///    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+///    fn spawn(&self, f: TaskFuture) -> Pin<Box<dyn SpawnedTask>> {
 ///      unimplemented!("Custom spawn not implemented");
 ///    }
 ///    fn sleep(&self, duration: typespec_client_core::time::Duration) -> TaskFuture {
