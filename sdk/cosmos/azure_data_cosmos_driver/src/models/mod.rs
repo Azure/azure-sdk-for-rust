@@ -27,8 +27,15 @@ pub(crate) mod resource_id;
 mod resource_reference;
 mod user_agent;
 pub(crate) mod vector_session_token;
-
 pub(crate) use cosmos_headers::request_header_names;
+#[allow(dead_code)]
+pub(crate) mod effective_partition_key;
+#[allow(dead_code)]
+mod murmur_hash;
+#[allow(dead_code)]
+pub(crate) mod partition_key_range;
+#[allow(dead_code)]
+pub(crate) mod range;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
@@ -42,6 +49,7 @@ pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
 pub use etag::{ETag, Precondition};
 pub use partition_key::PartitionKey;
+pub(crate) use partition_key::PartitionKeyValue;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};

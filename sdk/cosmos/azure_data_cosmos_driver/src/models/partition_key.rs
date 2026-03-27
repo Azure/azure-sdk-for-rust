@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+#![allow(dead_code)]
 
 //! Partition key types for Cosmos DB operations.
 
@@ -35,11 +36,164 @@ enum InnerPartitionKeyValue {
     String(Cow<'static, str>),
     Number(FiniteF64),
     Bool(bool),
+    /// Infinity sentinel, used only internally for EPK boundary calculations.
+    Infinity,
+}
+
+/// Maximum number of string bytes to include when hashing (V1 truncation).
+const MAX_STRING_BYTES_TO_APPEND: usize = 100;
+
+/// Byte markers for partition key value encoding.
+mod component {
+    pub const UNDEFINED: u8 = 0x00;
+    pub const NULL: u8 = 0x01;
+    pub const BOOL_FALSE: u8 = 0x02;
+    pub const BOOL_TRUE: u8 = 0x03;
+    pub const NUMBER: u8 = 0x05;
+    pub const STRING: u8 = 0x08;
+    pub const INFINITY: u8 = 0xFF;
+}
+
+impl InnerPartitionKeyValue {
+    /// Common hashing writer core: writes type marker + payload.
+    fn write_for_hashing_core(&self, string_suffix: u8, writer: &mut Vec<u8>, truncate: bool) {
+        match self {
+            InnerPartitionKeyValue::Bool(true) => writer.push(component::BOOL_TRUE),
+            InnerPartitionKeyValue::Bool(false) => writer.push(component::BOOL_FALSE),
+            InnerPartitionKeyValue::Null => writer.push(component::NULL),
+            InnerPartitionKeyValue::Number(n) => {
+                writer.push(component::NUMBER);
+                writer.extend_from_slice(&n.value().to_le_bytes());
+            }
+            InnerPartitionKeyValue::String(s) => {
+                writer.push(component::STRING);
+                let bytes = s.as_bytes();
+                if truncate && bytes.len() > MAX_STRING_BYTES_TO_APPEND {
+                    writer.extend_from_slice(&bytes[..MAX_STRING_BYTES_TO_APPEND]);
+                } else {
+                    writer.extend_from_slice(bytes);
+                }
+                writer.push(string_suffix);
+            }
+            InnerPartitionKeyValue::Infinity => writer.push(component::INFINITY),
+        }
+    }
+
+    /// V1 binary encoding for the EPK output string.
+    fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
+        match self {
+            InnerPartitionKeyValue::Bool(true) => writer.push(component::BOOL_TRUE),
+            InnerPartitionKeyValue::Bool(false) => writer.push(component::BOOL_FALSE),
+            InnerPartitionKeyValue::Infinity => writer.push(component::INFINITY),
+            InnerPartitionKeyValue::Number(n) => {
+                write_number_v1_binary(n.value(), writer);
+            }
+            InnerPartitionKeyValue::String(s) => {
+                writer.push(component::STRING);
+                let utf8 = s.as_bytes();
+                let short = utf8.len() <= MAX_STRING_BYTES_TO_APPEND;
+                let write_len = if short {
+                    utf8.len()
+                } else {
+                    std::cmp::min(utf8.len(), MAX_STRING_BYTES_TO_APPEND + 1)
+                };
+                for item in utf8.iter().take(write_len) {
+                    writer.push(item.wrapping_add(1));
+                }
+                if short {
+                    writer.push(0x00);
+                }
+            }
+            InnerPartitionKeyValue::Null => writer.push(component::NULL),
+        }
+    }
+}
+
+pub(crate) fn encode_double_as_uint64(value: f64) -> u64 {
+    let value_in_uint64 = u64::from_le_bytes(value.to_le_bytes());
+    let mask: u64 = 0x8000_0000_0000_0000;
+    if value_in_uint64 < mask {
+        value_in_uint64 ^ mask
+    } else {
+        (!value_in_uint64).wrapping_add(1)
+    }
+}
+
+/// Encode a number using V1 binary encoding (variable-length ordering-preserving).
+///
+/// Shared between [`InnerPartitionKeyValue::write_for_binary_encoding_v1`] and
+/// the EPK V1 hash computation in [`effective_partition_key`](super::effective_partition_key).
+pub(crate) fn write_number_v1_binary(value: f64, writer: &mut Vec<u8>) {
+    writer.push(component::NUMBER);
+    let mut payload = encode_double_as_uint64(value);
+    writer.push((payload >> 56) as u8);
+    payload <<= 8;
+    let mut first = true;
+    let mut byte_to_write: u8 = 0;
+    while payload != 0 {
+        if !first {
+            writer.push(byte_to_write);
+        } else {
+            first = false;
+        }
+        byte_to_write = ((payload >> 56) as u8) | 0x01;
+        payload <<= 7;
+    }
+    writer.push(byte_to_write & 0xFE);
 }
 
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {
     fn from(value: InnerPartitionKeyValue) -> Self {
         PartitionKeyValue(value)
+    }
+}
+
+impl PartitionKeyValue {
+    /// Writes this value into a byte buffer using the V2 hashing encoding.
+    ///
+    /// Used by the effective partition key computation for MurmurHash3-128.
+    pub(crate) fn write_for_hashing_v2(&self, writer: &mut Vec<u8>) {
+        self.0.write_for_hashing_core(0xFFu8, writer, false)
+    }
+
+    /// Writes this value into a byte buffer using the V1 hashing encoding.
+    ///
+    /// Used by the effective partition key computation for MurmurHash3-32.
+    pub(crate) fn write_for_hashing_v1(&self, writer: &mut Vec<u8>) {
+        self.0.write_for_hashing_core(0x00u8, writer, true)
+    }
+
+    /// Writes this value using V1 binary encoding for the EPK output string.
+    pub(crate) fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
+        self.0.write_for_binary_encoding_v1(writer)
+    }
+
+    /// Returns `true` if this value is the special Infinity sentinel.
+    pub(crate) fn is_infinity(&self) -> bool {
+        matches!(self.0, InnerPartitionKeyValue::Infinity)
+    }
+
+    /// Returns a truncated copy of this value for V1 binary encoding.
+    ///
+    /// String values longer than [`MAX_STRING_BYTES_TO_APPEND`] bytes are truncated
+    /// so that `write_for_binary_encoding_v1` sees them as "short" and appends the
+    /// `0x00` terminator, matching how the hashing step truncates strings.
+    pub(crate) fn truncated_for_v1_encoding(&self) -> PartitionKeyValue {
+        match &self.0 {
+            InnerPartitionKeyValue::String(s) if s.len() > MAX_STRING_BYTES_TO_APPEND => {
+                InnerPartitionKeyValue::String(Cow::Owned(
+                    s[..MAX_STRING_BYTES_TO_APPEND].to_string(),
+                ))
+                .into()
+            }
+            _ => self.clone(),
+        }
+    }
+
+    /// Creates the special Infinity sentinel value, used for EPK boundary calculations.
+    #[cfg(test)]
+    pub(crate) fn infinity() -> Self {
+        InnerPartitionKeyValue::Infinity.into()
     }
 }
 
@@ -154,6 +308,11 @@ impl PartitionKey {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    /// Returns the partition key components for use by the EPK hashing logic.
+    pub(crate) fn values(&self) -> &[PartitionKeyValue] {
+        &self.0
+    }
 }
 
 impl AsHeaders for PartitionKey {
@@ -218,6 +377,13 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Bool(b) => {
                     json.push_str(if *b { "true" } else { "false" });
+                }
+                InnerPartitionKeyValue::Infinity => {
+                    // Internal sentinel — should never appear in a user-facing partition key.
+                    return Err(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        "Infinity is not a valid partition key value for serialization",
+                    ));
                 }
             }
 
