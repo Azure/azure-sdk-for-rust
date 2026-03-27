@@ -143,7 +143,10 @@ mod tests {
             .with_operation_options(operation)
             .build();
 
-        assert_eq!(options.operation_options().max_failover_retry_count, Some(5));
+        assert_eq!(
+            options.operation_options().max_failover_retry_count,
+            Some(5)
+        );
         assert_eq!(options.operation_options().max_session_retry_count, Some(3));
     }
 
@@ -158,7 +161,10 @@ mod tests {
             .with_operation_options(operation)
             .build();
 
-        assert_eq!(options.operation_options().max_failover_retry_count, Some(5));
+        assert_eq!(
+            options.operation_options().max_failover_retry_count,
+            Some(5)
+        );
         assert_eq!(options.operation_options().max_session_retry_count, Some(2));
         assert!(options
             .operation_options()

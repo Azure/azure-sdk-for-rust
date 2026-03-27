@@ -1123,7 +1123,10 @@ mod tests {
             .operation_options()
             .throughput_control_group_name
             .is_none());
-        assert!(runtime.operation_options().max_failover_retry_count.is_none());
+        assert!(runtime
+            .operation_options()
+            .max_failover_retry_count
+            .is_none());
         // user_agent is always available with base prefix
         assert!(runtime
             .user_agent()
@@ -1147,7 +1150,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(runtime.operation_options().max_failover_retry_count, Some(7));
+        assert_eq!(
+            runtime.operation_options().max_failover_retry_count,
+            Some(7)
+        );
     }
 
     #[tokio::test]
@@ -1284,7 +1290,10 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
         // Initially none
-        assert!(runtime.operation_options().max_failover_retry_count.is_none());
+        assert!(runtime
+            .operation_options()
+            .max_failover_retry_count
+            .is_none());
 
         // Replace runtime options atomically
         let new_opts = OperationOptionsBuilder::new()
@@ -1293,7 +1302,10 @@ mod tests {
         runtime.set_operation_options(new_opts);
 
         // Now set
-        assert_eq!(runtime.operation_options().max_failover_retry_count, Some(5));
+        assert_eq!(
+            runtime.operation_options().max_failover_retry_count,
+            Some(5)
+        );
     }
 
     #[tokio::test]

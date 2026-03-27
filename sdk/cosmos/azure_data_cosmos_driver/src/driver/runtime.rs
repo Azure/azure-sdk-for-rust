@@ -17,9 +17,8 @@ use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions,
-        ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
-        WorkloadId,
+        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
+        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
