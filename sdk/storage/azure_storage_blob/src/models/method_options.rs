@@ -48,6 +48,11 @@ pub struct BlobClientManagedDownloadOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Optional. Size of the initial download request. A larger value means small/medium blobs
+    /// can be downloaded in a single request. Only used by `managed_download_to`.
+    /// A default value will be chosen if none is provided.
+    pub initial_partition_size: Option<NonZero<usize>>,
+
     /// Optional. Number of concurrent network transfers to maintain for this operation.
     /// A default value will be chosen if none is provided.
     pub parallel: Option<NonZero<usize>>,

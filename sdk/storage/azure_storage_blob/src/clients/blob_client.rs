@@ -263,6 +263,64 @@ impl BlobClient {
         self.block_blob_client().upload(content, options).await
     }
 
+    /// Downloads a blob directly into a caller-provided buffer using the Azure Core pipeline.
+    ///
+    /// Uses a large initial partition size (default 256MB) so small/medium blobs download in a
+    /// single HTTP request. Remaining data is downloaded in parallel chunks written directly to
+    /// the buffer at their correct offsets, with no ordering overhead.
+    ///
+    /// Returns the number of bytes written to the buffer.
+    pub async fn managed_download_to(
+        &self,
+        buffer: &mut [u8],
+        options: Option<BlobClientManagedDownloadOptions<'_>>,
+    ) -> Result<usize> {
+        let options = options.unwrap_or_default();
+        let parallel = options.parallel.unwrap_or(DEFAULT_DOWNLOAD_TO_PARALLEL);
+        let initial_partition_size = options
+            .initial_partition_size
+            .unwrap_or(DEFAULT_INITIAL_PARTITION_SIZE);
+        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+
+        let get_range_options = BlobClientDownloadOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
+            lease_id: options.lease_id,
+            range: None,
+            range_get_content_crc64: options.range_get_content_crc64,
+            range_get_content_md5: options.range_get_content_md5,
+            snapshot: options.snapshot,
+            structured_body_type: options.structured_body_type,
+            timeout: options.timeout,
+            version_id: options.version_id,
+            ..Default::default()
+        };
+
+        let client = GeneratedBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
+        let client = BlobClientDownloadBehavior::new(client, get_range_options);
+
+        partitioned_transfer::download_to(
+            buffer,
+            options.range,
+            parallel,
+            initial_partition_size,
+            partition_size,
+            Arc::new(client),
+        )
+        .await
+    }
+
     /// Checks if the blob exists.
     ///
     /// Returns `true` if the blob exists, `false` if the blob does not exist, and propagates all other errors.
@@ -289,6 +347,8 @@ impl BlobClient {
 // unwrap evaluated at compile time
 const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
 const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+const DEFAULT_DOWNLOAD_TO_PARALLEL: NonZero<usize> = NonZero::new(5).unwrap();
+const DEFAULT_INITIAL_PARTITION_SIZE: NonZero<usize> = NonZero::new(256 * 1024 * 1024).unwrap();
 
 struct BlobClientDownloadBehavior<'a> {
     client: GeneratedBlobClient,
