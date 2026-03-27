@@ -3,7 +3,7 @@
 
 //! Cosmos DB request/response header models.
 
-use crate::models::{ActivityId, ETag, RequestCharge, SessionToken, SubStatusCode};
+use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 
 /// Standard Cosmos DB request header names.
@@ -16,6 +16,8 @@ pub(crate) mod request_header_names {
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+    pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+    pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 }
 
 /// Standard Cosmos DB response header names.
@@ -58,6 +60,9 @@ pub struct CosmosRequestHeaders {
 
     /// Session token for session consistency (`x-ms-session-token`).
     pub session_token: Option<SessionToken>,
+
+    /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
+    pub precondition: Option<Precondition>,
 }
 
 impl CosmosRequestHeaders {
@@ -79,6 +84,18 @@ impl CosmosRequestHeaders {
                 request_header_names::SESSION_TOKEN.clone(),
                 HeaderValue::from(session_token.as_str().to_owned()),
             );
+        }
+        if let Some(precondition) = self.precondition.as_ref() {
+            match precondition {
+                Precondition::IfMatch(etag) => headers.insert(
+                    request_header_names::IF_MATCH.clone(),
+                    HeaderValue::from(etag.as_str().to_owned()),
+                ),
+                Precondition::IfNoneMatch(etag) => headers.insert(
+                    request_header_names::IF_NONE_MATCH.clone(),
+                    HeaderValue::from(etag.as_str().to_owned()),
+                ),
+            }
         }
     }
 }
@@ -258,6 +275,7 @@ mod tests {
         let headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
+            precondition: None,
         };
 
         assert_eq!(
@@ -275,6 +293,7 @@ mod tests {
         let cosmos_headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
+            precondition: None,
         };
         let mut headers = Headers::new();
 
@@ -287,6 +306,98 @@ mod tests {
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("x-ms-session-token")),
             Some("session-token")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_precondition_if_match() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: None,
+            session_token: None,
+            precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            Some("etag-value-1")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_precondition_if_none_match() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: None,
+            session_token: None,
+            precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            Some("*")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_no_precondition_omits_both_headers() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: None,
+            session_token: None,
+            precondition: None,
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            None
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_all_fields() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
+            session_token: Some(SessionToken::new("session:100".to_string())),
+            precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-activity-id")),
+            Some("corr-id-1")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-session-token")),
+            Some("session:100")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            Some("etag-abc")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
         );
     }
 }
