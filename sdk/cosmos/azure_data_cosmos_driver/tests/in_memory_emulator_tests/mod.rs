@@ -4,6 +4,7 @@
 //! Shared test helpers for the in-memory emulator integration tests.
 
 pub mod control_plane;
+pub mod driver_end_to_end;
 pub mod error_cases;
 pub mod multi_region;
 pub mod point_operations;

@@ -390,7 +390,7 @@ pub struct CosmosDriverRuntimeBuilder {
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
-    #[cfg(test)]
+    #[cfg(any(test, feature = "in_memory_emulator"))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
@@ -475,7 +475,7 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "in_memory_emulator"))]
     pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
         self
@@ -580,13 +580,13 @@ impl CosmosDriverRuntimeBuilder {
         let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(test)]
+                #[cfg(any(test, feature = "in_memory_emulator"))]
                 {
                     self.http_client_factory
                         .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
                 }
 
-                #[cfg(not(test))]
+                #[cfg(not(any(test, feature = "in_memory_emulator")))]
                 {
                     Arc::new(DefaultHttpClientFactory::new())
                 }

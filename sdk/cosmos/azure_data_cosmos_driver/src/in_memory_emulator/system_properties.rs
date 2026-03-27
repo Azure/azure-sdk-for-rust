@@ -138,12 +138,20 @@ pub(crate) fn account_properties_to_json(
 
     serde_json::json!({
         "id": "emulator-account",
-        "_rid": "",
+        "_rid": "emulator.documents.azure.com",
+        "_self": "",
+        "media": "//media/",
+        "addresses": "//addresses/",
+        "_dbs": "//dbs/",
         "readableLocations": readable,
         "writableLocations": writable,
         "enableMultipleWriteLocations": config.write_mode() == super::config::WriteMode::Multi,
+        "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
         "userConsistencyPolicy": {
             "defaultConsistencyLevel": config.consistency().as_str()
-        }
+        },
+        "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+        "queryEngineConfiguration": "{}"
     })
 }
