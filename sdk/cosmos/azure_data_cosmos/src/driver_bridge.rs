@@ -114,7 +114,7 @@ mod tests {
         let mut h = CosmosResponseHeaders::new();
         h.activity_id = Some(ActivityId::from_string("act-123".to_string()));
         h.request_charge = Some(RequestCharge::new(4.2));
-        h.session_token = Some(DriverSessionToken::new("sess-token".to_string()));
+        h.session_token = Some(DriverSessionToken::new("session-token".to_string()));
         h.etag = Some(ETag::new("\"etag-value\"".to_string()));
         h.continuation = Some("cont-token".to_string());
         h.item_count = Some(42);
@@ -128,7 +128,10 @@ mod tests {
 
         assert_eq!(headers.get_optional_str(&ACTIVITY_ID), Some("act-123"));
         assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), Some("4.2"));
-        assert_eq!(headers.get_optional_str(&SESSION_TOKEN), Some("sess-token"));
+        assert_eq!(
+            headers.get_optional_str(&SESSION_TOKEN),
+            Some("session-token")
+        );
         assert_eq!(
             headers.get_optional_str(&azure_core::http::headers::ETAG),
             Some("\"etag-value\""),
