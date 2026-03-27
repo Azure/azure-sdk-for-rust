@@ -113,6 +113,33 @@ impl PartitionKey {
         self.0.is_empty()
     }
 
+    /// Converts this SDK partition key into the driver's equivalent type.
+    pub(crate) fn into_driver_partition_key(
+        self,
+    ) -> azure_data_cosmos_driver::models::PartitionKey {
+        use azure_data_cosmos_driver::models::{
+            PartitionKey as DriverPK, PartitionKeyValue as DriverPKV,
+        };
+
+        let driver_values: Vec<DriverPKV> = self
+            .0
+            .into_iter()
+            .map(|v| match v.0 {
+                InnerPartitionKeyValue::String(s) => DriverPKV::from(s),
+                InnerPartitionKeyValue::Number(n) => DriverPKV::from(n),
+                InnerPartitionKeyValue::Bool(b) => DriverPKV::from(b),
+                InnerPartitionKeyValue::Null => DriverPKV::from(Option::<String>::None),
+                InnerPartitionKeyValue::Undefined | InnerPartitionKeyValue::Infinity => {
+                    // These are edge cases not supported by the driver's PK model.
+                    // Undefined/Infinity PKs are rare in practice.
+                    DriverPKV::from(Option::<String>::None)
+                }
+            })
+            .collect();
+
+        DriverPK::from(driver_values)
+    }
+
     /// Returns a hex string representation of the partition key hash.
     ///
     /// # Arguments

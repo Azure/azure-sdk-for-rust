@@ -20,14 +20,18 @@ use serde::de::DeserializeOwned;
 pub struct CosmosResponse<T> {
     /// The underlying typed HTTP response.
     response: Response<T>,
-    /// The final request used to fulfill the operation.
+    /// The final request used to fulfill the operation, if available.
+    ///
+    // TODO: Remove this field once all operations are routed through the driver.
+    // Driver-routed operations set this to `None` because the driver uses
+    // `CosmosOperation` + `OperationOptions` instead of `CosmosRequest`.
     #[allow(dead_code)]
-    request: CosmosRequest,
+    request: Option<CosmosRequest>,
 }
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
-    pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
+    pub(crate) fn new(response: Response<T>, request: Option<CosmosRequest>) -> Self {
         Self { response, request }
     }
 
@@ -49,20 +53,24 @@ impl<T> CosmosResponse<T> {
         self.response.headers().get_optional_str(name)
     }
 
-    /// Returns the final request used to fulfill the operation.
+    /// Returns the final request used to fulfill the operation, if available.
+    ///
+    /// Returns `None` for operations routed through the driver.
     /// This api is subject to change without a major version bump.
     ///
     #[cfg(feature = "fault_injection")]
     #[allow(dead_code)]
-    pub(crate) fn request(&self) -> &CosmosRequest {
-        &self.request
+    pub(crate) fn request(&self) -> Option<&CosmosRequest> {
+        self.request.as_ref()
     }
 
     /// Returns the final request URL used to fulfill the operation.
     /// This api is subject to change without a major version bump.
     #[cfg(feature = "fault_injection")]
-    pub fn request_url(&self) -> azure_core::http::Url {
-        self.request.clone().into_raw_request().url().clone()
+    pub fn request_url(&self) -> Option<azure_core::http::Url> {
+        self.request
+            .clone()
+            .map(|r| r.into_raw_request().url().clone())
     }
 
     /// Consumes the response and returns the response body.
@@ -137,7 +145,7 @@ mod tests {
             Bytes::from(body.to_string()),
         );
         let typed_response: Response<TestModel> = raw_response.into();
-        CosmosResponse::new(typed_response, create_mock_request())
+        CosmosResponse::new(typed_response, Some(create_mock_request()))
     }
 
     #[test]

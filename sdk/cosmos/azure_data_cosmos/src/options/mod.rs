@@ -190,6 +190,18 @@ impl ItemOptions {
         self.excluded_regions = Some(excluded_regions);
         self
     }
+
+    pub(crate) fn session_token(&self) -> Option<&SessionToken> {
+        self.session_token.as_ref()
+    }
+
+    pub(crate) fn if_match_etag(&self) -> Option<&Etag> {
+        self.if_match_etag.as_ref()
+    }
+
+    pub(crate) fn custom_headers(&self) -> &HashMap<HeaderName, HeaderValue> {
+        &self.custom_headers
+    }
 }
 
 impl ItemOptions {

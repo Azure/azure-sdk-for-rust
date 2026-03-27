@@ -25,7 +25,7 @@ pub(crate) const QUERY_ENABLE_CROSS_PARTITION: HeaderName =
 /// of [`Into<PartitionKey>`] will handle it for you.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub(crate) struct PartitionKeyValue(InnerPartitionKeyValue);
+pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
 // We don't want to expose the implementation details of PartitionKeyValue, so we use
 // this inner private enum to store the data.
