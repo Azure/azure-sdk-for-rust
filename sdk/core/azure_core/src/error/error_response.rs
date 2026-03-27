@@ -27,7 +27,7 @@ use std::{collections::HashMap, future::Future, str};
 ///```
 ///
 ///
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
     /// The error details.
@@ -56,7 +56,7 @@ impl TryFrom<Error> for ErrorResponse {
 /// Details about an error returned from a service.
 ///
 /// Implements a standard "ErrorDetails" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorDetail {
     /// The error code. A machine readable error code defined by the service.
@@ -84,7 +84,7 @@ pub struct ErrorDetail {
 /// Inner error information about an error returned from a service.
 ///
 /// Implements a standard "InnerError" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InnerError {
     /// A more specific error than was contained in the containing error.
@@ -486,6 +486,26 @@ mod tests {
             );
         }
         Ok(())
+    }
+
+    #[test]
+    fn clone_error_response() {
+        let response: ErrorResponse = serde_json::from_slice(
+            br#"{"error":{"code":"InvalidRequest","message":"bad request","innererror":{"code":"InvalidKey"},"extra":"value"}}"#,
+        )
+        .expect("deserialize");
+        let cloned = response.clone();
+        let detail = cloned.error.as_ref().expect("error detail present");
+        assert_eq!(detail.code.as_deref(), Some("InvalidRequest"));
+        assert_eq!(detail.message.as_deref(), Some("bad request"));
+        assert_eq!(
+            detail
+                .inner_error
+                .as_ref()
+                .and_then(|ie| ie.code.as_deref()),
+            Some("InvalidKey"),
+        );
+        assert!(detail.additional_properties.contains_key("extra"));
     }
 
     #[tokio::test]

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Derived `Clone` on `ErrorResponse`, `ErrorDetail`, and `InnerError`.
+
 ### Breaking Changes
 
 - Added `tokio` feature to `default` features.
