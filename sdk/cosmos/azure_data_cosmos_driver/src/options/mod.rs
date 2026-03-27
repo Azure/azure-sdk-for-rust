@@ -8,13 +8,9 @@
 //!
 //! **Environment → Runtime → Account (Driver) → Operation** (lowest to highest priority)
 //!
-//! Option groups use `#[derive(CosmosOptions)]` to generate View, Builder, Default,
-//! and `from_env()` constructors:
-//!
-//! - [`OperationOptions`] — cross-layer options for service requests (consistency,
-//!   excluded regions, content response on write)
-//! - [`RetryOptions`] / [`SessionRetryOptions`] — retry behavior configuration
-//! - [`RuntimeOptions`] — internal infrastructure options (failover, timeouts, session capture)
+//! [`OperationOptions`] is the single option group for all layered configuration.
+//! It uses `#[derive(CosmosOptions)]` to generate a [`OperationOptionsView`],
+//! [`OperationOptionsBuilder`], `Default`, and `from_env()` constructors.
 //!
 //! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
 //! initialization time and do not participate in per-operation layered resolution.
@@ -29,10 +25,6 @@ mod policies;
 mod priority;
 mod read_consistency;
 mod region;
-mod request_options;
-mod retry_options;
-mod runtime_options;
-mod session_retry_options;
 mod throughput_control;
 
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
@@ -50,12 +42,6 @@ pub use policies::{
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
-pub use request_options::RequestOptions;
-pub use retry_options::{RetryOptions, RetryOptionsBuilder, RetryOptionsView};
-pub use runtime_options::{RuntimeOptions, RuntimeOptionsBuilder, RuntimeOptionsView};
-pub use session_retry_options::{
-    SessionRetryOptions, SessionRetryOptionsBuilder, SessionRetryOptionsView,
-};
 pub use throughput_control::{
     ThroughputControlGroupKey, ThroughputControlGroupOptions,
     ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,

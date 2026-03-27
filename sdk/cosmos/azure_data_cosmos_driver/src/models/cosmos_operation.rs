@@ -29,7 +29,7 @@ use crate::models::{
 ///     AccountReference, CosmosOperation,
 ///     ItemReference, PartitionKey,
 /// };
-/// use azure_data_cosmos_driver::options::RequestOptions;
+/// use azure_data_cosmos_driver::options::OperationOptions;
 /// use url::Url;
 ///
 /// # async fn example() -> azure_core::Result<()> {
@@ -47,7 +47,7 @@ use crate::models::{
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_operation(CosmosOperation::read_item(item), RequestOptions::new())
+///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -312,7 +312,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation,
     /// };
-    /// use azure_data_cosmos_driver::options::RequestOptions;
+    /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -327,7 +327,7 @@ impl CosmosOperation {
     /// let result = driver
     ///     .execute_operation(
     ///         CosmosOperation::delete_container(container),
-    ///         RequestOptions::new(),
+    ///         OperationOptions::default(),
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -387,7 +387,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation, ContainerReference, PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::RequestOptions;
+    /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -404,7 +404,7 @@ impl CosmosOperation {
     ///     .execute_operation(
     ///         CosmosOperation::create_item(container, pk)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
-    ///         RequestOptions::new(),
+    ///         OperationOptions::default(),
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -430,7 +430,7 @@ impl CosmosOperation {
     ///     AccountReference, CosmosOperation, ItemReference,
     ///     PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::RequestOptions;
+    /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -444,7 +444,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), RequestOptions::new())
+    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }

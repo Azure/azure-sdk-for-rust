@@ -13,7 +13,7 @@
 //! effect application.
 
 use azure_data_cosmos_driver::models::AccountReference;
-use azure_data_cosmos_driver::options::RequestOptions;
+use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::{driver::CosmosDriverRuntime, models::CosmosOperation};
 
 fn read_env(name: &str) -> Option<String> {
@@ -56,7 +56,7 @@ async fn write_forbidden_triggers_refresh_and_failover() {
     let _ = driver
         .execute_operation(
             CosmosOperation::read_database(db_ref),
-            RequestOptions::new(),
+            OperationOptions::default(),
         )
         .await;
 }
@@ -90,7 +90,7 @@ async fn session_not_available_retries_across_locations() {
     let _ = driver
         .execute_operation(
             CosmosOperation::read_database(db_ref),
-            RequestOptions::new(),
+            OperationOptions::default(),
         )
         .await;
 }

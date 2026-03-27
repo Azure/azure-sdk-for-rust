@@ -3,14 +3,25 @@
 
 //! Operation options that participate in runtime/account/operation resolution.
 
+use std::time::Duration;
+
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::options::{ContentResponseOnWrite, ExcludedRegions, ReadConsistencyStrategy};
+use crate::{
+    models::ThroughputControlGroupName,
+    options::{
+        ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+        ReadConsistencyStrategy,
+    },
+};
 
-/// Operation options that apply to individual service requests.
+/// Options that apply to individual service requests.
 ///
 /// These options follow a hierarchy where operation-level settings override
 /// account-level, which override runtime-level, which override environment defaults.
+///
+/// `OperationOptions` is the single option group for all operation-specific
+/// configuration where application-wide or account-wide defaults make sense.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
@@ -25,6 +36,31 @@ pub struct OperationOptions {
     /// Content response on write setting.
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
+
+    /// Throughput control group name for rate limiting.
+    pub throughput_control_group_name: Option<ThroughputControlGroupName>,
+
+    /// End-to-end latency policy for timeout management.
+    pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
+
+    /// Maximum operation-level failover retries.
+    #[option(env = "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT")]
+    pub max_failover_retry_count: Option<u32>,
+
+    /// Endpoint unavailability TTL used by routing state.
+    pub endpoint_unavailability_ttl: Option<Duration>,
+
+    /// Whether session token capturing is disabled.
+    ///
+    /// When `None` or `Some(false)`, session tokens are captured and resolved
+    /// from response headers for session consistency (the default behavior).
+    /// Set to `Some(true)` to disable session token management for scenarios where
+    /// session consistency is not needed.
+    pub session_capturing_disabled: Option<bool>,
+
+    /// Maximum operation-level session retries for 404/1002 errors.
+    #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
+    pub max_session_retry_count: Option<u32>,
 }
 
 #[cfg(test)]
@@ -37,6 +73,9 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
+        assert!(options.throughput_control_group_name.is_none());
+        assert!(options.max_failover_retry_count.is_none());
+        assert!(options.max_session_retry_count.is_none());
     }
 
     #[test]
@@ -44,6 +83,8 @@ mod tests {
         let options = OperationOptionsBuilder::new()
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
+            .with_max_failover_retry_count(5)
+            .with_max_session_retry_count(3)
             .build();
 
         assert_eq!(
@@ -54,6 +95,8 @@ mod tests {
             options.read_consistency_strategy,
             Some(ReadConsistencyStrategy::Session)
         );
+        assert_eq!(options.max_failover_retry_count, Some(5));
+        assert_eq!(options.max_session_retry_count, Some(3));
     }
 
     #[test]
@@ -62,26 +105,24 @@ mod tests {
 
         let env = Arc::new(OperationOptions {
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
-            excluded_regions: None,
-            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            max_failover_retry_count: Some(3),
+            ..Default::default()
         });
 
         let runtime = Arc::new(OperationOptions {
-            read_consistency_strategy: None,
-            excluded_regions: None,
-            content_response_on_write: None,
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            ..Default::default()
         });
 
         let account = Arc::new(OperationOptions {
-            read_consistency_strategy: None,
-            excluded_regions: None,
+            max_failover_retry_count: Some(5),
             content_response_on_write: Some(ContentResponseOnWrite::Disabled),
+            ..Default::default()
         });
 
         let operation = OperationOptions {
             read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
-            excluded_regions: None,
-            content_response_on_write: None,
+            ..Default::default()
         };
 
         let view =
@@ -92,32 +133,16 @@ mod tests {
             view.read_consistency_strategy(),
             Some(&ReadConsistencyStrategy::Session)
         );
-        // Account overrides env
+        // Account overrides runtime
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Disabled)
         );
+        // Account overrides env
+        assert_eq!(view.max_failover_retry_count(), Some(&5));
         // Not set anywhere
         assert!(view.excluded_regions().is_none());
-    }
-
-    #[test]
-    fn view_falls_through_to_env() {
-        use std::sync::Arc;
-
-        let env = Arc::new(OperationOptions {
-            read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
-            excluded_regions: None,
-            content_response_on_write: None,
-        });
-
-        let view = OperationOptionsView::new(Some(env), None, None, None);
-
-        assert_eq!(
-            view.read_consistency_strategy(),
-            Some(&ReadConsistencyStrategy::Eventual)
-        );
-        assert!(view.content_response_on_write().is_none());
+        assert!(view.max_session_retry_count().is_none());
     }
 
     #[test]
@@ -125,6 +150,8 @@ mod tests {
         let options = OperationOptions::from_env_vars(|key| match key {
             "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY" => Ok("Session".to_string()),
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
+            "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
+            "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
 
@@ -136,6 +163,8 @@ mod tests {
             options.content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
         );
+        assert_eq!(options.max_failover_retry_count, Some(7));
+        assert_eq!(options.max_session_retry_count, Some(3));
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
     }
@@ -147,5 +176,7 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.content_response_on_write.is_none());
         assert!(options.excluded_regions.is_none());
+        assert!(options.max_failover_retry_count.is_none());
+        assert!(options.max_session_retry_count.is_none());
     }
 }

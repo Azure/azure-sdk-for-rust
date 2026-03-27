@@ -22,10 +22,7 @@ use crate::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{
-        OperationOptionsView, ReadConsistencyStrategy, RequestOptions, RuntimeOptionsView,
-        SessionRetryOptionsView,
-    },
+    options::{OperationOptionsView, ReadConsistencyStrategy},
 };
 
 use super::{
@@ -48,9 +45,7 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    _options: &RequestOptions,
-    effective_options: &RuntimeOptionsView<'_>,
-    operation_options: &OperationOptionsView<'_>,
+    options: &OperationOptionsView<'_>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -62,27 +57,26 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
-    session_retry_options: &SessionRetryOptionsView<'_>,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
-    let max_failover_retries = effective_options
+    let max_failover_retries = options
         .max_failover_retry_count()
         .copied()
         .unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
-    let session_capturing_disabled = effective_options
+    let session_capturing_disabled = options
         .session_capturing_disabled()
         .copied()
         .unwrap_or(false);
-    let read_consistency_strategy = operation_options
+    let read_consistency_strategy = options
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
-    let max_session_retries = session_retry_options
+    let max_session_retries = options
         .max_session_retry_count()
         .copied()
         .unwrap_or_else(|| {
@@ -102,7 +96,7 @@ pub(crate) async fn execute_operation_pipeline(
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,
         location_snapshot.account.multiple_write_locations_enabled,
-        operation_options
+        options
             .excluded_regions()
             .map(|r| r.0.clone())
             .unwrap_or_default(),
@@ -110,7 +104,7 @@ pub(crate) async fn execute_operation_pipeline(
         max_session_retries,
     );
 
-    let deadline = effective_options
+    let deadline = options
         .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
 
@@ -246,7 +240,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
-                        let timeout_duration = effective_options
+                        let timeout_duration = options
                             .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
@@ -283,7 +277,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
-                        let timeout_duration = effective_options
+                        let timeout_duration = options
                             .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
