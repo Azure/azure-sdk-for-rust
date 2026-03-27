@@ -5,10 +5,9 @@
 
 use std::sync::Arc;
 
-use azure_core::http::HttpClient;
-
 use super::http_client::FaultClient;
 use super::rule::FaultInjectionRule;
+use crate::driver::transport::cosmos_transport_client::CosmosTransportClient;
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 use crate::options::ConnectionPoolOptions;
 
@@ -41,7 +40,7 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn HttpClient>> {
+    ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
         let real_client = self.inner.build(connection_pool, config)?;
         let rules = (*self.rules).clone();
         Ok(Arc::new(FaultClient::new(real_client, rules)))
@@ -51,13 +50,15 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::driver::transport::cosmos_transport_client::{
+        CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
+    };
     use crate::fault_injection::{
         FaultInjectionErrorType, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
     };
-    use azure_core::http::{AsyncRawResponse, Request};
     use std::sync::atomic::{AtomicU32, Ordering};
 
-    /// A mock factory that creates mock HTTP clients.
+    /// A mock factory that creates mock transport clients.
     #[derive(Debug)]
     struct MockHttpClientFactory;
 
@@ -66,30 +67,30 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             _config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn HttpClient>> {
-            Ok(Arc::new(MockHttpClient {
+        ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
+            Ok(Arc::new(MockTransportClient {
                 call_count: AtomicU32::new(0),
             }))
         }
     }
 
     #[derive(Debug)]
-    struct MockHttpClient {
+    struct MockTransportClient {
         call_count: AtomicU32,
     }
 
     #[async_trait::async_trait]
-    impl HttpClient for MockHttpClient {
-        async fn execute_request(
+    impl CosmosTransportClient for MockTransportClient {
+        async fn send(
             &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
+            _request: &CosmosHttpRequest,
+        ) -> Result<CosmosHttpResponse, TransportError> {
             self.call_count.fetch_add(1, Ordering::SeqCst);
-            Ok(AsyncRawResponse::from_bytes(
-                azure_core::http::StatusCode::Ok,
-                azure_core::http::headers::Headers::new(),
-                vec![],
-            ))
+            Ok(CosmosHttpResponse {
+                status: 200,
+                headers: azure_core::http::headers::Headers::new(),
+                body: vec![],
+            })
         }
     }
 

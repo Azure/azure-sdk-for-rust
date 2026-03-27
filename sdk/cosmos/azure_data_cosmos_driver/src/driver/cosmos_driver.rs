@@ -988,7 +988,7 @@ mod tests {
     use std::sync::Mutex;
 
     use async_trait::async_trait;
-    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Request, StatusCode};
+    use azure_core::http::headers::Headers;
 
     use url::Url;
 
@@ -1006,8 +1006,11 @@ mod tests {
     use super::*;
     use crate::options::Region;
     use crate::{
-        driver::transport::http_client_factory::{
-            HttpClientConfig, HttpClientFactory, HttpVersionPolicy,
+        driver::transport::{
+            cosmos_transport_client::{
+                CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
+            },
+            http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
         },
         options::ConnectionPoolOptions,
     };
@@ -1049,21 +1052,26 @@ mod tests {
     }
 
     #[async_trait]
-    impl HttpClient for ScriptedClient {
-        async fn execute_request(
+    impl CosmosTransportClient for ScriptedClient {
+        async fn send(
             &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
+            _request: &CosmosHttpRequest,
+        ) -> Result<CosmosHttpResponse, TransportError> {
             match self.plan {
-                ResponsePlan::Success => Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::Ok,
-                    Headers::new(),
-                    ACCOUNT_PROPERTIES_PAYLOAD.as_bytes(),
-                )),
-                ResponsePlan::Http2Incompatible => Err(azure_core::Error::with_error(
-                    ErrorKind::Io,
-                    h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
-                    "http2 not supported",
+                ResponsePlan::Success => Ok(CosmosHttpResponse {
+                    status: 200,
+                    headers: Headers::new(),
+                    body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                }),
+                ResponsePlan::Http2Incompatible => Err(TransportError::new(
+                    azure_core::Error::with_error(
+                        ErrorKind::Io,
+                        h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+                        "http2 not supported",
+                    ),
+                    crate::diagnostics::RequestSentStatus::NotSent,
+                    false,
+                    false,
                 )),
             }
         }
@@ -1093,7 +1101,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+        ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
             self.configs
                 .lock()
                 .expect("config lock poisoned")

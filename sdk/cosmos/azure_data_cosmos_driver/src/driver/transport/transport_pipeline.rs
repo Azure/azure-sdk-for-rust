@@ -702,7 +702,6 @@ mod tests {
     };
 
     use async_trait::async_trait;
-    use azure_core::http::{AsyncRawResponse, Request};
 
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
@@ -712,20 +711,28 @@ mod tests {
     };
 
     #[derive(Debug)]
-    struct HangingHttpClient {
+    struct HangingTransportClient {
         delay: Duration,
     }
 
     #[async_trait]
-    impl azure_core::http::HttpClient for HangingHttpClient {
-        async fn execute_request(
+    impl super::super::cosmos_transport_client::CosmosTransportClient for HangingTransportClient {
+        async fn send(
             &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
+            _request: &super::super::cosmos_transport_client::CosmosHttpRequest,
+        ) -> Result<
+            super::super::cosmos_transport_client::CosmosHttpResponse,
+            super::super::cosmos_transport_client::TransportError,
+        > {
             tokio::time::sleep(self.delay).await;
-            Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                "request should have timed out before completion",
+            Err(super::super::cosmos_transport_client::TransportError::new(
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Io,
+                    "request should have timed out before completion",
+                ),
+                crate::diagnostics::RequestSentStatus::Unknown,
+                false,
+                false,
             ))
         }
     }
@@ -923,7 +930,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
-        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
             delay: Duration::from_secs(2),
         }));
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -957,34 +964,44 @@ mod tests {
     }
 
     #[derive(Debug)]
-    struct ScriptedHttpClient {
+    struct ScriptedTransportClient {
         error_kind: azure_core::error::ErrorKind,
         message: &'static str,
     }
 
     #[async_trait]
-    impl azure_core::http::HttpClient for ScriptedHttpClient {
-        async fn execute_request(
+    impl super::super::cosmos_transport_client::CosmosTransportClient for ScriptedTransportClient {
+        async fn send(
             &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
+            _request: &super::super::cosmos_transport_client::CosmosHttpRequest,
+        ) -> Result<
+            super::super::cosmos_transport_client::CosmosHttpResponse,
+            super::super::cosmos_transport_client::TransportError,
+        > {
             let error_kind = match &self.error_kind {
                 ErrorKind::Connection => ErrorKind::Connection,
                 ErrorKind::Io => ErrorKind::Io,
                 ErrorKind::Other => ErrorKind::Other,
                 _ => ErrorKind::Other,
             };
-            Err(azure_core::Error::with_message(error_kind, self.message))
+            Err(super::super::cosmos_transport_client::TransportError::new(
+                azure_core::Error::with_message(error_kind, self.message),
+                crate::diagnostics::RequestSentStatus::Unknown,
+                matches!(&self.error_kind, ErrorKind::Connection),
+                false,
+            ))
         }
     }
 
     #[derive(Debug)]
     struct ScriptedFactory {
-        clients: Mutex<Vec<Arc<dyn azure_core::http::HttpClient>>>,
+        clients: Mutex<Vec<Arc<dyn super::super::cosmos_transport_client::CosmosTransportClient>>>,
     }
 
     impl ScriptedFactory {
-        fn new(clients: Vec<Arc<dyn azure_core::http::HttpClient>>) -> Self {
+        fn new(
+            clients: Vec<Arc<dyn super::super::cosmos_transport_client::CosmosTransportClient>>,
+        ) -> Self {
             Self {
                 clients: Mutex::new(clients.into_iter().rev().collect()),
             }
@@ -996,7 +1013,8 @@ mod tests {
             &self,
             _connection_pool: &crate::options::ConnectionPoolOptions,
             _config: super::super::http_client_factory::HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn azure_core::http::HttpClient>> {
+        ) -> azure_core::Result<Arc<dyn super::super::cosmos_transport_client::CosmosTransportClient>>
+        {
             self.clients.lock().unwrap().pop().ok_or_else(|| {
                 azure_core::Error::with_message(ErrorKind::Other, "no scripted client available")
             })
@@ -1016,11 +1034,11 @@ mod tests {
             .build()
             .unwrap();
         let factory = Arc::new(ScriptedFactory::new(vec![
-            Arc::new(ScriptedHttpClient {
+            Arc::new(ScriptedTransportClient {
                 error_kind: error_kind_a,
                 message: message_a,
             }),
-            Arc::new(ScriptedHttpClient {
+            Arc::new(ScriptedTransportClient {
                 error_kind: error_kind_b,
                 message: message_b,
             }),
@@ -1177,7 +1195,7 @@ mod tests {
 
     #[tokio::test]
     async fn execute_transport_pipeline_preserves_client_generated_401_in_diagnostics() {
-        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
             delay: Duration::from_secs(1),
         }));
         let mut diagnostics = DiagnosticsContextBuilder::new(

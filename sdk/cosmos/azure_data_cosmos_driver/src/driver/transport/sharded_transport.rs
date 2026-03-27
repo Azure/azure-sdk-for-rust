@@ -17,8 +17,10 @@ use arc_swap::ArcSwap;
 
 use azure_core::{
     error::ErrorKind,
-    http::{AsyncRawResponse, HttpClient, Request},
+    http::{AsyncRawResponse, Request},
 };
+
+use super::cosmos_transport_client::CosmosTransportClient;
 #[cfg(any(feature = "tokio", test))]
 use std::time::Duration;
 #[cfg(any(feature = "tokio", test))]
@@ -101,7 +103,8 @@ impl ShardedHttpTransport {
 
         let shard_id = shard.id;
         let guard = shard.start_request();
-        let result = shard.client.execute_request(request).await;
+        let result =
+            super::cosmos_transport_client::bridge_send(shard.client.as_ref(), request).await;
         guard.finish(&result);
         let shard_diagnostics = Some(shard.transport_diagnostics());
 
@@ -551,7 +554,7 @@ const TIMESTAMP_BIAS_NANOS: u64 = 30_000_000_000; // 30 seconds
 
 struct ClientShard {
     id: u64,
-    client: Arc<dyn HttpClient>,
+    client: Arc<dyn CosmosTransportClient>,
     /// Monotonic base used for all timestamp offsets on this shard.
     creation_time: Instant,
     // -- Hot-path atomic counters (no Mutex needed) --
@@ -571,7 +574,7 @@ struct ClientShard {
 }
 
 impl ClientShard {
-    fn new(id: u64, client: Arc<dyn HttpClient>) -> Self {
+    fn new(id: u64, client: Arc<dyn CosmosTransportClient>) -> Self {
         Self {
             id,
             client,
@@ -916,6 +919,9 @@ impl fmt::Debug for ClientShard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::driver::transport::cosmos_transport_client::{
+        CosmosHttpRequest, CosmosHttpResponse, TransportError,
+    };
     use async_trait::async_trait;
 
     #[derive(Debug, Default)]
@@ -937,27 +943,32 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+        ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
             self.idle_ping_flags
                 .lock()
                 .expect("tracking lock poisoned")
                 .push(config.http2_keep_alive_while_idle);
-            Ok(Arc::new(NoopHttpClient))
+            Ok(Arc::new(NoopTransportClient))
         }
     }
 
     #[derive(Debug)]
-    struct NoopHttpClient;
+    struct NoopTransportClient;
 
     #[async_trait]
-    impl HttpClient for NoopHttpClient {
-        async fn execute_request(
+    impl CosmosTransportClient for NoopTransportClient {
+        async fn send(
             &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
-            Err(azure_core::Error::with_message(
-                ErrorKind::Other,
-                "noop client should not execute requests in shard unit tests",
+            _request: &CosmosHttpRequest,
+        ) -> Result<CosmosHttpResponse, TransportError> {
+            Err(TransportError::new(
+                azure_core::Error::with_message(
+                    ErrorKind::Other,
+                    "noop client should not execute requests in shard unit tests",
+                ),
+                crate::diagnostics::RequestSentStatus::NotSent,
+                false,
+                false,
             ))
         }
     }

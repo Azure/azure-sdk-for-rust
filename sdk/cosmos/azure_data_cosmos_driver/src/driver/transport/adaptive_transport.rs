@@ -5,11 +5,12 @@
 
 use std::{fmt, sync::Arc};
 
-use azure_core::http::{AsyncRawResponse, HttpClient, Request};
+use azure_core::http::{AsyncRawResponse, Request};
 
 use crate::diagnostics::{TransportHttpVersion, TransportKind};
 
 use super::{
+    cosmos_transport_client::CosmosTransportClient,
     http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
     sharded_transport::{EndpointKey, ShardedHttpTransport, TransportDispatch},
 };
@@ -25,7 +26,7 @@ use crate::options::ConnectionPoolOptions;
 #[derive(Clone)]
 pub(crate) enum AdaptiveTransport {
     /// Unsharded HTTP/1.1 gateway transport (TCP keepalive, no HTTP/2 sharding).
-    Gateway(Arc<dyn HttpClient>),
+    Gateway(Arc<dyn CosmosTransportClient>),
     /// Per-endpoint HTTP/2 sharded gateway transport (HTTP/2 keepalive, no TCP keepalive).
     ShardedGateway(Arc<ShardedHttpTransport>),
     /// Gateway 2.0 transport with per-endpoint HTTP/2 sharding.
@@ -99,7 +100,9 @@ impl AdaptiveTransport {
     ))]
     pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         match self {
-            Self::Gateway(client) => client.execute_request(request).await,
+            Self::Gateway(client) => {
+                super::cosmos_transport_client::bridge_send(client.as_ref(), request).await
+            }
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
                 let endpoint_key = EndpointKey::try_from(request.url())?;
                 transport
@@ -119,7 +122,7 @@ impl AdaptiveTransport {
     ) -> TransportDispatch {
         match self {
             Self::Gateway(client) => TransportDispatch {
-                result: client.execute_request(request).await,
+                result: super::cosmos_transport_client::bridge_send(client.as_ref(), request).await,
                 shard_id: None,
                 shard_diagnostics: None,
             },
