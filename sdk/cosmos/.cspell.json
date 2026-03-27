@@ -120,6 +120,7 @@
         "qself",
         "RAII",
         "reactivations",
+        "readfeed",
         "Replicaset",
         "reqs",
         "Retriable",
