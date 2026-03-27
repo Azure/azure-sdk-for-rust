@@ -23,8 +23,8 @@ use crate::{
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
     options::{
-        CrossLayerOperationOptionsView, OperationOptions, ReadConsistencyStrategy,
-        RuntimeOptionsView, SessionRetryOptionsView,
+        OperationOptionsView, ReadConsistencyStrategy, RequestOptions, RuntimeOptionsView,
+        SessionRetryOptionsView,
     },
 };
 
@@ -48,9 +48,9 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    _options: &OperationOptions,
+    _options: &RequestOptions,
     effective_options: &RuntimeOptionsView<'_>,
-    cross_layer_options: &CrossLayerOperationOptionsView<'_>,
+    operation_options: &OperationOptionsView<'_>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -76,7 +76,7 @@ pub(crate) async fn execute_operation_pipeline(
         .session_capturing_disabled()
         .copied()
         .unwrap_or(false);
-    let read_consistency_strategy = cross_layer_options
+    let read_consistency_strategy = operation_options
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
@@ -102,7 +102,7 @@ pub(crate) async fn execute_operation_pipeline(
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,
         location_snapshot.account.multiple_write_locations_enabled,
-        cross_layer_options
+        operation_options
             .excluded_regions()
             .map(|r| r.0.clone())
             .unwrap_or_default(),

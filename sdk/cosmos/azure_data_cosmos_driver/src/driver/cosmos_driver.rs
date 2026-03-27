@@ -13,8 +13,8 @@ use crate::{
         CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
-        ConnectionPoolOptions, CrossLayerOperationOptionsView, DiagnosticsOptions, DriverOptions,
-        OperationOptions, RuntimeOptionsView, SessionRetryOptionsView,
+        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptionsView,
+        RequestOptions, RuntimeOptionsView, SessionRetryOptionsView,
         ThroughputControlGroupSnapshot,
     },
 };
@@ -434,7 +434,7 @@ impl CosmosDriver {
         container_name: &str,
     ) -> azure_core::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
-        let options = OperationOptions::new();
+        let options = RequestOptions::new();
 
         let db_result = self
             .execute_operation(
@@ -486,7 +486,7 @@ impl CosmosDriver {
         container_rid: &str,
     ) -> azure_core::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
-        let options = OperationOptions::new();
+        let options = RequestOptions::new();
 
         let db_result = self
             .execute_operation(
@@ -675,13 +675,13 @@ impl CosmosDriver {
     /// Constructs a [`RuntimeOptionsView`] for resolving options across all layers.
     ///
     /// The view resolves options in priority order (highest first):
-    /// 1. `OperationOptions` - operation-specific overrides
+    /// 1. `RequestOptions` - operation-specific overrides
     /// 2. `DriverOptions` - driver-level defaults
     /// 3. `CosmosDriverRuntime` - global defaults
     /// 4. Environment - env vars read at startup
     pub fn runtime_options_view<'a>(
         &self,
-        operation_options: &'a OperationOptions,
+        operation_options: &'a RequestOptions,
     ) -> RuntimeOptionsView<'a> {
         RuntimeOptionsView::new(
             Some(Arc::clone(self.runtime.env_options())),
@@ -693,34 +693,32 @@ impl CosmosDriver {
 
     /// Constructs a [`SessionRetryOptionsView`] for resolving session retry options.
     ///
-    /// Currently only the environment layer is populated. Runtime and account
-    /// layers will be wired after `DriverOptions` restructuring.
+    /// Currently the environment and account layers are populated. The runtime
+    /// layer is not yet wired.
     fn session_retry_options_view(&self) -> SessionRetryOptionsView<'_> {
-        // TODO: wire runtime and account layers after DriverOptions restructuring
         SessionRetryOptionsView::new(
             Some(Arc::clone(self.runtime.env_session_retry_options())),
             None,
-            None,
+            self.options.retry_options().session_retry.as_ref(),
         )
     }
 
-    /// Constructs a [`CrossLayerOperationOptionsView`] for resolving cross-layer options.
+    /// Constructs an [`OperationOptionsView`] for resolving operation options.
     ///
     /// The view resolves options in priority order (highest first):
-    /// 1. `OperationOptions` - operation-specific overrides
-    /// 2. `DriverOptions` - driver-level defaults (not yet wired)
+    /// 1. `RequestOptions` - operation-specific overrides
+    /// 2. `DriverOptions` - driver-level defaults
     /// 3. `CosmosDriverRuntime` - global defaults (not yet wired)
     /// 4. Environment - env vars read at startup
-    fn cross_layer_options_view<'a>(
+    fn operation_options_view<'a>(
         &self,
-        operation_options: &'a OperationOptions,
-    ) -> CrossLayerOperationOptionsView<'a> {
-        // TODO: wire runtime and account layers after DriverOptions restructuring
-        CrossLayerOperationOptionsView::new(
-            Some(Arc::clone(self.runtime.env_cross_layer_options())),
+        operation_options: &'a RequestOptions,
+    ) -> OperationOptionsView<'a> {
+        OperationOptionsView::new(
+            Some(Arc::clone(self.runtime.env_operation_options())),
             None,
-            None,
-            Some(operation_options.cross_layer()),
+            Some(self.options.operation_options().clone()),
+            Some(operation_options.operation()),
         )
     }
 
@@ -777,7 +775,7 @@ impl CosmosDriver {
     ///
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    /// use azure_data_cosmos_driver::options::{OperationOptions, ContentResponseOnWrite};
+    /// use azure_data_cosmos_driver::options::{RequestOptions, ContentResponseOnWrite};
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
@@ -792,7 +790,7 @@ impl CosmosDriver {
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     ///
     /// // Execute operations with operation-specific options that override defaults
-    /// let options = OperationOptions::new()
+    /// let options = RequestOptions::new()
     ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
     ///
     /// // let result = driver.execute_operation(operation, options).await?;
@@ -807,7 +805,7 @@ impl CosmosDriver {
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
-        options: OperationOptions,
+        options: RequestOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -824,7 +822,7 @@ impl CosmosDriver {
         // Step 1: Build the runtime options view for layered resolution.
         let effective_options = self.runtime_options_view(&options);
         let session_retry_options = self.session_retry_options_view();
-        let cross_layer_options = self.cross_layer_options_view(&options);
+        let operation_options = self.operation_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
@@ -901,7 +899,7 @@ impl CosmosDriver {
             &operation,
             &options,
             &effective_options,
-            &cross_layer_options,
+            &operation_options,
             self.location_state_store.as_ref(),
             &transport,
             &endpoint,
@@ -938,7 +936,7 @@ impl CosmosDriver {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation, ItemReference, PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::RequestOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -955,7 +953,7 @@ impl CosmosDriver {
     /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+    ///     .execute_operation(CosmosOperation::read_item(item), RequestOptions::new())
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -1337,18 +1335,18 @@ mod tests {
 
     #[tokio::test]
     async fn effective_options_merge_priority() {
-        // Build runtime (no cross-layer options at runtime level yet)
+        // Build runtime (no operation options at runtime level yet)
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
-        // Driver has no cross-layer override either
+        // Driver has no operation options override either
         let driver_options = DriverOptions::builder(test_account()).build();
 
         let driver = CosmosDriver::new(cosmos_runtime, driver_options);
 
-        // Operation has DISABLED - should get DISABLED from cross-layer view
-        let op_options = OperationOptions::new()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled);
-        let view = driver.cross_layer_options_view(&op_options);
+        // Operation has DISABLED - should get DISABLED from operation options view
+        let op_options =
+            RequestOptions::new().with_content_response_on_write(ContentResponseOnWrite::Disabled);
+        let view = driver.operation_options_view(&op_options);
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Disabled)
@@ -1356,8 +1354,8 @@ mod tests {
 
         // Operation overrides to ENABLED - should get ENABLED
         let op_options =
-            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
-        let view = driver.cross_layer_options_view(&op_options);
+            RequestOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
+        let view = driver.operation_options_view(&op_options);
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Enabled)
@@ -1366,7 +1364,7 @@ mod tests {
 
     #[tokio::test]
     async fn effective_options_falls_back_to_runtime() {
-        // Build runtime (env-level cross-layer options are auto-loaded)
+        // Build runtime (env-level operation options are auto-loaded)
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
         // Driver has no override
@@ -1374,18 +1372,18 @@ mod tests {
 
         let driver = CosmosDriver::new(cosmos_runtime, driver_options);
 
-        // Operation sets ENABLED - should get ENABLED from cross-layer view
+        // Operation sets ENABLED - should get ENABLED from operation options view
         let op_options =
-            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
-        let view = driver.cross_layer_options_view(&op_options);
+            RequestOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
+        let view = driver.operation_options_view(&op_options);
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Enabled)
         );
 
         // Operation has no override - env has no override - should be None
-        let op_options = OperationOptions::new();
-        let view = driver.cross_layer_options_view(&op_options);
+        let op_options = RequestOptions::new();
+        let view = driver.operation_options_view(&op_options);
         assert!(view.content_response_on_write().is_none());
     }
 

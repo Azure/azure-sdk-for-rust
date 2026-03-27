@@ -16,10 +16,10 @@ use std::{
 use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId,
-        CrossLayerOperationOptions, DriverOptions, RuntimeOptions, SessionRetryOptions,
-        ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
-        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
+        OperationOptions, RuntimeOptions, SessionRetryOptions, ThroughputControlGroupOptions,
+        ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry, UserAgentSuffix,
+        WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -108,8 +108,8 @@ pub struct CosmosDriverRuntime {
     /// Environment-level session retry options, populated once from env vars at build time.
     env_session_retry_options: Arc<SessionRetryOptions>,
 
-    /// Environment-level cross-layer operation options, populated once from env vars at build time.
-    env_cross_layer_options: Arc<CrossLayerOperationOptions>,
+    /// Environment-level operation options, populated once from env vars at build time.
+    env_operation_options: Arc<OperationOptions>,
 
     /// User-provided runtime-level default options, swappable via interior mutability.
     ///
@@ -237,9 +237,9 @@ impl CosmosDriverRuntime {
         &self.env_session_retry_options
     }
 
-    /// Returns the environment-level cross-layer operation options (populated from env vars at build time).
-    pub fn env_cross_layer_options(&self) -> &Arc<CrossLayerOperationOptions> {
-        &self.env_cross_layer_options
+    /// Returns the environment-level operation options (populated from env vars at build time).
+    pub fn env_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_operation_options
     }
 
     /// Returns a snapshot of the runtime-level default options.
@@ -702,7 +702,7 @@ impl CosmosDriverRuntimeBuilder {
             http_client_factory,
             env_options: Arc::new(RuntimeOptions::from_env()),
             env_session_retry_options: Arc::new(SessionRetryOptions::from_env()),
-            env_cross_layer_options: Arc::new(CrossLayerOperationOptions::from_env()),
+            env_operation_options: Arc::new(OperationOptions::from_env()),
             runtime_options: RwLock::new(Arc::new(self.runtime_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,

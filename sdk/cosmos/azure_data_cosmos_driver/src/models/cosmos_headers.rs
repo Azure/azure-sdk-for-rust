@@ -3,7 +3,7 @@
 
 //! Cosmos DB request/response header models.
 
-use crate::models::{ActivityId, ETag, RequestCharge, SessionToken, SubStatusCode};
+use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 
 /// Standard Cosmos DB request header names.
@@ -16,6 +16,8 @@ pub(crate) mod request_header_names {
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+    pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+    pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 }
 
 /// Standard Cosmos DB response header names.
@@ -58,6 +60,9 @@ pub struct CosmosRequestHeaders {
 
     /// Session token for session consistency (`x-ms-session-token`).
     pub session_token: Option<SessionToken>,
+
+    /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
+    pub precondition: Option<Precondition>,
 }
 
 impl CosmosRequestHeaders {
@@ -79,6 +84,18 @@ impl CosmosRequestHeaders {
                 request_header_names::SESSION_TOKEN.clone(),
                 HeaderValue::from(session_token.as_str().to_owned()),
             );
+        }
+        if let Some(precondition) = self.precondition.as_ref() {
+            match precondition {
+                Precondition::IfMatch(etag) => headers.insert(
+                    request_header_names::IF_MATCH.clone(),
+                    HeaderValue::from(etag.as_str().to_owned()),
+                ),
+                Precondition::IfNoneMatch(etag) => headers.insert(
+                    request_header_names::IF_NONE_MATCH.clone(),
+                    HeaderValue::from(etag.as_str().to_owned()),
+                ),
+            }
         }
     }
 }
@@ -258,6 +275,7 @@ mod tests {
         let headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
+            precondition: None,
         };
 
         assert_eq!(
@@ -275,6 +293,7 @@ mod tests {
         let cosmos_headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
+            precondition: None,
         };
         let mut headers = Headers::new();
 

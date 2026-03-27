@@ -12,7 +12,7 @@ use azure_data_cosmos_driver::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
     },
-    options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
+    options::{ConnectionPoolOptions, EmulatorServerCertValidation, RequestOptions},
 };
 use std::{error::Error, future::Future, sync::Arc};
 use uuid::Uuid;
@@ -255,7 +255,7 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, RequestOptions::new())
             .await?;
 
         // Check for success status (201 Created)
@@ -284,7 +284,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, RequestOptions::new())
             .await?;
 
         // Check for success status (204 No Content)
@@ -317,7 +317,7 @@ impl DriverTestRunContext {
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, RequestOptions::new())
             .await?;
 
         // Check for success status (201 Created)
@@ -352,7 +352,7 @@ impl DriverTestRunContext {
             CosmosOperation::create_item(container.clone(), pk).with_body(body.to_vec());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, RequestOptions::new())
             .await?;
 
         Ok(result)
@@ -376,7 +376,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, RequestOptions::new())
             .await?;
 
         Ok(result)

@@ -8,17 +8,18 @@
 //!
 //! **Environment → Runtime → Account (Driver) → Operation** (lowest to highest priority)
 //!
-//! [`RuntimeOptions`] is the central option group that participates in all layers.
-//! It uses `#[derive(CosmosOptions)]` to generate:
-//! - [`RuntimeOptionsView`] — snapshot view for resolving options across layers
-//! - [`RuntimeOptionsBuilder`] — fluent builder for constructing options
-//! - `from_env()` — environment variable loading
+//! Option groups use `#[derive(CosmosOptions)]` to generate View, Builder, Default,
+//! and `from_env()` constructors:
+//!
+//! - [`OperationOptions`] — cross-layer options for service requests (consistency,
+//!   excluded regions, content response on write)
+//! - [`RetryOptions`] / [`SessionRetryOptions`] — retry behavior configuration
+//! - [`RuntimeOptions`] — internal infrastructure options (failover, timeouts, session capture)
 //!
 //! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
 //! initialization time and do not participate in per-operation layered resolution.
 
 mod connection_pool;
-mod cross_layer_operation_options;
 mod diagnostics_options;
 mod driver_options;
 mod env_parsing;
@@ -28,22 +29,20 @@ mod policies;
 mod priority;
 mod read_consistency;
 mod region;
+mod request_options;
 mod retry_options;
 mod runtime_options;
 mod session_retry_options;
 mod throughput_control;
 
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
-pub use cross_layer_operation_options::{
-    CrossLayerOperationOptions, CrossLayerOperationOptionsBuilder, CrossLayerOperationOptionsView,
-};
 pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
-pub use operation_options::OperationOptions;
+pub use operation_options::{OperationOptions, OperationOptionsBuilder, OperationOptionsView};
 pub use policies::{
     ContentResponseOnWrite, EmulatorServerCertValidation, EndToEndOperationLatencyPolicy,
     ExcludedRegions,
@@ -51,6 +50,7 @@ pub use policies::{
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
+pub use request_options::RequestOptions;
 pub use retry_options::{RetryOptions, RetryOptionsBuilder, RetryOptionsView};
 pub use runtime_options::{RuntimeOptions, RuntimeOptionsBuilder, RuntimeOptionsView};
 pub use session_retry_options::{

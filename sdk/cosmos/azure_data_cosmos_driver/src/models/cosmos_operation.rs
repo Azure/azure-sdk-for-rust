@@ -5,7 +5,7 @@
 
 use crate::models::{
     AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, ItemReference, OperationType, PartitionKey, ResourceType,
+    DatabaseReference, ItemReference, OperationType, PartitionKey, Precondition, ResourceType,
 };
 
 /// Represents a Cosmos DB operation with its routing and execution context.
@@ -29,7 +29,7 @@ use crate::models::{
 ///     AccountReference, CosmosOperation,
 ///     ItemReference, PartitionKey,
 /// };
-/// use azure_data_cosmos_driver::options::OperationOptions;
+/// use azure_data_cosmos_driver::options::RequestOptions;
 /// use url::Url;
 ///
 /// # async fn example() -> azure_core::Result<()> {
@@ -47,7 +47,7 @@ use crate::models::{
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+///     .execute_operation(CosmosOperation::read_item(item), RequestOptions::new())
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -132,6 +132,17 @@ impl CosmosOperation {
     pub fn with_activity_id(mut self, activity_id: crate::models::ActivityId) -> Self {
         self.request_headers.activity_id = Some(activity_id);
         self
+    }
+
+    /// Sets the precondition for optimistic concurrency control.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.request_headers.precondition = Some(precondition);
+        self
+    }
+
+    /// Returns the precondition, if set.
+    pub fn precondition(&self) -> Option<&Precondition> {
+        self.request_headers.precondition.as_ref()
     }
 
     /// Sets the request body.
@@ -301,7 +312,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::RequestOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -316,7 +327,7 @@ impl CosmosOperation {
     /// let result = driver
     ///     .execute_operation(
     ///         CosmosOperation::delete_container(container),
-    ///         OperationOptions::new(),
+    ///         RequestOptions::new(),
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -376,7 +387,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation, ContainerReference, PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::RequestOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -393,7 +404,7 @@ impl CosmosOperation {
     ///     .execute_operation(
     ///         CosmosOperation::create_item(container, pk)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
-    ///         OperationOptions::new(),
+    ///         RequestOptions::new(),
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -419,7 +430,7 @@ impl CosmosOperation {
     ///     AccountReference, CosmosOperation, ItemReference,
     ///     PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::RequestOptions;
     /// use url::Url;
     ///
     /// # async fn example() -> azure_core::Result<()> {
@@ -433,7 +444,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+    ///     .execute_operation(CosmosOperation::read_item(item), RequestOptions::new())
     ///     .await?;
     /// # Ok(())
     /// # }

@@ -59,7 +59,7 @@ impl SessionManager {
     ///
     /// Resolution order:
     /// 1. If the user explicitly provided a session token via
-    ///    [`OperationOptions`](crate::options::OperationOptions), use that.
+    ///    [`CosmosOperation::with_session_token`](crate::models::CosmosOperation::with_session_token), use that.
     /// 2. Otherwise, look up the cached token by the operation's
     ///    [`ContainerReference`].
     ///
