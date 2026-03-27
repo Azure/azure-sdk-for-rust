@@ -376,7 +376,7 @@ mod tests {
     fn write_to_headers_all_fields() {
         let cosmos_headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
-            session_token: Some(SessionToken::new("sess:100".to_string())),
+            session_token: Some(SessionToken::new("session:100".to_string())),
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
         };
         let mut headers = Headers::new();
@@ -389,7 +389,7 @@ mod tests {
         );
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("x-ms-session-token")),
-            Some("sess:100")
+            Some("session:100")
         );
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("if-match")),
