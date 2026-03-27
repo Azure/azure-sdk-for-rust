@@ -219,7 +219,7 @@ fn test_get_runtime() {
 struct TestRuntime;
 
 impl AsyncRuntime for TestRuntime {
-    fn spawn(&self, _f: TaskFuture) -> SpawnedTask {
+    fn spawn(&self, _f: TaskFuture) -> Pin<Box<dyn SpawnedTask>> {
         unimplemented!("TestRuntime does not support spawning tasks");
     }
 
@@ -244,4 +244,146 @@ fn test_set_runtime() {
 
     // Ensure that setting the runtime again fails
     set_async_runtime(runtime.clone()).unwrap_err();
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_abort_cancels_task() {
+    let spawner = Arc::new(tokio_runtime::TokioRuntime);
+    let started = Arc::new(Mutex::new(false));
+    let completed = Arc::new(Mutex::new(false));
+    let started_clone = Arc::clone(&started);
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        *started_clone.lock().unwrap() = true;
+        // Sleep long enough that abort will fire before completion
+        crate::sleep::sleep(Duration::seconds(10)).await;
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Give the task a moment to start
+    crate::sleep::sleep(Duration::milliseconds(50)).await;
+    assert!(*started.lock().unwrap(), "task should have started");
+
+    handle.abort();
+
+    // The task should not have completed
+    assert!(
+        !*completed.lock().unwrap(),
+        "task should not have completed after abort"
+    );
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_abort_then_await() {
+    let spawner = Arc::new(tokio_runtime::TokioRuntime);
+
+    let handle = spawner.spawn(Box::pin(async {
+        crate::sleep::sleep(Duration::seconds(10)).await;
+    }));
+
+    // Give the task a moment to start
+    crate::sleep::sleep(Duration::milliseconds(50)).await;
+
+    handle.abort();
+
+    // Awaiting an aborted task should still resolve (not hang)
+    let result = handle.await;
+    // Result may be Ok or Err depending on timing, but it must not hang
+    drop(result);
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_abort_already_completed_task() {
+    let spawner = Arc::new(tokio_runtime::TokioRuntime);
+    let completed = Arc::new(Mutex::new(false));
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Wait for the task to complete
+    crate::sleep::sleep(Duration::milliseconds(50)).await;
+    assert!(*completed.lock().unwrap());
+
+    // Aborting an already-completed task should not panic
+    handle.abort();
+}
+
+#[test]
+fn std_abort_prevents_blocking() {
+    let spawner = Arc::new(standard_runtime::StdRuntime);
+    let completed = Arc::new(Mutex::new(false));
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        // Sleep long enough that abort will fire before completion
+        std::thread::sleep(std::time::Duration::from_secs(10));
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Give the task a moment to start on its thread
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    // Abort should not panic and should mark the task as finished
+    handle.abort();
+
+    // Awaiting the aborted task should resolve immediately (not block for 10s)
+    let result = futures::executor::block_on(handle);
+    assert!(result.is_ok());
+
+    // The task's long sleep may still be running on its thread, but the future resolved
+    // without waiting for completion.
+}
+
+#[test]
+fn std_abort_already_completed_task() {
+    let spawner = Arc::new(standard_runtime::StdRuntime);
+    let completed = Arc::new(Mutex::new(false));
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Wait for the task to complete
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    assert!(*completed.lock().unwrap());
+
+    // Aborting an already-completed task should not panic
+    handle.abort();
+
+    let result = futures::executor::block_on(handle);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn std_abort_multiple_tasks() {
+    let spawner = Arc::new(standard_runtime::StdRuntime);
+    let mut handles = Vec::new();
+
+    for _ in 0..5 {
+        let handle = spawner.spawn(Box::pin(async {
+            std::thread::sleep(std::time::Duration::from_secs(10));
+        }));
+        handles.push(handle);
+    }
+
+    // Give tasks a moment to start
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    // Abort all tasks
+    for handle in &handles {
+        handle.abort();
+    }
+
+    // All aborted tasks should resolve without blocking
+    for handle in handles {
+        let result = futures::executor::block_on(handle);
+        assert!(result.is_ok());
+    }
 }

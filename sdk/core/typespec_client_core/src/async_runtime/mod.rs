@@ -42,15 +42,29 @@ mod tests;
 /// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
 pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
+// /// A `SpawnedTask` is a future that represents a running task.
+// /// It can be awaited to block until the task has completed.
+// pub type SpawnedTask = Pin<
+//     Box<
+//         dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>>
+//             + Send
+//             + 'static,
+//     >,
+// >;
+
 /// A `SpawnedTask` is a future that represents a running task.
-/// It can be awaited to block until the task has completed.
-pub type SpawnedTask = Pin<
-    Box<
-        dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>>
-            + Send
-            + 'static,
-    >,
->;
+/// It can be awaited to block until the task has completed,
+/// and it also provides an `abort` method to cancel the task.
+pub trait SpawnedTask:
+    Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>> + Send
+{
+    /// Aborts the task, attempting to cancel its execution.
+    /// The exact behavior of this method depends on the underlying async runtime implementation.
+    ///
+    /// For example, in a thread-based implementation, this might involve terminating the thread,
+    /// while in a Tokio-based implementation, it might involve calling `abort` on a `JoinHandle`.
+    fn abort(&self);
+}
 
 /// An Asynchronous Runtime.
 ///
@@ -91,7 +105,7 @@ pub trait AsyncRuntime: Send + Sync {
     /// method cannot directly return a future, instead they wrap the return value
     /// in a future, and we want the `spawn` method to directly return a future
     /// that can be awaited.
-    fn spawn(&self, f: TaskFuture) -> SpawnedTask;
+    fn spawn(&self, f: TaskFuture) -> Pin<Box<dyn SpawnedTask>>;
 
     /// Sleep for the specified duration asynchronously.
     ///

@@ -166,8 +166,8 @@ where
 /// - Returns Err if joined task closed with an error.
 async fn await_message_while_joining_workers<T>(
     receiver: &mut UnboundedReceiver<T>,
-    mut task_bucket: Vec<SpawnedTask>,
-) -> AzureResult<(T, Vec<SpawnedTask>)> {
+    mut task_bucket: Vec<Pin<Box<dyn SpawnedTask>>>,
+) -> AzureResult<(T, Vec<Pin<Box<dyn SpawnedTask>>>)> {
     let on_recv_err = |_| {
         Error::with_message(
             ErrorKind::Other,
@@ -223,7 +223,7 @@ fn start_initial_download_task(
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
     active_tasks_counter: Arc<AtomicUsize>,
     partition_size: usize,
-) -> SpawnedTask {
+) -> Pin<Box<dyn SpawnedTask>> {
     get_async_runtime().spawn(Box::pin(async move {
         let res = collect_into(
             initial_response.into_body(),
@@ -242,7 +242,7 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
     active_tasks_counter: Arc<AtomicUsize>,
     chunk_idx: usize,
-) -> SpawnedTask {
+) -> Pin<Box<dyn SpawnedTask>> {
     get_async_runtime().spawn(Box::pin(async move {
         let res = download_range_to_bytes(client, range)
             .await

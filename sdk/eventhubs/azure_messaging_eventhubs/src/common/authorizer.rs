@@ -13,6 +13,7 @@ use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, RngExt};
 use std::{
     collections::HashMap,
+    pin::Pin,
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
 };
 use tracing::{debug, trace, warn};
@@ -43,7 +44,7 @@ impl Default for TokenRefreshTimes {
 
 pub(crate) struct Authorizer {
     authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
-    authorization_refresher: OnceLock<SpawnedTask>,
+    authorization_refresher: OnceLock<Pin<Box<dyn SpawnedTask>>>,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
