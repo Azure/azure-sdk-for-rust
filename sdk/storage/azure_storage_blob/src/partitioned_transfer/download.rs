@@ -1025,6 +1025,40 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn download_into_insufficient_buffer() -> AzureResult<()> {
+        let partition_len = NonZero::new(3).unwrap();
+        let parallel = NonZero::new(2).unwrap();
+        let data_len = 1024;
+
+        let data = get_random_data(data_len);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+
+        for buffer_len in [0, data_len - 1, data_len / 2] {
+            let mut buffer = vec![0; buffer_len];
+            assert!(
+                download_into(&mut buffer, None, parallel, partition_len, mock.clone())
+                    .await
+                    .is_err()
+            );
+        }
+
+        for range_len in [1, data_len, data_len / 2] {
+            let mut buffer = vec![0; range_len - 1];
+            assert!(download_into(
+                &mut buffer,
+                Some(0..range_len),
+                parallel,
+                partition_len,
+                mock.clone()
+            )
+            .await
+            .is_err());
+        }
+
+        Ok(())
+    }
+
     trait BytesTryStreamExt {
         async fn buffer_all(&mut self) -> AzureResult<Vec<u8>>;
     }
