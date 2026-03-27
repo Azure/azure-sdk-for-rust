@@ -40,7 +40,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// ```rust,no_run
 /// use azure_data_cosmos::{
 ///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
-///     RoutingStrategy, regions,
+///     Region, RoutingStrategy,
 /// };
 /// use std::sync::Arc;
 ///
@@ -50,7 +50,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClientBuilder::new()
-///     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
+///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -61,7 +61,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// ```rust,no_run,ignore
 /// use azure_data_cosmos::{
 ///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
-///     RoutingStrategy, regions,
+///     Region, RoutingStrategy,
 /// };
 /// use azure_core::credentials::Secret;
 ///
@@ -69,7 +69,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
-///     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
+///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }

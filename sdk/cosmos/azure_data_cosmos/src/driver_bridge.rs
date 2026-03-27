@@ -289,7 +289,7 @@ mod tests {
         let driver_opts = item_options_to_operation_options(&options);
 
         let driver_custom = driver_opts
-            .custom_headers_ref()
+            .custom_headers()
             .expect("custom headers should be set");
         assert_eq!(
             driver_custom
@@ -317,7 +317,7 @@ mod tests {
         let options = ItemOptions::default();
         let driver_opts = item_options_to_operation_options(&options);
 
-        assert!(driver_opts.custom_headers_ref().is_none());
+        assert!(driver_opts.custom_headers().is_none());
         assert!(driver_opts.excluded_regions.is_none());
     }
 }

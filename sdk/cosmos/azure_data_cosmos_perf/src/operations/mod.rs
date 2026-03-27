@@ -15,8 +15,10 @@ mod upsert_item;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::options::ItemOptions;
-use azure_data_cosmos::regions::RegionName;
+use azure_data_cosmos::options::{
+    ExcludedRegions, ItemReadOptions, ItemWriteOptions, OperationOptions,
+};
+use azure_data_cosmos::regions::Region;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -83,23 +85,27 @@ pub fn create_operations(
     ops
 }
 
-/// Builds per-operation `ItemOptions` for reads and writes based on excluded regions config.
-fn build_item_options(config: &Config) -> (Option<ItemOptions>, Option<ItemOptions>) {
+/// Builds per-operation options for reads and writes based on excluded regions config.
+fn build_item_options(config: &Config) -> (Option<ItemReadOptions>, Option<ItemWriteOptions>) {
     if config.excluded_regions.is_empty() {
         return (None, None);
     }
 
-    let regions: Vec<RegionName> = config
+    let regions: Vec<Region> = config
         .excluded_regions
         .iter()
         .map(|r| r.clone().into())
         .collect();
 
-    let opts = || Some(ItemOptions::default().with_excluded_regions(regions.clone()));
+    let mut operation = OperationOptions::default();
+    operation.excluded_regions = Some(ExcludedRegions::from_iter(regions));
+
+    let read_opts = || Some(ItemReadOptions::default().with_operation_options(operation.clone()));
+    let write_opts = || Some(ItemWriteOptions::default().with_operation_options(operation.clone()));
 
     match config.exclude_regions_for {
-        ExcludeRegionsScope::Reads => (opts(), None),
-        ExcludeRegionsScope::Writes => (None, opts()),
-        ExcludeRegionsScope::Both => (opts(), opts()),
+        ExcludeRegionsScope::Reads => (read_opts(), None),
+        ExcludeRegionsScope::Writes => (None, write_opts()),
+        ExcludeRegionsScope::Both => (read_opts(), write_opts()),
     }
 }

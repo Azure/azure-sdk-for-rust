@@ -864,7 +864,7 @@ impl CosmosDriver {
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
             &effective_options,
-            options.custom_headers_ref(),
+            options.custom_headers(),
             self.location_state_store.as_ref(),
             &transport,
             &endpoint,

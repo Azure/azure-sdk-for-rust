@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build the Cosmos client using the builder pattern
-    let application_region: azure_data_cosmos::regions::RegionName =
+    let application_region: azure_data_cosmos::regions::Region =
         config.application_region.clone().into();
     let strategy = RoutingStrategy::ProximityTo(application_region.clone());
 

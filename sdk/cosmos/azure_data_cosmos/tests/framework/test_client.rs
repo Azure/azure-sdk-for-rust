@@ -10,8 +10,8 @@ use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
-use azure_data_cosmos::options::ItemOptions;
-use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
+use azure_data_cosmos::options::ItemReadOptions;
+use azure_data_cosmos::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
     Query, RoutingStrategy,
@@ -36,8 +36,8 @@ pub const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-pub const HUB_REGION: RegionName = EAST_US_2;
-pub const SATELLITE_REGION: RegionName = WEST_US_3;
+pub const HUB_REGION: Region = Region::EAST_US_2;
+pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
 
@@ -48,7 +48,7 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 #[derive(Default)]
 pub struct TestOptions {
     /// Application region for the normal (non-fault) client.
-    pub client_application_region: Option<RegionName>,
+    pub client_application_region: Option<Region>,
     /// Fault injection builder for the fault injection client.
     /// If provided, a separate client will be created with fault injection capabilities.
     /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
@@ -56,7 +56,7 @@ pub struct TestOptions {
     pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
     /// Application region for the fault injection client.
     /// Used in combination with `fault_injection_builder`.
-    pub fault_client_application_region: Option<RegionName>,
+    pub fault_client_application_region: Option<Region>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -68,7 +68,7 @@ impl TestOptions {
     }
 
     /// Sets the application region for the normal (non-fault) client.
-    pub fn with_client_application_region(mut self, region: RegionName) -> Self {
+    pub fn with_client_application_region(mut self, region: Region) -> Self {
         self.client_application_region = Some(region);
         self
     }
@@ -82,7 +82,7 @@ impl TestOptions {
     }
 
     /// Sets the application region for the fault injection client.
-    pub fn with_fault_client_application_region(mut self, region: RegionName) -> Self {
+    pub fn with_fault_client_application_region(mut self, region: Region) -> Self {
         self.fault_client_application_region = Some(region);
         self
     }
@@ -185,20 +185,20 @@ fn is_azure_pipelines() -> bool {
 
 impl TestClient {
     pub async fn from_env_with_fault_options(
-        fault_client_application_region: Option<RegionName>,
+        fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(None, None, fault_client_application_region).await
     }
 
     pub async fn from_env(
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(application_region, None, None).await
     }
 
     pub async fn from_env_with_fault_builder(
         fault_builder: FaultInjectionClientBuilder,
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(None, Some(fault_builder), application_region).await
     }
@@ -209,9 +209,9 @@ impl TestClient {
     /// Calling `run` on such a client will skip running the closure (thus skipping the test), except when
     /// running on Azure Pipelines, when it will panic instead.
     async fn from_env_inner(
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
         fault_builder: Option<FaultInjectionClientBuilder>,
-        fault_client_application_region: Option<RegionName>,
+        fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -253,10 +253,10 @@ impl TestClient {
 
     async fn from_connection_string(
         connection_string: &str,
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
         mut allow_invalid_certificates: bool,
         fault_builder: Option<FaultInjectionClientBuilder>,
-        fault_client_application_region: Option<RegionName>,
+        fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -573,7 +573,7 @@ impl TestRunContext {
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions>,
+        options: Option<ItemReadOptions>,
     ) -> azure_core::Result<ItemResponse<T>>
     where
         T: serde::de::DeserializeOwned,
@@ -778,7 +778,7 @@ impl TestRunContext {
 
     /// Creates a CosmosClient with a specific preferred region.
     async fn create_client_with_preferred_region(
-        region: RegionName,
+        region: Region,
     ) -> Result<CosmosClient, azure_core::Error> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
