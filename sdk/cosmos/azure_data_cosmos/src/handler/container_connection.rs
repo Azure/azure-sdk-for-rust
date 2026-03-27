@@ -73,7 +73,10 @@ impl ContainerConnection {
                     }
                 }
             } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
-                let routing_map = self.pk_range_cache.try_lookup(collection_name, collection_rid, None).await?;
+                let routing_map = self
+                    .pk_range_cache
+                    .try_lookup(collection_name, collection_rid, None)
+                    .await?;
 
                 if let Some(routing_map) = routing_map {
                     // Use a safe default version (2) when the service omits the version field,

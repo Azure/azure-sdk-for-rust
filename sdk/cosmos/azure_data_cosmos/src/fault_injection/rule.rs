@@ -48,9 +48,7 @@ impl Clone for FaultInjectionRule {
             id: self.id.clone(),
             enabled: AtomicBool::new(self.enabled.load(Ordering::SeqCst)),
             hit_count: AtomicU32::new(self.hit_count.load(Ordering::SeqCst)),
-            passthrough_statuses: Mutex::new(
-                self.passthrough_statuses.lock().unwrap().clone(),
-            ),
+            passthrough_statuses: Mutex::new(self.passthrough_statuses.lock().unwrap().clone()),
         }
     }
 }

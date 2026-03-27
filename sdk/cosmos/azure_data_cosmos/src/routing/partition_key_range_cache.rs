@@ -60,11 +60,15 @@ impl PartitionKeyRangeCache {
         range: Range<String>,
         force_refresh: bool,
     ) -> Result<Option<Vec<PartitionKeyRange>>, Error> {
-        let mut routing_map = self.try_lookup(collection_name, collection_rid, None).await?;
+        let mut routing_map = self
+            .try_lookup(collection_name, collection_rid, None)
+            .await?;
 
         if force_refresh {
             if let Some(previous) = routing_map.clone() {
-                routing_map = self.try_lookup(collection_name, collection_rid, Some(previous)).await?;
+                routing_map = self
+                    .try_lookup(collection_name, collection_rid, Some(previous))
+                    .await?;
             }
         }
 
@@ -89,7 +93,10 @@ impl PartitionKeyRangeCache {
         partition_key_range_id: &str,
         force_refresh: bool,
     ) -> Option<PartitionKeyRange> {
-        let mut routing_map = self.try_lookup(collection_name, collection_rid, None).await.ok()?;
+        let mut routing_map = self
+            .try_lookup(collection_name, collection_rid, None)
+            .await
+            .ok()?;
 
         if force_refresh {
             if let Some(previous) = routing_map.clone() {
@@ -131,7 +138,11 @@ impl PartitionKeyRangeCache {
                 },
                 || async {
                     let routing_map = self
-                        .get_routing_map_for_collection(collection_name, collection_rid, previous_value.clone())
+                        .get_routing_map_for_collection(
+                            collection_name,
+                            collection_rid,
+                            previous_value.clone(),
+                        )
                         .await?;
                     match routing_map {
                         Some(map) => Ok(map),
