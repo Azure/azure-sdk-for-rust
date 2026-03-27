@@ -113,7 +113,7 @@ mod tests {
     fn make_headers_all_some() -> CosmosResponseHeaders {
         let mut h = CosmosResponseHeaders::new();
         h.activity_id = Some(ActivityId::from_string("act-123".to_string()));
-        h.request_charge = Some(RequestCharge::new(3.14));
+        h.request_charge = Some(RequestCharge::new(4.2));
         h.session_token = Some(DriverSessionToken::new("sess-token".to_string()));
         h.etag = Some(ETag::new("\"etag-value\"".to_string()));
         h.continuation = Some("cont-token".to_string());
@@ -127,7 +127,7 @@ mod tests {
         let headers = driver_response_headers_to_headers(&make_headers_all_some());
 
         assert_eq!(headers.get_optional_str(&ACTIVITY_ID), Some("act-123"));
-        assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), Some("3.14"));
+        assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), Some("4.2"));
         assert_eq!(headers.get_optional_str(&SESSION_TOKEN), Some("sess-token"));
         assert_eq!(
             headers.get_optional_str(&azure_core::http::headers::ETAG),
