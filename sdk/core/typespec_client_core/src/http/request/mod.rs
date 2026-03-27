@@ -37,9 +37,9 @@ pub enum Body {
 
 impl Body {
     /// Returns the length of the body in bytes.
-    pub fn len(&self) -> usize {
+    pub fn len(&self) -> u64 {
         match self {
-            Body::Bytes(bytes) => bytes.len(),
+            Body::Bytes(bytes) => bytes.len() as u64,
             Body::SeekableStream(stream) => stream.len(),
         }
     }
