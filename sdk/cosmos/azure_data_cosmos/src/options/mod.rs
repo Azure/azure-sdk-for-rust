@@ -202,6 +202,10 @@ impl ItemOptions {
     pub(crate) fn custom_headers(&self) -> &HashMap<HeaderName, HeaderValue> {
         &self.custom_headers
     }
+
+    pub(crate) fn excluded_regions(&self) -> Option<&[RegionName]> {
+        self.excluded_regions.as_deref()
+    }
 }
 
 impl ItemOptions {

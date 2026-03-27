@@ -92,7 +92,7 @@ pub(crate) fn item_options_to_operation_options(options: &ItemOptions) -> Operat
         driver_options = driver_options.with_custom_headers(options.custom_headers().clone());
     }
 
-    if let Some(regions) = &options.excluded_regions {
+    if let Some(regions) = options.excluded_regions() {
         let driver_regions =
             ExcludedRegions(regions.iter().map(|r| Region::new(r.to_string())).collect());
         driver_options = driver_options.with_excluded_regions(driver_regions);
