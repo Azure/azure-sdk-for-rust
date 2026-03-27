@@ -8,11 +8,7 @@
 //! foundation for routing SDK operations through the driver.
 
 use azure_core::{
-    http::{
-        headers::{HeaderName, Headers},
-        response::Response,
-        RawResponse, StatusCode,
-    },
+    http::{headers::Headers, response::Response, RawResponse, StatusCode},
     Bytes,
 };
 use azure_data_cosmos_driver::{
@@ -23,7 +19,11 @@ use azure_data_cosmos_driver::{
     options::{ExcludedRegions, OperationOptions, Region},
 };
 
-use crate::{models::CosmosResponse, options::ItemOptions};
+use crate::{
+    constants::{ACTIVITY_ID, CONTINUATION, ITEM_COUNT, REQUEST_CHARGE, SESSION_TOKEN, SUB_STATUS},
+    models::CosmosResponse,
+    options::ItemOptions,
+};
 
 /// Converts a driver [`DriverResponse`] into the SDK's typed [`CosmosResponse<T>`].
 ///
@@ -50,43 +50,25 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     let mut headers = Headers::new();
 
     if let Some(activity_id) = &cosmos_headers.activity_id {
-        headers.insert(
-            HeaderName::from_static("x-ms-activity-id"),
-            activity_id.as_str().to_owned(),
-        );
+        headers.insert(ACTIVITY_ID, activity_id.as_str().to_owned());
     }
     if let Some(charge) = &cosmos_headers.request_charge {
-        headers.insert(
-            HeaderName::from_static("x-ms-request-charge"),
-            charge.value().to_string(),
-        );
+        headers.insert(REQUEST_CHARGE, charge.value().to_string());
     }
     if let Some(session_token) = &cosmos_headers.session_token {
-        headers.insert(
-            HeaderName::from_static("x-ms-session-token"),
-            session_token.as_str().to_owned(),
-        );
+        headers.insert(SESSION_TOKEN, session_token.as_str().to_owned());
     }
     if let Some(etag) = &cosmos_headers.etag {
-        headers.insert(HeaderName::from_static("etag"), etag.as_str().to_owned());
+        headers.insert(azure_core::http::headers::ETAG, etag.as_str().to_owned());
     }
     if let Some(continuation) = &cosmos_headers.continuation {
-        headers.insert(
-            HeaderName::from_static("x-ms-continuation"),
-            continuation.clone(),
-        );
+        headers.insert(CONTINUATION, continuation.clone());
     }
     if let Some(item_count) = cosmos_headers.item_count {
-        headers.insert(
-            HeaderName::from_static("x-ms-item-count"),
-            item_count.to_string(),
-        );
+        headers.insert(ITEM_COUNT, item_count.to_string());
     }
     if let Some(substatus) = &cosmos_headers.substatus {
-        headers.insert(
-            HeaderName::from_static("x-ms-substatus"),
-            substatus.value().to_string(),
-        );
+        headers.insert(SUB_STATUS, substatus.value().to_string());
     }
 
     headers
@@ -117,4 +99,121 @@ pub(crate) fn item_options_to_operation_options(options: &ItemOptions) -> Operat
     }
 
     driver_options
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::http::headers::HeaderName;
+    use azure_data_cosmos_driver::models::{
+        ActivityId, CosmosResponseHeaders, RequestCharge, SessionToken as DriverSessionToken,
+        SubStatusCode,
+    };
+
+    fn make_headers_all_some() -> CosmosResponseHeaders {
+        let mut h = CosmosResponseHeaders::new();
+        h.activity_id = Some(ActivityId::from_string("act-123".to_string()));
+        h.request_charge = Some(RequestCharge::new(3.14));
+        h.session_token = Some(DriverSessionToken::new("sess-token".to_string()));
+        h.etag = Some(ETag::new("\"etag-value\"".to_string()));
+        h.continuation = Some("cont-token".to_string());
+        h.item_count = Some(42);
+        h.substatus = Some(SubStatusCode::new(0));
+        h
+    }
+
+    #[test]
+    fn headers_all_some() {
+        let headers = driver_response_headers_to_headers(&make_headers_all_some());
+
+        assert_eq!(headers.get_optional_str(&ACTIVITY_ID), Some("act-123"));
+        assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), Some("3.14"));
+        assert_eq!(headers.get_optional_str(&SESSION_TOKEN), Some("sess-token"));
+        assert_eq!(
+            headers.get_optional_str(&azure_core::http::headers::ETAG),
+            Some("\"etag-value\""),
+        );
+        assert_eq!(headers.get_optional_str(&CONTINUATION), Some("cont-token"));
+        assert_eq!(headers.get_optional_str(&ITEM_COUNT), Some("42"));
+        assert_eq!(headers.get_optional_str(&SUB_STATUS), Some("0"));
+    }
+
+    #[test]
+    fn headers_all_none() {
+        let headers = driver_response_headers_to_headers(&CosmosResponseHeaders::new());
+
+        assert_eq!(headers.get_optional_str(&ACTIVITY_ID), None);
+        assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), None);
+        assert_eq!(headers.get_optional_str(&SESSION_TOKEN), None);
+        assert_eq!(
+            headers.get_optional_str(&azure_core::http::headers::ETAG),
+            None
+        );
+        assert_eq!(headers.get_optional_str(&CONTINUATION), None);
+        assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
+        assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
+    }
+
+    #[test]
+    fn options_session_token() {
+        let options = ItemOptions::default().with_session_token("my-session".to_string().into());
+        let driver_opts = item_options_to_operation_options(&options);
+
+        assert_eq!(
+            driver_opts.session_token_ref().map(|t| t.as_str()),
+            Some("my-session"),
+        );
+    }
+
+    #[test]
+    fn options_if_match_etag() {
+        let options = ItemOptions::default().with_if_match_etag("\"etag-123\"".into());
+        let driver_opts = item_options_to_operation_options(&options);
+
+        assert!(driver_opts.etag_condition_ref().is_some());
+    }
+
+    #[test]
+    fn options_custom_headers() {
+        let mut custom = std::collections::HashMap::new();
+        custom.insert(
+            HeaderName::from_static("x-custom-header"),
+            azure_core::http::headers::HeaderValue::from_static("custom-value"),
+        );
+        let options = ItemOptions::default().with_custom_headers(custom);
+        let driver_opts = item_options_to_operation_options(&options);
+
+        let driver_custom = driver_opts
+            .custom_headers_ref()
+            .expect("custom headers should be set");
+        assert_eq!(
+            driver_custom
+                .get(&HeaderName::from_static("x-custom-header"))
+                .map(|v| v.as_str()),
+            Some("custom-value"),
+        );
+    }
+
+    #[test]
+    fn options_excluded_regions() {
+        let options =
+            ItemOptions::default().with_excluded_regions(vec!["eastus".into(), "westus".into()]);
+        let driver_opts = item_options_to_operation_options(&options);
+
+        let regions = driver_opts
+            .excluded_regions_ref()
+            .expect("excluded regions should be set");
+        assert_eq!(regions.0.len(), 2);
+    }
+
+    #[test]
+    fn options_default_produces_empty_driver_options() {
+        let options = ItemOptions::default();
+        let driver_opts = item_options_to_operation_options(&options);
+
+        assert!(driver_opts.session_token_ref().is_none());
+        assert!(driver_opts.etag_condition_ref().is_none());
+        assert!(driver_opts.custom_headers_ref().is_none());
+        assert!(driver_opts.excluded_regions_ref().is_none());
+    }
 }
