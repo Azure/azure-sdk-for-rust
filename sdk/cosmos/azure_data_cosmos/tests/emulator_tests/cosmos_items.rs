@@ -59,7 +59,11 @@ fn assert_response<T>(
     }
 
     assert_eq!(
-        response.request_url().expect("request URL should be present").host_str().unwrap(),
+        response
+            .request_url()
+            .expect("request URL should be present")
+            .host_str()
+            .unwrap(),
         expected_endpoint,
         "unexpected endpoint"
     );
