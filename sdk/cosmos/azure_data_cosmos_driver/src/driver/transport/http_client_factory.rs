@@ -213,7 +213,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
                 format!("Failed to create HTTP client: {error}"),
             )
         })?;
-        Ok(super::reqwest_transport_client::ReqwestTransportClient::new(client))
+        Ok(super::reqwest_transport_client::ReqwestTransportClient::into_arc(client))
     }
 }
 

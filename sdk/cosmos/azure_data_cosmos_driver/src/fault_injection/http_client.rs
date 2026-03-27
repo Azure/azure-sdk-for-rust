@@ -179,11 +179,7 @@ impl FaultClient {
         // Apply delay if configured (only when fault is actually injected).
         if let Some(delay) = server_error.delay() {
             if delay > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(delay)
-                    .unwrap_or(azure_core::time::Duration::ZERO);
-                azure_core::async_runtime::get_async_runtime()
-                    .sleep(delay)
-                    .await;
+                tokio::time::sleep(delay).await;
             }
         }
 

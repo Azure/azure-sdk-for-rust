@@ -31,8 +31,13 @@ pub(crate) struct ReqwestTransportClient {
 
 impl ReqwestTransportClient {
     /// Wraps an existing `reqwest::Client`.
-    pub fn new(client: reqwest::Client) -> Arc<dyn CosmosTransportClient> {
-        Arc::new(Self { client })
+    pub fn new(client: reqwest::Client) -> Self {
+        Self { client }
+    }
+
+    /// Wraps an existing `reqwest::Client` and returns it as an `Arc<dyn CosmosTransportClient>`.
+    pub fn into_arc(client: reqwest::Client) -> Arc<dyn CosmosTransportClient> {
+        Arc::new(Self::new(client))
     }
 }
 
