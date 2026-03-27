@@ -480,7 +480,9 @@ fn build_transport_request(
     // override SDK-set headers above).
     if let Some(custom) = options.custom_headers_ref() {
         for (name, value) in custom {
-            headers.insert(name.clone(), value.clone());
+            if !headers.contains_key(name) {
+                headers.insert(name.clone(), value.clone());
+            }
         }
     }
 
