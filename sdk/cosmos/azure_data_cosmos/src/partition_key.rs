@@ -129,9 +129,11 @@ impl PartitionKey {
                 InnerPartitionKeyValue::Number(n) => DriverPKV::from(n),
                 InnerPartitionKeyValue::Bool(b) => DriverPKV::from(b),
                 InnerPartitionKeyValue::Null => DriverPKV::from(Option::<String>::None),
-                InnerPartitionKeyValue::Undefined | InnerPartitionKeyValue::Infinity => {
-                    // These are edge cases not supported by the driver's PK model.
-                    // Undefined/Infinity PKs are rare in practice.
+                InnerPartitionKeyValue::Undefined => DriverPKV::undefined(),
+                InnerPartitionKeyValue::Infinity => {
+                    // Infinity is an internal sentinel for EPK boundary calculations.
+                    // It is not valid for point operations like read_item and the
+                    // driver will return an error during header serialization.
                     DriverPKV::from(Option::<String>::None)
                 }
             })

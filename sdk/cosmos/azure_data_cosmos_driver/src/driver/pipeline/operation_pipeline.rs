@@ -439,8 +439,16 @@ fn build_transport_request(
 
     let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
 
-    // Build headers from the operation
+    // Build headers from the operation.
+    // Custom headers are inserted first so that SDK-set headers below always
+    // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
+    // pattern where custom headers are added before SDK headers).
     let mut headers = azure_core::http::headers::Headers::new();
+    if let Some(custom) = options.custom_headers_ref() {
+        for (name, value) in custom {
+            headers.insert(name.clone(), value.clone());
+        }
+    }
     operation.request_headers().write_to_headers(&mut headers);
 
     // Add activity ID if not already set by the operation
@@ -479,16 +487,6 @@ fn build_transport_request(
             request_header_names::SESSION_TOKEN.clone(),
             HeaderValue::from(token.as_str().to_owned()),
         );
-    }
-
-    // Add custom headers from operation options (inserted last so they don't
-    // override SDK-set headers above).
-    if let Some(custom) = options.custom_headers_ref() {
-        for (name, value) in custom {
-            if !headers.contains_key(name) {
-                headers.insert(name.clone(), value.clone());
-            }
-        }
     }
 
     Ok(TransportRequest {

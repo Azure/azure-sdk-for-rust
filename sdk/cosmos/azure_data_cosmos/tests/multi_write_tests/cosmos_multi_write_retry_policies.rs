@@ -109,7 +109,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            let request_url = response.request_url().to_string();
+            let request_url = response.request_url().expect("request URL should be present").to_string();
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
                 "read should have failed over to satellite region, but URL was: {}",
@@ -414,7 +414,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            let request_url = response.request_url().to_string();
+            let request_url = response.request_url().expect("request URL should be present").to_string();
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
                 "read should have failed over to satellite region, but URL was: {}",
