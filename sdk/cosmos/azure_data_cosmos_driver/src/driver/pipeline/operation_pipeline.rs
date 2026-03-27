@@ -144,7 +144,6 @@ pub(crate) async fn execute_operation_pipeline(
 
         let transport_request = build_transport_request(
             operation,
-            options,
             custom_headers,
             &routing,
             activity_id,
@@ -411,7 +410,6 @@ fn endpoint_is_available(
 /// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
-    options: &OperationOptionsView<'_>,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     routing: &RoutingDecision,
     activity_id: &ActivityId,

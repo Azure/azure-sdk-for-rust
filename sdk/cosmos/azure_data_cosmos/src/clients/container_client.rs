@@ -548,7 +548,19 @@ impl ContainerClient {
         );
 
         // Create the driver operation.
-        let operation = CosmosOperation::read_item(item_ref);
+        let mut operation = CosmosOperation::read_item(item_ref);
+
+        // Wire session token and etag from SDK options onto the operation.
+        if let Some(session_token) = options.session_token() {
+            operation = operation.with_session_token(session_token.to_string());
+        }
+        if let Some(etag) = options.if_match_etag() {
+            operation = operation.with_precondition(
+                azure_data_cosmos_driver::models::Precondition::if_match(
+                    azure_data_cosmos_driver::models::ETag::new(etag.to_string()),
+                ),
+            );
+        }
 
         // Translate SDK options to driver options.
         let driver_options = crate::driver_bridge::item_options_to_operation_options(&options);
