@@ -104,7 +104,7 @@ pub struct CosmosDriverRuntime {
     /// Environment-level operation options, populated once from env vars at build time.
     env_operation_options: Arc<OperationOptions>,
 
-    /// User-provided runtime-level default options, swappable via interior mutability.
+    /// User-provided default operation options, swappable via interior mutability.
     ///
     /// Wrapped in `RwLock<Arc<...>>` so that shared references can atomically
     /// replace the options while readers obtain a cheap `Arc` snapshot.
@@ -225,7 +225,7 @@ impl CosmosDriverRuntime {
         &self.env_operation_options
     }
 
-    /// Returns a snapshot of the runtime-level default options.
+    /// Returns a snapshot of the default operation options.
     ///
     /// The returned `Arc` is a cheap clone of the current value.
     /// In-flight readers are unaffected by concurrent calls to
@@ -239,7 +239,7 @@ impl CosmosDriverRuntime {
             .clone()
     }
 
-    /// Replaces the runtime-level default options atomically.
+    /// Replaces the default operation options atomically.
     ///
     /// In-flight operations that already obtained a snapshot via
     /// [`operation_options`](Self::operation_options) are unaffected.
