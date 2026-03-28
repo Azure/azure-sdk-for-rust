@@ -262,7 +262,7 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
-        let content_len = content.len() as u64;
+        let content_len = content.len();
         let rsp = self
             .client
             .upload_internal(
@@ -287,7 +287,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
 
     async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
         let block_id = Uuid::new_v4();
-        let content_len = content.len().try_into().unwrap();
+        let content_len = content.len();
         {
             self.blocks.lock().await.push(BlockInfo {
                 offset: offset as u64,
@@ -305,7 +305,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn initialize(&self, _content_len: usize) -> Result<()> {
+    async fn initialize(&self, _content_len: u64) -> Result<()> {
         Ok(())
     }
 
