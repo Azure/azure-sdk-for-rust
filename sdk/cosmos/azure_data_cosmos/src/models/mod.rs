@@ -7,19 +7,23 @@ use azure_core::{fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Deserializer, Serialize};
 
 mod account_properties;
+mod batch_response;
 mod container_properties;
 mod cosmos_response;
 mod indexing_policy;
+mod item_response;
+mod resource_response;
 mod response_metadata;
 mod throughput_properties;
 
 pub(crate) use account_properties::*;
+pub use batch_response::BatchResponse;
 pub use container_properties::*;
-pub use cosmos_response::CosmosResponse;
+pub(crate) use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
-pub use response_metadata::{
-    BatchMetadata, CosmosDiagnostics, ItemMetadata, QueryMetadata, ResourceMetadata,
-};
+pub use item_response::ItemResponse;
+pub use resource_response::ResourceResponse;
+pub use response_metadata::CosmosDiagnostics;
 pub use throughput_properties::*;
 
 // Re-export partition key and container reference types from the driver crate.

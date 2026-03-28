@@ -7,10 +7,7 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
     clients::{ContainerClient, OffersClient},
-    models::{
-        ContainerProperties, CosmosResponse, DatabaseProperties, ResourceMetadata,
-        ThroughputProperties,
-    },
+    models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -109,13 +106,13 @@ impl DatabaseClient {
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<DatabaseProperties, ResourceMetadata>> {
+    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
         self.pipeline
             .send(cosmos_request?, Context::default())
             .await
-            .map(|r| r.map_metadata(ResourceMetadata::from_headers))
+            .map(ResourceResponse::new)
     }
 
     /// Executes a query against containers in the database.
@@ -171,7 +168,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<ContainerProperties, ResourceMetadata>> {
+    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
@@ -182,7 +179,7 @@ impl DatabaseClient {
         self.pipeline
             .send(cosmos_request, Context::default())
             .await
-            .map(|r| r.map_metadata(ResourceMetadata::from_headers))
+            .map(ResourceResponse::new)
     }
 
     /// Deletes this database.
@@ -196,13 +193,13 @@ impl DatabaseClient {
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<(), ResourceMetadata>> {
+    ) -> azure_core::Result<ResourceResponse<()>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
         self.pipeline
             .send(cosmos_request?, Context::default())
             .await
-            .map(|r| r.map_metadata(ResourceMetadata::from_headers))
+            .map(ResourceResponse::new)
     }
 
     /// Reads database throughput properties, if any.
@@ -243,7 +240,7 @@ impl DatabaseClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<CosmosResponse<ThroughputProperties, ResourceMetadata>> {
+    ) -> azure_core::Result<ResourceResponse<ThroughputProperties>> {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -255,6 +252,6 @@ impl DatabaseClient {
         offers_client
             .replace(Context::default(), throughput)
             .await
-            .map(|r| r.map_metadata(ResourceMetadata::from_headers))
+            .map(ResourceResponse::new)
     }
 }

@@ -4,7 +4,7 @@
 use crate::{
     clients::DatabaseClient,
     cosmos_request::CosmosRequest,
-    models::{CosmosResponse, DatabaseProperties, ResourceMetadata},
+    models::{DatabaseProperties, ResourceResponse},
     operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::ResourceLink,
@@ -170,7 +170,7 @@ impl CosmosClient {
         &self,
         id: &str,
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<DatabaseProperties, ResourceMetadata>> {
+    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
 
         #[derive(Serialize)]
@@ -187,6 +187,6 @@ impl CosmosClient {
         self.pipeline
             .send(cosmos_request, Context::default())
             .await
-            .map(|r| r.map_metadata(ResourceMetadata::from_headers))
+            .map(ResourceResponse::new)
     }
 }

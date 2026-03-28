@@ -226,7 +226,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 "expected index metrics to be present when x-ms-cosmos-populateindexmetrics is set"
             );
 
-            // Verify common response metadata is also available on FeedPage
+            // Verify common response metadata is also available on QueryFeedPage
             assert!(
                 page.request_charge().is_some(),
                 "expected request charge on feed page"

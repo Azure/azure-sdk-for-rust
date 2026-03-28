@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 use crate::constants::{A_IM, IF_NONE_MATCH, MAX_ITEM_COUNT};
 use crate::cosmos_request::CosmosRequest;
+use crate::models::CosmosResponse;
 use crate::operation_context::OperationType;
 use crate::pipeline::GatewayPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
@@ -13,7 +14,6 @@ use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 use crate::routing::service_identity::ServiceIdentity;
-use crate::CosmosResponse;
 use azure_core::http::headers::HeaderName;
 use azure_core::http::{Context, StatusCode};
 use azure_core::Error;

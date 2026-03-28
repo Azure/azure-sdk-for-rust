@@ -9,7 +9,7 @@
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
-use azure_data_cosmos::models::{CosmosResponse, ItemMetadata, ThroughputProperties};
+use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemOptions;
 use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
 use azure_data_cosmos::{
@@ -574,7 +574,7 @@ impl TestRunContext {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<T, ItemMetadata>>
+    ) -> azure_core::Result<ItemResponse<T>>
     where
         T: serde::de::DeserializeOwned,
     {

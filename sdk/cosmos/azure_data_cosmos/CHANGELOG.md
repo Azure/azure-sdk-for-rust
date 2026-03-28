@@ -4,20 +4,22 @@
 
 ### Features Added
 
-- Added `CosmosResponse<T, M>` with a second generic parameter for operation-specific metadata: `ItemMetadata` (point operations), `QueryMetadata` (queries), `BatchMetadata` (transactional batch), and `ResourceMetadata` (resource management).
-- Added `CosmosDiagnostics` type accessible via `diagnostics()` on `CosmosResponse` and `FeedPage`, providing `activity_id()` and `server_duration_ms()`.
-- Added `FeedPage<T, QueryMetadata>` with typed `index_metrics()` and `query_metrics()` accessors. The `index_metrics()` method base64-decodes the raw header value to return valid JSON.
-- Added `request_charge()`, `session_token()`, and `diagnostics()` convenience methods to `FeedPage`.
+- Added dedicated response wrapper types: `ItemResponse<T>` (point operations), `ResourceResponse<T>` (resource management), `BatchResponse` (transactional batch), and `QueryFeedPage<T>` (query pages).
+- Added `CosmosDiagnostics` type accessible via `diagnostics()` on all response types, providing `activity_id()` and `server_duration_ms()`.
+- `QueryFeedPage<T>` provides typed `index_metrics()` and `query_metrics()` accessors. The `index_metrics()` method base64-decodes the raw header value to return valid JSON.
+- `ItemResponse<T>` and `BatchResponse` expose `etag()` returning `Option<&azure_core::http::Etag>`.
+- Added `request_charge()`, `session_token()`, and `diagnostics()` convenience methods to `FeedPage` and `QueryFeedPage`.
 - Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
 
 ### Breaking Changes
 
-- `CosmosResponse<T>` now takes an optional second type parameter `M` for operation-specific metadata. Client methods return `CosmosResponse<T, ItemMetadata>`, `CosmosResponse<T, ResourceMetadata>`, etc.
-- `execute_transactional_batch()` now returns `CosmosResponse<TransactionalBatchResponse, BatchMetadata>` instead of `CosmosResponse<TransactionalBatchResponse, ItemMetadata>`. Use `response.metadata().etag()` for the batch-level ETag.
-- `etag()` on `CosmosResponse` is now only available when `M = ItemMetadata` or `M = BatchMetadata`. Use `response.metadata().etag()` for generic access.
-- `activity_id()` and `server_duration_ms()` moved from `CosmosResponse` and `FeedPage` to `CosmosDiagnostics`, accessed via `response.diagnostics().activity_id()`.
-- `FeedPage::deconstruct()` has been removed. Use `into_items()`, `continuation()`, `headers()`, `metadata()`, and `diagnostics()` instead.
-- `FeedPage` gains a second type parameter `M`. Query operations return `FeedPage<T, QueryMetadata>`.
+- Point item operations (`create_item`, `read_item`, `replace_item`, `upsert_item`, `delete_item`) now return `ItemResponse<T>` instead of `CosmosResponse<T>`.
+- Resource operations (`read`, `delete`, `create_container`, `create_database`, `replace_throughput`) now return `ResourceResponse<T>` instead of `CosmosResponse<T>`.
+- `execute_transactional_batch()` now returns `BatchResponse` instead of `CosmosResponse<TransactionalBatchResponse>`.
+- Query operations now yield `QueryFeedPage<T>` (via `FeedItemIterator` / `FeedPageIterator`) instead of `FeedPage<T>`.
+- `etag()` on `ItemResponse` and `BatchResponse` returns `Option<&azure_core::http::Etag>` instead of `Option<&str>`.
+- `activity_id()` and `server_duration_ms()` moved to `CosmosDiagnostics`, accessed via `response.diagnostics()`.
+- `FeedPage::deconstruct()` has been removed. Use `into_items()`, `continuation()`, `headers()`, and `diagnostics()` instead.
 - Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RoutingStrategy` parameter on `build()`. Use `RoutingStrategy::ProximityTo(region)` to specify the application region. Also removed `CosmosClientOptions::with_application_region()`. ([#3889](https://github.com/Azure/azure-sdk-for-rust/pull/3889))
 - Changed `default_ttl` and `analytical_storage_ttl` fields on `ContainerProperties` from `Option<Duration>` to `TimeToLive`, a new enum with variants `Forever`, `NoDefault`, and `Seconds(u32)`, to correctly handle the `-1` wire value (TTL enabled with no default expiration).
 - `DatabaseClient::container_client()` now returns `azure_core::Result<ContainerClient>`, eagerly resolving container metadata (RID, partition key definition) at construction time. ([#4005](https://github.com/Azure/azure-sdk-for-rust/pull/4005))

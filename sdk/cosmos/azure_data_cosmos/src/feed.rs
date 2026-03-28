@@ -14,7 +14,7 @@ use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
     constants,
-    models::{CosmosDiagnostics, CosmosResponse, QueryMetadata},
+    models::{CosmosDiagnostics, CosmosResponse},
     SessionToken,
 };
 
@@ -25,9 +25,9 @@ use crate::{
 ///
 /// Cosmos DB queries can be executed using non-HTTP transports, depending on the circumstances.
 /// They may also produce results that don't directly correlate to specific HTTP responses (as in the case of cross-partition queries).
-/// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
+/// Because of this, Cosmos DB feed responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
 #[derive(Debug)]
-pub struct FeedPage<T, M = ()> {
+pub struct FeedPage<T> {
     /// The items in the response.
     items: Vec<T>,
 
@@ -40,22 +40,17 @@ pub struct FeedPage<T, M = ()> {
     /// Parsed Cosmos-specific response headers.
     headers: CosmosResponseHeaders,
 
-    /// Operation-specific metadata.
-    metadata: M,
-
     /// Diagnostics for this page.
     diagnostics: CosmosDiagnostics,
 }
 
-impl<T, M> FeedPage<T, M> {
+impl<T> FeedPage<T> {
     /// Creates a new `FeedPage` instance.
-    #[allow(dead_code)]
     pub(crate) fn new(
         items: Vec<T>,
         continuation: Option<String>,
         raw_headers: Headers,
         headers: CosmosResponseHeaders,
-        metadata: M,
         diagnostics: CosmosDiagnostics,
     ) -> Self {
         Self {
@@ -63,7 +58,6 @@ impl<T, M> FeedPage<T, M> {
             continuation,
             raw_headers,
             headers,
-            metadata,
             diagnostics,
         }
     }
@@ -108,21 +102,106 @@ impl<T, M> FeedPage<T, M> {
     pub fn diagnostics(&self) -> &CosmosDiagnostics {
         &self.diagnostics
     }
+}
 
-    /// Returns the operation-specific metadata.
-    pub fn metadata(&self) -> &M {
-        &self.metadata
+impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
+    fn from(value: FeedPage<T>) -> Self {
+        let continuation = value.continuation.clone();
+        match continuation {
+            Some(continuation) => PagerResult::More {
+                response: value,
+                continuation: PagerContinuation::Token(continuation),
+            },
+            None => PagerResult::Done { response: value },
+        }
     }
 }
 
-impl<T> FeedPage<T, QueryMetadata> {
+impl<T: DeserializeOwned> FeedPage<T> {
+    #[allow(dead_code)] // Will be used by future read-many and change feed operations
+    pub(crate) async fn from_response(
+        response: CosmosResponse<FeedBody<T>>,
+    ) -> azure_core::Result<Self> {
+        let raw_headers = response.headers().clone();
+        let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
+        let cosmos_headers = response.cosmos_headers().clone();
+        let diagnostics = response.diagnostics().clone();
+        let body: FeedBody<T> = response.into_model()?;
+
+        Ok(Self::new(
+            body.items,
+            continuation,
+            raw_headers,
+            cosmos_headers,
+            diagnostics,
+        ))
+    }
+}
+
+/// Represents a single page of results from a Cosmos DB query.
+///
+/// Wraps a [`FeedPage`] and adds query-specific metadata such as
+/// [`index_metrics()`](Self::index_metrics) and [`query_metrics()`](Self::query_metrics).
+///
+/// This type is yielded by [`FeedItemIterator`] and [`FeedPageIterator`] for query operations.
+#[derive(Debug)]
+pub struct QueryFeedPage<T> {
+    /// The underlying feed page with common fields.
+    page: FeedPage<T>,
+
+    /// Index utilization metrics (decoded from base64 JSON).
+    index_metrics: Option<String>,
+
+    /// Query execution metrics (semicolon-delimited key=value pairs).
+    query_metrics: Option<String>,
+}
+
+impl<T> QueryFeedPage<T> {
+    /// Gets the items in this page of results.
+    pub fn items(&self) -> &[T] {
+        self.page.items()
+    }
+
+    /// Consumes the page and returns a vector of the items.
+    pub fn into_items(self) -> Vec<T> {
+        self.page.into_items()
+    }
+
+    /// Gets the continuation token for the next page of results, if any.
+    pub fn continuation(&self) -> Option<&str> {
+        self.page.continuation()
+    }
+
+    /// Gets any headers returned by the server for this page of results.
+    pub fn headers(&self) -> &Headers {
+        self.page.headers()
+    }
+
+    /// Returns the request charge (RU consumption) for this page, if available.
+    pub fn request_charge(&self) -> Option<f64> {
+        self.page.request_charge()
+    }
+
+    /// Returns the session token from this page, if available.
+    pub fn session_token(&self) -> Option<SessionToken> {
+        self.page.session_token()
+    }
+
+    /// Returns the diagnostics for this page.
+    ///
+    /// Provides access to the activity ID, server-side duration, and other
+    /// diagnostic information for debugging and performance analysis.
+    pub fn diagnostics(&self) -> &CosmosDiagnostics {
+        self.page.diagnostics()
+    }
+
     /// Returns the index utilization metrics as a decoded JSON string, if available.
     ///
     /// The service returns this header as a base64-encoded JSON string. This method
     /// returns the decoded JSON. Only populated when the request included the
     /// `x-ms-cosmos-populateindexmetrics` header.
     pub fn index_metrics(&self) -> Option<&str> {
-        self.metadata.index_metrics()
+        self.index_metrics.as_deref()
     }
 
     /// Returns the query execution metrics, if available.
@@ -130,13 +209,13 @@ impl<T> FeedPage<T, QueryMetadata> {
     /// The value is a semicolon-delimited string of key=value pairs.
     /// Only populated when the request included the `x-ms-documentdb-populatequerymetrics` header.
     pub fn query_metrics(&self) -> Option<&str> {
-        self.metadata.query_metrics()
+        self.query_metrics.as_deref()
     }
 }
 
-impl<T, M> From<FeedPage<T, M>> for PagerResult<FeedPage<T, M>> {
-    fn from(value: FeedPage<T, M>) -> Self {
-        let continuation = value.continuation.clone();
+impl<T> From<QueryFeedPage<T>> for PagerResult<QueryFeedPage<T>> {
+    fn from(value: QueryFeedPage<T>) -> Self {
+        let continuation = value.page.continuation.clone();
         match continuation {
             Some(continuation) => PagerResult::More {
                 response: value,
@@ -156,42 +235,46 @@ pub(crate) struct FeedBody<T> {
     pub(crate) items: Vec<T>,
 }
 
-impl<T: DeserializeOwned> FeedPage<T, QueryMetadata> {
+impl<T: DeserializeOwned> QueryFeedPage<T> {
     pub(crate) async fn from_response(
         response: CosmosResponse<FeedBody<T>>,
     ) -> azure_core::Result<Self> {
         let raw_headers = response.headers().clone();
         let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
         let cosmos_headers = response.cosmos_headers().clone();
-        let metadata = QueryMetadata::from_headers(&cosmos_headers);
+        let index_metrics = cosmos_headers.index_metrics.clone();
+        let query_metrics = cosmos_headers.query_metrics.clone();
         let diagnostics = response.diagnostics().clone();
         let body: FeedBody<T> = response.into_model()?;
 
-        Ok(Self::new(
-            body.items,
-            continuation,
-            raw_headers,
-            cosmos_headers,
-            metadata,
-            diagnostics,
-        ))
+        Ok(Self {
+            page: FeedPage::new(
+                body.items,
+                continuation,
+                raw_headers,
+                cosmos_headers,
+                diagnostics,
+            ),
+            index_metrics,
+            query_metrics,
+        })
     }
 }
 
-/// Represents a stream of pages from a Cosmos DB feed.
+/// Represents a stream of items from a Cosmos DB query.
 ///
-/// See [`FeedPage`] for more details on Cosmos DB feeds.
+/// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
 #[pin_project::pin_project]
 pub struct FeedItemIterator<T: Send> {
     #[pin]
-    pages: BoxStream<'static, azure_core::Result<FeedPage<T, QueryMetadata>>>,
+    pages: BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>,
     current: Option<std::vec::IntoIter<T>>,
 }
 
 impl<T: Send> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
     pub(crate) fn new(
-        stream: impl Stream<Item = azure_core::Result<FeedPage<T, QueryMetadata>>> + Send + 'static,
+        stream: impl Stream<Item = azure_core::Result<QueryFeedPage<T>>> + Send + 'static,
     ) -> Self {
         Self {
             pages: Box::pin(stream),
@@ -225,7 +308,7 @@ impl<T: Send> Stream for FeedItemIterator<T> {
             match this.pages.as_mut().poll_next(cx) {
                 task::Poll::Ready(page) => match page {
                     Some(Ok(page)) => {
-                        *this.current = Some(page.items.into_iter());
+                        *this.current = Some(page.page.items.into_iter());
                         continue;
                     }
                     Some(Err(err)) => return task::Poll::Ready(Some(Err(err))),
@@ -237,12 +320,10 @@ impl<T: Send> Stream for FeedItemIterator<T> {
     }
 }
 
-pub struct FeedPageIterator<T: Send>(
-    BoxStream<'static, azure_core::Result<FeedPage<T, QueryMetadata>>>,
-);
+pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>);
 
 impl<T: Send> Stream for FeedPageIterator<T> {
-    type Item = azure_core::Result<FeedPage<T, QueryMetadata>>;
+    type Item = azure_core::Result<QueryFeedPage<T>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -257,18 +338,18 @@ mod tests {
     use super::*;
     use futures::StreamExt;
 
-    fn create_test_page<T>(
-        items: Vec<T>,
-        continuation: Option<String>,
-    ) -> FeedPage<T, QueryMetadata> {
-        FeedPage::new(
-            items,
-            continuation,
-            Headers::new(),
-            CosmosResponseHeaders::default(),
-            QueryMetadata::default(),
-            CosmosDiagnostics::default(),
-        )
+    fn create_test_page<T>(items: Vec<T>, continuation: Option<String>) -> QueryFeedPage<T> {
+        QueryFeedPage {
+            page: FeedPage::new(
+                items,
+                continuation,
+                Headers::new(),
+                CosmosResponseHeaders::default(),
+                CosmosDiagnostics::default(),
+            ),
+            index_metrics: None,
+            query_metrics: None,
+        }
     }
 
     #[tokio::test]
