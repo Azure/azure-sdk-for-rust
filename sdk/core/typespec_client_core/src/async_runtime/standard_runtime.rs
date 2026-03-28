@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+use crate::async_runtime::AbortableTask;
 use crate::time::Duration;
 use futures::{executor::LocalPool, task::SpawnExt};
 use std::error::Error;
@@ -28,7 +29,7 @@ struct ThreadJoinState {
     thread_finished: bool,
 }
 
-impl SpawnedTask for ThreadJoinFuture {
+impl AbortableTask for ThreadJoinFuture {
     fn abort(&self) {
         // We cannot actually abort the thread, but we can drop the join handle
         // to avoid blocking on it when the future is dropped.
@@ -96,7 +97,7 @@ impl Future for ThreadJoinError {
     }
 }
 
-impl SpawnedTask for ThreadJoinError {
+impl AbortableTask for ThreadJoinError {
     fn abort(&self) {
         // No-op since the thread never started
     }
@@ -106,7 +107,7 @@ impl SpawnedTask for ThreadJoinError {
 pub(crate) struct StdRuntime;
 
 impl AsyncRuntime for StdRuntime {
-    fn spawn(&self, f: TaskFuture) -> Pin<Box<dyn SpawnedTask>> {
+    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
         let join_state = Arc::new(Mutex::new(ThreadJoinState::default()));
         {
             let Ok(mut js) = join_state.lock() else {

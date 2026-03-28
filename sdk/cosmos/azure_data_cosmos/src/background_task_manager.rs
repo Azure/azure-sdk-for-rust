@@ -9,7 +9,7 @@
 //! cancellation to futures.
 
 use azure_core::async_runtime::{get_async_runtime, SpawnedTask, TaskFuture};
-use std::{pin::Pin, sync::Mutex};
+use std::sync::Mutex;
 use tracing::debug;
 
 /// Manages the lifecycle of background tasks spawned by a client.
@@ -21,7 +21,7 @@ pub(crate) struct BackgroundTaskManager {
     /// Stored spawned task futures. Dropping these cancels the tasks.
     /// Uses a [`Mutex`] for interior mutability so that [`spawn`] can accept
     /// `&self`, which is required when the manager lives inside an `Arc`.
-    tasks: Mutex<Vec<Pin<Box<dyn SpawnedTask>>>>,
+    tasks: Mutex<Vec<SpawnedTask>>,
 }
 
 impl std::fmt::Debug for BackgroundTaskManager {

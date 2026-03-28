@@ -219,7 +219,7 @@ fn test_get_runtime() {
 struct TestRuntime;
 
 impl AsyncRuntime for TestRuntime {
-    fn spawn(&self, _f: TaskFuture) -> Pin<Box<dyn SpawnedTask>> {
+    fn spawn(&self, _f: TaskFuture) -> SpawnedTask {
         unimplemented!("TestRuntime does not support spawning tasks");
     }
 

@@ -7,7 +7,7 @@
 ### Breaking Changes
 
 - Added `tokio` feature to `default` features.
-- Changed te `SpawnedTask` return value of `async_runtime::spawn` from a raw future to a trait which enables an `abort()` function on the returned `SpawnedTask`
+- Changed the `SpawnedTask` return value of `async_runtime::spawn` from a raw future to a trait which enables an `abort()` function on the returned `SpawnedTask`
 
 ### Bugs Fixed
 

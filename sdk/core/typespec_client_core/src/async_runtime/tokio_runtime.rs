@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
-use crate::time::Duration;
+use crate::{async_runtime::AbortableTask, time::Duration};
+use pin_project::pin_project;
 use std::{
     error::Error,
     pin::Pin,
@@ -14,7 +15,7 @@ use tokio::{task, time};
 pub(crate) struct TokioRuntime;
 
 impl AsyncRuntime for TokioRuntime {
-    fn spawn(&self, f: TaskFuture) -> Pin<Box<dyn SpawnedTask>> {
+    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
         let handle = ::tokio::spawn(f);
         Box::pin(JoinHandle {
             handle: Some(handle),
@@ -36,18 +37,21 @@ impl AsyncRuntime for TokioRuntime {
     }
 }
 
+#[pin_project]
 struct JoinHandle {
+    #[pin]
     handle: Option<task::JoinHandle<()>>,
 }
 
 impl std::future::Future for JoinHandle {
     type Output = Result<(), Box<dyn Error + Send>>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if let Some(handle) = &mut self.handle {
-            match Pin::new(handle).poll(cx) {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
+        if let Some(handle) = this.handle.as_mut().as_pin_mut() {
+            match handle.poll(cx) {
                 Poll::Ready(_) => {
-                    self.handle = None;
+                    this.handle.set(None);
                     Poll::Ready(Ok(()))
                 }
                 Poll::Pending => Poll::Pending,
@@ -58,7 +62,7 @@ impl std::future::Future for JoinHandle {
     }
 }
 
-impl SpawnedTask for JoinHandle {
+impl AbortableTask for JoinHandle {
     fn abort(&self) {
         if let Some(handle) = &self.handle {
             handle.abort();
