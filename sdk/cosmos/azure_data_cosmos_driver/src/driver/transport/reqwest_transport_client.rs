@@ -65,7 +65,7 @@ impl CosmosTransportClient for ReqwestTransportClient {
         let response = builder.send().await.map_err(|err| {
             let is_connect = err.is_connect();
             let is_timeout = err.is_timeout();
-            let request_sent = if is_connect {
+            let request_sent = if is_connect || err.is_request() {
                 RequestSentStatus::NotSent
             } else if err.is_body() {
                 RequestSentStatus::Sent

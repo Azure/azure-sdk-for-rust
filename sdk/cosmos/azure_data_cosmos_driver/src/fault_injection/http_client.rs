@@ -289,7 +289,7 @@ impl FaultClient {
 
         ApplyResult::Injected(Err(TransportError::new(
             error,
-            RequestSentStatus::NotSent,
+            RequestSentStatus::Sent,
             false,
             false,
         )))
