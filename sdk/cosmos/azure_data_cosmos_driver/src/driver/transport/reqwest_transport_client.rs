@@ -106,15 +106,8 @@ impl CosmosTransportClient for ReqwestTransportClient {
 }
 
 fn to_reqwest_method(method: azure_core::http::Method) -> reqwest::Method {
-    match method {
-        azure_core::http::Method::Get => reqwest::Method::GET,
-        azure_core::http::Method::Post => reqwest::Method::POST,
-        azure_core::http::Method::Put => reqwest::Method::PUT,
-        azure_core::http::Method::Delete => reqwest::Method::DELETE,
-        azure_core::http::Method::Patch => reqwest::Method::PATCH,
-        azure_core::http::Method::Head => reqwest::Method::HEAD,
-        _ => reqwest::Method::GET, // Unreachable for Cosmos operations
-    }
+    reqwest::Method::from_bytes(method.as_str().as_bytes())
+        .expect("azure_core::http::Method should always be a valid HTTP method")
 }
 
 fn to_driver_headers(reqwest_headers: &reqwest::header::HeaderMap) -> Headers {
