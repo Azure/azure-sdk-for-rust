@@ -108,7 +108,6 @@ impl<T> CosmosResponse<T> {
     pub(crate) fn diagnostics(&self) -> &CosmosDiagnostics {
         &self.diagnostics
     }
-
 }
 
 impl<T: DeserializeOwned> CosmosResponse<T> {
