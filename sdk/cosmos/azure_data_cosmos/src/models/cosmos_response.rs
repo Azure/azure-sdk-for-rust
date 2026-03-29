@@ -109,11 +109,6 @@ impl<T> CosmosResponse<T> {
         &self.diagnostics
     }
 
-    /// Deserializes the response body without consuming the response.
-    #[allow(dead_code)]
-    pub(crate) fn deserialize_body<U: DeserializeOwned>(&self) -> azure_core::Result<U> {
-        self.response.body().json()
-    }
 }
 
 impl<T: DeserializeOwned> CosmosResponse<T> {

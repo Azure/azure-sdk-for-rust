@@ -68,8 +68,13 @@ if ($IsWindows) {
 
 # Clear env vars set by Test-Setup.ps1 so that subsequent packages in the same
 # pipeline run get a clean environment and are not skipped by their own setup.
+# Only clear AZURE_COSMOS_CONNECTION_STRING if it was set to "emulator" by
+# Test-Setup.ps1. When the pipeline deploys a live Cosmos account, the connection
+# string is injected as a pipeline variable and must survive across packages.
 Write-Host "Clearing emulator environment variables."
-$env:AZURE_COSMOS_CONNECTION_STRING = $null
+if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator") {
+    $env:AZURE_COSMOS_CONNECTION_STRING = $null
+}
 $env:AZURE_COSMOS_TEST_MODE = $null
 $env:AZURE_COSMOS_EMULATOR_HOST = $null
 # Remove the --cfg=test_category="emulator" flag added by Test-Setup.ps1.
