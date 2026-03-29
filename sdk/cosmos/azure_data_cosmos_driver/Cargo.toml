@@ -68,7 +68,6 @@ reqwest = [
   "reqwest/http2",
   "azure_core/reqwest",
   "azure_core/tokio",
-  "tokio",
 ]
 reqwest_native_tls = [
   "reqwest",

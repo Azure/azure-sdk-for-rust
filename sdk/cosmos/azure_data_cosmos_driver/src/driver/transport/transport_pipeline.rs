@@ -345,7 +345,11 @@ pub(crate) async fn execute_transport_pipeline(
                     effective_delay = deadline_capped_delay(effective_delay, remaining);
                 }
 
-                tokio::time::sleep(effective_delay).await;
+                azure_core::sleep(
+                    azure_core::time::Duration::try_from(effective_delay)
+                        .unwrap_or(azure_core::time::Duration::ZERO),
+                )
+                .await;
 
                 if let Some(deadline) = request.deadline {
                     if Instant::now() >= deadline {
@@ -367,7 +371,11 @@ pub(crate) async fn execute_transport_pipeline(
                         // One extra retry attempt after throttle budget is exhausted.
                         // When no deadline exists, this retry is immediate.
                         if !final_delay.is_zero() {
-                            tokio::time::sleep(final_delay).await;
+                            azure_core::sleep(
+                                azure_core::time::Duration::try_from(final_delay)
+                                    .unwrap_or(azure_core::time::Duration::ZERO),
+                            )
+                            .await;
                         }
 
                         throttle_state = throttle_state.mark_forced_final_retry_used();
@@ -410,7 +418,11 @@ async fn execute_http_attempt(
             dispatched_shard,
         );
         let timeout_future = async {
-            tokio::time::sleep(timeout_duration).await;
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(timeout_duration)
+                    .unwrap_or(azure_core::time::Duration::ZERO),
+            )
+            .await;
         };
 
         pin_mut!(transport_future);
@@ -696,7 +708,11 @@ mod tests {
             super::super::cosmos_transport_client::CosmosHttpResponse,
             super::super::cosmos_transport_client::TransportError,
         > {
-            tokio::time::sleep(self.delay).await;
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(self.delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO),
+            )
+            .await;
             Err(super::super::cosmos_transport_client::TransportError::new(
                 azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,

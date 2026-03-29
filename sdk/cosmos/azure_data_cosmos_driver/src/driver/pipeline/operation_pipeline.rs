@@ -220,7 +220,9 @@ pub(crate) async fn execute_operation_pipeline(
             OperationAction::FailoverRetry { new_state, delay } => {
                 if let Some(delay) = delay {
                     if !delay.is_zero() {
-                        tokio::time::sleep(delay).await;
+                        if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
+                            azure_core::sleep(duration).await;
+                        }
                     }
                 }
 
