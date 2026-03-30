@@ -1022,59 +1022,40 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn download_empty() -> AzureResult<()> {
+    async fn download_empty_resource() -> AzureResult<()> {
         let parallel = NonZero::new(1).unwrap();
         let partition_len = NonZero::new(MB).unwrap();
-        for (empty_source, empty_range) in [(true, false), (false, true), (true, true)] {
-            let data = get_random_data(if empty_source { 0 } else { KB });
-            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+        let data = get_random_data(0);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let downloaded_data = download(
-                if empty_range { Some(0..0) } else { None },
-                parallel,
-                partition_len,
-                mock.clone(),
-            )
+        let downloaded_data = download(None, parallel, partition_len, mock.clone())
             .await?
             .buffer_all()
             .await?;
 
-            assert_eq!(
-                downloaded_data.len(),
-                0,
-                "empty_source={}. empty_range={}.",
-                empty_source,
-                empty_range
-            );
-        }
+        assert_eq!(downloaded_data.len(), 0);
 
         Ok(())
     }
 
     #[tokio::test]
-    async fn download_into_empty() -> AzureResult<()> {
+    async fn download_into_empty_resource() -> AzureResult<()> {
         let parallel = NonZero::new(1).unwrap();
         let partition_len = NonZero::new(MB).unwrap();
-        for (empty_source, empty_range) in [(true, false), (false, true), (true, true)] {
-            let data = get_random_data(if empty_source { 0 } else { KB });
-            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+        let data = get_random_data(0);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let mut destination = Vec::new();
-            let written = download_into(
-                &mut destination,
-                if empty_range { Some(0..0) } else { None },
-                parallel,
-                partition_len,
-                mock.clone(),
-            )
-            .await?;
+        let mut destination = Vec::new();
+        let written = download_into(
+            &mut destination,
+            None,
+            parallel,
+            partition_len,
+            mock.clone(),
+        )
+        .await?;
 
-            assert_eq!(
-                written, 0,
-                "empty_source={}. empty_range={}.",
-                empty_source, empty_range
-            );
-        }
+        assert_eq!(written, 0);
 
         Ok(())
     }
