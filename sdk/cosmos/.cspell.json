@@ -116,6 +116,8 @@
         "pksysdocs",
         "pluggable",
         "pointee",
+        "populateindexmetrics",
+        "populatequerymetrics",
         "PPAF",
         "PPCB",
         "purgeable",

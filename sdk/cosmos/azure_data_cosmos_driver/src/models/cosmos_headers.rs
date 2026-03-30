@@ -5,6 +5,7 @@
 
 use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 /// Standard Cosmos DB request header names.
 ///
@@ -31,6 +32,10 @@ pub(crate) mod response_header_names {
     pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
     pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
     pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+    pub static INDEX_METRICS: HeaderName = HeaderName::from_static("x-ms-cosmos-index-utilization");
+    pub static QUERY_METRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-query-metrics");
+    pub static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
+    pub static LSN: HeaderName = HeaderName::from_static("lsn");
     pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
     pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
 }
@@ -128,6 +133,27 @@ pub struct CosmosResponseHeaders {
     /// Cosmos substatus code (`x-ms-substatus`).
     pub substatus: Option<SubStatusCode>,
 
+    /// Index utilization metrics as a decoded JSON string (`x-ms-cosmos-index-utilization`).
+    ///
+    /// The service returns this header as a base64-encoded JSON string. This field
+    /// contains the decoded JSON. Only populated when the
+    /// `x-ms-cosmos-populateindexmetrics` request header is set.
+    pub index_metrics: Option<String>,
+
+    /// Query execution metrics (`x-ms-documentdb-query-metrics`).
+    ///
+    /// Semicolon-delimited key=value pairs. Only populated when the
+    /// `x-ms-documentdb-populatequerymetrics` request header is set.
+    pub query_metrics: Option<String>,
+
+    /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
+    ///
+    /// Non-finite and negative values are filtered during parsing and will be `None`.
+    pub server_duration_ms: Option<f64>,
+
+    /// Logical Sequence Number of the resource (`lsn`).
+    pub lsn: Option<u64>,
+
     /// Owner full name / alternate content path (`x-ms-alt-content-path`).
     ///
     /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
@@ -152,7 +178,10 @@ impl CosmosResponseHeaders {
     /// Extracts Cosmos headers from HTTP response headers.
     ///
     /// This parses standard Cosmos headers into typed fields for easy access.
-    pub(crate) fn from_headers(headers: &Headers) -> Self {
+    /// The `index_metrics` field is base64-decoded from the raw header value.
+    ///
+    /// This is part of the public API to allow cross-crate access from `azure_data_cosmos`.
+    pub fn from_headers(headers: &Headers) -> Self {
         Self {
             activity_id: headers
                 .get_optional_str(&response_header_names::ACTIVITY_ID)
@@ -176,6 +205,39 @@ impl CosmosResponseHeaders {
             substatus: headers
                 .get_optional_str(&response_header_names::SUBSTATUS)
                 .and_then(SubStatusCode::from_header_value),
+            index_metrics: headers
+                .get_optional_str(&response_header_names::INDEX_METRICS)
+                .and_then(|s| match STANDARD.decode(s) {
+                    Ok(bytes) => match String::from_utf8(bytes) {
+                        Ok(s) => Some(s),
+                        Err(e) => {
+                            tracing::warn!(
+                                header = "x-ms-cosmos-index-utilization",
+                                error = %e,
+                                "Failed to UTF-8 decode index metrics after base64 decode"
+                            );
+                            None
+                        }
+                    },
+                    Err(e) => {
+                        tracing::warn!(
+                            header = "x-ms-cosmos-index-utilization",
+                            error = %e,
+                            "Failed to base64-decode index metrics header"
+                        );
+                        None
+                    }
+                }),
+            query_metrics: headers
+                .get_optional_str(&response_header_names::QUERY_METRICS)
+                .map(|s| s.to_owned()),
+            server_duration_ms: headers
+                .get_optional_str(&response_header_names::SERVER_DURATION_MS)
+                .and_then(|s| s.parse::<f64>().ok())
+                .filter(|v| v.is_finite() && *v >= 0.0),
+            lsn: headers
+                .get_optional_str(&response_header_names::LSN)
+                .and_then(|s| s.parse().ok()),
             owner_full_name: headers
                 .get_optional_str(&response_header_names::OWNER_FULL_NAME)
                 .map(|s| s.to_owned()),
@@ -201,6 +263,18 @@ mod tests {
         headers.insert("etag", "\"version-1\"");
         headers.insert("x-ms-continuation", "next-page-token");
         headers.insert("x-ms-item-count", "10");
+        headers.insert(
+            "x-ms-cosmos-index-utilization",
+            // base64 of r#"{"UtilizedSingleIndexes":[]}"#
+            // cspell:disable-next-line
+            "eyJVdGlsaXplZFNpbmdsZUluZGV4ZXMiOltdfQ==",
+        );
+        headers.insert(
+            "x-ms-documentdb-query-metrics",
+            "totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01",
+        );
+        headers.insert("x-ms-request-duration-ms", "4.56");
+        headers.insert("lsn", "42");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -226,6 +300,37 @@ mod tests {
         );
         assert_eq!(cosmos_headers.item_count, Some(10));
         assert_eq!(cosmos_headers.substatus, Some(SubStatusCode::new(3200)));
+        assert_eq!(
+            cosmos_headers.index_metrics.as_deref(),
+            Some(r#"{"UtilizedSingleIndexes":[]}"#)
+        );
+        assert_eq!(
+            cosmos_headers.query_metrics.as_deref(),
+            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
+        );
+        assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
+        assert_eq!(cosmos_headers.lsn, Some(42));
+    }
+
+    #[test]
+    fn non_finite_server_duration_returns_none() {
+        for value in ["NaN", "inf", "-inf", "Infinity", "-Infinity", "-1.0"] {
+            let mut headers = Headers::new();
+            headers.insert("x-ms-request-duration-ms", value);
+            let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+            assert!(
+                cosmos_headers.server_duration_ms.is_none(),
+                "Expected None for '{value}'"
+            );
+        }
+    }
+
+    #[test]
+    fn invalid_base64_index_metrics_returns_none() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-cosmos-index-utilization", "not-valid-base64!!!");
+        let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+        assert!(cosmos_headers.index_metrics.is_none());
     }
 
     #[test]
@@ -238,6 +343,10 @@ mod tests {
             continuation: Some("cont".to_string()),
             item_count: Some(5),
             substatus: Some(SubStatusCode::new(1002)),
+            index_metrics: Some(r#"{"metrics":"data"}"#.to_string()),
+            query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
+            server_duration_ms: Some(4.56),
+            lsn: Some(100),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
         };
@@ -268,6 +377,10 @@ mod tests {
         assert!(headers.continuation.is_none());
         assert!(headers.item_count.is_none());
         assert!(headers.substatus.is_none());
+        assert!(headers.index_metrics.is_none());
+        assert!(headers.query_metrics.is_none());
+        assert!(headers.server_duration_ms.is_none());
+        assert!(headers.lsn.is_none());
     }
 
     #[test]

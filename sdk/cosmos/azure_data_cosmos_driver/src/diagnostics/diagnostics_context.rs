@@ -405,6 +405,9 @@ pub struct RequestDiagnostics {
     /// Session token from response (for session consistency).
     session_token: Option<String>,
 
+    /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
+    server_duration_ms: Option<crate::models::FiniteF64>,
+
     /// When this request was started.
     #[serde(skip)]
     started_at: Instant,
@@ -478,6 +481,7 @@ impl RequestDiagnostics {
             request_charge: RequestCharge::default(),
             activity_id: None,
             session_token: None,
+            server_duration_ms: None,
             started_at: Instant::now(),
             completed_at: None,
             duration_ms: 0,
@@ -581,6 +585,11 @@ impl RequestDiagnostics {
         self.session_token = Some(token);
     }
 
+    /// Sets the server-side request duration in milliseconds.
+    pub(crate) fn with_server_duration_ms(&mut self, duration: f64) {
+        self.server_duration_ms = Some(crate::models::FiniteF64::new_lossy(duration));
+    }
+
     /// Adds a pipeline event.
     pub(crate) fn add_event(&mut self, event: RequestEvent) {
         self.events.push(event);
@@ -661,6 +670,11 @@ impl RequestDiagnostics {
     /// Returns the session token from response, if present.
     pub fn session_token(&self) -> Option<&str> {
         self.session_token.as_deref()
+    }
+
+    /// Returns the server-side request processing duration in milliseconds, if available.
+    pub fn server_duration_ms(&self) -> Option<f64> {
+        self.server_duration_ms.map(|f| f.value())
     }
 
     /// Returns when this request was started.
@@ -2079,6 +2093,7 @@ mod tests {
                         "request_charge": 1.0,
                         "activity_id": null,
                         "session_token": null,
+                        "server_duration_ms": null,
                         "duration_ms": 0,
                         "events": [],
                         "timed_out": false,
@@ -2107,6 +2122,7 @@ mod tests {
                         "request_charge": 1.0,
                         "activity_id": null,
                         "session_token": null,
+                        "server_duration_ms": null,
                         "duration_ms": 0,
                         "events": [],
                         "timed_out": false,
