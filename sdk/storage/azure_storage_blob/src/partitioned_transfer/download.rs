@@ -17,7 +17,6 @@ use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
     http::{response::PinnedStream, AsyncRawResponse, StatusCode},
-    stream::BytesStream,
     Error,
 };
 use bytes::Bytes;
@@ -64,35 +63,16 @@ where
     let max_buffers = parallel * 2;
     let partition_size = partition_size.get();
 
-    // Outer bound estimate of the resource range that will be downloaded. The actual download
-    // range will never exceed these bounds, but it may be smaller, based on the actual size
-    // of the remote resource.
-    let max_download_range = range.unwrap_or(0..usize::MAX);
-    if max_download_range.is_empty() {
-        let raw_stream: PinnedStream = Box::pin(BytesStream::new_empty());
-        return Ok(raw_stream);
-    }
-
-    let initial_response = download_with_empty_blob_safety(
-        client.as_ref(),
-        max_download_range.start
-            ..min(
-                max_download_range.end,
-                max_download_range.start.saturating_add(partition_size),
-            ),
-    )
-    .await?;
-
-    let stats =
-        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
+    let (initial_response, stats) =
+        get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
 
     let mut remaining_ranges = stats
         .map(|s| s.remaining_download_ranges)
         .unwrap_or_default();
-    let total_chunks = remaining_ranges.len() + 1;
     if remaining_ranges.is_empty() {
-        return Ok(Box::pin(initial_response.into_body()));
+        return Ok(Box::pin(initial_response.into_body()) as PinnedStream);
     }
+    let total_chunks = remaining_ranges.len() + 1;
 
     // channel for download workers to send results to their coordinator.
     let (tx, mut rx) = mpsc::unbounded();
@@ -183,29 +163,17 @@ where
     // that result, rather than exit this whole function. Before returning that result, ensure ALL
     // tasks in `tasks` are joined.
     let overall_result = async {
-        // Outer bound estimate of the resource range that will be downloaded. The actual download
-        // range will never exceed these bounds, but it may be smaller, based on the actual size
-        // of the remote resource.
-        let max_download_range = range.unwrap_or(0..usize::MAX);
-        if max_download_range.is_empty() {
-            return Ok(0);
-        }
+        let (initial_response, stats_opt) =
+            get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
 
-        let initial_response = download_with_empty_blob_safety(
-            client.as_ref(),
-            max_download_range.start
-                ..min(
-                    max_download_range.end,
-                    max_download_range.start.saturating_add(partition_size),
-                ),
-        )
-        .await?;
+        let mut stats = match stats_opt {
+            Some(s) => s,
+            // If no information on ranges, no subsequent ranges to get.
+            // Write whatever we have and return.
+            None => return initial_response.into_body().collect_into(buffer).await,
+        };
 
-        let mut stats =
-            analyze_initial_response(&initial_response, partition_size, max_download_range.end)?
-                .ok_or_else(|| {
-                    Error::with_message(ErrorKind::Other, "Missing necessary response headers.")
-                })?;
+        // fail fast if we know we'll receive too much data
         if stats.overall_download_range.len() > buffer.len() {
             return Err(Error::with_message(
                 ErrorKind::Other,
@@ -217,9 +185,11 @@ where
             ));
         }
 
+        let total_ranges = stats.remaining_download_ranges.len() + 1;
+
         // if no real parallelism, take the simple option of executing downloads sequentially.
         // no worker spawning.
-        if parallel == 1 {
+        if parallel == 1 || stats.remaining_download_ranges.is_empty() {
             // sequence the initial response with a stream that fetches responses for each subsequent range
             let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
                 stream::iter(stats.remaining_download_ranges).then(|range| {
@@ -263,7 +233,7 @@ where
         let mut received_result_count = 0;
         let mut bytes_copied = 0;
         let mut consume_available_messages = || {
-            loop {
+            while received_result_count < total_ranges {
                 match rx.try_recv() {
                     Ok(worker_result) => {
                         bytes_copied += worker_result?;
@@ -330,6 +300,35 @@ where
     tasks.join_all().await;
 
     overall_result
+}
+
+async fn get_initial_response_and_analyze<Behavior>(
+    range: Option<Range<usize>>,
+    partition_size: usize,
+    client: Arc<Behavior>,
+) -> AzureResult<(AsyncRawResponse, Option<InitialResponseAnalysis>)>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    // Outer bound estimate of the resource range that will be downloaded. The actual download
+    // range will never exceed these bounds, but it may be smaller, based on the actual size
+    // of the remote resource.
+    let max_download_range = range.unwrap_or(0..usize::MAX);
+
+    let initial_response = download_with_empty_blob_safety(
+        client.as_ref(),
+        max_download_range.start
+            ..min(
+                max_download_range.end,
+                max_download_range.start.saturating_add(partition_size),
+            ),
+    )
+    .await?;
+
+    let stats =
+        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
+
+    Ok((initial_response, stats))
 }
 
 /// Race awaiting a message vs checking if tasks have completed successfully,
@@ -534,23 +533,6 @@ fn analyze_initial_response(
             }));
         }
     }
-    if let Some(content_length) = initial_response
-        .headers()
-        .get_optional_as::<usize, _>(&"content-length".into())?
-    {
-        return if content_length == 0 {
-            Ok(Some(InitialResponseAnalysis {
-                overall_download_range: 0..0,
-                initial_download_range: 0..0,
-                remaining_download_ranges: Default::default(),
-            }))
-        } else {
-            Err(Error::with_message(
-                ErrorKind::Other,
-                "Unexpected response headers.",
-            ))
-        };
-    }
     Ok(None)
 }
 
@@ -650,7 +632,7 @@ mod tests {
                         range: Some((range.start, range.end - 1)),
                         total_len: Some(self.data.len()),
                     })?;
-                    headers.add(ContentLength(range.len()));
+                    headers.add(ContentLength(range.len()))?;
                     let range = range.start..range.end;
                     Ok(AsyncRawResponse::new(
                         StatusCode::PartialContent,
@@ -663,7 +645,7 @@ mod tests {
                         range: None,
                         total_len: None,
                     })?;
-                    headers.add(ContentLength(0));
+                    headers.add(ContentLength(0))?;
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
@@ -675,7 +657,7 @@ mod tests {
                         range: Some((0, data_len - 1)),
                         total_len: Some(data_len),
                     })?;
-                    headers.add(ContentLength(data_len));
+                    headers.add(ContentLength(data_len))?;
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
