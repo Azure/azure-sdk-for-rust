@@ -198,6 +198,16 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
             "Item operations should use data plane pipeline"
         );
 
+        // Verify server-side duration is captured from response headers
+        assert!(
+            request.server_duration_ms().is_some(),
+            "Server duration should be captured from x-ms-request-duration-ms header"
+        );
+        assert!(
+            request.server_duration_ms().unwrap() >= 0.0,
+            "Server duration should be non-negative"
+        );
+
         Ok(())
     })
     .await
