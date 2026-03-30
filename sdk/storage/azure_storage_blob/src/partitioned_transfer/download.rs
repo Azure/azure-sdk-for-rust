@@ -287,7 +287,14 @@ where
 
         // final validation of work done
         if tasks.total_completed() != received_result_count {
-            todo!("error")
+            Err(Error::message(
+                ErrorKind::Other,
+                format!(
+                    "download completion count mismatch: tasks_completed={} messages_received={}",
+                    tasks.total_completed(),
+                    received_result_count
+                ),
+            ))
         } else {
             Ok(bytes_copied)
         }
