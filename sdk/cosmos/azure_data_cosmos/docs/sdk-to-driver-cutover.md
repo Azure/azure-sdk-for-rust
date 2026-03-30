@@ -72,7 +72,7 @@ The SDK's public API does not change. `read_item` retains the same signature, re
 
 An alternative approach was explored where the driver is **optional** — stored as `Option<Arc<CosmosDriver>>` on `CosmosClient`, `DatabaseClient`, and `ContainerClient`. In that model, each operation checks at runtime whether a driver is available: if so, it takes the driver path; otherwise, it falls back to the legacy gateway pipeline. Container metadata resolution is also optional and failure is silently ignored.
 
-We chose **not** to take that approach. In this design, the driver is **required**:
+We chose **not** to take that approach, since we want to verify the behavior of the driver being used only and this single method will serve as the test. In this design, the driver is **required**:
 
 - `CosmosClient` stores `Arc<CosmosDriver>` (not `Option`).
 - `ContainerClient::new()` eagerly resolves container metadata via the driver and returns `Result` — if resolution fails, the client cannot be created.
@@ -227,3 +227,72 @@ The public method signature should not change.
 - **`CosmosRequest` removal:** Once all operations are routed through the driver, the `Option<CosmosRequest>` field on `CosmosResponse<T>` can be removed entirely.
 - **`custom_headers` review:** The `custom_headers` field on `OperationOptions` was added for feature parity. It may be removed as we analyze which options are truly needed at the driver level.
 - **Remaining operations:** `create_item`, `delete_item`, `replace_item`, `upsert_item`, `patch_item`, and query operations should follow the same pattern established here.
+
+## Fault Injection Wiring
+
+When cutting `read_item` over to the driver, the SDK's fault injection tests initially failed because the two execution paths (gateway and driver) have **independent fault injection systems**. This section documents how they were connected.
+
+### Problem
+
+The SDK and driver each have their own fault injection module (`azure_data_cosmos::fault_injection` and `azure_data_cosmos_driver::fault_injection`). They define parallel but separate types (`FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult`, etc.) with identical variants but different Rust types. Prior to this work, only the gateway pipeline received fault injection rules — the driver was built without them.
+
+### Solution: Rule Translation with Shared State
+
+The bridge module (`driver_bridge.rs`) includes `sdk_fi_rules_to_driver_fi_rules()`, which translates SDK fault injection rules into driver fault injection rules. The translation covers:
+
+- `FaultOperationType` — variant-by-variant match (identical variant names)
+- `FaultInjectionErrorType` — variant-by-variant match
+- `FaultInjectionCondition` — `RegionName` → `Region`, operation type and container ID mapped directly
+- `FaultInjectionResult` — `Duration` → `Option<Duration>`, probability copied
+- Timing fields — `start_time: Instant` → `Option<Instant>`, `end_time` and `hit_limit` copied
+
+### Shared Mutable State
+
+SDK `FaultInjectionRule` has `enabled: Arc<AtomicBool>` and `hit_count: Arc<AtomicU32>` that tests mutate at runtime (`.disable()`, `.enable()`, `.hit_count()`). The driver's `FaultInjectionRuleBuilder` accepts external `Arc`s via `with_shared_state()`, so both the SDK gateway path and the driver path reference the **same atomic state**. This means:
+
+- Calling `.disable()` on the SDK rule also disables it in the driver
+- Hit counts are shared — both paths increment the same counter
+- Tests that toggle rules or assert hit counts work correctly across both paths
+
+### Wiring in `CosmosClientBuilder`
+
+In `CosmosClientBuilder::build()`:
+
+1. Before the `FaultInjectionClientBuilder` is consumed for the gateway transport, `rules()` extracts a reference to the SDK rules
+2. `sdk_fi_rules_to_driver_fi_rules()` translates them to driver rules with shared state
+3. The translated rules are passed to `CosmosDriverRuntimeBuilder::with_fault_injection_rules()`
+4. The SDK's `fault_injection` Cargo feature now forwards to the driver's `fault_injection` feature
+
+### Test Patterns for Future Cutover
+
+When cutting over additional operations, **no additional fault injection wiring is needed** — it's handled once at the `CosmosClientBuilder` level. However, tests that assert `request_url()` need to handle `None` for driver-routed operations:
+
+```rust
+// Gateway-routed operations return Some(url)
+// Driver-routed operations return None
+if let Some(url) = response.request_url() {
+    assert_eq!(url.host_str().unwrap(), expected_endpoint);
+}
+```
+
+### `custom_response` Translation
+
+Translation of `CustomResponse` (synthetic HTTP responses) is not yet implemented. None of the current tests use custom responses for `ReadItem` operations. When needed, the bridge function should be extended to translate `CustomResponse` fields (`status_code`, `headers`, `body`).
+
+### Consolidating to Driver Fault Injection After Cutover
+
+The current dual-system architecture (SDK fault injection + driver fault injection + translation bridge) exists only because the cutover is incremental — some operations still go through the gateway while others go through the driver. Once **all** operations are routed through the driver:
+
+1. **Drop `azure_data_cosmos::fault_injection`** — the SDK's HTTP-client-level fault interception module becomes unreachable. Delete the entire `src/fault_injection/` directory.
+2. **Re-export driver types** — the SDK re-exports the driver's fault injection types directly:
+
+   ```rust
+   #[cfg(feature = "fault_injection")]
+   pub use azure_data_cosmos_driver::fault_injection;
+   ```
+
+3. **Remove the translation layer** — `sdk_fi_rules_to_driver_fi_rules()` in `driver_bridge.rs` and the `shared_enabled()`/`shared_hit_count()` accessors on the SDK rule are no longer needed.
+4. **Simplify `CosmosClientBuilder`** — `with_fault_injection()` accepts `Vec<Arc<driver::FaultInjectionRule>>` directly and passes them to `CosmosDriverRuntimeBuilder::with_fault_injection_rules()`. No translation, no cloning, no intermediary builder.
+5. **Update tests** — tests construct driver `FaultInjectionRule` directly (same builders, same API) instead of SDK rules.
+
+At that point the SDK has **no fault injection logic of its own** — it's a pass-through to the driver, matching the overall "SDK as thin wrapper" goal. The driver is the single source of truth for all transport-related concerns including fault injection.

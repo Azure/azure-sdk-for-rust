@@ -4,7 +4,7 @@
 //! Defines fault injection rules that combine conditions and results.
 
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use azure_core::http::StatusCode;
@@ -28,9 +28,9 @@ pub struct FaultInjectionRule {
     /// Unique identifier for the fault injection scenario.
     pub id: String,
     /// Whether the rule is currently enabled.
-    enabled: AtomicBool,
+    enabled: Arc<AtomicBool>,
     /// Number of times the rule has been matched (including matches where no fault was injected).
-    hit_count: AtomicU32,
+    hit_count: Arc<AtomicU32>,
     /// HTTP status codes of responses for matched requests that passed through without fault injection.
     passthrough_statuses: Mutex<Vec<StatusCode>>,
 }
@@ -46,8 +46,8 @@ impl Clone for FaultInjectionRule {
             end_time: self.end_time,
             hit_limit: self.hit_limit,
             id: self.id.clone(),
-            enabled: AtomicBool::new(self.enabled.load(Ordering::SeqCst)),
-            hit_count: AtomicU32::new(self.hit_count.load(Ordering::SeqCst)),
+            enabled: Arc::new(AtomicBool::new(self.enabled.load(Ordering::SeqCst))),
+            hit_count: Arc::new(AtomicU32::new(self.hit_count.load(Ordering::SeqCst))),
             passthrough_statuses: Mutex::new(self.passthrough_statuses.lock().unwrap().clone()),
         }
     }
@@ -86,6 +86,16 @@ impl FaultInjectionRule {
     /// Resets the hit count to zero.
     pub fn reset_hit_count(&self) {
         self.hit_count.store(0, Ordering::SeqCst);
+    }
+
+    /// Returns a shared reference to the enabled flag for cross-path state sharing.
+    pub(crate) fn shared_enabled(&self) -> Arc<AtomicBool> {
+        Arc::clone(&self.enabled)
+    }
+
+    /// Returns a shared reference to the hit count for cross-path state sharing.
+    pub(crate) fn shared_hit_count(&self) -> Arc<AtomicU32> {
+        Arc::clone(&self.hit_count)
     }
 
     /// Records the HTTP status code of a response for a matched request that
@@ -179,8 +189,8 @@ impl FaultInjectionRuleBuilder {
             end_time: self.end_time,
             hit_limit: self.hit_limit,
             id: self.id,
-            enabled: AtomicBool::new(true),
-            hit_count: AtomicU32::new(0),
+            enabled: Arc::new(AtomicBool::new(true)),
+            hit_count: Arc::new(AtomicU32::new(0)),
             passthrough_statuses: Mutex::new(Vec::new()),
         }
     }

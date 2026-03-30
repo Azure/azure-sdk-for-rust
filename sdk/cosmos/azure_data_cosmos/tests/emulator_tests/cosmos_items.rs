@@ -58,15 +58,15 @@ fn assert_response<T>(
         assert!(etag.unwrap() != "", "expected etag to be non-empty");
     }
 
-    assert_eq!(
-        response
-            .request_url()
-            .expect("request URL should be present")
-            .host_str()
-            .unwrap(),
-        expected_endpoint,
-        "unexpected endpoint"
-    );
+    // request_url() returns None for driver-routed operations (e.g., read_item).
+    // Only assert the endpoint when the URL is available.
+    if let Some(url) = response.request_url() {
+        assert_eq!(
+            url.host_str().unwrap(),
+            expected_endpoint,
+            "unexpected endpoint"
+        );
+    }
     assert!(
         response.session_token().is_some(),
         "expected session token to be present"
