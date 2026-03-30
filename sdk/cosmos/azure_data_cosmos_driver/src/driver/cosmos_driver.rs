@@ -1074,8 +1074,6 @@ mod tests {
                         "http2 not supported",
                     ),
                     crate::diagnostics::RequestSentStatus::NotSent,
-                    false,
-                    false,
                 )),
             }
         }

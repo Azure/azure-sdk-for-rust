@@ -211,8 +211,6 @@ impl FaultClient {
                         "Injected fault: connection error",
                     ),
                     RequestSentStatus::NotSent,
-                    true,
-                    false,
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
@@ -222,8 +220,6 @@ impl FaultClient {
                         "Injected fault: response timeout",
                     ),
                     RequestSentStatus::Unknown,
-                    false,
-                    true,
                 )));
             }
             FaultInjectionErrorType::InternalServerError => (
@@ -287,12 +283,7 @@ impl FaultClient {
             message,
         );
 
-        ApplyResult::Injected(Err(TransportError::new(
-            error,
-            RequestSentStatus::Sent,
-            false,
-            false,
-        )))
+        ApplyResult::Injected(Err(TransportError::new(error, RequestSentStatus::Sent)))
     }
 }
 

@@ -106,12 +106,7 @@ impl AdaptiveTransport {
             Self::Gateway(client) => client.send(request).await,
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
                 let endpoint_key = EndpointKey::try_from(&request.url).map_err(|e| {
-                    TransportError::new(
-                        e,
-                        crate::diagnostics::RequestSentStatus::NotSent,
-                        false,
-                        false,
-                    )
+                    TransportError::new(e, crate::diagnostics::RequestSentStatus::NotSent)
                 })?;
                 transport
                     .send(request, None, &endpoint_key, None)

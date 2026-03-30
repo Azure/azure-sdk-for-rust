@@ -64,7 +64,6 @@ impl CosmosTransportClient for ReqwestTransportClient {
 
         let response = builder.send().await.map_err(|err| {
             let is_connect = err.is_connect();
-            let is_timeout = err.is_timeout();
             let request_sent = if is_connect {
                 RequestSentStatus::NotSent
             } else if err.is_body() {
@@ -77,12 +76,7 @@ impl CosmosTransportClient for ReqwestTransportClient {
             } else {
                 azure_core::error::ErrorKind::Io
             };
-            TransportError::new(
-                azure_core::Error::new(kind, err),
-                request_sent,
-                is_connect,
-                is_timeout,
-            )
+            TransportError::new(azure_core::Error::new(kind, err), request_sent)
         })?;
 
         let status = response.status().as_u16();
@@ -92,8 +86,6 @@ impl CosmosTransportClient for ReqwestTransportClient {
             TransportError::new(
                 azure_core::Error::new(azure_core::error::ErrorKind::Io, err),
                 RequestSentStatus::Sent,
-                false,
-                false,
             )
         })?;
 

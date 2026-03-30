@@ -85,8 +85,6 @@ impl ShardedHttpTransport {
                     result: Err(TransportError::new(
                         error,
                         crate::diagnostics::RequestSentStatus::NotSent,
-                        false,
-                        false,
                     )),
                     shard_id: None,
                     shard_diagnostics: None,
@@ -101,8 +99,6 @@ impl ShardedHttpTransport {
                     result: Err(TransportError::new(
                         error,
                         crate::diagnostics::RequestSentStatus::NotSent,
-                        false,
-                        false,
                     )),
                     shard_id: None,
                     shard_diagnostics: None,
@@ -975,8 +971,6 @@ mod tests {
                     "noop client should not execute requests in shard unit tests",
                 ),
                 crate::diagnostics::RequestSentStatus::NotSent,
-                false,
-                false,
             ))
         }
     }
@@ -1040,8 +1034,6 @@ mod tests {
         overflow.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
 
         overflow.set_last_request_at(Instant::now() - Duration::from_secs(5));
@@ -1049,14 +1041,10 @@ mod tests {
         first.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
         first.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
 
         first.set_consecutive_failures(0);
@@ -1113,29 +1101,21 @@ mod tests {
         first.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
         first.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
 
         second.record_request_start();
         second.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
         second.record_request_start();
         second.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
 
         {
@@ -1179,14 +1159,10 @@ mod tests {
         first.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
         first.record_request_finish(&Err(TransportError::new(
             azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
             crate::diagnostics::RequestSentStatus::NotSent,
-            false,
-            false,
         )));
 
         for shard in [&first, &second] {
@@ -1253,8 +1229,6 @@ mod tests {
             second.record_request_finish(&Err(TransportError::new(
                 azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
                 crate::diagnostics::RequestSentStatus::NotSent,
-                false,
-                false,
             )));
         }
 

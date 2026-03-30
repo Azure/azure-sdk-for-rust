@@ -719,8 +719,6 @@ mod tests {
                     "request should have timed out before completion",
                 ),
                 crate::diagnostics::RequestSentStatus::Unknown,
-                false,
-                false,
             ))
         }
     }
@@ -975,8 +973,6 @@ mod tests {
             Err(super::super::cosmos_transport_client::TransportError::new(
                 azure_core::Error::with_message(error_kind, self.message),
                 crate::diagnostics::RequestSentStatus::Unknown,
-                matches!(&self.error_kind, ErrorKind::Connection),
-                false,
             ))
         }
     }

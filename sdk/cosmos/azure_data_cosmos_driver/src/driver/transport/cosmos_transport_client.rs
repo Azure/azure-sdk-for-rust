@@ -68,10 +68,6 @@ pub(crate) struct CosmosHttpResponse {
 ///
 /// * [`request_sent`](Self::request_sent) — tri-state indicator of whether the
 ///   request reached the wire.
-/// * [`is_connect_error`](Self::is_connect_error) — `true` when the failure
-///   occurred during TCP/TLS connection establishment.
-/// * [`is_timeout_error`](Self::is_timeout_error) — `true` when the operation
-///   exceeded its deadline.
 pub(crate) struct TransportError {
     /// The underlying error, preserved as `azure_core::Error` for public API
     /// compatibility.
@@ -79,27 +75,14 @@ pub(crate) struct TransportError {
 
     /// Whether the request was definitely sent, not sent, or unknown.
     pub request_sent: RequestSentStatus,
-
-    /// Whether this was a connection establishment failure.
-    pub is_connect_error: bool,
-
-    /// Whether this was a timeout.
-    pub is_timeout_error: bool,
 }
 
 impl TransportError {
-    /// Creates a new [`TransportError`] with the given classification flags.
-    pub fn new(
-        error: azure_core::Error,
-        request_sent: RequestSentStatus,
-        is_connect_error: bool,
-        is_timeout_error: bool,
-    ) -> Self {
+    /// Creates a new [`TransportError`].
+    pub fn new(error: azure_core::Error, request_sent: RequestSentStatus) -> Self {
         Self {
             error,
             request_sent,
-            is_connect_error,
-            is_timeout_error,
         }
     }
 }
@@ -109,8 +92,6 @@ impl fmt::Debug for TransportError {
         f.debug_struct("TransportError")
             .field("error", &self.error.to_string())
             .field("request_sent", &self.request_sent)
-            .field("is_connect_error", &self.is_connect_error)
-            .field("is_timeout_error", &self.is_timeout_error)
             .finish()
     }
 }
