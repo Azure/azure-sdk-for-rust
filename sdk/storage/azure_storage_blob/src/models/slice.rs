@@ -12,7 +12,19 @@ pub(crate) struct SendSlice<T> {
 unsafe impl<T> Send for SendSlice<T> {}
 
 impl<T> SendSlice<T> {
-    pub fn from_raw(ptr: *mut T, len: usize) -> Self {
+    /// Creates a slice from raw parts, which can `Send` across threads.
+    ///
+    /// # Safety
+    /// The caller must ensure all safety required by `std::slice::from_raw_parts_mut()`
+    /// with the given values.
+    ///
+    /// This memory can be sent across thread boundaries as mutable. When sending this
+    /// slice to another thread, the caller must:
+    /// - Ensure no other references alias this memory until this slice is dropped AND any
+    ///   results from `as_mut_slice()` are also dropped.
+    /// - Ensure the aliased memory is not dropped until this slice is dropped AND any
+    ///   results from `as_mut_slice()` are also dropped.
+    pub unsafe fn from_raw(ptr: *mut T, len: usize) -> Self {
         Self { ptr, len }
     }
 

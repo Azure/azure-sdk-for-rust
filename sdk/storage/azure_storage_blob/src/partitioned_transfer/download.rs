@@ -287,7 +287,7 @@ where
 
         // final validation of work done
         if tasks.total_completed() != received_result_count {
-            Err(Error::message(
+            Err(Error::with_message(
                 ErrorKind::Other,
                 format!(
                     "download completion count mismatch: tasks_completed={} messages_received={}",
@@ -323,6 +323,12 @@ where
     // range will never exceed these bounds, but it may be smaller, based on the actual size
     // of the remote resource.
     let max_download_range = range.unwrap_or(0..usize::MAX);
+    if max_download_range.is_empty() {
+        return Err(Error::with_message(
+            ErrorKind::Other,
+            "Provided range must have length > 0.",
+        ));
+    }
 
     let initial_response = download_with_empty_blob_safety(
         client.as_ref(),
