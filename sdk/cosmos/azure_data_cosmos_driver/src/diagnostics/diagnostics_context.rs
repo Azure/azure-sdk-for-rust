@@ -37,6 +37,12 @@ pub enum ExecutionContext {
     Initial,
     /// Retry due to transient error (e.g., 429, 503).
     Retry,
+    /// Transport-level shard retry within the same region.
+    ///
+    /// The initial attempt failed with a connectivity error and the transport
+    /// pipeline retried on a different HTTP/2 shard before escalating to the
+    /// operation pipeline.
+    TransportRetry,
     /// Hedged request for latency reduction.
     Hedging,
     /// Region failover attempt.
@@ -51,6 +57,7 @@ impl ExecutionContext {
         match self {
             ExecutionContext::Initial => "initial",
             ExecutionContext::Retry => "retry",
+            ExecutionContext::TransportRetry => "transport_retry",
             ExecutionContext::Hedging => "hedging",
             ExecutionContext::RegionFailover => "region_failover",
             ExecutionContext::CircuitBreakerProbe => "circuit_breaker_probe",
@@ -198,6 +205,53 @@ impl AsRef<str> for TransportKind {
     }
 }
 
+/// The HTTP protocol version used by the selected transport.
+///
+/// This makes the negotiated standard gateway protocol visible in diagnostics,
+/// which is especially important after a sticky fallback from HTTP/2 to HTTP/1.1.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum TransportHttpVersion {
+    /// HTTP/1.1 transport.
+    Http11,
+
+    /// HTTP/2 transport.
+    Http2,
+}
+
+impl TransportHttpVersion {
+    /// Returns the string representation of this transport HTTP version.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TransportHttpVersion::Http11 => "http11",
+            TransportHttpVersion::Http2 => "http2",
+        }
+    }
+
+    /// Returns true if this request used HTTP/1.1.
+    pub fn is_http11(self) -> bool {
+        matches!(self, TransportHttpVersion::Http11)
+    }
+
+    /// Returns true if this request used HTTP/2.
+    pub fn is_http2(self) -> bool {
+        matches!(self, TransportHttpVersion::Http2)
+    }
+}
+
+impl std::fmt::Display for TransportHttpVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for TransportHttpVersion {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl TransportSecurity {
     /// Returns the string representation of this transport security mode.
     pub fn as_str(self) -> &'static str {
@@ -329,6 +383,9 @@ pub struct RequestDiagnostics {
     /// The concrete transport kind used for this request.
     transport_kind: TransportKind,
 
+    /// The HTTP protocol version used by the selected transport.
+    transport_http_version: TransportHttpVersion,
+
     /// Region this request was sent to.
     region: Option<Region>,
 
@@ -362,6 +419,18 @@ pub struct RequestDiagnostics {
     /// Pipeline events during this request.
     events: Vec<RequestEvent>,
 
+    /// Transport shard state captured for sharded HTTP/2 requests.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    transport_shard: Option<TransportShardDiagnostics>,
+
+    /// Prior shard-local transport failures before the final attempt outcome.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    failed_transport_shards: Vec<FailedTransportShardDiagnostics>,
+
+    /// Number of transport-local shard retries performed for this request.
+    #[serde(skip_serializing_if = "is_zero_u32")]
+    local_shard_retry_count: u32,
+
     /// Whether this request timed out.
     pub(crate) timed_out: bool,
 
@@ -375,6 +444,14 @@ pub struct RequestDiagnostics {
 
     /// Error message if the request failed.
     error: Option<String>,
+
+    /// Fault injection rule evaluations for this request.
+    ///
+    /// Populated only when the `fault_injection` feature is enabled and
+    /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
+    /// via a request-scoped concurrent map keyed by evaluation request ID.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }
 
 impl RequestDiagnostics {
@@ -384,6 +461,7 @@ impl RequestDiagnostics {
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
+        transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
     ) -> Self {
         Self {
@@ -391,6 +469,7 @@ impl RequestDiagnostics {
             pipeline_type,
             transport_security,
             transport_kind,
+            transport_http_version,
             region: endpoint.region().cloned(),
             endpoint: endpoint.url().as_str().to_owned(),
             // Status is set when the request completes via `complete()`.
@@ -403,9 +482,14 @@ impl RequestDiagnostics {
             completed_at: None,
             duration_ms: 0,
             events: Vec::new(),
+            transport_shard: None,
+            failed_transport_shards: Vec::new(),
+            local_shard_retry_count: 0,
             timed_out: false,
             request_sent: RequestSentStatus::Unknown,
             error: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_evaluations: Vec::new(),
         }
     }
 
@@ -418,6 +502,13 @@ impl RequestDiagnostics {
         if let Some(sub_status) = sub_status {
             self.with_sub_status(sub_status);
         }
+        // Clear any prior failure state. In the current pipeline each attempt
+        // gets its own RequestDiagnostics, so `error` and `timed_out` should
+        // always be their initial values here. These resets are defensive:
+        // they ensure a valid state if a future flow (e.g., shard retry)
+        // reuses a handle after a transport-level failure on the same attempt.
+        self.error = None;
+        self.timed_out = false;
         self.request_sent = RequestSentStatus::Sent;
         self.duration_ms = self
             .completed_at
@@ -431,9 +522,6 @@ impl RequestDiagnostics {
     /// Sets the status to 408 (Request Timeout) with sub-status
     /// [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
     /// operation timeout from the client side.
-    // TODO(Step 2): remove this allow once operation/transport deadline wiring
-    // uses the builder timeout path directly again.
-    #[allow(dead_code)]
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
@@ -448,22 +536,19 @@ impl RequestDiagnostics {
             .as_millis() as u64;
     }
 
-    /// Records failure of this request with an error message.
-    ///
-    /// Use this for transport-level failures (connection errors, DNS failures, etc.)
-    /// where no HTTP response was received.
-    ///
-    /// # Note on retry safety
-    ///
-    /// The `request_sent` parameter indicates whether the request bytes were
-    /// written to the network. This is critical for determining retry safety:
-    /// - `NotSent`: Safe to retry any operation
-    /// - `Sent`: Only safe to retry idempotent operations
-    /// - `Unknown`: Treat as potentially sent (conservative)
-    pub(crate) fn fail(&mut self, error: impl Into<String>, request_sent: RequestSentStatus) {
+    /// Records a transport-level failure using the synthetic Cosmos status
+    /// used across SDKs for client-generated gateway transport errors.
+    pub(crate) fn fail_transport(
+        &mut self,
+        error: impl Into<String>,
+        request_sent: RequestSentStatus,
+        status: CosmosStatus,
+    ) {
         self.completed_at = Some(Instant::now());
+        self.status = status;
         self.with_error(error);
         self.request_sent = request_sent;
+        self.timed_out = false;
         self.duration_ms = self
             .completed_at
             .unwrap()
@@ -501,6 +586,21 @@ impl RequestDiagnostics {
         self.events.push(event);
     }
 
+    pub(crate) fn set_transport_shard(&mut self, transport_shard: TransportShardDiagnostics) {
+        self.transport_shard = Some(transport_shard);
+    }
+
+    pub(crate) fn add_failed_transport_shard(
+        &mut self,
+        failed_transport_shard: FailedTransportShardDiagnostics,
+    ) {
+        self.failed_transport_shards.push(failed_transport_shard);
+    }
+
+    pub(crate) fn increment_local_shard_retry_count(&mut self) {
+        self.local_shard_retry_count = self.local_shard_retry_count.saturating_add(1);
+    }
+
     /// Returns whether this request has been completed.
     pub(crate) fn is_completed(&self) -> bool {
         self.completed_at.is_some()
@@ -526,6 +626,11 @@ impl RequestDiagnostics {
     /// Returns the concrete transport kind used for this request.
     pub fn transport_kind(&self) -> TransportKind {
         self.transport_kind
+    }
+
+    /// Returns the HTTP protocol version used by the selected transport.
+    pub fn transport_http_version(&self) -> TransportHttpVersion {
+        self.transport_http_version
     }
 
     /// Returns the region this request was sent to.
@@ -578,6 +683,21 @@ impl RequestDiagnostics {
         &self.events
     }
 
+    /// Returns the sharded transport state for the shard used by this request, if present.
+    pub fn transport_shard(&self) -> Option<&TransportShardDiagnostics> {
+        self.transport_shard.as_ref()
+    }
+
+    /// Returns prior shard-local failures recorded before the final attempt outcome.
+    pub fn failed_transport_shards(&self) -> &[FailedTransportShardDiagnostics] {
+        &self.failed_transport_shards
+    }
+
+    /// Returns how many shard-local transport retries were performed.
+    pub fn local_shard_retry_count(&self) -> u32 {
+        self.local_shard_retry_count
+    }
+
     /// Returns whether this request timed out.
     pub fn timed_out(&self) -> bool {
         self.timed_out
@@ -591,6 +711,26 @@ impl RequestDiagnostics {
     /// Returns the error message if the request failed.
     pub fn error(&self) -> Option<&str> {
         self.error.as_deref()
+    }
+
+    /// Returns fault injection rule evaluations for this request.
+    ///
+    /// Each entry describes why a rule was applied, skipped, or missed.
+    /// Only populated when the `fault_injection` feature is enabled.
+    #[cfg(feature = "fault_injection")]
+    pub fn fault_injection_evaluations(
+        &self,
+    ) -> &[crate::fault_injection::FaultInjectionEvaluation] {
+        &self.fault_injection_evaluations
+    }
+
+    /// Sets the fault injection evaluations for this request.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_evaluations(
+        &mut self,
+        evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
+    ) {
+        self.fault_injection_evaluations = evaluations;
     }
 }
 
@@ -716,6 +856,113 @@ pub struct RequestEvent {
 
     /// Additional context for this event.
     details: Option<String>,
+}
+
+/// Captured state for the HTTP/2 shard used by a request.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct TransportShardDiagnostics {
+    shard_id: u64,
+    /// Approximate inflight count at the time of capture. This is read from an
+    /// atomic counter outside the shard's state mutex, so it may be slightly
+    /// inconsistent with other fields.
+    estimated_inflight: u32,
+    consecutive_failures: u32,
+    total_requests: u64,
+    total_failures: u64,
+    /// Requests started but never finished (e.g., cancelled by a timeout race).
+    total_cancellations: u64,
+    marked_for_eviction: bool,
+}
+
+impl TransportShardDiagnostics {
+    pub(crate) fn new(
+        shard_id: u64,
+        estimated_inflight: u32,
+        consecutive_failures: u32,
+        total_requests: u64,
+        total_failures: u64,
+        total_cancellations: u64,
+        marked_for_eviction: bool,
+    ) -> Self {
+        Self {
+            shard_id,
+            estimated_inflight,
+            consecutive_failures,
+            total_requests,
+            total_failures,
+            total_cancellations,
+            marked_for_eviction,
+        }
+    }
+
+    pub fn shard_id(&self) -> u64 {
+        self.shard_id
+    }
+
+    pub fn estimated_inflight(&self) -> u32 {
+        self.estimated_inflight
+    }
+
+    pub fn consecutive_failures(&self) -> u32 {
+        self.consecutive_failures
+    }
+
+    pub fn total_requests(&self) -> u64 {
+        self.total_requests
+    }
+
+    pub fn total_failures(&self) -> u64 {
+        self.total_failures
+    }
+
+    pub fn total_cancellations(&self) -> u64 {
+        self.total_cancellations
+    }
+
+    pub fn marked_for_eviction(&self) -> bool {
+        self.marked_for_eviction
+    }
+}
+
+/// Captured diagnostics for a shard that failed before a local shard retry.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct FailedTransportShardDiagnostics {
+    #[serde(flatten)]
+    transport_shard: TransportShardDiagnostics,
+    request_sent: RequestSentStatus,
+    error: String,
+}
+
+impl FailedTransportShardDiagnostics {
+    pub(crate) fn new(
+        transport_shard: TransportShardDiagnostics,
+        request_sent: RequestSentStatus,
+        error: impl Into<String>,
+    ) -> Self {
+        Self {
+            transport_shard,
+            request_sent,
+            error: error.into(),
+        }
+    }
+
+    pub fn transport_shard(&self) -> &TransportShardDiagnostics {
+        &self.transport_shard
+    }
+
+    pub fn request_sent(&self) -> RequestSentStatus {
+        self.request_sent
+    }
+
+    pub fn error(&self) -> &str {
+        &self.error
+    }
+}
+
+fn is_zero_u32(value: &u32) -> bool {
+    *value == 0
 }
 
 impl RequestEvent {
@@ -944,6 +1191,10 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
 
+    /// Whether fault injection is enabled for this operation's runtime.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_enabled: bool,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -960,6 +1211,8 @@ impl DiagnosticsContextBuilder {
             options,
             cpu_monitor: None,
             machine_id: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: false,
             #[cfg(test)]
             test_system_usage: None,
         }
@@ -973,6 +1226,12 @@ impl DiagnosticsContextBuilder {
     /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
     pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
         self.machine_id = Some(machine_id);
+    }
+
+    /// Sets whether fault injection is enabled for this operation's runtime.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_enabled(&mut self, enabled: bool) {
+        self.fault_injection_enabled = enabled;
     }
 
     /// Returns the operation-level activity ID.
@@ -1013,6 +1272,7 @@ impl DiagnosticsContextBuilder {
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
+        transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
     ) -> RequestHandle {
         let request = RequestDiagnostics::new(
@@ -1020,6 +1280,7 @@ impl DiagnosticsContextBuilder {
             pipeline_type,
             transport_security,
             transport_kind,
+            transport_http_version,
             endpoint,
         );
         let handle = RequestHandle(self.requests.len());
@@ -1048,35 +1309,24 @@ impl DiagnosticsContextBuilder {
     /// 408 (Request Timeout) with sub-status [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`].
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
-    /// [`fail_request`](Self::fail_request) instead with the appropriate error.
-    // TODO(Step 2): remove this allow once timeout handling is unified across
-    // operation and transport pipelines.
-    #[allow(dead_code)]
+    /// [`fail_transport_request`](Self::fail_transport_request) with the
+    /// appropriate synthetic Cosmos status.
     pub(crate) fn timeout_request(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.timeout();
         }
     }
 
-    /// Records failure of a request with an error message.
-    ///
-    /// Should be called when a transport-level error occurs (connection failure,
-    /// DNS error, TLS error, etc.) and no HTTP response was received.
-    ///
-    /// # Parameters
-    ///
-    /// - `handle`: The request handle from [`start_request`](Self::start_request)
-    /// - `error`: The error message describing the failure
-    /// - `request_sent`: Whether the request was sent on the wire before failure.
-    ///   This is critical for retry safety - see [`RequestDiagnostics::fail`].
-    pub(crate) fn fail_request(
+    /// Records a transport-level failure for a request that received no Cosmos response.
+    pub(crate) fn fail_transport_request(
         &mut self,
         handle: RequestHandle,
         error: impl Into<String>,
         request_sent: RequestSentStatus,
+        status: CosmosStatus,
     ) {
         if let Some(request) = self.requests.get_mut(handle.0) {
-            request.fail(error, request_sent);
+            request.fail_transport(error, request_sent, status);
         }
     }
 
@@ -1111,6 +1361,44 @@ impl DiagnosticsContextBuilder {
         }
     }
 
+    pub(crate) fn set_transport_shard(
+        &mut self,
+        handle: RequestHandle,
+        transport_shard: TransportShardDiagnostics,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.set_transport_shard(transport_shard);
+        }
+    }
+
+    pub(crate) fn add_failed_transport_shard(
+        &mut self,
+        handle: RequestHandle,
+        failed_transport_shard: FailedTransportShardDiagnostics,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.add_failed_transport_shard(failed_transport_shard);
+        }
+    }
+
+    pub(crate) fn increment_local_shard_retry_count(&mut self, handle: RequestHandle) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.increment_local_shard_retry_count();
+        }
+    }
+
+    /// Sets fault injection evaluations on a request.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_evaluations(
+        &mut self,
+        handle: RequestHandle,
+        evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.set_fault_injection_evaluations(evaluations);
+        }
+    }
+
     /// Completes the builder and returns an immutable [`DiagnosticsContext`].
     ///
     /// This consumes the builder and creates a finalized diagnostics context
@@ -1126,6 +1414,10 @@ impl DiagnosticsContextBuilder {
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
+            #[cfg(not(feature = "fault_injection"))]
+            fault_injection_enabled: false,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -1195,6 +1487,9 @@ pub struct DiagnosticsContext {
 
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
+
+    /// Whether fault injection was enabled when this operation executed.
+    fault_injection_enabled: bool,
 
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
@@ -1274,6 +1569,11 @@ impl DiagnosticsContext {
     /// `"uuid_{generated-uuid}"` (stable for process lifetime).
     pub fn machine_id(&self) -> Option<&str> {
         self.machine_id.as_ref().map(|s| s.as_str())
+    }
+
+    /// Returns whether fault injection was enabled when this operation executed.
+    pub fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
     }
 
     /// Serializes diagnostics to a JSON string.
@@ -1397,6 +1697,7 @@ impl Clone for DiagnosticsContext {
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
@@ -1564,6 +1865,7 @@ mod tests {
                 PipelineType::DataPlane,
                 TransportSecurity::Secure,
                 TransportKind::Gateway,
+                TransportHttpVersion::Http11,
                 &cosmos_endpoint,
             )
         }
@@ -1757,29 +2059,63 @@ mod tests {
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
         let actual = normalize_diagnostics_json(json);
-        let expected: serde_json::Value = serde_json::json!({
-            "activity_id": "test-id",
-            "total_duration_ms": 0,
-            "total_request_charge": 1.0,
-            "request_count": 1,
-            "requests": [{
-                "execution_context": "initial",
-                "pipeline_type": "data_plane",
-                "transport_security": "secure",
-                "transport_kind": "gateway",
-                "region": "westus2",
-                "endpoint": "https://test.documents.azure.com/",
-                "status": "200",
-                "request_charge": 1.0,
-                "activity_id": null,
-                "session_token": null,
-                "duration_ms": 0,
-                "events": [],
-                "timed_out": false,
-                "request_sent": "sent",
-                "error": null
-            }]
-        });
+        let expected: serde_json::Value = {
+            #[cfg(feature = "fault_injection")]
+            {
+                serde_json::json!({
+                    "activity_id": "test-id",
+                    "total_duration_ms": 0,
+                    "total_request_charge": 1.0,
+                    "request_count": 1,
+                    "requests": [{
+                        "execution_context": "initial",
+                        "pipeline_type": "data_plane",
+                        "transport_security": "secure",
+                        "transport_kind": "gateway",
+                        "transport_http_version": "http11",
+                        "region": "westus2",
+                        "endpoint": "https://test.documents.azure.com/",
+                        "status": "200",
+                        "request_charge": 1.0,
+                        "activity_id": null,
+                        "session_token": null,
+                        "duration_ms": 0,
+                        "events": [],
+                        "timed_out": false,
+                        "request_sent": "sent",
+                        "error": null,
+                        "fault_injection_evaluations": []
+                    }]
+                })
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                serde_json::json!({
+                    "activity_id": "test-id",
+                    "total_duration_ms": 0,
+                    "total_request_charge": 1.0,
+                    "request_count": 1,
+                    "requests": [{
+                        "execution_context": "initial",
+                        "pipeline_type": "data_plane",
+                        "transport_security": "secure",
+                        "transport_kind": "gateway",
+                        "transport_http_version": "http11",
+                        "region": "westus2",
+                        "endpoint": "https://test.documents.azure.com/",
+                        "status": "200",
+                        "request_charge": 1.0,
+                        "activity_id": null,
+                        "session_token": null,
+                        "duration_ms": 0,
+                        "events": [],
+                        "timed_out": false,
+                        "request_sent": "sent",
+                        "error": null
+                    }]
+                })
+            }
+        };
         assert_eq!(actual, expected, "Detailed JSON mismatch.\nActual:\n{json}");
     }
 
@@ -1912,6 +2248,29 @@ mod tests {
     }
 
     #[test]
+    fn transport_failure_request_uses_transport_generated_503() {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+
+        builder.fail_transport_request(
+            handle,
+            "connection refused",
+            RequestSentStatus::Unknown,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        );
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        let status = requests[0].status();
+        assert_eq!(status, &CosmosStatus::TRANSPORT_GENERATED_503);
+        assert_eq!(requests[0].error(), Some("connection refused"));
+    }
+
+    #[test]
     fn percentile_calculation() {
         assert_eq!(percentile_sorted(&[], 50), 0);
         assert_eq!(percentile_sorted(&[100], 50), 100);
@@ -1982,6 +2341,10 @@ mod tests {
     fn execution_context_display() {
         assert_eq!(ExecutionContext::Initial.to_string(), "initial");
         assert_eq!(ExecutionContext::Retry.to_string(), "retry");
+        assert_eq!(
+            ExecutionContext::TransportRetry.to_string(),
+            "transport_retry"
+        );
         assert_eq!(ExecutionContext::Hedging.to_string(), "hedging");
         assert_eq!(
             ExecutionContext::RegionFailover.to_string(),
@@ -2019,6 +2382,14 @@ mod tests {
         assert!(!TransportKind::Gateway.is_gateway20());
         assert!(TransportKind::Gateway20.is_gateway20());
         assert!(!TransportKind::Gateway20.is_gateway());
+    }
+
+    #[test]
+    fn transport_http_version_classification() {
+        assert!(TransportHttpVersion::Http11.is_http11());
+        assert!(!TransportHttpVersion::Http11.is_http2());
+        assert!(TransportHttpVersion::Http2.is_http2());
+        assert!(!TransportHttpVersion::Http2.is_http11());
     }
 
     #[test]
@@ -2064,6 +2435,18 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&TransportKind::Gateway20).unwrap(),
             "\"gateway20\""
+        );
+    }
+
+    #[test]
+    fn transport_http_version_serialization() {
+        assert_eq!(
+            serde_json::to_string(&TransportHttpVersion::Http11).unwrap(),
+            "\"http11\""
+        );
+        assert_eq!(
+            serde_json::to_string(&TransportHttpVersion::Http2).unwrap(),
+            "\"http2\""
         );
     }
 

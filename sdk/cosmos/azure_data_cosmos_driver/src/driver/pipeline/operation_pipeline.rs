@@ -17,14 +17,14 @@ use crate::{
     driver::routing::{
         can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
         partition_endpoint_state::HealthStatus, remove_probe_succeeded_entry, AccountEndpointState,
-        CosmosEndpoint, LocationSnapshot, LocationStateStore,
+        session_manager::SessionManager, CosmosEndpoint, LocationSnapshot, LocationStateStore,
     },
     driver::transport::CosmosTransport,
     models::{
-        AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, CosmosResponseHeaders,
-        Credential, SubStatusCode,
+        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
+        CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{OperationOptions, RuntimeOptions},
+    options::{OperationOptionsView, ReadConsistencyStrategy},
 };
 
 use super::{
@@ -36,7 +36,8 @@ use super::{
 };
 
 use crate::driver::transport::{
-    transport_pipeline::execute_transport_pipeline, AuthorizationContext,
+    transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
+    AuthorizationContext, CosmosTransport,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
@@ -46,8 +47,7 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    _options: &OperationOptions,
-    effective_options: &RuntimeOptions,
+    options: &OperationOptionsView<'_>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -57,12 +57,27 @@ pub(crate) async fn execute_operation_pipeline(
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
+    session_manager: &SessionManager,
+    account_default_consistency: DefaultConsistencyLevel,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
-    let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
-    let max_session_retries = effective_options
-        .max_session_retry_count
+    let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
+
+    // Determine if session consistency is active for this operation.
+    let session_capturing_disabled = options
+        .session_capturing_disabled()
+        .copied()
+        .unwrap_or(false);
+    let read_consistency_strategy = options
+        .read_consistency_strategy()
+        .copied()
+        .unwrap_or(ReadConsistencyStrategy::Default);
+    let session_consistency_active = !session_capturing_disabled
+        && read_consistency_strategy.is_session_effective(account_default_consistency);
+    let max_session_retries = options
+        .max_session_retry_count()
+        .copied()
         .unwrap_or_else(|| {
             // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
             // Uses the original endpoint count (before unavailability filtering).
@@ -80,21 +95,27 @@ pub(crate) async fn execute_operation_pipeline(
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,
         location_snapshot.account.multiple_write_locations_enabled,
-        effective_options
-            .excluded_regions
-            .as_ref()
+        options
+            .excluded_regions()
             .map(|r| r.0.clone())
             .unwrap_or_default(),
         max_failover_retries,
         max_session_retries,
     );
 
-    let deadline = effective_options
-        .end_to_end_latency_policy
-        .as_ref()
+    let deadline = options
+        .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
 
+    let mut attempt = 0;
     loop {
+        attempt += 1;
+        let attempt_span = tracing::debug_span!(
+            "attempt",
+            attempt = attempt,
+            context = tracing::field::Empty
+        )
+        .entered();
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -117,6 +138,8 @@ pub(crate) async fn execute_operation_pipeline(
         } else {
             ExecutionContext::RegionFailover
         };
+        attempt_span.record("context", tracing::field::debug(&execution_context));
+        tracing::debug!(routing_decision = %routing, "routing decision made");
 
         let transport_request = build_transport_request(
             operation,
@@ -124,7 +147,19 @@ pub(crate) async fn execute_operation_pipeline(
             activity_id,
             execution_context,
             deadline,
+            session_consistency_active
+                .then(|| {
+                    session_manager.resolve_session_token(
+                        operation,
+                        operation.request_headers().session_token.as_ref(),
+                    )
+                })
+                .flatten(),
         )?;
+        tracing::trace!(
+            method = ?transport_request.method,
+            url = %transport_request.url,
+        "transport request created");
 
         let selected_transport = match pipeline_type {
             PipelineType::DataPlane => {
@@ -136,11 +171,14 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 4: Execute via transport pipeline ────────────────────
         let result = execute_transport_pipeline(
             transport_request,
-            &selected_transport,
-            credential,
-            user_agent,
-            pipeline_type,
-            transport_security,
+            &TransportPipelineContext {
+                transport: &selected_transport,
+                allow_sent_transport_retry: operation.is_read_only() || operation.is_idempotent(),
+                credential,
+                user_agent,
+                pipeline_type,
+                transport_security,
+            },
             &mut diagnostics,
         )
         .await;
@@ -152,6 +190,29 @@ pub(crate) async fn execute_operation_pipeline(
                     "x-ms-documentdb-partitionkeyrangeid",
                 )) {
                     retry_state.partition_key_range_id = Some(pk_range_id.to_owned());
+                }
+            }
+        }
+
+        // ── STAGE 4b: Capture session token ─────────────────────────────
+        // Capture session tokens from both successful and certain error
+        // responses (409 Conflict, 412 Precondition Failed, 404 non-1002).
+        // The server advances the session token even on these errors, so
+        // not capturing would break read-your-writes guarantees.
+        //
+        // This runs BEFORE evaluate_transport_result so that tokens are
+        // captured regardless of whether the response maps to Complete,
+        // Abort, or a retry action. 409/412 map to Abort, and the Abort
+        // variant does not carry headers — capturing after evaluation
+        // would silently drop tokens from those responses.
+        if session_consistency_active {
+            if let Some(headers) = result.response_headers() {
+                let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
+                if should_capture_session_token_from_status(
+                    cosmos_headers.substatus.as_ref(),
+                    &result.outcome,
+                ) {
+                    session_manager.capture_session_token(operation, &cosmos_headers);
                 }
             }
         }
@@ -205,9 +266,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
-                        let timeout_duration = effective_options
-                            .end_to_end_latency_policy
-                            .as_ref()
+                        let timeout_duration = options
+                            .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
 
@@ -223,6 +283,13 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::SessionRetry { new_state } => {
+                // Retry to a different region — the 404/1002 is likely a
+                // transient replica lag. Session tokens are intentionally
+                // preserved; clearing them would break read-your-writes
+                // guarantees. Container-recreation (RID change) handling
+                // will be addressed via deterministic RID comparison in
+                // a future change.
+
                 let next_location = location_state_store.snapshot();
                 let endpoints_len = preferred_endpoints_for_attempt(
                     next_location.account.as_ref(),
@@ -236,9 +303,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
-                        let timeout_duration = effective_options
-                            .end_to_end_latency_policy
-                            .as_ref()
+                        let timeout_duration = options
+                            .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
 
@@ -401,12 +467,15 @@ fn endpoint_is_available(
 }
 
 /// Builds a `TransportRequest` from the operation and routing decision.
+///
+/// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
     routing: &RoutingDecision,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
+    resolved_session_token: Option<SessionToken>,
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
@@ -448,6 +517,28 @@ fn build_transport_request(
         for (name, value) in pk_headers {
             headers.insert(name, value);
         }
+    }
+
+    // Add operation type header for fault injection rule matching
+    #[cfg(feature = "fault_injection")]
+    {
+        if let Some(fault_op) =
+            crate::fault_injection::FaultOperationType::from_operation_and_resource(
+                &operation.operation_type(),
+                &operation.resource_type(),
+            )
+        {
+            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+            headers.insert(FAULT_INJECTION_OPERATION.clone(), fault_op.as_str());
+        }
+    }
+
+    // Add resolved session token
+    if let Some(token) = resolved_session_token {
+        headers.insert(
+            request_header_names::SESSION_TOKEN.clone(),
+            HeaderValue::from(token.as_str().to_owned()),
+        );
     }
 
     Ok(TransportRequest {
@@ -492,6 +583,38 @@ fn build_cosmos_response(
                 "build_cosmos_response called with non-success result",
             ))
         }
+    }
+}
+
+/// Determines whether a session token should be captured from this response.
+///
+/// Follows Java/.NET patterns: capture on success (2xx), and on error responses
+/// where the server still advanced the session token:
+/// - 409 Conflict
+/// - 412 Precondition Failed
+/// - 404 when substatus is NOT ReadSessionNotAvailable (1002)
+///
+/// Does NOT capture on 404/1002 (that's the trigger for session retry/clear).
+fn should_capture_session_token_from_status(
+    substatus: Option<&SubStatusCode>,
+    outcome: &TransportOutcome,
+) -> bool {
+    match outcome {
+        TransportOutcome::Success { .. } => true,
+        TransportOutcome::HttpError { status, .. } => {
+            let code = status.status_code();
+            if code == azure_core::http::StatusCode::Conflict
+                || code == azure_core::http::StatusCode::PreconditionFailed
+            {
+                return true;
+            }
+            if code == azure_core::http::StatusCode::NotFound {
+                // Capture on 404 unless substatus is ReadSessionNotAvailable (1002)
+                return substatus != Some(&SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+            }
+            false
+        }
+        _ => false,
     }
 }
 
@@ -566,6 +689,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
+            None,
         )
         .expect("request should build");
 
@@ -583,6 +707,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
+            None,
         )
         .expect("request should build");
 
@@ -599,6 +724,7 @@ mod tests {
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
+            None,
             None,
         )
         .expect("request should build");
@@ -622,6 +748,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Retry,
             Some(std::time::Instant::now() + Duration::from_secs(5)),
+            None,
         )
         .expect("request should build");
 
@@ -652,6 +779,7 @@ mod tests {
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
             None,
+            None,
         )
         .expect("request should build");
 
@@ -678,6 +806,7 @@ mod tests {
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
+            None,
             None,
         )
         .expect("request should build");
@@ -899,6 +1028,108 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(second_routing.endpoint, endpoint_b);
+    }
+
+    mod should_capture_session_token_from_status_tests {
+        use azure_core::http::{headers::Headers, StatusCode};
+
+        use crate::{
+            driver::pipeline::components::TransportOutcome,
+            models::{CosmosStatus, SubStatusCode},
+        };
+
+        use super::super::should_capture_session_token_from_status;
+
+        fn success_outcome() -> TransportOutcome {
+            TransportOutcome::Success {
+                status: CosmosStatus::new(StatusCode::Ok),
+                headers: Headers::new(),
+                body: Vec::new(),
+            }
+        }
+
+        fn http_error_outcome(status: StatusCode) -> TransportOutcome {
+            TransportOutcome::HttpError {
+                status: CosmosStatus::new(status),
+                headers: Headers::new(),
+                body: Vec::new(),
+                request_sent: crate::diagnostics::RequestSentStatus::Sent,
+            }
+        }
+
+        #[test]
+        fn captures_on_success() {
+            let outcome = success_outcome();
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn captures_on_409_conflict() {
+            let outcome = http_error_outcome(StatusCode::Conflict);
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn captures_on_412_precondition_failed() {
+            let outcome = http_error_outcome(StatusCode::PreconditionFailed);
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn skips_on_404_with_substatus_1002() {
+            let outcome = http_error_outcome(StatusCode::NotFound);
+            let substatus = SubStatusCode::READ_SESSION_NOT_AVAILABLE;
+            assert!(!should_capture_session_token_from_status(
+                Some(&substatus),
+                &outcome
+            ));
+        }
+
+        #[test]
+        fn captures_on_404_without_substatus_1002() {
+            let outcome = http_error_outcome(StatusCode::NotFound);
+            assert!(should_capture_session_token_from_status(None, &outcome));
+        }
+
+        #[test]
+        fn skips_on_500_internal_server_error() {
+            let outcome = http_error_outcome(StatusCode::InternalServerError);
+            assert!(!should_capture_session_token_from_status(None, &outcome));
+        }
+    }
+
+    mod effective_consistency_tests {
+        use crate::{models::DefaultConsistencyLevel, options::ReadConsistencyStrategy};
+
+        #[test]
+        fn default_strategy_with_session_account() {
+            assert!(ReadConsistencyStrategy::Default
+                .is_session_effective(DefaultConsistencyLevel::Session));
+        }
+
+        #[test]
+        fn default_strategy_with_strong_account() {
+            assert!(!ReadConsistencyStrategy::Default
+                .is_session_effective(DefaultConsistencyLevel::Strong));
+        }
+
+        #[test]
+        fn session_strategy_overrides_account() {
+            assert!(ReadConsistencyStrategy::Session
+                .is_session_effective(DefaultConsistencyLevel::Strong));
+        }
+
+        #[test]
+        fn eventual_strategy_never_session() {
+            assert!(!ReadConsistencyStrategy::Eventual
+                .is_session_effective(DefaultConsistencyLevel::Session));
+        }
+
+        #[test]
+        fn consistent_prefix_not_session() {
+            assert!(!ReadConsistencyStrategy::Default
+                .is_session_effective(DefaultConsistencyLevel::ConsistentPrefix));
+        }
     }
 
     #[test]

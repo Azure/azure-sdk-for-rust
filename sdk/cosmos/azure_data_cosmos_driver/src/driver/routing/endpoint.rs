@@ -74,6 +74,7 @@ impl CosmosEndpoint {
         &self.gateway_url
     }
 }
+
 /// Type-safe index into preferred endpoint lists.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct LocationIndex {

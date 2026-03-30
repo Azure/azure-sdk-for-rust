@@ -9,7 +9,6 @@ use crate::pipeline::GatewayPipeline;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::collection_routing_map::CollectionRoutingMap;
-use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
@@ -28,7 +27,6 @@ const PAGE_SIZE_STRING: &str = "-1";
 pub(crate) struct PartitionKeyRangeCache {
     routing_map_cache: AsyncCache<String, CollectionRoutingMap>,
     pipeline: Arc<GatewayPipeline>,
-    container_cache: Arc<ContainerCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
     database_link: ResourceLink,
 }
@@ -43,7 +41,6 @@ impl PartitionKeyRangeCache {
     pub fn new(
         pipeline: Arc<GatewayPipeline>,
         database_link: ResourceLink,
-        container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
         // No TTL-based expiry is needed.
@@ -51,7 +48,6 @@ impl PartitionKeyRangeCache {
         Self {
             routing_map_cache,
             pipeline,
-            container_cache,
             endpoint_manager,
             database_link,
         }
@@ -59,15 +55,20 @@ impl PartitionKeyRangeCache {
 
     pub async fn resolve_overlapping_ranges(
         &self,
+        collection_name: &str,
         collection_rid: &str,
         range: Range<String>,
         force_refresh: bool,
     ) -> Result<Option<Vec<PartitionKeyRange>>, Error> {
-        let mut routing_map = self.try_lookup(collection_rid, None).await?;
+        let mut routing_map = self
+            .try_lookup(collection_name, collection_rid, None)
+            .await?;
 
         if force_refresh {
             if let Some(previous) = routing_map.clone() {
-                routing_map = self.try_lookup(collection_rid, Some(previous)).await?;
+                routing_map = self
+                    .try_lookup(collection_name, collection_rid, Some(previous))
+                    .await?;
             }
         }
 
@@ -87,16 +88,20 @@ impl PartitionKeyRangeCache {
 
     pub async fn resolve_partition_key_range_by_id(
         &self,
-        collection_resource_id: &str,
+        collection_name: &str,
+        collection_rid: &str,
         partition_key_range_id: &str,
         force_refresh: bool,
     ) -> Option<PartitionKeyRange> {
-        let mut routing_map = self.try_lookup(collection_resource_id, None).await.ok()?;
+        let mut routing_map = self
+            .try_lookup(collection_name, collection_rid, None)
+            .await
+            .ok()?;
 
         if force_refresh {
             if let Some(previous) = routing_map.clone() {
                 routing_map = self
-                    .try_lookup(collection_resource_id, Some(previous))
+                    .try_lookup(collection_name, collection_rid, Some(previous))
                     .await
                     .ok()?;
             }
@@ -107,7 +112,7 @@ impl PartitionKeyRangeCache {
             None => {
                 info!(
                     "Routing Map Null for collection: {}, PartitionKeyRangeId: {}, forceRefresh: {}",
-                    collection_resource_id,
+                    collection_rid,
                     partition_key_range_id,
                     force_refresh
                 );
@@ -118,6 +123,7 @@ impl PartitionKeyRangeCache {
 
     pub async fn try_lookup(
         &self,
+        collection_name: &str,
         collection_rid: &str,
         previous_value: Option<CollectionRoutingMap>,
     ) -> Result<Option<CollectionRoutingMap>, Error> {
@@ -132,15 +138,19 @@ impl PartitionKeyRangeCache {
                 },
                 || async {
                     let routing_map = self
-                        .get_routing_map_for_collection(collection_rid, previous_value.clone())
+                        .get_routing_map_for_collection(
+                            collection_name,
+                            collection_rid,
+                            previous_value.clone(),
+                        )
                         .await?;
                     match routing_map {
                         Some(map) => Ok(map),
                         None => Err(Error::new(
                             azure_core::error::ErrorKind::Other,
                             format!(
-                                "Failed to get routing map for collection: {}",
-                                collection_rid
+                                "Failed to get routing map for collection: {} (rid: {})",
+                                collection_name, collection_rid
                             ),
                         )),
                     }
@@ -148,6 +158,14 @@ impl PartitionKeyRangeCache {
             )
             .await;
 
+        if let Err(ref e) = routing_map {
+            tracing::warn!(
+                collection_name,
+                collection_rid,
+                error = %e,
+                "Failed to fetch routing map for collection"
+            );
+        }
         Ok(routing_map.ok())
     }
 
@@ -165,6 +183,7 @@ impl PartitionKeyRangeCache {
 
     async fn get_routing_map_for_collection(
         &self,
+        collection_name: &str,
         collection_rid: &str,
         previous_routing_map: Option<CollectionRoutingMap>,
     ) -> Result<Option<CollectionRoutingMap>, Error> {
@@ -193,7 +212,7 @@ impl PartitionKeyRangeCache {
             let pk_range_link = self
                 .database_link
                 .feed(ResourceType::Containers)
-                .item(collection_rid)
+                .item(collection_name)
                 .feed(ResourceType::PartitionKeyRanges);
             let response = self
                 .execute_partition_key_range_read_change_feed(
@@ -676,5 +695,53 @@ mod tests {
         let range = create_mock_partition_key_range("0", "", "FF");
         assert!(range.target_throughput.is_some());
         assert_eq!(range.target_throughput.unwrap(), 1000.0);
+    }
+
+    #[test]
+    fn pkranges_link_uses_container_name_not_rid() {
+        // The pkranges URL must use the container NAME (not RID) to match
+        // the name-based database_link. Mixed name/RID addressing causes 404s.
+        let database_link = ResourceLink::root(ResourceType::Databases).item("perfdb");
+        let pk_range_link = database_link
+            .feed(ResourceType::Containers)
+            .item("perfcontainer")
+            .feed(ResourceType::PartitionKeyRanges);
+
+        assert_eq!(
+            "dbs/perfdb/colls/perfcontainer/pkranges",
+            pk_range_link.path()
+        );
+    }
+
+    #[test]
+    fn pkranges_link_with_rid_causes_mixed_addressing() {
+        // Demonstrates why using RID in a name-based link is wrong:
+        // the resulting URL mixes name-based database with RID-based container,
+        // which Cosmos DB rejects with 404.
+        let database_link = ResourceLink::root(ResourceType::Databases).item("perfdb");
+
+        // Using item_by_rid with a RID in a name-based hierarchy produces
+        // a mixed-addressing URL that Cosmos DB cannot resolve.
+        let pk_range_link_mixed = database_link
+            .feed(ResourceType::Containers)
+            .item_by_rid("pLLZAIuPigw=")
+            .feed(ResourceType::PartitionKeyRanges);
+
+        // This path uses name for DB but RID for collection — Cosmos DB returns 404
+        assert_eq!(
+            "dbs/perfdb/colls/pLLZAIuPigw=/pkranges",
+            pk_range_link_mixed.path()
+        );
+
+        // Using item() with a name in a name-based hierarchy produces a valid URL.
+        let pk_range_link_correct = database_link
+            .feed(ResourceType::Containers)
+            .item("perfcontainer")
+            .feed(ResourceType::PartitionKeyRanges);
+
+        assert_eq!(
+            "dbs/perfdb/colls/perfcontainer/pkranges",
+            pk_range_link_correct.path()
+        );
     }
 }

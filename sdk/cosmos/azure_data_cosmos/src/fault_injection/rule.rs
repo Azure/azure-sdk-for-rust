@@ -3,8 +3,11 @@
 
 //! Defines fault injection rules that combine conditions and results.
 
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::Mutex;
 use std::time::Instant;
+
+use azure_core::http::StatusCode;
 
 use super::condition::FaultInjectionCondition;
 use super::result::FaultInjectionResult;
@@ -26,8 +29,14 @@ pub struct FaultInjectionRule {
     pub id: String,
     /// Whether the rule is currently enabled.
     enabled: AtomicBool,
+    /// Number of times the rule has been matched (including matches where no fault was injected).
+    hit_count: AtomicU32,
+    /// HTTP status codes of responses for matched requests that passed through without fault injection.
+    passthrough_statuses: Mutex<Vec<StatusCode>>,
 }
 
+/// Cloning snapshots the current `hit_count` and `enabled` state rather than
+/// resetting them, so a clone of a rule that has been hit 5 times starts at 5.
 impl Clone for FaultInjectionRule {
     fn clone(&self) -> Self {
         Self {
@@ -37,7 +46,9 @@ impl Clone for FaultInjectionRule {
             end_time: self.end_time,
             hit_limit: self.hit_limit,
             id: self.id.clone(),
-            enabled: AtomicBool::new(self.enabled.load(std::sync::atomic::Ordering::SeqCst)),
+            enabled: AtomicBool::new(self.enabled.load(Ordering::SeqCst)),
+            hit_count: AtomicU32::new(self.hit_count.load(Ordering::SeqCst)),
+            passthrough_statuses: Mutex::new(self.passthrough_statuses.lock().unwrap().clone()),
         }
     }
 }
@@ -45,19 +56,56 @@ impl Clone for FaultInjectionRule {
 impl FaultInjectionRule {
     /// Returns whether the rule is currently enabled.
     pub fn is_enabled(&self) -> bool {
-        self.enabled.load(std::sync::atomic::Ordering::SeqCst)
+        self.enabled.load(Ordering::SeqCst)
     }
 
     /// Enables the rule.
     pub fn enable(&self) {
-        self.enabled
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.enabled.store(true, Ordering::SeqCst);
     }
 
     /// Disables the rule.
     pub fn disable(&self) {
-        self.enabled
-            .store(false, std::sync::atomic::Ordering::SeqCst);
+        self.enabled.store(false, Ordering::SeqCst);
+    }
+
+    /// Returns the number of times this rule has been matched.
+    ///
+    /// The hit count is incremented each time the rule's condition matches a
+    /// request, regardless of whether the fault was actually applied (e.g.,
+    /// probability-based skipping still increments the count).
+    pub fn hit_count(&self) -> u32 {
+        self.hit_count.load(Ordering::SeqCst)
+    }
+
+    /// Increments the hit count by one.
+    pub(super) fn increment_hit_count(&self) {
+        self.hit_count.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// Resets the hit count to zero.
+    pub fn reset_hit_count(&self) {
+        self.hit_count.store(0, Ordering::SeqCst);
+    }
+
+    /// Records the HTTP status code of a response for a matched request that
+    /// passed through without fault injection (spy/passthrough mode).
+    pub(super) fn record_passthrough_status(&self, status: StatusCode) {
+        self.passthrough_statuses.lock().unwrap().push(status);
+    }
+
+    /// Returns the HTTP status codes of responses for matched requests that
+    /// passed through without fault injection.
+    ///
+    /// When a rule matches a request but does not inject a fault (e.g., no
+    /// `error_type` or `custom_response` is set), the real service response
+    /// status is recorded here. This enables "spy" rules that observe requests
+    /// without modifying them.
+    ///
+    /// The history grows unbounded for the lifetime of the rule. This is
+    /// designed for test scenarios with a bounded number of requests.
+    pub fn passthrough_statuses(&self) -> Vec<StatusCode> {
+        self.passthrough_statuses.lock().unwrap().clone()
     }
 }
 
@@ -132,6 +180,8 @@ impl FaultInjectionRuleBuilder {
             hit_limit: self.hit_limit,
             id: self.id,
             enabled: AtomicBool::new(true),
+            hit_count: AtomicU32::new(0),
+            passthrough_statuses: Mutex::new(Vec::new()),
         }
     }
 }
@@ -160,5 +210,30 @@ mod tests {
         assert!(rule.hit_limit.is_none());
         assert!(rule.condition.operation_type.is_none());
         assert!(rule.is_enabled());
+        assert_eq!(rule.hit_count(), 0);
+    }
+
+    #[test]
+    fn hit_count_increments() {
+        let rule = FaultInjectionRuleBuilder::new("hit-test", create_test_error()).build();
+
+        assert_eq!(rule.hit_count(), 0);
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 1);
+        rule.increment_hit_count();
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 3);
+    }
+
+    #[test]
+    fn reset_hit_count_clears_counter() {
+        let rule = FaultInjectionRuleBuilder::new("reset-test", create_test_error()).build();
+
+        rule.increment_hit_count();
+        rule.increment_hit_count();
+        assert_eq!(rule.hit_count(), 2);
+
+        rule.reset_hit_count();
+        assert_eq!(rule.hit_count(), 0);
     }
 }

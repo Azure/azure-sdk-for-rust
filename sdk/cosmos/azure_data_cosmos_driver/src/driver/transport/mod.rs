@@ -21,6 +21,7 @@ pub(crate) mod cosmos_headers;
 mod emulator;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
+mod sharded_transport;
 mod tracked_transport;
 pub(crate) mod transport_pipeline;
 
@@ -33,8 +34,12 @@ use std::sync::{Arc, OnceLock};
 
 use self::{
     adaptive_transport::AdaptiveTransport,
-    http_client_factory::{DefaultHttpClientFactory, HttpClientConfig, HttpClientFactory},
+    http_client_factory::{HttpClientConfig, HttpClientFactory},
 };
+use crate::diagnostics::TransportHttpVersion;
+
+#[cfg(test)]
+use self::http_client_factory::DefaultHttpClientFactory;
 
 pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
@@ -70,25 +75,21 @@ pub(crate) fn uses_dataplane_pipeline(
     }
 }
 
-/// HTTP transport manager for Cosmos DB connections.
+/// HTTP transport manager for a single Cosmos DB account.
 ///
-/// Manages connection pools with separate settings for metadata and data plane
-/// operations. Supports both production endpoints and local emulator with
-/// lazy initialization of emulator-specific pools.
+/// Each `CosmosDriver` instance (one per account) owns its own transport.
+/// The transport type (sharded HTTP/2 vs unsharded HTTP/1.1) is determined
+/// by an HTTP/2 probe during initialization and may be updated on periodic
+/// metadata refreshes.
 ///
-/// # Connection Pools
+/// # Transport Selection
 ///
-/// - **Metadata pool**: For REST/JSON operations (account/database/container
-///   management). Prefers HTTP/2 multiplexing when enabled.
-/// - **Data plane pool**: For point operations and queries. Will support RNTBD
-///   envelope encapsulation in future versions.
-/// - **Emulator pools**: Lazily created when connecting to emulator hosts with
-///   certificate validation disabled.
-///
-/// # Thread Safety
-///
-/// All pools are thread-safe and can be accessed concurrently. The transport
-/// is designed to be shared across all drivers in a runtime.
+/// - **HTTP/2 confirmed**: Sharded transport with HTTP/2 PING keepalive.
+///   No TCP keepalive needed — HTTP/2 PING frames serve that role.
+/// - **HTTP/1.1 fallback**: Unsharded transport with TCP keepalive for
+///   connection liveness detection.
+/// - **Gateway 2.0**: Always HTTP/2 (unchanged).
+/// - **Emulator**: Lazily created with insecure TLS.
 #[derive(Debug)]
 pub(crate) struct CosmosTransport {
     /// Connection pool configuration.
@@ -97,6 +98,9 @@ pub(crate) struct CosmosTransport {
     /// Factory used to create protocol-specific HTTP transports.
     http_client_factory: Arc<dyn HttpClientFactory>,
 
+    /// The detected HTTP version for this account's gateway.
+    negotiated_version: TransportHttpVersion,
+
     /// Transport for metadata operations.
     metadata_transport: AdaptiveTransport,
 
@@ -104,50 +108,108 @@ pub(crate) struct CosmosTransport {
     dataplane_gateway_transport: AdaptiveTransport,
 
     /// Lazily-initialized transport for dataplane Gateway 2.0 operations.
-    /// Only allocated when `is_gateway20_allowed()` is true and the account
-    /// has thin-client endpoints — most deployments never create this.
     dataplane_gateway20_transport: OnceLock<AdaptiveTransport>,
 
     /// Lazily-initialized transport for emulator metadata operations.
     insecure_emulator_metadata_transport: OnceLock<AdaptiveTransport>,
 
     /// Lazily-initialized transport for emulator dataplane operations.
-    /// The emulator does not support Gateway 2.0, so this always uses
-    /// the standard gateway configuration.
     insecure_emulator_dataplane_transport: OnceLock<AdaptiveTransport>,
 }
 
 impl CosmosTransport {
-    /// Creates a new transport with the given connection pool configuration.
+    /// Creates a transport for an account with the given negotiated HTTP version.
     ///
-    /// # Arguments
-    ///
-    /// * `connection_pool` - Connection pool settings for HTTP clients
-    pub(crate) fn new(connection_pool: ConnectionPoolOptions) -> azure_core::Result<Self> {
+    /// The `negotiated_version` should be determined by probing the gateway
+    /// during `CosmosDriver::initialize()`.
+    #[cfg(test)]
+    pub(crate) fn new(
+        connection_pool: ConnectionPoolOptions,
+        negotiated_version: TransportHttpVersion,
+    ) -> azure_core::Result<Self> {
         let http_client_factory: Arc<dyn HttpClientFactory> =
             Arc::new(DefaultHttpClientFactory::new());
 
-        let metadata_config = HttpClientConfig::metadata(&connection_pool);
-        let metadata_transport = AdaptiveTransport::from_policy(
-            metadata_config.version_policy,
-            http_client_factory.build(&connection_pool, metadata_config)?,
-        );
+        Self::with_factory(connection_pool, http_client_factory, negotiated_version)
+    }
 
-        let gateway_config = HttpClientConfig::dataplane_gateway(&connection_pool);
-        let dataplane_gateway_transport = AdaptiveTransport::from_policy(
-            gateway_config.version_policy,
-            http_client_factory.build(&connection_pool, gateway_config)?,
-        );
+    /// Creates a transport with a custom HTTP client factory (for testing).
+    pub(crate) fn with_factory(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+        negotiated_version: TransportHttpVersion,
+    ) -> azure_core::Result<Self> {
+        let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
+        let metadata_transport = AdaptiveTransport::from_config(
+            &connection_pool,
+            http_client_factory.clone(),
+            metadata_config,
+        )?;
+
+        let gateway_config =
+            HttpClientConfig::dataplane_gateway(&connection_pool, negotiated_version);
+        let dataplane_gateway_transport = AdaptiveTransport::from_config(
+            &connection_pool,
+            http_client_factory.clone(),
+            gateway_config,
+        )?;
 
         Ok(Self {
             connection_pool,
             http_client_factory,
+            negotiated_version,
             metadata_transport,
             dataplane_gateway_transport,
             dataplane_gateway20_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
         })
+    }
+
+    /// Creates a lightweight bootstrap transport for one-shot metadata probes.
+    ///
+    /// Uses a single unsharded HTTP client for metadata (no per-endpoint shard
+    /// pools, no background health sweep). The dataplane gateway transport is
+    /// created lazily only if somehow needed, keeping the bootstrap footprint
+    /// minimal.
+    pub(crate) fn bootstrap_metadata_only(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+        negotiated_version: TransportHttpVersion,
+    ) -> azure_core::Result<Self> {
+        let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
+        let metadata_transport = AdaptiveTransport::unsharded(
+            &connection_pool,
+            http_client_factory.clone(),
+            metadata_config,
+        )?;
+
+        // Dataplane transport is unused for bootstrap probes. Create a
+        // minimal unsharded instance to satisfy the struct layout; the
+        // overhead is a single HTTP client with no background tasks.
+        let gateway_config =
+            HttpClientConfig::dataplane_gateway(&connection_pool, negotiated_version);
+        let dataplane_gateway_transport = AdaptiveTransport::unsharded(
+            &connection_pool,
+            http_client_factory.clone(),
+            gateway_config,
+        )?;
+
+        Ok(Self {
+            connection_pool,
+            http_client_factory,
+            negotiated_version,
+            metadata_transport,
+            dataplane_gateway_transport,
+            dataplane_gateway20_transport: OnceLock::new(),
+            insecure_emulator_metadata_transport: OnceLock::new(),
+            insecure_emulator_dataplane_transport: OnceLock::new(),
+        })
+    }
+
+    /// Returns the negotiated HTTP version for this account.
+    pub(crate) fn negotiated_version(&self) -> TransportHttpVersion {
+        self.negotiated_version
     }
 
     /// Determines if insecure emulator transport should be used for the given endpoint.
@@ -169,11 +231,14 @@ impl CosmosTransport {
             match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
                 None => {
-                    let config = HttpClientConfig::metadata(&self.connection_pool).for_emulator();
-                    let client = self
-                        .http_client_factory
-                        .build(&self.connection_pool, config)?;
-                    let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                    let config =
+                        HttpClientConfig::metadata(&self.connection_pool, self.negotiated_version)
+                            .for_emulator();
+                    let t = AdaptiveTransport::from_config(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    )?;
                     self.insecure_emulator_metadata_transport
                         .get_or_init(|| t)
                         .clone()
@@ -192,17 +257,19 @@ impl CosmosTransport {
         transport_mode: TransportMode,
     ) -> azure_core::Result<AdaptiveTransport> {
         if self.should_use_insecure_emulator_transport(endpoint) {
-            // The Cosmos emulator does not support Gateway 2.0 — always
-            // use the standard gateway transport with insecure TLS.
             let transport = match self.insecure_emulator_dataplane_transport.get() {
                 Some(t) => t.clone(),
                 None => {
-                    let config =
-                        HttpClientConfig::dataplane_gateway(&self.connection_pool).for_emulator();
-                    let client = self
-                        .http_client_factory
-                        .build(&self.connection_pool, config)?;
-                    let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                    let config = HttpClientConfig::dataplane_gateway(
+                        &self.connection_pool,
+                        self.negotiated_version,
+                    )
+                    .for_emulator();
+                    let t = AdaptiveTransport::from_config(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    )?;
                     self.insecure_emulator_dataplane_transport
                         .get_or_init(|| t)
                         .clone()
@@ -212,18 +279,16 @@ impl CosmosTransport {
         }
 
         match transport_mode {
-            // Defense-in-depth: routing already checks is_gateway20_allowed() when
-            // building the endpoint, so this guard should always pass when
-            // transport_mode is Gateway20. We keep it as a safety net.
             TransportMode::Gateway20 if self.connection_pool.is_gateway20_allowed() => {
                 let transport = match self.dataplane_gateway20_transport.get() {
                     Some(t) => t.clone(),
                     None => {
                         let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
-                        let client = self
-                            .http_client_factory
-                            .build(&self.connection_pool, config)?;
-                        let t = AdaptiveTransport::from_policy(config.version_policy, client);
+                        let t = AdaptiveTransport::gateway20(
+                            &self.connection_pool,
+                            self.http_client_factory.clone(),
+                            config,
+                        );
                         self.dataplane_gateway20_transport.get_or_init(|| t).clone()
                     }
                 };
@@ -237,15 +302,15 @@ impl CosmosTransport {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use crate::diagnostics::TransportHttpVersion;
     use crate::driver::pipeline::components::TransportMode;
     use crate::options::{ConnectionPoolOptionsBuilder, EmulatorServerCertValidation};
 
     #[test]
-    fn transport_creates_with_default_options() {
+    fn transport_creates_with_http2() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
 
-        // Should not be using emulator transport for regular endpoints
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
         assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
@@ -257,17 +322,14 @@ pub(crate) mod tests {
             .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
 
-        // localhost is an emulator host
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
         assert!(transport.should_use_insecure_emulator_transport(&endpoint));
 
-        // 127.0.0.1 is an emulator host
         let endpoint = AccountEndpoint::try_from("https://127.0.0.1:8081/").unwrap();
         assert!(transport.should_use_insecure_emulator_transport(&endpoint));
 
-        // Production endpoint is not an emulator host
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
         assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
@@ -276,20 +338,29 @@ pub(crate) mod tests {
     #[test]
     fn transport_ignores_emulator_hosts_when_validation_enabled() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
 
-        // Even localhost should not use emulator transport if validation is enabled
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
         assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
     }
 
     #[test]
-    fn metadata_transport_is_http2_preferred_when_http2_allowed() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(true)
-            .build()
-            .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+    fn metadata_transport_is_sharded_when_http2_negotiated() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        assert!(matches!(
+            transport.get_metadata_transport(&endpoint).unwrap(),
+            AdaptiveTransport::ShardedGateway(_)
+        ));
+    }
+
+    #[test]
+    fn metadata_transport_is_unsharded_when_http11_negotiated() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -300,28 +371,9 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn metadata_transport_uses_gateway_when_http2_flag_disabled() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(false)
-            .build()
-            .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
-        let endpoint =
-            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
-
-        assert!(matches!(
-            transport.get_metadata_transport(&endpoint).unwrap(),
-            AdaptiveTransport::Gateway(_)
-        ));
-    }
-
-    #[test]
-    fn dataplane_transport_uses_gateway_when_http2_flag_disabled() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(false)
-            .build()
-            .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+    fn dataplane_transport_is_unsharded_when_http11_negotiated() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -334,52 +386,49 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_uses_gateway20_when_selected() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(true)
             .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::Gateway20(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway20(_)));
     }
 
     #[test]
-    fn dataplane_transport_falls_back_to_gateway_when_endpoint_is_standard() {
+    fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(true)
             .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::Gateway)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
     }
 
     #[test]
     fn dataplane_transport_ignores_gateway20_when_gateway20_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_http2_allowed(true)
             .with_is_gateway20_allowed(false)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool).unwrap();
+        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
     }
 
     #[test]

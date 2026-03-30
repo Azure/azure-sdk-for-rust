@@ -196,6 +196,7 @@ pub(crate) fn evaluate_transport_result(
         }
 
         TransportOutcome::TransportError {
+            status,
             error,
             request_sent,
         } => {
@@ -226,8 +227,8 @@ pub(crate) fn evaluate_transport_result(
 
             (
                 OperationAction::Abort {
-                    error,
-                    status: None,
+                    error: build_transport_error(&status, error),
+                    status: Some(status),
                 },
                 Vec::new(),
             )
@@ -290,6 +291,27 @@ fn build_http_error(status: &CosmosStatus, headers: &Headers, body: &[u8]) -> az
     )
 }
 
+fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azure_core::Error {
+    let status_code = status.status_code();
+    let name = status.name().unwrap_or("Unknown");
+    let sub_status_str = match status.sub_status() {
+        Some(s) => format!("/{}", s.value()),
+        None => String::new(),
+    };
+
+    let detail_summary = crate::driver::error_chain_summary(&error);
+    let message = format!(
+        "Cosmos DB transport failure HTTP {}{}: {} (kind: {}). Details: {}",
+        u16::from(status_code),
+        sub_status_str,
+        name,
+        error.kind(),
+        detail_summary,
+    );
+
+    azure_core::Error::with_error(error.kind().clone(), error, message)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -330,6 +352,7 @@ mod tests {
     fn make_transport_error(sent: RequestSentStatus) -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::TransportError {
+                status: CosmosStatus::TRANSPORT_GENERATED_503,
                 error: azure_core::Error::new(
                     azure_core::error::ErrorKind::Connection,
                     "connection refused",
@@ -400,7 +423,48 @@ mod tests {
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-        assert!(matches!(action, OperationAction::Abort { .. }));
+        match action {
+            OperationAction::Abort { status, .. } => {
+                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+            }
+            other => panic!("expected abort, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn transport_abort_error_includes_status_kind_and_details() {
+        let op = make_create_operation();
+        let result = TransportResult {
+            outcome: TransportOutcome::TransportError {
+                status: CosmosStatus::TRANSPORT_GENERATED_503,
+                error: azure_core::Error::with_error(
+                    azure_core::error::ErrorKind::Io,
+                    std::io::Error::new(std::io::ErrorKind::BrokenPipe, "socket reset"),
+                    "failed to execute `reqwest` request",
+                ),
+                request_sent: RequestSentStatus::Unknown,
+            },
+        };
+        let state = OperationRetryState::initial(0, false, Vec::new(), 0, 1);
+
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        match action {
+            OperationAction::Abort { status, error } => {
+                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+                assert_eq!(error.kind(), &azure_core::error::ErrorKind::Io);
+                let text = error.to_string();
+                assert!(text.contains("HTTP 503/20003"));
+                assert!(text.contains("TransportGenerated503"));
+                assert!(text.contains("kind: Io"));
+                assert!(text.contains("failed to execute `reqwest` request"));
+                assert!(text.contains("socket reset"));
+            }
+            other => panic!("expected abort, got {other:?}"),
+        }
     }
 
     #[test]
@@ -424,7 +488,12 @@ mod tests {
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-        assert!(matches!(action, OperationAction::Abort { .. }));
+        match action {
+            OperationAction::Abort { status, .. } => {
+                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+            }
+            other => panic!("expected abort, got {other:?}"),
+        }
     }
 
     #[test]

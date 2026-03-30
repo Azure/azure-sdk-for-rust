@@ -12,29 +12,40 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
 keywords = ["sdk", "internal"]
 categories = ["api-bindings"]
-publish = false # Internal implementation layer, not yet ready for crates.io
+
 
 [dependencies]
+arc-swap.workspace = true
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
+azure_data_cosmos_macros.workspace = true
 base64.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
+h2 = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
-tokio = { workspace = true, optional = true, features = ["rt"] }
+tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
+quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = [
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "test-util",
+] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [target.'cfg(windows)'.dependencies]
@@ -52,6 +63,7 @@ workspace = true
 default = ["tokio", "reqwest_native_tls"]
 tokio = ["dep:tokio"]
 reqwest = [
+  "dep:h2",
   "dep:reqwest",
   "reqwest/http2",
   "azure_core/reqwest",
@@ -62,3 +74,4 @@ reqwest_native_tls = [
   "reqwest/native-tls",
   "azure_core/reqwest_native_tls",
 ]
+fault_injection = ["dep:rand"]

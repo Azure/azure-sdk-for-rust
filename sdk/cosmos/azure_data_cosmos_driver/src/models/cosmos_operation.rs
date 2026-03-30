@@ -5,7 +5,7 @@
 
 use crate::models::{
     AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, ItemReference, OperationType, PartitionKey, ResourceType,
+    DatabaseReference, ItemReference, OperationType, PartitionKey, Precondition, ResourceType,
 };
 
 /// Represents a Cosmos DB operation with its routing and execution context.
@@ -47,7 +47,7 @@ use crate::models::{
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -132,6 +132,17 @@ impl CosmosOperation {
     pub fn with_activity_id(mut self, activity_id: crate::models::ActivityId) -> Self {
         self.request_headers.activity_id = Some(activity_id);
         self
+    }
+
+    /// Sets the precondition for optimistic concurrency control.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.request_headers.precondition = Some(precondition);
+        self
+    }
+
+    /// Returns the precondition, if set.
+    pub fn precondition(&self) -> Option<&Precondition> {
+        self.request_headers.precondition.as_ref()
     }
 
     /// Sets the request body.
@@ -316,7 +327,7 @@ impl CosmosOperation {
     /// let result = driver
     ///     .execute_operation(
     ///         CosmosOperation::delete_container(container),
-    ///         OperationOptions::new(),
+    ///         OperationOptions::default(),
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -366,8 +377,7 @@ impl CosmosOperation {
 
     /// Creates an item (document) in a container.
     ///
-    /// The `ItemReference` contains the container, partition key, and item identifier,
-    /// providing all the information needed for the operation.
+    /// The `container` and `partition_key` identify where to create the document.
     /// Use `with_body()` to provide the document JSON.
     ///
     /// # Example
@@ -375,8 +385,7 @@ impl CosmosOperation {
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     /// use azure_data_cosmos_driver::models::{
-    ///     AccountReference, CosmosOperation, ItemReference,
-    ///     PartitionKey,
+    ///     AccountReference, CosmosOperation, ContainerReference, PartitionKey,
     /// };
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
@@ -390,20 +399,22 @@ impl CosmosOperation {
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
-    /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
+    /// let pk = PartitionKey::from("pk-value");
     /// let result = driver
     ///     .execute_operation(
-    ///         CosmosOperation::create_item(item)
+    ///         CosmosOperation::create_item(container, pk)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
-    ///         OperationOptions::new(),
+    ///         OperationOptions::default(),
     ///     )
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item(item: ItemReference) -> Self {
-        let partition_key = item.partition_key().clone();
-        Self::new(OperationType::Create, item).with_partition_key(partition_key)
+    pub fn create_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::Create, resource_ref).with_partition_key(partition_key)
     }
 
     /// Reads an item (document) from a container.
@@ -433,7 +444,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }

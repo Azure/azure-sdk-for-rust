@@ -35,11 +35,11 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 pub const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
-pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 pub const HUB_REGION: RegionName = EAST_US_2;
 pub const SATELLITE_REGION: RegionName = WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
-pub const EMULATOR_HOST: &str = "localhost";
+pub const EMULATOR_HOST: &str = "127.0.0.1";
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
@@ -125,8 +125,8 @@ pub fn get_effective_hub_endpoint() -> String {
     let host = get_global_endpoint();
 
     if host == EMULATOR_HOST {
-        // The SDK resolves "localhost" to "127.0.0.1" in request URLs.
-        return "127.0.0.1".to_string();
+        // Return the IP address directly for emulator connections.
+        return host;
     }
 
     // Insert the hub region after the account name, before .documents.azure.com
@@ -149,7 +149,7 @@ pub fn get_global_endpoint() -> String {
 
     let account_endpoint = account_host.trim_end_matches('/');
 
-    // The emulator host is just "localhost" without a scheme, so return it directly.
+    // The emulator host is just "127.0.0.1" without a scheme, so return it directly.
     if account_endpoint == EMULATOR_HOST {
         return EMULATOR_HOST.to_string();
     }
@@ -674,7 +674,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await);
+                    return Ok(db_client.container_client(&created.id).await?);
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
@@ -686,7 +686,7 @@ impl TestRunContext {
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(&properties.id).await;
+                    let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -694,7 +694,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await);
+                    return Ok(db_client.container_client(&created.id).await?);
                 }
                 Err(e) => return Err(e),
             }
@@ -736,7 +736,7 @@ impl TestRunContext {
             match hub_client
                 .database_client(db_client.id())
                 .container_client(container_id)
-                .await
+                .await?
                 .read(None)
                 .await
             {
@@ -757,7 +757,7 @@ impl TestRunContext {
             match satellite_client
                 .database_client(db_client.id())
                 .container_client(container_id)
-                .await
+                .await?
                 .read(None)
                 .await
             {
@@ -773,7 +773,7 @@ impl TestRunContext {
             }
         }
 
-        Ok(db_client.container_client(container_id).await)
+        Ok(db_client.container_client(container_id).await?)
     }
 
     /// Creates a CosmosClient with a specific preferred region.

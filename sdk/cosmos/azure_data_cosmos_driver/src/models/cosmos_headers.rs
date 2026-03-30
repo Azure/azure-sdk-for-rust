@@ -3,7 +3,7 @@
 
 //! Cosmos DB request/response header models.
 
-use crate::models::{ActivityId, ETag, RequestCharge, SessionToken, SubStatusCode};
+use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 
 /// Standard Cosmos DB request header names.
@@ -11,15 +11,17 @@ use azure_core::http::headers::{HeaderValue, Headers};
 /// All names are lowercase as required by [`HeaderName`]. The azure_core [`Headers`]
 /// type normalizes header names to lowercase on insertion, so lookups are case-sensitive
 /// but will always match since both sides are lowercase.
-mod request_header_names {
+pub(crate) mod request_header_names {
     use azure_core::http::headers::HeaderName;
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+    pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+    pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 }
 
 /// Standard Cosmos DB response header names.
-mod response_header_names {
+pub(crate) mod response_header_names {
     use azure_core::http::headers::HeaderName;
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
@@ -29,6 +31,22 @@ mod response_header_names {
     pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
     pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
     pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+    pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
+    pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
+}
+
+/// Header names used by the fault injection framework.
+#[cfg(feature = "fault_injection")]
+pub(crate) mod fault_injection_header_names {
+    use azure_core::http::headers::HeaderName;
+
+    /// Operation type header set on requests for fault injection rule matching.
+    pub static FAULT_INJECTION_OPERATION: HeaderName =
+        HeaderName::from_static("x-ms-fault-injection-operation");
+    /// Header carrying the evaluation request ID for correlating FaultClient evaluations
+    /// with the transport pipeline's diagnostics context.
+    pub static FAULT_INJECTION_REQUEST_ID: HeaderName =
+        HeaderName::from_static("x-ms-fault-injection-request-id");
 }
 
 /// Cosmos request headers for operation-level customization.
@@ -42,6 +60,9 @@ pub struct CosmosRequestHeaders {
 
     /// Session token for session consistency (`x-ms-session-token`).
     pub session_token: Option<SessionToken>,
+
+    /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
+    pub precondition: Option<Precondition>,
 }
 
 impl CosmosRequestHeaders {
@@ -63,6 +84,18 @@ impl CosmosRequestHeaders {
                 request_header_names::SESSION_TOKEN.clone(),
                 HeaderValue::from(session_token.as_str().to_owned()),
             );
+        }
+        if let Some(precondition) = self.precondition.as_ref() {
+            match precondition {
+                Precondition::IfMatch(etag) => headers.insert(
+                    request_header_names::IF_MATCH.clone(),
+                    HeaderValue::from(etag.as_str().to_owned()),
+                ),
+                Precondition::IfNoneMatch(etag) => headers.insert(
+                    request_header_names::IF_NONE_MATCH.clone(),
+                    HeaderValue::from(etag.as_str().to_owned()),
+                ),
+            }
         }
     }
 }
@@ -94,6 +127,20 @@ pub struct CosmosResponseHeaders {
 
     /// Cosmos substatus code (`x-ms-substatus`).
     pub substatus: Option<SubStatusCode>,
+
+    /// Owner full name / alternate content path (`x-ms-alt-content-path`).
+    ///
+    /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
+    /// Will be used for container identity validation in follow-up work.
+    #[allow(dead_code)] // Used in follow-up PR for container identity validation
+    pub(crate) owner_full_name: Option<String>,
+
+    /// Owner resource ID / content path (`x-ms-content-path`).
+    ///
+    /// Contains the RID of the owning collection. Will be used for
+    /// RID mismatch validation in container-recreate detection.
+    #[allow(dead_code)] // Used in follow-up PR for RID validation
+    pub(crate) owner_id: Option<String>,
 }
 
 impl CosmosResponseHeaders {
@@ -129,6 +176,12 @@ impl CosmosResponseHeaders {
             substatus: headers
                 .get_optional_str(&response_header_names::SUBSTATUS)
                 .and_then(SubStatusCode::from_header_value),
+            owner_full_name: headers
+                .get_optional_str(&response_header_names::OWNER_FULL_NAME)
+                .map(|s| s.to_owned()),
+            owner_id: headers
+                .get_optional_str(&response_header_names::OWNER_ID)
+                .map(|s| s.to_owned()),
         }
     }
 }
@@ -185,6 +238,8 @@ mod tests {
             continuation: Some("cont".to_string()),
             item_count: Some(5),
             substatus: Some(SubStatusCode::new(1002)),
+            owner_full_name: Some("dbs/db1/colls/c1".to_string()),
+            owner_id: Some("rid1".to_string()),
         };
 
         assert_eq!(
@@ -220,6 +275,7 @@ mod tests {
         let headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
+            precondition: None,
         };
 
         assert_eq!(
@@ -237,6 +293,7 @@ mod tests {
         let cosmos_headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
+            precondition: None,
         };
         let mut headers = Headers::new();
 
@@ -249,6 +306,98 @@ mod tests {
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("x-ms-session-token")),
             Some("session-token")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_precondition_if_match() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: None,
+            session_token: None,
+            precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            Some("etag-value-1")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_precondition_if_none_match() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: None,
+            session_token: None,
+            precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            Some("*")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_no_precondition_omits_both_headers() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: None,
+            session_token: None,
+            precondition: None,
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            None
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_all_fields() {
+        let cosmos_headers = CosmosRequestHeaders {
+            activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
+            session_token: Some(SessionToken::new("session:100".to_string())),
+            precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+        };
+        let mut headers = Headers::new();
+
+        cosmos_headers.write_to_headers(&mut headers);
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-activity-id")),
+            Some("corr-id-1")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-session-token")),
+            Some("session:100")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-match")),
+            Some("etag-abc")
+        );
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
         );
     }
 }
