@@ -548,13 +548,8 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions>,
-<<<<<<< read-item-update
-    ) -> azure_core::Result<CosmosResponse<T>> {
-        let options = options.unwrap_or_default();
-=======
     ) -> azure_core::Result<ItemResponse<T>> {
-        let mut options = options.unwrap_or_default();
->>>>>>> release/azure_data_cosmos-previews
+        let options = options.unwrap_or_default();
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -566,7 +561,6 @@ impl ContainerClient {
         // Create the driver operation.
         let mut operation = CosmosOperation::read_item(item_ref);
 
-<<<<<<< read-item-update
         // Wire session token and etag from SDK options onto the operation.
         if let Some(session_token) = options.session_token() {
             operation = operation.with_session_token(session_token.to_string());
@@ -589,15 +583,9 @@ impl ContainerClient {
             .await?;
 
         // Bridge the driver response to the SDK response type.
-        Ok(crate::driver_bridge::driver_response_to_cosmos_response(
-            driver_response,
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
         ))
-=======
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(|r| ItemResponse::new(r))
->>>>>>> release/azure_data_cosmos-previews
     }
 
     /// Deletes an item from the container.

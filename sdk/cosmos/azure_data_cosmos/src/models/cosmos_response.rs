@@ -30,7 +30,7 @@ pub(crate) struct CosmosResponse<T> {
     // Driver-routed operations set this to `None` because the driver uses
     // `CosmosOperation` + `OperationOptions` instead of `CosmosRequest`.
     #[allow(dead_code)]
-    request: CosmosRequest,
+    request: Option<CosmosRequest>,
     /// Parsed Cosmos-specific response headers.
     cosmos_headers: CosmosResponseHeaders,
     /// Diagnostics for this operation.
@@ -44,7 +44,21 @@ impl<T> CosmosResponse<T> {
         let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
         Self {
             response,
-            request,
+            request: Some(request),
+            cosmos_headers,
+            diagnostics,
+        }
+    }
+
+    /// Creates a `CosmosResponse` from a typed response without a request.
+    ///
+    /// Used for driver-routed operations where no `CosmosRequest` is available.
+    pub(crate) fn from_response(response: Response<T>) -> Self {
+        let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+        let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
+        Self {
+            response,
+            request: None,
             cosmos_headers,
             diagnostics,
         }
@@ -73,9 +87,12 @@ impl<T> CosmosResponse<T> {
     }
 
     /// Returns the final request URL used to fulfill the operation.
+    /// Returns `None` for driver-routed operations.
     #[cfg(feature = "fault_injection")]
-    pub(crate) fn request_url(&self) -> azure_core::http::Url {
-        self.request.clone().into_raw_request().url().clone()
+    pub(crate) fn request_url(&self) -> Option<azure_core::http::Url> {
+        self.request
+            .clone()
+            .map(|r| r.into_raw_request().url().clone())
     }
 
     /// Consumes the response and returns the response body.
@@ -144,7 +161,7 @@ mod tests {
             Bytes::from(body.to_string()),
         );
         let typed_response: Response<TestModel> = raw_response.into();
-        CosmosResponse::new(typed_response, Some(create_mock_request()))
+        CosmosResponse::new(typed_response, create_mock_request())
     }
 
     fn create_response_with_headers(headers: Headers) -> CosmosResponse<TestModel> {

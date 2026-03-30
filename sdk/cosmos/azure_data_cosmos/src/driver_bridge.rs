@@ -36,7 +36,7 @@ pub(crate) fn driver_response_to_cosmos_response<T>(
     let raw_response = RawResponse::from_bytes(status_code, headers, Bytes::from(body));
     let typed_response: Response<T> = raw_response.into();
 
-    CosmosResponse::new(typed_response, None)
+    CosmosResponse::from_response(typed_response)
 }
 
 /// Converts driver [`CosmosResponseHeaders`] into raw [`Headers`] for the SDK response.

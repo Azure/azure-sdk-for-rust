@@ -198,11 +198,67 @@ To cut over another item operation (e.g., `create_item`), follow this template:
 
 1. **Build the operation:** Use the appropriate `CosmosOperation::*` factory method (e.g., `CosmosOperation::create_item(container_ref, pk)`).
 2. **Attach the body:** For write operations, serialize the item to bytes and call `.with_body(bytes)` on the operation.
-3. **Translate options:** Reuse `item_options_to_operation_options()` from `driver_bridge.rs`. For write-specific options (e.g., `content_response_on_write_enabled`), extend the bridge function.
-4. **Execute:** Call `self.driver.execute_operation(operation, driver_options).await?`.
-5. **Bridge response:** Reuse `driver_response_to_cosmos_response(driver_response)`.
+3. **Wire session token and etag:** These live on `CosmosOperation`, not `OperationOptions`. Set them inline before executing:
+
+   ```rust
+   if let Some(session_token) = options.session_token() {
+       operation = operation.with_session_token(session_token.to_string());
+   }
+   if let Some(etag) = options.if_match_etag() {
+       operation = operation.with_precondition(
+           Precondition::if_match(ETag::new(etag.to_string())),
+       );
+   }
+   ```
+
+   This is separate from the bridge function because Ashley's options alignment (#4055) moved session token and etag to `CosmosOperation` (the operation itself carries per-request state, while `OperationOptions` carries cross-cutting config).
+
+4. **Translate options:** Reuse `item_options_to_operation_options()` from `driver_bridge.rs`. This handles `excluded_regions` and `custom_headers`.
+5. **Execute:** Call `self.driver.execute_operation(operation, driver_options).await?`.
+6. **Bridge response:** Call `driver_response_to_cosmos_response(driver_response)` to get a `CosmosResponse<T>`, then wrap it in the appropriate public response type (e.g., `ItemResponse::new(cosmos_response)` for item operations, `ResourceResponse::new(cosmos_response)` for resource operations).
 
 The public method signature should not change.
+
+## Response Type Wrapping
+
+PR #3960 introduced dedicated public response types that wrap the internal `CosmosResponse<T>`:
+
+| Public Type | Used For | Extra Fields |
+| --- | --- | --- |
+| `ItemResponse<T>` | create/read/replace/upsert/delete item | `etag()` |
+| `ResourceResponse<T>` | create/read/delete database/container | — |
+| `BatchResponse` | transactional batch | `etag()` |
+| `QueryFeedPage<T>` | query operations | `index_metrics()`, `query_metrics()` |
+
+`CosmosResponse<T>` is now `pub(crate)`. The bridge function `driver_response_to_cosmos_response()` returns `CosmosResponse<T>`, and the caller wraps it:
+
+```rust
+// In read_item:
+Ok(ItemResponse::new(
+    crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+))
+
+// In a future create_container:
+Ok(ResourceResponse::new(
+    crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+))
+```
+
+`CosmosResponse` has two constructors:
+- `new(response, request)` — for gateway-routed operations (has a `CosmosRequest`)
+- `from_response(response)` — for driver-routed operations (no `CosmosRequest`, sets `request: None`)
+
+Both constructors parse `CosmosResponseHeaders` from the raw HTTP headers and build `CosmosDiagnostics` (activity ID, server duration) automatically. The bridge's `driver_response_headers_to_headers()` ensures the driver's typed headers are converted back to raw headers so the SDK's parsing works correctly.
+
+### `request_url()` and Fault Injection Tests
+
+`ItemResponse::request_url()` returns `Option<Url>` — `None` for driver-routed operations, `Some(url)` for gateway-routed operations. Other response types (`ResourceResponse`, `BatchResponse`) return `Url` directly since they are always gateway-routed.
+
+For fault injection tests that verify failover endpoints:
+- Gateway-routed operations: use `.request_url().expect("...")`
+- Driver-routed operations: use `if let Some(url) = response.request_url() { ... }`
+
+This means failover endpoint assertions are **silently skipped** for driver-routed reads. Once driver diagnostics expose the effective endpoint (tracked as future work), these assertions should be restored.
 
 ## Files Changed
 
@@ -265,7 +321,9 @@ In `CosmosClientBuilder::build()`:
 
 ### Test Patterns for Future Cutover
 
-When cutting over additional operations, **no additional fault injection wiring is needed** — it's handled once at the `CosmosClientBuilder` level. However, tests that assert `request_url()` need to handle `None` for driver-routed operations:
+When cutting over additional operations, **no additional fault injection wiring is needed** — it's handled once at the `CosmosClientBuilder` level. However, tests need to account for two behavioral differences:
+
+**`request_url()` returns `None` for driver-routed operations:**
 
 ```rust
 // Gateway-routed operations return Some(url)
@@ -274,6 +332,22 @@ if let Some(url) = response.request_url() {
     assert_eq!(url.host_str().unwrap(), expected_endpoint);
 }
 ```
+
+**Hit-count asymmetry between gateway and driver paths:**
+
+The driver retries certain errors internally (e.g., 500 on reads triggers up to 3 failover retries). Each retry attempt evaluates fault injection rules independently, so a single SDK-level `read_item` call can consume up to **4 fault injection hits** (initial + 3 retries). In contrast, the gateway path typically consumes 1 hit per SDK call.
+
+When writing `hit_limit`-based tests for driver-routed operations, multiply the expected hits per call by the driver's retry budget:
+
+```rust
+// Each read_item call consumes up to 4 hits (1 initial + 3 failover retries).
+// For 2 calls to fail: 2 × 4 = 8 hits.
+let rule = FaultInjectionRuleBuilder::new("test", error)
+    .with_hit_limit(8)  // not 2 or 4
+    .build();
+```
+
+This asymmetry will disappear once all operations are driver-routed, since there will be only one hit-counting path.
 
 ### `custom_response` Translation
 

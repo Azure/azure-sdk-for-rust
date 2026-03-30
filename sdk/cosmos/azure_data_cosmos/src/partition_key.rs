@@ -131,9 +131,9 @@ impl PartitionKey {
                 InnerPartitionKeyValue::Null => DriverPKV::from(Option::<String>::None),
                 InnerPartitionKeyValue::Undefined => DriverPKV::undefined(),
                 InnerPartitionKeyValue::Infinity => {
-                    // Infinity is an internal sentinel for EPK boundary calculations.
-                    // It is not valid for point operations like read_item and the
-                    // driver will return an error during header serialization.
+                    // Infinity is an internal sentinel for EPK boundary calculations
+                    // and cannot be constructed via the public SDK API.
+                    // Mapping to Null as a defensive fallback; this path should be unreachable.
                     DriverPKV::from(Option::<String>::None)
                 }
             })

@@ -110,6 +110,6 @@ impl GatewayPipeline {
         let raw_response: RawResponse =
             self.retry_handler.send(&mut cosmos_request, sender).await?;
         let typed_response: Response<T> = raw_response.into();
-        Ok(CosmosResponse::new(typed_response, Some(cosmos_request)))
+        Ok(CosmosResponse::new(typed_response, cosmos_request))
     }
 }

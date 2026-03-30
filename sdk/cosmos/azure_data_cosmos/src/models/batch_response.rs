@@ -53,7 +53,9 @@ impl BatchResponse {
     /// This api is subject to change without a major version bump.
     #[cfg(feature = "fault_injection")]
     pub fn request_url(&self) -> azure_core::http::Url {
-        self.response.request_url()
+        self.response
+            .request_url()
+            .expect("request URL should be present for gateway-routed operations")
     }
 
     /// Consumes the response and returns the response body.
