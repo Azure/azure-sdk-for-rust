@@ -260,6 +260,20 @@ For fault injection tests that verify failover endpoints:
 
 This means failover endpoint assertions are **silently skipped** for driver-routed reads. Once driver diagnostics expose the effective endpoint (tracked as future work), these assertions should be restored.
 
+### Driver Response Does Not Expose the Effective Endpoint
+
+The driver's `CosmosResponse` returns the response body, headers, and status — but does **not** expose which endpoint (URL or region) was ultimately used to serve the request. This information is critical for:
+
+- **Failover verification tests** — asserting that a request was routed to the expected region after a fault-triggered failover
+- **Diagnostics and observability** — understanding which region served a request for debugging and performance analysis
+
+The gateway pipeline tracked this via `CosmosRequest` (which held the final URL). The driver handles routing internally in the operation pipeline (`resolve_endpoint` → `RoutingDecision`) but does not propagate the resolved endpoint back through the response.
+
+**Future work:** The driver should surface the effective endpoint in its response (e.g., as a field on `CosmosResponse` or through `DiagnosticsContext`). This would allow:
+1. Restoring failover endpoint assertions in tests (currently skipped with `if let Some`)
+2. Providing users with routing transparency for observability
+3. Removing the `request_url()` → `Option` workaround once all operations are driver-routed
+
 ## Files Changed
 
 | File | Change |

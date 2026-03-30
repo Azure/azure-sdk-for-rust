@@ -229,14 +229,10 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
-            assert_eq!(
-                response
-                    .request_url()
-                    .expect("request URL should be present")
-                    .host_str()
-                    .unwrap(),
-                get_effective_hub_endpoint()
-            );
+            // request_url() returns None for driver-routed operations.
+            if let Some(url) = response.request_url() {
+                assert_eq!(url.host_str().unwrap(), get_effective_hub_endpoint());
+            }
 
             Ok(())
         },
@@ -306,8 +302,8 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
             let response = result.unwrap();
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             println!("Request succeeded via failover, final URL: {}", request_url);
             // Verify the request went to a different endpoint than the faulted one
             assert!(
@@ -386,8 +382,8 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             let response = result.unwrap();
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             // Verify the request went to a different endpoint than the faulted one
             assert!(
                 request_url.contains(&SATELLITE_REGION.as_str()),
@@ -478,8 +474,8 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let response = result.unwrap();
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             println!("Request succeeded via failover, final URL: {}", request_url);
             // Verify the request was retried on the hub region
             assert!(
@@ -555,8 +551,8 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
 
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             assert!(
                 request_url.contains(SATELLITE_REGION.as_str()),
                 "request should have failed over to satellite region, got: {request_url}"
@@ -639,8 +635,8 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
 
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             assert!(
                 request_url.contains(SATELLITE_REGION.as_str()),
                 "request should have failed over to satellite region, got: {request_url}"
@@ -790,8 +786,8 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
 
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             assert!(
                 request_url.contains(SATELLITE_REGION.as_str()),
                 "request should have failed over to satellite region, got: {request_url}"
@@ -864,8 +860,8 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
 
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             assert!(
                 request_url.contains(HUB_REGION.as_str()),
                 "request should have failed over to hub region, got: {request_url}"
@@ -942,8 +938,8 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
 
             let request_url = response
                 .request_url()
-                .expect("request URL should be present")
-                .to_string();
+                .map(|u| u.to_string())
+                .unwrap_or_default();
             // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
             assert!(
                 request_url.contains(HUB_REGION.as_str()),
