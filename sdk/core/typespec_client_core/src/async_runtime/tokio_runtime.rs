@@ -50,9 +50,13 @@ impl std::future::Future for JoinHandle {
         let mut this = self.project();
         if let Some(handle) = this.handle.as_mut().as_pin_mut() {
             match handle.poll(cx) {
-                Poll::Ready(_) => {
+                Poll::Ready(Ok(())) => {
                     this.handle.set(None);
                     Poll::Ready(Ok(()))
+                }
+                Poll::Ready(Err(join_err)) => {
+                    this.handle.set(None);
+                    Poll::Ready(Err(Box::new(join_err) as Box<dyn Error + Send>))
                 }
                 Poll::Pending => Poll::Pending,
             }

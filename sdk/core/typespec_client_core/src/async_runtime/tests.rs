@@ -268,7 +268,14 @@ async fn tokio_abort_cancels_task() {
 
     handle.abort();
 
-    // The task should not have completed
+    // Awaiting the aborted task should yield an error (cancellation), not a successful completion.
+    let result = handle.await;
+    assert!(
+        result.is_err(),
+        "aborted task should return an error when awaited"
+    );
+
+    // The task should not have completed its work after being aborted
     assert!(
         !*completed.lock().unwrap(),
         "task should not have completed after abort"
@@ -289,10 +296,12 @@ async fn tokio_abort_then_await() {
 
     handle.abort();
 
-    // Awaiting an aborted task should still resolve (not hang)
+    // Awaiting an aborted task should resolve with a cancellation error (not hang)
     let result = handle.await;
-    // Result may be Ok or Err depending on timing, but it must not hang
-    drop(result);
+    assert!(
+        result.is_err(),
+        "aborted task should return an error result"
+    );
 }
 
 #[cfg(feature = "tokio")]
