@@ -4,7 +4,6 @@
 
 ### Features Added
 
-- Added type-safe response wrappers (`ItemResponse<T>`, `ResourceResponse<T>`, `BatchResponse`, `QueryFeedPage<T>`) with operation-specific accessors like `etag()`, `index_metrics()`, `query_metrics()`, and universal `diagnostics()` providing `activity_id()` and `server_duration_ms()`. ([#3960](https://github.com/Azure/azure-sdk-for-rust/pull/3960))
 - Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
 
 ### Breaking Changes
