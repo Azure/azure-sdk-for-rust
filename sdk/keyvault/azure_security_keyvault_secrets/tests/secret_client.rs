@@ -8,12 +8,19 @@ use azure_core::{
 use azure_core_test::{
     recorded,
     tracing::{ExpectedApiInformation, ExpectedInstrumentation},
-    TestContext, TestMode,
+    TestContext, TestMode, SANITIZE_BODY_NAME,
+};
+use azure_security_keyvault_certificates::{
+    models::{
+        CertificatePolicy, CreateCertificateParameters, IssuerParameters, SecretProperties,
+        X509CertificateProperties,
+    },
+    CertificateClient, CertificateClientOptions,
 };
 use azure_security_keyvault_secrets::{
     models::{
-        SecretClientGetSecretOptions, SecretClientListSecretPropertiesOptions, SetSecretParameters,
-        UpdateSecretPropertiesParameters,
+        ContentType, SecretClientGetSecretOptions, SecretClientListSecretPropertiesOptions,
+        SetSecretParameters, UpdateSecretPropertiesParameters,
     },
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
@@ -613,4 +620,148 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
     .await;
 
     validate_result
+}
+
+#[recorded::test]
+async fn get_secret_with_out_content_type_pem(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
+
+    // Create a self-signed certificate (PFX format) so we get a certificate-backed secret.
+    let cert_client = {
+        let mut options = CertificateClientOptions::default();
+        recording.instrument(&mut options.client_options);
+        CertificateClient::new(
+            recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+            recording.credential(),
+            Some(options),
+        )?
+    };
+
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=OutContentTypeTest".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        secret_properties: Some(SecretProperties {
+            content_type: Some("application/x-pkcs12".into()),
+        }),
+        ..Default::default()
+    };
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+    cert_client
+        .create_certificate("out-content-type-test", body.try_into()?, None)?
+        .await?
+        .into_model()?;
+
+    // Get the certificate-backed secret with outContentType=PEM.
+    let secret_client = {
+        let mut options = SecretClientOptions::default();
+        recording.instrument(&mut options.client_options);
+        SecretClient::new(
+            recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+            recording.credential(),
+            Some(options),
+        )?
+    };
+
+    let secret = secret_client
+        .get_secret(
+            "out-content-type-test",
+            Some(SecretClientGetSecretOptions {
+                out_content_type: Some(ContentType::Pem),
+                ..Default::default()
+            }),
+        )
+        .await?
+        .into_model()?;
+
+    // The value should be PEM-encoded (converted from PFX).
+    let value = secret.value.expect("expected secret value");
+    assert!(
+        value.contains("-----BEGIN"),
+        "expected PEM content, got: {}",
+        &value[..value.len().min(200)]
+    );
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn get_secret_previous_version(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
+
+    // Create a self-signed certificate to produce a certificate-backed secret.
+    let cert_client = {
+        let mut options = CertificateClientOptions::default();
+        recording.instrument(&mut options.client_options);
+        CertificateClient::new(
+            recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+            recording.credential(),
+            Some(options),
+        )?
+    };
+
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=PrevVersionTest".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    // Create v1 of the certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy.clone()),
+        ..Default::default()
+    };
+    cert_client
+        .create_certificate("prev-version-test", body.try_into()?, None)?
+        .await?
+        .into_model()?;
+
+    // Create v2 of the certificate (same name triggers new version).
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+    cert_client
+        .create_certificate("prev-version-test", body.try_into()?, None)?
+        .await?
+        .into_model()?;
+
+    // Get the backing secret for v2: it should have previousVersion set.
+    let secret_client = {
+        let mut options = SecretClientOptions::default();
+        recording.instrument(&mut options.client_options);
+        SecretClient::new(
+            recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+            recording.credential(),
+            Some(options),
+        )?
+    };
+
+    let secret = secret_client
+        .get_secret("prev-version-test", None)
+        .await?
+        .into_model()?;
+
+    assert!(
+        secret.previous_version.is_some(),
+        "expected previousVersion to be set on the v2 certificate-backed secret"
+    );
+
+    Ok(())
 }

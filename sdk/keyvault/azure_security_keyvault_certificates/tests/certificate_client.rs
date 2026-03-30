@@ -14,7 +14,8 @@ use azure_security_keyvault_certificates::{
     models::{
         CertificateClientUpdateCertificatePropertiesOptions, CertificatePolicy,
         CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties, KeyType,
-        UpdateCertificatePropertiesParameters, X509CertificateProperties,
+        SecretProperties, SubjectAlternativeNames, UpdateCertificatePropertiesParameters,
+        X509CertificateProperties,
     },
     CertificateClient, CertificateClientOptions, ResourceExt as _,
 };
@@ -394,6 +395,95 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
         err.kind(),
         ErrorKind::HttpResponse { status, .. } if *status == StatusCode::BadRequest
     ));
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn create_certificate_with_san_ip_and_uri(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
+
+    let mut options = CertificateClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = CertificateClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    // Create a self-signed certificate with IP addresses and URIs in SANs.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=SanIpUriTest".into()),
+            subject_alternative_names: Some(SubjectAlternativeNames {
+                dns_names: Some(vec!["test.example.com".into()]),
+                emails: Some(vec!["test@example.com".into()]),
+                ip_addresses: Some(vec!["10.0.0.1".into(), "192.168.1.1".into()]),
+                uris: Some(vec![
+                    "https://test.example.com/api".into(),
+                    "spiffe://example.com/service".into(),
+                ]),
+                user_principal_names: Some(vec!["testuser@example.com".into()]),
+            }),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        secret_properties: Some(SecretProperties {
+            content_type: Some("application/x-pkcs12".into()),
+        }),
+        ..Default::default()
+    };
+
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+    let certificate = client
+        .create_certificate("san-ip-uri-test", body.try_into()?, None)?
+        .await?
+        .into_model()?;
+
+    assert!(certificate.id.is_some());
+
+    // Verify the policy SANs on the returned certificate.
+    let cert_policy = certificate.policy.expect("expected policy");
+    let x509 = cert_policy
+        .x509_certificate_properties
+        .expect("expected x509 properties");
+    let sans = x509
+        .subject_alternative_names
+        .expect("expected subject alternative names");
+
+    assert_eq!(
+        sans.dns_names.as_deref(),
+        Some(&["test.example.com".to_string()][..])
+    );
+    assert_eq!(
+        sans.emails.as_deref(),
+        Some(&["test@example.com".to_string()][..])
+    );
+    assert_eq!(
+        sans.ip_addresses.as_deref(),
+        Some(&["10.0.0.1".to_string(), "192.168.1.1".to_string()][..])
+    );
+    assert_eq!(
+        sans.uris.as_deref(),
+        Some(
+            &[
+                "https://test.example.com/api".to_string(),
+                "spiffe://example.com/service".to_string()
+            ][..]
+        )
+    );
+    assert_eq!(
+        sans.user_principal_names.as_deref(),
+        Some(&["testuser@example.com".to_string()][..])
+    );
 
     Ok(())
 }
