@@ -647,9 +647,12 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
 
+    // The driver retries 500 errors internally (up to 3 failover retries per call),
+    // so each read_item call consumes up to 4 fault injection hits. Setting
+    // hit_limit to 8 ensures 2 calls fail completely before the limit is exhausted.
     let rule = FaultInjectionRuleBuilder::new("hit-limit-test", server_error)
         .with_condition(condition)
-        .with_hit_limit(4)
+        .with_hit_limit(8)
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
@@ -700,7 +703,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                 .await;
             assert!(
                 result.is_ok(),
-                "request 4 should succeed after hit_limit exhausted: {:?}",
+                "request 3 should succeed after hit_limit exhausted: {:?}",
                 result.err()
             );
 
