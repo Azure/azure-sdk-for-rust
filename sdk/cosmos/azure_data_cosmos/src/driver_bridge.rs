@@ -17,7 +17,10 @@ use azure_data_cosmos_driver::{
 };
 
 use crate::{
-    constants::{ACTIVITY_ID, CONTINUATION, ITEM_COUNT, REQUEST_CHARGE, SESSION_TOKEN, SUB_STATUS},
+    constants::{
+        ACTIVITY_ID, CONTINUATION, INDEX_METRICS, ITEM_COUNT, QUERY_METRICS, REQUEST_CHARGE,
+        REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
+    },
     models::CosmosResponse,
     options::ItemOptions,
 };
@@ -66,6 +69,15 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     }
     if let Some(substatus) = &cosmos_headers.substatus {
         headers.insert(SUB_STATUS, substatus.value().to_string());
+    }
+    if let Some(server_duration) = cosmos_headers.server_duration_ms {
+        headers.insert(REQUEST_DURATION_MS, server_duration.to_string());
+    }
+    if let Some(index_metrics) = &cosmos_headers.index_metrics {
+        headers.insert(INDEX_METRICS, index_metrics.clone());
+    }
+    if let Some(query_metrics) = &cosmos_headers.query_metrics {
+        headers.insert(QUERY_METRICS, query_metrics.clone());
     }
 
     headers
