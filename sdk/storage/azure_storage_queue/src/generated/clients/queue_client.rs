@@ -477,8 +477,8 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
+        request.insert_header("content-type", "application/xml");
         request.set_body(queue_acl);
         let rsp = self
             .pipeline
@@ -582,9 +582,9 @@ impl QueueClient {
         query_builder.set_pair("visibilitytimeout", visibility_timeout.to_string());
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         if let Some(queue_message) = options.queue_message.clone() {
+            request.insert_header("content-type", "application/xml");
             request.set_body(queue_message);
         }
         let rsp = self
