@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::Body;
+use crate::http::{Body, RequestContent};
 
 use super::{Bytes, SeekableStream};
 use futures::io::AsyncRead;
@@ -57,6 +57,12 @@ impl From<Bytes> for BytesStream {
 impl From<BytesStream> for Body {
     fn from(stream: BytesStream) -> Self {
         Body::SeekableStream(Box::new(stream))
+    }
+}
+
+impl<T, F> From<BytesStream> for RequestContent<T, F> {
+    fn from(value: BytesStream) -> Self {
+        Body::from(value).into()
     }
 }
 

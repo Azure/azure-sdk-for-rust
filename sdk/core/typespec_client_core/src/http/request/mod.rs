@@ -5,7 +5,7 @@
 
 pub mod options;
 
-use crate::stream::{BytesStream, SeekableStream};
+use crate::stream::{BytesStream, ReadStream, SeekableStream};
 #[cfg(feature = "json")]
 use crate::{http::JsonFormat, json::to_json};
 use crate::{
@@ -17,6 +17,7 @@ use crate::{
 };
 #[cfg(any(feature = "json", feature = "xml"))]
 use crate::{time::OffsetDateTime, Value};
+use futures::AsyncRead;
 #[cfg(any(feature = "json", feature = "xml"))]
 use serde::Serialize;
 #[cfg(any(feature = "json", feature = "xml"))]
@@ -318,6 +319,49 @@ impl<T, F> RequestContent<T, F> {
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(body: &str) -> Self {
         Self::from_slice(body.as_bytes())
+    }
+
+    /// Create a new `RequestContent` from a [`SeekableStream`].
+    ///
+    /// # Implementations
+    ///
+    /// Some implementations available in this crate:
+    ///
+    /// - [`BytesStream`]
+    #[cfg_attr(
+        feature = "tokio",
+        doc = "- [`FileStream`](crate::stream::tokio::FileStream)"
+    )]
+    ///
+    /// # Examples
+    ///
+    /// Send a [`BytesStream`] as the request body.
+    ///
+    /// ```
+    /// # use typespec_client_core::{http::RequestContent, stream::BytesStream};
+    /// let stream = Box::new(BytesStream::new(b"stream data".as_slice()));
+    /// let content: RequestContent<()> = RequestContent::from_stream(stream);
+    /// assert_eq!(content.body().len(), 11);
+    /// ```
+    pub fn from_stream(stream: Box<dyn SeekableStream>) -> Self {
+        Self {
+            body: Body::SeekableStream(stream),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Create a new `RequestContent` from an [`AsyncRead`] source.
+    ///
+    /// The source is wrapped in a type that implements [`SeekableStream`] but errs when [`SeekableStream::reset()`] is called.
+    pub fn from_reader<R>(reader: R, len: u64) -> Self
+    where
+        R: AsyncRead + Unpin + Send + Sync + Clone + 'static,
+    {
+        let reader = ReadStream::new(reader, len);
+        Self {
+            body: Body::SeekableStream(Box::new(reader)),
+            phantom: PhantomData,
+        }
     }
 }
 
@@ -749,5 +793,26 @@ mod tests {
         }
 
         assert!(body.is_empty());
+    }
+
+    #[tokio::test]
+    async fn from_reader_sets_body() {
+        use futures::io::AsyncReadExt;
+
+        let data = b"reader data";
+        let cursor = futures::io::Cursor::new(data.to_vec());
+        let content: RequestContent<()> = RequestContent::from_reader(cursor, data.len() as u64);
+        assert_eq!(content.body().len(), data.len() as u64);
+
+        // Verify the body is readable.
+        match content.body {
+            Body::SeekableStream(mut stream) => {
+                let mut buf = vec![0u8; data.len()];
+                let n = stream.read(&mut buf).await.unwrap();
+                assert_eq!(n, data.len());
+                assert_eq!(&buf, data);
+            }
+            _ => panic!("expected SeekableStream"),
+        }
     }
 }

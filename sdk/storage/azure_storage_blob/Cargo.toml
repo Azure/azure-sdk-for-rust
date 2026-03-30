@@ -15,7 +15,7 @@ categories = ["api-bindings"]
 
 [features]
 default = ["tokio", "azure_core/default"]
-tokio = ["dep:tokio", "azure_core/tokio"]
+tokio = ["azure_core/tokio"]
 
 [dependencies]
 async-stream.workspace = true
@@ -28,11 +28,6 @@ pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
-tokio = { workspace = true, optional = true, features = [
-  "fs",
-  "io-util",
-  "sync",
-] }
 
 [lints]
 workspace = true

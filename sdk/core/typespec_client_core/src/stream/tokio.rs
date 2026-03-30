@@ -3,8 +3,8 @@
 
 //! Tokio-based stream implementations.
 
-use azure_core::{
-    http::Body,
+use crate::{
+    http::{Body, RequestContent},
     stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
 };
 use std::{
@@ -51,7 +51,7 @@ impl FileStreamBuilder {
     ///
     /// The [`SeekableStream::len()`] is the file size returned from [`Metadata::len()`](std::fs::Metadata)
     /// regardless of the initial position of the [`File`].
-    pub async fn build(self) -> azure_core::Result<FileStream> {
+    pub async fn build(self) -> crate::Result<FileStream> {
         let file_size = self.file.metadata().await?.len();
         let buffer_size = self.buffer_size.unwrap_or(DEFAULT_BUFFER_SIZE);
 
@@ -98,9 +98,15 @@ impl From<FileStream> for Body {
     }
 }
 
+impl<T, F> From<FileStream> for RequestContent<T, F> {
+    fn from(value: FileStream) -> Self {
+        Body::from(value).into()
+    }
+}
+
 #[async_trait::async_trait]
 impl SeekableStream for FileStream {
-    async fn reset(&mut self) -> azure_core::Result<()> {
+    async fn reset(&mut self) -> crate::Result<()> {
         let mut handle = self.handle.lock().await;
         handle.seek(SeekFrom::Start(0)).await?;
         Ok(())

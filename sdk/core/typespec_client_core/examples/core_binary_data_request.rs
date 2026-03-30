@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-mod common;
-
-use common::fs::FileStreamBuilder;
 use tokio::fs;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::fmt::format::FmtSpan;
-use typespec_client_core::http::RequestContent;
+use typespec_client_core::{http::RequestContent, stream::tokio::FileStream};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,12 +20,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Asynchronously stream the file with the service client request.
     let file = fs::File::open(file!()).await?;
-    let file = FileStreamBuilder::new(file)
+    let stream = FileStream::builder(file)
         // Simulate a slow, chunky request.
-        .buffer_size(512usize)
+        .with_buffer_size(512)
         .build()
         .await?;
-    client::put_binary_data(file.into()).await?;
+    client::put_binary_data(stream.into()).await?;
 
     Ok(())
 }

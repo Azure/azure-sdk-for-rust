@@ -29,9 +29,12 @@
 //! The `<ACCOUNT_NAME>` flag can also be provided via the `AZURE_STORAGE_ACCOUNT_NAME`
 //! environment variable.
 
-use azure_core::{http::Body, stream::DEFAULT_BUFFER_SIZE};
+use azure_core::{
+    http::Body,
+    stream::{tokio::FileStream, DEFAULT_BUFFER_SIZE},
+};
 use azure_identity::AzureCliCredential;
-use azure_storage_blob::{models::BlobClientUploadOptions, stream::tokio::FileStream, BlobClient};
+use azure_storage_blob::{models::BlobClientUploadOptions, BlobClient};
 use clap::Parser;
 use std::{num::NonZero, path::PathBuf};
 
