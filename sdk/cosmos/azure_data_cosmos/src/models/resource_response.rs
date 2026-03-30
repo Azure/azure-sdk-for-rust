@@ -5,11 +5,7 @@
 
 use crate::models::{CosmosDiagnostics, CosmosResponse};
 use crate::SessionToken;
-use azure_core::http::{
-    headers::{HeaderName, Headers},
-    response::ResponseBody,
-    StatusCode,
-};
+use azure_core::http::{headers::Headers, response::ResponseBody, StatusCode};
 use serde::de::DeserializeOwned;
 
 /// A response from a resource management operation (databases, containers, throughput).
@@ -35,11 +31,6 @@ impl<T> ResourceResponse<T> {
     /// Returns a reference to all response headers.
     pub fn headers(&self) -> &Headers {
         self.response.headers()
-    }
-
-    /// Gets an optional header value as a string by name.
-    pub fn get_optional_header_str(&self, name: &HeaderName) -> Option<&str> {
-        self.response.get_optional_header_str(name)
     }
 
     /// Returns the final request URL used to fulfill the operation.

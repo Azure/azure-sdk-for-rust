@@ -6,11 +6,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::CosmosDiagnostics;
 use crate::SessionToken;
-use azure_core::http::{
-    headers::{HeaderName, Headers},
-    response::Response,
-    StatusCode,
-};
+use azure_core::http::{headers::Headers, response::Response, StatusCode};
 use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 use serde::de::DeserializeOwned;
 
@@ -63,11 +59,6 @@ impl<T> CosmosResponse<T> {
     /// Returns a reference to the parsed Cosmos-specific response headers.
     pub(crate) fn cosmos_headers(&self) -> &CosmosResponseHeaders {
         &self.cosmos_headers
-    }
-
-    /// Gets an optional header value as a string by name.
-    pub(crate) fn get_optional_header_str(&self, name: &HeaderName) -> Option<&str> {
-        self.response.headers().get_optional_str(name)
     }
 
     /// Returns the final request used to fulfill the operation.
