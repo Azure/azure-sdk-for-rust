@@ -4,6 +4,9 @@
 //! Asynchronous streams.
 
 mod bytes_stream;
+mod read_stream;
+#[cfg(feature = "tokio")]
+pub mod tokio;
 
 use crate::{
     error::{Error, ErrorKind, Result},
@@ -12,6 +15,7 @@ use crate::{
 pub use bytes_stream::*;
 use dyn_clone::DynClone;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
+pub(crate) use read_stream::*;
 use std::{pin::Pin, task::Context};
 
 /// Amount of the stream to buffer in memory during streaming uploads.

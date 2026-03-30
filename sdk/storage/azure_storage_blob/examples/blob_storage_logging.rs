@@ -35,15 +35,16 @@
 //!
 //! ```bash
 //! az login
-//! export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
-//! export RUST_LOG="<log-level>"
-//! cargo run --package azure_storage_blob --example blob_storage_logging
+//! cargo run --package azure_storage_blob --example blob_storage_logging -- <ACCOUNT_NAME>
 //! ```
+//!
+//! The `<ACCOUNT_NAME>` argument can also be provided via the `AZURE_STORAGE_ACCOUNT_NAME`
+//! environment variable.
 //!
 //! To enable OpenTelemetry tracing (outputs spans to stdout):
 //!
 //! ```bash
-//! cargo run --package azure_storage_blob --example blob_storage_logging -- --otel
+//! cargo run --package azure_storage_blob --example blob_storage_logging -- <ACCOUNT_NAME> --otel
 //! ```
 
 use azure_core::{
@@ -53,14 +54,17 @@ use azure_core::{
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::AzureCliCredential;
 use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+use clap::Parser;
 use opentelemetry_sdk::trace::SdkTracerProvider;
-use std::{env, sync::Arc};
+use std::sync::Arc;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+
     // Check for --otel flag to enable OpenTelemetry distributed tracing.
-    let otel_enabled = env::args().any(|arg| arg == "--otel" || arg == "-otel");
+    let otel_enabled = args.otel;
 
     // Initialize tracing subscriber to see HTTP requests and responses.
     // When --otel is enabled, default to "warn" to reduce noise and let spans be visible.
@@ -86,9 +90,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None
     };
 
-    // Get Azure Storage Account name from environment variable
-    let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
-        .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
+    // Get Azure Storage Account name.
+    let account = &args.account_name;
 
     let container_name = "test-container";
     let blob_name = "hello_world.txt";
@@ -161,4 +164,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Pass --otel to see OpenTelemetry spans. Use RUST_LOG=trace for detailed HTTP logs.");
 
     Ok(())
+}
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Azure Storage account name.
+    ///
+    /// Can also be set via the `AZURE_STORAGE_ACCOUNT_NAME` environment variable.
+    #[arg(env = "AZURE_STORAGE_ACCOUNT_NAME")]
+    account_name: String,
+
+    /// Enable OpenTelemetry distributed tracing.
+    #[arg(long)]
+    otel: bool,
 }

@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `From<BytesStream> for Body`.
 - Derived `Clone` on `ErrorResponse`, `ErrorDetail`, and `InnerError`.
 
 ### Breaking Changes
