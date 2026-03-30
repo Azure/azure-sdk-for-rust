@@ -23,31 +23,40 @@ use tokio::{
 /// Builds a [`FileStream`] from a [`tokio::fs::File`].
 #[derive(Debug)]
 pub struct FileStreamBuilder {
-    handle: File,
+    file: File,
     buffer_size: Option<usize>,
 }
 
 impl FileStreamBuilder {
-    fn new(handle: File) -> Self {
+    fn new(file: File) -> Self {
         Self {
-            handle,
+            file,
             buffer_size: None,
         }
     }
 
     /// Sets the size of the buffer to use when reading from the stream.
     pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
+        // Not many APIs I looked at use NonZeroUsize which is a bit unwieldy,
+        // but they also don't often protect against this case either.
+        debug_assert!(buffer_size > 0, "buffer_size must be greater than 0");
+
         self.buffer_size = Some(buffer_size);
         self
     }
 
     /// Builds a [`FileStream`].
+    ///
+    /// # Notes
+    ///
+    /// The [`SeekableStream::len()`] is the file size returned from [`Metadata::len()`](std::fs::Metadata)
+    /// regardless of the initial position of the [`File`].
     pub async fn build(self) -> azure_core::Result<FileStream> {
-        let file_size = self.handle.metadata().await?.len();
+        let file_size = self.file.metadata().await?.len();
         let buffer_size = self.buffer_size.unwrap_or(DEFAULT_BUFFER_SIZE);
 
         Ok(FileStream {
-            handle: Arc::new(Mutex::new(self.handle)),
+            handle: Arc::new(Mutex::new(self.file)),
             file_size,
             buffer_size,
         })
@@ -68,8 +77,13 @@ impl FileStream {
     /// # Arguments
     ///
     /// * `handle` - An open [`tokio::fs::File`] to stream.
-    pub fn builder(handle: File) -> FileStreamBuilder {
-        FileStreamBuilder::new(handle)
+    ///
+    /// # Notes
+    ///
+    /// `len()` is the file size returned from [`Metadata::len()`](std::fs::Metadata)
+    /// regardless of the initial position of the [`File`].
+    pub fn builder(file: File) -> FileStreamBuilder {
+        FileStreamBuilder::new(file)
     }
 
     async fn read(&self, buf: &mut [u8]) -> std::io::Result<usize> {
@@ -92,8 +106,14 @@ impl SeekableStream for FileStream {
         Ok(())
     }
 
-    fn len(&self) -> usize {
-        self.file_size as usize
+    /// Gets the length of the underlying [`File`].
+    ///
+    /// # Notes
+    ///
+    /// `len()` is the file size returned from [`Metadata::len()`](std::fs::Metadata)
+    /// regardless of the initial position of the [`File`].
+    fn len(&self) -> u64 {
+        self.file_size
     }
 
     fn buffer_size(&self) -> usize {
@@ -116,7 +136,7 @@ impl futures::io::AsyncRead for FileStream {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use futures::AsyncReadExt;
     use std::path::Path;
 
     async fn open_this_file(buffer_size: Option<usize>) -> FileStream {
@@ -135,12 +155,12 @@ mod tests {
 
     #[tokio::test]
     async fn stream_large_chunks() {
-        let stream = open_this_file(None).await;
-        let expected_len = stream.len();
+        let mut stream = open_this_file(None).await;
+        let expected_len: usize = stream.len().try_into().unwrap();
         assert!(expected_len > 0);
 
         let mut buf = vec![0u8; expected_len];
-        let n = stream.read(&mut buf).await.unwrap();
+        let n = stream.read_to_end(&mut buf).await.unwrap();
         assert_eq!(n, expected_len);
     }
 
@@ -151,7 +171,7 @@ mod tests {
         let stream = open_this_file(Some(BUFFER_SIZE)).await;
         assert_eq!(stream.buffer_size(), BUFFER_SIZE);
 
-        let expected_len = stream.len();
+        let expected_len: usize = stream.len().try_into().unwrap();
         let mut total_read = 0;
         let mut buf = vec![0u8; BUFFER_SIZE];
         loop {
@@ -167,7 +187,7 @@ mod tests {
     #[tokio::test]
     async fn reset() {
         let mut stream = open_this_file(None).await;
-        let expected_len = stream.len();
+        let expected_len: usize = stream.len().try_into().unwrap();
 
         // First full read.
         let mut buf1 = vec![0u8; expected_len];
