@@ -297,7 +297,9 @@ where
     // SAFETY: This is where we prevent any tasks from living beyond this method return,
     // guaranteeing no references to `buffer` exist.
     // TODO: Implement aborting spawned runtime workers.
-    tasks.join_all().await;
+    while let Some(worker_result) = tasks.next().await {
+        worker_result.map_err(map_spawned_task_error)?;
+    }
 
     overall_result
 }
@@ -628,10 +630,12 @@ mod tests {
                         .into_error());
                     }
                     let range = range.start..min(range.end, data_len);
-                    headers.add(ContentRange {
-                        range: Some((range.start, range.end - 1)),
-                        total_len: Some(self.data.len()),
-                    })?;
+                    if !range.is_empty() {
+                        headers.add(ContentRange {
+                            range: Some((range.start, range.end - 1)),
+                            total_len: Some(self.data.len()),
+                        })?
+                    };
                     headers.add(ContentLength(range.len()))?;
                     let range = range.start..range.end;
                     Ok(AsyncRawResponse::new(
