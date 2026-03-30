@@ -16,8 +16,9 @@ use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     driver::routing::{
         can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-        partition_endpoint_state::HealthStatus, remove_probe_succeeded_entry, AccountEndpointState,
-        session_manager::SessionManager, CosmosEndpoint, LocationSnapshot, LocationStateStore,
+        partition_endpoint_state::HealthStatus, remove_probe_succeeded_entry,
+        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
+        LocationStateStore,
     },
     driver::transport::CosmosTransport,
     models::{
@@ -37,13 +38,17 @@ use super::{
 
 use crate::driver::transport::{
     transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext, CosmosTransport,
+    AuthorizationContext,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
 /// It orchestrates the 7-stage operation loop described in the spec.
+///
+/// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
+/// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
+/// can take effect from the very first attempt.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
@@ -59,6 +64,7 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
+    pre_resolved_pk_range_id: Option<String>,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -102,6 +108,11 @@ pub(crate) async fn execute_operation_pipeline(
         max_failover_retries,
         max_session_retries,
     );
+
+    // Seed the partition key range ID from pre-resolution (PK range cache).
+    // This enables PPAF/PPCB partition-level overrides from the very first attempt
+    // instead of only after the first retry captures it from response headers.
+    retry_state.partition_key_range_id = pre_resolved_pk_range_id;
 
     let deadline = options
         .end_to_end_latency_policy()

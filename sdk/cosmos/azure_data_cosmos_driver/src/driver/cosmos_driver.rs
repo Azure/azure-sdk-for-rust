@@ -10,7 +10,7 @@ use crate::{
     driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference,
+        CosmosOperation, DatabaseProperties, DatabaseReference, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -26,7 +26,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use super::{
-    cache::AccountRegion,
+    cache::{parse_pk_ranges_response, AccountRegion, PartitionKeyRangeCache, PkRangeFetchResult},
     transport::{
         cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
         AuthorizationContext, CosmosTransport,
@@ -56,6 +56,10 @@ pub struct CosmosDriver {
     transport: Arc<ArcSwap<CosmosTransport>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
+    /// Cache for partition key range routing maps.
+    /// Used to pre-resolve partition key range IDs for PPAF/PPCB
+    /// before the first request attempt.
+    pk_range_cache: PartitionKeyRangeCache,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -580,32 +584,12 @@ impl CosmosDriver {
         // Spawn the background failback loop for partition-level overrides.
         location_state_store.start_failback_loop();
 
-        let default_max_failover_retries = runtime
-            .runtime_options()
-            .snapshot()
-            .max_failover_retry_count
-            .unwrap_or_else(|| {
-                std::env::var("AZURE_COSMOS_FAILOVER_RETRY_COUNT")
-                    .ok()
-                    .and_then(|v| v.parse::<u32>().ok())
-                    .unwrap_or(3)
-            });
-
-        let default_max_session_retries = runtime
-            .runtime_options()
-            .snapshot()
-            .max_session_retry_count
-            .or_else(|| {
-                std::env::var("AZURE_COSMOS_SESSION_RETRY_COUNT")
-                    .ok()
-                    .and_then(|v| v.parse::<u32>().ok())
-            });
-
         Self {
             runtime,
             options,
             transport,
             location_state_store,
+            pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
         }
@@ -741,6 +725,148 @@ impl CosmosDriver {
             .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref()))
     }
 
+    /// Fetches partition key ranges from the service for the given container.
+    ///
+    /// Builds a GET request to `/dbs/{db_rid}/colls/{container_rid}/pkranges`
+    /// using the `A-IM: Incremental feed` header for changefeed semantics.
+    /// When `continuation` is provided, it is sent as the `If-None-Match` header
+    /// for incremental fetches. The server may return 304 Not Modified if no
+    /// new ranges exist since the last fetch.
+    ///
+    /// Returns `None` if the request fails (transient error, network issue, etc.).
+    /// The caller (the PK range cache) falls back gracefully on `None`.
+    async fn fetch_pk_ranges_from_service(
+        &self,
+        container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        let transport = self.transport();
+        let account = container.account().clone();
+        let endpoint = AccountEndpoint::from(&account);
+
+        let metadata_transport = transport.get_metadata_transport(&endpoint).ok()?;
+
+        // Build the pkranges request URL.
+        let pk_ranges_path = format!("{}/pkranges", container.rid_based_path());
+        let mut url = endpoint.join_path(&pk_ranges_path);
+        // Request all ranges in a single page.
+        url.query_pairs_mut()
+            .append_pair("$maxItemCount", "-1")
+            .finish();
+
+        let mut request = Request::new(url, azure_core::http::Method::Get);
+        cosmos_headers::apply_cosmos_headers(
+            &mut request,
+            &azure_core::http::headers::HeaderValue::from(
+                self.runtime.user_agent().as_str().to_owned(),
+            ),
+        );
+
+        // Sign against the parent collection resource (pkranges is a feed under it).
+        let signing_link = format!("dbs/{}/colls/{}", container.database_rid(), container.rid());
+        request_signing::sign_request(
+            &mut request,
+            account.auth(),
+            &AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                ResourceType::PartitionKeyRange,
+                &signing_link,
+            ),
+        )
+        .await
+        .ok()?;
+
+        // Add changefeed headers.
+        request.insert_header(
+            azure_core::http::headers::HeaderName::from_static("a-im"),
+            azure_core::http::headers::HeaderValue::from_static("Incremental feed"),
+        );
+        if let Some(ref token) = continuation {
+            request.insert_header(
+                azure_core::http::headers::HeaderName::from_static("if-none-match"),
+                azure_core::http::headers::HeaderValue::from(token.clone()),
+            );
+        }
+
+        let response = metadata_transport.send(&request).await.ok()?;
+        let raw = response.try_into_raw_response().await.ok()?;
+
+        let status = raw.status();
+        let etag = raw
+            .headers()
+            .get_optional_string(&azure_core::http::headers::HeaderName::from_static("etag"))
+            .map(|s| s.to_owned());
+
+        if status == azure_core::http::StatusCode::NotModified {
+            return Some(PkRangeFetchResult {
+                ranges: vec![],
+                continuation: etag.or(continuation),
+                not_modified: true,
+            });
+        }
+
+        if !status.is_success() {
+            tracing::warn!(
+                status = %status,
+                container = %container.name(),
+                "Failed to fetch partition key ranges"
+            );
+            return None;
+        }
+
+        let body = raw.body();
+        let ranges = parse_pk_ranges_response(body)?;
+
+        Some(PkRangeFetchResult {
+            ranges,
+            continuation: etag,
+            not_modified: false,
+        })
+    }
+
+    /// Pre-resolves the partition key range ID for a data plane operation.
+    ///
+    /// When PPAF/PPCB is enabled and the operation provides both a container
+    /// reference and a partition key, uses the `PartitionKeyRangeCache` to
+    /// compute the effective partition key and look up the range ID from
+    /// the cached routing map. If the routing map is not cached, fetches it
+    /// from the service.
+    ///
+    /// Returns `None` if:
+    /// - PPAF/PPCB is not enabled
+    /// - The operation does not target a partitioned resource
+    /// - The operation has no container reference or partition key
+    /// - The cache lookup or fetch fails
+    async fn pre_resolve_partition_key_range_id(
+        &self,
+        operation: &CosmosOperation,
+    ) -> Option<String> {
+        // Only pre-resolve for partitioned data plane operations.
+        if !operation.resource_type().is_partitioned() {
+            return None;
+        }
+
+        // A pre-resolved partition key range ID is only useful for
+        // PPAF/PPCB. Skip the work when neither mechanism is enabled.
+        let snapshot = self.location_state_store.snapshot();
+        let partition_state = snapshot.partitions.as_ref();
+        if !partition_state.per_partition_automatic_failover_enabled
+            && !partition_state.per_partition_circuit_breaker_enabled
+        {
+            return None;
+        }
+
+        // Need both a container reference and a partition key.
+        let container = operation.container()?;
+        let partition_key = operation.partition_key()?;
+
+        self.pk_range_cache
+            .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
+                self.fetch_pk_ranges_from_service(c, cont)
+            })
+            .await
+    }
+
     /// Executes a Cosmos DB operation.
     ///
     /// This method computes effective options by merging the provided operation options
@@ -847,12 +973,18 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        // Step 5: Select the adaptive transport context for the chosen pipeline
+        // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
+        // When partition-level failover is enabled, resolving the range ID
+        // before the first attempt lets the pipeline apply partition overrides
+        // from the very first request instead of only after the first retry.
+        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(&operation).await;
+
+        // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        // Step 6: Initialize diagnostics
+        // Step 7: Initialize diagnostics
         let mut diagnostics_builder = DiagnosticsContextBuilder::new(
             activity_id.clone(),
             std::sync::Arc::new(DiagnosticsOptions::default()),
@@ -884,7 +1016,7 @@ impl CosmosDriver {
             self.runtime.user_agent().as_str().to_owned(),
         );
 
-        // Step 7: Execute via the new operation pipeline
+        // Step 8: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
             &effective_options,
@@ -901,6 +1033,7 @@ impl CosmosDriver {
             account_properties
                 .user_consistency_policy
                 .default_consistency_level,
+            pre_resolved_pk_range_id,
         )
         .await
     }

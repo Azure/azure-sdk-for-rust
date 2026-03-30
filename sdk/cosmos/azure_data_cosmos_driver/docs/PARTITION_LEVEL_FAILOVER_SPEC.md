@@ -153,14 +153,23 @@ same lock-free pattern.
 
 ### Request Flow Summary
 
-1. **Endpoint resolution** (Stage 2 — `resolve_endpoint`):
+1. **Partition Key Range Pre-Resolution** (in `execute_operation`, before pipeline):
+   - When PPAF/PPCB is enabled and the operation targets a partitioned resource
+     with a known container and partition key, `pre_resolve_partition_key_range_id()`
+     uses the `PartitionKeyRangeCache` to look up the partition key range ID.
+   - The cache fetches from the service on cache miss (via `/pkranges` changefeed).
+   - The resolved ID is passed to `execute_operation_pipeline` and seeded on
+     `OperationRetryState.partition_key_range_id`.
+
+2. **Endpoint resolution** (Stage 2 — `resolve_endpoint`):
    - Select account-level endpoint from `AccountEndpointState` (existing logic).
    - If partition-level failover is enabled and a `partition_key_range_id` is
-     available on the `OperationRetryState`, consult `PartitionEndpointState`
-     for an override. If found and threshold conditions are met, use the
-     partition-level override endpoint instead.
+     available on the `OperationRetryState` (from pre-resolution or response
+     header capture), consult `PartitionEndpointState` for an override. If
+     found and threshold conditions are met, use the partition-level override
+     endpoint instead.
 
-2. **Failure evaluation** (Stage 5 — `evaluate_transport_result`):
+3. **Failure evaluation** (Stage 5 — `evaluate_transport_result`):
    - Classify the response status code.
    - Emit `LocationEffect::MarkPartitionUnavailable` for eligible status codes
      (403/3, 503, 429/3092, 410). This effect carries the `partition_key_range_id`,
@@ -793,9 +802,11 @@ if retry_state.partition_key_range_id.is_none() {
 }
 ```
 
-This means that on the **first attempt**, no partition-level override is possible
-(the partition key range ID is not yet known). Partition-level routing takes effect
-starting from the **second attempt** (first retry).
+This means that on the **first attempt**, if `pre_resolve_partition_key_range_id()`
+was unable to resolve the ID (e.g., due to a cache miss that fails to fetch from
+the service), no partition-level override is possible. In practice, the PK range
+cache successfully resolves the ID before the first attempt for most operations,
+so partition-level routing is effective from the very first attempt.
 
 #### 8.1.3 Stage 5: Retry Evaluation Emits Partition Effects
 
@@ -1243,20 +1254,34 @@ until enough failures accumulate. This is a deliberate trade-off:
 - **Pro**: Prevents premature failovers on transient, self-healing errors.
 - **Con**: Requests continue to fail until the threshold is reached, adding latency.
 
-### 13.4 First Attempt Has No Partition Override
+### 13.4 First Attempt Has No Partition Override (Partially Addressed)
 
-The partition key range ID is not known until the first response is received
-(from the `x-ms-documentdb-partitionkeyrangeid` header). This means:
+~~The partition key range ID is not known until the first response is received
+(from the `x-ms-documentdb-partitionkeyrangeid` header).~~
 
-- The **first attempt** always uses account-level routing.
-- Partition-level overrides take effect starting from the **first retry**.
-- If a partition has been previously failed over and a new request arrives, the
-  override is only applied if the partition key range ID was already learned
-  from a prior operation for the same partition.
+**Update (PK Range Cache Integration)**: The driver now uses a
+`PartitionKeyRangeCache` to pre-resolve partition key range IDs before the first
+attempt. When PPAF/PPCB is enabled and the operation provides a container reference
+and partition key, `CosmosDriver::pre_resolve_partition_key_range_id()` computes
+the effective partition key hash and looks up the owning range from the cached
+routing map. This resolved ID is passed to `execute_operation_pipeline` which seeds
+it on `OperationRetryState.partition_key_range_id`, enabling partition-level
+overrides from the **very first attempt**.
 
-**Future improvement**: If the driver implements direct-mode partition key range
-resolution (bypassing the gateway for physical partition discovery), the partition
-key range ID could be known before the first attempt.
+**Cache Behaviour**:
+- On the first operation targeting a given container, the cache is empty. The driver
+  fetches partition key ranges from the service (`/pkranges` changefeed endpoint),
+  populates the routing map, and resolves the range ID — all before the first
+  pipeline attempt.
+- Subsequent operations for the same container use the cached routing map (O(log n)
+  binary search on range boundaries).
+- The cache uses incremental change feed (`A-IM: Incremental feed` + `If-None-Match`
+  etag) for efficient refresh.
+
+**Remaining limitation**: If the pre-resolution fetch fails (network error, service
+unavailable), the pipeline falls back to the response-header approach — the first
+attempt uses account-level routing, and the partition key range ID is captured from
+`x-ms-documentdb-partitionkeyrangeid` on the response for use in subsequent retries.
 
 ### 13.5 Stale Override After Account Refresh
 
@@ -1381,28 +1406,30 @@ The implementation should include comprehensive tests covering:
 
 ### 15.1 Partition Key Range ID Availability
 
-**Status**: Not yet available on `CosmosOperation` or `OperationRetryState`.
+**Status**: ✅ Implemented.
 
-The partition key range ID is essential for partition-level failover — it's the key
-for the failover override maps. In the SDK, this comes from
-`RequestContext.resolved_partition_key_range` which is set during address resolution.
+The partition key range ID is now available through two complementary mechanisms:
 
-**In the driver** (gateway mode), the partition key range ID must be extracted from
-the gateway response header `x-ms-documentdb-partitionkeyrangeid`. This requires:
+1. **Pre-resolution via `PartitionKeyRangeCache`** (proactive, before first attempt):
+   `CosmosDriver::pre_resolve_partition_key_range_id()` uses the cached routing map
+   to compute the partition key range ID from the operation's partition key. The
+   resolved ID is passed to `execute_operation_pipeline` and seeded on
+   `OperationRetryState.partition_key_range_id`. This enables PPAF/PPCB overrides
+   from the very first attempt.
 
-1. **Add `partition_key_range_id: Option<PartitionKeyRangeId>` to `OperationRetryState`**
-   (in `pipeline/components.rs`).
-2. **Extract the header from `TransportResult`** after Stage 4 of the operation loop.
-   The extraction should happen for both success and failure responses.
-3. **Wire the value into `UnavailablePartition`** when building
-   `LocationEffect::MarkPartitionUnavailable` in `evaluate_transport_result()`.
+2. **Response header extraction** (reactive, fallback):
+   The pipeline continues to capture `x-ms-documentdb-partitionkeyrangeid` from
+   response headers in Stage 4 when `partition_key_range_id` is `None`. This serves
+   as a fallback when pre-resolution fails or the operation type doesn't support it.
 
-**Limitation**: On the first attempt, no partition key range ID is available. This
-means partition-level failover cannot take effect until the first retry. This is
-acceptable because:
-- Account-level failover handles the first retry (via `MarkEndpointUnavailable`)
-- Partition-level override enhances routing for subsequent retries of the same
-  request and future requests for the same partition
+**Implementation details**:
+- `PartitionKeyRangeCache` field added to `CosmosDriver` struct.
+- `fetch_pk_ranges_from_service()` method fetches ranges via `/pkranges` changefeed
+  using the metadata transport (same pattern as `fetch_account_properties`).
+- `pre_resolve_partition_key_range_id()` checks eligibility (PPAF/PPCB enabled,
+  partitioned resource, container + partition key present) before calling the cache.
+- `execute_operation_pipeline` accepts `pre_resolved_pk_range_id: Option<String>`
+  and seeds it on `retry_state` after `OperationRetryState::initial()`.
 
 ### 15.2 `ResourceType.is_partitioned()` Method
 
@@ -1453,7 +1480,9 @@ self.apply_partition(|current| {
 | `src/driver/routing/mod.rs` | **Modify** | Export new `partition_endpoint_state` module |
 | `src/driver/pipeline/components.rs` | **Modify** | Add `partition_key_range_id: Option<PartitionKeyRangeId>` to `OperationRetryState` |
 | `src/driver/pipeline/retry_evaluation.rs` | **Modify** | Wire `partition_key_range_id` from retry state; add `MarkPartitionUnavailable` to 403/3 effects |
-| `src/driver/pipeline/operation_pipeline.rs` | **Modify** | Capture `partition_key_range_id` from response headers; consult partition overrides in `resolve_endpoint()` |
+| `src/driver/pipeline/operation_pipeline.rs` | **Modify** | Capture `partition_key_range_id` from response headers; consult partition overrides in `resolve_endpoint()`; accept `pre_resolved_pk_range_id` parameter and seed it on `OperationRetryState` |
+| `src/driver/cosmos_driver.rs` | **Modify** | Add `PartitionKeyRangeCache` field; implement `fetch_pk_ranges_from_service()` and `pre_resolve_partition_key_range_id()`; wire pre-resolution into `execute_operation()` |
+| `src/driver/cache/mod.rs` | **Modify** | Export `parse_pk_ranges_response`, `PartitionKeyRangeCache`, `PkRangeFetchResult` |
 
 ---
 
@@ -1464,6 +1493,18 @@ CosmosDriver        execute_operation_pipeline       LocationStateStore         
   │                           │                           │                        │
   │  execute_operation()      │                           │                        │
   │ ─────────────────────►    │                           │                        │
+  │                           │                           │                        │
+  │ [Step 5: pre_resolve_     │                           │                        │
+  │  partition_key_range_id() │                           │                        │
+  │  via PartitionKeyRange    │                           │                        │
+  │  Cache → pk_range_id]     │                           │                        │
+  │                           │                           │                        │
+  │  execute_operation_       │                           │                        │
+  │  pipeline(pre_resolved)   │                           │                        │
+  │ ─────────────────────►    │                           │                        │
+  │                           │ seed retry_state.         │                        │
+  │                           │ partition_key_range_id    │                        │
+  │                           │ = pre_resolved            │                        │
   │                           │                           │                        │
   │                           │ STAGE 1: snapshot()       │                        │
   │                           │ ─────────────────────►    │                        │
