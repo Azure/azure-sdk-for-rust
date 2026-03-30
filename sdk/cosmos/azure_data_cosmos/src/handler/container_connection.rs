@@ -85,6 +85,7 @@ impl ContainerConnection {
                 || cosmos_request.resource_type == ResourceType::StoredProcedures)
         {
             let pk_def = self.container_ref.partition_key_definition();
+            let collection_name = self.container_ref.name();
             let collection_rid = self.container_ref.rid();
 
             if let Some(pk_range) = cosmos_request.partition_key_range_identity.as_ref() {
@@ -92,6 +93,7 @@ impl ContainerConnection {
                     if let Some(resolved) = self
                         .pk_range_cache
                         .resolve_partition_key_range_by_id(
+                            collection_name,
                             &pk_range.collection_rid,
                             &pk_range.partition_key_range_id,
                             false,
@@ -103,7 +105,10 @@ impl ContainerConnection {
                     }
                 }
             } else if let Some(partition_key) = cosmos_request.partition_key.as_ref() {
-                let routing_map = self.pk_range_cache.try_lookup(collection_rid, None).await?;
+                let routing_map = self
+                    .pk_range_cache
+                    .try_lookup(collection_name, collection_rid, None)
+                    .await?;
 
                 if let Some(routing_map) = routing_map {
                     // Use a safe default version (2) when the service omits the version field,
@@ -126,7 +131,7 @@ impl ContainerConnection {
                             // Refresh the routing map and retry.
                             let refreshed_routing_map = self
                                 .pk_range_cache
-                                .try_lookup(collection_rid, Some(routing_map))
+                                .try_lookup(collection_name, collection_rid, Some(routing_map))
                                 .await?;
 
                             if let Some(refreshed_routing_map) = refreshed_routing_map {

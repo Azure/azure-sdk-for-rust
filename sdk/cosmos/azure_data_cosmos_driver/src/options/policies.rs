@@ -135,62 +135,6 @@ impl<T: Into<Region>> FromIterator<T> for ExcludedRegions {
     }
 }
 
-/// Controls whether JavaScript stored procedure logging is enabled.
-///
-/// When enabled, script logs from stored procedures are included in the response.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum ScriptLoggingEnabled {
-    /// Script logging is enabled.
-    Enabled,
-    /// Script logging is disabled.
-    #[default]
-    Disabled,
-}
-
-impl From<bool> for ScriptLoggingEnabled {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<ScriptLoggingEnabled> for bool {
-    fn from(value: ScriptLoggingEnabled) -> Self {
-        matches!(value, ScriptLoggingEnabled::Enabled)
-    }
-}
-
-/// Controls whether quota information is included in responses.
-///
-/// When enabled, container quota stats are returned in the response headers.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum QuotaInfoEnabled {
-    /// Quota info is enabled.
-    Enabled,
-    /// Quota info is disabled.
-    #[default]
-    Disabled,
-}
-
-impl From<bool> for QuotaInfoEnabled {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<QuotaInfoEnabled> for bool {
-    fn from(value: QuotaInfoEnabled) -> Self {
-        matches!(value, QuotaInfoEnabled::Enabled)
-    }
-}
-
 /// Controls whether TLS server certificate validation is performed for Cosmos DB emulator connections.
 ///
 /// By default, certificate validation is enabled. Disabling it is **dangerous** and should only be

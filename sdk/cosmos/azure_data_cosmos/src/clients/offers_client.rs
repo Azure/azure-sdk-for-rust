@@ -12,7 +12,7 @@ use crate::{
     operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    FeedPage, Query,
+    Query, QueryFeedPage,
 };
 use azure_core::http::Context;
 use futures::TryStreamExt;
@@ -61,7 +61,7 @@ impl OffersClient {
 
         // There should only be one offer for a given resource ID.
         let mut page_iter = executor.into_stream()?.into_pages();
-        let page: Option<FeedPage<ThroughputProperties>> = page_iter.try_next().await?;
+        let page: Option<QueryFeedPage<ThroughputProperties>> = page_iter.try_next().await?;
         Ok(page.and_then(|p| p.into_items().into_iter().next()))
     }
 

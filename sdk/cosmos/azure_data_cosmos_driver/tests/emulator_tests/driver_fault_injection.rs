@@ -41,15 +41,29 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
         context.create_item(&container, "pk1", item_json).await?;
 
         // With probability 0.0, the read should succeed
-        let read_result = context.read_item(&container, "item1", "pk1").await;
-        assert!(
-            read_result.is_ok(),
-            "Read should succeed with probability 0.0, got: {:?}",
-            read_result.err()
-        );
+        let read_response = context
+            .read_item(&container, "item1", "pk1")
+            .await
+            .expect("Read should succeed with probability 0.0");
 
         // Verify the rule was never hit
         assert_eq!(rule.hit_count(), 0, "Rule should not have been hit");
+
+        // Verify evaluations are in diagnostics
+        let diagnostics = read_response.diagnostics();
+        let requests = diagnostics.requests();
+        assert!(!requests.is_empty(), "Should have at least one request");
+
+        // At least one request should have evaluations showing the probability miss
+        let has_probability_miss = requests.iter().any(|r| {
+            r.fault_injection_evaluations().iter().any(|e| {
+                matches!(e, FaultInjectionEvaluation::ProbabilityMiss { rule_id, .. } if rule_id == "zero-probability")
+            })
+        });
+        assert!(
+            has_probability_miss,
+            "Diagnostics should contain ProbabilityMiss evaluation for the zero-probability rule"
+        );
 
         Ok(())
     })
@@ -136,11 +150,23 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
 
         // CreateItem should succeed (rule only targets ReadItem)
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-        let create_result = context.create_item(&container, "pk1", item_json).await;
+        let create_response = context
+            .create_item(&container, "pk1", item_json)
+            .await
+            .expect("CreateItem should succeed when rule targets ReadItem");
+
+        // CreateItem should show OperationMismatch for the read-only rule
+        let create_diagnostics = create_response.diagnostics();
+        let create_requests = create_diagnostics.requests();
+
+        let has_op_mismatch = create_requests.iter().any(|r| {
+            r.fault_injection_evaluations().iter().any(|e| {
+                matches!(e, FaultInjectionEvaluation::OperationMismatch { rule_id } if rule_id == "read-only-fault")
+            })
+        });
         assert!(
-            create_result.is_ok(),
-            "CreateItem should succeed when rule targets ReadItem, got: {:?}",
-            create_result.err()
+            has_op_mismatch,
+            "CreateItem diagnostics should contain OperationMismatch evaluation"
         );
 
         // ReadItem should fail (matches the rule)
@@ -208,11 +234,23 @@ pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<
             );
 
             // After hitting the limit, reads should succeed
-            let final_read = context.read_item(&container, "item1", "pk1").await;
+            let final_response = context
+                .read_item(&container, "item1", "pk1")
+                .await
+                .expect("Reads should succeed after hit limit is exhausted");
+
+            // Verify diagnostics contain HitLimitExhausted evaluation
+            let final_diagnostics = final_response.diagnostics();
+            let final_requests = final_diagnostics.requests();
+
+            let has_hit_limit = final_requests.iter().any(|r| {
+                r.fault_injection_evaluations().iter().any(|e| {
+                    matches!(e, FaultInjectionEvaluation::HitLimitExhausted { rule_id, .. } if rule_id == "hit-limit-test")
+                })
+            });
             assert!(
-                final_read.is_ok(),
-                "Reads should succeed after hit limit is exhausted, got: {:?}",
-                final_read.err()
+                has_hit_limit,
+                "Diagnostics should contain HitLimitExhausted evaluation after limit reached"
             );
 
             Ok(())

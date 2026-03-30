@@ -14,7 +14,7 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
-        RuntimeOptionsView, ThroughputControlGroupSnapshot,
+        OperationOptionsView, ThroughputControlGroupSnapshot,
     },
 };
 use arc_swap::ArcSwap;
@@ -433,7 +433,7 @@ impl CosmosDriver {
         container_name: &str,
     ) -> azure_core::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
-        let options = OperationOptions::new();
+        let options = OperationOptions::default();
 
         let db_result = self
             .execute_operation(
@@ -485,7 +485,7 @@ impl CosmosDriver {
         container_rid: &str,
     ) -> azure_core::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
-        let options = OperationOptions::new();
+        let options = OperationOptions::default();
 
         let db_result = self
             .execute_operation(
@@ -555,12 +555,11 @@ impl CosmosDriver {
         });
 
         // Resolve endpoint_unavailability_ttl from driver → runtime layers, then
-        // fall back to env var. The env_options layer is skipped because this field
-        // has no #[option(env)] annotation on RuntimeOptions.
+        // fall back to env var.
         let endpoint_unavailability_ttl = options
-            .runtime_options()
+            .operation_options()
             .endpoint_unavailability_ttl
-            .or(runtime.runtime_options().endpoint_unavailability_ttl)
+            .or(runtime.operation_options().endpoint_unavailability_ttl)
             .unwrap_or_else(|| {
                 std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
                     .ok()
@@ -671,35 +670,35 @@ impl CosmosDriver {
         Ok(())
     }
 
-    /// Constructs a [`RuntimeOptionsView`] for resolving options across all layers.
+    /// Constructs an [`OperationOptionsView`] for resolving options across all layers.
     ///
     /// The view resolves options in priority order (highest first):
     /// 1. `OperationOptions` - operation-specific overrides
     /// 2. `DriverOptions` - driver-level defaults
-    /// 3. `CosmosDriverRuntime` - global defaults
+    /// 3. `CosmosDriverRuntime` - global runtime defaults
     /// 4. Environment - env vars read at startup
-    pub fn runtime_options_view<'a>(
+    pub fn operation_options_view<'a>(
         &self,
         operation_options: &'a OperationOptions,
-    ) -> RuntimeOptionsView<'a> {
-        RuntimeOptionsView::new(
-            Some(Arc::clone(self.runtime.env_options())),
-            Some(self.runtime.runtime_options()),
-            Some(self.options.runtime_options().clone()),
-            Some(operation_options.runtime()),
+    ) -> OperationOptionsView<'a> {
+        OperationOptionsView::new(
+            Some(Arc::clone(self.runtime.env_operation_options())),
+            Some(self.runtime.operation_options()),
+            Some(self.options.operation_options().clone()),
+            Some(operation_options),
         )
     }
 
     /// Computes the effective throughput control group for an operation.
     ///
     /// Resolution order (first match wins):
-    /// 1. Explicit group name from the resolved runtime options + operation's container
+    /// 1. Explicit group name from the resolved options + operation's container
     /// 2. Default group for the operation's container
     ///
     /// Returns `None` if no applicable control group is found.
     pub(crate) fn effective_throughput_control_group(
         &self,
-        effective_options: &RuntimeOptionsView<'_>,
+        effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
     ) -> Option<ThroughputControlGroupSnapshot> {
         // First, check if an explicit group name is specified in options
@@ -743,7 +742,7 @@ impl CosmosDriver {
     ///
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    /// use azure_data_cosmos_driver::options::{OperationOptions, ContentResponseOnWrite};
+    /// use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder, ContentResponseOnWrite};
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
@@ -758,8 +757,9 @@ impl CosmosDriver {
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     ///
     /// // Execute operations with operation-specific options that override defaults
-    /// let options = OperationOptions::new()
-    ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
+    /// let options = OperationOptionsBuilder::new()
+    ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+    ///     .build();
     ///
     /// // let result = driver.execute_operation(operation, options).await?;
     /// # Ok(())
@@ -787,8 +787,8 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        // Step 1: Build the runtime options view for layered resolution.
-        let effective_options = self.runtime_options_view(&options);
+        // Step 1: Build the single OperationOptionsView for layered resolution.
+        let effective_options = self.operation_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
         // Step 1 transport pipeline does not consume this yet.
@@ -863,7 +863,6 @@ impl CosmosDriver {
         // Step 7: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
-            &options,
             &effective_options,
             self.location_state_store.as_ref(),
             &transport,
@@ -917,7 +916,7 @@ impl CosmosDriver {
     /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -998,7 +997,7 @@ mod tests {
         driver::CosmosDriverRuntimeBuilder,
         models::AccountReference,
         options::{
-            ContentResponseOnWrite, CorrelationId, RuntimeOptionsBuilder, UserAgentSuffix,
+            ContentResponseOnWrite, CorrelationId, OperationOptionsBuilder, UserAgentSuffix,
             WorkloadId,
         },
     };
@@ -1118,15 +1117,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn default_runtime_options() {
+    async fn default_operation_options() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
-            .runtime_options()
+            .operation_options()
             .throughput_control_group_name
             .is_none());
         assert!(runtime
-            .runtime_options()
-            .content_response_on_write
+            .operation_options()
+            .max_failover_retry_count
             .is_none());
         // user_agent is always available with base prefix
         assert!(runtime
@@ -1140,20 +1139,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn builder_sets_runtime_options() {
-        let opts = RuntimeOptionsBuilder::new()
-            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+    async fn builder_sets_operation_options() {
+        let opts = OperationOptionsBuilder::new()
+            .with_max_failover_retry_count(7)
             .build();
 
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_runtime_options(opts)
+            .with_operation_options(opts)
             .build()
             .await
             .unwrap();
 
         assert_eq!(
-            runtime.runtime_options().content_response_on_write,
-            Some(ContentResponseOnWrite::Disabled)
+            runtime.operation_options().max_failover_retry_count,
+            Some(7)
         );
     }
 
@@ -1292,59 +1291,48 @@ mod tests {
 
         // Initially none
         assert!(runtime
-            .runtime_options()
-            .content_response_on_write
+            .operation_options()
+            .max_failover_retry_count
             .is_none());
 
         // Replace runtime options atomically
-        let new_opts = RuntimeOptionsBuilder::new()
-            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+        let new_opts = OperationOptionsBuilder::new()
+            .with_max_failover_retry_count(5)
             .build();
-        runtime.set_runtime_options(new_opts);
+        runtime.set_operation_options(new_opts);
 
         // Now set
         assert_eq!(
-            runtime.runtime_options().content_response_on_write,
-            Some(ContentResponseOnWrite::Enabled)
+            runtime.operation_options().max_failover_retry_count,
+            Some(5)
         );
     }
 
     #[tokio::test]
     async fn effective_options_merge_priority() {
-        // Runtime has ENABLED
-        let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
-            .with_runtime_options(
-                RuntimeOptionsBuilder::new()
-                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
-                    .build(),
-            )
-            .build()
-            .await
-            .unwrap();
+        // Build runtime (no operation options at runtime level yet)
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
-        // Driver has DISABLED
-        let driver_options = DriverOptions::builder(test_account())
-            .with_runtime_options(
-                RuntimeOptionsBuilder::new()
-                    .with_content_response_on_write(ContentResponseOnWrite::Disabled)
-                    .build(),
-            )
-            .build();
+        // Driver has no operation options override either
+        let driver_options = DriverOptions::builder(test_account()).build();
 
         let driver = CosmosDriver::new(cosmos_runtime, driver_options);
 
-        // Operation has no override - should get driver's DISABLED
-        let op_options = OperationOptions::new();
-        let view = driver.runtime_options_view(&op_options);
+        // Operation has DISABLED - should get DISABLED from operation options view
+        let op_options = OperationOptionsBuilder::new()
+            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .build();
+        let view = driver.operation_options_view(&op_options);
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Disabled)
         );
 
         // Operation overrides to ENABLED - should get ENABLED
-        let op_options =
-            OperationOptions::new().with_content_response_on_write(ContentResponseOnWrite::Enabled);
-        let view = driver.runtime_options_view(&op_options);
+        let op_options = OperationOptionsBuilder::new()
+            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+            .build();
+        let view = driver.operation_options_view(&op_options);
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Enabled)
@@ -1353,29 +1341,28 @@ mod tests {
 
     #[tokio::test]
     async fn effective_options_falls_back_to_runtime() {
-        // Runtime has ENABLED
-        let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
-            .with_runtime_options(
-                RuntimeOptionsBuilder::new()
-                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
-                    .build(),
-            )
-            .build()
-            .await
-            .unwrap();
+        // Build runtime (env-level operation options are auto-loaded)
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 
         // Driver has no override
         let driver_options = DriverOptions::builder(test_account()).build();
 
         let driver = CosmosDriver::new(cosmos_runtime, driver_options);
 
-        // Operation has no override - should fall back to runtime's ENABLED
-        let op_options = OperationOptions::new();
-        let view = driver.runtime_options_view(&op_options);
+        // Operation sets ENABLED - should get ENABLED from operation options view
+        let op_options = OperationOptionsBuilder::new()
+            .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+            .build();
+        let view = driver.operation_options_view(&op_options);
         assert_eq!(
             view.content_response_on_write(),
             Some(&ContentResponseOnWrite::Enabled)
         );
+
+        // Operation has no override - env has no override - should be None
+        let op_options = OperationOptions::default();
+        let view = driver.operation_options_view(&op_options);
+        assert!(view.content_response_on_write().is_none());
     }
 
     #[test]

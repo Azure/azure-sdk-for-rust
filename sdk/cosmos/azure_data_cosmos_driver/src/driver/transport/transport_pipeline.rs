@@ -279,6 +279,18 @@ pub(crate) async fn execute_transport_pipeline(
             RequestEvent::new(RequestEventType::TransportStart),
         );
 
+        #[cfg(feature = "fault_injection")]
+        let eval_id = {
+            use crate::fault_injection::next_evaluation_id;
+            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REQUEST_ID;
+            let id = next_evaluation_id();
+            http_request.headers_mut().insert(
+                FAULT_INJECTION_REQUEST_ID.clone(),
+                azure_core::http::headers::HeaderValue::from(id.to_string()),
+            );
+            id
+        };
+
         let result = execute_http_attempt(
             &http_request,
             ctx.transport,
@@ -289,6 +301,14 @@ pub(crate) async fn execute_transport_pipeline(
             &endpoint_key,
         )
         .await;
+
+        #[cfg(feature = "fault_injection")]
+        {
+            let evals = crate::fault_injection::take_evaluations(eval_id);
+            if !evals.is_empty() {
+                diagnostics.set_fault_injection_evaluations(request_handle, evals);
+            }
+        }
         if !attempt_span.is_disabled() {
             attempt_span.record("outcome", format!("{}", result.result.outcome));
         }
@@ -666,6 +686,9 @@ fn map_http_response_payload(
         }
         if let Some(token) = cosmos_headers.session_token.clone() {
             req.with_session_token(token.to_string());
+        }
+        if let Some(duration) = cosmos_headers.server_duration_ms {
+            req.with_server_duration_ms(duration);
         }
     });
 

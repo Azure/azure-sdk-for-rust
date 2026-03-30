@@ -17,7 +17,7 @@ use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        RuntimeOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
+        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
         ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
@@ -49,17 +49,17 @@ use super::{
 /// use azure_data_cosmos_driver::driver::{
 ///     CosmosDriverRuntime, CosmosDriverRuntimeBuilder,
 /// };
-/// use azure_data_cosmos_driver::options::{RuntimeOptions, RuntimeOptionsBuilder, ContentResponseOnWrite};
+/// use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
 /// # async fn example() -> azure_core::Result<()> {
-/// let runtime = RuntimeOptionsBuilder::new()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+/// let operation_options = OperationOptionsBuilder::new()
+///     .with_max_failover_retry_count(5)
 ///     .build();
 ///
 /// let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
-///     .with_runtime_options(runtime)
+///     .with_operation_options(operation_options)
 ///     .build()
 ///     .await?;
 ///
@@ -72,7 +72,7 @@ use super::{
 /// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
 ///
 /// // Later, replace runtime defaults atomically
-/// // cosmos_runtime.set_runtime_options(new_options);
+/// // cosmos_runtime.set_operation_options(new_options);
 /// # Ok(())
 /// # }
 /// ```
@@ -101,14 +101,14 @@ pub struct CosmosDriverRuntime {
     /// Factory for creating HTTP clients, shared across per-account transports.
     http_client_factory: Arc<dyn HttpClientFactory>,
 
-    /// Environment-level runtime options, populated once from env vars at build time.
-    env_options: Arc<RuntimeOptions>,
+    /// Environment-level operation options, populated once from env vars at build time.
+    env_operation_options: Arc<OperationOptions>,
 
-    /// User-provided runtime-level default options, swappable via interior mutability.
+    /// User-provided default operation options, swappable via interior mutability.
     ///
     /// Wrapped in `RwLock<Arc<...>>` so that shared references can atomically
     /// replace the options while readers obtain a cheap `Arc` snapshot.
-    runtime_options: RwLock<Arc<RuntimeOptions>>,
+    operation_options: RwLock<Arc<OperationOptions>>,
 
     /// Computed user agent string for HTTP requests.
     ///
@@ -220,32 +220,32 @@ impl CosmosDriverRuntime {
         self.fault_injection_enabled
     }
 
-    /// Returns the environment-level runtime options (populated from env vars at build time).
-    pub fn env_options(&self) -> &Arc<RuntimeOptions> {
-        &self.env_options
+    /// Returns the environment-level operation options (populated from env vars at build time).
+    pub fn env_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_operation_options
     }
 
-    /// Returns a snapshot of the runtime-level default options.
+    /// Returns a snapshot of the default operation options.
     ///
     /// The returned `Arc` is a cheap clone of the current value.
     /// In-flight readers are unaffected by concurrent calls to
-    /// [`set_runtime_options`](Self::set_runtime_options).
-    pub fn runtime_options(&self) -> Arc<RuntimeOptions> {
+    /// [`set_operation_options`](Self::set_operation_options).
+    pub fn operation_options(&self) -> Arc<OperationOptions> {
         // Poisoning is safe to ignore: the write side is an atomic Arc swap with no
         // multi-step mutation, so the value is always in a consistent state.
-        self.runtime_options
+        self.operation_options
             .read()
             .unwrap_or_else(|e| e.into_inner())
             .clone()
     }
 
-    /// Replaces the runtime-level default options atomically.
+    /// Replaces the default operation options atomically.
     ///
     /// In-flight operations that already obtained a snapshot via
-    /// [`runtime_options`](Self::runtime_options) are unaffected.
-    pub fn set_runtime_options(&self, options: RuntimeOptions) {
+    /// [`operation_options`](Self::operation_options) are unaffected.
+    pub fn set_operation_options(&self, options: OperationOptions) {
         *self
-            .runtime_options
+            .operation_options
             .write()
             .unwrap_or_else(|e| e.into_inner()) = Arc::new(options);
     }
@@ -396,8 +396,8 @@ impl CosmosDriverRuntime {
 
 /// Builder for creating [`CosmosDriverRuntime`].
 ///
-/// Use `RuntimeOptionsBuilder` to create runtime options, then pass them
-/// to this builder via [`with_runtime_options()`](Self::with_runtime_options).
+/// Use `OperationOptionsBuilder` to create operation options, then pass them
+/// to this builder via [`with_operation_options()`](Self::with_operation_options).
 ///
 /// # User Agent
 ///
@@ -418,7 +418,7 @@ impl CosmosDriverRuntime {
 pub struct CosmosDriverRuntimeBuilder {
     client_options: Option<ClientOptions>,
     connection_pool: Option<ConnectionPoolOptions>,
-    runtime_options: Option<RuntimeOptions>,
+    operation_options: Option<OperationOptions>,
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
@@ -448,11 +448,11 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Sets the runtime options (defaults for operations).
+    /// Sets the operation options (defaults for operations at the runtime layer).
     ///
-    /// Use `RuntimeOptionsBuilder` to create the runtime options.
-    pub fn with_runtime_options(mut self, options: RuntimeOptions) -> Self {
-        self.runtime_options = Some(options);
+    /// Use `OperationOptionsBuilder` to create the operation options.
+    pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
+        self.operation_options = Some(options);
         self
     }
 
@@ -683,8 +683,8 @@ impl CosmosDriverRuntimeBuilder {
             connection_pool,
             bootstrap_transport,
             http_client_factory,
-            env_options: Arc::new(RuntimeOptions::from_env()),
-            runtime_options: RwLock::new(Arc::new(self.runtime_options.unwrap_or_default())),
+            env_operation_options: Arc::new(OperationOptions::from_env()),
+            operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,

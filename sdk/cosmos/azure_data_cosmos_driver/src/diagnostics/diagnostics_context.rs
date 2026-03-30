@@ -405,6 +405,9 @@ pub struct RequestDiagnostics {
     /// Session token from response (for session consistency).
     session_token: Option<String>,
 
+    /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
+    server_duration_ms: Option<crate::models::FiniteF64>,
+
     /// When this request was started.
     #[serde(skip)]
     started_at: Instant,
@@ -444,6 +447,14 @@ pub struct RequestDiagnostics {
 
     /// Error message if the request failed.
     error: Option<String>,
+
+    /// Fault injection rule evaluations for this request.
+    ///
+    /// Populated only when the `fault_injection` feature is enabled and
+    /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
+    /// via a request-scoped concurrent map keyed by evaluation request ID.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }
 
 impl RequestDiagnostics {
@@ -470,6 +481,7 @@ impl RequestDiagnostics {
             request_charge: RequestCharge::default(),
             activity_id: None,
             session_token: None,
+            server_duration_ms: None,
             started_at: Instant::now(),
             completed_at: None,
             duration_ms: 0,
@@ -480,6 +492,8 @@ impl RequestDiagnostics {
             timed_out: false,
             request_sent: RequestSentStatus::Unknown,
             error: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_evaluations: Vec::new(),
         }
     }
 
@@ -571,6 +585,11 @@ impl RequestDiagnostics {
         self.session_token = Some(token);
     }
 
+    /// Sets the server-side request duration in milliseconds.
+    pub(crate) fn with_server_duration_ms(&mut self, duration: f64) {
+        self.server_duration_ms = Some(crate::models::FiniteF64::new_lossy(duration));
+    }
+
     /// Adds a pipeline event.
     pub(crate) fn add_event(&mut self, event: RequestEvent) {
         self.events.push(event);
@@ -653,6 +672,11 @@ impl RequestDiagnostics {
         self.session_token.as_deref()
     }
 
+    /// Returns the server-side request processing duration in milliseconds, if available.
+    pub fn server_duration_ms(&self) -> Option<f64> {
+        self.server_duration_ms.map(|f| f.value())
+    }
+
     /// Returns when this request was started.
     pub fn started_at(&self) -> Instant {
         self.started_at
@@ -701,6 +725,26 @@ impl RequestDiagnostics {
     /// Returns the error message if the request failed.
     pub fn error(&self) -> Option<&str> {
         self.error.as_deref()
+    }
+
+    /// Returns fault injection rule evaluations for this request.
+    ///
+    /// Each entry describes why a rule was applied, skipped, or missed.
+    /// Only populated when the `fault_injection` feature is enabled.
+    #[cfg(feature = "fault_injection")]
+    pub fn fault_injection_evaluations(
+        &self,
+    ) -> &[crate::fault_injection::FaultInjectionEvaluation] {
+        &self.fault_injection_evaluations
+    }
+
+    /// Sets the fault injection evaluations for this request.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_evaluations(
+        &mut self,
+        evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
+    ) {
+        self.fault_injection_evaluations = evaluations;
     }
 }
 
@@ -1354,6 +1398,18 @@ impl DiagnosticsContextBuilder {
     pub(crate) fn increment_local_shard_retry_count(&mut self, handle: RequestHandle) {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.increment_local_shard_retry_count();
+        }
+    }
+
+    /// Sets fault injection evaluations on a request.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn set_fault_injection_evaluations(
+        &mut self,
+        handle: RequestHandle,
+        evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
+    ) {
+        if let Some(request) = self.requests.get_mut(handle.0) {
+            request.set_fault_injection_evaluations(evaluations);
         }
     }
 
@@ -2017,30 +2073,65 @@ mod tests {
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
         let actual = normalize_diagnostics_json(json);
-        let expected: serde_json::Value = serde_json::json!({
-            "activity_id": "test-id",
-            "total_duration_ms": 0,
-            "total_request_charge": 1.0,
-            "request_count": 1,
-            "requests": [{
-                "execution_context": "initial",
-                "pipeline_type": "data_plane",
-                "transport_security": "secure",
-                "transport_kind": "gateway",
-                "transport_http_version": "http11",
-                "region": "westus2",
-                "endpoint": "https://test.documents.azure.com/",
-                "status": "200",
-                "request_charge": 1.0,
-                "activity_id": null,
-                "session_token": null,
-                "duration_ms": 0,
-                "events": [],
-                "timed_out": false,
-                "request_sent": "sent",
-                "error": null
-            }]
-        });
+        let expected: serde_json::Value = {
+            #[cfg(feature = "fault_injection")]
+            {
+                serde_json::json!({
+                    "activity_id": "test-id",
+                    "total_duration_ms": 0,
+                    "total_request_charge": 1.0,
+                    "request_count": 1,
+                    "requests": [{
+                        "execution_context": "initial",
+                        "pipeline_type": "data_plane",
+                        "transport_security": "secure",
+                        "transport_kind": "gateway",
+                        "transport_http_version": "http11",
+                        "region": "westus2",
+                        "endpoint": "https://test.documents.azure.com/",
+                        "status": "200",
+                        "request_charge": 1.0,
+                        "activity_id": null,
+                        "session_token": null,
+                        "server_duration_ms": null,
+                        "duration_ms": 0,
+                        "events": [],
+                        "timed_out": false,
+                        "request_sent": "sent",
+                        "error": null,
+                        "fault_injection_evaluations": []
+                    }]
+                })
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                serde_json::json!({
+                    "activity_id": "test-id",
+                    "total_duration_ms": 0,
+                    "total_request_charge": 1.0,
+                    "request_count": 1,
+                    "requests": [{
+                        "execution_context": "initial",
+                        "pipeline_type": "data_plane",
+                        "transport_security": "secure",
+                        "transport_kind": "gateway",
+                        "transport_http_version": "http11",
+                        "region": "westus2",
+                        "endpoint": "https://test.documents.azure.com/",
+                        "status": "200",
+                        "request_charge": 1.0,
+                        "activity_id": null,
+                        "session_token": null,
+                        "server_duration_ms": null,
+                        "duration_ms": 0,
+                        "events": [],
+                        "timed_out": false,
+                        "request_sent": "sent",
+                        "error": null
+                    }]
+                })
+            }
+        };
         assert_eq!(actual, expected, "Detailed JSON mismatch.\nActual:\n{json}");
     }
 

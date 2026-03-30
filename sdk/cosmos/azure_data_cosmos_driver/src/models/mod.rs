@@ -27,8 +27,15 @@ pub(crate) mod resource_id;
 mod resource_reference;
 mod user_agent;
 pub(crate) mod vector_session_token;
-
 pub(crate) use cosmos_headers::request_header_names;
+#[allow(dead_code)]
+pub(crate) mod effective_partition_key;
+#[allow(dead_code)]
+mod murmur_hash;
+#[allow(dead_code)]
+pub(crate) mod partition_key_range;
+#[allow(dead_code)]
+pub(crate) mod range;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
@@ -42,6 +49,7 @@ pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
 pub use etag::{ETag, Precondition};
 pub use partition_key::PartitionKey;
+pub(crate) use partition_key::PartitionKeyValue;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
@@ -560,56 +568,6 @@ impl AsRef<str> for SessionToken {
 impl std::fmt::Display for SessionToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
-    }
-}
-
-/// Represents a trigger to be invoked before or after an operation.
-///
-/// Triggers are server-side scripts that can be automatically invoked
-/// during create, update, and delete operations on items.
-///
-/// This type is serialized into request headers to specify which trigger to invoke.
-/// For resource references to trigger definitions, see the resource reference types.
-#[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct TriggerInvocation {
-    /// The name/id of the trigger to invoke.
-    pub name: Cow<'static, str>,
-}
-
-impl TriggerInvocation {
-    /// Creates a new trigger invocation with the given name.
-    pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
-        Self { name: name.into() }
-    }
-
-    /// Returns the trigger name as a string slice.
-    pub fn as_str(&self) -> &str {
-        &self.name
-    }
-}
-
-impl AsRef<str> for TriggerInvocation {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl std::fmt::Display for TriggerInvocation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.name)
-    }
-}
-
-impl From<&'static str> for TriggerInvocation {
-    fn from(name: &'static str) -> Self {
-        Self::new(name)
-    }
-}
-
-impl From<String> for TriggerInvocation {
-    fn from(name: String) -> Self {
-        Self::new(name)
     }
 }
 

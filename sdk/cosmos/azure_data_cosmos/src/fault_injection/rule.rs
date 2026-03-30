@@ -4,7 +4,10 @@
 //! Defines fault injection rules that combine conditions and results.
 
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::Mutex;
 use std::time::Instant;
+
+use azure_core::http::StatusCode;
 
 use super::condition::FaultInjectionCondition;
 use super::result::FaultInjectionResult;
@@ -26,8 +29,10 @@ pub struct FaultInjectionRule {
     pub id: String,
     /// Whether the rule is currently enabled.
     enabled: AtomicBool,
-    /// Number of times the rule has been matched and applied.
+    /// Number of times the rule has been matched (including matches where no fault was injected).
     hit_count: AtomicU32,
+    /// HTTP status codes of responses for matched requests that passed through without fault injection.
+    passthrough_statuses: Mutex<Vec<StatusCode>>,
 }
 
 /// Cloning snapshots the current `hit_count` and `enabled` state rather than
@@ -43,6 +48,7 @@ impl Clone for FaultInjectionRule {
             id: self.id.clone(),
             enabled: AtomicBool::new(self.enabled.load(Ordering::SeqCst)),
             hit_count: AtomicU32::new(self.hit_count.load(Ordering::SeqCst)),
+            passthrough_statuses: Mutex::new(self.passthrough_statuses.lock().unwrap().clone()),
         }
     }
 }
@@ -80,6 +86,26 @@ impl FaultInjectionRule {
     /// Resets the hit count to zero.
     pub fn reset_hit_count(&self) {
         self.hit_count.store(0, Ordering::SeqCst);
+    }
+
+    /// Records the HTTP status code of a response for a matched request that
+    /// passed through without fault injection (spy/passthrough mode).
+    pub(super) fn record_passthrough_status(&self, status: StatusCode) {
+        self.passthrough_statuses.lock().unwrap().push(status);
+    }
+
+    /// Returns the HTTP status codes of responses for matched requests that
+    /// passed through without fault injection.
+    ///
+    /// When a rule matches a request but does not inject a fault (e.g., no
+    /// `error_type` or `custom_response` is set), the real service response
+    /// status is recorded here. This enables "spy" rules that observe requests
+    /// without modifying them.
+    ///
+    /// The history grows unbounded for the lifetime of the rule. This is
+    /// designed for test scenarios with a bounded number of requests.
+    pub fn passthrough_statuses(&self) -> Vec<StatusCode> {
+        self.passthrough_statuses.lock().unwrap().clone()
     }
 }
 
@@ -155,6 +181,7 @@ impl FaultInjectionRuleBuilder {
             id: self.id,
             enabled: AtomicBool::new(true),
             hit_count: AtomicU32::new(0),
+            passthrough_statuses: Mutex::new(Vec::new()),
         }
     }
 }

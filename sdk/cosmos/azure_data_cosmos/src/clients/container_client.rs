@@ -4,11 +4,14 @@
 use crate::{
     clients::OffersClient,
     feed_range::FeedRange,
-    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
+    models::{
+        BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
+        ThroughputProperties,
+    },
     options::{BatchOptions, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
+    transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
     ReplaceContainerOptions, ThroughputOptions,
 };
@@ -107,7 +110,7 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
         let response: CosmosResponse<ContainerProperties> = self
@@ -115,7 +118,7 @@ impl ContainerClient {
             .send(cosmos_request, Context::default())
             .await?;
 
-        Ok(response)
+        Ok(ResourceResponse::new(response))
     }
 
     /// Updates the indexing policy of the container.
@@ -151,13 +154,14 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ReplaceContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
             .json(&properties)
             .build()?;
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ResourceResponse::new)
     }
 
     /// Reads container throughput properties, if any.
@@ -200,7 +204,7 @@ impl ContainerClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ThroughputProperties>> {
         #[allow(
             unused_variables,
             reason = "The 'options' variable may be used in the future"
@@ -215,7 +219,10 @@ impl ContainerClient {
             .expect("service should always return a '_rid' for a container");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.replace(Context::default(), throughput).await
+        offers_client
+            .replace(Context::default(), throughput)
+            .await
+            .map(ResourceResponse::new)
     }
 
     /// Deletes this container.
@@ -232,12 +239,13 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<DeleteContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+    ) -> azure_core::Result<ResourceResponse<()>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ResourceResponse::new)
     }
 
     /// Creates a new item in the container.
@@ -275,7 +283,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -308,7 +316,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+    ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let excluded_regions = options.excluded_regions.clone();
         let mut cosmos_request =
@@ -322,6 +330,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ItemResponse::new)
     }
 
     /// Replaces an existing item in the container.
@@ -360,7 +369,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -393,7 +402,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+    ) -> azure_core::Result<ItemResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
         let excluded_regions = options.excluded_regions.clone();
@@ -407,6 +416,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ItemResponse::new)
     }
 
     /// Creates or replaces an item in the container.
@@ -448,7 +458,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -480,7 +490,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+    ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.clone().unwrap_or_default();
         let excluded_regions = options.excluded_regions.clone();
         let mut cosmos_request =
@@ -494,7 +504,8 @@ impl ContainerClient {
         return self
             .container_connection
             .send(cosmos_request, Context::default())
-            .await;
+            .await
+            .map(ItemResponse::new);
     }
 
     /// Reads a specific item from the container.
@@ -533,7 +544,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<T>> {
+    ) -> azure_core::Result<ItemResponse<T>> {
         let mut options = options.unwrap_or_default();
 
         // Read APIs should always return the item, ignoring whatever the user set.
@@ -550,6 +561,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(|r| ItemResponse::new(r))
     }
 
     /// Deletes an item from the container.
@@ -578,7 +590,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+    ) -> azure_core::Result<ItemResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
         let excluded_regions = options.excluded_regions.clone();
@@ -591,6 +603,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ItemResponse::new)
     }
 
     /// Executes a single-partition query against items in the container.
@@ -727,7 +740,7 @@ impl ContainerClient {
         &self,
         batch: TransactionalBatch,
         options: Option<BatchOptions>,
-    ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse>> {
+    ) -> azure_core::Result<BatchResponse> {
         let options = options.unwrap_or_default();
         let partition_key = batch.partition_key().clone();
 
@@ -741,6 +754,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(BatchResponse::new)
     }
 
     /// Gets the feed ranges for this container.

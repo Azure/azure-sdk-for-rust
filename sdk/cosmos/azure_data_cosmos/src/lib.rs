@@ -31,7 +31,7 @@ pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
-pub use models::CosmosResponse;
+pub use models::{BatchResponse, CosmosDiagnostics, ItemResponse, ResourceResponse};
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
@@ -41,7 +41,7 @@ pub use transactional_batch::{
     TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
 };
 
-pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
+pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
 pub use feed_range::FeedRange;
 mod background_task_manager;
 mod cosmos_request;
