@@ -46,6 +46,7 @@ struct TestItem {
 /// Injects a 408 on the hub region for ReadItem with a hit limit of 1.
 /// The read should fail on the hub region and succeed via cross-region
 /// retry on the satellite region.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -134,6 +135,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 ///
 /// Injects a 408 on all regions for CreateItem. The write should fail
 /// with a 408 status code rather than retrying on a different region.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -205,6 +207,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
 ///
 /// Same as the create test above but for upserts, verifying that the no-cross-region
 /// retry policy applies consistently to all write operations.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -277,6 +280,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 /// Queries are read-only operations and should cross-region retry just like
 /// point reads. Injects a 408 on the hub region for QueryItem with a hit
 /// limit of 1, then verifies the query succeeds via the satellite region.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -355,6 +359,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 /// Injects a 500 on the hub region for ReadItem with a hit limit of 1.
 /// The read should fail on the hub region and succeed via cross-region
 /// retry on the satellite region.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -442,6 +447,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
 ///
 /// Injects a 408 on all regions for ReplaceItem. The replace should fail
 /// with a 408 status code rather than retrying on a different region.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -530,6 +536,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
 ///
 /// Injects a 408 on all regions for DeleteItem. The delete should fail
 /// with a 408 status code rather than retrying on a different region.
+#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
 pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()

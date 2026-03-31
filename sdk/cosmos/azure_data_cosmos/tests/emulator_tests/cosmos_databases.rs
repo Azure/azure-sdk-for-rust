@@ -11,6 +11,7 @@ use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Que
 use framework::TestClient;
 use futures::TryStreamExt;
 
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
@@ -57,6 +58,7 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     })
     .await
 }
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 #[cfg(feature = "key_auth")]
 pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {

@@ -50,6 +50,7 @@ fn create_test_item(unique_id: &str) -> TestItem {
 
 /// Test probability fault injection - fault should only apply based on probability.
 /// With probability 0.0, the fault should never be applied.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -112,6 +113,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 }
 
 /// Test probability fault injection - with probability 1.0, fault should always apply.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -177,6 +179,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
 /// Test retry on transient errors with hit_limit.
 /// Injects 429 for the first 2 requests, verifies 3rd succeeds.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -244,6 +247,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 }
 
 /// Test DeleteItem fault - verify CRUD operations unaffected.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -326,6 +330,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 }
 
 /// Test container-specific fault - verify other containers unaffected.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -414,6 +419,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 }
 
 /// Test multiple rules priority - first matching rule wins.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem
@@ -487,6 +493,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 
 /// Test that first rule is skipped because its start_time is in the future.
 /// Second rule applies immediately and should win.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with a future start_time (won't be active yet)
@@ -561,6 +568,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 
 /// Test that first rule is expired because its end_time is in the past.
 /// Second rule should win.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with an end_time in the past (already expired)
@@ -637,6 +645,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 }
 
 /// Test hit_limit behavior - fault stops after N applications.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -715,6 +724,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 }
 
 /// Test empty rules - no fault injection, operations should succeed.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
     let fault_builder = FaultInjectionClientBuilder::new();
@@ -762,6 +772,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 }
 
 /// Test that item operations succeed when metadata operations are faulted.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -865,6 +876,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
 /// Test that disabling a rule at runtime prevents fault injection,
 /// and re-enabling it resumes injection.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -957,6 +969,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 /// 1. The pkranges code path is exercised (`hit_count >= 1`).
 /// 2. The service returns 200 (the URL uses name-based addressing, not mixed RID).
 /// 3. The item operation succeeds end-to-end with correct partition key routing.
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn Error>> {
     // Spy rule: no error, no custom response → passthrough with status recording.

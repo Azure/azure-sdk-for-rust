@@ -13,6 +13,7 @@ use azure_data_cosmos::{
 };
 use framework::TestClient;
 
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
@@ -57,6 +58,7 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
     .await
 }
 
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -96,6 +98,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     .await
 }
 
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
 pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
