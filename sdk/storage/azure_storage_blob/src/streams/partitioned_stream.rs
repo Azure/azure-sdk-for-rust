@@ -1,7 +1,7 @@
 use pin_project::pin_project;
 use std::{mem, num::NonZero, pin::Pin, slice, task::Poll};
 
-use azure_core::stream::SeekableStream;
+use azure_core::{error::ErrorKind, stream::SeekableStream, Error};
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::FusedStream, AsyncRead, Stream};
 
@@ -30,7 +30,7 @@ impl PartitionedStream {
             partition_len,
             total_read: 0,
             inner_complete: false,
-        }
+        })
     }
 }
 
@@ -119,8 +119,8 @@ mod tests {
                 let data = get_random_data(part_len * part_count);
                 let stream = PartitionedStream::new(
                     Box::new(BytesStream::new(data.clone())),
-                    NonZero::new(part_len).unwrap(),
-                );
+                    NonZero::new(part_len as u64).unwrap(),
+                )?;
 
                 let parts: Vec<_> = stream.try_collect().await?;
 
@@ -142,8 +142,8 @@ mod tests {
                     let data = get_random_data(part_len * (part_count - 1) + dangling_len);
                     let stream = PartitionedStream::new(
                         Box::new(BytesStream::new(data.clone())),
-                        NonZero::new(part_len).unwrap(),
-                    );
+                        NonZero::new(part_len as u64).unwrap(),
+                    )?;
 
                     let parts: Vec<_> = stream.try_collect().await?;
 
@@ -169,8 +169,8 @@ mod tests {
             let data = get_random_data(len);
             let mut stream = PartitionedStream::new(
                 Box::new(BytesStream::new(data.clone())),
-                NonZero::new(len).unwrap(),
-            );
+                NonZero::new(len as u64).unwrap(),
+            )?;
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -187,8 +187,8 @@ mod tests {
             let data = get_random_data(len);
             let mut stream = PartitionedStream::new(
                 Box::new(BytesStream::new(data.clone())),
-                NonZero::new(part_len).unwrap(),
-            );
+                NonZero::new(part_len as u64).unwrap(),
+            )?;
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -204,8 +204,8 @@ mod tests {
             let data = get_random_data(0);
             let mut stream = PartitionedStream::new(
                 Box::new(BytesStream::new(data.clone())),
-                NonZero::new(part_len).unwrap(),
-            );
+                NonZero::new(part_len as u64).unwrap(),
+            )?;
 
             assert!(stream.try_next().await?.is_none());
         }
