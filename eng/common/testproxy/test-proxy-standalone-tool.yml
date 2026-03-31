@@ -93,7 +93,7 @@ steps:
     - pwsh: |
         $proxyUrl = "http://localhost:5000"
         if ($env:ASPNETCORE_URLS) {
-          $proxyUrl = $($env:ASPNETCORE_URLS).Split(';')[0]
+          $proxyUrl = $($env:ASPNETCORE_URLS).Split(';')[0].TrimEnd('/')
         }
         for ($i = 0; $i -lt 10; $i++) {
             try {
