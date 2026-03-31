@@ -5,11 +5,10 @@
 
 use std::{fmt, sync::Arc};
 
-use azure_core::http::{AsyncRawResponse, HttpClient, Request};
-
 use crate::diagnostics::{TransportHttpVersion, TransportKind};
 
 use super::{
+    cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
     http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
     sharded_transport::{EndpointKey, ShardedHttpTransport, TransportDispatch},
 };
@@ -25,7 +24,7 @@ use crate::options::ConnectionPoolOptions;
 #[derive(Clone)]
 pub(crate) enum AdaptiveTransport {
     /// Unsharded HTTP/1.1 gateway transport (TCP keepalive, no HTTP/2 sharding).
-    Gateway(Arc<dyn HttpClient>),
+    Gateway(Arc<dyn TransportClient>),
     /// Per-endpoint HTTP/2 sharded gateway transport (HTTP/2 keepalive, no TCP keepalive).
     ShardedGateway(Arc<ShardedHttpTransport>),
     /// Gateway 2.0 transport with per-endpoint HTTP/2 sharding.
@@ -94,14 +93,16 @@ impl AdaptiveTransport {
 
     /// Sends an HTTP request through the underlying transport.
     #[tracing::instrument(level = tracing::Level::TRACE, skip_all, err, fields(
-        method = %request.method(),
-        url = %request.url(),
+        method = %request.method,
+        url = %request.url,
     ))]
-    pub(crate) async fn send(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+    pub(crate) async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         match self {
-            Self::Gateway(client) => client.execute_request(request).await,
+            Self::Gateway(client) => client.send(request).await,
             Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
-                let endpoint_key = EndpointKey::try_from(request.url())?;
+                let endpoint_key = EndpointKey::try_from(&request.url).map_err(|e| {
+                    TransportError::new(e, crate::diagnostics::RequestSentStatus::NotSent)
+                })?;
                 transport
                     .send(request, None, &endpoint_key, None)
                     .await
@@ -112,14 +113,14 @@ impl AdaptiveTransport {
 
     pub(crate) async fn send_with_dispatch(
         &self,
-        request: &Request,
+        request: &HttpRequest,
         excluded_shard_id: Option<u64>,
         endpoint_key: &EndpointKey,
         preferred_shard_id: Option<u64>,
     ) -> TransportDispatch {
         match self {
             Self::Gateway(client) => TransportDispatch {
-                result: client.execute_request(request).await,
+                result: client.send(request).await,
                 shard_id: None,
                 shard_diagnostics: None,
             },
