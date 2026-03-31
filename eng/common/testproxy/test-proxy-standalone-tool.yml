@@ -91,10 +91,14 @@ steps:
         DOTNET_ROLL_FORWARD: 'Major'
 
     - pwsh: |
+        $proxyUrl = "http://localhost:5000/"
+        if ($env:ASPNETCORE_URLS) {
+          $proxyUrl = $($env:ASPNETCORE_URLS).Split(';')[0]
+        }
         for ($i = 0; $i -lt 10; $i++) {
             try {
-                Write-Host "Invoke-WebRequest -Uri `"http://localhost:5000/Admin/IsAlive`" | Out-Null"
-                Invoke-WebRequest -Uri "http://localhost:5000/Admin/IsAlive" | Out-Null
+                Write-Host "Invoke-WebRequest -Uri `$proxyUrl/Admin/IsAlive`" | Out-Null"
+                Invoke-WebRequest -Uri "$proxyUrl/Admin/IsAlive" | Out-Null
                 Write-Host "Successfully connected to the test proxy on port 5000."
                 exit 0
             } catch {
