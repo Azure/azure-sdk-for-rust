@@ -1151,3 +1151,59 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     container_client.delete(None).await?;
     Ok(())
 }
+
+// Demonstrates the friction of using a download response body as the source for a subsequent
+// upload.
+// `BlobClient::download` returns `AsyncResponse<BlobClientDownloadResult>`, whose body
+// is a `PinnedStream`: a single-use, forward-only async byte stream.
+// `BlobClient::upload` requires `RequestContent<Bytes, NoFormat>`, which internally becomes a `Body` that must
+// implement `SeekableStream` for the partitioned (multi-block) upload path. `SeekableStream`
+// requires both `len()` (known upfront) and `reset()` (replay on retry), neither of which a
+// streaming HTTP response body can provide. As a result, the caller is forced to buffer the
+// entire download into memory before uploading, regardless of blob size.
+#[recorded::test]
+async fn test_download_then_upload_requires_full_buffer(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let dest_blob_client = container_client.blob_client("dest-blob");
+
+    let original_data = b"hello from the other side";
+
+    // Arrange — upload a source blob
+    source_blob_client
+        .upload(RequestContent::from(original_data.to_vec()), None)
+        .await?;
+
+    // Act — download the blob
+    // `download` returns AsyncResponse<BlobClientDownloadResult>: the body is a PinnedStream.
+    // PinnedStream is a Pin<Box<dyn Stream<Item=Result<Bytes>> + Send>>: it is forward-only
+    // and cannot be reset or asked for its length without consuming it first.
+    let download_response = source_blob_client.download(None).await?;
+
+    // The content-length header is available, but the body stream itself has no `len()` method
+    // and no `reset()`. There is no conversion from AsyncResponseBody into RequestContent or
+    // Body::SeekableStream. The only path forward is to collect the entire stream into memory.
+    let buffered: Bytes = download_response.into_body().collect().await?;
+
+    // Only after full buffering can the data be passed to `upload`.
+    dest_blob_client
+        .upload(RequestContent::from(buffered.to_vec()), None)
+        .await?;
+
+    // Assert — round-trip fidelity
+    let downloaded = dest_blob_client
+        .download(None)
+        .await?
+        .into_body()
+        .collect()
+        .await?;
+    assert_eq!(original_data.as_slice(), downloaded.as_ref());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
