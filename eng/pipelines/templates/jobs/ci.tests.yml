@@ -64,6 +64,12 @@ jobs:
     condition: eq(variables['System.Debug'], 'true')
 
   - ${{ if eq(parameters.TestProxy, true) }}:
+    - pwsh: |
+        $proxyUrl = "http://localhost:6603"
+        Write-Host "##vso[task.setvariable variable=ASPNETCORE_URLS]$proxyUrl"
+        Write-Host "##vso[task.setvariable variable=TEST_PROXY_URL]$proxyUrl"
+      displayName: 'Set Proxy Target URL'
+
     - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
 
   - task: Powershell@2
