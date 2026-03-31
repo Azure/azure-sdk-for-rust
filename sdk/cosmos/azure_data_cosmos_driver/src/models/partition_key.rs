@@ -26,7 +26,7 @@ pub(crate) const QUERY_ENABLE_CROSS_PARTITION: HeaderName =
 /// of [`Into<PartitionKey>`] will handle it for you.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub(crate) struct PartitionKeyValue(InnerPartitionKeyValue);
+pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
 // We don't want to expose the implementation details of PartitionKeyValue, so we use
 // this inner private enum to store the data.
@@ -36,6 +36,8 @@ enum InnerPartitionKeyValue {
     String(Cow<'static, str>),
     Number(FiniteF64),
     Bool(bool),
+    /// Undefined sentinel — represents items with no partition key property.
+    Undefined,
     /// Infinity sentinel, used only internally for EPK boundary calculations.
     Infinity,
 }
@@ -76,10 +78,9 @@ impl InnerPartitionKeyValue {
                 writer.push(string_suffix);
             }
             InnerPartitionKeyValue::Infinity => writer.push(component::INFINITY),
+            InnerPartitionKeyValue::Undefined => writer.push(component::UNDEFINED),
         }
     }
-
-    /// V1 binary encoding for the EPK output string.
     fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
         match self {
             InnerPartitionKeyValue::Bool(true) => writer.push(component::BOOL_TRUE),
@@ -105,6 +106,7 @@ impl InnerPartitionKeyValue {
                 }
             }
             InnerPartitionKeyValue::Null => writer.push(component::NULL),
+            InnerPartitionKeyValue::Undefined => writer.push(component::UNDEFINED),
         }
     }
 }
@@ -194,6 +196,13 @@ impl PartitionKeyValue {
     #[cfg(test)]
     pub(crate) fn infinity() -> Self {
         InnerPartitionKeyValue::Infinity.into()
+    }
+
+    /// Creates the Undefined partition key value.
+    ///
+    /// Represents items with no partition key property set.
+    pub fn undefined() -> Self {
+        InnerPartitionKeyValue::Undefined.into()
     }
 }
 
@@ -384,6 +393,10 @@ impl AsHeaders for PartitionKey {
                         azure_core::error::ErrorKind::Other,
                         "Infinity is not a valid partition key value for serialization",
                     ));
+                }
+                InnerPartitionKeyValue::Undefined => {
+                    // Items with no partition key property.
+                    json.push_str("{}");
                 }
             }
 

@@ -231,10 +231,10 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
-            assert_eq!(
-                response.request_url().host_str().unwrap(),
-                get_effective_hub_endpoint()
-            );
+            // request_url() returns None for driver-routed operations.
+            if let Some(url) = response.request_url() {
+                assert_eq!(url.host_str().unwrap(), get_effective_hub_endpoint());
+            }
 
             Ok(())
         },
@@ -647,9 +647,12 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
 
+    // The driver retries 500 errors internally (up to 3 failover retries per call),
+    // so each read_item call consumes up to 4 fault injection hits. Setting
+    // hit_limit to 8 ensures 2 calls fail completely before the limit is exhausted.
     let rule = FaultInjectionRuleBuilder::new("hit-limit-test", server_error)
         .with_condition(condition)
-        .with_hit_limit(4)
+        .with_hit_limit(8)
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
@@ -700,7 +703,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                 .await;
             assert!(
                 result.is_ok(),
-                "request 4 should succeed after hit_limit exhausted: {:?}",
+                "request 3 should succeed after hit_limit exhausted: {:?}",
                 result.err()
             );
 

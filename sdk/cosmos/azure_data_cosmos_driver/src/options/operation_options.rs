@@ -3,8 +3,10 @@
 
 //! Operation options that participate in runtime/account/operation resolution.
 
+use std::collections::HashMap;
 use std::time::Duration;
 
+use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
 use crate::{
@@ -61,6 +63,23 @@ pub struct OperationOptions {
     /// Maximum operation-level session retries for 404/1002 errors.
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
+
+    // Additional headers beyond those natively supported by the driver.
+    // May be removed in the future as we analyze exactly what options are needed.
+    custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
+}
+
+impl OperationOptions {
+    /// Sets additional headers to include in the request.
+    pub fn with_custom_headers(mut self, headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = Some(headers);
+        self
+    }
+
+    /// Gets the custom headers.
+    pub fn custom_headers_ref(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
+        self.custom_headers.as_ref()
+    }
 }
 
 #[cfg(test)]
