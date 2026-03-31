@@ -24,7 +24,7 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{AsyncRawResponse, RawResponse, Response};
+pub use response::{AsyncRawResponse, AsyncResponseBody, RawResponse, Response};
 pub use sanitizer::*;
 
 use std::borrow::Cow::{self, Borrowed, Owned};

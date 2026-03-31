@@ -10,9 +10,8 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
-        method_options::BlobClientManagedDownloadOptions, AccessTier, AccountKind,
-        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-        BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
+        AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
         BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
@@ -138,14 +137,10 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(data),
-        response_body.collect().await?.as_ref()
-    );
+    assert!(response.raw_response.status().is_success());
+    assert_eq!(17, response.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(data), body_data);
 
     // Overwrite Scenarios
     let new_data = b"hello overwritten rusty world";
@@ -168,16 +163,11 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload(RequestContent::from(new_data.to_vec()), None)
         .await?;
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-
     // Assert
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(29, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(new_data),
-        response_body.collect().await?.as_ref()
-    );
+    assert!(response.raw_response.status().is_success());
+    assert_eq!(29, response.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(new_data), body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -250,14 +240,10 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
-    assert_eq!(
-        b"hello rusty world".to_vec(),
-        response_body.collect().await?.to_vec(),
-    );
+    assert!(response.raw_response.status().is_success());
+    assert_eq!(17, response.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(b"hello rusty world".as_ref(), &body_data[..]);
 
     container_client.delete(None).await?;
     Ok(())
@@ -465,11 +451,10 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     let response = blob_client.download(Some(download_options)).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(10, content_length.unwrap());
-    assert_eq!(data.to_vec(), response_body.collect().await?.to_vec());
+    assert!(response.raw_response.status().is_success());
+    assert_eq!(10, response.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.as_ref(), &body_data[..]);
 
     blob_client.break_lease(None).await?;
     container_client.delete(None).await?;
@@ -960,13 +945,14 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
         let mut download_stream = blob_client
-            .managed_download(Some(BlobClientManagedDownloadOptions {
+            .download(Some(BlobClientDownloadOptions {
                 partition_size: Some(NonZero::new(partition_len).unwrap()),
                 parallel: Some(NonZero::new(parallel).unwrap()),
                 range: download_range.map(|r| r.0..r.1),
                 ..Default::default()
             }))
-            .await?;
+            .await?
+            .body;
 
         let mut downloaded_data = BytesMut::new();
         while let Some(bytes) = download_stream.try_next().await? {
@@ -1008,7 +994,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
 
     request_count.store(0, Ordering::Relaxed);
     let _scope = count_policy.check_request_scope();
-    let mut download_stream = blob_client.managed_download(None).await?;
+    let mut download_stream = blob_client.download(None).await?.body;
 
     let mut downloaded_data = BytesMut::new();
     while let Some(bytes) = download_stream.try_next().await? {
@@ -1060,12 +1046,14 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
 
     // Assert Content Headers Also Present on Download Response
     let response = blob_client.download(None).await?;
-    assert_eq!(Some("no-cache".to_string()), response.cache_control()?);
-    assert_eq!(Some("inline".to_string()), response.content_disposition()?);
-    assert_eq!(Some("identity".to_string()), response.content_encoding()?);
-    assert_eq!(Some("en-US".to_string()), response.content_language()?);
-    let content_type: Option<String> = response.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+    assert_eq!(Some("no-cache".to_string()), response.cache_control);
+    assert_eq!(Some("inline".to_string()), response.content_disposition);
+    assert_eq!(Some("identity".to_string()), response.content_encoding);
+    assert_eq!(Some("en-US".to_string()), response.content_language);
+    assert_eq!(
+        Some("application/octet-stream".to_string()),
+        response.content_type
+    );
 
     // Overwrite with Different Content Headers — new headers replace old ones
     blob_client

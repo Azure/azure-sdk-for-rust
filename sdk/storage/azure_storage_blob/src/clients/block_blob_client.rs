@@ -4,29 +4,38 @@
 pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
 
 use crate::{
+    generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
-        BlockBlobClientUploadInternalResultHeaders,
+        BlobClientDownloadInternalOptions, BlockBlobClientCommitBlockListResultHeaders,
+        BlockBlobClientUploadInternalOptions, BlockBlobClientUploadInternalResultHeaders,
+        CopyStatus,
     },
     logging::apply_storage_logging_defaults,
     models::{
-        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
+        http_ranges::IntoRangeHeader,
+        method_options::{BlockBlobClientDownloadOptions, BlockBlobClientUploadOptions},
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientDownloadResult,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
-    partitioned_transfer::{self, PartitionedUploadBehavior},
+    partitioned_transfer::{self, PartitionedDownloadBehavior, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
 };
 use async_trait::async_trait;
 use azure_core::{
+    base64,
     credentials::TokenCredential,
     http::{
+        headers::HeaderName,
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
+        response::AsyncResponseBody,
+        AsyncRawResponse, Body, NoFormat, Pipeline, RequestContent, Url,
     },
+    time::parse_rfc7231,
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
-use std::{num::NonZero, sync::Arc};
+use std::collections::HashMap;
+use std::{num::NonZero, ops::Range, sync::Arc};
 
 impl BlockBlobClient {
     /// Creates a new BlockBlobClient, using Entra ID authentication.
@@ -221,6 +230,199 @@ impl BlockBlobClient {
             )
         })
     }
+
+    /// Downloads a blob and its contents from the service.
+    ///
+    /// This operation performs a managed (multi-part) download, splitting the blob into
+    /// parallel range requests for better performance on large blobs.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlockBlob.download")]
+    pub async fn download(
+        &self,
+        options: Option<BlockBlobClientDownloadOptions<'_>>,
+    ) -> Result<BlockBlobClientDownloadResult> {
+        let options = options.unwrap_or_default();
+        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
+        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        // construct exhaustively to ensure we catch new options when added
+        let get_range_options = BlobClientDownloadInternalOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
+            lease_id: options.lease_id,
+            // TODO: method_options: options.method_options,
+            range: None,
+            range_get_content_crc64: options.range_get_content_crc64,
+            range_get_content_md5: options.range_get_content_md5,
+            snapshot: options.snapshot,
+            structured_body_type: options.structured_body_type,
+            timeout: options.timeout,
+            version_id: options.version_id,
+            ..Default::default()
+        };
+        let generated_blob_client = GeneratedBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
+        let behavior =
+            BlockBlobClientDownloadBehavior::new(generated_blob_client, get_range_options);
+        let (raw_response, body) = partitioned_transfer::download(
+            options.range,
+            parallel,
+            partition_size,
+            Arc::new(behavior),
+        )
+        .await?;
+        let headers = raw_response.headers();
+        let etag = headers.get_optional_as(&HeaderName::from_static("etag"))?;
+        let last_modified = headers
+            .get_optional_with(&HeaderName::from_static("last-modified"), |h| {
+                parse_rfc7231(h.as_str())
+            })?;
+        let content_length = headers.get_optional_as(&HeaderName::from_static("content-length"))?;
+        let content_type = headers.get_optional_as(&HeaderName::from_static("content-type"))?;
+        let cache_control = headers.get_optional_as(&HeaderName::from_static("cache-control"))?;
+        let content_disposition =
+            headers.get_optional_as(&HeaderName::from_static("content-disposition"))?;
+        let content_encoding =
+            headers.get_optional_as(&HeaderName::from_static("content-encoding"))?;
+        let content_language =
+            headers.get_optional_as(&HeaderName::from_static("content-language"))?;
+        let content_range = headers.get_optional_as(&HeaderName::from_static("content-range"))?;
+        let content_hash = headers
+            .get_optional_with(&HeaderName::from_static("content-md5"), |h| {
+                base64::decode(h.as_str())
+            })?;
+        let content_crc64 = headers
+            .get_optional_with(&HeaderName::from_static("x-ms-content-crc64"), |h| {
+                base64::decode(h.as_str())
+            })?;
+        let blob_content_hash = headers
+            .get_optional_with(&HeaderName::from_static("x-ms-blob-content-md5"), |h| {
+                base64::decode(h.as_str())
+            })?;
+        let blob_type = headers.get_optional_as(&HeaderName::from_static("x-ms-blob-type"))?;
+        let blob_sequence_number =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-blob-sequence-number"))?;
+        let blob_committed_block_count =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-blob-committed-block-count"))?;
+        let is_sealed = headers.get_optional_as(&HeaderName::from_static("x-ms-blob-sealed"))?;
+        let is_server_encrypted =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-server-encrypted"))?;
+        let encryption_scope =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-encryption-scope"))?;
+        let encryption_key_sha256 =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-encryption-key-sha256"))?;
+        let version_id = headers.get_optional_as(&HeaderName::from_static("x-ms-version-id"))?;
+        let created_on = headers
+            .get_optional_with(&HeaderName::from_static("x-ms-creation-time"), |h| {
+                parse_rfc7231(h.as_str())
+            })?;
+        let last_accessed = headers
+            .get_optional_with(&HeaderName::from_static("x-ms-last-access-time"), |h| {
+                parse_rfc7231(h.as_str())
+            })?;
+        let lease_state = headers.get_optional_as(&HeaderName::from_static("x-ms-lease-state"))?;
+        let lease_status =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-lease-status"))?;
+        let lease_duration =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-lease-duration"))?;
+        let legal_hold = headers.get_optional_as(&HeaderName::from_static("x-ms-legal-hold"))?;
+        let immutability_policy_mode =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-immutability-policy-mode"))?;
+        let immutability_policy_expires_on = headers.get_optional_with(
+            &HeaderName::from_static("x-ms-immutability-policy-until-date"),
+            |h| parse_rfc7231(h.as_str()),
+        )?;
+        let copy_completed_on = headers
+            .get_optional_with(&HeaderName::from_static("x-ms-copy-completion-time"), |h| {
+                parse_rfc7231(h.as_str())
+            })?;
+        let copy_id = headers.get_optional_as(&HeaderName::from_static("x-ms-copy-id"))?;
+        let copy_progress =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-copy-progress"))?;
+        let copy_source = headers.get_optional_as(&HeaderName::from_static("x-ms-copy-source"))?;
+        let copy_status: Option<CopyStatus> =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-copy-status"))?;
+        let copy_status_description =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-copy-status-description"))?;
+        let object_replication_policy_id =
+            headers.get_optional_as(&HeaderName::from_static("x-ms-or-policy-id"))?;
+        let tag_count = headers.get_optional_as(&HeaderName::from_static("x-ms-tag-count"))?;
+        let mut metadata = HashMap::new();
+        let mut object_replication_rules = HashMap::new();
+        const META_PREFIX: &str = "x-ms-meta-";
+        const OR_PREFIX: &str = "x-ms-or-";
+        for (name, value) in headers.iter() {
+            let name = name.as_str();
+            if name.len() > META_PREFIX.len() && name.starts_with(META_PREFIX) {
+                metadata.insert(
+                    name[META_PREFIX.len()..].to_owned(),
+                    value.as_str().to_owned(),
+                );
+            } else if name.len() > OR_PREFIX.len()
+                && name.starts_with(OR_PREFIX)
+                && name != "x-ms-or-policy-id"
+            {
+                object_replication_rules.insert(
+                    name[OR_PREFIX.len()..].to_owned(),
+                    value.as_str().to_owned(),
+                );
+            }
+        }
+        Ok(BlockBlobClientDownloadResult {
+            body: AsyncResponseBody::new(body),
+            etag,
+            last_modified,
+            created_on,
+            last_accessed,
+            content_length,
+            content_type,
+            cache_control,
+            content_disposition,
+            content_encoding,
+            content_language,
+            content_range,
+            content_hash,
+            content_crc64,
+            blob_content_hash,
+            blob_type,
+            blob_sequence_number,
+            blob_committed_block_count,
+            is_sealed,
+            metadata,
+            is_server_encrypted,
+            encryption_scope,
+            encryption_key_sha256,
+            version_id,
+            lease_state,
+            lease_status,
+            lease_duration,
+            legal_hold,
+            immutability_policy_mode,
+            immutability_policy_expires_on,
+            copy_completed_on,
+            copy_id,
+            copy_progress,
+            copy_source,
+            copy_status,
+            copy_status_description,
+            object_replication_policy_id,
+            object_replication_rules,
+            tag_count,
+            raw_response,
+        })
+    }
 }
 
 // unwrap evaluated at compile time
@@ -340,5 +542,28 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
             raw_response: rsp.to_raw_response(),
         });
         Ok(())
+    }
+}
+
+struct BlockBlobClientDownloadBehavior<'a> {
+    client: GeneratedBlobClient,
+    options: BlobClientDownloadInternalOptions<'a>,
+}
+
+impl<'a> BlockBlobClientDownloadBehavior<'a> {
+    fn new(client: GeneratedBlobClient, options: BlobClientDownloadInternalOptions<'a>) -> Self {
+        Self { client, options }
+    }
+}
+
+#[async_trait]
+impl PartitionedDownloadBehavior for BlockBlobClientDownloadBehavior<'_> {
+    async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
+        let mut opt = self.options.clone();
+        opt.range = range.map(|r| r.as_range_header());
+        self.client
+            .download_internal(Some(opt))
+            .await
+            .map(AsyncRawResponse::from)
     }
 }

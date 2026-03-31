@@ -302,7 +302,7 @@ enum Body {
 
 impl AsyncResponseBody {
     /// Create a new [`AsyncResponseBody`] from an async stream of bytes.
-    fn new(stream: PinnedStream) -> Self {
+    pub fn new(stream: PinnedStream) -> Self {
         Self(Body::Stream(stream))
     }
 
