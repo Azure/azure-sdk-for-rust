@@ -10,6 +10,7 @@
 
 - `SeekableStream::len()` and `Body::len()` now return `u64` instead of `usize` to align with `std::fs::Metadata::len()` and support large file sizes.
 - Added `tokio` feature to `default` features.
+- Changed `async_runtime::spawn`/`SpawnedTask` to return a trait object that supports `abort()`.
 
 ### Bugs Fixed
 
