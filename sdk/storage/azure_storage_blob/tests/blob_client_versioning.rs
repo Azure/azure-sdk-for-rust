@@ -50,7 +50,6 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
     // Download Version 1 Using with_version()
     let version_1_client = blob_client.with_version(&version_1)?;
     let download_response = version_1_client.download(None).await?;
-    assert!(download_response.raw_response.status().is_success());
     let body_data = download_response.body.collect().await?;
     assert_eq!(data_v1.to_vec(), body_data);
 
@@ -63,7 +62,6 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
         ..Default::default()
     };
     let download_response = version_2_client.download(Some(download_options)).await?;
-    assert!(download_response.raw_response.status().is_success());
     let body_data = download_response.body.collect().await?;
     assert_eq!(data_v1.to_vec(), body_data);
 

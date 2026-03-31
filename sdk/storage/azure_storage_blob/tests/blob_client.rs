@@ -137,7 +137,6 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert!(response.raw_response.status().is_success());
     assert_eq!(17, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(data), body_data);
@@ -164,7 +163,6 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
     let response = blob_client.download(None).await?;
     // Assert
-    assert!(response.raw_response.status().is_success());
     assert_eq!(29, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(new_data), body_data);
@@ -240,7 +238,6 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    assert!(response.raw_response.status().is_success());
     assert_eq!(17, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"hello rusty world".as_ref(), &body_data[..]);
@@ -451,7 +448,6 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     let response = blob_client.download(Some(download_options)).await?;
-    assert!(response.raw_response.status().is_success());
     assert_eq!(10, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(data.as_ref(), &body_data[..]);

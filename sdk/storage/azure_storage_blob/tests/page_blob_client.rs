@@ -76,7 +76,6 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert!(response.raw_response.status().is_success());
     assert_eq!(512, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(data, body_data);
@@ -110,7 +109,6 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert!(response.raw_response.status().is_success());
     assert_eq!(512, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(vec![0; 512], body_data);
@@ -157,7 +155,6 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.resize(512, None).await?;
     // Assert
     let response = blob_client.download(None).await?;
-    assert!(response.raw_response.status().is_success());
     assert_eq!(512, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(vec![b'A'; 512], body_data);
@@ -258,7 +255,6 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     // Assert
     let response = blob_client_2.download(None).await?;
-    assert!(response.raw_response.status().is_success());
     assert_eq!(1024, response.content_length.unwrap());
     data_a.extend(&data_b);
     let body_data = response.body.collect().await?;

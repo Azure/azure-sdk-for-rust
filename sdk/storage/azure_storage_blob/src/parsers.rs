@@ -59,3 +59,36 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
 
     Ok(format_expression.join(" and "))
 }
+
+/// Parses `x-ms-meta-*` and `x-ms-or-*` headers from a response into separate maps.
+///
+/// Returns `(metadata, object_replication_rules)` where:
+/// - `metadata` maps unprefixed key names to values from `x-ms-meta-<key>` headers.
+/// - `object_replication_rules` maps `<policyId_ruleId>` to status from
+///   `x-ms-or-<policyId_ruleId>` headers (excluding `x-ms-or-policy-id`).
+pub(crate) fn parse_metadata_and_replication_headers(
+    headers: &azure_core::http::headers::Headers,
+) -> (HashMap<String, String>, HashMap<String, String>) {
+    const META_PREFIX: &str = "x-ms-meta-";
+    const OR_PREFIX: &str = "x-ms-or-";
+    let mut metadata = HashMap::new();
+    let mut object_replication_rules = HashMap::new();
+    for (name, value) in headers.iter() {
+        let name = name.as_str();
+        if name.len() > META_PREFIX.len() && name.starts_with(META_PREFIX) {
+            metadata.insert(
+                name[META_PREFIX.len()..].to_owned(),
+                value.as_str().to_owned(),
+            );
+        } else if name.len() > OR_PREFIX.len()
+            && name.starts_with(OR_PREFIX)
+            && name != "x-ms-or-policy-id"
+        {
+            object_replication_rules.insert(
+                name[OR_PREFIX.len()..].to_owned(),
+                value.as_str().to_owned(),
+            );
+        }
+    }
+    (metadata, object_replication_rules)
+}

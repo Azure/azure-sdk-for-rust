@@ -2,8 +2,14 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    base64,
     fmt::SafeDebug,
-    http::{response::AsyncResponseBody, Etag, RawResponse},
+    http::{
+        headers::{HeaderName, Headers},
+        response::AsyncResponseBody,
+        Etag,
+    },
+    time::parse_rfc7231,
 };
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -12,9 +18,9 @@ use crate::generated::models::{
     BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
 };
 
-/// Result of a `BlockBlobClient::download()` or `BlobClient::download()` operation.
+/// Result of a `BlobClient::download()` operation.
 #[derive(SafeDebug)]
-pub struct BlockBlobClientDownloadResult {
+pub struct BlobClientDownloadResult {
     /// The blob content stream.
     pub body: AsyncResponseBody,
 
@@ -94,7 +100,7 @@ pub struct BlockBlobClientDownloadResult {
     /// Status of the blob's lease.
     pub lease_status: Option<LeaseStatus>,
 
-    /// Duration type of the lease (fixed or infinite).
+    /// Duration type of the lease.
     pub lease_duration: Option<LeaseDuration>,
 
     /// Whether the blob has a legal hold.
@@ -112,7 +118,7 @@ pub struct BlockBlobClientDownloadResult {
     /// String identifier for the last copy operation.
     pub copy_id: Option<String>,
 
-    /// Progress of an in-progress copy operation (e.g. `"123/456"`).
+    /// Progress of an in-progress copy operation.
     pub copy_progress: Option<String>,
 
     /// URL of the source blob for the last copy operation.
@@ -127,13 +133,98 @@ pub struct BlockBlobClientDownloadResult {
     /// Destination policy ID for object replication.
     pub object_replication_policy_id: Option<String>,
 
-    /// Object replication rule results (`"policyId_ruleId"` → status).
+    /// Object replication rules and statuses.
     pub object_replication_rules: HashMap<String, String>,
 
     /// Number of tags on the blob.
     pub tag_count: Option<i64>,
+}
 
-    /// Raw HTTP response from the initial (first) partition request.
-    /// The body has been consumed into `body`; headers are preserved here.
-    pub raw_response: RawResponse,
+impl BlobClientDownloadResult {
+    /// Constructs a `BlobClientDownloadResult` by parsing headers from the initial response.
+    pub(crate) fn from_headers(
+        headers: Headers,
+        body: azure_core::http::response::PinnedStream,
+    ) -> azure_core::Result<Self> {
+        let (metadata, object_replication_rules) =
+            crate::parsers::parse_metadata_and_replication_headers(&headers);
+        Ok(Self {
+            body: AsyncResponseBody::new(body),
+            etag: headers.get_optional_as(&HeaderName::from_static("etag"))?,
+            last_modified: headers
+                .get_optional_with(&HeaderName::from_static("last-modified"), |h| {
+                    parse_rfc7231(h.as_str())
+                })?,
+            created_on: headers
+                .get_optional_with(&HeaderName::from_static("x-ms-creation-time"), |h| {
+                    parse_rfc7231(h.as_str())
+                })?,
+            last_accessed: headers
+                .get_optional_with(&HeaderName::from_static("x-ms-last-access-time"), |h| {
+                    parse_rfc7231(h.as_str())
+                })?,
+            content_length: headers.get_optional_as(&HeaderName::from_static("content-length"))?,
+            content_type: headers.get_optional_as(&HeaderName::from_static("content-type"))?,
+            cache_control: headers.get_optional_as(&HeaderName::from_static("cache-control"))?,
+            content_disposition: headers
+                .get_optional_as(&HeaderName::from_static("content-disposition"))?,
+            content_encoding: headers
+                .get_optional_as(&HeaderName::from_static("content-encoding"))?,
+            content_language: headers
+                .get_optional_as(&HeaderName::from_static("content-language"))?,
+            content_range: headers.get_optional_as(&HeaderName::from_static("content-range"))?,
+            content_hash: headers
+                .get_optional_with(&HeaderName::from_static("content-md5"), |h| {
+                    base64::decode(h.as_str())
+                })?,
+            content_crc64: headers
+                .get_optional_with(&HeaderName::from_static("x-ms-content-crc64"), |h| {
+                    base64::decode(h.as_str())
+                })?,
+            blob_content_hash: headers
+                .get_optional_with(&HeaderName::from_static("x-ms-blob-content-md5"), |h| {
+                    base64::decode(h.as_str())
+                })?,
+            blob_type: headers.get_optional_as(&HeaderName::from_static("x-ms-blob-type"))?,
+            blob_sequence_number: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-blob-sequence-number"))?,
+            blob_committed_block_count: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-blob-committed-block-count"))?,
+            is_sealed: headers.get_optional_as(&HeaderName::from_static("x-ms-blob-sealed"))?,
+            is_server_encrypted: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-server-encrypted"))?,
+            encryption_scope: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-encryption-scope"))?,
+            encryption_key_sha256: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-encryption-key-sha256"))?,
+            version_id: headers.get_optional_as(&HeaderName::from_static("x-ms-version-id"))?,
+            lease_state: headers.get_optional_as(&HeaderName::from_static("x-ms-lease-state"))?,
+            lease_status: headers.get_optional_as(&HeaderName::from_static("x-ms-lease-status"))?,
+            lease_duration: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-lease-duration"))?,
+            legal_hold: headers.get_optional_as(&HeaderName::from_static("x-ms-legal-hold"))?,
+            immutability_policy_mode: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-immutability-policy-mode"))?,
+            immutability_policy_expires_on: headers.get_optional_with(
+                &HeaderName::from_static("x-ms-immutability-policy-until-date"),
+                |h| parse_rfc7231(h.as_str()),
+            )?,
+            copy_completed_on: headers
+                .get_optional_with(&HeaderName::from_static("x-ms-copy-completion-time"), |h| {
+                    parse_rfc7231(h.as_str())
+                })?,
+            copy_id: headers.get_optional_as(&HeaderName::from_static("x-ms-copy-id"))?,
+            copy_progress: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-copy-progress"))?,
+            copy_source: headers.get_optional_as(&HeaderName::from_static("x-ms-copy-source"))?,
+            copy_status: headers.get_optional_as(&HeaderName::from_static("x-ms-copy-status"))?,
+            copy_status_description: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-copy-status-description"))?,
+            object_replication_policy_id: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-or-policy-id"))?,
+            tag_count: headers.get_optional_as(&HeaderName::from_static("x-ms-tag-count"))?,
+            metadata,
+            object_replication_rules,
+        })
+    }
 }

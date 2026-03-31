@@ -6,11 +6,9 @@
 
 ### Breaking Changes
 
-- Revised `download()` on `BlockBlobClient` and `BlobClient` with the following breaking changes:
+- Revised `download()` on `BlobClient` with the following breaking changes:
   - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
-  - `BlobClient::download()` and the new `BlockBlobClient::download()` accept `BlobClientDownloadOptions` / `BlockBlobClientDownloadOptions` (renamed from `BlobClientManagedDownloadOptions`).
-  - The `range` field is now `Option<Range<usize>>` instead of `Option<String>`.
-  - Returns `Result<BlockBlobClientDownloadResult>` (or `Result<BlobClientDownloadResult>` via `BlobClient`) instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
+  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
   - The previous `BlobClientDownloadResultHeaders` trait was removed.
 
 ### Bugs Fixed

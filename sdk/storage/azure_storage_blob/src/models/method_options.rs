@@ -11,9 +11,9 @@ use time::OffsetDateTime;
 
 use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode};
 
-/// Options to be passed to `BlockBlobClient::download()` or `BlobClient::download()`
+/// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlockBlobClientDownloadOptions<'a> {
+pub struct BlobClientDownloadOptions<'a> {
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,

@@ -108,7 +108,6 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    assert!(response.raw_response.status().is_success());
     assert_eq!(9, response.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(b"AAABBBCCC"), &body_data[..],);
@@ -271,7 +270,6 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Committed Block Scenario
     let response = dest_blob_client.download(None).await?;
     // Assert
-    assert!(response.raw_response.status().is_success());
     assert_eq!(
         source_content.len(),
         response.content_length.unwrap() as usize
@@ -326,7 +324,6 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     let response = dest_blob_client.download(None).await?;
     // Assert
-    assert!(response.raw_response.status().is_success());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(source_content_2), &body_data[..],);
 

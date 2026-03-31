@@ -15,7 +15,7 @@ use async_trait::async_trait;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
-    http::{headers::Headers, response::PinnedStream, AsyncRawResponse, RawResponse, StatusCode},
+    http::{headers::Headers, response::PinnedStream, AsyncRawResponse, StatusCode},
     stream::BytesStream,
     Error,
 };
@@ -50,7 +50,7 @@ pub(crate) async fn download<Behavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
-) -> AzureResult<(RawResponse, PinnedStream)>
+) -> AzureResult<(Headers, PinnedStream)>
 where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
@@ -63,9 +63,7 @@ where
     // of the remote resource.
     let max_download_range = range.unwrap_or(0..usize::MAX);
     if max_download_range.is_empty() {
-        let raw_response = RawResponse::from_bytes(StatusCode::Ok, Headers::new(), Bytes::new());
-        let raw_stream: PinnedStream = Box::pin(BytesStream::new_empty());
-        return Ok((raw_response, raw_stream));
+        return Ok((Headers::new(), Box::pin(BytesStream::new_empty())));
     }
 
     let initial_response = download_with_empty_blob_safety(
@@ -78,11 +76,7 @@ where
     )
     .await?;
 
-    let raw_response = RawResponse::from_bytes(
-        initial_response.status(),
-        initial_response.headers().clone(),
-        Bytes::new(),
-    );
+    let headers = initial_response.headers().clone();
     let stats =
         analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
 
@@ -91,7 +85,7 @@ where
         .unwrap_or_default();
     let total_chunks = remaining_ranges.len() + 1;
     if remaining_ranges.is_empty() {
-        return Ok((raw_response, Box::pin(initial_response.into_body())));
+        return Ok((headers, Box::pin(initial_response.into_body())));
     }
 
     // channel for download workers to send results to their coordinator.
@@ -159,7 +153,7 @@ where
         }
     };
 
-    Ok((raw_response, Box::pin(stream)))
+    Ok((headers, Box::pin(stream)))
 }
 
 /// Race awaiting a message vs checking if tasks have completed successfully,
@@ -468,7 +462,7 @@ mod tests {
         ] {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let (_raw_response, mut body) = download(
+            let (_headers, mut body) = download(
                 download_range.map(|r| r.0..r.1),
                 PARALLEL.try_into().unwrap(),
                 partition_size.try_into().unwrap(),
@@ -530,7 +524,7 @@ mod tests {
                 ] {
                     let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-                    let (_raw_response, mut body) = download(
+                    let (_headers, mut body) = download(
                         download_range.map(|r| r.0..r.1),
                         parallel.try_into().unwrap(),
                         partition_len.try_into().unwrap(),
@@ -585,8 +579,7 @@ mod tests {
             Some(1..5),
         ));
 
-        let (_raw_response, mut body) =
-            download(None, parallel, partition_size, mock.clone()).await?;
+        let (_headers, mut body) = download(None, parallel, partition_size, mock.clone()).await?;
         let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data[..], data[..]);
@@ -603,7 +596,7 @@ mod tests {
             let data = get_random_data(if empty_source { 0 } else { KB });
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let (_raw_response, mut body) = download(
+            let (_headers, mut body) = download(
                 if empty_range { Some(0..0) } else { None },
                 parallel,
                 partition_len,
