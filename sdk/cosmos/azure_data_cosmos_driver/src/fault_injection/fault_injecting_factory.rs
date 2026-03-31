@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use super::http_client::FaultClient;
 use super::rule::FaultInjectionRule;
-use crate::driver::transport::cosmos_transport_client::CosmosTransportClient;
+use crate::driver::transport::cosmos_transport_client::TransportClient;
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 use crate::options::ConnectionPoolOptions;
 
@@ -40,7 +40,7 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
+    ) -> azure_core::Result<Arc<dyn TransportClient>> {
         let real_client = self.inner.build(connection_pool, config)?;
         let rules = (*self.rules).clone();
         Ok(Arc::new(FaultClient::new(real_client, rules)))
@@ -51,7 +51,7 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
 mod tests {
     use super::*;
     use crate::driver::transport::cosmos_transport_client::{
-        CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
+        HttpRequest, HttpResponse, TransportClient, TransportError,
     };
     use crate::fault_injection::{
         FaultInjectionErrorType, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
@@ -67,7 +67,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             _config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             Ok(Arc::new(MockTransportClient {
                 call_count: AtomicU32::new(0),
             }))
@@ -80,13 +80,10 @@ mod tests {
     }
 
     #[async_trait::async_trait]
-    impl CosmosTransportClient for MockTransportClient {
-        async fn send(
-            &self,
-            _request: &CosmosHttpRequest,
-        ) -> Result<CosmosHttpResponse, TransportError> {
+    impl TransportClient for MockTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             self.call_count.fetch_add(1, Ordering::SeqCst);
-            Ok(CosmosHttpResponse {
+            Ok(HttpResponse {
                 status: 200,
                 headers: azure_core::http::headers::Headers::new(),
                 body: vec![],

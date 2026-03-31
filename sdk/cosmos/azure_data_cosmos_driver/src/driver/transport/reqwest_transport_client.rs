@@ -1,24 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Default [`CosmosTransportClient`] implementation backed by `reqwest`.
+//! Default [`TransportClient`] implementation backed by `reqwest`.
 //!
 //! [`ReqwestTransportClient`] wraps a `reqwest::Client` and translates
-//! between the driver's [`CosmosHttpRequest`]/[`CosmosHttpResponse`] types
+//! between the driver's [`HttpRequest`]/[`HttpResponse`] types
 //! and reqwest's native request/response types. Per-request timeouts are
 //! applied via `reqwest::RequestBuilder::timeout()`.
-
-use std::sync::Arc;
 
 use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 
 use crate::diagnostics::RequestSentStatus;
 
-use super::cosmos_transport_client::{
-    CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
-};
+use super::cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError};
 
-/// A [`CosmosTransportClient`] backed by `reqwest::Client`.
+/// A [`TransportClient`] backed by `reqwest::Client`.
 ///
 /// Each instance wraps a single `reqwest::Client` configured with
 /// connection-pool settings, TLS, and HTTP version policy. Per-request
@@ -34,19 +30,11 @@ impl ReqwestTransportClient {
     pub fn new(client: reqwest::Client) -> Self {
         Self { client }
     }
-
-    /// Wraps an existing `reqwest::Client` and returns it as an `Arc<dyn CosmosTransportClient>`.
-    pub fn into_arc(client: reqwest::Client) -> Arc<dyn CosmosTransportClient> {
-        Arc::new(Self::new(client))
-    }
 }
 
 #[async_trait::async_trait]
-impl CosmosTransportClient for ReqwestTransportClient {
-    async fn send(
-        &self,
-        request: &CosmosHttpRequest,
-    ) -> Result<CosmosHttpResponse, TransportError> {
+impl TransportClient for ReqwestTransportClient {
+    async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         let method = to_reqwest_method(request.method);
         let mut builder = self.client.request(method, request.url.clone());
 
@@ -89,7 +77,7 @@ impl CosmosTransportClient for ReqwestTransportClient {
             )
         })?;
 
-        Ok(CosmosHttpResponse {
+        Ok(HttpResponse {
             status,
             headers,
             body: body.to_vec(),

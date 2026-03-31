@@ -7,7 +7,7 @@
 
 use azure_core::http::headers::{HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE, USER_AGENT};
 
-use super::{cosmos_transport_client::CosmosHttpRequest, COSMOS_API_VERSION};
+use super::{cosmos_transport_client::HttpRequest, COSMOS_API_VERSION};
 
 const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
@@ -21,7 +21,7 @@ const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 ///
 /// Sets `x-ms-version`, `x-ms-cosmos-sdk-supportedcapabilities`, `Content-Type`,
 /// `Accept`, `Cache-Control`, and `User-Agent`.
-pub(crate) fn apply_cosmos_headers(request: &mut CosmosHttpRequest, user_agent: &HeaderValue) {
+pub(crate) fn apply_cosmos_headers(request: &mut HttpRequest, user_agent: &HeaderValue) {
     request
         .headers
         .insert(VERSION, HeaderValue::from_static(COSMOS_API_VERSION));

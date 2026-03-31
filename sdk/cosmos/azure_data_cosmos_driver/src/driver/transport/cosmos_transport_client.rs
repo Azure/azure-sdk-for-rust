@@ -3,7 +3,7 @@
 
 //! Driver-owned HTTP transport abstraction for Cosmos DB.
 //!
-//! This module defines [`CosmosTransportClient`], the internal transport trait
+//! This module defines [`TransportClient`], the internal transport trait
 //! that replaces direct use of `azure_core::http::HttpClient`. The key
 //! motivation is **per-request timeout support**: `HttpClient` only allows a
 //! single client-level timeout, but Cosmos DB operations need distinct timeouts
@@ -31,7 +31,7 @@ use crate::diagnostics::RequestSentStatus;
 /// field so the transport layer can enforce a deadline that differs from the
 /// client-level default.
 #[derive(Clone, Debug)]
-pub(crate) struct CosmosHttpRequest {
+pub(crate) struct HttpRequest {
     pub url: Url,
     pub method: Method,
     pub headers: Headers,
@@ -51,7 +51,7 @@ pub(crate) struct CosmosHttpRequest {
 /// via configuration), so buffering the entire body is safe and simplifies
 /// downstream processing.
 #[derive(Clone, Debug)]
-pub(crate) struct CosmosHttpResponse {
+pub(crate) struct HttpResponse {
     pub status: u16,
     pub headers: Headers,
     pub body: Vec<u8>,
@@ -115,9 +115,9 @@ impl std::error::Error for TransportError {
 /// Async transport trait for dispatching HTTP requests to Cosmos DB.
 ///
 /// Implementations handle the actual network I/O, including enforcing the
-/// per-request [`timeout`](CosmosHttpRequest::timeout) when present.
+/// per-request [`timeout`](HttpRequest::timeout) when present.
 #[async_trait::async_trait]
-pub(crate) trait CosmosTransportClient: Send + Sync + fmt::Debug {
+pub(crate) trait TransportClient: Send + Sync + fmt::Debug {
     /// Sends an HTTP request and returns a buffered response.
     ///
     /// # Errors
@@ -125,8 +125,7 @@ pub(crate) trait CosmosTransportClient: Send + Sync + fmt::Debug {
     /// Returns a [`TransportError`] on network failures, timeouts, or other
     /// I/O errors. The error carries classification flags that the retry layer
     /// uses to decide whether to retry.
-    async fn send(&self, request: &CosmosHttpRequest)
-        -> Result<CosmosHttpResponse, TransportError>;
+    async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
 }
 
-// (bridge_send removed — all callers now build CosmosHttpRequest directly)
+// (bridge_send removed — all callers now build HttpRequest directly)

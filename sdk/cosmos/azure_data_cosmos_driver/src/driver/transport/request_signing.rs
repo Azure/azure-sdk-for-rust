@@ -10,9 +10,7 @@ use azure_core::time::{self, OffsetDateTime};
 
 use crate::models::Credential;
 
-use super::{
-    cosmos_transport_client::CosmosHttpRequest, generate_authorization, AuthorizationContext,
-};
+use super::{cosmos_transport_client::HttpRequest, generate_authorization, AuthorizationContext};
 
 const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 
@@ -21,7 +19,7 @@ const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 /// Computes the HMAC-SHA256 signature (master key) or obtains an AAD token,
 /// then sets both `x-ms-date` and `Authorization` headers.
 pub(crate) async fn sign_request(
-    request: &mut CosmosHttpRequest,
+    request: &mut HttpRequest,
     credential: &Credential,
     auth_context: &AuthorizationContext,
 ) -> azure_core::Result<()> {

@@ -17,9 +17,7 @@ use arc_swap::ArcSwap;
 
 use azure_core::error::ErrorKind;
 
-use super::cosmos_transport_client::{
-    CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
-};
+use super::cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError};
 #[cfg(any(feature = "tokio", test))]
 use std::time::Duration;
 #[cfg(any(feature = "tokio", test))]
@@ -35,7 +33,7 @@ use super::background_task_manager::BackgroundTaskManager;
 use super::http_client_factory::{HttpClientConfig, HttpClientFactory};
 
 pub(crate) struct TransportDispatch {
-    pub(crate) result: Result<CosmosHttpResponse, TransportError>,
+    pub(crate) result: Result<HttpResponse, TransportError>,
     pub(crate) shard_id: Option<u64>,
     pub(crate) shard_diagnostics: Option<TransportShardDiagnostics>,
 }
@@ -73,7 +71,7 @@ impl ShardedHttpTransport {
 
     pub(crate) async fn send(
         &self,
-        request: &CosmosHttpRequest,
+        request: &HttpRequest,
         excluded_shard_id: Option<u64>,
         endpoint_key: &EndpointKey,
         preferred_shard_id: Option<u64>,
@@ -558,7 +556,7 @@ const TIMESTAMP_BIAS_NANOS: u64 = 30_000_000_000; // 30 seconds
 
 struct ClientShard {
     id: u64,
-    client: Arc<dyn CosmosTransportClient>,
+    client: Arc<dyn TransportClient>,
     /// Monotonic base used for all timestamp offsets on this shard.
     creation_time: Instant,
     // -- Hot-path atomic counters (no Mutex needed) --
@@ -578,7 +576,7 @@ struct ClientShard {
 }
 
 impl ClientShard {
-    fn new(id: u64, client: Arc<dyn CosmosTransportClient>) -> Self {
+    fn new(id: u64, client: Arc<dyn TransportClient>) -> Self {
         Self {
             id,
             client,
@@ -624,7 +622,7 @@ impl ClientShard {
         }
     }
 
-    fn record_request_outcome(&self, result: &Result<CosmosHttpResponse, TransportError>) {
+    fn record_request_outcome(&self, result: &Result<HttpResponse, TransportError>) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
         let now_nanos = self.instant_to_nanos(Instant::now());
         self.last_request_at_nanos
@@ -661,7 +659,7 @@ impl<'a> InflightGuard<'a> {
     /// Records the request outcome and consumes the guard.
     ///
     /// This decrements the inflight counter and updates success/failure state.
-    fn finish(mut self, result: &Result<CosmosHttpResponse, TransportError>) {
+    fn finish(mut self, result: &Result<HttpResponse, TransportError>) {
         self.finished = true;
         self.shard.record_request_outcome(result);
     }
@@ -707,7 +705,7 @@ impl ClientShard {
 
     /// Records outcome for test setup (not cancellation-safe; use `InflightGuard::finish` in production).
     #[cfg(test)]
-    fn record_request_finish(&self, result: &Result<CosmosHttpResponse, TransportError>) {
+    fn record_request_finish(&self, result: &Result<HttpResponse, TransportError>) {
         self.record_request_outcome(result);
     }
 
@@ -924,7 +922,7 @@ impl fmt::Debug for ClientShard {
 mod tests {
     use super::*;
     use crate::driver::transport::cosmos_transport_client::{
-        CosmosHttpRequest, CosmosHttpResponse, TransportError,
+        HttpRequest, HttpResponse, TransportError,
     };
     use async_trait::async_trait;
 
@@ -947,7 +945,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             self.idle_ping_flags
                 .lock()
                 .expect("tracking lock poisoned")
@@ -960,11 +958,8 @@ mod tests {
     struct NoopTransportClient;
 
     #[async_trait]
-    impl CosmosTransportClient for NoopTransportClient {
-        async fn send(
-            &self,
-            _request: &CosmosHttpRequest,
-        ) -> Result<CosmosHttpResponse, TransportError> {
+    impl TransportClient for NoopTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             Err(TransportError::new(
                 azure_core::Error::with_message(
                     ErrorKind::Other,
@@ -1237,12 +1232,12 @@ mod tests {
         second.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
         // Ensure the first shard is healthy so eviction can proceed.
-        first.record_request_finish(&Ok(CosmosHttpResponse {
+        first.record_request_finish(&Ok(HttpResponse {
             status: 200,
             headers: azure_core::http::headers::Headers::new(),
             body: Vec::new(),
         }));
-        first.record_request_finish(&Ok(CosmosHttpResponse {
+        first.record_request_finish(&Ok(HttpResponse {
             status: 200,
             headers: azure_core::http::headers::Headers::new(),
             body: Vec::new(),

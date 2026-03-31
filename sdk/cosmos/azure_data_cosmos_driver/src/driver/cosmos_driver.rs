@@ -27,8 +27,8 @@ use std::time::Duration;
 use super::{
     cache::AccountRegion,
     transport::{
-        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
-        AuthorizationContext, CosmosTransport,
+        cosmos_headers, cosmos_transport_client::HttpRequest, is_emulator_host, request_signing,
+        uses_dataplane_pipeline, AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -224,7 +224,7 @@ impl CosmosDriver {
         user_agent: &azure_core::http::headers::HeaderValue,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let mut request = super::transport::cosmos_transport_client::CosmosHttpRequest {
+        let mut request = HttpRequest {
             url: endpoint.join_path("/"),
             method: azure_core::http::Method::Get,
             headers: azure_core::http::headers::Headers::new(),
@@ -1011,9 +1011,7 @@ mod tests {
     use crate::options::Region;
     use crate::{
         driver::transport::{
-            cosmos_transport_client::{
-                CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
-            },
+            cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
             http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
         },
         options::ConnectionPoolOptions,
@@ -1056,13 +1054,10 @@ mod tests {
     }
 
     #[async_trait]
-    impl CosmosTransportClient for ScriptedClient {
-        async fn send(
-            &self,
-            _request: &CosmosHttpRequest,
-        ) -> Result<CosmosHttpResponse, TransportError> {
+    impl TransportClient for ScriptedClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             match self.plan {
-                ResponsePlan::Success => Ok(CosmosHttpResponse {
+                ResponsePlan::Success => Ok(HttpResponse {
                     status: 200,
                     headers: Headers::new(),
                     body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
@@ -1103,7 +1098,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn CosmosTransportClient>> {
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             self.configs
                 .lock()
                 .expect("config lock poisoned")

@@ -28,8 +28,8 @@ use crate::{
 
 use super::{
     adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
-    cosmos_transport_client::CosmosHttpRequest, infer_request_sent_status,
-    request_signing::sign_request, sharded_transport::EndpointKey,
+    cosmos_transport_client::HttpRequest, infer_request_sent_status, request_signing::sign_request,
+    sharded_transport::EndpointKey,
 };
 
 use crate::driver::pipeline::components::{
@@ -231,7 +231,7 @@ pub(crate) async fn execute_transport_pipeline(
         }
 
         // Build HTTP request from TransportRequest
-        let mut http_request = CosmosHttpRequest {
+        let mut http_request = HttpRequest {
             url: request.url.clone(),
             method: request.method,
             headers: request.headers.clone(),
@@ -394,7 +394,7 @@ fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult 
 }
 
 async fn execute_http_attempt(
-    http_request: &CosmosHttpRequest,
+    http_request: &HttpRequest,
     transport: &AdaptiveTransport,
     per_request_timeout: Option<Duration>,
     request_handle: RequestHandle,
@@ -460,7 +460,7 @@ async fn execute_http_attempt(
 }
 
 async fn execute_http_attempt_future(
-    http_request: &CosmosHttpRequest,
+    http_request: &HttpRequest,
     transport: &AdaptiveTransport,
     excluded_shard_id: Option<u64>,
     endpoint_key: &EndpointKey,
@@ -689,7 +689,16 @@ mod tests {
 
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
-        driver::{routing::CosmosEndpoint, transport::adaptive_transport::AdaptiveTransport},
+        driver::{
+            routing::CosmosEndpoint,
+            transport::{
+                adaptive_transport::AdaptiveTransport,
+                cosmos_transport_client::{
+                    HttpRequest, HttpResponse, TransportClient, TransportError,
+                },
+                http_client_factory::{HttpClientConfig, HttpClientFactory},
+            },
+        },
         models::{ActivityId, Credential, ResourceType},
         options::DiagnosticsOptions,
     };
@@ -700,20 +709,14 @@ mod tests {
     }
 
     #[async_trait]
-    impl super::super::cosmos_transport_client::CosmosTransportClient for HangingTransportClient {
-        async fn send(
-            &self,
-            _request: &super::super::cosmos_transport_client::CosmosHttpRequest,
-        ) -> Result<
-            super::super::cosmos_transport_client::CosmosHttpResponse,
-            super::super::cosmos_transport_client::TransportError,
-        > {
+    impl TransportClient for HangingTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             azure_core::sleep(
                 azure_core::time::Duration::try_from(self.delay)
                     .unwrap_or(azure_core::time::Duration::ZERO),
             )
             .await;
-            Err(super::super::cosmos_transport_client::TransportError::new(
+            Err(TransportError::new(
                 azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     "request should have timed out before completion",
@@ -956,21 +959,15 @@ mod tests {
     }
 
     #[async_trait]
-    impl super::super::cosmos_transport_client::CosmosTransportClient for ScriptedTransportClient {
-        async fn send(
-            &self,
-            _request: &super::super::cosmos_transport_client::CosmosHttpRequest,
-        ) -> Result<
-            super::super::cosmos_transport_client::CosmosHttpResponse,
-            super::super::cosmos_transport_client::TransportError,
-        > {
+    impl TransportClient for ScriptedTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             let error_kind = match &self.error_kind {
                 ErrorKind::Connection => ErrorKind::Connection,
                 ErrorKind::Io => ErrorKind::Io,
                 ErrorKind::Other => ErrorKind::Other,
                 _ => ErrorKind::Other,
             };
-            Err(super::super::cosmos_transport_client::TransportError::new(
+            Err(TransportError::new(
                 azure_core::Error::with_message(error_kind, self.message),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
@@ -979,26 +976,23 @@ mod tests {
 
     #[derive(Debug)]
     struct ScriptedFactory {
-        clients: Mutex<Vec<Arc<dyn super::super::cosmos_transport_client::CosmosTransportClient>>>,
+        clients: Mutex<Vec<Arc<dyn TransportClient>>>,
     }
 
     impl ScriptedFactory {
-        fn new(
-            clients: Vec<Arc<dyn super::super::cosmos_transport_client::CosmosTransportClient>>,
-        ) -> Self {
+        fn new(clients: Vec<Arc<dyn TransportClient>>) -> Self {
             Self {
                 clients: Mutex::new(clients.into_iter().rev().collect()),
             }
         }
     }
 
-    impl super::super::http_client_factory::HttpClientFactory for ScriptedFactory {
+    impl HttpClientFactory for ScriptedFactory {
         fn build(
             &self,
             _connection_pool: &crate::options::ConnectionPoolOptions,
-            _config: super::super::http_client_factory::HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn super::super::cosmos_transport_client::CosmosTransportClient>>
-        {
+            _config: HttpClientConfig,
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             self.clients.lock().unwrap().pop().ok_or_else(|| {
                 azure_core::Error::with_message(ErrorKind::Other, "no scripted client available")
             })
@@ -1031,7 +1025,7 @@ mod tests {
         AdaptiveTransport::from_config(
             &pool,
             factory,
-            super::super::http_client_factory::HttpClientConfig::dataplane_gateway(
+            HttpClientConfig::dataplane_gateway(
                 &pool,
                 crate::diagnostics::TransportHttpVersion::Http2,
             ),

@@ -10,7 +10,7 @@ use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
 use crate::diagnostics::RequestSentStatus;
 use crate::driver::transport::cosmos_transport_client::{
-    CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
+    HttpRequest, HttpResponse, TransportClient, TransportError,
 };
 use crate::models::cosmos_headers::fault_injection_header_names::{
     FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
@@ -27,7 +27,7 @@ use std::time::{Duration, Instant};
 /// Result of attempting to apply a fault injection rule.
 enum ApplyResult {
     /// Fault was injected — return this response/error to the caller.
-    Injected(Result<CosmosHttpResponse, TransportError>),
+    Injected(Result<HttpResponse, TransportError>),
     /// Rule matched but the probability check failed.
     ProbabilityMiss,
     /// Rule had no error_type and no custom_response — effectively no-op.
@@ -39,7 +39,7 @@ enum ApplyResult {
 #[derive(Debug)]
 pub struct FaultClient {
     /// The inner transport client to which requests are delegated.
-    inner: Arc<dyn CosmosTransportClient>,
+    inner: Arc<dyn TransportClient>,
     /// The fault injection rules to apply.
     rules: Arc<Vec<Arc<FaultInjectionRule>>>,
 }
@@ -47,7 +47,7 @@ pub struct FaultClient {
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
     pub(crate) fn new(
-        inner: Arc<dyn CosmosTransportClient>,
+        inner: Arc<dyn TransportClient>,
         rules: Vec<Arc<FaultInjectionRule>>,
     ) -> Self {
         Self {
@@ -104,7 +104,7 @@ impl FaultClient {
     /// Returns `None` if it matches, or `Some(evaluation)` with the mismatch reason.
     fn evaluate_condition(
         &self,
-        request: &CosmosHttpRequest,
+        request: &HttpRequest,
         rule: &FaultInjectionRule,
     ) -> Option<FaultInjectionEvaluation> {
         let condition = rule.condition();
@@ -188,7 +188,7 @@ impl FaultClient {
         // Check for custom response first (takes precedence over error injection)
         if let Some(custom) = server_error.custom_response() {
             let headers = custom.headers().clone();
-            return ApplyResult::Injected(Ok(CosmosHttpResponse {
+            return ApplyResult::Injected(Ok(HttpResponse {
                 status: u16::from(custom.status_code()),
                 headers,
                 body: custom.body().to_vec(),
@@ -288,11 +288,8 @@ impl FaultClient {
 }
 
 #[async_trait]
-impl CosmosTransportClient for FaultClient {
-    async fn send(
-        &self,
-        request: &CosmosHttpRequest,
-    ) -> Result<CosmosHttpResponse, TransportError> {
+impl TransportClient for FaultClient {
+    async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         let mut evaluations: Vec<FaultInjectionEvaluation> = Vec::new();
         let mut matched_rule: Option<Arc<FaultInjectionRule>> = None;
 
@@ -369,7 +366,7 @@ impl CosmosTransportClient for FaultClient {
             clean_headers.remove(FAULT_INJECTION_OPERATION.clone());
             clean_headers.remove(FAULT_INJECTION_REQUEST_ID.clone());
 
-            let clean_request = CosmosHttpRequest {
+            let clean_request = HttpRequest {
                 url: request.url.clone(),
                 method: request.method,
                 headers: clean_headers,
@@ -387,7 +384,7 @@ impl CosmosTransportClient for FaultClient {
 mod tests {
     use super::FaultClient;
     use crate::driver::transport::cosmos_transport_client::{
-        CosmosHttpRequest, CosmosHttpResponse, CosmosTransportClient, TransportError,
+        HttpRequest, HttpResponse, TransportClient, TransportError,
     };
     use crate::fault_injection::{
         next_evaluation_id, take_evaluations, CustomResponseBuilder,
@@ -426,15 +423,12 @@ mod tests {
     }
 
     #[async_trait]
-    impl CosmosTransportClient for MockTransportClient {
-        async fn send(
-            &self,
-            _request: &CosmosHttpRequest,
-        ) -> Result<CosmosHttpResponse, TransportError> {
+    impl TransportClient for MockTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             self.call_count.fetch_add(1, Ordering::SeqCst);
 
             // Return a minimal valid response
-            Ok(CosmosHttpResponse {
+            Ok(HttpResponse {
                 status: 200,
                 headers: Headers::new(),
                 body: vec![],
@@ -442,11 +436,11 @@ mod tests {
         }
     }
 
-    fn create_test_request() -> (CosmosHttpRequest, u64) {
+    fn create_test_request() -> (HttpRequest, u64) {
         let eval_id = next_evaluation_id();
         let mut headers = Headers::new();
         headers.insert(FAULT_INJECTION_REQUEST_ID.clone(), eval_id.to_string());
-        let request = CosmosHttpRequest {
+        let request = HttpRequest {
             url: Url::parse("https://test.cosmos.azure.com/dbs/testdb").unwrap(),
             method: Method::Get,
             headers,
