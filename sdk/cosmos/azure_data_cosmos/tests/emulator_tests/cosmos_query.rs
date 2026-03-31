@@ -10,7 +10,11 @@ use std::error::Error;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{constants, options::{OperationOptions, QueryOptions}, Query};
+use azure_data_cosmos::{
+    constants,
+    options::{OperationOptions, QueryOptions},
+    Query,
+};
 use framework::{test_data, MockItem, TestClient};
 use futures::{StreamExt, TryStreamExt};
 
