@@ -60,13 +60,17 @@ impl ContainerConnection {
         &self,
         force_refresh: bool,
     ) -> azure_core::Result<Option<CollectionRoutingMap>> {
+        let collection_name = self.container_ref.name();
         let collection_rid = self.container_ref.rid();
-        let routing_map = self.pk_range_cache.try_lookup(collection_rid, None).await?;
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(collection_name, collection_rid, None)
+            .await?;
         if force_refresh {
             if let Some(rm) = routing_map {
                 return self
                     .pk_range_cache
-                    .try_lookup(collection_rid, Some(rm))
+                    .try_lookup(collection_name, collection_rid, Some(rm))
                     .await;
             }
         }

@@ -41,6 +41,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
+use crate::hash::EffectivePartitionKey;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 
@@ -62,8 +63,8 @@ use crate::routing::range::Range;
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct FeedRange {
-    pub(crate) min_inclusive: String,
-    pub(crate) max_exclusive: String,
+    pub(crate) min_inclusive: EffectivePartitionKey,
+    pub(crate) max_exclusive: EffectivePartitionKey,
 }
 
 /// JSON wire format matching the cross-SDK feed range representation.
@@ -95,8 +96,8 @@ impl FeedRange {
     /// encompassing all partitions in a container.
     pub fn full() -> Self {
         Self {
-            min_inclusive: String::new(),
-            max_exclusive: "FF".to_string(),
+            min_inclusive: EffectivePartitionKey::from(""),
+            max_exclusive: EffectivePartitionKey::from("FF"),
         }
     }
 
@@ -140,8 +141,8 @@ impl FeedRange {
             range.is_max_inclusive
         );
         Self {
-            min_inclusive: range.min.clone(),
-            max_exclusive: range.max.clone(),
+            min_inclusive: EffectivePartitionKey::from(range.min.as_str()),
+            max_exclusive: EffectivePartitionKey::from(range.max.as_str()),
         }
     }
 
@@ -152,8 +153,8 @@ impl FeedRange {
     )]
     pub(crate) fn to_range(&self) -> Range<String> {
         Range::new(
-            self.min_inclusive.clone(),
-            self.max_exclusive.clone(),
+            self.min_inclusive.as_str().to_owned(),
+            self.max_exclusive.as_str().to_owned(),
             true,
             false,
         )
@@ -162,8 +163,8 @@ impl FeedRange {
     /// Creates a `FeedRange` from a `PartitionKeyRange`.
     pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> Self {
         Self {
-            min_inclusive: pkr.min_inclusive.clone(),
-            max_exclusive: pkr.max_exclusive.clone(),
+            min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
+            max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
         }
     }
 }
@@ -176,8 +177,8 @@ impl fmt::Display for FeedRange {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let json = FeedRangeJson {
             range: RangeJson {
-                min: self.min_inclusive.clone(),
-                max: self.max_exclusive.clone(),
+                min: self.min_inclusive.as_str().to_owned(),
+                max: self.max_exclusive.as_str().to_owned(),
                 is_min_inclusive: true,
                 is_max_inclusive: false,
             },
@@ -212,8 +213,8 @@ impl FromStr for FeedRange {
         }
 
         Ok(Self {
-            min_inclusive: json.range.min,
-            max_exclusive: json.range.max,
+            min_inclusive: EffectivePartitionKey::from(json.range.min),
+            max_exclusive: EffectivePartitionKey::from(json.range.max),
         })
     }
 }
@@ -225,8 +226,8 @@ impl Serialize for FeedRange {
     {
         let json = FeedRangeJson {
             range: RangeJson {
-                min: self.min_inclusive.clone(),
-                max: self.max_exclusive.clone(),
+                min: self.min_inclusive.as_str().to_owned(),
+                max: self.max_exclusive.as_str().to_owned(),
                 is_min_inclusive: true,
                 is_max_inclusive: false,
             },
@@ -249,8 +250,8 @@ impl<'de> Deserialize<'de> for FeedRange {
         }
 
         Ok(Self {
-            min_inclusive: json.range.min,
-            max_exclusive: json.range.max,
+            min_inclusive: EffectivePartitionKey::from(json.range.min),
+            max_exclusive: EffectivePartitionKey::from(json.range.max),
         })
     }
 }
@@ -262,16 +263,16 @@ mod tests {
     #[test]
     fn full_range() {
         let full = FeedRange::full();
-        assert_eq!(full.min_inclusive, "");
-        assert_eq!(full.max_exclusive, "FF");
+        assert_eq!(full.min_inclusive.as_str(), "");
+        assert_eq!(full.max_exclusive.as_str(), "FF");
     }
 
     #[test]
     fn contains_full_contains_sub() {
         let full = FeedRange::full();
         let sub = FeedRange {
-            min_inclusive: "00".to_string(),
-            max_exclusive: "80".to_string(),
+            min_inclusive: EffectivePartitionKey::from("00"),
+            max_exclusive: EffectivePartitionKey::from("80"),
         };
         assert!(full.contains(&sub));
         assert!(!sub.contains(&full));
@@ -280,8 +281,8 @@ mod tests {
     #[test]
     fn contains_self() {
         let range = FeedRange {
-            min_inclusive: "20".to_string(),
-            max_exclusive: "80".to_string(),
+            min_inclusive: EffectivePartitionKey::from("20"),
+            max_exclusive: EffectivePartitionKey::from("80"),
         };
         assert!(range.contains(&range));
     }
@@ -289,12 +290,12 @@ mod tests {
     #[test]
     fn overlaps_basic() {
         let a = FeedRange {
-            min_inclusive: "00".to_string(),
-            max_exclusive: "50".to_string(),
+            min_inclusive: EffectivePartitionKey::from("00"),
+            max_exclusive: EffectivePartitionKey::from("50"),
         };
         let b = FeedRange {
-            min_inclusive: "30".to_string(),
-            max_exclusive: "80".to_string(),
+            min_inclusive: EffectivePartitionKey::from("30"),
+            max_exclusive: EffectivePartitionKey::from("80"),
         };
         assert!(a.overlaps(&b));
         assert!(b.overlaps(&a));
@@ -303,12 +304,12 @@ mod tests {
     #[test]
     fn overlaps_adjacent_no_overlap() {
         let a = FeedRange {
-            min_inclusive: "00".to_string(),
-            max_exclusive: "50".to_string(),
+            min_inclusive: EffectivePartitionKey::from("00"),
+            max_exclusive: EffectivePartitionKey::from("50"),
         };
         let b = FeedRange {
-            min_inclusive: "50".to_string(),
-            max_exclusive: "FF".to_string(),
+            min_inclusive: EffectivePartitionKey::from("50"),
+            max_exclusive: EffectivePartitionKey::from("FF"),
         };
         // Adjacent ranges (a's max == b's min) do NOT overlap because max is exclusive
         assert!(!a.overlaps(&b));
@@ -318,12 +319,12 @@ mod tests {
     #[test]
     fn overlaps_disjoint() {
         let a = FeedRange {
-            min_inclusive: "00".to_string(),
-            max_exclusive: "30".to_string(),
+            min_inclusive: EffectivePartitionKey::from("00"),
+            max_exclusive: EffectivePartitionKey::from("30"),
         };
         let b = FeedRange {
-            min_inclusive: "50".to_string(),
-            max_exclusive: "FF".to_string(),
+            min_inclusive: EffectivePartitionKey::from("50"),
+            max_exclusive: EffectivePartitionKey::from("FF"),
         };
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
@@ -332,8 +333,8 @@ mod tests {
     #[test]
     fn display_and_from_str_round_trip() {
         let range = FeedRange {
-            min_inclusive: "".to_string(),
-            max_exclusive: "FF".to_string(),
+            min_inclusive: EffectivePartitionKey::from(""),
+            max_exclusive: EffectivePartitionKey::from("FF"),
         };
         let serialized = range.to_string();
         let restored: FeedRange = serialized.parse().unwrap();
@@ -343,8 +344,8 @@ mod tests {
     #[test]
     fn display_and_from_str_sub_range() {
         let range = FeedRange {
-            min_inclusive: "3FFFFFFFFFFF".to_string(),
-            max_exclusive: "7FFFFFFFFFFF".to_string(),
+            min_inclusive: EffectivePartitionKey::from("3FFFFFFFFFFF"),
+            max_exclusive: EffectivePartitionKey::from("7FFFFFFFFFFF"),
         };
         let serialized = range.to_string();
         let restored: FeedRange = serialized.parse().unwrap();
@@ -354,8 +355,8 @@ mod tests {
     #[test]
     fn serde_json_round_trip() {
         let range = FeedRange {
-            min_inclusive: "".to_string(),
-            max_exclusive: "FF".to_string(),
+            min_inclusive: EffectivePartitionKey::from(""),
+            max_exclusive: EffectivePartitionKey::from("FF"),
         };
         let json = serde_json::to_string(&range).unwrap();
         let restored: FeedRange = serde_json::from_str(&json).unwrap();
@@ -388,15 +389,15 @@ mod tests {
     fn from_partition_key_range() {
         let pkr = PartitionKeyRange::new("0".to_string(), "".to_string(), "FF".to_string());
         let feed_range = FeedRange::from_partition_key_range(&pkr);
-        assert_eq!(feed_range.min_inclusive, "");
-        assert_eq!(feed_range.max_exclusive, "FF");
+        assert_eq!(feed_range.min_inclusive.as_str(), "");
+        assert_eq!(feed_range.max_exclusive.as_str(), "FF");
     }
 
     #[test]
     fn to_range_and_back() {
         let feed_range = FeedRange {
-            min_inclusive: "20".to_string(),
-            max_exclusive: "80".to_string(),
+            min_inclusive: EffectivePartitionKey::from("20"),
+            max_exclusive: EffectivePartitionKey::from("80"),
         };
         let range = feed_range.to_range();
         assert_eq!(range.min, "20");
