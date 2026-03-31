@@ -75,7 +75,7 @@ impl CosmosClientOptions {
     // applies them to the HTTP request. Will be removed when operations use the
     // internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = &self.operation.custom_headers {
+        if let Some(custom_headers) = self.operation.custom_headers() {
             for (header_name, header_value) in custom_headers {
                 // Only insert if not already set — SDK/request headers take priority.
                 if headers.get_optional_str(header_name).is_none() {
@@ -196,35 +196,6 @@ impl ItemReadOptions {
         self.operation = operation;
         self
     }
-
-    pub(crate) fn custom_headers(&self) -> &HashMap<HeaderName, HeaderValue> {
-        &self.custom_headers
-    }
-
-    pub(crate) fn excluded_regions(&self) -> Option<&[RegionName]> {
-        self.excluded_regions.as_deref()
-    }
-}
-
-impl ItemReadOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when read_item uses the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = &self.operation.custom_headers {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-        if let Some(precondition) = &self.precondition {
-            apply_precondition_headers(precondition, headers);
-        }
-    }
 }
 
 /// Options for item write operations.
@@ -276,7 +247,7 @@ impl ItemWriteOptions {
     // Temporary: applies option values as HTTP headers for the SDK pipeline.
     // Will be removed when write operations use the internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = &self.operation.custom_headers {
+        if let Some(custom_headers) = self.operation.custom_headers() {
             for (name, value) in custom_headers {
                 // Only insert if not already set — SDK/request headers take priority.
                 if headers.get_optional_str(name).is_none() {
@@ -334,7 +305,7 @@ impl BatchOptions {
     // Temporary: applies option values as HTTP headers for the SDK pipeline.
     // Will be removed when batch operations use the internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = &self.operation.custom_headers {
+        if let Some(custom_headers) = self.operation.custom_headers() {
             for (name, value) in custom_headers {
                 // Only insert if not already set — SDK/request headers take priority.
                 if headers.get_optional_str(name).is_none() {
@@ -397,7 +368,7 @@ impl QueryOptions {
     // Temporary: applies option values as HTTP headers for the SDK pipeline.
     // Will be removed when query operations use the internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = &self.operation.custom_headers {
+        if let Some(custom_headers) = self.operation.custom_headers() {
             for (name, value) in custom_headers {
                 // Only insert if not already set — SDK/request headers take priority.
                 if headers.get_optional_str(name).is_none() {
@@ -447,8 +418,7 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
 
         let options = ItemWriteOptions {
             operation,
@@ -474,26 +444,6 @@ mod tests {
     }
 
     #[test]
-    fn item_read_options_as_headers() {
-        let options = ItemReadOptions::default()
-            .with_session_token("ReadSession".to_string())
-            .with_precondition(Precondition::IfNoneMatch(ETag::from("etag_value")));
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (constants::SESSION_TOKEN, "ReadSession".into()),
-            (constants::IF_NONE_MATCH, "etag_value".into()),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
     fn custom_headers_should_not_override_sdk_set_headers() {
         let mut custom_headers = HashMap::new();
         custom_headers.insert(
@@ -501,8 +451,7 @@ mod tests {
             HeaderValue::from_static("CustomSession"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
 
         let options = ItemWriteOptions {
             operation,
@@ -532,8 +481,7 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
 
         let client_options = CosmosClientOptions {
             operation,
@@ -560,8 +508,7 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
 
         let query_options = QueryOptions {
             operation,
@@ -624,8 +571,7 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(custom_headers);
+        let mut operation = OperationOptions::default().with_custom_headers(custom_headers);
         operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
 
         let batch_options = BatchOptions {
@@ -656,8 +602,7 @@ mod tests {
             HeaderValue::from_static("CustomSession"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
 
         let batch_options = BatchOptions {
             operation,

@@ -10,6 +10,10 @@ use crate::{
 };
 
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
+#[cfg(feature = "allow_invalid_certificates")]
+use azure_data_cosmos_driver::options::{
+    ConnectionPoolOptions, EmulatorServerCertValidation,
+};
 use std::sync::Arc;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
@@ -332,6 +336,15 @@ impl CosmosClientBuilder {
         let driver_account = build_driver_account(endpoint, driver_credential);
         #[allow(unused_mut)]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
+        #[cfg(feature = "allow_invalid_certificates")]
+        if self.allow_emulator_invalid_certificates {
+            let connection_pool = ConnectionPoolOptions::builder()
+                .with_emulator_server_cert_validation(
+                    EmulatorServerCertValidation::DangerousDisabled,
+                )
+                .build()?;
+            driver_runtime_builder = driver_runtime_builder.with_connection_pool(connection_pool);
+        }
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =

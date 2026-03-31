@@ -803,7 +803,14 @@ impl TestRunContext {
                     format!("Failed to parse account endpoint: {}", e),
                 )
             })?;
-        CosmosClient::builder()
+        let mut builder = CosmosClient::builder();
+
+        #[cfg(feature = "allow_invalid_certificates")]
+        if env_var == "emulator" {
+            builder = builder.with_allow_emulator_invalid_certificates(true);
+        }
+
+        builder
             .build(
                 azure_data_cosmos::CosmosAccountReference::with_master_key(
                     endpoint,

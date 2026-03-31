@@ -410,8 +410,7 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let mut operation = OperationOptions::default();
-        operation.custom_headers = Some(request_custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(request_custom_headers);
         let item_options = ItemWriteOptions {
             operation,
             ..Default::default()
@@ -434,8 +433,8 @@ mod tests {
             HeaderValue::from_static("custom_value-2"),
         );
 
-        let mut client_operation = OperationOptions::default();
-        client_operation.custom_headers = Some(client_custom_headers);
+        let client_operation =
+            OperationOptions::default().with_custom_headers(client_custom_headers);
         let client_options =
             CosmosClientOptions::default().with_operation_options(client_operation);
         client_options.apply_headers(&mut req.headers);

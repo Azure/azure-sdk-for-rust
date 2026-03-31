@@ -11,10 +11,7 @@ use azure_core::{
     http::{headers::Headers, response::Response, RawResponse, StatusCode},
     Bytes,
 };
-use azure_data_cosmos_driver::{
-    models::{CosmosResponse as DriverResponse, CosmosResponseHeaders},
-    options::{ExcludedRegions, OperationOptions, Region},
-};
+use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosResponseHeaders};
 
 use crate::{
     constants::{
@@ -22,7 +19,6 @@ use crate::{
         REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
     },
     models::CosmosResponse,
-    options::ItemOptions,
 };
 
 /// Converts a driver [`DriverResponse`] into the SDK's typed [`CosmosResponse<T>`].
@@ -81,23 +77,6 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     }
 
     headers
-}
-
-/// Translates SDK [`ItemOptions`] into driver [`OperationOptions`].
-pub(crate) fn item_options_to_operation_options(options: &ItemOptions) -> OperationOptions {
-    let mut driver_options = OperationOptions::default();
-
-    if let Some(regions) = options.excluded_regions() {
-        let driver_regions =
-            ExcludedRegions(regions.iter().map(|r| Region::new(r.to_string())).collect());
-        driver_options.excluded_regions = Some(driver_regions);
-    }
-
-    if !options.custom_headers().is_empty() {
-        driver_options = driver_options.with_custom_headers(options.custom_headers().clone());
-    }
-
-    driver_options
 }
 
 /// Translates SDK fault injection rules into driver fault injection rules.
@@ -225,7 +204,6 @@ pub(crate) fn sdk_fi_rules_to_driver_fi_rules(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::http::headers::HeaderName;
     use azure_data_cosmos_driver::models::{
         ActivityId, CosmosResponseHeaders, ETag, RequestCharge, SessionToken as DriverSessionToken,
         SubStatusCode,
@@ -276,48 +254,5 @@ mod tests {
         assert_eq!(headers.get_optional_str(&CONTINUATION), None);
         assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
         assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
-    }
-
-    #[test]
-    fn options_custom_headers() {
-        let mut custom = std::collections::HashMap::new();
-        custom.insert(
-            HeaderName::from_static("x-custom-header"),
-            azure_core::http::headers::HeaderValue::from_static("custom-value"),
-        );
-        let options = ItemOptions::default().with_custom_headers(custom);
-        let driver_opts = item_options_to_operation_options(&options);
-
-        let driver_custom = driver_opts
-            .custom_headers()
-            .expect("custom headers should be set");
-        assert_eq!(
-            driver_custom
-                .get(&HeaderName::from_static("x-custom-header"))
-                .map(|v| v.as_str()),
-            Some("custom-value"),
-        );
-    }
-
-    #[test]
-    fn options_excluded_regions() {
-        let options =
-            ItemOptions::default().with_excluded_regions(vec!["eastus".into(), "westus".into()]);
-        let driver_opts = item_options_to_operation_options(&options);
-
-        let regions = driver_opts
-            .excluded_regions
-            .as_ref()
-            .expect("excluded regions should be set");
-        assert_eq!(regions.0.len(), 2);
-    }
-
-    #[test]
-    fn options_default_produces_empty_driver_options() {
-        let options = ItemOptions::default();
-        let driver_opts = item_options_to_operation_options(&options);
-
-        assert!(driver_opts.custom_headers().is_none());
-        assert!(driver_opts.excluded_regions.is_none());
     }
 }
