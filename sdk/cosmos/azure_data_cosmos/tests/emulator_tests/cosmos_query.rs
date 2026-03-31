@@ -21,8 +21,11 @@ fn collect_matching_items(
     items.iter().filter(|p| predicate(p)).cloned().collect()
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -45,8 +48,11 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -79,8 +85,11 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -107,8 +116,11 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -140,8 +152,11 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -181,8 +196,11 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {

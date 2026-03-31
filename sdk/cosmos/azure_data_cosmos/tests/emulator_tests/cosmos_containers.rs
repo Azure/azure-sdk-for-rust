@@ -18,8 +18,11 @@ use futures::TryStreamExt;
 
 use framework::TestClient;
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -134,8 +137,11 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {

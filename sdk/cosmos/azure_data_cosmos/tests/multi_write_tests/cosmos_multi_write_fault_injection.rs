@@ -111,8 +111,11 @@ async fn verify_read_fails_with_injected_error(
     .await
 }
 
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn item_read_fault_injection_service_unavailable() -> Result<(), Box<dyn Error>> {
     verify_read_fails_with_injected_error(
         FaultInjectionErrorType::ServiceUnavailable,
@@ -121,8 +124,11 @@ pub async fn item_read_fault_injection_service_unavailable() -> Result<(), Box<d
     .await
 }
 
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn item_read_fault_injection_internal_server_error() -> Result<(), Box<dyn Error>> {
     verify_read_fails_with_injected_error(
         FaultInjectionErrorType::InternalServerError,
@@ -131,8 +137,11 @@ pub async fn item_read_fault_injection_internal_server_error() -> Result<(), Box
     .await
 }
 
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn item_read_fault_injection_too_many_requests() -> Result<(), Box<dyn Error>> {
     verify_read_fails_with_injected_error(
         FaultInjectionErrorType::TooManyRequests,
@@ -141,8 +150,11 @@ pub async fn item_read_fault_injection_too_many_requests() -> Result<(), Box<dyn
     .await
 }
 
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn item_read_fault_injection_timeout() -> Result<(), Box<dyn Error>> {
     verify_read_fails_with_injected_error(
         FaultInjectionErrorType::Timeout,
@@ -151,8 +163,11 @@ pub async fn item_read_fault_injection_timeout() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn item_read_fault_injection_partition_is_gone() -> Result<(), Box<dyn Error>> {
     verify_read_fails_with_injected_error(
         FaultInjectionErrorType::PartitionIsGone,
@@ -167,8 +182,11 @@ pub async fn item_read_fault_injection_partition_is_gone() -> Result<(), Box<dyn
 /// This test uses two clients:
 /// - A normal client for creating items
 /// - A fault injection client (with CreateItem fault) for reading items (which should succeed)
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), Box<dyn Error>> {
     // Create a fault injection rule that returns 503 for CreateItem operations
     let server_error = FaultInjectionResultBuilder::new()
@@ -248,8 +266,11 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 }
 
 /// Test read region retries - inject 503 for primary region, verify cross region retries.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error>> {
     // Create a fault injection rule that returns 503 for reads targeting the primary region
     let server_error = FaultInjectionResultBuilder::new()
@@ -328,8 +349,11 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 }
 
 /// Test write region retries - inject 503 for primary region, verify cross region retries.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -407,8 +431,11 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
 
 /// Test 404:1002 retry - inject ReadSessionNotAvailable on satellite region,
 /// verify the read retries on the hub region and succeeds.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn Error>> {
     // Create a fault injection rule that returns 404:1002 for reads targeting the satellite region
     let server_error = FaultInjectionResultBuilder::new()
@@ -500,8 +527,11 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
 /// Test write failover on connection error — inject ConnectionError on hub for CreateItem.
 /// The retry policy retries 3 times on the same endpoint, then fails over to satellite.
 /// hit_limit(4) ensures the fault fires for all local retries plus the one that triggers failover.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
@@ -573,8 +603,11 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
 
 /// Test read failover on connection error — inject ConnectionError on hub for ReadItem.
 /// Same 3-local-retry-then-failover path as writes, but for a read operation.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
@@ -657,8 +690,11 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
 /// Test that writes are NOT retried on response timeout.
 /// ResponseTimeout has Unknown sent-status — the request may have been sent, so
 /// write retries are unsafe. The write must fail.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ResponseTimeout)
@@ -724,8 +760,11 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
 
 /// Test that reads ARE retried on response timeout and fail over to satellite.
 /// ResponseTimeout has Unknown sent-status — reads are safe to retry.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_read_response_timeout_retries_to_satellite(
 ) -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
@@ -807,8 +846,11 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
 
 /// Test connection error reverse failover — inject on satellite, preferred [SATELLITE, HUB].
 /// Verifies failover works in the opposite direction (satellite → hub).
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
@@ -881,8 +923,11 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
 /// Test that a transient connection error clears before failover is needed.
 /// With hit_limit(2), the fault fires twice then stops. Since MAX_RETRY_COUNT is 3,
 /// the third local retry succeeds on the same hub endpoint — no failover occurs.
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(), Box<dyn Error>> {
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)

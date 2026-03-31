@@ -13,8 +13,11 @@ use azure_data_cosmos::{
 };
 use framework::TestClient;
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let cosmos_client = run_context.client();
@@ -58,8 +61,11 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -98,8 +104,11 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {

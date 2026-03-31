@@ -29,8 +29,11 @@ struct TestItem {
 /// 3. Reads the item back using `CosmosOperation::read_item()`
 /// 4. Validates the response body matches the created item
 /// 5. Validates diagnostics for both operations
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
         // Create a container
@@ -95,8 +98,11 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 }
 
 /// Tests that control plane operations use the metadata pipeline.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
         // Create a container and verify it used the metadata pipeline
@@ -133,8 +139,11 @@ pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>
 }
 
 /// Tests diagnostics content for emulator operations.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
         // Create a container

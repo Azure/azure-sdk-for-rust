@@ -96,8 +96,11 @@ async fn create_container_and_write_item(
     Ok(())
 }
 
-#[cfg_attr(not(test_category = "multi_write"), ignore = "requires test_category 'multi_write'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // Create a buffer to capture log messages
     let log_buffer: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));

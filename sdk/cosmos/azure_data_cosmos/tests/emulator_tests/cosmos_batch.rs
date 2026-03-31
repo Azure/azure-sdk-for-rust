@@ -39,8 +39,11 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     Ok(container_client)
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -99,8 +102,11 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -177,8 +183,11 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -234,8 +243,11 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -277,8 +289,11 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {

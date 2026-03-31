@@ -13,8 +13,11 @@ use std::sync::Arc;
 /// Tests that a rule with probability 0.0 never injects faults.
 ///
 /// A read operation should succeed because the fault never fires.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
@@ -72,8 +75,11 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 }
 
 /// Tests that a ServiceUnavailable fault with probability 1.0 causes read failures.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
@@ -126,8 +132,11 @@ pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), 
 /// Tests that fault injection respects the operation type filter.
 ///
 /// A rule targeting only ReadItem should not affect CreateItem operations.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
@@ -188,8 +197,11 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
 ///
 /// A rule with a hit limit should only inject faults up to that limit,
 /// then allow operations to succeed normally.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
@@ -264,8 +276,11 @@ pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<
 }
 
 /// Tests that a ConnectionError fault causes read failures.
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)

@@ -108,8 +108,11 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     Ok(container_client)
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -228,8 +231,11 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -285,8 +291,11 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -333,8 +342,11 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -387,8 +399,11 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -479,8 +494,11 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -562,8 +580,11 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -642,8 +663,11 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -741,8 +765,11 @@ struct ExplicitPkItem {
     value: usize,
 }
 
-#[cfg_attr(not(test_category = "emulator"), ignore = "requires test_category 'emulator'")]
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
