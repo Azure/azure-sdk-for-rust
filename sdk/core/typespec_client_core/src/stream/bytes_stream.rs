@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::http::Body;
+
 use super::{Bytes, SeekableStream};
 use futures::io::AsyncRead;
 use futures::stream::Stream;
@@ -49,6 +51,12 @@ impl fmt::Debug for BytesStream {
 impl From<Bytes> for BytesStream {
     fn from(bytes: Bytes) -> Self {
         Self::new(bytes)
+    }
+}
+
+impl From<BytesStream> for Body {
+    fn from(stream: BytesStream) -> Self {
+        Body::SeekableStream(Box::new(stream))
     }
 }
 

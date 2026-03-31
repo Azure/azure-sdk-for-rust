@@ -14,7 +14,8 @@ keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
 
 [features]
-default = ["azure_core/default"]
+default = ["tokio", "azure_core/default"]
+tokio = ["dep:tokio", "azure_core/tokio"]
 
 [dependencies]
 async-stream.workspace = true
@@ -27,6 +28,11 @@ pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
+tokio = { workspace = true, optional = true, features = [
+  "fs",
+  "io-util",
+  "sync",
+] }
 
 [lints]
 workspace = true
@@ -38,15 +44,18 @@ azure_core_test = { workspace = true, features = [
 ] }
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
-clap.workspace = true
+clap = { workspace = true, features = ["env"] }
 futures.workspace = true
 opentelemetry.workspace = true
 opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 rand.workspace = true
-tokio = { workspace = true, features = ["macros"] }
+tokio = { workspace = true, features = ["macros", "rt"] }
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[package.metadata.docs.rs]
+all-features = true
 
 [[bench]]
 name = "perf"
