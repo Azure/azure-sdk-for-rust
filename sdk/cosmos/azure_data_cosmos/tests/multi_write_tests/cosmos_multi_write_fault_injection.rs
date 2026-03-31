@@ -300,16 +300,14 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .await;
 
             let response = result.unwrap();
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            println!("Request succeeded via failover, final URL: {}", request_url);
-            // Verify the request went to a different endpoint than the faulted one
-            assert!(
-                request_url.contains(&SATELLITE_REGION.as_str()),
-                "request should have failed over to secondary region"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                println!("Request succeeded via failover, final URL: {}", request_url);
+                // Verify the request went to a different endpoint than the faulted one
+                assert!(
+                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    "request should have failed over to secondary region"
+                );
+            }
 
             Ok(())
         },
@@ -380,15 +378,13 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             );
 
             let response = result.unwrap();
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            // Verify the request went to a different endpoint than the faulted one
-            assert!(
-                request_url.contains(&SATELLITE_REGION.as_str()),
-                "request should have failed over to secondary region"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                // Verify the request went to a different endpoint than the faulted one
+                assert!(
+                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    "request should have failed over to secondary region"
+                );
+            }
 
             Ok(())
         },
@@ -472,16 +468,14 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .await;
 
             let response = result.unwrap();
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            println!("Request succeeded via failover, final URL: {}", request_url);
-            // Verify the request was retried on the hub region
-            assert!(
-                request_url.contains(&HUB_REGION.as_str()),
-                "request should have failed over to hub region"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                println!("Request succeeded via failover, final URL: {}", request_url);
+                // Verify the request was retried on the hub region
+                assert!(
+                    request_url.contains(&HUB_REGION.as_str()),
+                    "request should have failed over to hub region"
+                );
+            }
 
             Ok(())
         },
@@ -549,14 +543,12 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
                 .await
                 .expect("write should succeed via failover to satellite");
 
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            assert!(
-                request_url.contains(SATELLITE_REGION.as_str()),
-                "request should have failed over to satellite region, got: {request_url}"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                assert!(
+                    request_url.contains(SATELLITE_REGION.as_str()),
+                    "request should have failed over to satellite region, got: {request_url}"
+                );
+            }
 
             Ok(())
         },
@@ -633,14 +625,12 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
                 .await
                 .expect("read should succeed via failover to satellite");
 
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            assert!(
-                request_url.contains(SATELLITE_REGION.as_str()),
-                "request should have failed over to satellite region, got: {request_url}"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                assert!(
+                    request_url.contains(SATELLITE_REGION.as_str()),
+                    "request should have failed over to satellite region, got: {request_url}"
+                );
+            }
 
             Ok(())
         },
@@ -784,14 +774,12 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
                 .await
                 .expect("read should succeed via failover after response timeout on hub");
 
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            assert!(
-                request_url.contains(SATELLITE_REGION.as_str()),
-                "request should have failed over to satellite region, got: {request_url}"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                assert!(
+                    request_url.contains(SATELLITE_REGION.as_str()),
+                    "request should have failed over to satellite region, got: {request_url}"
+                );
+            }
 
             Ok(())
         },
@@ -858,14 +846,12 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
                 .await
                 .expect("write should succeed via reverse failover to hub");
 
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            assert!(
-                request_url.contains(HUB_REGION.as_str()),
-                "request should have failed over to hub region, got: {request_url}"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                assert!(
+                    request_url.contains(HUB_REGION.as_str()),
+                    "request should have failed over to hub region, got: {request_url}"
+                );
+            }
 
             Ok(())
         },
@@ -936,15 +922,13 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
                 .await
                 .expect("read should succeed on hub after transient fault clears");
 
-            let request_url = response
-                .request_url()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-            // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
-            assert!(
-                request_url.contains(HUB_REGION.as_str()),
-                "request should have succeeded on hub without failover, got: {request_url}"
-            );
+            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
+                // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
+                assert!(
+                    request_url.contains(HUB_REGION.as_str()),
+                    "request should have succeeded on hub without failover, got: {request_url}"
+                );
+            }
 
             Ok(())
         },

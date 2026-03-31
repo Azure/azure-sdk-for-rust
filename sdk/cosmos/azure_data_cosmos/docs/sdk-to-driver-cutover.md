@@ -274,6 +274,21 @@ The gateway pipeline tracked this via `CosmosRequest` (which held the final URL)
 2. Providing users with routing transparency for observability
 3. Removing the `request_url()` → `Option` workaround once all operations are driver-routed
 
+**Tests with skipped endpoint assertions** (these should be restored once the driver exposes the effective endpoint):
+
+| Test File | Test Name | What it verifies |
+| --- | --- | --- |
+| `cosmos_items.rs` | `assert_response` helper (all item tests) | Endpoint matches expected host |
+| `cosmos_fault_injection.rs` | `fault_injection_429_retry_with_hit_limit` | Endpoint matches hub |
+| `cosmos_multi_write_retry_policies.rs` | `read_cross_region_retry_on_408` | Failover to satellite region |
+| `cosmos_multi_write_retry_policies.rs` | `read_cross_region_retry_on_500` | Failover to satellite region |
+| `cosmos_multi_write_fault_injection.rs` | `fault_injection_read_unaffected_by_create_rule` | Endpoint matches hub |
+| `cosmos_multi_write_fault_injection.rs` | `fault_injection_read_region_retry_503` | Failover to satellite region |
+| `cosmos_multi_write_fault_injection.rs` | `fault_injection_read_session_retry_404_1002` | Failover to hub region |
+| `cosmos_multi_write_fault_injection.rs` | `fault_injection_read_connection_error_failover` | Failover to satellite region |
+| `cosmos_multi_write_fault_injection.rs` | `fault_injection_read_response_timeout_retries_to_satellite` | Failover to satellite region |
+| `cosmos_multi_write_fault_injection.rs` | `fault_injection_connection_error_local_retry_succeeds` | Stays on hub (no failover) |
+
 ## Files Changed
 
 | File | Change |
