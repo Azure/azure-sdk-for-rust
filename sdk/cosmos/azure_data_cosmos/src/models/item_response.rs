@@ -44,9 +44,10 @@ impl<T> ItemResponse<T> {
     }
 
     /// Returns the final request URL used to fulfill the operation.
+    /// Returns `None` for driver-routed operations.
     /// This api is subject to change without a major version bump.
     #[cfg(feature = "fault_injection")]
-    pub fn request_url(&self) -> azure_core::http::Url {
+    pub fn request_url(&self) -> Option<azure_core::http::Url> {
         self.response.request_url()
     }
 

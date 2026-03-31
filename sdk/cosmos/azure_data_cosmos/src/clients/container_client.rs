@@ -25,6 +25,7 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
+use azure_data_cosmos_driver::models::{ContainerReference, CosmosOperation, ItemReference};
 use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -38,6 +39,8 @@ pub struct ContainerClient {
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
     container_id: String,
+    driver: Arc<CosmosDriver>,
+    container_ref: ContainerReference,
 }
 
 impl ContainerClient {
@@ -74,7 +77,7 @@ impl ContainerClient {
             pipeline.clone(),
             partition_key_range_cache,
             global_partition_endpoint_manager.clone(),
-            container_ref,
+            container_ref.clone(),
         ));
 
         Ok(Self {
@@ -83,6 +86,8 @@ impl ContainerClient {
             pipeline,
             container_connection,
             container_id: container_id.to_string(),
+            driver,
+            container_ref,
         })
     }
 
@@ -545,23 +550,43 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemOptions>,
     ) -> azure_core::Result<ItemResponse<T>> {
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
 
-        // Read APIs should always return the item, ignoring whatever the user set.
-        options = options.with_content_response_on_write_enabled(true);
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
 
-        let link = self.items_link.item(item_id);
-        let excluded_regions = options.excluded_regions.clone();
-        let mut cosmos_request = CosmosRequest::builder(OperationType::Read, link)
-            .partition_key(partition_key.into())
-            .excluded_regions(excluded_regions)
-            .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        // Create the driver operation.
+        let mut operation = CosmosOperation::read_item(item_ref);
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(|r| ItemResponse::new(r))
+        // Wire session token and etag from SDK options onto the operation.
+        if let Some(session_token) = options.session_token() {
+            operation = operation.with_session_token(session_token.to_string());
+        }
+        if let Some(etag) = options.if_match_etag() {
+            operation = operation.with_precondition(
+                azure_data_cosmos_driver::models::Precondition::if_match(
+                    azure_data_cosmos_driver::models::ETag::new(etag.to_string()),
+                ),
+            );
+        }
+
+        // Translate SDK options to driver options.
+        let driver_options = crate::driver_bridge::item_options_to_operation_options(&options);
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, driver_options)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Deletes an item from the container.

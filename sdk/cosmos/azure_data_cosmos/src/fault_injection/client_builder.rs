@@ -76,6 +76,11 @@ impl FaultInjectionClientBuilder {
         self
     }
 
+    /// Returns a reference to the current fault injection rules.
+    pub(crate) fn rules(&self) -> &[Arc<FaultInjectionRule>] {
+        &self.rules
+    }
+
     /// Sets a custom inner HTTP client to wrap with fault injection.
     ///
     /// This is useful when you need fault injection combined with other transport

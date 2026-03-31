@@ -46,6 +46,7 @@ use crate::driver::transport::{
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -112,8 +113,10 @@ pub(crate) async fn execute_operation_pipeline(
             "attempt",
             attempt = attempt,
             context = tracing::field::Empty
-        )
-        .entered();
+        );
+        // Enter the span for sync work but drop the guard before the first
+        // `.await` so the future remains `Send` (`EnteredSpan` is `!Send`).
+        let attempt_guard = attempt_span.enter();
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -141,6 +144,7 @@ pub(crate) async fn execute_operation_pipeline(
 
         let transport_request = build_transport_request(
             operation,
+            custom_headers,
             &routing,
             activity_id,
             execution_context,
@@ -167,6 +171,9 @@ pub(crate) async fn execute_operation_pipeline(
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
+        // Drop the span guard before the first `.await` to keep the future `Send`.
+        drop(attempt_guard);
+
         let result = execute_transport_pipeline(
             transport_request,
             &TransportPipelineContext {
@@ -403,6 +410,7 @@ fn endpoint_is_available(
 /// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     routing: &RoutingDecision,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
@@ -431,8 +439,16 @@ fn build_transport_request(
 
     let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
 
-    // Build headers from the operation
+    // Build headers from the operation.
+    // Custom headers are inserted first so that SDK-set headers below always
+    // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
+    // pattern where custom headers are added before SDK headers).
     let mut headers = azure_core::http::headers::Headers::new();
+    if let Some(custom) = custom_headers {
+        for (name, value) in custom {
+            headers.insert(name.clone(), value.clone());
+        }
+    }
     operation.request_headers().write_to_headers(&mut headers);
 
     // Add activity ID if not already set by the operation
@@ -617,6 +633,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -635,6 +652,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -653,6 +671,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -676,6 +695,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Retry,
@@ -707,6 +727,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -735,6 +756,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
