@@ -6,7 +6,7 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{models::ContainerProperties, CreateContainerOptions, FeedRange};
+use azure_data_cosmos::{models::ContainerProperties, FeedRange};
 
 use framework::TestClient;
 
@@ -25,13 +25,24 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
             // The emulator should return at least one physical partition.
             assert!(!ranges.is_empty(), "expected at least one feed range");
 
-            // All ranges must cover the full EPK space contiguously.
-            // The first range should start at "" and the last should end at "FF".
-            let first = &ranges[0];
-            let last = &ranges[ranges.len() - 1];
+            // All ranges should be contained within the full EPK space.
             let full = FeedRange::full();
-            assert!(full.contains(first), "full range should contain first");
-            assert!(full.contains(last), "full range should contain last");
+            for range in &ranges {
+                assert!(
+                    full.contains(range),
+                    "full range should contain every partition range"
+                );
+            }
+
+            // No two ranges should overlap.
+            for i in 0..ranges.len() {
+                for j in (i + 1)..ranges.len() {
+                    assert!(
+                        !ranges[i].overlaps(&ranges[j]),
+                        "ranges {i} and {j} should not overlap"
+                    );
+                }
+            }
 
             // Each range should be serializable and round-trip via Display/FromStr.
             for range in &ranges {

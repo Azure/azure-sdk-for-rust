@@ -42,6 +42,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use crate::hash::EffectivePartitionKey;
+use crate::hash::{EPK_MAX, EPK_MIN};
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 
@@ -54,6 +55,15 @@ use crate::routing::range::Range;
 /// Feed ranges can be serialized to strings (via [`std::fmt::Display`]/[`std::str::FromStr`]) for storage or transfer
 /// between processes. The serialization format is base64-encoded JSON, compatible with other
 /// Azure Cosmos DB SDKs.
+///
+/// # Serialization Formats
+///
+/// `FeedRange` supports two distinct serialization formats:
+///
+/// - **[`Display`](std::fmt::Display)/[`FromStr`]** — base64-encoded JSON, intended for string storage and cross-SDK transfer.
+/// - **[`Serialize`]/[`Deserialize`]** — structured JSON (`{"Range": {...}}`), intended for embedding in JSON documents.
+///
+/// These formats are **not interchangeable**: a value serialized with one cannot be deserialized with the other.
 ///
 /// # Comparison Methods
 ///
@@ -96,8 +106,8 @@ impl FeedRange {
     /// encompassing all partitions in a container.
     pub fn full() -> Self {
         Self {
-            min_inclusive: EffectivePartitionKey::from(""),
-            max_exclusive: EffectivePartitionKey::from("FF"),
+            min_inclusive: EffectivePartitionKey::from(EPK_MIN),
+            max_exclusive: EffectivePartitionKey::from(EPK_MAX),
         }
     }
 
@@ -133,17 +143,17 @@ impl FeedRange {
         dead_code,
         reason = "will be used when query/change-feed gain FeedRange support"
     )]
-    pub(crate) fn from_range(range: &Range<String>) -> Self {
-        debug_assert!(
-            range.is_min_inclusive && !range.is_max_inclusive,
-            "FeedRange requires [min, max) semantics but got is_min_inclusive={}, is_max_inclusive={}",
-            range.is_min_inclusive,
-            range.is_max_inclusive
-        );
-        Self {
+    pub(crate) fn from_range(range: &Range<String>) -> azure_core::Result<Self> {
+        if !range.is_min_inclusive || range.is_max_inclusive {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "FeedRange requires [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+            ));
+        }
+        Ok(Self {
             min_inclusive: EffectivePartitionKey::from(range.min.as_str()),
             max_exclusive: EffectivePartitionKey::from(range.max.as_str()),
-        }
+        })
     }
 
     /// Converts this `FeedRange` to an internal `Range<String>`.
@@ -167,6 +177,45 @@ impl FeedRange {
             max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
         }
     }
+
+    /// Builds the JSON wire-format representation for serialization.
+    fn to_json(&self) -> FeedRangeJson {
+        FeedRangeJson {
+            range: RangeJson {
+                min: self.min_inclusive.as_str().to_owned(),
+                max: self.max_exclusive.as_str().to_owned(),
+                is_min_inclusive: true,
+                is_max_inclusive: false,
+            },
+        }
+    }
+
+    /// Validates and constructs a `FeedRange` from deserialized JSON fields.
+    ///
+    /// Checks inclusivity flags and min ≤ max ordering.
+    fn from_json(json: FeedRangeJson) -> azure_core::Result<Self> {
+        if !json.range.is_min_inclusive || json.range.is_max_inclusive {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+            ));
+        }
+
+        let min = EffectivePartitionKey::from(json.range.min);
+        let max = EffectivePartitionKey::from(json.range.max);
+
+        if min > max {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "feed range min must be less than or equal to max",
+            ));
+        }
+
+        Ok(Self {
+            min_inclusive: min,
+            max_exclusive: max,
+        })
+    }
 }
 
 impl fmt::Display for FeedRange {
@@ -175,15 +224,7 @@ impl fmt::Display for FeedRange {
     /// The output is compatible with other Azure Cosmos DB SDKs and can be
     /// parsed back using [`std::str::FromStr`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let json = FeedRangeJson {
-            range: RangeJson {
-                min: self.min_inclusive.as_str().to_owned(),
-                max: self.max_exclusive.as_str().to_owned(),
-                is_min_inclusive: true,
-                is_max_inclusive: false,
-            },
-        };
-        let json_str = serde_json::to_string(&json).map_err(|_| fmt::Error)?;
+        let json_str = serde_json::to_string(&self.to_json()).map_err(|_| fmt::Error)?;
         let encoded = base64::engine::general_purpose::STANDARD.encode(json_str.as_bytes());
         f.write_str(&encoded)
     }
@@ -203,19 +244,7 @@ impl FromStr for FeedRange {
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
 
-        // Cosmos DB always uses [min, max) semantics. Reject ranges with unexpected inclusivity
-        // to prevent subtly incorrect containment/overlap checks.
-        if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
-            ));
-        }
-
-        Ok(Self {
-            min_inclusive: EffectivePartitionKey::from(json.range.min),
-            max_exclusive: EffectivePartitionKey::from(json.range.max),
-        })
+        Self::from_json(json)
     }
 }
 
@@ -224,15 +253,7 @@ impl Serialize for FeedRange {
     where
         S: serde::Serializer,
     {
-        let json = FeedRangeJson {
-            range: RangeJson {
-                min: self.min_inclusive.as_str().to_owned(),
-                max: self.max_exclusive.as_str().to_owned(),
-                is_min_inclusive: true,
-                is_max_inclusive: false,
-            },
-        };
-        json.serialize(serializer)
+        self.to_json().serialize(serializer)
     }
 }
 
@@ -242,17 +263,7 @@ impl<'de> Deserialize<'de> for FeedRange {
         D: serde::Deserializer<'de>,
     {
         let json = FeedRangeJson::deserialize(deserializer)?;
-
-        if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(serde::de::Error::custom(
-                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
-            ));
-        }
-
-        Ok(Self {
-            min_inclusive: EffectivePartitionKey::from(json.range.min),
-            max_exclusive: EffectivePartitionKey::from(json.range.max),
-        })
+        Self::from_json(json).map_err(|e| serde::de::Error::custom(e.to_string()))
     }
 }
 
@@ -405,7 +416,7 @@ mod tests {
         assert!(range.is_min_inclusive);
         assert!(!range.is_max_inclusive);
 
-        let restored = FeedRange::from_range(&range);
+        let restored = FeedRange::from_range(&range).unwrap();
         assert_eq!(feed_range, restored);
     }
 
@@ -426,5 +437,40 @@ mod tests {
         assert_eq!(range.get("max").unwrap().as_str().unwrap(), "FF");
         assert!(range.get("isMinInclusive").unwrap().as_bool().unwrap());
         assert!(!range.get("isMaxInclusive").unwrap().as_bool().unwrap());
+    }
+
+    #[test]
+    fn from_str_rejects_max_inclusive() {
+        let json = r#"{"Range":{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":true}}"#;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(json.as_bytes());
+        assert!(encoded.parse::<FeedRange>().is_err());
+    }
+
+    #[test]
+    fn serde_rejects_min_not_inclusive() {
+        let json =
+            r#"{"Range":{"min":"","max":"FF","isMinInclusive":false,"isMaxInclusive":false}}"#;
+        assert!(serde_json::from_str::<FeedRange>(json).is_err());
+    }
+
+    #[test]
+    fn from_str_rejects_inverted_range() {
+        let json =
+            r#"{"Range":{"min":"FF","max":"","isMinInclusive":true,"isMaxInclusive":false}}"#;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(json.as_bytes());
+        assert!(encoded.parse::<FeedRange>().is_err());
+    }
+
+    #[test]
+    fn serde_rejects_inverted_range() {
+        let json =
+            r#"{"Range":{"min":"FF","max":"","isMinInclusive":true,"isMaxInclusive":false}}"#;
+        assert!(serde_json::from_str::<FeedRange>(json).is_err());
+    }
+
+    #[test]
+    fn from_range_rejects_wrong_inclusivity() {
+        let range = Range::new("".to_string(), "FF".to_string(), false, true);
+        assert!(FeedRange::from_range(&range).is_err());
     }
 }

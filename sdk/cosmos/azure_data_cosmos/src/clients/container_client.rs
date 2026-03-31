@@ -813,13 +813,7 @@ impl ContainerClient {
         let routing_map = self
             .container_connection
             .resolve_routing_map(options.force_refresh())
-            .await?
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "failed to resolve routing map for container",
-                )
-            })?;
+            .await?;
 
         let feed_ranges = routing_map
             .ordered_partition_key_ranges()
@@ -865,18 +859,18 @@ impl ContainerClient {
         let epk = partition_key.get_hashed_partition_key_string(pk_def.kind(), pk_version);
 
         // Look up the physical partition range containing this EPK.
-        let routing_map = self
-            .container_connection
-            .resolve_routing_map(false)
-            .await?
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "failed to resolve routing map for container",
-                )
-            })?;
+        let routing_map = self.container_connection.resolve_routing_map(false).await?;
 
-        let pkr = routing_map.get_range_by_effective_partition_key(epk.as_str())?;
-        Ok(FeedRange::from_partition_key_range(pkr))
+        let pkr = match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
+            Ok(pkr) => pkr.clone(),
+            Err(_) => {
+                // Routing map may be stale (e.g. after a partition split). Refresh and retry once.
+                let refreshed = self.container_connection.resolve_routing_map(true).await?;
+                refreshed
+                    .get_range_by_effective_partition_key(epk.as_str())?
+                    .clone()
+            }
+        };
+        Ok(FeedRange::from_partition_key_range(&pkr))
     }
 }

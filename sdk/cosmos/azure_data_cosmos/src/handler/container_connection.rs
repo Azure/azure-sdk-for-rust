@@ -59,7 +59,7 @@ impl ContainerConnection {
     pub(crate) async fn resolve_routing_map(
         &self,
         force_refresh: bool,
-    ) -> azure_core::Result<Option<CollectionRoutingMap>> {
+    ) -> azure_core::Result<CollectionRoutingMap> {
         let collection_name = self.container_ref.name();
         let collection_rid = self.container_ref.rid();
         let routing_map = self
@@ -71,10 +71,23 @@ impl ContainerConnection {
                 return self
                     .pk_range_cache
                     .try_lookup(collection_name, collection_rid, Some(rm))
-                    .await;
+                    .await
+                    .and_then(|opt| {
+                        opt.ok_or_else(|| {
+                            azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::Other,
+                                "failed to resolve routing map for container",
+                            )
+                        })
+                    });
             }
         }
-        Ok(routing_map)
+        routing_map.ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "failed to resolve routing map for container",
+            )
+        })
     }
 
     pub async fn send<T>(
