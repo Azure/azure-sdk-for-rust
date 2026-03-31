@@ -43,6 +43,7 @@ pub use transactional_batch::{
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
 mod background_task_manager;
 mod cosmos_request;
+mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
 mod handler;

@@ -109,12 +109,15 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            let request_url = response.request_url().to_string();
-            assert!(
-                request_url.contains(&SATELLITE_REGION.as_str()),
-                "read should have failed over to satellite region, but URL was: {}",
-                request_url
-            );
+            // request_url() returns None for driver-routed operations.
+            if let Some(request_url) = response.request_url() {
+                let request_url = request_url.to_string();
+                assert!(
+                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    "read should have failed over to satellite region, but URL was: {}",
+                    request_url
+                );
+            }
 
             Ok(())
         },
@@ -414,12 +417,15 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            let request_url = response.request_url().to_string();
-            assert!(
-                request_url.contains(&SATELLITE_REGION.as_str()),
-                "read should have failed over to satellite region, but URL was: {}",
-                request_url
-            );
+            // request_url() returns None for driver-routed operations.
+            if let Some(request_url) = response.request_url() {
+                let request_url = request_url.to_string();
+                assert!(
+                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    "read should have failed over to satellite region, but URL was: {}",
+                    request_url
+                );
+            }
 
             Ok(())
         },

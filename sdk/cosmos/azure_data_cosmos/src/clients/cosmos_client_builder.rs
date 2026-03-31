@@ -203,16 +203,24 @@ impl CosmosClientBuilder {
         let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = None;
 
         #[cfg(feature = "fault_injection")]
-        let transport: Option<azure_core::http::Transport> =
-            if let Some(fault_builder) = self.fault_injection_builder {
-                let fault_builder = match base_client {
-                    Some(client) => fault_builder.with_inner_client(client),
-                    None => fault_builder,
-                };
-                Some(fault_builder.build())
-            } else {
-                base_client.map(azure_core::http::Transport::new)
+        let (transport, driver_fi_rules): (
+            Option<azure_core::http::Transport>,
+            Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
+        ) = if let Some(fault_builder) = self.fault_injection_builder {
+            // Translate rules for the driver before the builder is consumed.
+            let driver_rules =
+                crate::driver_bridge::sdk_fi_rules_to_driver_fi_rules(fault_builder.rules());
+            let fault_builder = match base_client {
+                Some(client) => fault_builder.with_inner_client(client),
+                None => fault_builder,
             };
+            (Some(fault_builder.build()), driver_rules)
+        } else {
+            (
+                base_client.map(azure_core::http::Transport::new),
+                Vec::new(),
+            )
+        };
         #[cfg(not(feature = "fault_injection"))]
         let transport: Option<azure_core::http::Transport> =
             base_client.map(azure_core::http::Transport::new);
@@ -322,7 +330,14 @@ impl CosmosClientBuilder {
         // should be shared across clients targeting the same account to avoid duplicate
         // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
         let driver_account = build_driver_account(endpoint, driver_credential);
-        let driver_runtime = CosmosDriverRuntimeBuilder::new().build().await?;
+        #[allow(unused_mut)]
+        let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
+        #[cfg(feature = "fault_injection")]
+        if !driver_fi_rules.is_empty() {
+            driver_runtime_builder =
+                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules);
+        }
+        let driver_runtime = driver_runtime_builder.build().await?;
         let driver = driver_runtime
             .get_or_create_driver(driver_account, None)
             .await?;
