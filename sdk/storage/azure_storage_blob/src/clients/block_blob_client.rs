@@ -28,7 +28,7 @@ use azure_core::{
         headers::HeaderName,
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         response::AsyncResponseBody,
-        AsyncRawResponse, Body, NoFormat, Pipeline, RequestContent, Url,
+        AsyncRawResponse, Body, ClientMethodOptions, NoFormat, Pipeline, RequestContent, Url,
     },
     time::parse_rfc7231,
     tracing, Bytes, Result, Uuid,
@@ -258,7 +258,10 @@ impl BlockBlobClient {
             if_tags: options.if_tags,
             if_unmodified_since: options.if_unmodified_since,
             lease_id: options.lease_id,
-            // TODO: method_options: options.method_options,
+            // requires into_owned due to BlockBlobClientDownloadBehavior w/ 'static Behavior
+            method_options: ClientMethodOptions {
+                context: options.method_options.context.into_owned(),
+            },
             range: None,
             range_get_content_crc64: options.range_get_content_crc64,
             range_get_content_md5: options.range_get_content_md5,
@@ -266,7 +269,6 @@ impl BlockBlobClient {
             structured_body_type: options.structured_body_type,
             timeout: options.timeout,
             version_id: options.version_id,
-            ..Default::default()
         };
         let generated_blob_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
