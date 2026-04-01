@@ -10,7 +10,11 @@ use std::error::Error;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{constants, options::QueryOptions, Query};
+use azure_data_cosmos::{
+    constants,
+    options::{OperationOptions, QueryOptions},
+    Query,
+};
 use framework::{test_data, MockItem, TestClient};
 use futures::{StreamExt, TryStreamExt};
 
@@ -194,7 +198,8 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 HeaderName::from(constants::DOCUMENTDB_POPULATEQUERYMETRICS),
                 HeaderValue::from("true"),
             );
-            let options = QueryOptions::default().with_custom_headers(custom_headers);
+            let operation = OperationOptions::default().with_custom_headers(custom_headers);
+            let options = QueryOptions::default().with_operation_options(operation);
 
             let mut pages = container_client
                 .query_items::<MockItem>("select * from c", "partition0", Some(options))?

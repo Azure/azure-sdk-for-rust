@@ -3,27 +3,45 @@
 
 use crate::constants;
 use crate::models::ThroughputProperties;
-use crate::regions::RegionName;
-use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
-use azure_core::http::{headers, Etag};
-use std::collections::HashMap;
+use azure_core::http::headers::{self, Headers};
 use std::fmt;
 use std::fmt::Display;
 
-/// Session tokens are intended to be opaque. They are used to ensure session consistency.
-///
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SessionToken(String);
+// Re-exported types that form part of the azure_data_cosmos public API.
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::{ETag, Precondition, SessionToken};
+#[doc(inline)]
+pub use azure_data_cosmos_driver::options::{
+    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
+    OperationOptionsBuilder, OperationOptionsView, ReadConsistencyStrategy, Region,
+};
 
-impl From<String> for SessionToken {
-    fn from(value: String) -> Self {
-        Self(value)
+// Temporary: these helpers allow the SDK pipeline to apply OperationOptions values
+// as HTTP headers. They will be removed when individual operations use the internal
+// pipeline directly.
+fn apply_precondition_headers(precondition: &Precondition, headers: &mut Headers) {
+    match precondition {
+        Precondition::IfMatch(etag) => {
+            headers.insert(headers::IF_MATCH, etag.to_string());
+        }
+        Precondition::IfNoneMatch(etag) => {
+            headers.insert(constants::IF_NONE_MATCH, etag.to_string());
+        }
+        _ => {}
     }
 }
 
-impl Display for SessionToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
+// Temporary: applies the prefer header based on the content_response_on_write option.
+// Will be removed when write operations use the internal pipeline directly.
+fn apply_content_response_on_write_header(
+    content_response_on_write: Option<&ContentResponseOnWrite>,
+    headers: &mut Headers,
+) {
+    match content_response_on_write {
+        Some(ContentResponseOnWrite::Enabled) => {}
+        _ => {
+            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
+        }
     }
 }
 
@@ -35,9 +53,11 @@ impl Display for SessionToken {
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct CosmosClientOptions {
+    /// Default [`OperationOptions`] applied to all requests made by this client,
+    /// unless overridden by per-request options.
+    pub(crate) operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<String>,
-    pub(crate) application_region: Option<RegionName>,
-    pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
+    pub(crate) application_region: Option<Region>,
 }
 
 impl CosmosClientOptions {
@@ -46,15 +66,21 @@ impl CosmosClientOptions {
         self
     }
 
-    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = custom_headers;
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
+
+    // Temporary: extracts custom headers from the embedded OperationOptions and
+    // applies them to the HTTP request. Will be removed when operations use the
+    // internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        for (header_name, header_value) in &self.custom_headers {
-            // Only insert if not already set — request-level headers take priority.
-            if !headers.iter().any(|(n, _)| n == header_name) {
-                headers.insert(header_name.clone(), header_value.clone());
+        if let Some(custom_headers) = self.operation.custom_headers() {
+            for (header_name, header_value) in custom_headers {
+                // Only insert if not already set — SDK/request headers take priority.
+                if headers.get_optional_str(header_name).is_none() {
+                    headers.insert(header_name.clone(), header_value.clone());
+                }
             }
         }
     }
@@ -103,9 +129,12 @@ pub struct DeleteContainerOptions;
 #[non_exhaustive]
 pub struct DeleteDatabaseOptions;
 
-/// Specifies consistency levels that can be used when working with Cosmos APIs.
+/// Specifies consistency levels for Cosmos DB accounts.
 ///
-/// Learn more at [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
+/// This is a model type for account-level consistency properties returned by the service.
+/// For per-request consistency, use [`ReadConsistencyStrategy`] via [`OperationOptions`].
+///
+/// Learn more at [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels).
 #[derive(Clone, Debug)]
 pub enum ConsistencyLevel {
     ConsistentPrefix,
@@ -128,217 +157,225 @@ impl Display for ConsistencyLevel {
     }
 }
 
-/// Options to be passed to APIs that manipulate items.
+/// Options for item point-read operations.
+///
+/// Used by [`ContainerClient::read_item()`](crate::clients::ContainerClient::read_item).
+///
+/// General-purpose settings such as custom headers and excluded regions are configured
+/// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ItemOptions {
-    /// Applies when working with Session consistency.
-    /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
-    /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
-    ///
-    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    session_token: Option<SessionToken>,
-    /// If specified, the operation will only be performed if the item matches the provided Etag.
-    ///
-    /// See [Optimistic Concurrency Control](https://learn.microsoft.com/azure/cosmos-db/nosql/database-transactions-optimistic-concurrency#optimistic-concurrency-control) for more.
-    if_match_etag: Option<Etag>,
-    /// When this value is true, write operations will respond with the new value of the resource being written.
-    ///
-    /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    content_response_on_write_enabled: bool,
-    /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
-    /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    ///
-    /// Custom headers will not override headers that are already set by the SDK.
-    custom_headers: HashMap<HeaderName, HeaderValue>,
-    /// Regions to be skipped from regional routing preferences. The regions in this list are specified as the names of the Azure Cosmos locations like, 'West US', 'East US' and so on.
-    /// If all regions were excluded, the primary/hub region will be used to route requests.
-    /// If None is provided, client-level excluded regions will be used.
-    /// If an empty vector is provided, no regions will be excluded for this request.
-    pub(crate) excluded_regions: Option<Vec<RegionName>>,
+pub struct ItemReadOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
+    /// Session token for session-consistent reads.
+    pub session_token: Option<SessionToken>,
+
+    /// Conditional ETag check. For reads, typically [`Precondition::IfNoneMatch`]
+    /// (returns 304 Not Modified if unchanged).
+    pub precondition: Option<Precondition>,
 }
 
-impl ItemOptions {
-    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
-        self.session_token = Some(session_token);
+impl ItemReadOptions {
+    /// Sets the session token for this request.
+    pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
+        self.session_token = Some(session_token.into());
         self
     }
 
-    pub fn with_if_match_etag(mut self, if_match_etag: Etag) -> Self {
-        self.if_match_etag = Some(if_match_etag);
+    /// Sets a conditional ETag check for this request.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
         self
     }
 
-    pub fn with_content_response_on_write_enabled(
-        mut self,
-        content_response_on_write_enabled: bool,
-    ) -> Self {
-        self.content_response_on_write_enabled = content_response_on_write_enabled;
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
-    }
-
-    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = custom_headers;
-        self
-    }
-
-    pub fn with_excluded_regions(mut self, excluded_regions: Vec<RegionName>) -> Self {
-        self.excluded_regions = Some(excluded_regions);
-        self
-    }
-
-    pub(crate) fn session_token(&self) -> Option<&SessionToken> {
-        self.session_token.as_ref()
-    }
-
-    pub(crate) fn if_match_etag(&self) -> Option<&Etag> {
-        self.if_match_etag.as_ref()
-    }
-
-    pub(crate) fn custom_headers(&self) -> &HashMap<HeaderName, HeaderValue> {
-        &self.custom_headers
-    }
-
-    pub(crate) fn excluded_regions(&self) -> Option<&[RegionName]> {
-        self.excluded_regions.as_deref()
     }
 }
 
-impl ItemOptions {
+/// Options for item write operations.
+///
+/// Used by [`ContainerClient::create_item()`](crate::clients::ContainerClient::create_item),
+/// [`ContainerClient::replace_item()`](crate::clients::ContainerClient::replace_item),
+/// [`ContainerClient::upsert_item()`](crate::clients::ContainerClient::upsert_item), and
+/// [`ContainerClient::delete_item()`](crate::clients::ContainerClient::delete_item).
+///
+/// General-purpose settings such as custom headers, excluded regions, and content
+/// response behavior are configured via the [`operation`](Self::operation) field.
+/// See [`OperationOptions`] for details.
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct ItemWriteOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
+    /// Session token for session-consistent writes.
+    pub session_token: Option<SessionToken>,
+
+    /// Conditional ETag check. For writes, typically [`Precondition::IfMatch`]
+    /// (optimistic concurrency).
+    pub precondition: Option<Precondition>,
+}
+
+impl ItemWriteOptions {
+    /// Sets the session token for this request.
+    pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
+        self.session_token = Some(session_token.into());
+        self
+    }
+
+    /// Sets a conditional ETag check for this request.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
+        self
+    }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
+
+impl ItemWriteOptions {
+    // Temporary: applies option values as HTTP headers for the SDK pipeline.
+    // Will be removed when write operations use the internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        // custom headers should be added first so that they don't override SDK-set headers
-        for (header_name, header_value) in &self.custom_headers {
-            headers.insert(header_name.clone(), header_value.clone());
+        if let Some(custom_headers) = self.operation.custom_headers() {
+            for (name, value) in custom_headers {
+                // Only insert if not already set — SDK/request headers take priority.
+                if headers.get_optional_str(name).is_none() {
+                    headers.insert(name.clone(), value.clone());
+                }
+            }
         }
-
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
-
-        if let Some(etag) = &self.if_match_etag {
-            headers.insert(headers::IF_MATCH, etag.to_string());
+        if let Some(precondition) = &self.precondition {
+            apply_precondition_headers(precondition, headers);
         }
-
-        if !self.content_response_on_write_enabled {
-            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
-        }
+        apply_content_response_on_write_header(
+            self.operation.content_response_on_write.as_ref(),
+            headers,
+        );
     }
 }
 
-/// Options to be passed to [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
+/// Options for transactional batch operations.
 ///
-/// This is similar to [`ItemOptions`] but excludes ETag-based conditional options,
-/// since those are specified per-operation within the batch itself.
+/// Used by [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
+/// ETag-based conditional options are specified per-operation within the batch itself.
+///
+/// General-purpose settings such as custom headers and content response behavior
+/// are configured via the [`operation`](Self::operation) field.
+/// See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct BatchOptions {
-    /// Applies when working with Session consistency.
-    /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
-    /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
-    ///
-    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    session_token: Option<SessionToken>,
-    /// When this value is true, write operations will respond with the new value of the resource being written.
-    ///
-    /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
-    content_response_on_write_enabled: bool,
-    /// Additional headers to be included in the batch request. This allows for custom headers beyond those natively supported.
-    ///
-    /// Custom headers will not override headers that are already set by the SDK.
-    custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
+    /// Session token for session-consistent batch operations.
+    pub session_token: Option<SessionToken>,
 }
 
 impl BatchOptions {
-    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
-        self.session_token = Some(session_token);
+    /// Sets the session token for this request.
+    pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
+        self.session_token = Some(session_token.into());
         self
     }
 
-    pub fn with_content_response_on_write_enabled(
-        mut self,
-        content_response_on_write_enabled: bool,
-    ) -> Self {
-        self.content_response_on_write_enabled = content_response_on_write_enabled;
-        self
-    }
-
-    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = custom_headers;
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
 }
 
 impl BatchOptions {
+    // Temporary: applies option values as HTTP headers for the SDK pipeline.
+    // Will be removed when batch operations use the internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        // custom headers should be added first so that they don't override SDK-set headers
-        for (header_name, header_value) in &self.custom_headers {
-            headers.insert(header_name.clone(), header_value.clone());
+        if let Some(custom_headers) = self.operation.custom_headers() {
+            for (name, value) in custom_headers {
+                // Only insert if not already set — SDK/request headers take priority.
+                if headers.get_optional_str(name).is_none() {
+                    headers.insert(name.clone(), value.clone());
+                }
+            }
         }
-
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
-
-        if !self.content_response_on_write_enabled {
-            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
-        }
+        apply_content_response_on_write_header(
+            self.operation.content_response_on_write.as_ref(),
+            headers,
+        );
     }
 }
 
-/// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
+/// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct QueryContainersOptions;
 
-/// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases())
+/// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct QueryDatabasesOptions;
 
-/// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
+/// Options for query operations.
+///
+/// Used by [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
+///
+/// General-purpose settings such as custom headers and excluded regions are configured
+/// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct QueryOptions {
-    /// Applies when working with Session consistency.
-    /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
-    /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
-    ///
-    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
-    session_token: Option<SessionToken>,
-    /// Additional headers to be included in the query request. This allows for custom headers beyond those natively supported.
-    /// The following are some example headers that can be added using this api.
-    /// Dedicated gateway cache staleness: "x-ms-dedicatedgateway-max-age".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#adjust-maxintegratedcachestaleness for more info.
-    /// Bypass dedicated gateway cache: "x-ms-dedicatedgateway-bypass-cache".
-    /// See https://learn.microsoft.com/azure/cosmos-db/how-to-configure-integrated-cache?tabs=dotnet#bypass-the-integrated-cache for more info.
-    ///
-    /// Custom headers will not override headers that are already set by the SDK.
-    custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
+    /// Session token for session-consistent queries.
+    pub session_token: Option<SessionToken>,
 }
 
 impl QueryOptions {
-    pub fn with_session_token(mut self, session_token: SessionToken) -> Self {
-        self.session_token = Some(session_token);
+    /// Sets the session token for this request.
+    pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
+        self.session_token = Some(session_token.into());
         self
     }
 
-    pub fn with_custom_headers(mut self, custom_headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = custom_headers;
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
 }
 
 impl QueryOptions {
+    // Temporary: applies option values as HTTP headers for the SDK pipeline.
+    // Will be removed when query operations use the internal pipeline directly.
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        // custom headers should be added first so that they don't override SDK-set headers
-        for (header_name, header_value) in &self.custom_headers {
-            headers.insert(header_name.clone(), header_value.clone());
+        if let Some(custom_headers) = self.operation.custom_headers() {
+            for (name, value) in custom_headers {
+                // Only insert if not already set — SDK/request headers take priority.
+                if headers.get_optional_str(name).is_none() {
+                    headers.insert(name.clone(), value.clone());
+                }
+            }
         }
-
         if let Some(session_token) = &self.session_token {
             headers.insert(constants::SESSION_TOKEN, session_token.to_string());
         }
@@ -363,6 +400,8 @@ pub struct ThroughputOptions;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::http::headers::{HeaderName, HeaderValue};
+    use std::collections::HashMap;
 
     fn headers_to_map<I>(headers: I) -> HashMap<HeaderName, HeaderValue>
     where
@@ -372,20 +411,24 @@ mod tests {
     }
 
     #[test]
-    fn item_options_as_headers() {
+    fn item_write_options_as_headers() {
         let mut custom_headers = HashMap::new();
         custom_headers.insert(
             HeaderName::from_static("x-custom-header"),
             HeaderValue::from_static("custom_value"),
         );
 
-        let item_options = ItemOptions::default()
-            .with_session_token("SessionToken".to_string().into())
-            .with_if_match_etag(Etag::from("etag_value"))
-            .with_custom_headers(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
+
+        let options = ItemWriteOptions {
+            operation,
+            ..Default::default()
+        }
+        .with_session_token("SessionToken".to_string())
+        .with_precondition(Precondition::IfMatch(ETag::from("etag_value")));
 
         let mut headers_result = Headers::new();
-        item_options.apply_headers(&mut headers_result);
+        options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             ("x-custom-header".into(), "custom_value".into()),
@@ -408,12 +451,16 @@ mod tests {
             HeaderValue::from_static("CustomSession"),
         );
 
-        let item_options = ItemOptions::default()
-            .with_session_token("RealSessionToken".to_string().into())
-            .with_custom_headers(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
+
+        let options = ItemWriteOptions {
+            operation,
+            ..Default::default()
+        }
+        .with_session_token("RealSessionToken".to_string());
 
         let mut headers_result = Headers::new();
-        item_options.apply_headers(&mut headers_result);
+        options.apply_headers(&mut headers_result);
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             (constants::SESSION_TOKEN, "RealSessionToken".into()),
@@ -434,7 +481,12 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let client_options = CosmosClientOptions::default().with_custom_headers(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
+
+        let client_options = CosmosClientOptions {
+            operation,
+            ..Default::default()
+        };
 
         let mut headers_result = Headers::new();
         client_options.apply_headers(&mut headers_result);
@@ -456,9 +508,13 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let query_options = QueryOptions::default()
-            .with_session_token("QuerySessionToken".to_string().into())
-            .with_custom_headers(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
+
+        let query_options = QueryOptions {
+            operation,
+            ..Default::default()
+        }
+        .with_session_token("QuerySessionToken".to_string());
 
         let mut headers_result = Headers::new();
         query_options.apply_headers(&mut headers_result);
@@ -475,11 +531,11 @@ mod tests {
     }
 
     #[test]
-    fn item_options_empty_as_headers_with_content_response() {
-        let item_options = ItemOptions::default();
+    fn item_write_options_default_as_headers() {
+        let options = ItemWriteOptions::default();
 
         let mut headers_result = Headers::new();
-        item_options.apply_headers(&mut headers_result);
+        options.apply_headers(&mut headers_result);
         let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> =
@@ -489,11 +545,17 @@ mod tests {
     }
 
     #[test]
-    fn item_options_empty_as_headers() {
-        let item_options = ItemOptions::default().with_content_response_on_write_enabled(true);
+    fn item_write_options_with_content_response_enabled() {
+        let mut operation = OperationOptions::default();
+        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+
+        let options = ItemWriteOptions {
+            operation,
+            ..Default::default()
+        };
 
         let mut headers_result = Headers::new();
-        item_options.apply_headers(&mut headers_result);
+        options.apply_headers(&mut headers_result);
         let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
@@ -509,10 +571,14 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let batch_options = BatchOptions::default()
-            .with_session_token("BatchSessionToken".to_string().into())
-            .with_content_response_on_write_enabled(true)
-            .with_custom_headers(custom_headers);
+        let mut operation = OperationOptions::default().with_custom_headers(custom_headers);
+        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+
+        let batch_options = BatchOptions {
+            operation,
+            ..Default::default()
+        }
+        .with_session_token("BatchSessionToken".to_string());
 
         let mut headers_result = Headers::new();
         batch_options.apply_headers(&mut headers_result);
@@ -536,9 +602,13 @@ mod tests {
             HeaderValue::from_static("CustomSession"),
         );
 
-        let batch_options = BatchOptions::default()
-            .with_session_token("RealSessionToken".to_string().into())
-            .with_custom_headers(custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(custom_headers);
+
+        let batch_options = BatchOptions {
+            operation,
+            ..Default::default()
+        }
+        .with_session_token("RealSessionToken".to_string());
 
         let mut headers_result = Headers::new();
         batch_options.apply_headers(&mut headers_result);
@@ -570,7 +640,13 @@ mod tests {
 
     #[test]
     fn batch_options_with_content_response_enabled() {
-        let batch_options = BatchOptions::default().with_content_response_on_write_enabled(true);
+        let mut operation = OperationOptions::default();
+        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+
+        let batch_options = BatchOptions {
+            operation,
+            ..Default::default()
+        };
 
         let mut headers_result = Headers::new();
         batch_options.apply_headers(&mut headers_result);

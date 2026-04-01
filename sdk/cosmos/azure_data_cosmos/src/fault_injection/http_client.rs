@@ -302,7 +302,7 @@ mod tests {
         CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::regions;
+    use crate::regions::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
     use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Method, Request, Url};
@@ -518,7 +518,7 @@ mod tests {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_region(regions::WEST_US)
+            .with_region(Region::WEST_US)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)

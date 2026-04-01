@@ -17,50 +17,70 @@ use crate::{
     },
 };
 
-/// Options that apply to individual service requests.
+/// Options that apply to individual Cosmos DB requests.
 ///
-/// These options follow a hierarchy where operation-level settings override
-/// account-level, which override runtime-level, which override environment defaults.
+/// `OperationOptions` controls cross-cutting concerns such as consistency, routing,
+/// retry behavior, and custom headers. These settings can be specified at multiple
+/// levels — each per-operation options type (e.g., `ItemReadOptions`)
+/// has an `operation` field of this type.
 ///
-/// `OperationOptions` is the single option group for all operation-specific
-/// configuration where application-wide or account-wide defaults make sense.
+/// # Layered Resolution
+///
+/// When the same option is set at multiple levels, the most specific value wins:
+///
+/// 1. **Operation** — set on the per-request options (highest priority)
+/// 2. **Account** — set on `CosmosClientOptions` when building the client
+/// 3. **Runtime** — application-wide defaults
+/// 4. **Environment** — loaded from `AZURE_COSMOS_*` environment variables (lowest priority)
+///
+/// A field set to `None` means "inherit from a lower-priority level."
+/// A field set to `Some(value)` overrides all lower levels.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
-    /// Read consistency strategy for read operations.
+    /// Read consistency strategy for this request.
+    ///
+    /// Controls the consistency guarantee for read operations. Set to `None` to
+    /// inherit the account or runtime default.
     #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
 
-    /// Regions to exclude from routing.
+    /// Regions to exclude from request routing.
+    ///
+    /// When set, the SDK will not route this request to the specified regions.
+    /// Set to `Some(empty)` to clear exclusions; `None` inherits from a lower level.
     pub excluded_regions: Option<ExcludedRegions>,
 
-    /// Content response on write setting.
+    /// Whether write responses include the resource body.
+    ///
+    /// [`ContentResponseOnWrite::Enabled`] returns the written resource in the response.
+    /// [`ContentResponseOnWrite::Disabled`] suppresses the body to reduce bandwidth.
+    /// `None` inherits from a lower level (default: disabled).
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group name for rate limiting.
+    /// Throughput control group name for request prioritization.
     pub throughput_control_group_name: Option<ThroughputControlGroupName>,
 
-    /// End-to-end latency policy for timeout management.
+    /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
 
-    /// Maximum operation-level failover retries.
+    /// Maximum number of region failover retries.
     #[option(env = "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT")]
     pub max_failover_retry_count: Option<u32>,
 
-    /// Endpoint unavailability TTL used by routing state.
+    /// How long an endpoint is considered unavailable after a failure.
     pub endpoint_unavailability_ttl: Option<Duration>,
 
-    /// Whether session token capturing is disabled.
+    /// Disables automatic session token management.
     ///
-    /// When `None` or `Some(false)`, session tokens are captured and resolved
-    /// from response headers for session consistency (the default behavior).
-    /// Set to `Some(true)` to disable session token management for scenarios where
-    /// session consistency is not needed.
+    /// When `None` or `Some(false)`, session tokens are captured from responses
+    /// and sent on subsequent requests for session consistency.
+    /// Set to `Some(true)` to disable this behavior.
     pub session_capturing_disabled: Option<bool>,
 
-    /// Maximum operation-level session retries for 404/1002 errors.
+    /// Maximum number of session-consistency retries on 404/1002 errors.
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
 
@@ -77,7 +97,7 @@ impl OperationOptions {
     }
 
     /// Gets the custom headers.
-    pub fn custom_headers_ref(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
+    pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
         self.custom_headers.as_ref()
     }
 }
