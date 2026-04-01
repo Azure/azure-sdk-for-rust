@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
         "queue-name",                                             // Queue Name
         Some(credential),                                         // Credential
-        None,                                                     // QueueClient Options
+        Some(QueueClientOptions::default()),                      // QueueClient Options
     )?;
     Ok(())
 }
