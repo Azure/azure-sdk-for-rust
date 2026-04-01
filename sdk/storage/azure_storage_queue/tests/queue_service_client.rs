@@ -431,7 +431,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
         geo_replication.status.as_ref().unwrap() == &GeoReplicationStatus::Live,
         "Geo-replication status should be Live"
     );
-    // Assert - `last_sync_time` is greater than Fri, 1 Jun 2025 00:00:00 GMT.
+    // Assert - `last_sync_time` is greater than 1 Jun 2025 00:00:00 GMT.
     assert!(
         geo_replication.last_sync_time.unwrap()
             > OffsetDateTime::from_unix_timestamp(1748728800).unwrap(),

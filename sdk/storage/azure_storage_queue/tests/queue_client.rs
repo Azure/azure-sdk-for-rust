@@ -7,7 +7,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
-        Context, FixedRetryOptions, RetryOptions, StatusCode,
+        Context, FixedRetryOptions, Response, RetryOptions, StatusCode,
     },
     time::{parse_rfc3339, to_rfc3339, Duration, OffsetDateTime},
     Result,
@@ -22,7 +22,7 @@ use azure_storage_queue::{
     },
     QueueClient, QueueClientOptions,
 };
-use common::{assert_successful_response, get_queue_name, recorded_test_setup};
+use common::{get_queue_name, recorded_test_setup};
 
 use std::collections::HashMap;
 use std::sync::{
@@ -1803,4 +1803,12 @@ async fn peek_and_assert(
     }
 
     Ok(())
+}
+
+fn assert_successful_response<T, F>(response: &Response<T, F>) {
+    assert!(
+        response.status().is_success(),
+        "Expected successful status code, got {}",
+        response.status()
+    );
 }
