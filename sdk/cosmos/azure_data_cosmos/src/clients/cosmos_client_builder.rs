@@ -4,6 +4,8 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
+    clients::ClientContext,
+    options::ThroughputControlGroupOptions,
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
@@ -81,6 +83,8 @@ pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
     /// Whether to allow proxy usage. When false (default), `HTTPS_PROXY` is ignored.
     allow_proxy: bool,
+    /// Throughput control groups to register on the driver runtime.
+    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
     #[cfg(feature = "allow_invalid_certificates")]
     allow_emulator_invalid_certificates: bool,
@@ -159,6 +163,16 @@ impl CosmosClientBuilder {
     /// * `allow` - Whether to allow proxy usage.
     pub fn with_proxy_allowed(mut self, allow: bool) -> Self {
         self.allow_proxy = allow;
+        self
+    }
+
+    /// Registers a throughput control group on the driver runtime.
+    ///
+    /// Groups define throughput policies (priority level, throughput bucket) that
+    /// are applied to requests referencing the group name via
+    /// [`OperationOptions::throughput_control_group_names`](crate::OperationOptions::throughput_control_group_names).
+    pub fn with_throughput_control_group(mut self, group: ThroughputControlGroupOptions) -> Self {
+        self.throughput_control_groups.push(group);
         self
     }
 
@@ -381,6 +395,16 @@ impl CosmosClientBuilder {
             driver_runtime_builder =
                 driver_runtime_builder.with_fault_injection_rules(driver_fi_rules);
         }
+        for group in self.throughput_control_groups {
+            driver_runtime_builder = driver_runtime_builder
+                .register_throughput_control_group(group)
+                .map_err(|e| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!("failed to register throughput control group: {e}"),
+                    )
+                })?;
+        }
         let driver_runtime = driver_runtime_builder.build().await?;
         let driver = driver_runtime
             .get_or_create_driver(driver_account, None)
@@ -388,10 +412,12 @@ impl CosmosClientBuilder {
 
         Ok(CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline,
-            driver,
-            global_endpoint_manager,
-            global_partition_endpoint_manager,
+            context: ClientContext {
+                pipeline,
+                driver,
+                global_endpoint_manager,
+                global_partition_endpoint_manager,
+            },
         })
     }
 }

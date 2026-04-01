@@ -544,7 +544,7 @@ impl CosmosDriverRuntimeBuilder {
     ///
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
-    /// use azure_data_cosmos_driver::options::{ThroughputControlGroupOptions, ThroughputTarget};
+    /// use azure_data_cosmos_driver::options::{PriorityLevel, ThroughputControlGroupOptions};
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
@@ -562,11 +562,10 @@ impl CosmosDriverRuntimeBuilder {
     /// // Register a throughput control group on a new runtime builder.
     /// let runtime = CosmosDriverRuntimeBuilder::new()
     ///     .register_throughput_control_group(
-    ///         ThroughputControlGroupOptions::client_side(
+    ///         ThroughputControlGroupOptions::server_side_priority_based_throttling(
     ///             "default-group",
     ///             container.clone(),
-    ///             ThroughputTarget::Threshold(0.5),
-    ///             None,
+    ///             PriorityLevel::High,
     ///             true, // is_default
     ///         )
     ///     )?

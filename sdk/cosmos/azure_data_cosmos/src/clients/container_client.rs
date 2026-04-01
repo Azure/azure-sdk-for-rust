@@ -2,13 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::OffersClient,
+    clients::{ClientContext, OffersClient},
     models::{
         BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
         ThroughputProperties,
     },
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
-    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
@@ -19,13 +18,10 @@ use std::sync::Arc;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{ContainerReference, CosmosOperation, ItemReference};
-use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -35,22 +31,18 @@ use serde::{de::DeserializeOwned, Serialize};
 pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
-    pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
     container_id: String,
-    driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
+    context: ClientContext,
 }
 
 impl ContainerClient {
     pub(crate) async fn new(
-        pipeline: Arc<GatewayPipeline>,
+        context: ClientContext,
         database_link: &ResourceLink,
         container_id: &str,
         database_id: &str,
-        driver: Arc<CosmosDriver>,
-        global_endpoint_manager: Arc<GlobalEndpointManager>,
-        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
     ) -> azure_core::Result<Self> {
         let link = database_link
             .feed(ResourceType::Containers)
@@ -58,7 +50,8 @@ impl ContainerClient {
         let items_link = link.feed(ResourceType::Documents);
 
         // Eagerly resolve immutable container metadata from the driver.
-        let container_ref = driver
+        let container_ref = context
+            .driver
             .resolve_container(database_id, container_id)
             .await
             .map_err(|e| {
@@ -68,25 +61,24 @@ impl ContainerClient {
             })?;
 
         let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
-            pipeline.clone(),
+            context.pipeline.clone(),
             database_link.clone(),
-            global_endpoint_manager.clone(),
+            context.global_endpoint_manager.clone(),
         ));
         let container_connection = Arc::from(ContainerConnection::new(
-            pipeline.clone(),
+            context.pipeline.clone(),
             partition_key_range_cache,
-            global_partition_endpoint_manager.clone(),
+            context.global_partition_endpoint_manager.clone(),
             container_ref.clone(),
         ));
 
         Ok(Self {
             link,
             items_link,
-            pipeline,
             container_connection,
             container_id: container_id.to_string(),
-            driver,
             container_ref,
+            context,
         })
     }
 
@@ -190,7 +182,7 @@ impl ContainerClient {
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        let offers_client = OffersClient::new(self.context.pipeline.clone(), resource_id);
         offers_client.read(Context::default()).await
     }
 
@@ -222,7 +214,7 @@ impl ContainerClient {
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        let offers_client = OffersClient::new(self.context.pipeline.clone(), resource_id);
         offers_client
             .replace(Context::default(), throughput)
             .await
@@ -575,6 +567,7 @@ impl ContainerClient {
 
         // Execute through the driver.
         let driver_response = self
+            .context
             .driver
             .execute_operation(operation, options.operation)
             .await?;
@@ -706,7 +699,7 @@ impl ContainerClient {
         options.apply_headers(&mut headers);
 
         crate::query::executor::QueryExecutor::new(
-            self.pipeline.clone(),
+            self.context.pipeline.clone(),
             self.items_link.clone(),
             Context::default(),
             query,

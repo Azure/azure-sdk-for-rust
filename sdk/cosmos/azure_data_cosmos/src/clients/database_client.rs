@@ -3,20 +3,15 @@
 
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
-    clients::{ContainerClient, OffersClient},
+    clients::{ClientContext, ContainerClient, OffersClient},
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
-    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
 use azure_core::http::Context;
-use azure_data_cosmos_driver::CosmosDriver;
-use std::sync::Arc;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -25,20 +20,11 @@ pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: Arc<GatewayPipeline>,
-    driver: Arc<CosmosDriver>,
-    global_endpoint_manager: Arc<GlobalEndpointManager>,
-    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    context: ClientContext,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(
-        pipeline: Arc<GatewayPipeline>,
-        database_id: &str,
-        driver: Arc<CosmosDriver>,
-        global_endpoint_manager: Arc<GlobalEndpointManager>,
-        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
-    ) -> Self {
+    pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -47,10 +33,7 @@ impl DatabaseClient {
             link,
             containers_link,
             database_id,
-            pipeline,
-            driver,
-            global_endpoint_manager,
-            global_partition_endpoint_manager,
+            context,
         }
     }
 
@@ -67,16 +50,7 @@ impl DatabaseClient {
     ///
     /// Returns an error if the container does not exist or the metadata cannot be resolved.
     pub async fn container_client(&self, name: &str) -> azure_core::Result<ContainerClient> {
-        ContainerClient::new(
-            self.pipeline.clone(),
-            &self.link,
-            name,
-            &self.database_id,
-            self.driver.clone(),
-            self.global_endpoint_manager.clone(),
-            self.global_partition_endpoint_manager.clone(),
-        )
-        .await
+        ContainerClient::new(self.context.clone(), &self.link, name, &self.database_id).await
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -109,7 +83,8 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
         let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
 
-        self.pipeline
+        self.context
+            .pipeline
             .send(cosmos_request?, Context::default())
             .await
             .map(ResourceResponse::new)
@@ -146,7 +121,7 @@ impl DatabaseClient {
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
         crate::query::executor::QueryExecutor::new(
-            self.pipeline.clone(),
+            self.context.pipeline.clone(),
             self.containers_link.clone(),
             Context::default(),
             query.into(),
@@ -176,7 +151,8 @@ impl DatabaseClient {
                 .json(&properties)
                 .build()?;
 
-        self.pipeline
+        self.context
+            .pipeline
             .send(cosmos_request, Context::default())
             .await
             .map(ResourceResponse::new)
@@ -196,7 +172,8 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<()>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
-        self.pipeline
+        self.context
+            .pipeline
             .send(cosmos_request?, Context::default())
             .await
             .map(ResourceResponse::new)
@@ -221,7 +198,7 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        let offers_client = OffersClient::new(self.context.pipeline.clone(), resource_id);
         offers_client.read(Context::default()).await
     }
 
@@ -248,7 +225,7 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
+        let offers_client = OffersClient::new(self.context.pipeline.clone(), resource_id);
         offers_client
             .replace(Context::default(), throughput)
             .await

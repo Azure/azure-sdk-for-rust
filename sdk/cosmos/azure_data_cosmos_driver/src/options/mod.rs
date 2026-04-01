@@ -45,5 +45,5 @@ pub use region::Region;
 pub use throughput_control::{
     ThroughputControlGroupKey, ThroughputControlGroupOptions,
     ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,
-    ThroughputControlGroupSnapshot, ThroughputTarget,
+    ThroughputControlGroupSnapshot,
 };

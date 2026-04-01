@@ -10,11 +10,11 @@ use crate::{
     driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference,
+        CosmosOperation, DatabaseProperties, DatabaseReference, ThroughputControlGroupName,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
-        OperationOptionsView, ThroughputControlGroupSnapshot,
+        OperationOptionsView, PriorityLevel, ThroughputControlGroupSnapshot,
     },
 };
 use arc_swap::ArcSwap;
@@ -695,30 +695,75 @@ impl CosmosDriver {
 
     /// Computes the effective throughput control group for an operation.
     ///
-    /// Resolution order (first match wins):
-    /// 1. Explicit group name from the resolved options + operation's container
-    /// 2. Default group for the operation's container
+    /// Resolution order:
+    /// 1. Explicit group names from the resolved options — all named groups are
+    ///    resolved and merged into a single snapshot, taking `priority_level` from
+    ///    the first group that has one and `throughput_bucket` from the first group
+    ///    that has one.
+    /// 2. Default group for the operation's container.
     ///
-    /// Returns `None` if no applicable control group is found.
+    /// Returns `Ok(None)` if no applicable control group is found.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any explicitly named group is not found in the registry.
     pub(crate) fn effective_throughput_control_group(
         &self,
         effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
-    ) -> Option<ThroughputControlGroupSnapshot> {
-        // First, check if an explicit group name is specified in options
-        if let Some(group_name) = effective_options.throughput_control_group_name() {
-            if let Some(group) = self
-                .runtime
-                .get_throughput_control_group(container, group_name)
-            {
-                return Some(ThroughputControlGroupSnapshot::from(group.as_ref()));
+    ) -> azure_core::Result<Option<ThroughputControlGroupSnapshot>> {
+        if let Some(group_names) = effective_options.throughput_control_group_names() {
+            if group_names.is_empty() {
+                // Explicit empty list means no throughput control (no default fallback).
+                return Ok(None);
             }
+
+            let mut merged_name_parts: Vec<&str> = Vec::new();
+            let mut priority_level: Option<PriorityLevel> = None;
+            let mut throughput_bucket: Option<u32> = None;
+
+            for name in group_names {
+                if let Some(group) = self.runtime.get_throughput_control_group(container, name) {
+                    let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
+                    merged_name_parts.push(name.as_str());
+                    if priority_level.is_none() {
+                        priority_level = snapshot.priority_level();
+                    }
+                    if throughput_bucket.is_none() {
+                        throughput_bucket = snapshot.throughput_bucket();
+                    }
+                } else {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!(
+                            "throughput control group '{}' not found in registry for container '{}'",
+                            name,
+                            container.name()
+                        ),
+                    ));
+                }
+            }
+
+            let merged_name = merged_name_parts.join("+");
+            let mut merged = ThroughputControlGroupSnapshot::new(
+                ThroughputControlGroupName::new(merged_name),
+                container.clone(),
+                false,
+            );
+            if let Some(level) = priority_level {
+                merged = merged.with_priority_level(level);
+            }
+            if let Some(bucket) = throughput_bucket {
+                merged = merged.with_throughput_bucket(bucket);
+            }
+            return Ok(Some(merged));
         }
 
-        // Fall back to the default group for the container
-        self.runtime
+        // No explicit names — fall back to the default group for the container.
+        Ok(self
+            .runtime
             .get_default_throughput_control_group(container)
-            .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref()))
+            .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref())))
     }
 
     /// Executes a Cosmos DB operation.
@@ -795,11 +840,12 @@ impl CosmosDriver {
         let effective_options = self.operation_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
-        // Step 1 transport pipeline does not consume this yet.
-        // TODO(Step 2): wire resolved throughput control into operation/transport execution.
-        let _effective_control_group = operation.container().and_then(|container| {
-            self.effective_throughput_control_group(&effective_options, container)
-        });
+        let effective_control_group = match operation.container() {
+            Some(container) => {
+                self.effective_throughput_control_group(&effective_options, container)?
+            }
+            None => None,
+        };
 
         // Step 3: Initialize operation activity id
         let activity_id = ActivityId::new_uuid();
@@ -882,6 +928,7 @@ impl CosmosDriver {
             account_properties
                 .user_consistency_policy
                 .default_consistency_level,
+            effective_control_group.as_ref(),
         )
         .await
     }
@@ -1127,7 +1174,7 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
             .operation_options()
-            .throughput_control_group_name
+            .throughput_control_group_names
             .is_none());
         assert!(runtime
             .operation_options()
