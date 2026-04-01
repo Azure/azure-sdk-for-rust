@@ -237,14 +237,14 @@ impl BlobClient {
             tracer: self.tracer.clone(),
         };
         let behavior = BlobClientDownloadBehavior::new(inner_client, get_range_options);
-        let (headers, body) = partitioned_transfer::download(
+        let response = partitioned_transfer::download(
             options.range,
             parallel,
             partition_size,
             Arc::new(behavior),
         )
         .await?;
-        BlobClientDownloadResult::from_headers(headers, body)
+        BlobClientDownloadResult::from_headers(response)
     }
 
     /// Uploads content to a block blob, overwriting any existing blob by default.

@@ -4,11 +4,7 @@
 use azure_core::{
     base64,
     fmt::SafeDebug,
-    http::{
-        headers::{HeaderName, Headers},
-        response::AsyncResponseBody,
-        Etag,
-    },
+    http::{headers::HeaderName, response::AsyncResponseBody, AsyncRawResponse, Etag},
     time::parse_rfc7231,
 };
 use std::collections::HashMap;
@@ -142,14 +138,12 @@ pub struct BlobClientDownloadResult {
 
 impl BlobClientDownloadResult {
     /// Constructs a `BlobClientDownloadResult` by parsing headers from the initial response.
-    pub(crate) fn from_headers(
-        headers: Headers,
-        body: azure_core::http::response::PinnedStream,
-    ) -> azure_core::Result<Self> {
+    pub(crate) fn from_headers(response: AsyncRawResponse) -> azure_core::Result<Self> {
+        let (_, headers, body) = response.deconstruct();
         let (metadata, object_replication_rules) =
             crate::parsers::parse_metadata_and_replication_headers(&headers);
         Ok(Self {
-            body: AsyncResponseBody::new(body),
+            body,
             etag: headers.get_optional_as(&HeaderName::from_static("etag"))?,
             last_modified: headers
                 .get_optional_with(&HeaderName::from_static("last-modified"), |h| {

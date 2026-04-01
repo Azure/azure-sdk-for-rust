@@ -15,7 +15,7 @@ use async_trait::async_trait;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
-    http::{headers::Headers, response::PinnedStream, AsyncRawResponse, StatusCode},
+    http::{headers::Headers, AsyncRawResponse, StatusCode},
     stream::BytesStream,
     Error,
 };
@@ -50,7 +50,7 @@ pub(crate) async fn download<Behavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
-) -> AzureResult<(Headers, PinnedStream)>
+) -> AzureResult<AsyncRawResponse>
 where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
@@ -63,7 +63,11 @@ where
     // of the remote resource.
     let max_download_range = range.unwrap_or(0..usize::MAX);
     if max_download_range.is_empty() {
-        return Ok((Headers::new(), Box::pin(BytesStream::new_empty())));
+        return Ok(AsyncRawResponse::new(
+            StatusCode::Ok,
+            Headers::new(),
+            Box::pin(BytesStream::new_empty()),
+        ));
     }
 
     let initial_response = download_with_empty_blob_safety(
@@ -76,6 +80,7 @@ where
     )
     .await?;
 
+    let status = initial_response.status();
     let headers = initial_response.headers().clone();
     let stats =
         analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
@@ -85,7 +90,11 @@ where
         .unwrap_or_default();
     let total_chunks = remaining_ranges.len() + 1;
     if remaining_ranges.is_empty() {
-        return Ok((headers, Box::pin(initial_response.into_body())));
+        return Ok(AsyncRawResponse::new(
+            status,
+            headers,
+            Box::pin(initial_response.into_body()),
+        ));
     }
 
     // channel for download workers to send results to their coordinator.
@@ -153,7 +162,7 @@ where
         }
     };
 
-    Ok((headers, Box::pin(stream)))
+    Ok(AsyncRawResponse::new(status, headers, Box::pin(stream)))
 }
 
 /// Race awaiting a message vs checking if tasks have completed successfully,
@@ -462,13 +471,14 @@ mod tests {
         ] {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let (_headers, mut body) = download(
+            let mut body = download(
                 download_range.map(|r| r.0..r.1),
                 PARALLEL.try_into().unwrap(),
                 partition_size.try_into().unwrap(),
                 mock.clone(),
             )
-            .await?;
+            .await?
+            .into_body();
             let downloaded_data = body.buffer_all().await?;
 
             assert_eq!(
@@ -524,13 +534,14 @@ mod tests {
                 ] {
                     let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-                    let (_headers, mut body) = download(
+                    let mut body = download(
                         download_range.map(|r| r.0..r.1),
                         parallel.try_into().unwrap(),
                         partition_len.try_into().unwrap(),
                         mock.clone(),
                     )
-                    .await?;
+                    .await?
+                    .into_body();
                     let downloaded_data = body.buffer_all().await?;
 
                     assert_eq!(
@@ -579,7 +590,9 @@ mod tests {
             Some(1..5),
         ));
 
-        let (_headers, mut body) = download(None, parallel, partition_size, mock.clone()).await?;
+        let mut body = download(None, parallel, partition_size, mock.clone())
+            .await?
+            .into_body();
         let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data[..], data[..]);
@@ -596,13 +609,14 @@ mod tests {
             let data = get_random_data(if empty_source { 0 } else { KB });
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let (_headers, mut body) = download(
+            let mut body = download(
                 if empty_range { Some(0..0) } else { None },
                 parallel,
                 partition_len,
                 mock.clone(),
             )
-            .await?;
+            .await?
+            .into_body();
             let downloaded_data = body.buffer_all().await?;
 
             assert_eq!(
