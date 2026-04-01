@@ -47,11 +47,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "container_name",                                        // container name
-        "blob_name",                                             // blob name
-        Some(credential),                                        // credential
-        Some(BlobClientOptions::default()),                      // BlobClient options
+        "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
+        "container_name",                                        // Container Name
+        "blob_name",                                             // Blob Name
+        Some(credential),                                        // Credential
+        Some(BlobClientOptions::default()),                      // BlobClient Options
     )?;
     Ok(())
 }
@@ -74,11 +74,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "container_name",                                        // container name
-        "blob_name",                                             // blob name
-        Some(credential),                                        // credential
-        Some(BlobClientOptions::default()),                      // BlobClient options
+        "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
+        "container_name",                                        // Container Name
+        "blob_name",                                             // Blob Name
+        Some(credential),                                        // Credential
+        Some(BlobClientOptions::default()),                      // BlobClient Options
     )?;
     Ok(())
 }
@@ -105,8 +105,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data = b"hello world";
     blob_client
         .upload(
-            RequestContent::from(data.to_vec()), // data
-            None,                                // upload options
+            RequestContent::from(data.to_vec()), // Data
+            None,                                // Upload Options
         )
         .await?;
     Ok(())
@@ -124,16 +124,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/",
-        "container_name",
-        "blob_name",
-        Some(credential),
-        Some(BlobClientOptions::default()),
+        "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
+        "container_name",                                        // Container Name
+        "blob_name",                                             // Blob Name
+        Some(credential),                                        // Credential
+        Some(BlobClientOptions::default()),                      // BlobClient Options
     )?;
-    let blob_properties = blob_client.get_properties(
-        None // get properties options
-        )
-        .await?;
+    let blob_properties = blob_client.get_properties(None).await?;
     Ok(())
 }
 ```
