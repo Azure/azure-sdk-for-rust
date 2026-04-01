@@ -10,7 +10,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     http::{
         headers::{Headers, CONTENT_LENGTH, CONTENT_TYPE, WWW_AUTHENTICATE},
-        policies::auth::{is_challenge_resource_match, Authorizer, OnChallenge, OnRequest},
+        policies::auth::{Authorizer, OnChallenge, OnRequest},
         Body, Context, Request, Url,
     },
     Result,
@@ -145,7 +145,7 @@ impl OnChallenge for KeyVaultAuthorizer {
                     format!("invalid request URL: {}", request.url()),
                 )
             })?;
-            if !is_challenge_resource_match(request_host, challenge_host) {
+            if !request_host.ends_with(format!(".{challenge_host}").as_str()) {
                 return Err(Error::with_message(
                     ErrorKind::Other,
                     format!(
@@ -688,13 +688,18 @@ mod tests {
 
     #[tokio::test]
     async fn on_challenge_trailing_period_on_request_host() {
-        // Trailing FQDN root dot on the request host should not bypass domain verification.
-        send_challenge_request(
+        // Trailing FQDN root dot on the request host must not bypass domain verification.
+        let err = send_challenge_request(
             "https://myvault.vault.azure.net./keys",
             "https://vault.azure.net",
         )
         .await
-        .expect("trailing period on request host should still match");
+        .expect_err("trailing period on request host should not match");
+        assert!(err
+            .into_inner()
+            .unwrap()
+            .to_string()
+            .contains("doesn't match"),);
     }
 
     #[tokio::test]
