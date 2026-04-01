@@ -10,7 +10,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     http::{
         headers::{Headers, CONTENT_LENGTH, CONTENT_TYPE, WWW_AUTHENTICATE},
-        policies::auth::{Authorizer, OnChallenge, OnRequest},
+        policies::auth::{is_challenge_resource_match, Authorizer, OnChallenge, OnRequest},
         Body, Context, Request, Url,
     },
     Result,
@@ -145,7 +145,7 @@ impl OnChallenge for KeyVaultAuthorizer {
                     format!("invalid request URL: {}", request.url()),
                 )
             })?;
-            if !request_host.ends_with(format!(".{challenge_host}").as_str()) {
+            if !is_challenge_resource_match(request_host, challenge_host) {
                 return Err(Error::with_message(
                     ErrorKind::Other,
                     format!(

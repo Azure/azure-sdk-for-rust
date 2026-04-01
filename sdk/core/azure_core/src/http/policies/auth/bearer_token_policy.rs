@@ -253,6 +253,20 @@ fn should_refresh(expires_on: &OffsetDateTime) -> bool {
     *expires_on <= OffsetDateTime::now_utc() + Duration::minutes(5)
 }
 
+/// Checks whether the request host is a subdomain of the challenge host.
+///
+/// Verifies that the challenge resource's host matches the request URL's host by checking
+/// for a leading period separator (e.g., ".vault.azure.net") before the challenge host in
+/// the request host. Both hosts are normalized by stripping any trailing period (FQDN root
+/// dot) before comparison to prevent bypassing the check with a fully-qualified domain name.
+///
+/// Returns `true` if `request_host` ends with `.{challenge_host}` after normalization.
+pub fn is_challenge_resource_match(request_host: &str, challenge_host: &str) -> bool {
+    let request_host = request_host.strip_suffix('.').unwrap_or(request_host);
+    let challenge_host = challenge_host.strip_suffix('.').unwrap_or(challenge_host);
+    request_host.ends_with(&format!(".{challenge_host}"))
+}
+
 #[derive(Debug, Default)]
 struct DefaultOnRequest {
     scopes: Vec<String>,
@@ -303,20 +317,6 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
-
-    /// Checks whether the request host is a subdomain of the challenge host.
-    ///
-    /// Verifies that the challenge resource's host matches the request URL's host by checking
-    /// for a leading period separator (e.g., ".vault.azure.net") before the challenge host in
-    /// the request host. Both hosts are normalized by stripping any trailing period (FQDN root
-    /// dot) before comparison to prevent bypassing the check with a fully-qualified domain name.
-    ///
-    /// Returns `true` if `request_host` ends with `.{challenge_host}` after normalization.
-    fn is_challenge_resource_match(request_host: &str, challenge_host: &str) -> bool {
-        let request_host = request_host.strip_suffix('.').unwrap_or(request_host);
-        let challenge_host = challenge_host.strip_suffix('.').unwrap_or(challenge_host);
-        request_host.ends_with(&format!(".{challenge_host}"))
-    }
 
     #[derive(Debug, Clone)]
     struct MockCredential {

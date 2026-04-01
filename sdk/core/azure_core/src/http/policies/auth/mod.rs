@@ -5,4 +5,6 @@
 
 mod bearer_token_policy;
 
-pub use bearer_token_policy::{Authorizer, BearerTokenAuthorizationPolicy, OnChallenge, OnRequest};
+pub use bearer_token_policy::{
+    is_challenge_resource_match, Authorizer, BearerTokenAuthorizationPolicy, OnChallenge, OnRequest,
+};
