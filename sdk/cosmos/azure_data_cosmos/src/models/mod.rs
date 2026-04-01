@@ -28,6 +28,7 @@ pub use throughput_properties::*;
 
 // Re-export partition key and container reference types from the driver crate.
 // These are the canonical definitions; the SDK does not duplicate them.
+#[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
     ContainerReference, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion,
 };

@@ -9,7 +9,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
-use azure_data_cosmos::regions::RegionName;
+use azure_data_cosmos::regions::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
@@ -66,7 +66,7 @@ fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
 }
 
 // Helper to avoid duplicating the same application region setup.
-fn options_with_application_region(region: RegionName) -> TestOptions {
+fn options_with_application_region(region: Region) -> TestOptions {
     TestOptions::new().with_client_application_region(region)
 }
 

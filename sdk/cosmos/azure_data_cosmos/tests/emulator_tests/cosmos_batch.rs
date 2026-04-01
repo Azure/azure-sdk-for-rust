@@ -11,6 +11,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::BatchOptions;
 use azure_data_cosmos::TransactionalBatch;
+use azure_data_cosmos::{ContentResponseOnWrite, OperationOptions};
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
@@ -70,7 +71,9 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
                 .create_item(&item2)?
                 .read_item("item1", None);
 
-            let options = BatchOptions::default().with_content_response_on_write_enabled(true);
+            let mut operation = OperationOptions::default();
+            operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+            let options = BatchOptions::default().with_operation_options(operation);
 
             let response = container_client
                 .execute_transactional_batch(batch, Some(options))

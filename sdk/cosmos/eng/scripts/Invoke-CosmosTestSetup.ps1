@@ -65,7 +65,11 @@ if ($IsWindows) {
             Write-Host "Emulator responded with status $($response.StatusCode)."
             $emulatorReady = $true
         } catch {
-             $response = $_.Exception.Response
+             # Some exceptions (e.g. connection refused) have no Response property.
+             $response = $null
+             if ($_.Exception.PSObject.Properties['Response']) {
+                 $response = $_.Exception.Response
+             }
              if ($null -ne $response -and $null -ne $response.StatusCode) {
                  $statusCode = $response.StatusCode.value__
                  if ($statusCode -ge 400 -and $statusCode -lt 500) {

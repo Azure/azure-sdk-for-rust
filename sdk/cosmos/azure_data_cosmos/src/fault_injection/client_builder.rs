@@ -19,7 +19,7 @@ use super::rule::FaultInjectionRule;
 ///
 /// ```rust,no_run
 /// use azure_data_cosmos::{
-///     CosmosClientBuilder, CosmosAccountEndpoint, RoutingStrategy, regions,
+///     CosmosClientBuilder, CosmosAccountEndpoint, Region, RoutingStrategy,
 ///     fault_injection::{
 ///         FaultInjectionClientBuilder, FaultInjectionErrorType,
 ///         FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
@@ -43,7 +43,7 @@ use super::rule::FaultInjectionRule;
 ///     .with_fault_injection(fault_builder)
 ///     .build(
 ///         (endpoint, Secret::from("my_account_key")),
-///         RoutingStrategy::ProximityTo(regions::EAST_US),
+///         RoutingStrategy::ProximityTo(Region::EAST_US),
 ///     )
 ///     .await
 ///     .unwrap();

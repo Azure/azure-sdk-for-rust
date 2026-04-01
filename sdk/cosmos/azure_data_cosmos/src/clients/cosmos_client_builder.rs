@@ -9,6 +9,8 @@ use crate::{
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
+#[cfg(feature = "allow_invalid_certificates")]
+use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation};
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
 
@@ -40,7 +42,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// ```rust,no_run
 /// use azure_data_cosmos::{
 ///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
-///     RoutingStrategy, regions,
+///     Region, RoutingStrategy,
 /// };
 /// use std::sync::Arc;
 ///
@@ -50,7 +52,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClientBuilder::new()
-///     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
+///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -61,7 +63,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// ```rust,no_run,ignore
 /// use azure_data_cosmos::{
 ///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
-///     RoutingStrategy, regions,
+///     Region, RoutingStrategy,
 /// };
 /// use azure_core::credentials::Secret;
 ///
@@ -69,7 +71,7 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
-///     .build(account, RoutingStrategy::ProximityTo(regions::EAST_US))
+///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -332,6 +334,15 @@ impl CosmosClientBuilder {
         let driver_account = build_driver_account(endpoint, driver_credential);
         #[allow(unused_mut)]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
+        #[cfg(feature = "allow_invalid_certificates")]
+        if self.allow_emulator_invalid_certificates {
+            let connection_pool = ConnectionPoolOptions::builder()
+                .with_emulator_server_cert_validation(
+                    EmulatorServerCertValidation::DangerousDisabled,
+                )
+                .build()?;
+            driver_runtime_builder = driver_runtime_builder.with_connection_pool(connection_pool);
+        }
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =

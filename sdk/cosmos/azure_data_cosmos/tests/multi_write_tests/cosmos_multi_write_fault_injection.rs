@@ -11,7 +11,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::ItemOptions;
+use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
     get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
@@ -491,8 +491,9 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, None)
                 .await;
-            let options =
-                ItemOptions::default().with_excluded_regions(vec![SATELLITE_REGION.into()]);
+            let mut operation = OperationOptions::default();
+            operation.excluded_regions = Some(ExcludedRegions::from_iter([SATELLITE_REGION]));
+            let options = ItemReadOptions::default().with_operation_options(operation);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
@@ -659,7 +660,9 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Ensure replication to satellite before reading with fault client
-            let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
+            let mut operation = OperationOptions::default();
+            operation.excluded_regions = Some(ExcludedRegions::from_iter([HUB_REGION]));
+            let options = ItemReadOptions::default().with_operation_options(operation);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
@@ -816,7 +819,9 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Ensure replication to satellite
-            let options = ItemOptions::default().with_excluded_regions(vec![HUB_REGION.into()]);
+            let mut operation = OperationOptions::default();
+            operation.excluded_regions = Some(ExcludedRegions::from_iter([HUB_REGION]));
+            let options = ItemReadOptions::default().with_operation_options(operation);
             let _ = run_context
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;

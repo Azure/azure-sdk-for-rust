@@ -4,7 +4,9 @@
 use std::error::Error;
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{CosmosClient, ItemOptions, PartitionKey};
+use azure_data_cosmos::{
+    ContentResponseOnWrite, CosmosClient, ItemWriteOptions, OperationOptions, PartitionKey,
+};
 use clap::{Args, Subcommand};
 
 use crate::utils::ThroughputOptions;
@@ -77,11 +79,16 @@ impl ReplaceCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let options =
-                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
+                let options = if show_updated {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                } else {
+                    None
+                };
 
                 let response = container_client
-                    .replace_item(pk, &item_id, item, Some(options))
+                    .replace_item(pk, &item_id, item, options)
                     .await;
                 match response {
                     Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
