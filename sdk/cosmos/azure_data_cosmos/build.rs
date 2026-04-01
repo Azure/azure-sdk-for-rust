@@ -5,6 +5,6 @@
 // Some CI/build setups enable `-W unexpected-cfgs`, and in newer Rust toolchains
 // unknown cfg names are warned/denied unless explicitly declared via check-cfg.
 fn main() {
-    // Allow `#![cfg(test_category = "...")]` gating in `tests/*.rs`.
+    // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
     println!("cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"multi_write\"))");
 }

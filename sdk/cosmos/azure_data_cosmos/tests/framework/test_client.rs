@@ -17,6 +17,8 @@ use azure_data_cosmos::{
     Query, RoutingStrategy,
 };
 use futures::TryStreamExt;
+use std::future::Future;
+use std::pin::Pin;
 use std::time::Duration;
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
@@ -394,7 +396,7 @@ impl TestClient {
                 const MAX_BACKOFF: Duration = Duration::from_secs(30);
 
                 loop {
-                    let test_result = test(&run).await;
+                    let test_result = Box::pin(test(&run)).await;
 
                     if let Err(e) = &test_result {
                         println!("Error running test: {}", e);
@@ -444,7 +446,7 @@ impl TestClient {
         Self::run_with_options(
             async |run_context| {
                 let db_client = run_context.create_db().await?;
-                test(run_context, &db_client).await
+                Box::pin(test(run_context, &db_client)).await
             },
             options.unwrap_or_default(),
         )
@@ -470,7 +472,7 @@ impl TestClient {
                 }
                 let db_client = run_context.shared_db_client();
                 db_client.read(None).await?;
-                test(run_context, &db_client).await
+                Box::pin(test(run_context, &db_client)).await
             },
             options.unwrap_or_default(),
         )
@@ -674,7 +676,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await?);
+                    return db_client.container_client(&created.id).await;
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
@@ -694,7 +696,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await?);
+                    return db_client.container_client(&created.id).await;
                 }
                 Err(e) => return Err(e),
             }
@@ -711,69 +713,72 @@ impl TestRunContext {
     ///
     /// This is useful for tests that need to ensure the container is fully available
     /// in multiple regions before performing operations on it.
-    pub async fn create_container_with_throughput(
-        &self,
-        db_client: &DatabaseClient,
+    pub fn create_container_with_throughput<'a>(
+        &'a self,
+        db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> azure_core::Result<ContainerClient> {
-        let created_properties = db_client
-            .create_container(
-                properties,
-                Some(CreateContainerOptions::default().with_throughput(throughput)),
-            )
-            .await?
-            .into_model()?;
-
-        // Create two clients with different preferred regions to ensure container is available in both
-        let hub_client = Self::create_client_with_preferred_region(HUB_REGION).await?;
-        let satellite_client = Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
-
-        let container_id = &created_properties.id;
-
-        // Wait for hub region client to successfully read the container
-        loop {
-            match hub_client
-                .database_client(db_client.id())
-                .container_client(container_id)
+    ) -> Pin<Box<dyn Future<Output = azure_core::Result<ContainerClient>> + Send + 'a>> {
+        Box::pin(async move {
+            let created_properties = db_client
+                .create_container(
+                    properties,
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
+                )
                 .await?
-                .read(None)
-                .await
-            {
-                Ok(_) => break,
-                Err(e) => {
-                    println!(
-                        "waiting for container to be created in hub region ({}): {}",
-                        HUB_REGION.as_str(),
-                        e
-                    );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                .into_model()?;
+
+            // Create two clients with different preferred regions to ensure container is available in both
+            let hub_client = Self::create_client_with_preferred_region(HUB_REGION).await?;
+            let satellite_client =
+                Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
+
+            let container_id = &created_properties.id;
+
+            // Wait for hub region client to successfully read the container
+            loop {
+                match hub_client
+                    .database_client(db_client.id())
+                    .container_client(container_id)
+                    .await?
+                    .read(None)
+                    .await
+                {
+                    Ok(_) => break,
+                    Err(e) => {
+                        println!(
+                            "waiting for container to be created in hub region ({}): {}",
+                            HUB_REGION.as_str(),
+                            e
+                        );
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
                 }
             }
-        }
 
-        // Wait for satellite region client to successfully read the container
-        loop {
-            match satellite_client
-                .database_client(db_client.id())
-                .container_client(container_id)
-                .await?
-                .read(None)
-                .await
-            {
-                Ok(_) => break,
-                Err(e) => {
-                    println!(
-                        "waiting for container to be created in satellite region ({}): {}",
-                        SATELLITE_REGION.as_str(),
-                        e
-                    );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+            // Wait for satellite region client to successfully read the container
+            loop {
+                match satellite_client
+                    .database_client(db_client.id())
+                    .container_client(container_id)
+                    .await?
+                    .read(None)
+                    .await
+                {
+                    Ok(_) => break,
+                    Err(e) => {
+                        println!(
+                            "waiting for container to be created in satellite region ({}): {}",
+                            SATELLITE_REGION.as_str(),
+                            e
+                        );
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
                 }
             }
-        }
 
-        Ok(db_client.container_client(container_id).await?)
+            db_client.container_client(container_id).await
+        })
     }
 
     /// Creates a CosmosClient with a specific preferred region.

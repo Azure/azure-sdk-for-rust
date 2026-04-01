@@ -8,7 +8,7 @@ use super::framework;
 use std::collections::HashMap;
 use std::error::Error;
 
-use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_core::http::headers::HeaderValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     constants,
@@ -26,6 +26,10 @@ fn collect_matching_items(
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -49,6 +53,10 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -82,6 +90,10 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -109,6 +121,10 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -141,6 +157,10 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -181,6 +201,10 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
@@ -191,11 +215,11 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
             // Enable both index metrics and query metrics via custom headers
             let mut custom_headers = HashMap::new();
             custom_headers.insert(
-                HeaderName::from(constants::COSMOS_POPULATEINDEXMETRICS),
+                constants::COSMOS_POPULATEINDEXMETRICS,
                 HeaderValue::from("true"),
             );
             custom_headers.insert(
-                HeaderName::from(constants::DOCUMENTDB_POPULATEQUERYMETRICS),
+                constants::DOCUMENTDB_POPULATEQUERYMETRICS,
                 HeaderValue::from("true"),
             );
             let operation = OperationOptions::default().with_custom_headers(custom_headers);

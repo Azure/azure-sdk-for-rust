@@ -127,10 +127,7 @@ mod tests {
         assert_eq!(readable.len(), 2);
         assert_eq!(writable[0]["name"].as_str().unwrap(), "eastus2");
         assert_eq!(writable[1]["name"].as_str().unwrap(), "westus");
-        assert_eq!(
-            value["enableMultipleWriteLocations"].as_bool().unwrap(),
-            false
-        );
+        assert!(!value["enableMultipleWriteLocations"].as_bool().unwrap());
     }
 
     #[test]
