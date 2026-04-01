@@ -20,6 +20,9 @@ pub(crate) mod request_header_names {
     pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
     pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
     pub static PREFER: HeaderName = HeaderName::from_static("prefer");
+    pub static PRIORITY_LEVEL: HeaderName = HeaderName::from_static("x-ms-cosmos-priority-level");
+    pub static THROUGHPUT_BUCKET: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-throughput-bucket");
 }
 
 /// Standard Cosmos DB response header names.
