@@ -48,7 +48,7 @@ async fn verify_read_fails_with_injected_error(
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new(&format!("{:?}-always", error_type), server_error)
+    let rule = FaultInjectionRuleBuilder::new(format!("{:?}-always", error_type), server_error)
         .with_condition(condition)
         .build();
 
@@ -85,7 +85,7 @@ async fn verify_read_fails_with_injected_error(
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let result = run_context
@@ -236,7 +236,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read the item using the fault client - this should succeed because the fault only targets CreateItem
@@ -319,7 +319,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed on satellite region after primary returns 503
@@ -332,7 +332,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 println!("Request succeeded via failover, final URL: {}", request_url);
                 // Verify the request went to a different endpoint than the faulted one
                 assert!(
-                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    request_url.contains(SATELLITE_REGION.as_str()),
                     "request should have failed over to secondary region"
                 );
             }
@@ -385,7 +385,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let unique_id = Uuid::new_v4().to_string();
@@ -413,7 +413,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
                 // Verify the request went to a different endpoint than the faulted one
                 assert!(
-                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    request_url.contains(SATELLITE_REGION.as_str()),
                     "request should have failed over to secondary region"
                 );
             }
@@ -484,7 +484,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Make sure the write has been replicated on both regions
@@ -509,7 +509,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 println!("Request succeeded via failover, final URL: {}", request_url);
                 // Verify the request was retried on the hub region
                 assert!(
-                    request_url.contains(&HUB_REGION.as_str()),
+                    request_url.contains(HUB_REGION.as_str()),
                     "request should have failed over to hub region"
                 );
             }
@@ -564,7 +564,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let unique_id = Uuid::new_v4().to_string();
@@ -656,7 +656,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Ensure replication to satellite before reading with fault client
@@ -728,7 +728,7 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let unique_id = Uuid::new_v4().to_string();
@@ -815,7 +815,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Ensure replication to satellite
@@ -887,7 +887,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let unique_id = Uuid::new_v4().to_string();
@@ -979,7 +979,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let response = run_context

@@ -1066,7 +1066,7 @@ pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn E
             // Verify the pkranges request returned 200 from the service.
             let statuses = rule_handle.passthrough_statuses();
             assert!(
-                statuses.iter().any(|s| *s == StatusCode::Ok),
+                statuses.contains(&StatusCode::Ok),
                 "Expected pkranges request to return 200, got: {:?}",
                 statuses
             );

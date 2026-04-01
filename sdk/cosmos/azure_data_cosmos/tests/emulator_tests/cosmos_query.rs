@@ -8,7 +8,7 @@ use super::framework;
 use std::collections::HashMap;
 use std::error::Error;
 
-use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_core::http::headers::HeaderValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     constants,
@@ -215,11 +215,11 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
             // Enable both index metrics and query metrics via custom headers
             let mut custom_headers = HashMap::new();
             custom_headers.insert(
-                HeaderName::from(constants::COSMOS_POPULATEINDEXMETRICS),
+                constants::COSMOS_POPULATEINDEXMETRICS,
                 HeaderValue::from("true"),
             );
             custom_headers.insert(
-                HeaderName::from(constants::DOCUMENTDB_POPULATEQUERYMETRICS),
+                constants::DOCUMENTDB_POPULATEQUERYMETRICS,
                 HeaderValue::from("true"),
             );
             let operation = OperationOptions::default().with_custom_headers(custom_headers);

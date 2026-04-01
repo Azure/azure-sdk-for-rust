@@ -173,7 +173,7 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
                 .map(|r| r.status_code())
                 .collect();
             assert!(
-                status_codes.iter().all(|&c| c >= 200 && c < 300),
+                status_codes.iter().all(|&c| (200..300).contains(&c)),
                 "Expected all success status codes, got: {:?}",
                 status_codes
             );

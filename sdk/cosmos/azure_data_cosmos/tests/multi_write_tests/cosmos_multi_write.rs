@@ -70,30 +70,33 @@ fn options_with_application_region(region: Region) -> TestOptions {
     TestOptions::new().with_client_application_region(region)
 }
 
-async fn create_container_and_write_item(
-    db_client: &DatabaseClient,
-    run_context: &TestRunContext,
-    container_id: &str,
-    _expected_region: &str,
-) -> Result<(), Box<dyn Error>> {
-    let properties = ContainerProperties::new(Cow::Owned(String::from(container_id)), "/id".into());
+fn create_container_and_write_item<'a>(
+    db_client: &'a DatabaseClient,
+    run_context: &'a TestRunContext,
+    container_id: &'a str,
+    _expected_region: &'a str,
+) -> futures::future::BoxFuture<'a, Result<(), Box<dyn Error>>> {
+    Box::pin(async move {
+        let properties =
+            ContainerProperties::new(Cow::Owned(String::from(container_id)), "/id".into());
 
-    let throughput = ThroughputProperties::manual(400);
+        let throughput = ThroughputProperties::manual(400);
 
-    let container_client = run_context
-        .create_container_with_throughput(&db_client, properties, throughput)
-        .await?;
+        let container_client = run_context
+            .create_container_with_throughput(db_client, properties, throughput)
+            .await?;
 
-    // This upsert operation should be logged by the retry_handler
-    container_client
-        .upsert_item(
-            "item1",
-            &serde_json::json!({"id": "item1", "value": "test"}),
-            None,
-        )
-        .await?;
+        // This upsert operation should be logged by the retry_handler
+        container_client
+            .upsert_item(
+                "item1",
+                &serde_json::json!({"id": "item1", "value": "test"}),
+                None,
+            )
+            .await?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[tokio::test]
