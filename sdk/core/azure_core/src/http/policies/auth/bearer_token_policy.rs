@@ -915,6 +915,7 @@ mod tests {
         );
     }
 
+    // cspell:ignore myvault hostexample hostvault
     #[test]
     fn challenge_resource_subdomain_matches() {
         assert!(is_challenge_resource_match(

@@ -570,4 +570,167 @@ mod tests {
             assert_eq!("https://a.b/.default", scope);
         }
     }
+
+    /// Sends a request through a pipeline with [`KeyVaultAuthorizer`] to test
+    /// challenge-response domain matching. The mock transport always returns
+    /// a 401 with a `WWW-Authenticate` header whose resource is `challenge_resource`.
+    /// On success the pipeline completes; on domain mismatch it returns an error
+    /// containing `"doesn't match"`.
+    async fn send_challenge_request(
+        request_url: &str,
+        challenge_resource: &str,
+    ) -> azure_core::Result<()> {
+        let challenge_scope = format!("{challenge_resource}/.default");
+        let transport = Transport::new(Arc::new(MockHttpClient::new({
+            let challenge_resource = challenge_resource.to_string();
+            let requests = Arc::new(AtomicUsize::new(0));
+            move |_| {
+                let challenge_resource = challenge_resource.clone();
+                let requests = Arc::clone(&requests);
+                async move {
+                    let attempt = requests.fetch_add(1, Ordering::SeqCst);
+                    if attempt == 0 {
+                        let mut headers = Headers::new();
+                        headers.insert(
+                            WWW_AUTHENTICATE,
+                            format!(
+                                r#"Bearer authorization="https://login.microsoftonline.com/tenant", resource="{challenge_resource}""#
+                            ),
+                        );
+                        Ok(AsyncRawResponse::from_bytes(
+                            StatusCode::Unauthorized,
+                            headers,
+                            Bytes::new(),
+                        ))
+                    } else {
+                        Ok(AsyncRawResponse::from_bytes(
+                            StatusCode::Ok,
+                            Headers::new(),
+                            Bytes::new(),
+                        ))
+                    }
+                }
+                .boxed()
+            }
+        })));
+
+        let mock_credential = Arc::new(MockCredential::new(
+            vec![AccessToken {
+                token: Secret::new("token".to_string()),
+                expires_on: OffsetDateTime::now_utc() + Duration::seconds(600),
+            }],
+            challenge_scope,
+        ));
+
+        let authorizer = KeyVaultAuthorizer::new(true);
+        let auth_policy: Arc<dyn Policy> = Arc::new(
+            BearerTokenAuthorizationPolicy::new(mock_credential, Vec::<String>::new())
+                .with_on_request(authorizer.clone())
+                .with_on_challenge(authorizer),
+        );
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::http::ClientOptions {
+                transport: Some(transport),
+                ..Default::default()
+            },
+            Vec::default(),
+            vec![auth_policy],
+            None,
+        );
+
+        let mut request = Request::new(Url::parse(request_url).unwrap(), Method::Get);
+        pipeline
+            .send(&Context::default(), &mut request, None)
+            .await?;
+        Ok(())
+    }
+
+    // cspell:ignore myvault hostexample hostvault
+    #[tokio::test]
+    async fn on_challenge_subdomain_matches() {
+        send_challenge_request(
+            "https://myvault.vault.azure.net/keys",
+            "https://vault.azure.net",
+        )
+        .await
+        .expect("subdomain should match");
+    }
+
+    #[tokio::test]
+    async fn on_challenge_without_period_separator_does_not_match() {
+        let err = send_challenge_request(
+            "https://hostvault.azure.net/keys",
+            "https://vault.azure.net",
+        )
+        .await
+        .expect_err("missing period separator should fail");
+        assert!(err
+            .into_inner()
+            .unwrap()
+            .to_string()
+            .contains("doesn't match"),);
+    }
+
+    #[tokio::test]
+    async fn on_challenge_different_domain_does_not_match() {
+        let err = send_challenge_request("https://vault.evil.com/keys", "https://vault.azure.net")
+            .await
+            .expect_err("different domain should fail");
+        assert!(err
+            .into_inner()
+            .unwrap()
+            .to_string()
+            .contains("doesn't match"),);
+    }
+
+    #[tokio::test]
+    async fn on_challenge_trailing_period_on_request_host() {
+        // Trailing FQDN root dot on the request host should not bypass domain verification.
+        send_challenge_request(
+            "https://myvault.vault.azure.net./keys",
+            "https://vault.azure.net",
+        )
+        .await
+        .expect("trailing period on request host should still match");
+    }
+
+    #[tokio::test]
+    async fn on_challenge_trailing_period_on_challenge_host() {
+        // Trailing FQDN root dot on the challenge resource host should not bypass domain verification.
+        send_challenge_request(
+            "https://myvault.vault.azure.net/keys",
+            "https://vault.azure.net.",
+        )
+        .await
+        .expect("trailing period on challenge host should still match");
+    }
+
+    #[tokio::test]
+    async fn on_challenge_trailing_period_on_both_hosts() {
+        // Trailing FQDN root dots on both hosts should not bypass domain verification.
+        send_challenge_request(
+            "https://myvault.vault.azure.net./keys",
+            "https://vault.azure.net.",
+        )
+        .await
+        .expect("trailing periods on both hosts should still match");
+    }
+
+    #[tokio::test]
+    async fn on_challenge_trailing_period_without_separator_does_not_match() {
+        let err = send_challenge_request(
+            "https://hostvault.azure.net./keys",
+            "https://vault.azure.net.",
+        )
+        .await
+        .expect_err("trailing periods should not mask missing separator");
+        assert!(err
+            .into_inner()
+            .unwrap()
+            .to_string()
+            .contains("doesn't match"),);
+    }
 }
