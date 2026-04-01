@@ -132,7 +132,7 @@ stages:
                       Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
                     displayName: 'Copy crate for ESRP'
 
-                  - task: EsrpRelease@10
+                  - task: EsrpRelease@11
                     displayName: 'ESRP Release'
                     inputs:
                       connectedservicename: 'Azure SDK PME Managed Identity'

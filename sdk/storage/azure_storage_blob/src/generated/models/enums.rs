@@ -80,7 +80,7 @@ pub enum AccountKind {
 /// The archive status.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ArchiveStatus {
-    /// The archive status is rehydrating pending to archive.
+    /// The archive status is rehydrating pending to cold.
     RehydratePendingToCold,
 
     /// The archive status is rehydrating pending to cool.

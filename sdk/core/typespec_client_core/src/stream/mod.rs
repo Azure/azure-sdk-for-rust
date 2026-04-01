@@ -24,7 +24,7 @@ pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + Dy
     async fn reset(&mut self) -> Result<()>;
 
     /// Returns the total length of the stream in bytes.
-    fn len(&self) -> usize;
+    fn len(&self) -> u64;
 
     /// Returns `true` if the stream is empty.
     fn is_empty(&self) -> bool {

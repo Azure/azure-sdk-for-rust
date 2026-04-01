@@ -35,6 +35,8 @@ pub struct AdministratorContact {
 #[non_exhaustive]
 pub struct BackupCertificateResult {
     /// The backup blob containing the backed up certificate.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -66,14 +68,20 @@ pub struct Certificate {
     pub content_type: Option<String>,
 
     /// The certificate id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
     /// The key id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
 
     /// The management policy.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<CertificatePolicy>,
 
@@ -83,6 +91,8 @@ pub struct Certificate {
     pub preserve_cert_order: Option<bool>,
 
     /// The secret id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 
@@ -91,6 +101,8 @@ pub struct Certificate {
     pub tags: Option<HashMap<String, String>>,
 
     /// Thumbprint of the certificate.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -105,6 +117,8 @@ pub struct Certificate {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct CertificateAttributes {
     /// Creation time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -135,16 +149,22 @@ pub struct CertificateAttributes {
     pub not_before: Option<OffsetDateTime>,
 
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "recoverableDays", skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
 
     /// Reflects the deletion recovery level currently in effect for certificates in the current vault. If it contains 'Purgeable',
     /// the certificate can be permanently deleted by a privileged user; otherwise, only the system can purge the certificate,
     /// at the end of the retention interval.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "recoveryLevel", skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<DeletionRecoveryLevel>,
 
     /// Last updated time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -175,6 +195,8 @@ pub struct CertificateOperation {
     pub error: Option<KeyVaultErrorError>,
 
     /// The certificate id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
@@ -212,6 +234,8 @@ pub struct CertificatePolicy {
     pub attributes: Option<CertificateAttributes>,
 
     /// The certificate id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
@@ -287,6 +311,8 @@ pub struct Contacts {
     pub contact_list: Option<Vec<Contact>>,
 
     /// Identifier for the contacts collection.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -335,6 +361,8 @@ pub struct DeletedCertificate {
     pub content_type: Option<String>,
 
     /// The time when the certificate was deleted, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "deletedDate",
@@ -344,14 +372,20 @@ pub struct DeletedCertificate {
     pub deleted_date: Option<OffsetDateTime>,
 
     /// The certificate id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
     /// The key id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
 
     /// The management policy.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<CertificatePolicy>,
 
@@ -365,6 +399,8 @@ pub struct DeletedCertificate {
     pub recovery_id: Option<String>,
 
     /// The time when the certificate is scheduled to be purged, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "scheduledPurgeDate",
@@ -374,6 +410,8 @@ pub struct DeletedCertificate {
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
     /// The secret id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 
@@ -382,6 +420,8 @@ pub struct DeletedCertificate {
     pub tags: Option<HashMap<String, String>>,
 
     /// Thumbprint of the certificate.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -401,6 +441,8 @@ pub struct DeletedCertificateProperties {
     pub attributes: Option<CertificateAttributes>,
 
     /// The time when the certificate was deleted, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "deletedDate",
@@ -418,6 +460,8 @@ pub struct DeletedCertificateProperties {
     pub recovery_id: Option<String>,
 
     /// The time when the certificate is scheduled to be purged, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "scheduledPurgeDate",
@@ -483,6 +527,8 @@ pub struct Issuer {
     pub credentials: Option<IssuerCredentials>,
 
     /// Identifier for the issuer object.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
@@ -499,6 +545,8 @@ pub struct Issuer {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct IssuerAttributes {
     /// Creation time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -511,6 +559,8 @@ pub struct IssuerAttributes {
     pub enabled: Option<bool>,
 
     /// Last updated time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -585,18 +635,35 @@ pub struct KeyProperties {
     pub reuse_key: Option<bool>,
 }
 
+/// The key vault error exception.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct KeyVaultError {
+    /// The key vault server error.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<KeyVaultErrorError>,
+}
+
+/// The key vault server error.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyVaultErrorError {
     /// The error code.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 
     /// The key vault server error.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "innererror", skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<Box<KeyVaultErrorError>>,
 
     /// The error message.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -639,6 +706,8 @@ pub struct LifetimeActionType {
 #[non_exhaustive]
 pub struct ListCertificatePropertiesResult {
     /// The URL to get the next set of certificates.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 
@@ -652,11 +721,15 @@ pub struct ListCertificatePropertiesResult {
 #[non_exhaustive]
 pub struct ListDeletedCertificatePropertiesResult {
     /// The URL to get the next set of deleted certificates.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 
     /// A response message containing a list of deleted certificates in the vault along with a link to the next page of deleted
     /// certificates.
+    ///
+    /// Operational visibility: Read
     #[serde(default)]
     pub value: Vec<DeletedCertificateProperties>,
 }
@@ -666,11 +739,15 @@ pub struct ListDeletedCertificatePropertiesResult {
 #[non_exhaustive]
 pub struct ListIssuerPropertiesResult {
     /// The URL to get the next set of certificate issuers.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 
     /// A response message containing a list of certificate issuers in the key vault along with a link to the next page of certificate
     /// issuers.
+    ///
+    /// Operational visibility: Read
     #[serde(default)]
     pub value: Vec<IssuerProperties>,
 }

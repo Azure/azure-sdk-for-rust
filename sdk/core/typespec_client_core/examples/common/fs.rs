@@ -152,12 +152,12 @@ impl SeekableStream for FileStream {
         Ok(())
     }
 
-    fn len(&self) -> usize {
+    fn len(&self) -> u64 {
         debug!(
             "stream len:  {} - {} ... {}",
             self.stream_size, self.offset, self.block_size
         );
-        min(self.stream_size - self.offset, self.block_size) as usize
+        min(self.stream_size - self.offset, self.block_size)
     }
 
     fn buffer_size(&self) -> usize {

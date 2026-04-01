@@ -15,16 +15,16 @@ pub struct CertificateClientBackupCertificateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::delete_certificate()`](crate::generated::clients::CertificateClient::delete_certificate())
+/// Options to be passed to [`CertificateClient::delete_certificate_operation()`](crate::generated::clients::CertificateClient::delete_certificate_operation())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientDeleteCertificateOptions<'a> {
+pub struct CertificateClientDeleteCertificateOperationOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::delete_certificate_operation()`](crate::generated::clients::CertificateClient::delete_certificate_operation())
+/// Options to be passed to [`CertificateClient::delete_certificate()`](crate::generated::clients::CertificateClient::delete_certificate())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientDeleteCertificateOperationOptions<'a> {
+pub struct CertificateClientDeleteCertificateOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -43,6 +43,13 @@ pub struct CertificateClientDeleteIssuerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`CertificateClient::get_certificate_operation()`](crate::generated::clients::CertificateClient::get_certificate_operation())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientGetCertificateOperationOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`CertificateClient::get_certificate()`](crate::generated::clients::CertificateClient::get_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientGetCertificateOptions<'a> {
@@ -50,13 +57,6 @@ pub struct CertificateClientGetCertificateOptions<'a> {
     /// is returned.
     pub certificate_version: Option<String>,
 
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::get_certificate_operation()`](crate::generated::clients::CertificateClient::get_certificate_operation())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientGetCertificateOperationOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

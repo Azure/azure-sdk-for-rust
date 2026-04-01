@@ -1,17 +1,32 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{cmp::min, collections::VecDeque, ops::Range, sync::Arc};
+use std::{
+    cmp::min,
+    collections::VecDeque,
+    ops::Range,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use async_trait::async_trait;
 use azure_core::{
+    async_runtime::{get_async_runtime, SpawnedTask},
+    error::ErrorKind,
     http::{response::PinnedStream, AsyncRawResponse, StatusCode},
     stream::BytesStream,
+    Error,
 };
-use bytes::Bytes;
-use futures::{stream::FuturesOrdered, StreamExt};
+use bytes::{Bytes, BytesMut};
+use futures::{
+    channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
+    future::Either,
+    SinkExt, TryStream,
+};
 
-use crate::models::http_ranges::ContentRange;
+use crate::models::{drains::SequentialBoundedDrain, http_ranges::ContentRange};
 
 use super::*;
 
@@ -26,9 +41,10 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// download in the sequence has been buffered, regardless of the state of any other downloads.
 /// This means completed ranged downloads may sit for a while while earlier ones complete.
 ///
-/// A download that has completed buffering but has not yet returned its buffer in the resulting
-/// stream will still count when determining current running operations. This is so the stream can
-/// promise its buffered bytes do not exceed parallel * partition_size.
+/// This implementation makes an initial download request to gauge the actual size of the remote
+/// resource while not wasting a roundtrip just for a HEAD request. It then determines the
+/// correct set of additional ranges to download and queues them up. The returned `Stream`
+/// executes these downloads, maintaining limits for parallel downloads and buffer count.
 pub(crate) async fn download<Behavior>(
     range: Option<Range<usize>>,
     parallel: NonZero<usize>,
@@ -39,6 +55,7 @@ where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
     let parallel = parallel.get();
+    let max_buffers = parallel * 2;
     let partition_size = partition_size.get();
 
     // Outer bound estimate of the resource range that will be downloaded. The actual download
@@ -50,73 +67,258 @@ where
         return Ok(raw_stream);
     }
 
-    let initial_response = match client
-        .transfer_range(Some(
-            max_download_range.start
-                ..min(
-                    max_download_range.end,
-                    max_download_range.start.saturating_add(partition_size),
-                ),
-        ))
-        .await
-    {
-        Ok(response) => response,
-        Err(err) => match (err.http_status(), max_download_range.start) {
-            (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
-                client.transfer_range(None).await?
-            }
-            _ => Err(err)?,
-        },
-    };
+    let initial_response = download_with_empty_blob_safety(
+        client.as_ref(),
+        max_download_range.start
+            ..min(
+                max_download_range.end,
+                max_download_range.start.saturating_add(partition_size),
+            ),
+    )
+    .await?;
 
-    let mut ranges: VecDeque<_> = match initial_response
-        .headers()
-        .get_optional_as::<ContentRange, _>(&"content-range".into())?
-    {
-        Some(content_range) => match (content_range.range, content_range.total_len) {
-            (Some(received_range), Some(resource_len)) => {
-                let remainder_start = received_range.1;
-                let remainder_end = min(max_download_range.end, resource_len);
-                (remainder_start..remainder_end)
-                    .step_by(partition_size)
-                    .map(|i| i..min(i.saturating_add(partition_size), remainder_end))
-                    .collect()
-            }
-            _ => VecDeque::new(),
-        },
-        None => VecDeque::new(),
-    };
+    let stats =
+        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
 
-    // the first operation has a different type from the others.
-    // fully type this variable out to specify dyn.
-    let fut: Pin<Box<dyn DownloadRangeFuture<Output = AzureResult<Bytes>>>> =
-        Box::pin(initial_response.into_body().collect());
-    let mut ops = FuturesOrdered::new();
-    ops.push_back(fut);
+    let mut remaining_ranges = stats
+        .map(|s| s.remaining_download_ranges)
+        .unwrap_or_default();
+    let total_chunks = remaining_ranges.len() + 1;
+    if remaining_ranges.is_empty() {
+        return Ok(Box::pin(initial_response.into_body()));
+    }
 
-    let stream = futures::stream::poll_fn(move |cx| {
-        // fill to max parallel ops
-        while ops.len() < parallel {
-            match ranges.pop_front() {
-                Some(range) => {
-                    ops.push_back(Box::pin(download_range_to_bytes(client.clone(), range)))
+    // channel for download workers to send results to their coordinator.
+    let (tx, mut rx) = mpsc::unbounded();
+
+    // start with one initial download task at index 0
+    let active_tasks_counter = Arc::new(AtomicUsize::new(1));
+    let mut next_task_index = 1;
+    let mut task_bucket = vec![start_initial_download_task(
+        initial_response,
+        tx.clone(),
+        active_tasks_counter.clone(),
+        partition_size,
+    )];
+
+    let mut drain = SequentialBoundedDrain::new(max_buffers);
+    let mut tx_opt = Some(tx);
+
+    // This stream maintains up to parallel-many active client downloads at a time while maintaining
+    // up to max_buffers-many buffers of length partition_size.
+    // It re-sequences these buffers, only yielding the sequentially next buffer when it is ready,
+    // regardless of the state of subsequent buffers.
+    // Drain serves double duty of holding completed buffers as well as tracking position of the
+    // download, indexed by chunk.
+    let stream = async_stream::try_stream! {
+        while drain.position() < total_chunks {
+            // while there is room in the buffer drain and not at max connections, start new range downloads
+            while drain.currently_accepting().contains(&next_task_index) && active_tasks_counter.load(Ordering::Relaxed) < parallel {
+                match remaining_ranges.pop_front() {
+                    Some(range) => {
+                        let i = next_task_index;
+                        next_task_index += 1;
+                        active_tasks_counter.fetch_add(1, Ordering::Relaxed);
+
+                        let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
+                        task_bucket.push(start_download_task(client.clone(), range, t, active_tasks_counter.clone(), i));
+                    }
+                    None => {
+                        // if ranges are finished, we'll never need to clone the transmitter again.
+                        // drop this transmitter to ensure channel closes when expected
+                        tx_opt = None;
+                        break;
+                    }
                 }
-                None => break,
             }
-        }
 
-        ops.poll_next_unpin(cx)
-    });
+            // return next readied bytes, if any
+            while let Some(bytes) = drain.pop() {
+                yield bytes;
+            }
+
+            // early break if finished
+            if drain.position() >= total_chunks {
+                break;
+            }
+
+            // max tasks are spawned and sequential ready bytes already returned
+            // this will not change until either:
+            //   1. a task sends a message through this channel
+            //   2. a task fails
+            let channel_message;
+            (channel_message, task_bucket) = await_message_while_joining_workers(&mut rx, task_bucket).await?;
+            let (idx, bytes) = channel_message?;
+            drain.push(idx, bytes)?;
+        }
+    };
 
     Ok(Box::pin(stream))
+}
+
+/// Race awaiting a message vs checking if tasks have completed successfully,
+/// until either message is received or a task failure is found.
+///
+/// # Returns
+///
+/// - Returns Ok with received message and remaining un-joined tasks.
+/// - Returns Err if channel closed before a message received.
+/// - Returns Err if joined task closed with an error.
+async fn await_message_while_joining_workers<T>(
+    receiver: &mut UnboundedReceiver<T>,
+    mut task_bucket: Vec<SpawnedTask>,
+) -> AzureResult<(T, Vec<SpawnedTask>)> {
+    let on_recv_err = |_| {
+        Error::with_message(
+            ErrorKind::Other,
+            "Download incomplete. Premature channel close.",
+        )
+    };
+
+    let mut message_fut = receiver.recv();
+    // `task_bucket`` may be empty. `select_all` cannot handle that.
+    while !task_bucket.is_empty() {
+        match future::select(message_fut, future::select_all(task_bucket)).await {
+            Either::Left((message, task_select)) => {
+                return Ok((message.map_err(on_recv_err)?, task_select.into_inner()));
+            }
+            Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
+                completed_task.map_err(|e| Error::with_message(ErrorKind::Other, e.to_string()))?;
+                task_bucket = remaining_tasks;
+                message_fut = m_fut;
+            }
+        }
+    }
+
+    Ok((message_fut.await.map_err(on_recv_err)?, task_bucket))
 }
 
 async fn download_range_to_bytes(
     client: Arc<impl PartitionedDownloadBehavior>,
     range: Range<usize>,
 ) -> AzureResult<Bytes> {
-    let response = client.transfer_range(Some(range)).await?;
-    response.into_body().collect().await
+    let mut dst = vec![0u8; range.len()];
+    let count = client
+        .transfer_range(Some(range))
+        .await?
+        .into_body()
+        .collect_into(&mut dst)
+        .await?;
+    dst.truncate(count);
+    Ok(dst.into())
+}
+
+async fn collect_into<S: TryStream<Ok = Bytes> + Unpin>(
+    mut stream: S,
+    mut destination: BytesMut,
+) -> Result<Bytes, S::Error> {
+    while let Some(bytes) = stream.try_next().await? {
+        destination.extend_from_slice(&bytes);
+    }
+    Ok(destination.freeze())
+}
+
+fn start_initial_download_task(
+    initial_response: AsyncRawResponse,
+    mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
+    active_tasks_counter: Arc<AtomicUsize>,
+    partition_size: usize,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = collect_into(
+            initial_response.into_body(),
+            BytesMut::with_capacity(partition_size),
+        )
+        .await
+        .map(|bytes| (0usize, bytes));
+        active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
+        let _send_res = sender.send(res).await;
+    }))
+}
+
+fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'static>(
+    client: Arc<Behavior>,
+    range: Range<usize>,
+    mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
+    active_tasks_counter: Arc<AtomicUsize>,
+    chunk_idx: usize,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = download_range_to_bytes(client, range)
+            .await
+            .map(|bytes| (chunk_idx, bytes));
+        active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
+        let _send_res = sender.send(res).await;
+    }))
+}
+
+/// Performs a `transfer_range()` call with the given range. If this results in a
+/// RequestedRangeNotSatisfiable error, and if the requested range begins at the
+/// start of the blob, retries the operation without a range argument.
+/// This handles the service's edge case where a ranged get on an empty blob
+/// always fails. Retrying with an empty range gives the correct empty blob data
+/// as well as all the header information we expect.
+async fn download_with_empty_blob_safety<Behavior>(
+    client: &Behavior,
+    range: Range<usize>,
+) -> AzureResult<AsyncRawResponse>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    let range_start = range.start;
+    match client.transfer_range(Some(range)).await {
+        Ok(response) => Ok(response),
+        Err(err) => match (err.http_status(), range_start) {
+            (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
+                client.transfer_range(None).await
+            }
+            _ => Err(err),
+        },
+    }
+}
+
+struct InitialResponseAnalysis {
+    overall_download_range: Range<usize>,
+    initial_download_range: Range<usize>,
+    remaining_download_ranges: VecDeque<Range<usize>>,
+}
+/// Reads over the response headers of the initial download response and compiles all relevant
+/// information to perform the remaining downloads and arrange all resulting bytes.
+///
+/// # Returns
+///
+/// Ok(Some(analysis)) if the appropriate information was available.
+///
+/// Ok(None) if the appropriate information was not available.
+///
+/// Err(error) if there was an error parsing the appropriate information.
+fn analyze_initial_response(
+    initial_response: &AsyncRawResponse,
+    partition_len: usize,
+    max_range_end: usize,
+) -> AzureResult<Option<InitialResponseAnalysis>> {
+    let content_range = match initial_response
+        .headers()
+        .get_optional_as::<ContentRange, _>(&"content-range".into())?
+    {
+        Some(content_range) => content_range,
+        None => return Ok(None),
+    };
+    match (content_range.range, content_range.total_len) {
+        (Some(received_range), Some(resource_len)) => {
+            let remainder_start = received_range.1;
+            let remainder_end = min(max_range_end, resource_len);
+            Ok(Some(InitialResponseAnalysis {
+                overall_download_range: received_range.0..remainder_end,
+                initial_download_range: received_range.0..received_range.1,
+                remaining_download_ranges: (remainder_start..remainder_end)
+                    .step_by(partition_len)
+                    .map(|i| i..min(i.saturating_add(partition_len), remainder_end))
+                    .collect(),
+            }))
+        }
+        _ => Ok(None),
+    }
 }
 
 trait DownloadRangeFuture: Future + Send {}
