@@ -85,17 +85,15 @@ pub(crate) struct UnorderedFuturesDrain<F> {
 impl<F: Future + Unpin> UnorderedFuturesDrain<F> {
     // Constructs a new drain.
     pub fn new() -> Self {
-        Self {
-            futures: Vec::new(),
-            ..Default::default()
-        }
+        Self::default()
     }
 
-    // Constructs a new drain. The drain will automatically resize its capacity.
+    // Constructs a new drain with a given starting capacity.
+    // The drain will still automatically resize its capacity as needed.
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             futures: Vec::with_capacity(capacity),
-            ..Default::default()
+            ..Self::default()
         }
     }
 
