@@ -352,6 +352,7 @@ dependencies = [
  "azure_data_cosmos_macros",
  "azure_identity",
  "base64 0.22.1",
+ "bytes",
  "crossbeam-epoch",
  "futures",
  "h2",
