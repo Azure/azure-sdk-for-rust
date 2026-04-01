@@ -35,6 +35,16 @@ fn create_aad_credential(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tokio-console subscriber when the feature is enabled.
+    // This must happen before any tokio tasks are spawned.
+    #[cfg(feature = "tokio-console")]
+    {
+        console_subscriber::ConsoleLayer::builder()
+            .server_addr(([0, 0, 0, 0], 6669))
+            .init();
+        eprintln!("tokio-console enabled — connect with: tokio-console http://<pod-ip>:6669");
+    }
+
     use std::sync::Arc;
     use std::time::Duration;
 

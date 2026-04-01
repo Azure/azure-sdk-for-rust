@@ -25,6 +25,11 @@ sysinfo.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "signal"] }
 uuid.workspace = true
+console-subscriber = { version = "0.4", optional = true }
+
+[features]
+default = []
+tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [lints]
 workspace = true
