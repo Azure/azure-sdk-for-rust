@@ -3,13 +3,9 @@
 
 //! Cache infrastructure for Cosmos DB driver.
 //!
-//! This module provides async caching primitives with single-pending-I/O semantics:
-//!
-//! - [`AsyncLazy`] - Single-value lazy initialization
-//! - [`AsyncCache`] - Key-value cache with per-key lazy initialization
-//! - [`AccountMetadataCache`] - Cache for account metadata (regions, capabilities)
-//! - [`ContainerCache`] - Cache for container metadata (partition key, indexing)
-//! - [`PartitionKeyRangeCache`] - Cache for partition key ranges (routing)
+//! This module provides partition key range caching via
+//! [`ContainerRoutingMap`], which maps effective partition keys to their
+//! owning physical partition key ranges.
 
 mod account_metadata_cache;
 mod async_cache;
