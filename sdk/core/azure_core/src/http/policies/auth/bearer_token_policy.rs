@@ -257,13 +257,13 @@ fn should_refresh(expires_on: &OffsetDateTime) -> bool {
 ///
 /// Verifies that the challenge resource's host matches the request URL's host by checking
 /// for a leading period separator (e.g., ".vault.azure.net") before the challenge host in
-/// the request host. Both hosts are normalized by stripping any trailing period (FQDN root
-/// dot) before comparison to prevent bypassing the check with a fully-qualified domain name.
+/// the request host. The request host is normalized by stripping any trailing period (FQDN
+/// root dot) before comparison to prevent bypassing the check with a fully-qualified domain
+/// name.
 ///
 /// Returns `true` if `request_host` ends with `.{challenge_host}` after normalization.
 pub fn is_challenge_resource_match(request_host: &str, challenge_host: &str) -> bool {
     let request_host = request_host.strip_suffix('.').unwrap_or(request_host);
-    let challenge_host = challenge_host.strip_suffix('.').unwrap_or(challenge_host);
     request_host.ends_with(&format!(".{challenge_host}"))
 }
 
@@ -963,32 +963,6 @@ mod tests {
         assert!(!is_challenge_resource_match(
             "hostexample.com.",
             "example.com"
-        ));
-    }
-
-    #[test]
-    fn challenge_resource_trailing_period_on_challenge_host() {
-        // A trailing period (FQDN root dot) on the challenge host should not break matching.
-        assert!(is_challenge_resource_match(
-            "host.example.com",
-            "example.com."
-        ));
-        assert!(!is_challenge_resource_match(
-            "hostexample.com",
-            "example.com."
-        ));
-    }
-
-    #[test]
-    fn challenge_resource_trailing_period_on_both_hosts() {
-        // Trailing periods on both hosts should not break matching.
-        assert!(is_challenge_resource_match(
-            "host.example.com.",
-            "example.com."
-        ));
-        assert!(!is_challenge_resource_match(
-            "hostexample.com.",
-            "example.com."
         ));
     }
 

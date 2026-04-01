@@ -698,32 +698,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn on_challenge_trailing_period_on_challenge_host() {
-        // Trailing FQDN root dot on the challenge resource host should not bypass domain verification.
-        send_challenge_request(
-            "https://myvault.vault.azure.net/keys",
-            "https://vault.azure.net.",
-        )
-        .await
-        .expect("trailing period on challenge host should still match");
-    }
-
-    #[tokio::test]
-    async fn on_challenge_trailing_period_on_both_hosts() {
-        // Trailing FQDN root dots on both hosts should not bypass domain verification.
-        send_challenge_request(
-            "https://myvault.vault.azure.net./keys",
-            "https://vault.azure.net.",
-        )
-        .await
-        .expect("trailing periods on both hosts should still match");
-    }
-
-    #[tokio::test]
     async fn on_challenge_trailing_period_without_separator_does_not_match() {
         let err = send_challenge_request(
             "https://hostvault.azure.net./keys",
-            "https://vault.azure.net.",
+            "https://vault.azure.net",
         )
         .await
         .expect_err("trailing periods should not mask missing separator");
