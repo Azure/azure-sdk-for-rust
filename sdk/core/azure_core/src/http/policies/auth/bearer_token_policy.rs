@@ -304,6 +304,20 @@ mod tests {
         Arc,
     };
 
+    /// Checks whether the request host is a subdomain of the challenge host.
+    ///
+    /// Verifies that the challenge resource's host matches the request URL's host by checking
+    /// for a leading period separator (e.g., ".vault.azure.net") before the challenge host in
+    /// the request host. Both hosts are normalized by stripping any trailing period (FQDN root
+    /// dot) before comparison to prevent bypassing the check with a fully-qualified domain name.
+    ///
+    /// Returns `true` if `request_host` ends with `.{challenge_host}` after normalization.
+    fn is_challenge_resource_match(request_host: &str, challenge_host: &str) -> bool {
+        let request_host = request_host.strip_suffix('.').unwrap_or(request_host);
+        let challenge_host = challenge_host.strip_suffix('.').unwrap_or(challenge_host);
+        request_host.ends_with(&format!(".{challenge_host}"))
+    }
+
     #[derive(Debug, Clone)]
     struct MockCredential {
         calls: Arc<AtomicUsize>,
@@ -899,5 +913,87 @@ mod tests {
                 }],
             }],
         );
+    }
+
+    #[test]
+    fn challenge_resource_subdomain_matches() {
+        assert!(is_challenge_resource_match(
+            "host.example.com",
+            "example.com"
+        ));
+        assert!(is_challenge_resource_match(
+            "a.b.example.com",
+            "example.com"
+        ));
+        assert!(is_challenge_resource_match(
+            "myvault.vault.azure.net",
+            "vault.azure.net"
+        ));
+    }
+
+    #[test]
+    fn challenge_resource_exact_match_does_not_match() {
+        assert!(!is_challenge_resource_match("example.com", "example.com"));
+        assert!(!is_challenge_resource_match(
+            "vault.azure.net",
+            "vault.azure.net"
+        ));
+    }
+
+    #[test]
+    fn challenge_resource_without_period_separator_does_not_match() {
+        assert!(!is_challenge_resource_match(
+            "hostexample.com",
+            "example.com"
+        ));
+        assert!(!is_challenge_resource_match(
+            "hostvault.azure.net",
+            "vault.azure.net"
+        ));
+    }
+
+    #[test]
+    fn challenge_resource_trailing_period_on_request_host() {
+        // A trailing period (FQDN root dot) on the request host should not break matching.
+        assert!(is_challenge_resource_match(
+            "host.example.com.",
+            "example.com"
+        ));
+        assert!(!is_challenge_resource_match(
+            "hostexample.com.",
+            "example.com"
+        ));
+    }
+
+    #[test]
+    fn challenge_resource_trailing_period_on_challenge_host() {
+        // A trailing period (FQDN root dot) on the challenge host should not break matching.
+        assert!(is_challenge_resource_match(
+            "host.example.com",
+            "example.com."
+        ));
+        assert!(!is_challenge_resource_match(
+            "hostexample.com",
+            "example.com."
+        ));
+    }
+
+    #[test]
+    fn challenge_resource_trailing_period_on_both_hosts() {
+        // Trailing periods on both hosts should not break matching.
+        assert!(is_challenge_resource_match(
+            "host.example.com.",
+            "example.com."
+        ));
+        assert!(!is_challenge_resource_match(
+            "hostexample.com.",
+            "example.com."
+        ));
+    }
+
+    #[test]
+    fn challenge_resource_different_domain_does_not_match() {
+        assert!(!is_challenge_resource_match("evil.com", "example.com"));
+        assert!(!is_challenge_resource_match("evil.com", "vault.azure.net"));
     }
 }
