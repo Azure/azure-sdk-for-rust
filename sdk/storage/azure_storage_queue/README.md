@@ -26,8 +26,8 @@ If you wish to create a new storage account, you can use the
 [Azure Portal], [Azure PowerShell], or [Azure CLI]:
 
 ```sh
-# Create a new resource group to hold the storage account -
-# if using an existing resource group, skip this step
+# Create a new resource group to hold the storage account.
+# Skip this step if using an existing resource group.
 az group create --name my-resource-group --location westus2
 
 # Create the storage account
@@ -39,7 +39,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
-use azure_storage_queue::{QueueClient, QueueClientOptions};
+use azure_storage_queue::QueueClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "https://<storage_account_name>.queue.core.windows.net/", // endpoint
         "queue-name",                                            // queue name
         Some(credential),                                        // credential
-        Some(QueueClientOptions::default()),                     // QueueClient options
+        None,                                                    // QueueClient options
     )?;
     Ok(())
 }

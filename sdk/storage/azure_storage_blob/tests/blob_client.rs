@@ -1067,7 +1067,7 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
     let content_type: Option<String> = response.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
 
-    // Overwrite with Different Content Headers — new headers replace old ones
+    // Overwrite with Different Content Headers - new headers replace old ones
     blob_client
         .upload(
             RequestContent::from(b"overwrite-content-headers".to_vec()),
@@ -1131,7 +1131,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
 
-    // Set only Content-Type — omitted headers are cleared by the service
+    // Set only Content-Type - omitted headers are cleared by the service
     blob_client
         .set_properties(Some(BlobClientSetPropertiesOptions {
             blob_content_type: Some("image/png".to_string()),
