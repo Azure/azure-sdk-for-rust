@@ -38,6 +38,7 @@ tokio = { workspace = true, optional = true, features = [
 workspace = true
 
 [dev-dependencies]
+async-trait.workspace = true
 azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = [
   "tracing",
