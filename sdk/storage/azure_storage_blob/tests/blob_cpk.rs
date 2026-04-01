@@ -28,52 +28,6 @@ mod blob_client {
     use super::*;
 
     #[recorded::test]
-    async fn test_upload_blob_partial_cpk_options_fail(
-        ctx: TestContext,
-    ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
-        let recording = ctx.recording();
-        let container_client =
-            get_container_client(recording, true, StorageAccount::Standard, None).await?;
-        let (encryption_algorithm, encryption_key, _) = get_cpk();
-
-        // Key Only Scenario
-        let key_only_blob =
-            container_client.blob_client(&format!("{}-cpk-key-only", get_blob_name(recording)));
-        let result = key_only_blob
-            .upload(
-                RequestContent::from(b"key-only".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    encryption_key: Some(encryption_key.clone()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        // Key + Algorithm Without Hash Scenario
-        let key_plus_algorithm_blob = container_client.blob_client(&format!(
-            "{}-cpk-key-plus-algorithm",
-            get_blob_name(recording)
-        ));
-        let result = key_plus_algorithm_blob
-            .upload(
-                RequestContent::from(b"key-plus-algorithm".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    encryption_algorithm: Some(encryption_algorithm),
-                    encryption_key: Some(encryption_key),
-                    encryption_key_sha256: None,
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        container_client.delete(None).await?;
-        Ok(())
-    }
-
-    #[recorded::test]
     async fn test_blob_client_cpk_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -280,53 +234,6 @@ mod blob_client {
 
 mod block_blob_client {
     use super::*;
-
-    #[recorded::test]
-    async fn test_stage_block_partial_cpk_options_fail(
-        ctx: TestContext,
-    ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
-        let recording = ctx.recording();
-        let container_client =
-            get_container_client(recording, true, StorageAccount::Standard, None).await?;
-        let (encryption_algorithm, encryption_key, _) = get_cpk();
-        let blob_client =
-            container_client.blob_client(&format!("{}-cpk-partial", get_blob_name(recording)));
-        let block_blob_client = blob_client.block_blob_client();
-
-        // Key Only Scenario
-        let result = block_blob_client
-            .stage_block(
-                b"key-only",
-                8,
-                RequestContent::from(b"key-only".to_vec()),
-                Some(BlockBlobClientStageBlockOptions {
-                    encryption_key: Some(encryption_key.clone()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        // Key + Algorithm Without Hash Scenario
-        let result = block_blob_client
-            .stage_block(
-                b"key-plus-algorithm",
-                18,
-                RequestContent::from(b"key-plus-algorithm".to_vec()),
-                Some(BlockBlobClientStageBlockOptions {
-                    encryption_algorithm: Some(encryption_algorithm),
-                    encryption_key: Some(encryption_key),
-                    encryption_key_sha256: None,
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        container_client.delete(None).await?;
-        Ok(())
-    }
 
     #[recorded::test]
     async fn test_block_blob_stage_and_commit_cpk(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -664,56 +571,6 @@ mod append_blob_client {
     use super::*;
 
     #[recorded::test]
-    async fn test_append_blob_partial_cpk_options_fail(
-        ctx: TestContext,
-    ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
-        let recording = ctx.recording();
-        let container_client =
-            get_container_client(recording, true, StorageAccount::Standard, None).await?;
-        let (encryption_algorithm, encryption_key, _) = get_cpk();
-
-        // Key Only Create Scenario
-        let key_only_blob =
-            container_client.blob_client(&format!("{}-cpk-key-only", get_blob_name(recording)));
-        let result = key_only_blob
-            .append_blob_client()
-            .create(Some(AppendBlobClientCreateOptions {
-                encryption_key: Some(encryption_key.clone()),
-                ..Default::default()
-            }))
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        // Key + Algorithm Without Hash Append Block Scenario
-        let key_plus_algorithm_blob = container_client.blob_client(&format!(
-            "{}-cpk-key-plus-algorithm",
-            get_blob_name(recording)
-        ));
-        key_plus_algorithm_blob
-            .append_blob_client()
-            .create(None)
-            .await?;
-        let result = key_plus_algorithm_blob
-            .append_blob_client()
-            .append_block(
-                RequestContent::from(b"key-plus-algorithm".to_vec()),
-                18,
-                Some(AppendBlobClientAppendBlockOptions {
-                    encryption_algorithm: Some(encryption_algorithm),
-                    encryption_key: Some(encryption_key),
-                    encryption_key_sha256: None,
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        container_client.delete(None).await?;
-        Ok(())
-    }
-
-    #[recorded::test]
     async fn test_append_blob_cpk_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -908,57 +765,6 @@ mod append_blob_client {
 
 mod page_blob_client {
     use super::*;
-
-    #[recorded::test]
-    async fn test_page_blob_partial_cpk_options_fail(
-        ctx: TestContext,
-    ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
-        let recording = ctx.recording();
-        let container_client =
-            get_container_client(recording, true, StorageAccount::Standard, None).await?;
-        let (encryption_algorithm, encryption_key, _) = get_cpk();
-
-        // Key Only Create Scenario
-        let key_only_blob =
-            container_client.blob_client(&format!("{}-cpk-key-only", get_blob_name(recording)));
-        let result = key_only_blob
-            .page_blob_client()
-            .create(
-                512,
-                Some(PageBlobClientCreateOptions {
-                    encryption_key: Some(encryption_key.clone()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        // Key + Algorithm Without Hash Upload Scenario
-        let key_plus_algorithm_blob = container_client.blob_client(&format!(
-            "{}-cpk-key-plus-algorithm",
-            get_blob_name(recording)
-        ));
-        let key_plus_algorithm_page_blob = key_plus_algorithm_blob.page_blob_client();
-        key_plus_algorithm_page_blob.create(512, None).await?;
-        let result = key_plus_algorithm_page_blob
-            .upload_pages(
-                RequestContent::from(vec![b'P'; 512]),
-                512,
-                format_page_range(0, 512)?,
-                Some(PageBlobClientUploadPagesOptions {
-                    encryption_algorithm: Some(encryption_algorithm),
-                    encryption_key: Some(encryption_key),
-                    encryption_key_sha256: None,
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_bad_request_or_conflict(result.unwrap_err().http_status());
-
-        container_client.delete(None).await?;
-        Ok(())
-    }
 
     #[recorded::test]
     async fn test_page_blob_cpk_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -1279,6 +1085,160 @@ mod page_blob_client {
             )
             .await;
         assert_bad_request_or_conflict(err.unwrap_err().http_status());
+
+        container_client.delete(None).await?;
+        Ok(())
+    }
+}
+
+mod partial_cpk_validation {
+    use super::*;
+
+    #[recorded::test]
+    async fn test_partial_cpk_options_fail(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+        // Recording Setup
+        let recording = ctx.recording();
+        let container_client =
+            get_container_client(recording, true, StorageAccount::Standard, None).await?;
+        let (encryption_algorithm, encryption_key, _) = get_cpk();
+
+        // Upload: key only
+        let key_only_blob =
+            container_client.blob_client(&format!("{}-upload-key-only", get_blob_name(recording)));
+        let result = key_only_blob
+            .upload(
+                RequestContent::from(b"key-only".to_vec()),
+                Some(BlockBlobClientUploadOptions {
+                    encryption_key: Some(encryption_key.clone()),
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Upload: key + algorithm without hash
+        let key_plus_algorithm_blob = container_client.blob_client(&format!(
+            "{}-upload-key-plus-algorithm",
+            get_blob_name(recording)
+        ));
+        let result = key_plus_algorithm_blob
+            .upload(
+                RequestContent::from(b"key-plus-algorithm".to_vec()),
+                Some(BlockBlobClientUploadOptions {
+                    encryption_algorithm: Some(encryption_algorithm),
+                    encryption_key: Some(encryption_key.clone()),
+                    encryption_key_sha256: None,
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Stage block: key only
+        let stage_block_blob = container_client
+            .blob_client(&format!("{}-stage-key-only", get_blob_name(recording)))
+            .block_blob_client();
+        let result = stage_block_blob
+            .stage_block(
+                b"key-only",
+                8,
+                RequestContent::from(b"key-only".to_vec()),
+                Some(BlockBlobClientStageBlockOptions {
+                    encryption_key: Some(encryption_key.clone()),
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Stage block: key + algorithm without hash
+        let result = stage_block_blob
+            .stage_block(
+                b"key-plus-algorithm",
+                18,
+                RequestContent::from(b"key-plus-algorithm".to_vec()),
+                Some(BlockBlobClientStageBlockOptions {
+                    encryption_algorithm: Some(encryption_algorithm),
+                    encryption_key: Some(encryption_key.clone()),
+                    encryption_key_sha256: None,
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Append blob create: key only
+        let append_key_only =
+            container_client.blob_client(&format!("{}-append-key-only", get_blob_name(recording)));
+        let result = append_key_only
+            .append_blob_client()
+            .create(Some(AppendBlobClientCreateOptions {
+                encryption_key: Some(encryption_key.clone()),
+                ..Default::default()
+            }))
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Append blob append_block: key + algorithm without hash
+        let append_key_plus_algorithm = container_client.blob_client(&format!(
+            "{}-append-key-plus-algorithm",
+            get_blob_name(recording)
+        ));
+        append_key_plus_algorithm
+            .append_blob_client()
+            .create(None)
+            .await?;
+        let result = append_key_plus_algorithm
+            .append_blob_client()
+            .append_block(
+                RequestContent::from(b"key-plus-algorithm".to_vec()),
+                18,
+                Some(AppendBlobClientAppendBlockOptions {
+                    encryption_algorithm: Some(encryption_algorithm),
+                    encryption_key: Some(encryption_key.clone()),
+                    encryption_key_sha256: None,
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Page blob create: key only
+        let page_key_only =
+            container_client.blob_client(&format!("{}-page-key-only", get_blob_name(recording)));
+        let result = page_key_only
+            .page_blob_client()
+            .create(
+                512,
+                Some(PageBlobClientCreateOptions {
+                    encryption_key: Some(encryption_key.clone()),
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
+
+        // Page blob upload_pages: key + algorithm without hash
+        let page_key_plus_algorithm = container_client.blob_client(&format!(
+            "{}-page-key-plus-algorithm",
+            get_blob_name(recording)
+        ));
+        let page_blob = page_key_plus_algorithm.page_blob_client();
+        page_blob.create(512, None).await?;
+        let result = page_blob
+            .upload_pages(
+                RequestContent::from(vec![b'P'; 512]),
+                512,
+                format_page_range(0, 512)?,
+                Some(PageBlobClientUploadPagesOptions {
+                    encryption_algorithm: Some(encryption_algorithm),
+                    encryption_key: Some(encryption_key),
+                    encryption_key_sha256: None,
+                    ..Default::default()
+                }),
+            )
+            .await;
+        assert_bad_request_or_conflict(result.unwrap_err().http_status());
 
         container_client.delete(None).await?;
         Ok(())

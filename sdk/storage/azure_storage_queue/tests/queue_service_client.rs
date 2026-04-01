@@ -157,7 +157,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         .into_pages();
     let mut all_queue_names = Vec::new();
 
-    // Act — iterate through all pages
+    // Act - iterate through all pages
     while let Some(page) = page_iterator.next().await {
         let response = page?;
         let queue_list = response.into_model()?;
@@ -170,7 +170,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         }
     }
 
-    // Assert — the test queue appears in the list
+    // Assert - the test queue appears in the list
     assert!(
         all_queue_names.contains(&queue_name),
         "Expected queue '{}' to be found in the list of queues: {:?}",
@@ -259,7 +259,7 @@ pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
     let queue_name_a = format!("{queue_name}-a");
     let queue_name_b = format!("{queue_name}-b");
 
-    // Arrange — create two queues that share the same base name as prefix
+    // Arrange - create two queues that share the same base name as prefix
     queue_service_client
         .queue_client(&queue_name_a)?
         .create(None)
@@ -290,7 +290,7 @@ pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
             }
         }
 
-        // Assert — both test queues are returned
+        // Assert - both test queues are returned
         assert!(
             returned_names.contains(&queue_name_a),
             "Expected '{}' in results: {:?}",
@@ -304,7 +304,7 @@ pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
             returned_names
         );
 
-        // Assert — all returned queues start with the prefix
+        // Assert - all returned queues start with the prefix
         for name in &returned_names {
             assert!(
                 name.starts_with(&queue_name),
@@ -343,21 +343,21 @@ pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
     let queue_service_client = get_queue_service_client(recording).await?;
     let queue_name = get_queue_name(recording);
 
-    // Arrange — create a queue and set metadata on it
+    // Arrange - create a queue and set metadata on it
     queue_service_client
         .queue_client(&queue_name)?
         .create(None)
         .await?;
 
     let test_result = async {
-        // Arrange — set metadata on the queue
+        // Arrange - set metadata on the queue
         let metadata = HashMap::from([("env".to_string(), "test".to_string())]);
         queue_service_client
             .queue_client(&queue_name)?
             .set_metadata(&metadata, None)
             .await?;
 
-        // Act — list queues with metadata included and filter to our prefix
+        // Act - list queues with metadata included and filter to our prefix
         let options = QueueServiceClientListQueuesOptions {
             prefix: Some(queue_name.clone()),
             include: Some(vec![ListQueuesIncludeType::Metadata]),
@@ -382,10 +382,10 @@ pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
             }
         }
 
-        // Assert — queue was found in the listing
+        // Assert - queue was found in the listing
         let found = found_queue.expect("Expected to find test queue in list");
 
-        // Assert — metadata was returned and contains the expected key-value pair
+        // Assert - metadata was returned and contains the expected key-value pair
         let returned_metadata = found
             .metadata
             .expect("Expected metadata to be present when include=metadata");
@@ -433,7 +433,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
         geo_replication.status.as_ref().unwrap() == &GeoReplicationStatus::Live,
         "Geo-replication status should be Live"
     );
-    // Assert — `last_sync_time` is greater than Fri, 1 Jun 2025 00:00:00 GMT.
+    // Assert - `last_sync_time` is greater than Fri, 1 Jun 2025 00:00:00 GMT.
     assert!(
         geo_replication.last_sync_time.unwrap()
             > OffsetDateTime::from_unix_timestamp(1748728800).unwrap(),

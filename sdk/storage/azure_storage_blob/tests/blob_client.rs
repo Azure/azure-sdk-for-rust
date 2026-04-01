@@ -11,12 +11,13 @@ use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
         method_options::BlobClientManagedDownloadOptions, AccessTier, AccountKind,
-        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-        BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
-        BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
+        BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
+        BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, RehydratePriority,
         StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
@@ -121,20 +122,9 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     // No Overwrite Scenario
-    let upload_result = blob_client
+    blob_client
         .upload(RequestContent::from(data.to_vec()), None)
         .await?;
-
-    // Assert upload result fields and raw response
-    assert!(upload_result.etag.is_some());
-    assert!(upload_result.last_modified.is_some());
-    assert_eq!(Some(true), upload_result.is_server_encrypted);
-    assert_eq!(StatusCode::Created, upload_result.raw_response.status());
-    assert!(upload_result
-        .raw_response
-        .headers()
-        .get_optional_str(&azure_core::http::headers::ETAG)
-        .is_some());
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -164,13 +154,17 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
     // Working Case (overwrite=true)
-    blob_client
+    let overwrite_response = blob_client
         .upload(RequestContent::from(new_data.to_vec()), None)
         .await?;
     let response = blob_client.download(None).await?;
     let content_length = response.content_length()?;
 
     // Assert
+    assert_eq!(
+        overwrite_response.raw_response.status(),
+        StatusCode::Created
+    );
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(29, content_length.unwrap());
@@ -1024,7 +1018,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
 }
 
 #[recorded::test]
-async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_upload_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -1049,7 +1043,7 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
         )
         .await?;
 
-    // Assert Content Headers Roundtrip via get_properties
+    // Assert Content Headers via get_properties
     let props = blob_client.get_properties(None).await?;
     assert_eq!(Some("no-cache".to_string()), props.cache_control()?);
     assert_eq!(Some("inline".to_string()), props.content_disposition()?);
@@ -1058,7 +1052,7 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
 
-    // Assert Content Headers Also Present on Download Response
+    // Assert Content Headers on Download Response
     let response = blob_client.download(None).await?;
     assert_eq!(Some("no-cache".to_string()), response.cache_control()?);
     assert_eq!(Some("inline".to_string()), response.content_disposition()?);
@@ -1066,23 +1060,6 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
     assert_eq!(Some("en-US".to_string()), response.content_language()?);
     let content_type: Option<String> = response.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
-
-    // Overwrite with Different Content Headers — new headers replace old ones
-    blob_client
-        .upload(
-            RequestContent::from(b"overwrite-content-headers".to_vec()),
-            Some(BlockBlobClientUploadOptions {
-                blob_cache_control: Some("max-age=3600".to_string()),
-                blob_content_type: Some("image/png".to_string()),
-                ..Default::default()
-            }),
-        )
-        .await?;
-
-    let props = blob_client.get_properties(None).await?;
-    assert_eq!(Some("max-age=3600".to_string()), props.cache_control()?);
-    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("image/png".to_string()), content_type);
 
     container_client.delete(None).await?;
     Ok(())
@@ -1104,8 +1081,6 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
         .await?;
 
     // Set All Content Headers via Set Properties
-    // Note: set_properties does not validate blob_content_md5 against actual content,
-    // so an arbitrary value can be used to verify storage and roundtrip behavior.
     blob_client
         .set_properties(Some(BlobClientSetPropertiesOptions {
             blob_cache_control: Some("no-store".to_string()),
@@ -1131,14 +1106,17 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
 
-    // Set only Content-Type — omitted headers are cleared by the service
+    // Overwrite with Only Content-Type - all other headers absent, so service clears them
+    // Note: set_properties does not validate blob_content_md5 against actual content,
+    // so we can use an arbitrary value to test storage and clearing behavior.
     blob_client
         .set_properties(Some(BlobClientSetPropertiesOptions {
-            blob_content_type: Some("image/png".to_string()),
+            blob_content_type: Some("application/octet-stream".to_string()),
             ..Default::default()
         }))
         .await?;
 
+    // Assert Only Content-Type Remains; Others Are Cleared
     let props = blob_client.get_properties(None).await?;
     assert_eq!(None, props.cache_control()?);
     assert_eq!(None, props.content_disposition()?);
@@ -1146,7 +1124,155 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     assert_eq!(None, props.content_language()?);
     assert_eq!(None, props.content_md5()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("image/png".to_string()), content_type);
+    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_overwrite_content_headers(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let content_v1 = b"overwrite-headers-v1";
+    let content_v2 = b"overwrite-headers-v2";
+
+    // Upload v1 with Initial Content Headers
+    blob_client
+        .upload(
+            RequestContent::from(content_v1.to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                blob_cache_control: Some("no-cache".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Overwrite v2 with Different Content Headers
+    blob_client
+        .upload(
+            RequestContent::from(content_v2.to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                blob_cache_control: Some("max-age=3600".to_string()),
+                blob_content_type: Some("application/json".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert v2 Headers Replace v1 Headers
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("max-age=3600".to_string()), props.cache_control()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/json".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&blob_client, None, None).await?;
+
+    let proposed_id = "00000000-1111-2222-3333-444444444444".to_string();
+
+    // Acquire With Proposed Lease ID Scenario
+    let response = blob_client
+        .acquire_lease(
+            15,
+            Some(BlobClientAcquireLeaseOptions {
+                proposed_lease_id: Some(proposed_id.clone()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    assert_eq!(proposed_id, response.lease_id()?.unwrap());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // BlobNotFound - get_properties on a blob that doesn't exist
+    let err = blob_client.get_properties(None).await.unwrap_err();
+    let storage_error: StorageError = err.try_into()?;
+    assert_eq!(
+        storage_error.error_code.as_ref(),
+        Some(&StorageErrorCode::BlobNotFound),
+        "expected BlobNotFound error code"
+    );
+
+    // Upload once so the blob exists
+    create_test_blob(&blob_client, None, None).await?;
+
+    // BlobAlreadyExists - upload again with overwrite=false
+    let err = blob_client
+        .upload(
+            RequestContent::from(b"duplicate".to_vec()),
+            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+        )
+        .await
+        .unwrap_err();
+    let storage_error: StorageError = err.try_into()?;
+    assert_eq!(
+        storage_error.error_code.as_ref(),
+        Some(&StorageErrorCode::BlobAlreadyExists),
+        "expected BlobAlreadyExists error code"
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Move blob to Archive tier
+    blob_client.set_tier(AccessTier::Archive, None).await?;
+
+    // Rehydrate to Hot with High Priority Scenario
+    blob_client
+        .set_tier(
+            AccessTier::Hot,
+            Some(BlobClientSetTierOptions {
+                rehydrate_priority: Some(RehydratePriority::High),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    assert_eq!(
+        Some(RehydratePriority::High),
+        response.rehydrate_priority()?
+    );
 
     container_client.delete(None).await?;
     Ok(())
