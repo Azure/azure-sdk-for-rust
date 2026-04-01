@@ -75,7 +75,7 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
 
             // Get the feed range for a specific partition key.
             let pk_range = container_client
-                .feed_range_from_partition_key("test_partition_key")
+                .feed_range_from_partition_key("test_partition_key", None)
                 .await?;
 
             // The returned range must match one of the physical partitions.
@@ -87,7 +87,7 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
 
             // The same partition key should always map to the same range (deterministic).
             let pk_range_again = container_client
-                .feed_range_from_partition_key("test_partition_key")
+                .feed_range_from_partition_key("test_partition_key", None)
                 .await?;
             assert_eq!(pk_range, pk_range_again, "same PK should map to same range");
 

@@ -20,7 +20,7 @@
 //! println!("Container has {} physical partitions", ranges.len());
 //!
 //! // Check if one range contains another
-//! let pk_range = container.feed_range_from_partition_key("my_partition_key").await?;
+//! let pk_range = container.feed_range_from_partition_key("my_partition_key", None).await?;
 //! for range in &ranges {
 //!     if range.contains(&pk_range) {
 //!         println!("Partition key falls within this feed range");
@@ -41,9 +41,10 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
+use azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange;
+
 use crate::hash::EffectivePartitionKey;
 use crate::hash::{EPK_MAX, EPK_MIN};
-use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 
 /// An opaque representation of a contiguous range of partitions in a Cosmos DB container.
@@ -170,7 +171,7 @@ impl FeedRange {
         )
     }
 
-    /// Creates a `FeedRange` from a `PartitionKeyRange`.
+    /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
     pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> Self {
         Self {
             min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),

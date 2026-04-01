@@ -11,7 +11,7 @@
 //! - [`CosmosDriver`] - A driver instance for a specific Cosmos DB account
 // cspell:ignore splitmix
 
-pub(crate) mod cache;
+pub mod cache;
 mod cosmos_driver;
 pub(crate) mod jitter;
 pub(crate) mod pipeline;

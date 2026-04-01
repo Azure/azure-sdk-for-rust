@@ -8,7 +8,7 @@ use crate::{
         BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
         ThroughputProperties,
     },
-    options::{BatchOptions, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions},
+    options::{BatchOptions, FeedRangeOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
@@ -806,17 +806,17 @@ impl ContainerClient {
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_feed_ranges(
         &self,
-        options: Option<ReadFeedRangesOptions>,
+        options: Option<FeedRangeOptions>,
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
 
         let routing_map = self
-            .container_connection
-            .resolve_routing_map(options.force_refresh())
+            .driver
+            .resolve_routing_map(&self.container_ref, options.force_refresh())
             .await?;
 
         let feed_ranges = routing_map
-            .ordered_partition_key_ranges()
+            .ranges()
             .iter()
             .map(FeedRange::from_partition_key_range)
             .collect();
@@ -833,6 +833,7 @@ impl ContainerClient {
     /// # Arguments
     ///
     /// * `partition_key` - The partition key value to convert.
+    /// * `options` - Optional [`FeedRangeOptions`] to control cache behavior.
     ///
     /// # Examples
     ///
@@ -840,7 +841,7 @@ impl ContainerClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let feed_range = container_client
-    ///     .feed_range_from_partition_key("my_partition_key")
+    ///     .feed_range_from_partition_key("my_partition_key", None)
     ///     .await?;
     /// println!("Partition key maps to feed range: {}", feed_range);
     /// # Ok(())
@@ -850,24 +851,42 @@ impl ContainerClient {
     pub async fn feed_range_from_partition_key(
         &self,
         partition_key: impl Into<PartitionKey>,
+        options: Option<FeedRangeOptions>,
     ) -> azure_core::Result<FeedRange> {
         let partition_key = partition_key.into();
+        let options = options.unwrap_or_default();
 
         // Get partition key definition from the eagerly-resolved container reference.
         let pk_def = self.container_connection.partition_key_definition();
         let pk_version = pk_def.version().value() as u8;
         let epk = partition_key.get_hashed_partition_key_string(pk_def.kind(), pk_version);
+        let driver_epk =
+            azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey::from(
+                epk.as_str(),
+            );
 
         // Look up the physical partition range containing this EPK.
-        let routing_map = self.container_connection.resolve_routing_map(false).await?;
+        let routing_map = self
+            .driver
+            .resolve_routing_map(&self.container_ref, options.force_refresh())
+            .await?;
 
-        let pkr = match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
-            Ok(pkr) => pkr.clone(),
-            Err(_) => {
+        let pkr = match routing_map.get_range_by_effective_partition_key(&driver_epk) {
+            Some(pkr) => pkr.clone(),
+            None => {
                 // Routing map may be stale (e.g. after a partition split). Refresh and retry once.
-                let refreshed = self.container_connection.resolve_routing_map(true).await?;
+                let refreshed = self
+                    .driver
+                    .resolve_routing_map(&self.container_ref, true)
+                    .await?;
                 refreshed
-                    .get_range_by_effective_partition_key(epk.as_str())?
+                    .get_range_by_effective_partition_key(&driver_epk)
+                    .ok_or_else(|| {
+                        azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::Other,
+                            "partition key range not found for effective partition key",
+                        )
+                    })?
                     .clone()
             }
         };

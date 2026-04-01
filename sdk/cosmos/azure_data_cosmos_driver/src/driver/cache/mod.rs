@@ -24,6 +24,7 @@ pub(crate) use account_metadata_cache::{AccountMetadataCache, AccountProperties,
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
 pub(crate) use container_cache::ContainerCache;
-// Standalone cache — will be wired in when pre-flight PK range resolution lands.
-#[allow(unused_imports)]
-pub(crate) use partition_key_range_cache::{PartitionKeyRangeCache, PkRangeFetchResult};
+pub use container_routing_map::ContainerRoutingMap;
+pub(crate) use partition_key_range_cache::{
+    parse_pk_ranges_response, PartitionKeyRangeCache, PkRangeFetchResult,
+};

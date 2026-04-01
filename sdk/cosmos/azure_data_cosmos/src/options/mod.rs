@@ -360,14 +360,17 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
-/// Options to be passed to [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges).
+/// Options for feed range operations on a [`ContainerClient`](crate::clients::ContainerClient).
+///
+/// Used by both [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
+/// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
-pub struct ReadFeedRangesOptions {
+pub struct FeedRangeOptions {
     force_refresh: bool,
 }
 
-impl ReadFeedRangesOptions {
+impl FeedRangeOptions {
     /// When `true`, bypasses the local partition key range cache and fetches
     /// fresh partition information from the service.
     ///
