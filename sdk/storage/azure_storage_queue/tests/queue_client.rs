@@ -7,7 +7,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
-        Context, FixedRetryOptions, RetryOptions, StatusCode,
+        Context, FixedRetryOptions, Response, RetryOptions, StatusCode,
     },
     time::{parse_rfc3339, to_rfc3339, Duration, OffsetDateTime},
     Result,
@@ -22,7 +22,7 @@ use azure_storage_queue::{
     },
     QueueClient, QueueClientOptions,
 };
-use common::{assert_successful_response, get_queue_name, recorded_test_setup};
+use common::{get_queue_name, recorded_test_setup};
 
 use std::collections::HashMap;
 use std::sync::{
@@ -651,7 +651,7 @@ async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
 
     let test_result = async {
         // Arrange
-        let unicode_text = "こんにちは Azure 🦀 — Ünïcödé";
+        let unicode_text = "こんにちは Azure 🦀 - Ünïcödé";
         queue_client
             .send_message(
                 QueueMessage {
@@ -1161,50 +1161,6 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             unicode_messages[0].message_text
         );
 
-        // Unicode Content Update Scenario
-        let unicode_text = "啊齄丂狛狜";
-        let send_response = queue_client
-            .send_message(
-                QueueMessage {
-                    message_text: Some("initial ascii".to_string()),
-                }
-                .try_into()?,
-                None,
-            )
-            .await?;
-        let sent: SentMessage = send_response.into_model()?;
-        let message_id = sent.message_id.clone().expect("Expected message_id");
-        let pop_receipt = sent.pop_receipt.clone().expect("Expected pop_receipt");
-        let update_options = Some(QueueClientUpdateMessageOptions {
-            queue_message: Some(
-                QueueMessage {
-                    message_text: Some(unicode_text.to_string()),
-                }
-                .try_into()?,
-            ),
-            ..Default::default()
-        });
-        queue_client
-            .update_message(&message_id, &pop_receipt, 0, update_options)
-            .await?;
-        let recv_response = queue_client.receive_messages(None).await?;
-        assert_successful_response(&recv_response);
-        let unicode_messages = recv_response
-            .into_model()?
-            .items
-            .expect("Expected at least one message");
-        assert_eq!(
-            unicode_messages.len(),
-            1,
-            "Expected exactly one message after unicode update"
-        );
-        assert_eq!(
-            unicode_messages[0].message_text.as_deref(),
-            Some(unicode_text),
-            "Expected updated Unicode content, got {:?}",
-            unicode_messages[0].message_text
-        );
-
         Ok::<(), azure_core::Error>(())
     }
     .await;
@@ -1262,11 +1218,11 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         );
 
         // Partial Queue Delete Scenario
-        for msg in ["msg-a", "msg-b", "msg-c"] {
+        for message in ["message-a", "message-b", "message-c"] {
             queue_client
                 .send_message(
                     QueueMessage {
-                        message_text: Some(msg.to_string()),
+                        message_text: Some(message.to_string()),
                     }
                     .try_into()?,
                     None,
@@ -1274,7 +1230,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
                 .await?;
         }
         let recv = queue_client.receive_messages(None).await?;
-        let first_msg = recv
+        let first_message = recv
             .into_model()?
             .items
             .expect("Expected at least one message")
@@ -1283,8 +1239,8 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             .expect("Expected a message");
         queue_client
             .delete_message(
-                &first_msg.message_id.clone().unwrap(),
-                &first_msg.pop_receipt.clone().unwrap(),
+                &first_message.message_id.clone().unwrap(),
+                &first_message.pop_receipt.clone().unwrap(),
                 None,
             )
             .await?;
@@ -1294,12 +1250,12 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
                 ..Default::default()
             }))
             .await?;
-        let remaining_msgs = peek_resp
+        let remaining_messages = peek_resp
             .into_model()?
             .items
             .expect("Expected 2 remaining messages");
         assert_eq!(
-            remaining_msgs.len(),
+            remaining_messages.len(),
             2,
             "Expected 2 messages to remain after deleting 1 of 3"
         );
@@ -1517,7 +1473,7 @@ async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
             .as_ref()
             .expect("Expected access policy");
 
-        // Assert — both dates survive the round-trip
+        // Assert - both dates survive the round-trip
         assert_eq!(ap.permission.as_deref(), Some("r"));
         assert!(ap.start.is_some(), "Expected start to round-trip");
         assert!(ap.expiry.is_some(), "Expected expiry to round-trip");
@@ -1662,7 +1618,7 @@ async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    // Act — queue names must be lowercase alphanumeric; Unicode characters are not valid.
+    // Act - queue names must be lowercase alphanumeric; Unicode characters are not valid.
     let queue_client = QueueClient::new(
         &endpoint,
         "啊齄丂狛狜",
@@ -1847,4 +1803,12 @@ async fn peek_and_assert(
     }
 
     Ok(())
+}
+
+fn assert_successful_response<T, F>(response: &Response<T, F>) {
+    assert!(
+        response.status().is_success(),
+        "Expected successful status code, got {}",
+        response.status()
+    );
 }

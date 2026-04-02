@@ -26,8 +26,8 @@ If you wish to create a new storage account, you can use the
 [Azure Portal], [Azure PowerShell], or [Azure CLI]:
 
 ```sh
-# Create a new resource group to hold the storage account -
-# if using an existing resource group, skip this step
+# Create a new resource group to hold the storage account.
+# Skip this step if using an existing resource group.
 az group create --name my-resource-group --location westus2
 
 # Create the storage account
@@ -47,10 +47,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a QueueClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
     let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/", // endpoint
-        "queue-name",                                            // queue name
-        Some(credential),                                        // credential
-        Some(QueueClientOptions::default()),                     // QueueClient options
+        "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
+        "queue-name",                                             // Queue Name
+        Some(credential),                                         // Credential
+        Some(QueueClientOptions::default()),                      // QueueClient Options
     )?;
     Ok(())
 }

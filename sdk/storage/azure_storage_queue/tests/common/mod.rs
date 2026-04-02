@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, Response};
+use azure_core::http::ClientOptions;
 use azure_core_test::Recording;
 
 /// Returns a randomized queue name with prefix "q" of length 12.
@@ -30,13 +30,4 @@ pub fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String, Str
         account_name.as_str()
     );
     (client_options, endpoint, secondary_endpoint)
-}
-
-/// Helper function to verify a successful response.
-pub fn assert_successful_response<T, F>(response: &Response<T, F>) {
-    assert!(
-        response.status().is_success(),
-        "Expected successful status code, got {}",
-        response.status()
-    );
 }
