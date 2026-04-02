@@ -6,7 +6,10 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{models::ContainerProperties, FeedRange};
+use azure_data_cosmos::{
+    models::{ContainerProperties, ThroughputProperties},
+    CreateContainerOptions, FeedRange,
+};
 use base64::Engine;
 
 use framework::TestClient;
@@ -17,14 +20,22 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
         async |run_context, db_client| {
             let properties = ContainerProperties::new("FeedRangeContainer", "/pk".into());
 
+            // Use 11000 RU/s to ensure at least 2 physical partitions (10000 RU/s per partition).
+            let throughput = ThroughputProperties::manual(11000);
+            let options = CreateContainerOptions::default().with_throughput(throughput);
+
             let container_client = run_context
-                .create_container(db_client, properties, None)
+                .create_container(db_client, properties, Some(options))
                 .await?;
 
             let ranges = container_client.read_feed_ranges(None).await?;
 
-            // The emulator should return at least one physical partition.
-            assert!(!ranges.is_empty(), "expected at least one feed range");
+            // With 11000 RU/s the service should create at least 2 physical partitions.
+            assert!(
+                ranges.len() >= 2,
+                "expected at least 2 feed ranges with 11000 RU/s, got {}",
+                ranges.len()
+            );
 
             // All ranges should be contained within the full EPK space.
             let full = FeedRange::full();
@@ -91,8 +102,12 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
         async |run_context, db_client| {
             let properties = ContainerProperties::new("FeedRangeFromPK", "/pk".into());
 
+            // Use 11000 RU/s to ensure at least 2 physical partitions.
+            let throughput = ThroughputProperties::manual(11000);
+            let options = CreateContainerOptions::default().with_throughput(throughput);
+
             let container_client = run_context
-                .create_container(db_client, properties, None)
+                .create_container(db_client, properties, Some(options))
                 .await?;
 
             // Get the physical partition ranges.

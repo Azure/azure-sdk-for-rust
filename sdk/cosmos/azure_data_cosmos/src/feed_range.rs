@@ -172,7 +172,17 @@ impl FeedRange {
     }
 
     /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
+    ///
+    /// Partition key ranges from the service always use `[min, max)` semantics
+    /// (min inclusive, max exclusive). This method asserts that invariant.
     pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> Self {
+        // Partition key ranges from the Cosmos DB service always have
+        // [min_inclusive, max_exclusive) semantics. Defensive assertion
+        // in case a future service change violates this assumption.
+        debug_assert!(
+            pkr.min_inclusive <= pkr.max_exclusive,
+            "partition key range min_inclusive must be <= max_exclusive"
+        );
         Self {
             min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
             max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
