@@ -26,12 +26,15 @@ pub(crate) async fn upload(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    if content.len() <= partition_size.get() as u64 {
-        client.transfer_oneshot(content).await?;
-        return Ok(());
-    }
+    let content_len = match content.len() {
+        Some(len) if len > partition_size.get() as u64 => len,
+        _ => {
+            client.transfer_oneshot(content).await?;
+            return Ok(());
+        }
+    };
 
-    client.initialize(content.len()).await?;
+    client.initialize(content_len).await?;
 
     match content {
         Body::Bytes(bytes) => {

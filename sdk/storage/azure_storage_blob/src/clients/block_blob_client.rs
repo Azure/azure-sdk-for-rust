@@ -262,7 +262,9 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
-        let content_len = content.len();
+        let content_len = content.len().ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
+        })?;
         let rsp = self
             .client
             .upload_internal(
@@ -287,7 +289,9 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
 
     async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
         let block_id = Uuid::new_v4();
-        let content_len = content.len();
+        let content_len = content.len().ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
+        })?;
         {
             self.blocks.lock().await.push(BlockInfo {
                 offset: offset as u64,
