@@ -343,45 +343,68 @@ mod tests {
     }
 
     #[test]
-    fn display_and_from_str_round_trip() {
+    fn display_produces_expected_base64_full_range() {
         let range = FeedRange {
             min_inclusive: EffectivePartitionKey::from(""),
             max_exclusive: EffectivePartitionKey::from("FF"),
         };
-        let serialized = range.to_string();
-        let restored: FeedRange = serialized.parse().unwrap();
-        assert_eq!(range, restored);
+        assert_eq!(
+            range.to_string(),
+            "eyJSYW5nZSI6eyJtaW4iOiIiLCJtYXgiOiJGRiIsImlzTWluSW5jbHVzaXZlIjp0cnVlLCJpc01heEluY2x1c2l2ZSI6ZmFsc2V9fQ=="
+        );
     }
 
     #[test]
-    fn display_and_from_str_sub_range() {
+    fn display_produces_expected_base64_sub_range() {
         let range = FeedRange {
             min_inclusive: EffectivePartitionKey::from("3FFFFFFFFFFF"),
             max_exclusive: EffectivePartitionKey::from("7FFFFFFFFFFF"),
         };
-        let serialized = range.to_string();
-        let restored: FeedRange = serialized.parse().unwrap();
-        assert_eq!(range, restored);
+        assert_eq!(
+            range.to_string(),
+            "eyJSYW5nZSI6eyJtaW4iOiIzRkZGRkZGRkZGRkYiLCJtYXgiOiI3RkZGRkZGRkZGRkYiLCJpc01pbkluY2x1c2l2ZSI6dHJ1ZSwiaXNNYXhJbmNsdXNpdmUiOmZhbHNlfX0="
+        );
     }
 
     #[test]
-    fn serde_json_round_trip() {
+    fn from_str_parses_full_range() {
+        let input = "eyJSYW5nZSI6eyJtaW4iOiIiLCJtYXgiOiJGRiIsImlzTWluSW5jbHVzaXZlIjp0cnVlLCJpc01heEluY2x1c2l2ZSI6ZmFsc2V9fQ==";
+        let range: FeedRange = input.parse().unwrap();
+        assert_eq!(range.min_inclusive.as_str(), "");
+        assert_eq!(range.max_exclusive.as_str(), "FF");
+    }
+
+    #[test]
+    fn from_str_parses_sub_range() {
+        let input = "eyJSYW5nZSI6eyJtaW4iOiIzRkZGRkZGRkZGRkYiLCJtYXgiOiI3RkZGRkZGRkZGRkYiLCJpc01pbkluY2x1c2l2ZSI6dHJ1ZSwiaXNNYXhJbmNsdXNpdmUiOmZhbHNlfX0=";
+        let range: FeedRange = input.parse().unwrap();
+        assert_eq!(range.min_inclusive.as_str(), "3FFFFFFFFFFF");
+        assert_eq!(range.max_exclusive.as_str(), "7FFFFFFFFFFF");
+    }
+
+    #[test]
+    fn serde_json_serializes_to_cross_sdk_format() {
         let range = FeedRange {
             min_inclusive: EffectivePartitionKey::from(""),
             max_exclusive: EffectivePartitionKey::from("FF"),
         };
         let json = serde_json::to_string(&range).unwrap();
-        let restored: FeedRange = serde_json::from_str(&json).unwrap();
-        assert_eq!(range, restored);
 
-        // Verify the JSON structure matches the cross-SDK format
         let value: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert!(value.get("Range").is_some());
-        let inner = value.get("Range").unwrap();
+        let inner = value.get("Range").expect("expected 'Range' key");
         assert_eq!(inner.get("min").unwrap().as_str().unwrap(), "");
         assert_eq!(inner.get("max").unwrap().as_str().unwrap(), "FF");
         assert!(inner.get("isMinInclusive").unwrap().as_bool().unwrap());
         assert!(!inner.get("isMaxInclusive").unwrap().as_bool().unwrap());
+    }
+
+    #[test]
+    fn serde_json_deserializes_cross_sdk_format() {
+        let json =
+            r#"{"Range":{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}}"#;
+        let range: FeedRange = serde_json::from_str(json).unwrap();
+        assert_eq!(range.min_inclusive.as_str(), "");
+        assert_eq!(range.max_exclusive.as_str(), "FF");
     }
 
     #[test]
@@ -406,7 +429,7 @@ mod tests {
     }
 
     #[test]
-    fn to_range_and_back() {
+    fn to_range_produces_expected_fields() {
         let feed_range = FeedRange {
             min_inclusive: EffectivePartitionKey::from("20"),
             max_exclusive: EffectivePartitionKey::from("80"),
@@ -416,9 +439,14 @@ mod tests {
         assert_eq!(range.max, "80");
         assert!(range.is_min_inclusive);
         assert!(!range.is_max_inclusive);
+    }
 
-        let restored = FeedRange::from_range(&range).unwrap();
-        assert_eq!(feed_range, restored);
+    #[test]
+    fn from_range_parses_expected_fields() {
+        let range = Range::new("20".to_owned(), "80".to_owned(), true, false);
+        let feed_range = FeedRange::from_range(&range).unwrap();
+        assert_eq!(feed_range.min_inclusive.as_str(), "20");
+        assert_eq!(feed_range.max_exclusive.as_str(), "80");
     }
 
     #[test]

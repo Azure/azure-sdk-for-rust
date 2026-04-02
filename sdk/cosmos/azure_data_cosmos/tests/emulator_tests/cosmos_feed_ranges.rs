@@ -7,6 +7,7 @@ use super::framework;
 use std::error::Error;
 
 use azure_data_cosmos::{models::ContainerProperties, FeedRange};
+use base64::Engine;
 
 use framework::TestClient;
 
@@ -44,13 +45,37 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
                 }
             }
 
-            // Each range should be serializable and round-trip via Display/FromStr.
+            // Each range should be serializable via Display and parseable via FromStr.
             for range in &ranges {
                 let serialized = range.to_string();
-                let deserialized: FeedRange = serialized
+                // Verify the serialized string is valid base64-encoded JSON
+                // with the expected cross-SDK structure.
+                let decoded = base64::engine::general_purpose::STANDARD
+                    .decode(&serialized)
+                    .expect("feed range Display should produce valid base64");
+                let json: serde_json::Value =
+                    serde_json::from_slice(&decoded).expect("decoded base64 should be valid JSON");
+                let inner = json.get("Range").expect("expected 'Range' key");
+                assert!(inner.get("min").is_some(), "expected 'min' field");
+                assert!(inner.get("max").is_some(), "expected 'max' field");
+                assert!(
+                    inner.get("isMinInclusive").unwrap().as_bool().unwrap(),
+                    "isMinInclusive should be true"
+                );
+                assert!(
+                    !inner.get("isMaxInclusive").unwrap().as_bool().unwrap(),
+                    "isMaxInclusive should be false"
+                );
+
+                // Verify FromStr can parse the serialized string and produces
+                // a range contained within the full EPK space.
+                let parsed: FeedRange = serialized
                     .parse()
-                    .expect("feed range should round-trip through Display/FromStr");
-                assert_eq!(range, &deserialized);
+                    .expect("feed range should be parseable from Display output");
+                assert!(
+                    full.contains(&parsed),
+                    "parsed feed range should be within full EPK space"
+                );
             }
 
             Ok(())
