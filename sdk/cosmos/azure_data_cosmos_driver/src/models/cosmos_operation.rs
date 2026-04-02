@@ -296,7 +296,7 @@ impl CosmosOperation {
     /// Reads (lists) all partition key ranges for a container.
     ///
     /// Returns a feed of partition key range resources. Used internally by the
-    /// routing cache to discover how a container's keyspace is split across
+    /// routing cache to discover how a container's partition keys are split across
     /// physical partitions.
     pub(crate) fn read_all_pk_ranges(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
