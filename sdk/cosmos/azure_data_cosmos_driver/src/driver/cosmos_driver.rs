@@ -7,10 +7,17 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    driver::{
+        cache::{
+            parse_pk_ranges_response, ContainerRoutingMap, PartitionKeyRangeCache,
+            PkRangeFetchResult,
+        },
+        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    },
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference,
+        CosmosOperation, CosmosRequestHeaders, DatabaseProperties, DatabaseReference, ETag,
+        Precondition,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -62,6 +69,8 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// Cache for partition key ranges, keyed by container reference.
+    pk_range_cache: PartitionKeyRangeCache,
 }
 
 impl CosmosDriver {
@@ -588,6 +597,7 @@ impl CosmosDriver {
             location_state_store,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
+            pk_range_cache: PartitionKeyRangeCache::new(),
         }
     }
 
@@ -983,6 +993,91 @@ impl CosmosDriver {
             .await?;
 
         Ok(resolved.as_ref().clone())
+    }
+
+    /// Resolves the partition key range routing map for a container.
+    ///
+    /// Returns a cached routing map if available, or fetches partition key ranges
+    /// from the service and builds a new routing map. When `force_refresh` is true,
+    /// performs an incremental change-feed refresh of the cached routing map.
+    ///
+    /// The routing map maps effective partition keys to their owning physical
+    /// partition key ranges, enabling partition-level routing.
+    pub async fn resolve_routing_map(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> azure_core::Result<Arc<ContainerRoutingMap>> {
+        self.pk_range_cache
+            .try_lookup(container, force_refresh, |container_ref, continuation| {
+                self.fetch_pk_ranges(container_ref, continuation)
+            })
+            .await
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })
+    }
+
+    /// Fetches a single page of partition key ranges from the service.
+    ///
+    /// This is the callback supplied to [`PartitionKeyRangeCache::try_lookup`].
+    /// It issues a ReadFeed operation against the container's `/pkranges` endpoint,
+    /// using the `If-None-Match` header for incremental change-feed fetches.
+    async fn fetch_pk_ranges(
+        &self,
+        container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        let mut operation = CosmosOperation::read_all_pk_ranges(container);
+
+        // Set If-None-Match for incremental change-feed refresh.
+        if let Some(ref etag) = continuation {
+            let headers = CosmosRequestHeaders {
+                precondition: Some(Precondition::if_none_match(ETag::new(etag.clone()))),
+                // Preserve the headers already set by read_all_pk_ranges.
+                max_item_count: Some(-1),
+                a_im: Some("Incremental Feed".to_owned()),
+                ..Default::default()
+            };
+            operation = operation.with_request_headers(headers);
+        }
+
+        let result = self
+            .execute_operation(operation, OperationOptions::default())
+            .await;
+
+        match result {
+            Ok(response) => {
+                let etag_continuation = response
+                    .headers()
+                    .etag
+                    .as_ref()
+                    .map(|e| e.as_str().to_owned());
+                let ranges = parse_pk_ranges_response(response.body()).unwrap_or_default();
+                Some(PkRangeFetchResult {
+                    ranges,
+                    continuation: etag_continuation,
+                    not_modified: false,
+                })
+            }
+            Err(e) => {
+                // HTTP 304 Not Modified is expected for incremental change-feed refreshes.
+                if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
+                    if *status == azure_core::http::StatusCode::NotModified {
+                        return Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        });
+                    }
+                }
+                tracing::warn!("Failed to fetch partition key ranges: {}", e);
+                None
+            }
+        }
     }
 }
 

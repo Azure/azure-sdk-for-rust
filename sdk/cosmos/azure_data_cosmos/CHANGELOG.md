@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `FeedRange` type with `ContainerClient::read_feed_ranges()` and `ContainerClient::feed_range_from_partition_key()`. ([#3987](https://github.com/Azure/azure-sdk-for-rust/pull/3987))
 - Added `CosmosClientBuilder::with_proxy_allowed(bool)` for explicit opt-in to HTTP proxy usage with documented support limitations. ([#4062](https://github.com/Azure/azure-sdk-for-rust/pull/4062))
 - Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
 
