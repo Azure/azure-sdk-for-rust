@@ -4,10 +4,12 @@
 
 ### Features Added
 
+- Added `CosmosClientBuilder::with_proxy_allowed(bool)` for explicit opt-in to HTTP proxy usage with documented support limitations. ([#4062](https://github.com/Azure/azure-sdk-for-rust/pull/4062))
 - Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
 
 ### Breaking Changes
 
+- HTTP proxies (`HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY` environment variables) are now ignored by default. Use `CosmosClientBuilder::with_proxy_allowed(true)` to opt in. ([#4062](https://github.com/Azure/azure-sdk-for-rust/pull/4062))
 - Client methods now return dedicated response types instead of `CosmosResponse<T>`: `ItemResponse<T>` for point operations, `ResourceResponse<T>` for resource management, `BatchResponse` for transactional batch, and `QueryFeedPage<T>` for query pages. `etag()` returns `Option<&Etag>` instead of `Option<&str>`, and `activity_id()` / `server_duration_ms()` are accessed via `response.diagnostics()`. ([#3960](https://github.com/Azure/azure-sdk-for-rust/pull/3960))
 - `FeedPage::deconstruct()` has been removed. Use `into_items()`, `continuation()`, `headers()`, and `diagnostics()` instead. ([#3960](https://github.com/Azure/azure-sdk-for-rust/pull/3960))
 - Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RoutingStrategy` parameter on `build()`. Use `RoutingStrategy::ProximityTo(region)` to specify the application region. Also removed `CosmosClientOptions::with_application_region()`. ([#3889](https://github.com/Azure/azure-sdk-for-rust/pull/3889))

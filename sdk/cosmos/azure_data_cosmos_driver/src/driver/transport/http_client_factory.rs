@@ -172,7 +172,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         builder = builder.connect_timeout(connection_pool.max_connect_timeout());
         builder = builder.timeout(config.request_timeout);
 
-        if !connection_pool.is_proxy_allowed() {
+        if !connection_pool.proxy_allowed() {
             builder = builder.no_proxy();
         }
 

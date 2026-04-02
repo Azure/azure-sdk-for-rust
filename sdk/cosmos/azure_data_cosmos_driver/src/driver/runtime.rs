@@ -14,6 +14,7 @@ use std::{
 };
 
 use crate::{
+    diagnostics::ProxyConfiguration,
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
@@ -162,6 +163,9 @@ pub struct CosmosDriverRuntime {
 
     /// Whether fault injection is enabled for this runtime.
     fault_injection_enabled: bool,
+
+    /// Proxy configuration snapshot for diagnostics.
+    proxy_configuration: ProxyConfiguration,
 }
 
 impl CosmosDriverRuntime {
@@ -218,6 +222,14 @@ impl CosmosDriverRuntime {
     /// Returns whether fault injection is enabled for this runtime.
     pub(crate) fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
+    }
+
+    /// Returns the proxy configuration snapshot.
+    ///
+    /// Captures whether proxy is allowed and the proxy environment variable
+    /// values at client creation time, for diagnostic purposes.
+    pub fn proxy_configuration(&self) -> &ProxyConfiguration {
+        &self.proxy_configuration
     }
 
     /// Returns the environment-level operation options (populated from env vars at build time).
@@ -612,6 +624,7 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
+        let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
         #[allow(unused_mut)]
         let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
@@ -696,6 +709,7 @@ impl CosmosDriverRuntimeBuilder {
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
             fault_injection_enabled,
+            proxy_configuration,
         }))
     }
 }

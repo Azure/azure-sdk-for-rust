@@ -95,6 +95,9 @@ if ($IsWindows) {
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+
+    # Run tests single-threaded to avoid env var contamination from proxy tests.
+    $env:RUST_TEST_THREADS = "1"
 } elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
 
@@ -141,6 +144,9 @@ if ($IsWindows) {
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+
+    # Run tests single-threaded to avoid env var contamination from proxy tests.
+    $env:RUST_TEST_THREADS = "1"
 
     Write-Host "Cosmos DB Emulator is running in Docker."
 } else {

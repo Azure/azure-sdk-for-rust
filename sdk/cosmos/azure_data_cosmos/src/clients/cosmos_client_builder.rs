@@ -79,6 +79,8 @@ use azure_core::http::{ClientOptions, LoggingOptions, RetryOptions};
 #[derive(Default)]
 pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
+    /// Whether to allow proxy usage. When false (default), `HTTPS_PROXY` is ignored.
+    allow_proxy: bool,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
     #[cfg(feature = "allow_invalid_certificates")]
     allow_emulator_invalid_certificates: bool,
@@ -139,6 +141,27 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Allows the SDK to use HTTP proxies and respect system proxy settings.
+    ///
+    /// By default, the Cosmos DB SDK ignores the `HTTPS_PROXY`, `HTTP_PROXY`,
+    /// `ALL_PROXY` environment variables and their lowercase variants. Proxies
+    /// can cause issues for Cosmos DB connectivity, availability, and throughput.
+    ///
+    /// When enabled, the SDK will respect system-configured proxy settings
+    /// (such as proxy-related environment variables, including any exclusions).
+    ///
+    /// NOTE: End-to-end latency, availability, and throughput guarantees cannot
+    /// be provided when a proxy is in use. Full backend support is provided,
+    /// but client/proxy interactions are supported on a best-effort basis only.
+    ///
+    /// # Arguments
+    ///
+    /// * `allow` - Whether to allow proxy usage.
+    pub fn with_proxy_allowed(mut self, allow: bool) -> Self {
+        self.allow_proxy = allow;
+        self
+    }
+
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. You can create one using
@@ -190,6 +213,16 @@ impl CosmosClientBuilder {
                 .pool_max_idle_per_host(DEFAULT_MAX_CONNECTION_POOL_SIZE)
                 .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
                 .timeout(DEFAULT_REQUEST_TIMEOUT);
+
+            if self.allow_proxy {
+                tracing::warn!(
+                    "Proxy usage is enabled. Azure Cosmos DB does not provide end-to-end SLAs \
+                     when a proxy is in use. Full backend support is provided, but client/proxy \
+                     interactions are supported on a best-effort basis only."
+                );
+            } else {
+                builder = builder.no_proxy();
+            }
 
             #[cfg(feature = "allow_invalid_certificates")]
             if self.allow_emulator_invalid_certificates {
