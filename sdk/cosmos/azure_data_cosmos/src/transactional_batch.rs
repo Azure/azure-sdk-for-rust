@@ -35,6 +35,7 @@
 //! # }
 //! ```
 
+use crate::options::Precondition;
 use crate::PartitionKey;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
@@ -46,22 +47,14 @@ use std::borrow::Cow;
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchUpsertOptions {
-    /// Only perform the operation if the item's ETag matches this value.
-    if_match: Option<String>,
-    /// Only perform the operation if the item's ETag does not match this value.
-    if_none_match: Option<String>,
+    /// Conditional ETag check for optimistic concurrency control.
+    pub precondition: Option<Precondition>,
 }
 
 impl BatchUpsertOptions {
-    /// Sets the `if_match` condition for optimistic concurrency control.
-    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
-        self.if_match = Some(etag.into());
-        self
-    }
-
-    /// Sets the `if_none_match` condition for optimistic concurrency control.
-    pub fn with_if_none_match(mut self, etag: impl Into<String>) -> Self {
-        self.if_none_match = Some(etag.into());
+    /// Sets the precondition for optimistic concurrency control.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
         self
     }
 }
@@ -73,14 +66,14 @@ impl BatchUpsertOptions {
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchReplaceOptions {
-    /// Only replace if the item's current ETag matches this value.
-    if_match: Option<String>,
+    /// Conditional ETag check for optimistic concurrency control.
+    pub precondition: Option<Precondition>,
 }
 
 impl BatchReplaceOptions {
-    /// Sets the `if_match` condition for optimistic concurrency control.
-    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
-        self.if_match = Some(etag.into());
+    /// Sets the precondition for optimistic concurrency control.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
         self
     }
 }
@@ -91,22 +84,14 @@ impl BatchReplaceOptions {
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchReadOptions {
-    /// Only return the item if its ETag matches this value.
-    if_match: Option<String>,
-    /// Only return the item if its ETag does not match (useful for caching).
-    if_none_match: Option<String>,
+    /// Conditional ETag check, commonly used for cache validation.
+    pub precondition: Option<Precondition>,
 }
 
 impl BatchReadOptions {
-    /// Sets the `if_match` condition.
-    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
-        self.if_match = Some(etag.into());
-        self
-    }
-
-    /// Sets the `if_none_match` condition (useful for caching).
-    pub fn with_if_none_match(mut self, etag: impl Into<String>) -> Self {
-        self.if_none_match = Some(etag.into());
+    /// Sets the precondition (useful for caching or concurrency control).
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
         self
     }
 }
@@ -118,14 +103,14 @@ impl BatchReadOptions {
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchDeleteOptions {
-    /// Only delete if the item's current ETag matches this value.
-    if_match: Option<String>,
+    /// Conditional ETag check for optimistic concurrency control.
+    pub precondition: Option<Precondition>,
 }
 
 impl BatchDeleteOptions {
-    /// Sets the `if_match` condition for optimistic concurrency control.
-    pub fn with_if_match(mut self, etag: impl Into<String>) -> Self {
-        self.if_match = Some(etag.into());
+    /// Sets the precondition for optimistic concurrency control.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
         self
     }
 }
@@ -219,11 +204,17 @@ impl TransactionalBatch {
         options: Option<BatchUpsertOptions>,
     ) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
+        let (if_match, if_none_match) = match options.as_ref().and_then(|o| o.precondition.as_ref())
+        {
+            Some(Precondition::IfMatch(etag)) => (Some(etag.to_string()), None),
+            Some(Precondition::IfNoneMatch(etag)) => (None, Some(etag.to_string())),
+            None | Some(_) => (None, None),
+        };
         self.operations.push(TransactionalBatchOperation::Upsert {
             resource_body,
             id: None,
-            if_match: options.as_ref().and_then(|o| o.if_match.clone()),
-            if_none_match: options.as_ref().and_then(|o| o.if_none_match.clone()),
+            if_match,
+            if_none_match,
         });
         Ok(self)
     }
@@ -241,10 +232,14 @@ impl TransactionalBatch {
         options: Option<BatchReplaceOptions>,
     ) -> Result<Self, serde_json::Error> {
         let resource_body = serde_json::to_value(item)?;
+        let if_match = match options.as_ref().and_then(|o| o.precondition.as_ref()) {
+            Some(Precondition::IfMatch(etag)) => Some(etag.to_string()),
+            _ => None,
+        };
         self.operations.push(TransactionalBatchOperation::Replace {
             id: item_id.into(),
             resource_body,
-            if_match: options.and_then(|o| o.if_match),
+            if_match,
         });
         Ok(self)
     }
@@ -259,10 +254,16 @@ impl TransactionalBatch {
         item_id: impl Into<Cow<'static, str>>,
         options: Option<BatchReadOptions>,
     ) -> Self {
+        let (if_match, if_none_match) = match options.as_ref().and_then(|o| o.precondition.as_ref())
+        {
+            Some(Precondition::IfMatch(etag)) => (Some(etag.to_string()), None),
+            Some(Precondition::IfNoneMatch(etag)) => (None, Some(etag.to_string())),
+            None | Some(_) => (None, None),
+        };
         self.operations.push(TransactionalBatchOperation::Read {
             id: item_id.into(),
-            if_match: options.as_ref().and_then(|o| o.if_match.clone()),
-            if_none_match: options.as_ref().and_then(|o| o.if_none_match.clone()),
+            if_match,
+            if_none_match,
         });
         self
     }
@@ -277,9 +278,13 @@ impl TransactionalBatch {
         item_id: impl Into<Cow<'static, str>>,
         options: Option<BatchDeleteOptions>,
     ) -> Self {
+        let if_match = match options.as_ref().and_then(|o| o.precondition.as_ref()) {
+            Some(Precondition::IfMatch(etag)) => Some(etag.to_string()),
+            _ => None,
+        };
         self.operations.push(TransactionalBatchOperation::Delete {
             id: item_id.into(),
-            if_match: options.and_then(|o| o.if_match),
+            if_match,
         });
         self
     }
@@ -470,6 +475,7 @@ impl TransactionalBatchOperationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::options::ETag;
     use serde::Serialize;
 
     #[derive(Serialize)]
@@ -492,7 +498,8 @@ mod tests {
             value: 42,
         };
 
-        let replace_options = BatchReplaceOptions::default().with_if_match("some-etag");
+        let replace_options = BatchReplaceOptions::default()
+            .with_precondition(Precondition::IfMatch(ETag::from("some-etag")));
 
         let batch = TransactionalBatch::new("test_partition")
             .create_item(&item)?

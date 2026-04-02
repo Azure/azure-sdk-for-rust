@@ -142,7 +142,7 @@ pub(crate) async fn execute_operation_pipeline(
         attempt_span.record("context", tracing::field::debug(&execution_context));
         tracing::debug!(routing_decision = %routing, "routing decision made");
 
-        let transport_request = build_transport_request(
+        let mut transport_request = build_transport_request(
             operation,
             custom_headers,
             &routing,
@@ -158,6 +158,18 @@ pub(crate) async fn execute_operation_pipeline(
                 })
                 .flatten(),
         )?;
+
+        // Apply custom headers from resolved options.
+        // Inserted conditionally so they don't override SDK-set headers.
+        if let Some(custom_headers) = options.custom_headers() {
+            for (name, value) in custom_headers {
+                if !transport_request.headers.iter().any(|(n, _)| n == name) {
+                    transport_request
+                        .headers
+                        .insert(name.clone(), value.clone());
+                }
+            }
+        }
         tracing::trace!(
             method = ?transport_request.method,
             url = %transport_request.url,
@@ -225,8 +237,10 @@ pub(crate) async fn execute_operation_pipeline(
             }
             OperationAction::FailoverRetry { new_state, delay } => {
                 if let Some(delay) = delay {
-                    if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
-                        azure_core::sleep(duration).await;
+                    if !delay.is_zero() {
+                        if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
+                            azure_core::sleep(duration).await;
+                        }
                     }
                 }
 

@@ -21,7 +21,7 @@ impl PartitionedStream {
     pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
         let partition_len = partition_len.get();
         Self {
-            buf: BytesMut::with_capacity(std::cmp::min(partition_len, inner.len())),
+            buf: BytesMut::with_capacity(std::cmp::min(partition_len as u64, inner.len()) as usize),
             inner,
             partition_len,
             total_read: 0,
@@ -44,9 +44,9 @@ impl Stream for PartitionedStream {
                 let ret = mem::replace(
                     this.buf,
                     BytesMut::with_capacity(std::cmp::min(
-                        *this.partition_len,
-                        this.inner.len() - *this.total_read,
-                    )),
+                        *this.partition_len as u64,
+                        this.inner.len() - *this.total_read as u64,
+                    ) as usize),
                 );
                 return if ret.is_empty() {
                     Poll::Ready(None)

@@ -62,6 +62,7 @@ default = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_native_tls",
+  "tokio",
 ]
 debug = ["typespec_client_core/debug"]
 decimal = ["typespec_client_core/decimal"]

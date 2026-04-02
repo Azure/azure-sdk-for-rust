@@ -957,7 +957,6 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
@@ -971,6 +970,7 @@ impl BlobContainerClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
+        request.insert_header("content-type", "application/xml");
         request.set_body(container_acl);
         let rsp = self
             .pipeline
@@ -1039,11 +1039,14 @@ impl BlobContainerClient {
     }
 }
 
+/// Default value for [`BlobContainerClientOptions::version`].
+pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+
 impl Default for BlobContainerClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
+            version: String::from(DEFAULT_VERSION),
         }
     }
 }

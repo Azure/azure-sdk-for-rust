@@ -25,7 +25,6 @@ use crate::{
     },
 };
 use arc_swap::ArcSwap;
-use azure_core::http::Request;
 use futures::future::BoxFuture;
 use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -35,8 +34,8 @@ use std::time::Duration;
 use super::{
     cache::AccountRegion,
     transport::{
-        cosmos_headers, is_emulator_host, request_signing, uses_dataplane_pipeline,
-        AuthorizationContext, CosmosTransport,
+        cosmos_headers, cosmos_transport_client::HttpRequest, is_emulator_host, request_signing,
+        uses_dataplane_pipeline, AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -234,7 +233,13 @@ impl CosmosDriver {
         user_agent: &azure_core::http::headers::HeaderValue,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let mut request = Request::new(endpoint.join_path("/"), azure_core::http::Method::Get);
+        let mut request = HttpRequest {
+            url: endpoint.join_path("/"),
+            method: azure_core::http::Method::Get,
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            timeout: None,
+        };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request_signing::sign_request(
             &mut request,
@@ -247,9 +252,8 @@ impl CosmosDriver {
         )
         .await?;
 
-        let response = transport.send(&request).await?;
-        let raw = response.try_into_raw_response().await?;
-        let props = Self::parse_account_properties_payload(raw.body())?;
+        let response = transport.send(&request).await.map_err(|e| e.error)?;
+        let props = Self::parse_account_properties_payload(&response.body)?;
         tracing::info!(
             endpoint = %endpoint,
             write_region = ?props.write_region(),
@@ -874,7 +878,7 @@ impl CosmosDriver {
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
             &effective_options,
-            options.custom_headers_ref(),
+            options.custom_headers(),
             self.location_state_store.as_ref(),
             &transport,
             &endpoint,
@@ -1083,7 +1087,7 @@ mod tests {
     use std::sync::Mutex;
 
     use async_trait::async_trait;
-    use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Request, StatusCode};
+    use azure_core::http::headers::Headers;
 
     use url::Url;
 
@@ -1101,8 +1105,9 @@ mod tests {
     use super::*;
     use crate::options::Region;
     use crate::{
-        driver::transport::http_client_factory::{
-            HttpClientConfig, HttpClientFactory, HttpVersionPolicy,
+        driver::transport::{
+            cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
+            http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
         },
         options::ConnectionPoolOptions,
     };
@@ -1144,21 +1149,21 @@ mod tests {
     }
 
     #[async_trait]
-    impl HttpClient for ScriptedClient {
-        async fn execute_request(
-            &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
+    impl TransportClient for ScriptedClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             match self.plan {
-                ResponsePlan::Success => Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::Ok,
-                    Headers::new(),
-                    ACCOUNT_PROPERTIES_PAYLOAD.as_bytes(),
-                )),
-                ResponsePlan::Http2Incompatible => Err(azure_core::Error::with_error(
-                    ErrorKind::Io,
-                    h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
-                    "http2 not supported",
+                ResponsePlan::Success => Ok(HttpResponse {
+                    status: 200,
+                    headers: Headers::new(),
+                    body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                }),
+                ResponsePlan::Http2Incompatible => Err(TransportError::new(
+                    azure_core::Error::with_error(
+                        ErrorKind::Io,
+                        h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+                        "http2 not supported",
+                    ),
+                    crate::diagnostics::RequestSentStatus::NotSent,
                 )),
             }
         }
@@ -1188,7 +1193,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             self.configs
                 .lock()
                 .expect("config lock poisoned")

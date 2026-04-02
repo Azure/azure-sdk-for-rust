@@ -5,7 +5,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::models::{AccountProperties, AccountRegion};
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::regions::Region;
 use crate::resource_context::ResourceType;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -58,15 +58,15 @@ impl RequestOperation {
 #[derive(Clone, Default, Debug)]
 pub(crate) struct DatabaseAccountLocationsInfo {
     /// User-specified preferred Azure regions for request routing
-    pub preferred_locations: Vec<RegionName>,
+    pub preferred_locations: Vec<Region>,
     /// List of regions where write operations are supported
     pub account_write_locations: Vec<AccountRegion>,
     /// List of regions where read operations are supported
     pub account_read_locations: Vec<AccountRegion>,
     /// Map from location name to write endpoint URL
-    pub account_write_endpoints_by_location: HashMap<RegionName, Url>,
+    pub account_write_endpoints_by_location: HashMap<Region, Url>,
     /// Map from location name to read endpoint URL
-    pub(crate) account_read_endpoints_by_location: HashMap<RegionName, Url>,
+    pub(crate) account_read_endpoints_by_location: HashMap<Region, Url>,
     /// Ordered list of available write endpoint URLs (preferred first, unavailable last)
     pub write_endpoints: Vec<Url>,
     /// Ordered list of available read endpoint URLs
@@ -96,7 +96,7 @@ pub(crate) struct LocationCache {
     /// Thread-safe map tracking unavailable endpoints and when they were last checked
     pub location_unavailability_info_map: RwLock<HashMap<Url, LocationUnavailabilityInfo>>,
     /// Client level excluded regions. Empty if no regions are excluded.
-    pub client_excluded_regions: Vec<RegionName>,
+    pub client_excluded_regions: Vec<Region>,
 }
 
 impl LocationCache {
@@ -116,8 +116,8 @@ impl LocationCache {
     /// A new `LocationCache` instance ready for endpoint management
     pub fn new(
         default_endpoint: Url,
-        preferred_locations: Vec<RegionName>,
-        excluded_regions: Vec<RegionName>,
+        preferred_locations: Vec<Region>,
+        excluded_regions: Vec<Region>,
     ) -> Self {
         Self {
             default_endpoint,
@@ -195,7 +195,7 @@ impl LocationCache {
         let mut effective_preferred_locations = self.locations_info.preferred_locations.clone();
 
         // Use HashSet for O(1) lookups instead of O(n) linear search
-        let existing: HashSet<RegionName> = effective_preferred_locations.iter().cloned().collect();
+        let existing: HashSet<Region> = effective_preferred_locations.iter().cloned().collect();
 
         // Extend with read locations not already in preferred locations - O(n)
         for location in &read_locations {
@@ -348,7 +348,7 @@ impl LocationCache {
         } else {
             let endpoints = self.get_applicable_endpoints(
                 request.operation_type,
-                request.excluded_regions.as_ref(),
+                request.excluded_regions.as_ref().map(|e| &e.0),
             );
 
             if !endpoints.is_empty() {
@@ -423,7 +423,7 @@ impl LocationCache {
     pub fn get_applicable_endpoints(
         &self,
         operation_type: OperationType,
-        excluded_regions: Option<&Vec<RegionName>>,
+        excluded_regions: Option<&Vec<Region>>,
     ) -> Vec<Url> {
         // Select endpoints based on operation type.
         if operation_type.is_read_only() {
@@ -488,7 +488,7 @@ impl LocationCache {
         &mut self,
         locations: Vec<AccountRegion>,
         is_write: bool,
-    ) -> (HashMap<RegionName, Url>, Vec<AccountRegion>) {
+    ) -> (HashMap<Region, Url>, Vec<AccountRegion>) {
         // Separates locations into a hashmap and list
         let mut endpoints_by_location = HashMap::new();
         let mut parsed_locations = Vec::new();
@@ -530,10 +530,10 @@ impl LocationCache {
     /// An ordered vector of endpoint URLs (preferred available, preferred unavailable, default)
     fn get_preferred_available_endpoints(
         &self,
-        endpoints_by_location: &HashMap<RegionName, Url>,
+        endpoints_by_location: &HashMap<Region, Url>,
         request: RequestOperation,
         default_endpoint: &Url,
-        request_excluded_regions: Option<&Vec<RegionName>>,
+        request_excluded_regions: Option<&Vec<Region>>,
     ) -> Vec<Url> {
         let mut endpoints = Vec::new();
         let mut unavailable_endpoints = Vec::new();
@@ -594,8 +594,9 @@ impl LocationCache {
 mod tests {
     use super::*;
     use crate::operation_context::OperationType;
+    use crate::options::ExcludedRegions;
     use crate::region_proximity::generate_preferred_region_list;
-    use crate::regions;
+    use crate::regions::Region;
     use crate::resource_context::{ResourceLink, ResourceType};
     use std::{collections::HashSet, vec};
 
@@ -603,8 +604,8 @@ mod tests {
         Url,
         Vec<AccountRegion>,
         Vec<AccountRegion>,
-        Vec<RegionName>,
-        Vec<RegionName>,
+        Vec<Region>,
+        Vec<Region>,
     );
 
     fn create_test_data() -> TestData {
@@ -613,29 +614,27 @@ mod tests {
 
         let location_1 = AccountRegion {
             database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 1"),
+            name: Region::from("Location 1"),
         };
         let location_2 = AccountRegion {
             database_account_endpoint: "https://location2.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 2"),
+            name: Region::from("Location 2"),
         };
         let location_3 = AccountRegion {
             database_account_endpoint: "https://location3.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 3"),
+            name: Region::from("Location 3"),
         };
         let location_4 = AccountRegion {
             database_account_endpoint: "https://location4.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 4"),
+            name: Region::from("Location 4"),
         };
         let write_locations = Vec::from([location_1.clone(), location_2.clone()]);
 
         let read_locations = Vec::from([location_1, location_2, location_3, location_4]);
 
-        let preferred_locations: Vec<RegionName> = vec![
-            RegionName::from("Location 1"),
-            RegionName::from("Location 2"),
-        ];
-        let excluded_regions: Vec<RegionName> = vec![];
+        let preferred_locations: Vec<Region> =
+            vec![Region::from("Location 1"), Region::from("Location 2")];
+        let excluded_regions: Vec<Region> = vec![];
 
         (
             default_endpoint,
@@ -672,10 +671,10 @@ mod tests {
             mut excluded_regions,
         ) = create_test_data();
         if let Some(regions) = pref_regions {
-            preferred_locations = regions.into_iter().map(RegionName::from).collect();
+            preferred_locations = regions.into_iter().map(Region::from).collect();
         }
         if let Some(regions) = excl_regions {
-            excluded_regions = regions.into_iter().map(RegionName::from).collect();
+            excluded_regions = regions.into_iter().map(Region::from).collect();
         }
 
         let mut cache = LocationCache::new(default_endpoint, preferred_locations, excluded_regions);
@@ -697,10 +696,10 @@ mod tests {
         assert_eq!(
             cache.locations_info.preferred_locations,
             vec![
-                RegionName::from("Location 1"),
-                RegionName::from("Location 2"),
-                RegionName::from("Location 3"),
-                RegionName::from("Location 4")
+                Region::from("Location 1"),
+                Region::from("Location 2"),
+                Region::from("Location 3"),
+                Region::from("Location 4")
             ]
         );
 
@@ -712,9 +711,9 @@ mod tests {
             .cloned()
             .map(|account_region| account_region.name)
             .collect();
-        let expected_account_write_locations: HashSet<RegionName> = ["Location 1", "Location 2"]
+        let expected_account_write_locations: HashSet<Region> = ["Location 1", "Location 2"]
             .iter()
-            .map(|s| RegionName::from(*s))
+            .map(|s| Region::from(*s))
             .collect();
         assert_eq!(
             actual_account_write_locations,
@@ -729,10 +728,10 @@ mod tests {
             .cloned()
             .map(|account_region| account_region.name)
             .collect();
-        let expected_account_read_locations: HashSet<RegionName> =
+        let expected_account_read_locations: HashSet<Region> =
             ["Location 1", "Location 2", "Location 3", "Location 4"]
                 .iter()
-                .map(|s| RegionName::from(*s))
+                .map(|s| Region::from(*s))
                 .collect();
 
         assert_eq!(
@@ -744,11 +743,11 @@ mod tests {
             cache.locations_info.account_write_endpoints_by_location,
             HashMap::from([
                 (
-                    RegionName::from("Location 1"),
+                    Region::from("Location 1"),
                     Url::parse("https://location1.documents.example.com").unwrap()
                 ),
                 (
-                    RegionName::from("Location 2"),
+                    Region::from("Location 2"),
                     Url::parse("https://location2.documents.example.com").unwrap()
                 )
             ])
@@ -758,19 +757,19 @@ mod tests {
             cache.locations_info.account_read_endpoints_by_location,
             HashMap::from([
                 (
-                    RegionName::from("Location 1"),
+                    Region::from("Location 1"),
                     Url::parse("https://location1.documents.example.com").unwrap()
                 ),
                 (
-                    RegionName::from("Location 2"),
+                    Region::from("Location 2"),
                     Url::parse("https://location2.documents.example.com").unwrap()
                 ),
                 (
-                    RegionName::from("Location 3"),
+                    Region::from("Location 3"),
                     Url::parse("https://location3.documents.example.com").unwrap()
                 ),
                 (
-                    RegionName::from("Location 4"),
+                    Region::from("Location 4"),
                     Url::parse("https://location4.documents.example.com").unwrap()
                 )
             ])
@@ -822,9 +821,9 @@ mod tests {
             cache.locations_info.preferred_locations,
             vec![
                 preferred_locations[0].clone(),
-                RegionName::from("Location 2"),
-                RegionName::from("Location 3"),
-                RegionName::from("Location 4")
+                Region::from("Location 2"),
+                Region::from("Location 3"),
+                Region::from("Location 4")
             ]
         );
 
@@ -1042,7 +1041,9 @@ mod tests {
 
         let cosmos_request = builder
             .clone()
-            .excluded_regions(Some(vec!["Location 4".into()]))
+            .excluded_regions(Some(ExcludedRegions::from_iter([Region::from(
+                "Location 4",
+            )])))
             .build()
             .ok()
             .unwrap();
@@ -1055,12 +1056,12 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .excluded_regions(Some(vec![
-                "Location 4".into(),
-                "Location 3".into(),
-                "Location 2".into(),
-                "Location 1".into(),
-            ]))
+            .excluded_regions(Some(ExcludedRegions::from_iter([
+                Region::from("Location 4"),
+                Region::from("Location 3"),
+                Region::from("Location 2"),
+                Region::from("Location 1"),
+            ])))
             .build()
             .ok()
             .unwrap();
@@ -1120,7 +1121,9 @@ mod tests {
 
         let cosmos_request = builder
             .clone()
-            .excluded_regions(Some(vec!["Location 3".into()]))
+            .excluded_regions(Some(ExcludedRegions::from_iter([Region::from(
+                "Location 3",
+            )])))
             .build()
             .ok()
             .unwrap();
@@ -1144,7 +1147,11 @@ mod tests {
         );
 
         // if setting an empty list in request excluded regions, no regions should be excluded
-        let cosmos_request = builder.excluded_regions(Some(vec![])).build().ok().unwrap();
+        let cosmos_request = builder
+            .excluded_regions(Some(ExcludedRegions::from_iter(Vec::<Region>::new())))
+            .build()
+            .ok()
+            .unwrap();
 
         // resolve service endpoint - should not exclude any regions and go to Location 4
         let endpoint = cache.resolve_service_endpoint(&cosmos_request);
@@ -1177,7 +1184,9 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .excluded_regions(Some(vec!["Location 1".into()]))
+            .excluded_regions(Some(ExcludedRegions::from_iter([Region::from(
+                "Location 1",
+            )])))
             .build()
             .ok()
             .unwrap();
@@ -1276,7 +1285,7 @@ mod tests {
 
         let single_write = vec![AccountRegion {
             database_account_endpoint: "https://location1.documents.example.com".parse().unwrap(),
-            name: RegionName::from("Location 1"),
+            name: Region::from("Location 1"),
         }];
 
         let read_locations = vec![
@@ -1284,20 +1293,17 @@ mod tests {
                 database_account_endpoint: "https://location1.documents.example.com"
                     .parse()
                     .unwrap(),
-                name: RegionName::from("Location 1"),
+                name: Region::from("Location 1"),
             },
             AccountRegion {
                 database_account_endpoint: "https://location2.documents.example.com"
                     .parse()
                     .unwrap(),
-                name: RegionName::from("Location 2"),
+                name: Region::from("Location 2"),
             },
         ];
 
-        let preferred = vec![
-            RegionName::from("Location 1"),
-            RegionName::from("Location 2"),
-        ];
+        let preferred = vec![Region::from("Location 1"), Region::from("Location 2")];
 
         let mut cache = LocationCache::new(default_endpoint, preferred, vec![]);
 
@@ -1469,7 +1475,10 @@ mod tests {
         );
 
         let cosmos_request = builder
-            .excluded_regions(Some(vec!["Location 4".into(), "Location 3".into()]))
+            .excluded_regions(Some(ExcludedRegions::from_iter([
+                Region::from("Location 4"),
+                Region::from("Location 3"),
+            ])))
             .build()
             .ok()
             .unwrap();
@@ -1488,26 +1497,26 @@ mod tests {
     #[test]
     fn preferred_regions_filtered_to_account_regions_in_proximity_order() {
         // Simulate application_region = EAST_US → generates ~96 proximity-sorted regions
-        let proximity_list = generate_preferred_region_list(&regions::EAST_US)
+        let proximity_list = generate_preferred_region_list(&Region::EAST_US)
             .expect("EAST_US should be a known region")
             .to_vec();
 
         // Account only has these 3 regions (subset of the 96)
         let account_regions = vec![
             AccountRegion {
-                name: regions::WEST_US.clone(),
+                name: Region::WEST_US.clone(),
                 database_account_endpoint: "https://test-westus.documents.azure.com:443/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::EAST_US_2.clone(),
+                name: Region::EAST_US_2.clone(),
                 database_account_endpoint: "https://test-eastus2.documents.azure.com:443/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::WEST_EUROPE.clone(),
+                name: Region::WEST_EUROPE.clone(),
                 database_account_endpoint: "https://test-westeurope.documents.azure.com:443/"
                     .parse()
                     .unwrap(),
@@ -1546,20 +1555,20 @@ mod tests {
     /// the preferred regions list.
     #[test]
     fn write_endpoints_respect_proximity_order() {
-        let proximity_list = generate_preferred_region_list(&regions::WEST_EUROPE)
+        let proximity_list = generate_preferred_region_list(&Region::WEST_EUROPE)
             .expect("WEST_EUROPE should be a known region")
             .to_vec();
 
         // Account has 2 write regions
         let write_regions = vec![
             AccountRegion {
-                name: regions::EAST_US.clone(),
+                name: Region::EAST_US.clone(),
                 database_account_endpoint: "https://test-eastus.documents.azure.com:443/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::NORTH_EUROPE.clone(),
+                name: Region::NORTH_EUROPE.clone(),
                 database_account_endpoint: "https://test-northeurope.documents.azure.com:443/"
                     .parse()
                     .unwrap(),
@@ -1592,9 +1601,9 @@ mod tests {
     /// the given account regions, and client-level excluded regions.
     fn create_proximity_cache_with_exclusions(
         account_regions: &[AccountRegion],
-        client_excluded: Vec<RegionName>,
+        client_excluded: Vec<Region>,
     ) -> LocationCache {
-        let proximity_list = generate_preferred_region_list(&regions::EAST_US)
+        let proximity_list = generate_preferred_region_list(&Region::EAST_US)
             .expect("EAST_US should be a known region")
             .to_vec();
         let default_endpoint: Url = "https://test.documents.azure.com/".parse().unwrap();
@@ -1609,19 +1618,19 @@ mod tests {
     fn east_us_account_regions() -> Vec<AccountRegion> {
         vec![
             AccountRegion {
-                name: regions::EAST_US_2.clone(),
+                name: Region::EAST_US_2.clone(),
                 database_account_endpoint: "https://test-eastus2.documents.azure.com/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::WEST_US.clone(),
+                name: Region::WEST_US.clone(),
                 database_account_endpoint: "https://test-westus.documents.azure.com/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::WEST_EUROPE.clone(),
+                name: Region::WEST_EUROPE.clone(),
                 database_account_endpoint: "https://test-westeurope.documents.azure.com/"
                     .parse()
                     .unwrap(),
@@ -1634,7 +1643,7 @@ mod tests {
     fn proximity_with_closest_region_excluded() {
         let cache = create_proximity_cache_with_exclusions(
             &east_us_account_regions(),
-            vec![regions::EAST_US_2],
+            vec![Region::EAST_US_2],
         );
 
         let read_endpoints = cache.read_endpoints();
@@ -1654,7 +1663,7 @@ mod tests {
     fn proximity_with_multiple_regions_excluded() {
         let mut regions_list = east_us_account_regions();
         regions_list.push(AccountRegion {
-            name: regions::NORTH_EUROPE.clone(),
+            name: Region::NORTH_EUROPE.clone(),
             database_account_endpoint: "https://test-northeurope.documents.azure.com/"
                 .parse()
                 .unwrap(),
@@ -1662,7 +1671,7 @@ mod tests {
 
         let cache = create_proximity_cache_with_exclusions(
             &regions_list,
-            vec![regions::EAST_US_2, regions::WEST_US],
+            vec![Region::EAST_US_2, Region::WEST_US],
         );
 
         let read_endpoints = cache.read_endpoints();
@@ -1685,7 +1694,7 @@ mod tests {
         // Client excludes East US 2 (closest)
         let cache = create_proximity_cache_with_exclusions(
             &east_us_account_regions(),
-            vec![regions::EAST_US_2],
+            vec![Region::EAST_US_2],
         );
 
         // Request excludes West Europe instead — overrides client exclusion,
@@ -1694,7 +1703,7 @@ mod tests {
             OperationType::Read,
             ResourceLink::root(ResourceType::Documents),
         )
-        .excluded_regions(Some(vec![regions::WEST_EUROPE]))
+        .excluded_regions(Some(ExcludedRegions::from_iter([Region::WEST_EUROPE])))
         .build()
         .ok()
         .unwrap();
@@ -1712,13 +1721,13 @@ mod tests {
     fn proximity_exclude_all_falls_back_to_default() {
         let account = vec![
             AccountRegion {
-                name: regions::EAST_US_2.clone(),
+                name: Region::EAST_US_2.clone(),
                 database_account_endpoint: "https://test-eastus2.documents.azure.com/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::WEST_US.clone(),
+                name: Region::WEST_US.clone(),
                 database_account_endpoint: "https://test-westus.documents.azure.com/"
                     .parse()
                     .unwrap(),
@@ -1727,7 +1736,7 @@ mod tests {
 
         let cache = create_proximity_cache_with_exclusions(
             &account,
-            vec![regions::EAST_US_2, regions::WEST_US],
+            vec![Region::EAST_US_2, Region::WEST_US],
         );
 
         let read_endpoints = cache.read_endpoints();
@@ -1744,13 +1753,13 @@ mod tests {
     fn proximity_exclude_non_account_region_is_noop() {
         let account = vec![
             AccountRegion {
-                name: regions::EAST_US_2.clone(),
+                name: Region::EAST_US_2.clone(),
                 database_account_endpoint: "https://test-eastus2.documents.azure.com/"
                     .parse()
                     .unwrap(),
             },
             AccountRegion {
-                name: regions::WEST_US.clone(),
+                name: Region::WEST_US.clone(),
                 database_account_endpoint: "https://test-westus.documents.azure.com/"
                     .parse()
                     .unwrap(),
@@ -1759,7 +1768,7 @@ mod tests {
 
         let cache = create_proximity_cache_with_exclusions(
             &account,
-            vec![regions::AUSTRALIA_EAST], // not in the account
+            vec![Region::AUSTRALIA_EAST], // not in the account
         );
 
         let read_endpoints = cache.read_endpoints();

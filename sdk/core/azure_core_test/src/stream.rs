@@ -177,8 +177,8 @@ where
         Ok(())
     }
 
-    fn len(&self) -> usize {
-        LENGTH
+    fn len(&self) -> u64 {
+        LENGTH as u64
     }
 }
 

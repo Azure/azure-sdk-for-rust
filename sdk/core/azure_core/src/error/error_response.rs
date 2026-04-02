@@ -7,7 +7,7 @@ use crate::{
     error::{Error, ErrorKind},
     http::{headers::ERROR_CODE, AsyncRawResponse, RawResponse, StatusCode},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, future::Future, str};
 
 /// An HTTP error response.
@@ -27,7 +27,7 @@ use std::{collections::HashMap, future::Future, str};
 ///```
 ///
 ///
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
     /// The error details.
@@ -56,7 +56,7 @@ impl TryFrom<Error> for ErrorResponse {
 /// Details about an error returned from a service.
 ///
 /// Implements a standard "ErrorDetails" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorDetail {
     /// The error code. A machine readable error code defined by the service.
@@ -84,7 +84,7 @@ pub struct ErrorDetail {
 /// Inner error information about an error returned from a service.
 ///
 /// Implements a standard "InnerError" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InnerError {
     /// A more specific error than was contained in the containing error.
@@ -431,6 +431,47 @@ mod tests {
             .contains_key("key"));
     }
 
+    #[test]
+    fn serialize_error_response() {
+        let error_response = ErrorResponse {
+            error: Some(ErrorDetail {
+                code: Some("InvalidRequest".to_string()),
+                message: Some("The request object is not recognized.".to_string()),
+                target: None,
+                details: vec![],
+                inner_error: Some(InnerError {
+                    code: Some("InvalidKey".to_string()),
+                    inner_error: None,
+                }),
+                additional_properties: HashMap::from([(
+                    "key".to_string(),
+                    crate::Value::from("foo"),
+                )]),
+            }),
+        };
+
+        let json = serde_json::to_value(&error_response).expect("Serialize success.");
+        let error_obj = json.get("error").expect("error should be set");
+        assert_eq!(
+            error_obj.get("code").and_then(|v| v.as_str()),
+            Some("InvalidRequest")
+        );
+        assert_eq!(
+            error_obj.get("message").and_then(|v| v.as_str()),
+            Some("The request object is not recognized.")
+        );
+        assert_eq!(
+            error_obj
+                .get("innererror")
+                .and_then(|v| v.get("code"))
+                .and_then(|v| v.as_str()),
+            Some("InvalidKey")
+        );
+        assert_eq!(error_obj.get("key").and_then(|v| v.as_str()), Some("foo"));
+        assert!(error_obj.get("target").is_some());
+        assert!(error_obj.get("details").is_some());
+    }
+
     #[tokio::test]
     async fn convert_error_to_error_response() -> crate::Result<()> {
         {
@@ -486,6 +527,26 @@ mod tests {
             );
         }
         Ok(())
+    }
+
+    #[test]
+    fn clone_error_response() {
+        let response: ErrorResponse = serde_json::from_slice(
+            br#"{"error":{"code":"InvalidRequest","message":"bad request","innererror":{"code":"InvalidKey"},"extra":"value"}}"#,
+        )
+        .expect("deserialize");
+        let cloned = response.clone();
+        let detail = cloned.error.as_ref().expect("error detail present");
+        assert_eq!(detail.code.as_deref(), Some("InvalidRequest"));
+        assert_eq!(detail.message.as_deref(), Some("bad request"));
+        assert_eq!(
+            detail
+                .inner_error
+                .as_ref()
+                .and_then(|ie| ie.code.as_deref()),
+            Some("InvalidKey"),
+        );
+        assert!(detail.additional_properties.contains_key("extra"));
     }
 
     #[tokio::test]

@@ -3,6 +3,7 @@
 
 //! Model types for Azure Blob Storage.
 
+pub(crate) mod drains;
 pub mod error;
 mod extensions;
 pub(crate) mod http_ranges;

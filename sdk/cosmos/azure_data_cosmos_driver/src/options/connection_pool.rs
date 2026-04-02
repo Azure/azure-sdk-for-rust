@@ -34,7 +34,7 @@ use crate::options::EmulatorServerCertValidation;
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct ConnectionPoolOptions {
-    is_proxy_allowed: bool,
+    proxy_allowed: bool,
 
     min_connect_timeout: Duration,
     max_connect_timeout: Duration,
@@ -88,8 +88,8 @@ impl ConnectionPoolOptions {
     ///
     /// When `true`, the `HTTPS_PROXY` environment variable will be respected.
     /// When using a proxy, no end-to-end SLAs are guaranteed by Azure Cosmos DB.
-    pub fn is_proxy_allowed(&self) -> bool {
-        self.is_proxy_allowed
+    pub fn proxy_allowed(&self) -> bool {
+        self.proxy_allowed
     }
 
     /// Returns the minimum connection timeout.
@@ -274,7 +274,7 @@ impl ConnectionPoolOptions {
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
 pub struct ConnectionPoolOptionsBuilder {
-    is_proxy_allowed: Option<bool>,
+    proxy_allowed: Option<bool>,
     min_connect_timeout: Option<Duration>,
     max_connect_timeout: Option<Duration>,
     min_dataplane_request_timeout: Option<Duration>,
@@ -310,8 +310,8 @@ impl ConnectionPoolOptionsBuilder {
     /// Sets whether proxy usage is allowed. If true, the HTTPS_PROXY environment variable will be respected.
     /// When using a proxy, no e2e SLAs are guaranteed by Azure Cosmos DB.
     /// Defaults to `false`.
-    pub fn with_dangerous_is_proxy_allowed(mut self, value: bool) -> Self {
-        self.is_proxy_allowed = Some(value);
+    pub fn with_proxy_allowed(mut self, value: bool) -> Self {
+        self.proxy_allowed = Some(value);
         self
     }
 
@@ -738,8 +738,8 @@ impl ConnectionPoolOptionsBuilder {
         )?;
 
         Ok(ConnectionPoolOptions {
-            is_proxy_allowed: parse_from_env(
-                self.is_proxy_allowed,
+            proxy_allowed: parse_from_env(
+                self.proxy_allowed,
                 "AZURE_COSMOS_CONNECTION_POOL_IS_PROXY_ALLOWED",
                 false,
                 ValidationBounds::none(),
@@ -802,7 +802,7 @@ mod tests {
     fn connection_pool_options_builder_defaults() {
         let options = ConnectionPoolOptionsBuilder::new().build().unwrap();
 
-        assert!(!options.is_proxy_allowed());
+        assert!(!options.proxy_allowed());
         assert_eq!(options.min_connect_timeout(), Duration::from_millis(100));
         assert_eq!(options.max_connect_timeout(), Duration::from_millis(5_000));
         assert_eq!(
@@ -857,7 +857,7 @@ mod tests {
     #[test]
     fn connection_pool_options_builder_custom_values() {
         let options = ConnectionPoolOptionsBuilder::new()
-            .with_dangerous_is_proxy_allowed(true)
+            .with_proxy_allowed(true)
             .with_min_connect_timeout(Duration::from_millis(200))
             .with_max_connect_timeout(Duration::from_millis(3_000))
             .with_min_dataplane_request_timeout(Duration::from_millis(500))
@@ -884,7 +884,7 @@ mod tests {
             .build()
             .unwrap();
 
-        assert!(options.is_proxy_allowed());
+        assert!(options.proxy_allowed());
         assert_eq!(options.min_connect_timeout(), Duration::from_millis(200));
         assert_eq!(options.max_connect_timeout(), Duration::from_millis(3_000));
         assert_eq!(

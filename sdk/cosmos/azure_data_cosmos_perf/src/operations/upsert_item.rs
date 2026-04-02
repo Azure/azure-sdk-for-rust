@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::options::ItemOptions;
+use azure_data_cosmos::options::ItemWriteOptions;
 use rand::RngExt;
 
 use super::{Operation, PerfItem};
@@ -16,12 +16,12 @@ use crate::seed::SharedItems;
 /// Upserts an item into a random seeded partition.
 pub struct UpsertItemOperation {
     items: Arc<SharedItems>,
-    options: Option<ItemOptions>,
+    options: Option<ItemWriteOptions>,
 }
 
 impl UpsertItemOperation {
     /// Creates a new upsert operation targeting the given seeded items.
-    pub fn new(items: Arc<SharedItems>, options: Option<ItemOptions>) -> Self {
+    pub fn new(items: Arc<SharedItems>, options: Option<ItemWriteOptions>) -> Self {
         Self { items, options }
     }
 }

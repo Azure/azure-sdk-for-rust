@@ -51,6 +51,10 @@ fn create_test_item(unique_id: &str) -> TestItem {
 /// Test probability fault injection - fault should only apply based on probability.
 /// With probability 0.0, the fault should never be applied.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -113,6 +117,10 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
 /// Test probability fault injection - with probability 1.0, fault should always apply.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -178,6 +186,10 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 /// Test retry on transient errors with hit_limit.
 /// Injects 429 for the first 2 requests, verifies 3rd succeeds.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::TooManyRequests)
@@ -245,6 +257,10 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
 /// Test DeleteItem fault - verify CRUD operations unaffected.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -327,6 +343,10 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 
 /// Test container-specific fault - verify other containers unaffected.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -415,6 +435,10 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
 /// Test multiple rules priority - first matching rule wins.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem
     let error1 = FaultInjectionResultBuilder::new()
@@ -488,6 +512,10 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 /// Test that first rule is skipped because its start_time is in the future.
 /// Second rule applies immediately and should win.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with a future start_time (won't be active yet)
     let error1 = FaultInjectionResultBuilder::new()
@@ -562,6 +590,10 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 /// Test that first rule is expired because its end_time is in the past.
 /// Second rule should win.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with an end_time in the past (already expired)
     let error1 = FaultInjectionResultBuilder::new()
@@ -638,6 +670,10 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 
 /// Test hit_limit behavior - fault stops after N applications.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::InternalServerError)
@@ -716,6 +752,10 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
 /// Test empty rules - no fault injection, operations should succeed.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
     let fault_builder = FaultInjectionClientBuilder::new();
 
@@ -763,6 +803,10 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
 /// Test that item operations succeed when metadata operations are faulted.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::InternalServerError)
@@ -866,6 +910,10 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 /// Test that disabling a rule at runtime prevents fault injection,
 /// and re-enabling it resumes injection.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -958,6 +1006,10 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 /// 2. The service returns 200 (the URL uses name-based addressing, not mixed RID).
 /// 3. The item operation succeeds end-to-end with correct partition key routing.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn Error>> {
     // Spy rule: no error, no custom response → passthrough with status recording.
     let spy_result = FaultInjectionResultBuilder::new().build();
@@ -1014,7 +1066,7 @@ pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn E
             // Verify the pkranges request returned 200 from the service.
             let statuses = rule_handle.passthrough_statuses();
             assert!(
-                statuses.iter().any(|s| *s == StatusCode::Ok),
+                statuses.contains(&StatusCode::Ok),
                 "Expected pkranges request to return 200, got: {:?}",
                 statuses
             );

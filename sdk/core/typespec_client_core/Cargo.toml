@@ -13,6 +13,7 @@ keywords = []
 [dependencies]
 async-trait.workspace = true
 base64.workspace = true
+bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
 gloo-timers = { workspace = true, optional = true }
@@ -48,6 +49,7 @@ default = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_native_tls",
+  "tokio",
 ]
 debug = ["typespec_macros?/debug"]
 decimal = ["dep:rust_decimal"]

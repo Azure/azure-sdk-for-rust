@@ -12,6 +12,10 @@ use framework::TestClient;
 use futures::TryStreamExt;
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let cosmos_client = run_context.client();
@@ -57,8 +61,12 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     })
     .await
 }
-#[tokio::test]
 #[cfg(feature = "key_auth")]
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let cosmos_client = run_context.client();

@@ -47,6 +47,10 @@ struct TestItem {
 /// The read should fail on the hub region and succeed via cross-region
 /// retry on the satellite region.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
@@ -94,7 +98,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed via cross-region retry after hub returns 408
@@ -113,7 +117,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             if let Some(request_url) = response.request_url() {
                 let request_url = request_url.to_string();
                 assert!(
-                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    request_url.contains(SATELLITE_REGION.as_str()),
                     "read should have failed over to satellite region, but URL was: {}",
                     request_url
                 );
@@ -135,6 +139,10 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 /// Injects a 408 on all regions for CreateItem. The write should fail
 /// with a 408 status code rather than retrying on a different region.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
@@ -164,7 +172,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let unique_id = Uuid::new_v4().to_string();
@@ -206,6 +214,10 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
 /// Same as the create test above but for upserts, verifying that the no-cross-region
 /// retry policy applies consistently to all write operations.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
@@ -235,7 +247,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let unique_id = Uuid::new_v4().to_string();
@@ -278,6 +290,10 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 /// point reads. Injects a 408 on the hub region for QueryItem with a hit
 /// limit of 1, then verifies the query succeeds via the satellite region.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
@@ -323,7 +339,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let query = Query::from(format!("SELECT * FROM c WHERE c.partition_key = '{}'", pk));
@@ -356,6 +372,10 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 /// The read should fail on the hub region and succeed via cross-region
 /// retry on the satellite region.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::InternalServerError)
@@ -402,7 +422,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed via cross-region retry after hub returns 500
@@ -421,7 +441,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             if let Some(request_url) = response.request_url() {
                 let request_url = request_url.to_string();
                 assert!(
-                    request_url.contains(&SATELLITE_REGION.as_str()),
+                    request_url.contains(SATELLITE_REGION.as_str()),
                     "read should have failed over to satellite region, but URL was: {}",
                     request_url
                 );
@@ -443,6 +463,10 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
 /// Injects a 408 on all regions for ReplaceItem. The replace should fail
 /// with a 408 status code rather than retrying on a different region.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
@@ -488,7 +512,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let updated_item = TestItem {
@@ -531,6 +555,10 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
 /// Injects a 408 on all regions for DeleteItem. The delete should fail
 /// with a 408 status code rather than retrying on a different region.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
@@ -576,7 +604,7 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
-            let fault_db_client = fault_client.database_client(&db_client.id());
+            let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Delete should fail with 408 — no cross-region retry for writes
