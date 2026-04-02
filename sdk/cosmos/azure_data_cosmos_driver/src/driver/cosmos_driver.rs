@@ -1033,26 +1033,17 @@ impl CosmosDriver {
         if let Some(ref etag) = continuation {
             let headers = CosmosRequestHeaders {
                 precondition: Some(Precondition::if_none_match(ETag::new(etag.clone()))),
+                // Preserve the headers already set by read_all_pk_ranges.
+                max_item_count: Some(-1),
+                a_im: Some("Incremental Feed".to_owned()),
                 ..Default::default()
             };
             operation = operation.with_request_headers(headers);
         }
 
-        // The pkranges endpoint requires change-feed headers:
-        // - A-IM: Incremental Feed (required for change-feed semantics)
-        // - x-ms-max-item-count: -1 (return all ranges in a single page)
-        let mut custom_headers = std::collections::HashMap::new();
-        custom_headers.insert(
-            azure_core::http::headers::HeaderName::from("a-im"),
-            azure_core::http::headers::HeaderValue::from("Incremental Feed"),
-        );
-        custom_headers.insert(
-            azure_core::http::headers::HeaderName::from("x-ms-max-item-count"),
-            azure_core::http::headers::HeaderValue::from("-1"),
-        );
-        let options = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let result = self.execute_operation(operation, options).await;
+        let result = self
+            .execute_operation(operation, OperationOptions::default())
+            .await;
 
         match result {
             Ok(response) => {

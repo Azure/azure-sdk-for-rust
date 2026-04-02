@@ -302,7 +302,12 @@ impl CosmosOperation {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::PartitionKeyRange)
             .into_feed_reference();
-        Self::new(OperationType::ReadFeed, resource_ref)
+        let headers = CosmosRequestHeaders {
+            max_item_count: Some(-1),
+            a_im: Some("Incremental Feed".to_owned()),
+            ..Default::default()
+        };
+        Self::new(OperationType::ReadFeed, resource_ref).with_request_headers(headers)
     }
 
     /// Queries containers in a database.

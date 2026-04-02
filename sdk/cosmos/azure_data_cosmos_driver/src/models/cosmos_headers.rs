@@ -19,6 +19,8 @@ pub(crate) mod request_header_names {
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
     pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
     pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+    pub static MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
+    pub static A_IM: HeaderName = HeaderName::from_static("a-im");
 }
 
 /// Standard Cosmos DB response header names.
@@ -68,6 +70,16 @@ pub struct CosmosRequestHeaders {
 
     /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
     pub precondition: Option<Precondition>,
+
+    /// Maximum number of items to return per page (`x-ms-max-item-count`).
+    ///
+    /// Set to `-1` for unbounded pages (e.g., partition key range feeds).
+    pub max_item_count: Option<i32>,
+
+    /// Accept-encoding-like header for change feed (`A-IM`).
+    ///
+    /// Set to `"Incremental Feed"` for change-feed semantics on feed operations.
+    pub a_im: Option<String>,
 }
 
 impl CosmosRequestHeaders {
@@ -101,6 +113,18 @@ impl CosmosRequestHeaders {
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
             }
+        }
+        if let Some(max_item_count) = self.max_item_count {
+            headers.insert(
+                request_header_names::MAX_ITEM_COUNT.clone(),
+                HeaderValue::from(max_item_count.to_string()),
+            );
+        }
+        if let Some(a_im) = self.a_im.as_ref() {
+            headers.insert(
+                request_header_names::A_IM.clone(),
+                HeaderValue::from(a_im.clone()),
+            );
         }
     }
 }
@@ -389,6 +413,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            max_item_count: None,
+            a_im: None,
         };
 
         assert_eq!(
@@ -407,6 +433,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            max_item_count: None,
+            a_im: None,
         };
         let mut headers = Headers::new();
 
@@ -428,6 +456,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+            max_item_count: None,
+            a_im: None,
         };
         let mut headers = Headers::new();
 
@@ -449,6 +479,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+            max_item_count: None,
+            a_im: None,
         };
         let mut headers = Headers::new();
 
@@ -470,6 +502,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: None,
+            max_item_count: None,
+            a_im: None,
         };
         let mut headers = Headers::new();
 
@@ -491,6 +525,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
             session_token: Some(SessionToken::new("session:100".to_string())),
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+            max_item_count: None,
+            a_im: None,
         };
         let mut headers = Headers::new();
 
