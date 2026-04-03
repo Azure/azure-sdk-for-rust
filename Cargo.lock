@@ -467,7 +467,9 @@ dependencies = [
  "azure_core",
  "azure_core_test",
  "azure_identity",
+ "futures",
  "serde",
+ "tokio",
 ]
 
 [[package]]

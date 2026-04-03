@@ -24,6 +24,8 @@ serde = { workspace = true }
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
+futures.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true
