@@ -239,6 +239,8 @@ pub(crate) async fn execute_transport_pipeline(
             headers: request.headers.clone(),
             body: request.body.clone(),
             timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
         };
 
         let per_request_timeout = remaining_request_timeout(request.deadline);
@@ -281,15 +283,12 @@ pub(crate) async fn execute_transport_pipeline(
         );
 
         #[cfg(feature = "fault_injection")]
-        let eval_id = {
-            use crate::fault_injection::next_evaluation_id;
-            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REQUEST_ID;
-            let id = next_evaluation_id();
-            http_request.headers.insert(
-                FAULT_INJECTION_REQUEST_ID.clone(),
-                azure_core::http::headers::HeaderValue::from(id.to_string()),
-            );
-            id
+        let evaluation_collector = if diagnostics.fault_injection_enabled() {
+            let collector = crate::fault_injection::EvaluationCollector::default();
+            http_request.evaluation_collector = Some(collector.clone());
+            Some(collector)
+        } else {
+            None
         };
 
         let result = execute_http_attempt(
@@ -304,8 +303,8 @@ pub(crate) async fn execute_transport_pipeline(
         .await;
 
         #[cfg(feature = "fault_injection")]
-        {
-            let evals = crate::fault_injection::take_evaluations(eval_id);
+        if let Some(ref collector) = evaluation_collector {
+            let evals = collector.take();
             if !evals.is_empty() {
                 diagnostics.set_fault_injection_evaluations(request_handle, evals);
             }

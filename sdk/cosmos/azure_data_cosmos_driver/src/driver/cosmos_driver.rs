@@ -230,6 +230,8 @@ impl CosmosDriver {
             headers: azure_core::http::headers::Headers::new(),
             body: None,
             timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request_signing::sign_request(

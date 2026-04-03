@@ -452,7 +452,8 @@ pub struct RequestDiagnostics {
     ///
     /// Populated only when the `fault_injection` feature is enabled and
     /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
-    /// via a request-scoped concurrent map keyed by evaluation request ID.
+    /// via an [`EvaluationCollector`](crate::fault_injection::EvaluationCollector) attached
+    /// to the [`HttpRequest`](crate::driver::transport::cosmos_transport_client::HttpRequest).
     #[cfg(feature = "fault_injection")]
     fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }
@@ -1246,6 +1247,12 @@ impl DiagnosticsContextBuilder {
     #[cfg(feature = "fault_injection")]
     pub(crate) fn set_fault_injection_enabled(&mut self, enabled: bool) {
         self.fault_injection_enabled = enabled;
+    }
+
+    /// Returns whether fault injection is enabled for this operation's runtime.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
     }
 
     /// Returns the operation-level activity ID.

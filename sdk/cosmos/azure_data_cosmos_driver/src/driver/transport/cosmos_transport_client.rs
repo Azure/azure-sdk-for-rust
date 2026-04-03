@@ -21,6 +21,9 @@ use url::Url;
 
 use crate::diagnostics::RequestSentStatus;
 
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::EvaluationCollector;
+
 // ----------------------------------------------------------------------------
 // Request
 // ----------------------------------------------------------------------------
@@ -39,6 +42,15 @@ pub(crate) struct HttpRequest {
 
     /// Per-request timeout. When set, overrides the client-level timeout.
     pub timeout: Option<Duration>,
+
+    /// Collector for fault injection evaluations.
+    ///
+    /// When present, [`FaultClient`](crate::fault_injection::FaultClient) writes its
+    /// rule evaluations into this collector so the transport pipeline can read
+    /// them after the request completes — without a global store or
+    /// header-based correlation.
+    #[cfg(feature = "fault_injection")]
+    pub evaluation_collector: Option<EvaluationCollector>,
 }
 
 // ----------------------------------------------------------------------------
