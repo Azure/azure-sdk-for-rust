@@ -45,23 +45,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("tokio-console enabled — connect with: tokio-console http://<pod-ip>:6669");
     }
 
+    // Warn if tokio-metrics is enabled without tokio_unstable (partial metrics only)
+    #[cfg(all(feature = "tokio-metrics", not(tokio_unstable)))]
+    eprintln!("Note: build with RUSTFLAGS='--cfg tokio_unstable' for full tokio metrics (polls, steals, overflow)");
+
     // Initialize Pyroscope CPU profiling when the feature is enabled and server URL is set.
     #[cfg(all(feature = "pyroscope", target_os = "linux"))]
     let _pyroscope_guard = {
         if let Ok(server_url) = std::env::var("PYROSCOPE_SERVER_URL") {
             if !server_url.is_empty() {
-                let agent = pyroscope::PyroscopeAgent::builder(
-                    &server_url,
-                    &"cosmos-perf".to_string(),
-                )
-                .backend(pyroscope_pprofrs::pprof_backend(
-                    pyroscope_pprofrs::PprofConfig::new().sample_rate(100),
-                ))
-                .build()
-                .expect("failed to build Pyroscope agent");
-                let guard = agent.start().expect("failed to start Pyroscope agent");
-                eprintln!("Pyroscope profiling enabled — pushing to {server_url}");
-                Some(guard)
+                match pyroscope::PyroscopeAgent::builder(&server_url, &"cosmos-perf".to_string())
+                    .backend(pyroscope_pprofrs::pprof_backend(
+                        pyroscope_pprofrs::PprofConfig::new().sample_rate(100),
+                    ))
+                    .build()
+                    .and_then(|agent| agent.start())
+                {
+                    Ok(guard) => {
+                        eprintln!("Pyroscope profiling enabled — pushing to {server_url}");
+                        Some(guard)
+                    }
+                    Err(e) => {
+                        eprintln!("Warning: Pyroscope failed to start, continuing without profiling: {e}");
+                        None
+                    }
+                }
             } else {
                 None
             }
