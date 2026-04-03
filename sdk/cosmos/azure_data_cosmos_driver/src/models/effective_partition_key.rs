@@ -62,7 +62,16 @@ impl EffectivePartitionKey {
                 PartitionKeyVersion::V1 => effective_partition_key_hash_v1(pk_values),
                 PartitionKeyVersion::V2 => effective_partition_key_hash_v2(pk_values),
             },
-            PartitionKeyKind::MultiHash => effective_partition_key_multi_hash_v2(pk_values),
+            PartitionKeyKind::MultiHash => {
+                // MultiHash is only supported with V2. All MultiHash container definitions
+                // are created with version=2; V1 MultiHash does not exist in Cosmos DB.
+                debug_assert!(
+                    version == PartitionKeyVersion::V2,
+                    "MultiHash requires V2, got {:?}",
+                    version
+                );
+                effective_partition_key_multi_hash_v2(pk_values)
+            }
             // Range partitioning is legacy; fall through to V2 as a reasonable default.
             _ => effective_partition_key_hash_v2(pk_values),
         };
@@ -86,6 +95,17 @@ impl EffectivePartitionKey {
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
     ) -> std::ops::Range<Self> {
+        debug_assert!(
+            !pk_values.is_empty(),
+            "compute_range called with empty pk_values"
+        );
+        debug_assert!(
+            pk_values.len() <= pk_definition.paths().len(),
+            "More partition key components ({}) than definition paths ({})",
+            pk_values.len(),
+            pk_definition.paths().len()
+        );
+
         let kind = pk_definition.kind();
         let version = pk_definition.version();
         let epk = Self::compute(pk_values, kind, version);
