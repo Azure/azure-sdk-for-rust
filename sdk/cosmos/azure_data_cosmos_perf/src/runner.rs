@@ -96,6 +96,19 @@ struct PerfResult {
     config_valgrind_tool: Option<String>,
 }
 
+/// Tokio runtime metrics snapshot for a single reporting interval.
+#[derive(Clone, Copy)]
+struct TokioSnapshot {
+    workers: u64,
+    busy_pct: f64,
+    polls: u64,
+    mean_poll_us: f64,
+    steal_count: u64,
+    overflow_count: u64,
+    park_count: u64,
+    queue_depth: u64,
+}
+
 /// Error document written to the results container for each individual operation failure.
 #[derive(Debug, Serialize)]
 struct ErrorResult {
@@ -238,12 +251,15 @@ pub async fn run(config: RunConfig) {
                     let (steals, overflow) = (0u64, 0u64);
                     println!("  Tokio:   Workers={}, Busy={:.1}%, Polls={}, MeanPoll={:.1}\u{00b5}s, Steals={}, Overflow={}",
                         workers, busy_pct, polls, mean_poll_us, steals, overflow);
-                    (workers, busy_pct, polls, mean_poll_us, steals,
-                     overflow, rt.total_park_count, rt.global_queue_depth as u64)
+                    TokioSnapshot {
+                        workers, busy_pct, polls, mean_poll_us, steal_count: steals,
+                        overflow_count: overflow, park_count: rt.total_park_count,
+                        queue_depth: rt.global_queue_depth as u64,
+                    }
                 })
             };
             #[cfg(not(feature = "tokio-metrics"))]
-            let tokio_fields: Option<(u64, f64, u64, f64, u64, u64, u64, u64)> = None;
+            let tokio_fields: Option<TokioSnapshot> = None;
 
             let summaries = report_stats.drain_summaries();
             stats::print_report(&summaries);
@@ -334,11 +350,12 @@ pub async fn run(config: RunConfig) {
 }
 
 /// Upserts perf result documents into the results container.
+#[allow(clippy::too_many_arguments)]
 async fn upsert_results(
     container: &ContainerClient,
     summaries: &[stats::Summary],
     metrics: Option<&stats::ProcessMetrics>,
-    tokio_fields: Option<(u64, f64, u64, f64, u64, u64, u64, u64)>,
+    tokio_fields: Option<TokioSnapshot>,
     config: &ConfigSnapshot,
     workload_id: &str,
     commit_sha: &str,
@@ -381,14 +398,14 @@ async fn upsert_results(
             system_cpu_percent: sys_cpu,
             system_total_memory_bytes: sys_total,
             system_used_memory_bytes: sys_used,
-            tokio_workers: tokio_fields.map(|t| t.0),
-            tokio_busy_pct: tokio_fields.map(|t| t.1),
-            tokio_polls: tokio_fields.map(|t| t.2),
-            tokio_mean_poll_us: tokio_fields.map(|t| t.3),
-            tokio_steal_count: tokio_fields.map(|t| t.4),
-            tokio_overflow_count: tokio_fields.map(|t| t.5),
-            tokio_park_count: tokio_fields.map(|t| t.6),
-            tokio_queue_depth: tokio_fields.map(|t| t.7),
+            tokio_workers: tokio_fields.map(|t| t.workers),
+            tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
+            tokio_polls: tokio_fields.map(|t| t.polls),
+            tokio_mean_poll_us: tokio_fields.map(|t| t.mean_poll_us),
+            tokio_steal_count: tokio_fields.map(|t| t.steal_count),
+            tokio_overflow_count: tokio_fields.map(|t| t.overflow_count),
+            tokio_park_count: tokio_fields.map(|t| t.park_count),
+            tokio_queue_depth: tokio_fields.map(|t| t.queue_depth),
             config_concurrency: Some(config.concurrency),
             config_application_region: Some(config.application_region.clone()),
             config_excluded_regions: if config.excluded_regions.is_empty() {

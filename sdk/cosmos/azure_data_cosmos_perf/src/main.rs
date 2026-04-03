@@ -45,6 +45,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("tokio-console enabled — connect with: tokio-console http://<pod-ip>:6669");
     }
 
+    // Initialize Pyroscope CPU profiling when the feature is enabled and server URL is set.
+    #[cfg(feature = "pyroscope")]
+    let _pyroscope_guard = {
+        if let Ok(server_url) = std::env::var("PYROSCOPE_SERVER_URL") {
+            if !server_url.is_empty() {
+                let agent = pyroscope::PyroscopeAgent::builder(
+                    &server_url,
+                    &"cosmos-perf".to_string(),
+                )
+                .backend(pyroscope_pprofrs::pprof_backend(
+                    pyroscope_pprofrs::PprofConfig::new().sample_rate(100),
+                ))
+                .build()
+                .expect("failed to build Pyroscope agent");
+                let guard = agent.start().expect("failed to start Pyroscope agent");
+                eprintln!("Pyroscope profiling enabled — pushing to {server_url}");
+                Some(guard)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -230,7 +255,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tokio_threads: std::thread::available_parallelism()
             .map(|n| n.get() as u64)
             .unwrap_or(1),
-        ppcb_enabled: std::env::var("COSMOS_PPCB_ENABLED")
+        ppcb_enabled: std::env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false),
         gateway20_allowed: std::env::var("COSMOS_GATEWAY20_ALLOWED")
