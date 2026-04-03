@@ -66,11 +66,8 @@ impl EvaluationCollector {
 
     /// Takes all collected evaluations, leaving the collector empty.
     pub fn take(&self) -> Vec<FaultInjectionEvaluation> {
-        self.0
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .drain(..)
-            .collect()
+        let mut evaluations = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        std::mem::take(&mut *evaluations)
     }
 }
 

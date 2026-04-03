@@ -1249,6 +1249,12 @@ impl DiagnosticsContextBuilder {
         self.fault_injection_enabled = enabled;
     }
 
+    /// Returns whether fault injection is enabled for this operation's runtime.
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
+    }
+
     /// Returns the operation-level activity ID.
     // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
     // added in integration tests for operation pipeline retries/failover.
