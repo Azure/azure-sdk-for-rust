@@ -81,7 +81,7 @@ impl OnRequest for KeyVaultAuthorizer {
     ) -> azure_core::Result<()> {
         let scope = self.scope.read().await;
         if scope.is_empty() {
-            if !request.body().is_empty() {
+            if request.body().is_empty() != Some(true) {
                 let body = request.body_mut().take();
                 ctx.insert(body);
                 let headers = request.headers_mut();
@@ -155,7 +155,13 @@ impl OnChallenge for KeyVaultAuthorizer {
         }
         if let Some(saved_body) = context.value::<Body>() {
             request.set_body(saved_body);
-            request.insert_header(CONTENT_LENGTH, saved_body.len().to_string());
+            request.insert_header(
+                CONTENT_LENGTH,
+                saved_body
+                    .len()
+                    .ok_or_else(|| Error::with_message(ErrorKind::Io, "length unknown"))?
+                    .to_string(),
+            );
             request.insert_header(CONTENT_TYPE, "application/json");
         }
         let options = TokenRequestOptions {
@@ -259,7 +265,7 @@ mod tests {
 
                     let attempt = attempts.fetch_add(1, Ordering::SeqCst);
                     if attempt == 0 {
-                        assert!(req.body().is_empty(), "first request should have empty body");
+                        assert_eq!(req.body().is_empty(), Some(true), "first request should have empty body");
                         let mut headers = Headers::new();
                         headers.insert(WWW_AUTHENTICATE, r#"Bearer authorization="https://login.microsoftonline.com/tenant", resource="https://a.b""#);
                         Ok(AsyncRawResponse::from_bytes(

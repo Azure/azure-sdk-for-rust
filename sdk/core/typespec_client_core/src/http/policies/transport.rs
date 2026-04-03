@@ -41,7 +41,7 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
-        if request.body().is_empty()
+        if request.body().is_empty() == Some(true)
             && matches!(request.method(), Method::Patch | Method::Post | Method::Put)
         {
             request.add_mandatory_header(EMPTY_CONTENT_LENGTH);

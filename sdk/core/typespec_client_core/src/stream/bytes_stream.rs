@@ -87,8 +87,8 @@ impl SeekableStream for BytesStream {
         Ok(())
     }
 
-    fn len(&self) -> u64 {
-        self.bytes.len() as u64
+    fn len(&self) -> Option<u64> {
+        Some(self.bytes.len() as u64)
     }
 }
 

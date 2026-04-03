@@ -5,7 +5,7 @@ use azure_core::http::Body;
 use bytes::Bytes;
 
 use async_trait::async_trait;
-use azure_core::stream::SeekableStream;
+use azure_core::{error::ErrorKind, stream::SeekableStream};
 use futures::StreamExt;
 
 use crate::streams::partitioned_stream::PartitionedStream;
@@ -26,12 +26,20 @@ pub(crate) async fn upload(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    if content.len() <= partition_size.get() as u64 {
+    // cspell:ignore jaschrep
+    // TODO (jaschrep-msft) support oneshot given optional length
+    let Some(content_len) = content.len() else {
+        return Err(azure_core::Error::with_message(
+            ErrorKind::Io,
+            "length unknown",
+        ));
+    };
+    if content_len <= partition_size.get() as u64 {
         client.transfer_oneshot(content).await?;
         return Ok(());
     }
 
-    client.initialize(content.len()).await?;
+    client.initialize(content_len).await?;
 
     match content {
         Body::Bytes(bytes) => {
