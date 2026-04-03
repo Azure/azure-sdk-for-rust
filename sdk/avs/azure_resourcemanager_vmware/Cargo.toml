@@ -1,0 +1,29 @@
+[package]
+name = "azure_resourcemanager_vmware"
+version = "0.1.0"
+description = "Rust client library for Azure VMware Solution (Microsoft.AVS)"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_resourcemanager_vmware"
+keywords = ["sdk", "azure", "cloud", "vmware", "avs"]
+categories = ["api-bindings"]
+
+[features]
+default = ["azure_core/default"]
+
+[dependencies]
+async-trait = { workspace = true }
+azure_core = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+azure_core_test = { workspace = true, features = ["tracing"] }
+azure_identity.workspace = true
+
+[lints]
+workspace = true
