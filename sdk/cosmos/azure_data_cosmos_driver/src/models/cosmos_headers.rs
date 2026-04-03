@@ -48,10 +48,6 @@ pub(crate) mod fault_injection_header_names {
     /// Operation type header set on requests for fault injection rule matching.
     pub static FAULT_INJECTION_OPERATION: HeaderName =
         HeaderName::from_static("x-ms-fault-injection-operation");
-    /// Header carrying the evaluation request ID for correlating FaultClient evaluations
-    /// with the transport pipeline's diagnostics context.
-    pub static FAULT_INJECTION_REQUEST_ID: HeaderName =
-        HeaderName::from_static("x-ms-fault-injection-request-id");
 }
 
 /// Cosmos request headers for operation-level customization.
