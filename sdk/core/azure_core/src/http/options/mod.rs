@@ -5,8 +5,8 @@ mod instrumentation;
 mod user_agent;
 
 pub use instrumentation::*;
-use std::sync::Arc;
-use typespec_client_core::http::policies::Policy;
+use std::{borrow::Cow, collections::HashSet, sync::Arc};
+use typespec_client_core::http::{policies::Policy, DEFAULT_ALLOWED_QUERY_PARAMETERS};
 pub use typespec_client_core::http::{
     ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, LoggingOptions,
     PipelineOptions, RetryOptions, Transport,
@@ -51,6 +51,7 @@ pub struct ClientOptions {
 pub(crate) struct CoreClientOptions {
     pub(crate) user_agent: UserAgentOptions,
     pub(crate) instrumentation: InstrumentationOptions,
+    pub(crate) allowed_query_params: HashSet<Cow<'static, str>>,
 }
 
 impl ClientOptions {
@@ -60,6 +61,12 @@ impl ClientOptions {
     pub(in crate::http) fn deconstruct(
         self,
     ) -> (CoreClientOptions, typespec_client_core::http::ClientOptions) {
+        // Merge the default allowed query parameters with any additional ones from logging options.
+        // This merged set is shared by both the logging policy and the request instrumentation policy
+        // to sanitize query parameters in logs and traced URLs.
+        let mut allowed_query_params = (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone();
+        allowed_query_params.extend(self.logging.additional_allowed_query_params.iter().cloned());
+
         let options = typespec_client_core::http::ClientOptions {
             per_call_policies: self.per_call_policies,
             per_try_policies: self.per_try_policies,
@@ -72,6 +79,7 @@ impl ClientOptions {
             CoreClientOptions {
                 user_agent: self.user_agent,
                 instrumentation: self.instrumentation,
+                allowed_query_params,
             },
             options,
         )

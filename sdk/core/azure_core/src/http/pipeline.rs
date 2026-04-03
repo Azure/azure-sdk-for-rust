@@ -165,8 +165,10 @@ impl Pipeline {
 
         let mut per_try_policies = per_try_policies.clone();
         if let Some(ref tracer) = tracer {
-            let request_instrumentation_policy =
-                RequestInstrumentationPolicy::new(Some(tracer.clone()));
+            let request_instrumentation_policy = RequestInstrumentationPolicy::new(
+                Some(tracer.clone()),
+                core_client_options.allowed_query_params.clone(),
+            );
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
 
