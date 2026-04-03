@@ -17,6 +17,8 @@
 
 ### Other Changes
 
+- The `url.full` span attribute in distributed traces now has query parameter values sanitized. Only parameters in `LoggingOptions::additional_allowed_query_params` and the default allow list (e.g., `api-version`) retain their values; all others are replaced with `REDACTED`.
+
 ## 0.33.0 (2026-03-05)
 
 ### Features Added
