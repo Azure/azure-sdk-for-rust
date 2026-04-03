@@ -27,9 +27,13 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "si
 uuid.workspace = true
 console-subscriber = { version = "0.4", optional = true }
 
+# Optional: tokio runtime metrics (scheduling delay, poll times, worker utilization)
+tokio-metrics = { version = "0.4", optional = true }
+
 [features]
 default = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
+tokio-metrics = ["dep:tokio-metrics"]
 
 [lints]
 workspace = true

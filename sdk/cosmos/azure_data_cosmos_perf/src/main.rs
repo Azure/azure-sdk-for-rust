@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use crate::config::{AuthMethod, Config};
     use crate::operations::create_operations;
-    use crate::runner::RunConfig;
+    use crate::runner::{ConfigSnapshot, RunConfig};
     use crate::stats::Stats;
 
     let config = Config::parse();
@@ -222,6 +222,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|h| h.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string());
 
+    // Build config snapshot for Grafana dashboard visibility
+    let config_snapshot = ConfigSnapshot {
+        concurrency: config.concurrency as u64,
+        application_region: config.application_region.clone(),
+        excluded_regions: config.excluded_regions.join(", "),
+        tokio_threads: std::thread::available_parallelism()
+            .map(|n| n.get() as u64)
+            .unwrap_or(1),
+        ppcb_enabled: std::env::var("COSMOS_PPCB_ENABLED")
+            .map(|v| v == "true" || v == "1")
+            .unwrap_or(false),
+        gateway20_allowed: std::env::var("COSMOS_GATEWAY20_ALLOWED")
+            .map(|v| v == "true" || v == "1")
+            .unwrap_or(false),
+        pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
+            .map(|v| !v.is_empty())
+            .unwrap_or(false),
+        tokio_console_enabled: cfg!(feature = "tokio-console"),
+        tokio_metrics_enabled: cfg!(feature = "tokio-metrics"),
+        valgrind_tool: std::env::var("VALGRIND_TOOL").unwrap_or_default(),
+    };
+
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
     let stats = Arc::new(Stats::new(&op_names));
@@ -236,6 +258,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         workload_id: config.workload_id,
         commit_sha,
         hostname,
+        config_snapshot,
     })
     .await;
 
