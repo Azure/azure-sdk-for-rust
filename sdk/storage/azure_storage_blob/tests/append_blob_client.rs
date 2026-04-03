@@ -64,7 +64,7 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert_eq!(17, response.content_length.unwrap());
+    assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     block_1.extend(&block_2);
     assert_eq!(block_1, body_data);
@@ -92,7 +92,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert_eq!(17, response.content_length.unwrap());
+    assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"hello rusty world".to_vec(), body_data);
 
@@ -128,7 +128,7 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Check Read-Only
     let response = blob_client.download(None).await?;
     // Assert
-    assert_eq!(0, response.content_length.unwrap());
+    assert_eq!(0, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"".to_vec(), body_data);
 

@@ -108,7 +108,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    assert_eq!(9, response.content_length.unwrap());
+    assert_eq!(9, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(b"AAABBBCCC"), &body_data[..],);
     assert_eq!(
@@ -272,7 +272,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Assert
     assert_eq!(
         source_content.len(),
-        response.content_length.unwrap() as usize
+        response.properties.content_length.unwrap() as usize
     );
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(source_content), &body_data[..],);

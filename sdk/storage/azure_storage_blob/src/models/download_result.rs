@@ -4,7 +4,11 @@
 use azure_core::{
     base64,
     fmt::SafeDebug,
-    http::{headers::HeaderName, response::AsyncResponseBody, AsyncRawResponse, Etag},
+    http::{
+        headers::{HeaderName, Headers},
+        response::AsyncResponseBody,
+        AsyncRawResponse, Etag,
+    },
     time::parse_rfc7231,
 };
 use std::collections::HashMap;
@@ -20,119 +24,127 @@ pub struct BlobClientDownloadResult {
     /// The blob content stream.
     pub body: AsyncResponseBody,
 
-    /// The blob's ETag, from the initial partition response.
-    pub etag: Option<Etag>,
-
-    /// Date/time the blob was last modified.
-    pub last_modified: Option<OffsetDateTime>,
-
-    /// Date/time the blob was created.
-    pub created_on: Option<OffsetDateTime>,
-
-    /// Date/time the blob was last read or written.
-    pub last_accessed: Option<OffsetDateTime>,
-
-    /// Total size of the blob in bytes.
-    pub content_length: Option<u64>,
-
-    /// The content type of the blob.
-    pub content_type: Option<String>,
-
-    /// The cache control directive for the blob.
-    pub cache_control: Option<String>,
-
-    /// The content disposition of the blob.
-    pub content_disposition: Option<String>,
-
-    /// The content encoding of the blob.
-    pub content_encoding: Option<String>,
-
-    /// The content language of the blob.
-    pub content_language: Option<String>,
-
-    /// The content range returned, if a range was requested.
+    /// The content range returned, if a range was requested (`Content-Range` header).
     pub content_range: Option<String>,
 
-    /// MD5 hash of the response content (Content-MD5 header).
-    pub content_hash: Option<Vec<u8>>,
+    /// Parsed blob properties from the response headers.
+    pub properties: BlobDownloadProperties,
 
-    /// CRC-64 hash of the response content (x-ms-content-crc64 header).
+    /// All response headers.
+    pub headers: Headers,
+}
+
+/// Properties parsed from the response headers of a `BlobClient::download()` operation.
+#[derive(SafeDebug)]
+pub struct BlobDownloadProperties {
+    /// The blob's ETag (`ETag` header).
+    pub etag: Option<Etag>,
+
+    /// Date/time the blob was last modified (`Last-Modified` header).
+    pub last_modified: Option<OffsetDateTime>,
+
+    /// Date/time the blob was created (`x-ms-creation-time` header).
+    pub created_on: Option<OffsetDateTime>,
+
+    /// Date/time the blob was last read or written (`x-ms-last-access-time` header).
+    pub last_accessed: Option<OffsetDateTime>,
+
+    /// Total size of the blob in bytes (`Content-Length` header).
+    pub content_length: Option<u64>,
+
+    /// The content type of the blob (`Content-Type` header).
+    pub content_type: Option<String>,
+
+    /// The cache control directive for the blob (`Cache-Control` header).
+    pub cache_control: Option<String>,
+
+    /// The content disposition of the blob (`Content-Disposition` header).
+    pub content_disposition: Option<String>,
+
+    /// The content encoding of the blob (`Content-Encoding` header).
+    pub content_encoding: Option<String>,
+
+    /// The content language of the blob (`Content-Language` header).
+    pub content_language: Option<String>,
+
+    /// MD5 hash of the response content (`Content-MD5` header).
+    ///
+    /// For full-blob reads this covers the entire blob. For ranged reads it covers only the
+    /// returned range. To get the MD5 of the full blob content for a ranged read, see
+    /// [`blob_content_md5`](Self::blob_content_md5).
+    pub content_md5: Option<Vec<u8>>,
+
+    /// CRC-64 hash of the response content (`x-ms-content-crc64` header).
     pub content_crc64: Option<Vec<u8>>,
 
-    /// The stored MD5 hash of the full blob content (x-ms-blob-content-md5 header).
-    /// Only returned for ranged reads; may differ from `content_hash`.
-    pub blob_content_hash: Option<Vec<u8>>,
+    /// MD5 hash of the full blob content (`x-ms-blob-content-md5` header).
+    ///
+    /// Only returned for ranged reads. This is the hash of the complete blob, not just the
+    /// requested range; contrast with [`content_md5`](Self::content_md5).
+    pub blob_content_md5: Option<Vec<u8>>,
 
-    /// The type of blob (BlockBlob, PageBlob, AppendBlob).
+    /// The type of blob (`x-ms-blob-type` header): BlockBlob, PageBlob, or AppendBlob.
     pub blob_type: Option<BlobType>,
 
-    /// Current sequence number for a page blob.
+    /// Current sequence number for a page blob (`x-ms-blob-sequence-number` header).
     pub blob_sequence_number: Option<i64>,
 
-    /// Number of committed blocks, returned only for append blobs.
+    /// Number of committed blocks, returned only for append blobs
+    /// (`x-ms-blob-committed-block-count` header).
     pub blob_committed_block_count: Option<i32>,
 
-    /// Whether this append blob has been sealed.
+    /// Whether this append blob has been sealed (`x-ms-blob-sealed` header).
     pub is_sealed: Option<bool>,
 
-    /// User-defined metadata on the blob.
+    /// User-defined metadata on the blob (all `x-ms-meta-*` headers).
     pub metadata: HashMap<String, String>,
 
-    /// Whether the blob is server-side encrypted.
-    pub is_server_encrypted: Option<bool>,
-
-    /// Encryption scope used, if any.
-    pub encryption_scope: Option<String>,
-
-    /// SHA-256 hash of the customer-provided encryption key, if any.
-    pub encryption_key_sha256: Option<String>,
-
-    /// Version ID of the blob, if versioning is enabled.
+    /// Version ID of the blob, if versioning is enabled (`x-ms-version-id` header).
     pub version_id: Option<String>,
 
-    /// State of the blob's lease.
+    /// State of the blob's lease (`x-ms-lease-state` header).
     pub lease_state: Option<LeaseState>,
 
-    /// Status of the blob's lease.
+    /// Status of the blob's lease (`x-ms-lease-status` header).
     pub lease_status: Option<LeaseStatus>,
 
-    /// Duration type of the lease.
+    /// Duration type of the lease (`x-ms-lease-duration` header).
     pub lease_duration: Option<LeaseDuration>,
 
-    /// Whether the blob has a legal hold.
+    /// Whether the blob has a legal hold (`x-ms-legal-hold` header).
     pub legal_hold: Option<bool>,
 
-    /// The immutability policy mode.
+    /// The immutability policy mode (`x-ms-immutability-policy-mode` header).
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
 
-    /// The immutability policy expiry time.
+    /// The immutability policy expiry time (`x-ms-immutability-policy-until-date` header).
     pub immutability_policy_expires_on: Option<OffsetDateTime>,
 
-    /// Completion time of the last copy operation.
+    /// Completion time of the last copy operation (`x-ms-copy-completion-time` header).
     pub copy_completed_on: Option<OffsetDateTime>,
 
-    /// String identifier for the last copy operation.
+    /// String identifier for the last copy operation (`x-ms-copy-id` header).
     pub copy_id: Option<String>,
 
-    /// Progress of an in-progress copy operation.
+    /// Progress of an in-progress copy operation (`x-ms-copy-progress` header).
     pub copy_progress: Option<String>,
 
-    /// URL of the source blob for the last copy operation.
+    /// URL of the source blob for the last copy operation (`x-ms-copy-source` header).
     pub copy_source: Option<String>,
 
-    /// State of the copy operation.
+    /// State of the copy operation (`x-ms-copy-status` header).
     pub copy_status: Option<CopyStatus>,
 
-    /// Description of a failed or aborted copy operation.
+    /// Description of a failed or aborted copy operation (`x-ms-copy-status-description` header).
     pub copy_status_description: Option<String>,
 
-    /// Destination policy ID for object replication.
+    /// Destination policy ID for object replication (`x-ms-or-policy-id` header).
     pub object_replication_policy_id: Option<String>,
 
-    /// Object replication rules and statuses.
+    /// Object replication rules and their statuses (all `x-ms-or-*` headers).
     pub object_replication_rules: HashMap<String, String>,
 
-    /// Number of tags on the blob.
+    /// Number of tags on the blob (`x-ms-tag-count` header).
     pub tag_count: Option<i64>,
 }
 
@@ -140,10 +152,22 @@ impl BlobClientDownloadResult {
     /// Constructs a `BlobClientDownloadResult` by parsing headers from the initial response.
     pub(crate) fn from_headers(response: AsyncRawResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let (metadata, object_replication_rules) =
-            crate::parsers::parse_metadata_and_replication_headers(&headers);
+        let content_range = headers.get_optional_as(&HeaderName::from_static("content-range"))?;
+        let properties = BlobDownloadProperties::from_headers(&headers)?;
         Ok(Self {
             body,
+            content_range,
+            properties,
+            headers,
+        })
+    }
+}
+
+impl BlobDownloadProperties {
+    fn from_headers(headers: &Headers) -> azure_core::Result<Self> {
+        let (metadata, object_replication_rules) =
+            crate::parsers::parse_metadata_and_replication_headers(headers);
+        Ok(Self {
             etag: headers.get_optional_as(&HeaderName::from_static("etag"))?,
             last_modified: headers
                 .get_optional_with(&HeaderName::from_static("last-modified"), |h| {
@@ -166,8 +190,7 @@ impl BlobClientDownloadResult {
                 .get_optional_as(&HeaderName::from_static("content-encoding"))?,
             content_language: headers
                 .get_optional_as(&HeaderName::from_static("content-language"))?,
-            content_range: headers.get_optional_as(&HeaderName::from_static("content-range"))?,
-            content_hash: headers
+            content_md5: headers
                 .get_optional_with(&HeaderName::from_static("content-md5"), |h| {
                     base64::decode(h.as_str())
                 })?,
@@ -175,7 +198,7 @@ impl BlobClientDownloadResult {
                 .get_optional_with(&HeaderName::from_static("x-ms-content-crc64"), |h| {
                     base64::decode(h.as_str())
                 })?,
-            blob_content_hash: headers
+            blob_content_md5: headers
                 .get_optional_with(&HeaderName::from_static("x-ms-blob-content-md5"), |h| {
                     base64::decode(h.as_str())
                 })?,
@@ -185,12 +208,6 @@ impl BlobClientDownloadResult {
             blob_committed_block_count: headers
                 .get_optional_as(&HeaderName::from_static("x-ms-blob-committed-block-count"))?,
             is_sealed: headers.get_optional_as(&HeaderName::from_static("x-ms-blob-sealed"))?,
-            is_server_encrypted: headers
-                .get_optional_as(&HeaderName::from_static("x-ms-server-encrypted"))?,
-            encryption_scope: headers
-                .get_optional_as(&HeaderName::from_static("x-ms-encryption-scope"))?,
-            encryption_key_sha256: headers
-                .get_optional_as(&HeaderName::from_static("x-ms-encryption-key-sha256"))?,
             version_id: headers.get_optional_as(&HeaderName::from_static("x-ms-version-id"))?,
             lease_state: headers.get_optional_as(&HeaderName::from_static("x-ms-lease-state"))?,
             lease_status: headers.get_optional_as(&HeaderName::from_static("x-ms-lease-status"))?,

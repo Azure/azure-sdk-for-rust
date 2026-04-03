@@ -50,7 +50,10 @@ async fn stream_blob_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert_eq!(data.len() as u64, response.content_length.unwrap());
+    assert_eq!(
+        data.len() as u64,
+        response.properties.content_length.unwrap()
+    );
     let body_data = response.body.collect().await?;
     assert_eq!(data.to_vec(), body_data);
 
@@ -103,7 +106,10 @@ async fn stream_stage_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let response = blob_client.download(None).await?;
     let expected_len = block_1_data.len() + block_2_data.len();
-    assert_eq!(expected_len as u64, response.content_length.unwrap());
+    assert_eq!(
+        expected_len as u64,
+        response.properties.content_length.unwrap()
+    );
     let mut expected = block_1_data.to_vec();
     expected.extend_from_slice(block_2_data);
     let body_data = response.body.collect().await?;
@@ -145,7 +151,10 @@ async fn stream_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let response = blob_client.download(None).await?;
     let expected_len = block_1.len() + block_2.len();
-    assert_eq!(expected_len as u64, response.content_length.unwrap());
+    assert_eq!(
+        expected_len as u64,
+        response.properties.content_length.unwrap()
+    );
     let mut expected = block_1.to_vec();
     expected.extend_from_slice(block_2);
     let body_data = response.body.collect().await?;
@@ -180,7 +189,7 @@ async fn stream_upload_pages(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert_eq!(512, response.content_length.unwrap());
+    assert_eq!(512, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(data, body_data);
 

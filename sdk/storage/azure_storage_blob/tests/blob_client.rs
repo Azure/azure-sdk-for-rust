@@ -137,7 +137,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    assert_eq!(17, response.content_length.unwrap());
+    assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(data), body_data);
 
@@ -163,7 +163,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
     let response = blob_client.download(None).await?;
     // Assert
-    assert_eq!(29, response.content_length.unwrap());
+    assert_eq!(29, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(new_data), body_data);
 
@@ -238,7 +238,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    assert_eq!(17, response.content_length.unwrap());
+    assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"hello rusty world".as_ref(), &body_data[..]);
 
@@ -448,7 +448,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     let response = blob_client.download(Some(download_options)).await?;
-    assert_eq!(10, response.content_length.unwrap());
+    assert_eq!(10, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(data.as_ref(), &body_data[..]);
 
@@ -1042,13 +1042,25 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
 
     // Assert Content Headers Also Present on Download Response
     let response = blob_client.download(None).await?;
-    assert_eq!(Some("no-cache".to_string()), response.cache_control);
-    assert_eq!(Some("inline".to_string()), response.content_disposition);
-    assert_eq!(Some("identity".to_string()), response.content_encoding);
-    assert_eq!(Some("en-US".to_string()), response.content_language);
+    assert_eq!(
+        Some("no-cache".to_string()),
+        response.properties.cache_control
+    );
+    assert_eq!(
+        Some("inline".to_string()),
+        response.properties.content_disposition
+    );
+    assert_eq!(
+        Some("identity".to_string()),
+        response.properties.content_encoding
+    );
+    assert_eq!(
+        Some("en-US".to_string()),
+        response.properties.content_language
+    );
     assert_eq!(
         Some("application/octet-stream".to_string()),
-        response.content_type
+        response.properties.content_type
     );
 
     // Overwrite with Different Content Headers — new headers replace old ones
