@@ -24,7 +24,7 @@ use azure_core::{
 use client::Client;
 use serde::Serializer;
 use std::process::ExitStatus;
-use std::{fmt, str::FromStr, sync::Arc};
+use std::{env, fmt, str::FromStr, sync::Arc};
 use tokio::{io::Lines, process::Child};
 
 const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
@@ -32,6 +32,7 @@ const RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
 const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode");
 const RECORDING_UPSTREAM_BASE_URI: HeaderName =
     HeaderName::from_static("x-recording-upstream-base-uri");
+const TEST_PROXY_URL_ENV: &str = "TEST_PROXY_URL";
 
 pub use bootstrap::start;
 
@@ -182,7 +183,12 @@ impl Proxy {
 impl Proxy {
     /// Gets a proxy representing an existing test-proxy process.
     pub fn existing() -> Result<Self> {
-        let endpoint: Url = "http://localhost:5000".parse()?;
+        let endpoint: Url = env::var(TEST_PROXY_URL_ENV)
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .as_deref()
+            .unwrap_or("http://localhost:5000")
+            .parse()?;
         Ok(Self {
             command: None,
             endpoint: Some(endpoint.clone()),
