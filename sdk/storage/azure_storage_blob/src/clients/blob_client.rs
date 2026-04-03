@@ -112,12 +112,16 @@ impl BlobClient {
         })
     }
 
-    /// The managed download operation retrieves the content of an existing blob.
+    /// Downloads a blob directly into a caller-provided buffer.
+    ///
+    /// Unlike [`BlobClient::download`], which allocates and returns the blob data, this method
+    /// writes the content directly into `buffer`. The blob is fetched in parallel range requests and assembled in-place.
     ///
     /// # Arguments
     ///
+    /// * `buffer` - The buffer to write the blob content into. Must be large enough to hold the requested range or the entire blob.
     /// * `options` - Optional parameters for the request.
-    pub async fn managed_download_into(
+    pub async fn download_into(
         &self,
         buffer: &mut [u8],
         options: Option<BlobClientDownloadOptions<'_>>,
@@ -127,7 +131,7 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        // construct exhaustively to ensure we catch new options when added
+        // Construct exhaustively to catch new options.
         let get_range_options = BlobClientDownloadInternalOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key,
@@ -266,7 +270,7 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        // construct exhaustively to ensure we catch new options when added
+        // Construct exhaustively to catch new options.
         let get_range_options = BlobClientDownloadInternalOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key,

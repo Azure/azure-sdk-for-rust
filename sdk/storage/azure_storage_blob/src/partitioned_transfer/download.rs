@@ -874,15 +874,15 @@ mod tests {
         for args in multi_range_args(DATA_LEN) {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let downloaded_data = download(
+            let mut body = download(
                 args.download_range.map(|r| r.0..r.1),
                 args.parallel.try_into().unwrap(),
                 args.partition_len.try_into().unwrap(),
                 mock.clone(),
             )
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+            let downloaded_data = body.buffer_all().await?;
 
             assert_eq!(
                 downloaded_data.len(),

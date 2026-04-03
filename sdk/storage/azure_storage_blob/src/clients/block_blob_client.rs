@@ -135,7 +135,7 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
-        // construct exhaustively to ensure we catch new options when added
+        // Construct exhaustively to catch new options.
         let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),

@@ -994,7 +994,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn test_managed_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
@@ -1025,9 +1025,9 @@ async fn test_managed_download_into(ctx: TestContext) -> Result<(), Box<dyn Erro
         let _scope = count_policy.check_request_scope();
         let mut destination = vec![0u8; data_len];
         let written = blob_client
-            .managed_download_into(
+            .download_into(
                 &mut destination,
-                Some(BlobClientManagedDownloadOptions {
+                Some(BlobClientDownloadOptions {
                     partition_size: Some(NonZero::new(partition_len).unwrap()),
                     parallel: Some(NonZero::new(parallel).unwrap()),
                     range: download_range.map(|r| r.0..r.1),
@@ -1096,7 +1096,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
 }
 
 #[recorded::test]
-async fn test_managed_download_into_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_download_into_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
@@ -1116,7 +1116,7 @@ async fn test_managed_download_into_empty(ctx: TestContext) -> Result<(), Box<dy
 
     request_count.store(0, Ordering::Relaxed);
     let _scope = count_policy.check_request_scope();
-    let written = blob_client.managed_download_into(&mut [], None).await?;
+    let written = blob_client.download_into(&mut [], None).await?;
 
     assert_eq!(written, 0);
     // 1 op with a range, 1 op without after the first one fails
