@@ -4,12 +4,14 @@
 
 ### Features Added
 
-- Derived `Clone` on `ErrorResponse`, `ErrorDetail`, and `InnerError`.
+- Added `From<BytesStream> for Body`.
+- Derived `Clone` and `Serialize` on `ErrorResponse`, `ErrorDetail`, and `InnerError`.
 
 ### Breaking Changes
 
 - `SeekableStream::len()` and `Body::len()` now return `u64` instead of `usize` to align with `std::fs::Metadata::len()` and support large file sizes.
 - Added `tokio` feature to `default` features.
+- Changed `async_runtime::spawn`/`SpawnedTask` to return a trait object that supports `abort()`.
 
 ### Bugs Fixed
 

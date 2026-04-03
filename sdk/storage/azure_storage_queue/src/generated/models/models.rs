@@ -42,6 +42,7 @@ pub struct AccessPolicy {
 /// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
 /// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "CorsRule")]
 pub struct CorsRule {
     /// The allowed headers.
     #[serde(rename = "AllowedHeaders", skip_serializing_if = "Option::is_none")]
@@ -217,6 +218,7 @@ pub struct Metrics {
 /// a Queue
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessage")]
 pub struct PeekedMessage {
     /// The number of times the message has been dequeued.
     #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
@@ -325,6 +327,7 @@ pub struct QueueServiceStats {
 /// a Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessage")]
 pub struct ReceivedMessage {
     /// The number of times the message has been dequeued.
     #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
@@ -397,6 +400,7 @@ pub struct RetentionPolicy {
 /// Queue
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessage")]
 pub struct SentMessageInternal {
     /// The time that the Message will expire and be automatically deleted.
     #[serde(

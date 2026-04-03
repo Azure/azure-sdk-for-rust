@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
+
 ### Breaking Changes
 
 - Revised `download()` on `BlobClient` with the following breaking changes:

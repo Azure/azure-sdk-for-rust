@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::ops::Range;
+use std::{future::Future, mem, ops::Range};
 
 use azure_core::{error::ErrorKind, Error};
+use futures::future;
 
 /// A drain which accepts elements out-of-order with a specified position and
 /// releases them in-order.
@@ -71,5 +72,84 @@ impl<T> SequentialBoundedDrain<T> {
             return Some(item);
         }
         None
+    }
+}
+
+/// An unbounded drain for Futures that can be handled in any order.
+pub(crate) struct UnorderedFuturesDrain<F> {
+    futures: Vec<F>,
+    total_accepted: usize,
+    total_completed: usize,
+}
+
+impl<F: Future + Unpin> UnorderedFuturesDrain<F> {
+    // Constructs a new drain.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    // Constructs a new drain with a given starting capacity.
+    // The drain will still automatically resize its capacity as needed.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            futures: Vec::with_capacity(capacity),
+            ..Self::default()
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.futures.len()
+    }
+
+    pub fn total_accepted(&self) -> usize {
+        self.total_accepted
+    }
+
+    pub fn total_completed(&self) -> usize {
+        self.total_completed
+    }
+
+    pub fn push(&mut self, future: F) {
+        self.futures.push(future);
+        self.total_accepted += 1;
+    }
+
+    pub async fn next(&mut self) -> Option<F::Output> {
+        if self.futures.is_empty() {
+            return None;
+        }
+        if self.futures.len() == 1 {
+            return match self.futures.pop() {
+                Some(fut) => {
+                    let output = fut.await;
+                    self.total_completed += 1;
+                    Some(output)
+                }
+                None => None,
+            };
+        }
+        let output;
+        (output, _, self.futures) = future::select_all(mem::take(&mut self.futures)).await;
+        self.total_completed += 1;
+        Some(output)
+    }
+
+    pub async fn join_all(&mut self) -> Vec<F::Output> {
+        if self.futures.is_empty() {
+            return Default::default();
+        }
+        let futures = future::join_all(mem::take(&mut self.futures)).await;
+        self.total_completed += futures.len();
+        futures
+    }
+}
+
+impl<F> Default for UnorderedFuturesDrain<F> {
+    fn default() -> Self {
+        Self {
+            futures: Vec::new(),
+            total_accepted: 0,
+            total_completed: 0,
+        }
     }
 }
