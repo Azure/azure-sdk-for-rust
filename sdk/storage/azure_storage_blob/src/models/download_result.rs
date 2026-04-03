@@ -80,7 +80,7 @@ pub struct BlobDownloadProperties {
     /// MD5 hash of the full blob content (`x-ms-blob-content-md5` header).
     ///
     /// Only returned for ranged reads. This is the hash of the complete blob, not just the
-    /// requested range; contrast with [`content_md5`](Self::content_md5).
+    /// requested range.
     pub blob_content_md5: Option<Vec<u8>>,
 
     /// The type of blob (`x-ms-blob-type` header): BlockBlob, PageBlob, or AppendBlob.
