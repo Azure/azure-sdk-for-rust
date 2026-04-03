@@ -97,6 +97,57 @@ impl PartitionKeyRangeCache {
             .map(|r| r.id.clone())
     }
 
+    /// Resolves partition key range IDs for a given container and partition key,
+    /// supporting both full and prefix (hierarchical) partition keys.
+    ///
+    /// For full partition keys (component count == definition path count), returns
+    /// a single range ID (same as [`resolve_partition_key_range_id`](Self::resolve_partition_key_range_id)).
+    ///
+    /// For prefix partition keys on MultiHash containers (fewer components than
+    /// the definition), computes the prefix EPK range and returns all overlapping
+    /// partition key range IDs, enabling fan-out queries across multiple physical
+    /// partitions.
+    ///
+    /// Returns `None` if the partition key is empty or the routing map cannot be resolved.
+    pub async fn resolve_partition_key_range_ids<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        partition_key: &PartitionKey,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> Option<Vec<String>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+    {
+        if partition_key.is_empty() {
+            return None;
+        }
+
+        let pk_def = container.partition_key_definition();
+        let epk_range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def);
+
+        if epk_range.start == epk_range.end {
+            // Full key — point lookup
+            let routing_map = self
+                .try_lookup(container, force_refresh, fetch_pk_ranges)
+                .await?;
+            routing_map
+                .get_range_by_effective_partition_key(&epk_range.start)
+                .map(|r| vec![r.id.clone()])
+        } else {
+            // Prefix key — overlapping range lookup
+            self.resolve_overlapping_ranges(
+                container,
+                &epk_range.start..&epk_range.end,
+                force_refresh,
+                fetch_pk_ranges,
+            )
+            .await
+            .map(|ranges| ranges.into_iter().map(|r| r.id).collect())
+        }
+    }
+
     /// Resolves all partition key ranges that overlap with the given EPK range.
     ///
     /// Returns `None` if the routing map cannot be resolved.
