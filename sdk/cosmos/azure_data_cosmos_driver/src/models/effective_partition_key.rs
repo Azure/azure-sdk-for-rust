@@ -9,7 +9,7 @@
 use crate::models::{
     murmur_hash::{murmurhash3_128, murmurhash3_32},
     partition_key::write_number_v1_binary,
-    PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
+    PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -62,10 +62,74 @@ impl EffectivePartitionKey {
                 PartitionKeyVersion::V1 => effective_partition_key_hash_v1(pk_values),
                 PartitionKeyVersion::V2 => effective_partition_key_hash_v2(pk_values),
             },
+            PartitionKeyKind::MultiHash => {
+                // MultiHash is only supported with V2. All MultiHash container definitions
+                // are created with version=2; V1 MultiHash does not exist in Cosmos DB.
+                debug_assert!(
+                    version == PartitionKeyVersion::V2,
+                    "MultiHash requires V2, got {:?}",
+                    version
+                );
+                effective_partition_key_multi_hash_v2(pk_values)
+            }
             // Range partitioning is legacy; fall through to V2 as a reasonable default.
             _ => effective_partition_key_hash_v2(pk_values),
         };
         Self::from(hex)
+    }
+
+    /// Computes an EPK range for the given partition key values and definition.
+    ///
+    /// For full partition keys (component count == definition path count), returns a
+    /// point range where start == end. Note: in Rust a `Range` with `start == end` is
+    /// technically empty; callers should check `start == end` to detect the point case
+    /// rather than iterating the range.
+    ///
+    /// For prefix partition keys on MultiHash containers (fewer components than the
+    /// definition), returns a range `[prefix_epk, prefix_epk + "FF")` covering all
+    /// possible completions of the prefix across multiple physical partitions.
+    ///
+    /// For non-MultiHash containers, always returns a point range regardless of
+    /// component count, since all components are hashed together.
+    pub fn compute_range(
+        pk_values: &[PartitionKeyValue],
+        pk_definition: &PartitionKeyDefinition,
+    ) -> std::ops::Range<Self> {
+        debug_assert!(
+            !pk_values.is_empty(),
+            "compute_range called with empty pk_values"
+        );
+        debug_assert!(
+            pk_values.len() <= pk_definition.paths().len(),
+            "More partition key components ({}) than definition paths ({})",
+            pk_values.len(),
+            pk_definition.paths().len()
+        );
+
+        let kind = pk_definition.kind();
+        let version = pk_definition.version();
+        let epk = Self::compute(pk_values, kind, version);
+
+        let is_prefix =
+            kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
+
+        debug_assert!(
+            kind == PartitionKeyKind::MultiHash || pk_values.len() == pk_definition.paths().len(),
+            "Non-MultiHash containers require exactly as many components ({}) as paths ({})",
+            pk_values.len(),
+            pk_definition.paths().len()
+        );
+
+        if is_prefix {
+            // "FF" is safe as an upper-bound sentinel because hash_v2_to_epk masks
+            // hash_bytes[0] with 0x3F, so every EPK component's first hex digit
+            // is in [0-3]. "FF" is lexicographically greater than any valid suffix.
+            let max_str = format!("{}FF", epk.as_str());
+            let max = Self::from(max_str);
+            epk..max
+        } else {
+            epk.clone()..epk
+        }
     }
 }
 
@@ -111,7 +175,30 @@ fn effective_partition_key_hash_v2(pk_values: &[PartitionKeyValue]) -> String {
     for v in pk_values {
         v.write_for_hashing_v2(&mut buf);
     }
-    let hash_128 = murmurhash3_128(&buf, 0);
+    hash_v2_to_epk(&buf)
+}
+
+/// MultiHash V2: per-component MurmurHash3-128, concatenated.
+///
+/// Each component is independently encoded, hashed, and hex-encoded.
+/// The results are concatenated to produce an EPK of N×32 hex characters
+/// where N is the number of partition key components.
+fn effective_partition_key_multi_hash_v2(pk_values: &[PartitionKeyValue]) -> String {
+    let mut result = String::with_capacity(pk_values.len() * 32);
+    let mut buf = Vec::new();
+    for v in pk_values {
+        buf.clear();
+        v.write_for_hashing_v2(&mut buf);
+        result.push_str(&hash_v2_to_epk(&buf));
+    }
+    result
+}
+
+/// Shared V2 hash-to-EPK conversion: MurmurHash3-128, reverse bytes, mask top 2 bits, hex-encode.
+///
+/// Returns a 32-character uppercase hexadecimal string.
+fn hash_v2_to_epk(data: &[u8]) -> String {
+    let hash_128 = murmurhash3_128(data, 0);
     let mut hash_bytes = hash_128.to_le_bytes();
     hash_bytes.reverse();
     hash_bytes[0] &= 0x3F;
@@ -365,9 +452,187 @@ mod tests {
             );
         }
     }
-}
 
-/// Cross-SDK baseline tests using the same XML datasets as the Go SDK.
+    /// A single-component MultiHash EPK should produce the same 32-char hex
+    /// as V2 single-hash, since both hash one component identically.
+    #[test]
+    fn multi_hash_single_component_matches_v2() {
+        let pk = vec![PartitionKeyValue::from("redmond".to_string())];
+        let multi = EffectivePartitionKey::compute(
+            &pk,
+            PartitionKeyKind::MultiHash,
+            PartitionKeyVersion::V2,
+        );
+        let single =
+            EffectivePartitionKey::compute(&pk, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
+        assert_eq!(multi.as_str(), single.as_str());
+        assert_eq!(multi.as_str().len(), 32);
+    }
+
+    /// Two-component MultiHash EPK should be 64 hex chars (2 × 32).
+    /// Each component is hashed independently, so the result is NOT the same
+    /// as a single V2 hash of both components concatenated.
+    #[test]
+    fn multi_hash_two_components() {
+        let pk = vec![
+            PartitionKeyValue::from("redmond".to_string()),
+            PartitionKeyValue::from(5.0f64),
+        ];
+        let multi = EffectivePartitionKey::compute(
+            &pk,
+            PartitionKeyKind::MultiHash,
+            PartitionKeyVersion::V2,
+        );
+        assert_eq!(multi.as_str().len(), 64);
+
+        // Expected values from the effective_partition_key_hash_v2 test cases above,
+        // verified against cross-SDK baselines (.NET, Go, Java).
+        // First 32 chars should match the single-component hash of "redmond"
+        assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
+        // Second 32 chars should match the single-component hash of 5.0
+        assert_eq!(&multi.as_str()[32..], "19C08621B135968252FB34B4CF66F811");
+    }
+
+    /// Three-component MultiHash EPK should be 96 hex chars (3 × 32).
+    #[test]
+    fn multi_hash_three_components() {
+        let pk = vec![
+            PartitionKeyValue::from("redmond".to_string()),
+            PartitionKeyValue::from(true),
+            PartitionKeyValue::from(None::<String>),
+        ];
+        let multi = EffectivePartitionKey::compute(
+            &pk,
+            PartitionKeyKind::MultiHash,
+            PartitionKeyVersion::V2,
+        );
+        assert_eq!(multi.as_str().len(), 96);
+
+        // Expected values from the effective_partition_key_hash_v2 test cases above,
+        // verified against cross-SDK baselines (.NET, Go, Java).
+        assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
+        assert_eq!(&multi.as_str()[32..64], "0E711127C5B5A8E4726AC6DD306A3E59");
+        assert_eq!(&multi.as_str()[64..], "378867E4430E67857ACE5C908374FE16");
+    }
+
+    /// MultiHash with an Undefined component (used for partial HPK).
+    #[test]
+    fn multi_hash_with_undefined() {
+        let pk = vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::undefined(),
+        ];
+        let multi = EffectivePartitionKey::compute(
+            &pk,
+            PartitionKeyKind::MultiHash,
+            PartitionKeyVersion::V2,
+        );
+        assert_eq!(multi.as_str().len(), 64);
+
+        // First segment: hash of "tenant1"
+        let single_tenant = EffectivePartitionKey::compute(
+            &[PartitionKeyValue::from("tenant1".to_string())],
+            PartitionKeyKind::Hash,
+            PartitionKeyVersion::V2,
+        );
+        assert_eq!(&multi.as_str()[..32], single_tenant.as_str());
+
+        // Second segment: hash of Undefined (0x00 byte)
+        let single_undef = EffectivePartitionKey::compute(
+            &[PartitionKeyValue::undefined()],
+            PartitionKeyKind::Hash,
+            PartitionKeyVersion::V2,
+        );
+        assert_eq!(&multi.as_str()[32..], single_undef.as_str());
+    }
+
+    /// MultiHash should NOT produce the same result as single-hash V2 for
+    /// multi-component keys, since single-hash concatenates then hashes once.
+    #[test]
+    fn multi_hash_differs_from_single_hash() {
+        let pk = vec![
+            PartitionKeyValue::from(5.0f64),
+            PartitionKeyValue::from("redmond".to_string()),
+            PartitionKeyValue::from(true),
+            PartitionKeyValue::from(None::<String>),
+        ];
+        let multi = EffectivePartitionKey::compute(
+            &pk,
+            PartitionKeyKind::MultiHash,
+            PartitionKeyVersion::V2,
+        );
+        let single =
+            EffectivePartitionKey::compute(&pk, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
+        // Single hash produces 32 chars, multi hash produces 128 chars (4 × 32)
+        assert_eq!(single.as_str().len(), 32);
+        assert_eq!(multi.as_str().len(), 128);
+        assert_ne!(multi.as_str(), single.as_str());
+    }
+
+    /// compute_range returns a point range for a full MultiHash key.
+    #[test]
+    fn compute_range_full_key_returns_point() {
+        let pk = vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::from("user1".to_string()),
+            PartitionKeyValue::from("session1".to_string()),
+        ];
+        let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+
+        assert_eq!(
+            range.start, range.end,
+            "Full key should produce a point range"
+        );
+        assert_eq!(range.start.as_str().len(), 96);
+    }
+
+    /// compute_range returns an EPK range for a prefix (2 of 3 components).
+    #[test]
+    fn compute_range_prefix_two_of_three() {
+        let pk = vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::from("user1".to_string()),
+        ];
+        let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+
+        assert_ne!(range.start, range.end, "Prefix key should produce a range");
+        // min EPK = hash(tenant1) + hash(user1) = 64 chars
+        assert_eq!(range.start.as_str().len(), 64);
+        // max EPK = min + "FF" = 66 chars
+        assert_eq!(range.end.as_str().len(), 66);
+        assert!(range.end.as_str().ends_with("FF"));
+        assert!(range.end.as_str().starts_with(range.start.as_str()));
+    }
+
+    /// compute_range returns an EPK range for a prefix (1 of 3 components).
+    #[test]
+    fn compute_range_prefix_one_of_three() {
+        let pk = vec![PartitionKeyValue::from("tenant1".to_string())];
+        let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+
+        assert_ne!(range.start, range.end);
+        assert_eq!(range.start.as_str().len(), 32);
+        assert_eq!(range.end.as_str().len(), 34);
+        assert!(range.end.as_str().ends_with("FF"));
+    }
+
+    /// compute_range always returns a point for single-hash (non-MultiHash) keys,
+    /// even if fewer components than paths are provided.
+    #[test]
+    fn compute_range_single_hash_always_point() {
+        let pk = vec![PartitionKeyValue::from("tenant1".to_string())];
+        let pk_def = PartitionKeyDefinition::from("/tenantId");
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+
+        assert_eq!(
+            range.start, range.end,
+            "Single-hash should always be a point"
+        );
+    }
+}
 ///
 /// These tests operate at two levels:
 ///
