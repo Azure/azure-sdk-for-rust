@@ -66,7 +66,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Some(guard)
                     }
                     Err(e) => {
-                        eprintln!("Warning: Pyroscope failed to start, continuing without profiling: {e}");
+                        eprintln!(
+                            "Warning: Pyroscope failed to start, continuing without profiling: {e}"
+                        );
                         None
                     }
                 }
