@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Initialize Pyroscope CPU profiling when the feature is enabled and server URL is set.
-    #[cfg(feature = "pyroscope")]
+    #[cfg(all(feature = "pyroscope", target_os = "linux"))]
     let _pyroscope_guard = {
         if let Ok(server_url) = std::env::var("PYROSCOPE_SERVER_URL") {
             if !server_url.is_empty() {
