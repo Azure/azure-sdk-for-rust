@@ -1,21 +1,14 @@
-use pin_project::pin_project;
-use std::{mem, num::NonZero, pin::Pin, slice, task::Poll};
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-use azure_core::{error::ErrorKind, stream::SeekableStream, Error};
-use bytes::{Bytes, BytesMut};
-use futures::{ready, stream::FusedStream, AsyncRead, Stream};
+use async_stream::try_stream;
+use std::{cmp::min, mem, num::NonZero, slice};
 
-type AzureResult<T> = azure_core::Result<T>;
+use azure_core::stream::SeekableStream;
+use bytes::{BufMut, Bytes, BytesMut};
+use futures::{AsyncReadExt, Stream};
 
-#[pin_project]
-pub(crate) struct PartitionedStream {
-    #[pin]
-    inner: Box<dyn SeekableStream>,
-    buf: BytesMut,
-    partition_len: usize,
-    total_read: usize,
-    inner_complete: bool,
-}
+type Result<T> = azure_core::Result<T>;
 
 impl PartitionedStream {
     pub(crate) fn new(inner: Box<dyn SeekableStream>, partition_len: NonZero<usize>) -> Self {
@@ -43,6 +36,20 @@ impl Stream for PartitionedStream {
     ) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
 
+/// Converts the given AsyncRead into a Stream<Item = Bytes>, where each item is a chunk of data
+/// that is exactly `partition_len` bytes. The last item may be smaller.
+pub(crate) fn stream_single_buffer_partitions(
+    mut inner: Box<dyn SeekableStream>,
+    partition_len: NonZero<usize>,
+) -> impl Stream<Item = Result<Bytes>> {
+    let partition_len = partition_len.get();
+    try_stream! {
+        let mut len_hint = Some(inner.len());
+        let mut total_read = 0;
+        let new_partition = |len_hint: Option<u64>, total_read: u64| BytesMut::with_capacity(len_hint
+            .map(|len| min(len.saturating_sub(total_read), partition_len as u64) as usize)
+            .unwrap_or(partition_len));
+        let mut partition = new_partition(len_hint, total_read);
         loop {
             if *this.inner_complete || this.buf.len() >= *this.partition_len {
                 let remaining = this
@@ -63,39 +70,137 @@ impl Stream for PartitionedStream {
                 };
             }
 
-            let spare_capacity = this.buf.spare_capacity_mut();
-            let spare_capacity = unsafe {
-                // spare_capacity_mut() gives us the known remaining capacity of BytesMut.
-                // Those bytes are valid reserved memory but have had no values written
-                // to them. Those are the exact bytes we want to write into.
-                // MaybeUninit<u8> can be safely cast into u8, and so this pointer cast
-                // is safe. Since the spare capacity length is safely known, we can
-                // provide those to from_raw_parts without worry.
-                slice::from_raw_parts_mut(
+            // Read from inner stream
+            // SAFETY: spare_capacity_mut() returns allocated memory without initialized value.
+            // We want to read directly into that memory. We are responsible for correctly
+            // updating `buf` with its new length using the memory we've now initialized.
+            unsafe {
+                let spare_capacity = partition.spare_capacity_mut();
+                let mut spare_capacity = slice::from_raw_parts_mut(
                     spare_capacity.as_mut_ptr() as *mut u8,
                     spare_capacity.len(),
-                )
-            };
-            match ready!(this.inner.as_mut().poll_read(cx, spare_capacity)) {
-                Ok(bytes_read) => {
-                    // poll_read() wrote bytes_read-many bytes into the spare capacity.
-                    // those values are therefore initialized and we can add them to
-                    // the existing buffer length
-                    unsafe { this.buf.set_len(this.buf.len() + bytes_read) };
-                    *this.total_read += bytes_read;
-                    *this.inner_complete = bytes_read == 0;
+                );
+                // Reserved capacity may go beyond the partition length. Cap it.
+                // The resulting capped slice may go beyond what len_hint suggests. Good.
+                if spare_capacity.len() > remaining_partition_space {
+                    spare_capacity = &mut spare_capacity[..remaining_partition_space];
                 }
-                Err(e) => {
-                    return Poll::Ready(Some(Err(e.into())));
+                let count = inner.read(spare_capacity).await?;
+                if count == 0 {
+                    // stream finished! yield existing bytes and complete
+                    if !partition.is_empty() {
+                        yield mem::take(&mut partition).freeze();
+                    }
+                    break;
+                }
+                partition.set_len(partition.len() + count);
+                total_read += count as u64;
+            }
+
+            // If len_hint has been exceeded, discard as inaccurate
+            if let Some(expected_total_len) = len_hint {
+                if total_read > expected_total_len {
+                    len_hint = None;
                 }
             }
         }
     }
 }
 
-impl FusedStream for PartitionedStream {
-    fn is_terminated(&self) -> bool {
-        self.inner_complete && self.buf.is_empty()
+#[derive(Default)]
+struct MultiBufferPartition {
+    completed_buffers: Vec<Bytes>,
+    current_buffer: BytesMut,
+    buffer_len: usize,
+}
+
+impl MultiBufferPartition {
+    fn new(buffer_len: usize, expected_buffers: usize) -> Self {
+        Self {
+            completed_buffers: Vec::with_capacity(expected_buffers),
+            current_buffer: BytesMut::with_capacity(buffer_len),
+            buffer_len,
+        }
+    }
+    fn len(&self) -> u64 {
+        self.current_buffer.len() as u64
+            + self
+                .completed_buffers
+                .iter()
+                .map(|bytes| bytes.len() as u64)
+                .sum::<u64>()
+    }
+    fn buf(&mut self) -> &mut BytesMut {
+        if self.current_buffer.spare_capacity_mut().is_empty() {
+            self.completed_buffers.push(
+                mem::replace(
+                    &mut self.current_buffer,
+                    BytesMut::with_capacity(self.buffer_len),
+                )
+                .freeze(),
+            );
+        }
+        &mut self.current_buffer
+    }
+    fn freeze(mut self) -> Vec<Bytes> {
+        self.completed_buffers
+            .push(mem::take(&mut self.current_buffer).freeze());
+        self.completed_buffers
+    }
+}
+
+/// Converts the given AsyncRead into a Stream<Item = Vec<Bytes>>, where each item is a chunk of
+/// data that is exactly `partition_len` bytes. The last item may be smaller.
+pub(crate) fn stream_multi_buffer_partitions(
+    mut inner: Box<dyn SeekableStream>,
+    partition_len: NonZero<u64>,
+) -> impl Stream<Item = Result<Vec<Bytes>>> {
+    let partition_len = partition_len.get();
+    const INDIVIDUAL_BUF_LEN: usize = 4 * 1024 * 1024;
+    // supports a partition_len up to MAX_CONTIGUOUS_ELEMENT * INDIVIDUAL_BUF_LEN (= 8 petabytes)
+    let vec_len = partition_len
+        .div_ceil(INDIVIDUAL_BUF_LEN as u64)
+        .try_into()
+        .unwrap_or(MAX_CONTIGUOUS_ELEMENTS);
+    try_stream! {
+        let mut partition = MultiBufferPartition::new(INDIVIDUAL_BUF_LEN, vec_len);
+        loop {
+            // If partition is at partition_len, yield it
+            let mut remaining_partition_space = partition_len.saturating_sub(partition.len());
+            if remaining_partition_space == 0 {
+                yield mem::replace(&mut partition, MultiBufferPartition::new(INDIVIDUAL_BUF_LEN, vec_len)).freeze();
+                remaining_partition_space = partition_len;
+            }
+            let remaining_partition_space = remaining_partition_space; // un-mut this variable
+
+            // Read from inner stream
+            // SAFETY: spare_capacity_mut() returns allocated memory without initialized value.
+            // We want to read directly into that memory. We are responsible for correctly
+            // updating `buf` with its new length using the memory we've now initialized.
+            unsafe {
+                let buf = partition.buf();
+                let spare_capacity = buf.spare_capacity_mut();
+                let mut spare_capacity = slice::from_raw_parts_mut(
+                    spare_capacity.as_mut_ptr() as *mut u8,
+                    spare_capacity.len(),
+                );
+                // Reserved capacity may go beyond the partition length. Cap it.
+                if let Ok(remaining_usize) = remaining_partition_space.try_into() {
+                    if spare_capacity.len() > remaining_usize {
+                        spare_capacity = &mut spare_capacity[..remaining_usize];
+                    }
+                }
+                let count = inner.read(spare_capacity).await?;
+                if count == 0 {
+                    // stream finished! yield existing bytes and complete
+                    if partition.len() > 0 {
+                        yield mem::take(&mut partition).freeze();
+                    }
+                    break;
+                }
+                buf.set_len(buf.len() + count);
+            }
+        }
     }
 }
 
@@ -113,14 +218,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_exact_len() -> AzureResult<()> {
+    async fn partitions_exact_len() -> Result<()> {
         for part_count in [2usize, 3, 11, 16] {
             for part_len in [1024usize, 1000, 9999, 1] {
                 let data = get_random_data(part_len * part_count);
-                let stream = PartitionedStream::new(
+                let stream = Box::pin(stream_single_buffer_partitions(
                     Box::new(BytesStream::new(data.clone())),
-                    NonZero::new(part_len as u64).unwrap(),
-                )?;
+                    NonZero::new(part_len).unwrap(),
+                ));
 
                 let parts: Vec<_> = stream.try_collect().await?;
 
@@ -135,15 +240,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_with_remainder() -> AzureResult<()> {
+    async fn partitions_with_remainder() -> Result<()> {
         for part_count in [2usize, 3, 11, 16] {
             for part_len in [1024usize, 1000, 9999] {
                 for dangling_len in [part_len / 2, 100, 128, 99] {
                     let data = get_random_data(part_len * (part_count - 1) + dangling_len);
-                    let stream = PartitionedStream::new(
+                    let stream = Box::pin(stream_single_buffer_partitions(
                         Box::new(BytesStream::new(data.clone())),
-                        NonZero::new(part_len as u64).unwrap(),
-                    )?;
+                        NonZero::new(part_len).unwrap(),
+                    ));
 
                     let parts: Vec<_> = stream.try_collect().await?;
 
@@ -164,13 +269,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn exactly_one_partition() -> AzureResult<()> {
+    async fn exactly_one_partition() -> Result<()> {
         for len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(len);
-            let mut stream = PartitionedStream::new(
+            let mut stream = Box::pin(stream_single_buffer_partitions(
                 Box::new(BytesStream::new(data.clone())),
-                NonZero::new(len as u64).unwrap(),
-            )?;
+                NonZero::new(len).unwrap(),
+            ));
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -181,14 +286,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn less_than_one_partition() -> AzureResult<()> {
+    async fn less_than_one_partition() -> Result<()> {
         let part_len = 99999usize;
         for len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(len);
-            let mut stream = PartitionedStream::new(
+            let mut stream = Box::pin(stream_single_buffer_partitions(
                 Box::new(BytesStream::new(data.clone())),
-                NonZero::new(part_len as u64).unwrap(),
-            )?;
+                NonZero::new(part_len).unwrap(),
+            ));
 
             let single_partition = stream.try_next().await?.unwrap();
 
@@ -199,13 +304,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn successful_empty_stream_when_empty_source_stream() -> AzureResult<()> {
+    async fn successful_empty_stream_when_empty_source_stream() -> Result<()> {
         for part_len in [1024usize, 1000, 9999, 1] {
             let data = get_random_data(0);
-            let mut stream = PartitionedStream::new(
+            let mut stream = Box::pin(stream_single_buffer_partitions(
                 Box::new(BytesStream::new(data.clone())),
-                NonZero::new(part_len as u64).unwrap(),
-            )?;
+                NonZero::new(part_len).unwrap(),
+            ));
 
             assert!(stream.try_next().await?.is_none());
         }
