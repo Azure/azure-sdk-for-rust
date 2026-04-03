@@ -19,22 +19,26 @@ use crate::generated::models::{
 };
 
 /// Result of a `BlobClient::download()` operation.
+///
+/// The full blob content over the requested range is streamed via [`body`](Self::body).
+/// All other fields: [`properties`](Self::properties), and [`headers`](Self::headers), are parsed
+/// from the **initial response**.
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult {
     /// The blob content stream.
     pub body: AsyncResponseBody,
 
-    /// The content range returned, if a range was requested (`Content-Range` header).
-    pub content_range: Option<String>,
-
-    /// Parsed blob properties from the response headers.
+    /// Blob properties parsed from the initial response.
     pub properties: BlobDownloadProperties,
 
-    /// All response headers.
+    /// All headers from the initial response.
+    ///
+    /// Use this to access headers that are not surfaced as named fields, such as
+    /// `x-ms-encryption-key-sha256`, `x-ms-request-id`, and more.
     pub headers: Headers,
 }
 
-/// Properties parsed from the response headers of a `BlobClient::download()` operation.
+/// Blob properties parsed from the initial response headers of a `BlobClient::download()` operation.
 #[derive(SafeDebug)]
 pub struct BlobDownloadProperties {
     /// The blob's ETag (`ETag` header).
@@ -49,7 +53,10 @@ pub struct BlobDownloadProperties {
     /// Date/time the blob was last read or written (`x-ms-last-access-time` header).
     pub last_accessed: Option<OffsetDateTime>,
 
-    /// Total size of the blob in bytes (`Content-Length` header).
+    /// Number of bytes in the response body (`Content-Length` header).
+    ///
+    /// For a full-blob download this equals the total blob size. For a ranged or partitioned
+    /// download, this is the byte count of the initial response.
     pub content_length: Option<u64>,
 
     /// The content type of the blob (`Content-Type` header).
@@ -74,7 +81,11 @@ pub struct BlobDownloadProperties {
     /// [`blob_content_md5`](Self::blob_content_md5).
     pub content_md5: Option<Vec<u8>>,
 
-    /// CRC-64 hash of the response content (`x-ms-content-crc64` header).
+    /// CRC-64 hash for the downloaded range (`x-ms-content-crc64` header).
+    ///
+    /// Only returned for ranged reads (when [`BlobClientDownloadOptions::range`] is set)
+    /// and only when [`BlobClientDownloadOptions::range_get_content_crc64`] is `true`.
+    /// The range must be 4 MiB or smaller, otherwise the service rejects the request.
     pub content_crc64: Option<Vec<u8>>,
 
     /// MD5 hash of the full blob content (`x-ms-blob-content-md5` header).
@@ -152,11 +163,9 @@ impl BlobClientDownloadResult {
     /// Constructs a `BlobClientDownloadResult` by parsing headers from the initial response.
     pub(crate) fn from_headers(response: AsyncRawResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let content_range = headers.get_optional_as(&HeaderName::from_static("content-range"))?;
         let properties = BlobDownloadProperties::from_headers(&headers)?;
         Ok(Self {
             body,
-            content_range,
             properties,
             headers,
         })

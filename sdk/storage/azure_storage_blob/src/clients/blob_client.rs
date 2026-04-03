@@ -192,7 +192,10 @@ impl BlobClient {
     /// Downloads a blob and its contents from the service.
     ///
     /// This operation performs a managed (multi-part) download, splitting the blob into
-    /// parallel range requests for better performance on large blobs.
+    /// parallel range requests for better performance on large blobs. The returned
+    /// [`BlobClientDownloadResult::body`] contains the complete blob data, while
+    /// [`BlobClientDownloadResult::properties`] and /// [`BlobClientDownloadResult::headers`]
+    /// reflect only the initial response's metadata and properties.
     ///
     /// # Arguments
     ///
