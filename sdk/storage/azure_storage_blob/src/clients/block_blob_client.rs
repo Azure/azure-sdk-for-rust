@@ -262,6 +262,7 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
+        // cspell:ignore jaschrep
         // TODO (jaschrep-msft) support oneshot given optional length
         let content_len = content.len().ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")

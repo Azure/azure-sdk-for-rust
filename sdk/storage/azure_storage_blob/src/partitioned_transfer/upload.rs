@@ -26,6 +26,7 @@ pub(crate) async fn upload(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
+    // cspell:ignore jaschrep
     // TODO (jaschrep-msft) support oneshot given optional length
     let Some(content_len) = content.len() else {
         return Err(azure_core::Error::with_message(
