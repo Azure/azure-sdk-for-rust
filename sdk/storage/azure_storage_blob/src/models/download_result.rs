@@ -83,8 +83,8 @@ pub struct BlobDownloadProperties {
 
     /// CRC-64 hash for the downloaded range (`x-ms-content-crc64` header).
     ///
-    /// Only returned for ranged reads (when [`BlobClientDownloadOptions::range`] is set)
-    /// and only when [`BlobClientDownloadOptions::range_get_content_crc64`] is `true`.
+    /// Only returned for ranged reads (when [`range`](crate::models::BlobClientDownloadOptions::range) is set)
+    /// and only when [`range_get_content_crc64`](crate::models::BlobClientDownloadOptions::range_get_content_crc64) is `true`.
     /// The range must be 4 MiB or smaller, otherwise the service rejects the request.
     pub content_crc64: Option<Vec<u8>>,
 
