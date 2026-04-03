@@ -12,9 +12,12 @@ use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
 use futures::Stream;
 use std::{
     pin::Pin,
-    sync::{Arc, OnceLock, Weak},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, OnceLock, Weak,
+    },
 };
-use tracing::{debug, trace, warn};
+use tracing::{debug, info, trace, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
 ///
@@ -26,6 +29,7 @@ pub struct PartitionClient {
     client_details: ConsumerClientDetails,
     event_receiver: OnceLock<EventReceiver>,
     consumers: Weak<ProcessorConsumersMap>,
+    revoked: Arc<AtomicBool>,
 }
 
 // It's safe to use the PartitionClient from multiple threads simultaneously.
@@ -45,6 +49,7 @@ impl PartitionClient {
             client_details,
             event_receiver: OnceLock::new(),
             consumers,
+            revoked: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -54,6 +59,25 @@ impl PartitionClient {
     /// A reference to the partition ID as a String slice.
     pub fn get_partition_id(&self) -> &str {
         &self.partition_id
+    }
+
+    /// Marks this partition client as revoked.
+    ///
+    /// When a partition is reassigned to another consumer by the load balancer,
+    /// the event processor calls this method to signal that this client should
+    /// stop processing events. Callers should check [`is_revoked`](Self::is_revoked)
+    /// between event receives and stop when it returns `true`.
+    pub fn revoke(&self) {
+        info!("Revoking partition client for partition {}", self.partition_id);
+        self.revoked.store(true, Ordering::Relaxed);
+    }
+
+    /// Returns `true` if this partition client has been revoked.
+    ///
+    /// A revoked partition client indicates that the partition has been
+    /// reassigned to another consumer and this client should stop processing.
+    pub fn is_revoked(&self) -> bool {
+        self.revoked.load(Ordering::Relaxed)
     }
 
     /// Receives events from the partition.

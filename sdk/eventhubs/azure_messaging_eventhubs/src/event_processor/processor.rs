@@ -50,6 +50,7 @@ pub struct EventProcessor {
     next_partition_client_sender: Sender<Arc<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
+    owner_level: Option<i64>,
     update_interval: Duration,
     start_positions: StartPositions,
     is_running: std::sync::Mutex<bool>,
@@ -62,6 +63,7 @@ struct EventProcessorOptions {
     update_interval: Duration,
     start_positions: StartPositions,
     prefetch: u32,
+    owner_level: Option<i64>,
     partition_ids: Vec<String>,
 }
 
@@ -123,6 +125,38 @@ impl ProcessorConsumersMap {
         info!("Consumers for partition now: {:?}", consumers.keys());
         Ok(())
     }
+
+    /// Returns the set of partition IDs that have active partition clients.
+    fn get_active_partition_ids(&self) -> Result<Vec<String>> {
+        let consumers = self
+            .consumers
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
+        Ok(consumers.keys().cloned().collect())
+    }
+
+    /// Revokes and removes partition clients for partitions that are no longer
+    /// owned by this processor instance.
+    ///
+    /// This is called during dispatch when the load balancer indicates that
+    /// a partition has been reassigned to another consumer. The partition client
+    /// is marked as revoked (so the consumer can detect it via `is_revoked()`)
+    /// and removed from the consumers map (so a new client can be created if the
+    /// partition is later reassigned back).
+    fn revoke_partition_clients(&self, partition_ids: &[String]) -> Result<()> {
+        let mut consumers = self
+            .consumers
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
+        for partition_id in partition_ids {
+            if let Some(weak) = consumers.remove(partition_id) {
+                if let Some(client) = weak.upgrade() {
+                    client.revoke();
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 //pub(crate) type ConsumersType = std::sync::Mutex<HashMap<String, Arc<PartitionClient>>>;
@@ -163,6 +197,7 @@ impl EventProcessor {
             ))),
             client_details,
             prefetch: options.prefetch,
+            owner_level: options.owner_level,
             update_interval: options.update_interval,
             start_positions: options.start_positions,
             next_partition_client_sender: sender,
@@ -293,6 +328,25 @@ impl EventProcessor {
             e
         })?;
 
+        // Detect partitions that were stolen by another consumer.
+        // Compare the set of partitions we currently own (from load_balance)
+        // against active partition clients. Revoke any clients for partitions
+        // we no longer own so they stop processing.
+        let owned_ids: std::collections::HashSet<&str> =
+            ownerships.iter().map(|o| o.partition_id.as_str()).collect();
+        let active_ids = consumers.get_active_partition_ids()?;
+        let stolen: Vec<String> = active_ids
+            .into_iter()
+            .filter(|id| !owned_ids.contains(id.as_str()))
+            .collect();
+        if !stolen.is_empty() {
+            info!(
+                "Partitions no longer owned, revoking: {}",
+                stolen.join(", ")
+            );
+            consumers.revoke_partition_clients(&stolen)?;
+        }
+
         let checkpoints = self.get_checkpoint_map().await;
         let checkpoints = checkpoints.map_err(|e| {
             error!("Error in getting checkpoint map: {:?}", e);
@@ -366,6 +420,7 @@ impl EventProcessor {
                 Some(OpenReceiverOptions {
                     start_position: Some(start_position),
                     prefetch: Some(self.prefetch),
+                    owner_level: self.owner_level,
                     ..Default::default()
                 }),
             )
@@ -527,7 +582,7 @@ pub mod builders {
 
     const DEFAULT_PREFETCH: u32 = 300;
     const DEFAULT_UPDATE_INTERVAL: Duration = Duration::seconds(30);
-    const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::seconds(10);
+    const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::seconds(60);
 
     /// Builder for creating an `EventProcessor`.
     /// This builder allows you to configure various options for the event processor,
@@ -560,12 +615,13 @@ pub mod builders {
     /// ```
     #[derive(Default)]
     pub struct EventProcessorBuilder {
-        update_interval: Option<Duration>,
-        start_positions: Option<StartPositions>,
-        max_partition_count: Option<usize>,
-        prefetch: Option<u32>,
-        load_balancing_strategy: Option<super::ProcessorStrategy>,
-        partition_expiration_duration: Option<Duration>,
+        pub(crate) update_interval: Option<Duration>,
+        pub(crate) start_positions: Option<StartPositions>,
+        pub(crate) max_partition_count: Option<usize>,
+        pub(crate) prefetch: Option<u32>,
+        pub(crate) owner_level: Option<i64>,
+        pub(crate) load_balancing_strategy: Option<super::ProcessorStrategy>,
+        pub(crate) partition_expiration_duration: Option<Duration>,
     }
     impl EventProcessorBuilder {
         pub(super) fn new() -> Self {
@@ -611,6 +667,17 @@ pub mod builders {
             self
         }
 
+        /// Sets the owner level (epoch) for partition receivers.
+        ///
+        /// When set, the Event Hub broker enforces exclusive access: a new
+        /// receiver with the same or higher owner level will disconnect any
+        /// existing receiver on the same partition. This prevents duplicate
+        /// processing when partitions are rebalanced across consumers.
+        pub fn with_owner_level(mut self, owner_level: i64) -> Self {
+            self.owner_level = Some(owner_level);
+            self
+        }
+
         /// Sets the partition expiration duration for the event processor.
         pub fn with_partition_expiration_duration(
             mut self,
@@ -627,6 +694,19 @@ pub mod builders {
             consumer_client: ConsumerClient,
             checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
         ) -> Result<Arc<EventProcessor>> {
+            let update_interval = self.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL);
+            let partition_expiration_duration = self
+                .partition_expiration_duration
+                .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION);
+
+            if partition_expiration_duration <= update_interval {
+                return Err(crate::EventHubsError::with_message(format!(
+                    "partition_expiration_duration ({partition_expiration_duration:?}) \
+                     must be greater than update_interval ({update_interval:?})"
+                ))
+                .into());
+            }
+
             // Retrieve the set of partitions from the consumer client
             // and limit the number of partitions to the specified max_partition_count.
             let mut eh_properties = consumer_client.get_eventhub_properties().await?;
@@ -641,15 +721,49 @@ pub mod builders {
                     strategy: self
                         .load_balancing_strategy
                         .unwrap_or(super::ProcessorStrategy::Greedy),
-                    partition_expiration_duration: self
-                        .partition_expiration_duration
-                        .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION),
-                    update_interval: self.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL),
+                    partition_expiration_duration,
+                    update_interval,
                     start_positions: self.start_positions.unwrap_or_default(),
                     prefetch: self.prefetch.unwrap_or(DEFAULT_PREFETCH),
+                    owner_level: self.owner_level,
                     partition_ids: eh_properties.partition_ids,
                 },
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::builders::EventProcessorBuilder;
+    use azure_core::time::Duration;
+
+    #[test]
+    fn builder_stores_owner_level() {
+        let builder = EventProcessorBuilder::default().with_owner_level(5);
+        assert_eq!(builder.owner_level, Some(5));
+    }
+
+    #[test]
+    fn builder_owner_level_defaults_to_none() {
+        let builder = EventProcessorBuilder::default();
+        assert_eq!(builder.owner_level, None);
+    }
+
+    #[test]
+    fn builder_stores_update_interval() {
+        let builder =
+            EventProcessorBuilder::default().with_update_interval(Duration::seconds(10));
+        assert_eq!(builder.update_interval, Some(Duration::seconds(10)));
+    }
+
+    #[test]
+    fn builder_stores_partition_expiration_duration() {
+        let builder = EventProcessorBuilder::default()
+            .with_partition_expiration_duration(Duration::seconds(120));
+        assert_eq!(
+            builder.partition_expiration_duration,
+            Some(Duration::seconds(120))
+        );
     }
 }
