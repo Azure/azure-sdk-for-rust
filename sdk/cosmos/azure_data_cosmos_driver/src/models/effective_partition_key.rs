@@ -72,7 +72,9 @@ impl EffectivePartitionKey {
     /// Computes an EPK range for the given partition key values and definition.
     ///
     /// For full partition keys (component count == definition path count), returns a
-    /// point range where start == end (single partition).
+    /// point range where start == end. Note: in Rust a `Range` with `start == end` is
+    /// technically empty; callers should check `start == end` to detect the point case
+    /// rather than iterating the range.
     ///
     /// For prefix partition keys on MultiHash containers (fewer components than the
     /// definition), returns a range `[prefix_epk, prefix_epk + "FF")` covering all
@@ -91,7 +93,17 @@ impl EffectivePartitionKey {
         let is_prefix =
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
+        debug_assert!(
+            kind == PartitionKeyKind::MultiHash || pk_values.len() == pk_definition.paths().len(),
+            "Non-MultiHash containers require exactly as many components ({}) as paths ({})",
+            pk_values.len(),
+            pk_definition.paths().len()
+        );
+
         if is_prefix {
+            // "FF" is safe as an upper-bound sentinel because hash_v2_to_epk masks
+            // hash_bytes[0] with 0x3F, so every EPK component's first hex digit
+            // is in [0-3]. "FF" is lexicographically greater than any valid suffix.
             let max_str = format!("{}FF", epk.as_str());
             let max = Self::from(max_str);
             epk..max
@@ -152,9 +164,10 @@ fn effective_partition_key_hash_v2(pk_values: &[PartitionKeyValue]) -> String {
 /// The results are concatenated to produce an EPK of N×32 hex characters
 /// where N is the number of partition key components.
 fn effective_partition_key_multi_hash_v2(pk_values: &[PartitionKeyValue]) -> String {
-    let mut result = String::new();
+    let mut result = String::with_capacity(pk_values.len() * 32);
+    let mut buf = Vec::new();
     for v in pk_values {
-        let mut buf = Vec::new();
+        buf.clear();
         v.write_for_hashing_v2(&mut buf);
         result.push_str(&hash_v2_to_epk(&buf));
     }
@@ -162,6 +175,8 @@ fn effective_partition_key_multi_hash_v2(pk_values: &[PartitionKeyValue]) -> Str
 }
 
 /// Shared V2 hash-to-EPK conversion: MurmurHash3-128, reverse bytes, mask top 2 bits, hex-encode.
+///
+/// Returns a 32-character uppercase hexadecimal string.
 fn hash_v2_to_epk(data: &[u8]) -> String {
     let hash_128 = murmurhash3_128(data, 0);
     let mut hash_bytes = hash_128.to_le_bytes();
@@ -450,6 +465,8 @@ mod tests {
         );
         assert_eq!(multi.as_str().len(), 64);
 
+        // Expected values from the effective_partition_key_hash_v2 test cases above,
+        // verified against cross-SDK baselines (.NET, Go, Java).
         // First 32 chars should match the single-component hash of "redmond"
         assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
         // Second 32 chars should match the single-component hash of 5.0
@@ -471,7 +488,8 @@ mod tests {
         );
         assert_eq!(multi.as_str().len(), 96);
 
-        // Each 32-char segment should match the corresponding single-component V2 hash
+        // Expected values from the effective_partition_key_hash_v2 test cases above,
+        // verified against cross-SDK baselines (.NET, Go, Java).
         assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
         assert_eq!(&multi.as_str()[32..64], "0E711127C5B5A8E4726AC6DD306A3E59");
         assert_eq!(&multi.as_str()[64..], "378867E4430E67857ACE5C908374FE16");
