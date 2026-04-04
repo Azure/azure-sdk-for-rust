@@ -460,6 +460,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_resourcemanager_vmware"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core",
+ "azure_core_test",
+ "azure_identity",
+ "futures",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "azure_security_keyvault_certificates"
 version = "0.12.0"
 dependencies = [
