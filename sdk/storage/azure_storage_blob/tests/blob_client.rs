@@ -1,9 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    http::{headers::CONTENT_TYPE, ClientOptions, RequestContent, StatusCode, Url},
+    http::{
+        headers::CONTENT_TYPE,
+        policies::{Policy, PolicyResult},
+        ClientOptions, Context, Request, RequestContent, StatusCode, Transport, Url,
+    },
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
@@ -25,11 +30,13 @@ use azure_storage_blob_test::{
     StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
+use flate2::{write::GzEncoder, Compression};
 use futures::TryStreamExt;
 use std::{
     cmp::min,
     collections::HashMap,
     error::Error,
+    io::Write,
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -38,6 +45,25 @@ use std::{
     time::Duration,
 };
 use tokio::time;
+
+// Policy that removes the `accept-encoding` header before forwarding the request.
+// Used to test whether the Azure Blob service returns `content-encoding` regardless
+// of whether the client advertised any encoding preferences.
+#[derive(Debug)]
+struct StripAcceptEncodingPolicy;
+
+#[async_trait]
+impl Policy for StripAcceptEncodingPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        request.headers_mut().remove("accept-encoding");
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -1263,6 +1289,179 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     assert_eq!(None, props.content_md5()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("image/png".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+/// Uploads a gzip-compressed blob with `content-encoding: gzip` and downloads it with the
+/// default client to document reqwest's auto-decompression behavior.
+#[recorded::test]
+async fn test_gzip_blob_autodecompression_baseline(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Arrange — compress plaintext and upload with blob_content_encoding: gzip
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Act — download with default client (reqwest gzip feature enabled)
+    let response = blob_client.download(None).await?;
+
+    // Assert — reqwest decompresses the body and strips content-encoding from the response;
+    // code sees plaintext bytes and no content-encoding header.
+    let content_encoding = response.content_encoding()?;
+    let (_, _, body) = response.deconstruct();
+    let downloaded_bytes = body.collect().await?.to_vec();
+    assert_eq!(None, content_encoding);
+    assert_eq!(plaintext.to_vec(), downloaded_bytes);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+/// Uploads a gzip-compressed blob with `content-encoding: gzip` and downloads it through a
+/// policy that strips `accept-encoding` from the outgoing request, to explore whether removing
+/// that header changes what the service sends back.
+///
+/// Finding: `StripAcceptEncodingPolicy` removes the header from the azure_core `Request`
+/// object, but reqwest re-injects `accept-encoding: gzip` when converting the request to an
+/// actual HTTP call (because the reqwest gzip feature is enabled unconditionally).
+/// Checking test recordings reveals `accept-encoding: gzip` is still present.
+/// The service therefore still returns `content-encoding: gzip` and reqwest still decompresses.
+/// The assertions mirror the baseline test: code sees plaintext with no content-encoding header.
+#[recorded::test]
+async fn test_gzip_blob_suppress_accept_encoding(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let strip_policy = Arc::new(StripAcceptEncodingPolicy);
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(strip_policy)),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Arrange — compress plaintext and upload with blob_content_encoding: gzip
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Act — download (accept-encoding stripped at SDK layer but reqwest re-adds it)
+    let response = blob_client.download(None).await?;
+
+    // Assert — identical to baseline: reqwest still decompresses and strips the header.
+    let content_encoding = response.content_encoding()?;
+    let (_, _, body) = response.deconstruct();
+    let downloaded_bytes = body.collect().await?.to_vec();
+    assert_eq!(None, content_encoding);
+    assert_eq!(plaintext.to_vec(), downloaded_bytes);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+/// Downloads a gzip-encoded blob using a custom reqwest transport with auto-decompression
+/// disabled, proving that the raw wire response reaches our code unchanged.
+///
+/// Unlike the baseline and suppress-accept-encoding tests — where reqwest's gzip feature
+/// intercepts the response before our code sees it — this test builds a reqwest client with
+/// `.gzip(false)` and injects it as the transport via `ClientOptions::transport`. The recording
+/// proxy is still active (instrumented via policies), so the test works in both record and
+/// playback modes.
+///
+/// What the assertions verify: `content-encoding: gzip` is present in the download response
+/// and the body bytes are the raw gzip stream, not the decompressed plaintext.
+#[recorded::test]
+async fn test_gzip_blob_raw_without_autodecompression(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+
+    // Build a reqwest client that does NOT auto-decompress gzip responses.
+    let no_gzip_client = Arc::new(
+        ::reqwest::ClientBuilder::new()
+            .gzip(false)
+            .redirect(::reqwest::redirect::Policy::none())
+            .build()?,
+    );
+    let mut client_options = ClientOptions::default();
+    client_options.transport = Some(Transport::new(no_gzip_client));
+
+    // get_container_client calls recording.instrument() on client_options, which adds the
+    // recording proxy policies without touching the transport we set above.
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions {
+            client_options,
+            ..Default::default()
+        }),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Arrange — compress plaintext and upload with blob_content_encoding: gzip
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes.clone()),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Act — download; reqwest does not decompress because gzip is disabled on this client.
+    let response = blob_client.download(None).await?;
+
+    // Assert — the raw wire response is visible: content-encoding header is present and the
+    // body is a valid gzip stream that decodes back to the original plaintext.
+    // Note: we do not assert exact gzip bytes because the service may normalize the OS byte
+    // in the gzip header (byte 9: 0x0A Windows → 0xFF unknown), so the streams can differ
+    // in metadata while encoding identical content.
+    let content_encoding = response.content_encoding()?;
+    let (_, _, body) = response.deconstruct();
+    let downloaded_bytes = body.collect().await?.to_vec();
+    assert_eq!(Some("gzip".to_string()), content_encoding);
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_slice());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(plaintext.to_vec(), decompressed);
 
     container_client.delete(None).await?;
     Ok(())
