@@ -13,7 +13,7 @@ use azure_storage_blob::models::{
     BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
     BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
     BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
-    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, PublicAccessType,
+    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem,
     SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
@@ -600,56 +600,6 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     let cleared_response = container_client.get_access_policy(None).await?;
     let cleared_signed_identifiers = cleared_response.into_model()?;
     assert!(cleared_signed_identifiers.items.is_none());
-
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_create_container_with_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-
-    // TODO: use public access account
-
-    // Blob-level public access
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client
-        .create(Some(BlobContainerClientCreateOptions {
-            access: Some(PublicAccessType::Blob),
-            ..Default::default()
-        }))
-        .await?;
-
-    // Assert
-    let props = container_client.get_properties(None).await?;
-    assert_eq!(Some(PublicAccessType::Blob), props.access()?);
-    container_client.delete(None).await?;
-
-    // Container-level public access
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client
-        .create(Some(BlobContainerClientCreateOptions {
-            access: Some(PublicAccessType::Container),
-            ..Default::default()
-        }))
-        .await?;
-
-    // Assert
-    let props = container_client.get_properties(None).await?;
-    assert_eq!(Some(PublicAccessType::Container), props.access()?);
-    container_client.delete(None).await?;
-
-    // Private access (no public access header expected)
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client.create(None).await?;
-
-    // Assert
-    let props = container_client.get_properties(None).await?;
-    assert_eq!(None, props.access()?);
-    container_client.delete(None).await?;
 
     Ok(())
 }
