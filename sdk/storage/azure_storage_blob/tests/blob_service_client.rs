@@ -382,6 +382,9 @@ async fn test_set_service_properties_cors_and_metrics(
     let recording = ctx.recording();
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
 
+    // Save existing properties so they can be restored after the test.
+    let original_props = service_client.get_properties(None).await?.into_model()?;
+
     // CORS and Metrics Scenario
     let cors_rule = CorsRule {
         allowed_origins: Some("https://example.com".to_string()),
@@ -424,6 +427,11 @@ async fn test_set_service_properties_cors_and_metrics(
     let retention = hour_metrics.retention_policy.unwrap();
     assert_eq!(retention.enabled, Some(true));
     assert_eq!(retention.days, Some(7));
+
+    // Restore original properties to avoid contaminating other tests.
+    let restore_content: RequestContent<BlobServiceProperties, XmlFormat> =
+        original_props.try_into()?;
+    service_client.set_properties(restore_content, None).await?;
 
     Ok(())
 }

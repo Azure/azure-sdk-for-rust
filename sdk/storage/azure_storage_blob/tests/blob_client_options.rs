@@ -97,19 +97,25 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
 #[recorded::test]
 async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let per_try_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(per_try_count.clone(), None));
+
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(
         recording,
         true,
         StorageAccount::Standard,
-        Some(BlobContainerClientOptions {
-            client_options: ClientOptions {
-                retry: RetryOptions::none(),
+        Some(
+            BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    retry: RetryOptions::none(),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        }),
+            }
+            .with_per_try_policy(count_policy.clone()),
+        ),
     )
     .await?;
 
@@ -123,8 +129,15 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
     )
     .await?;
 
-    // Assert
+    // Assert: with RetryOptions::none(), each request is attempted exactly once.
+    // Verify by counting per-try invocations for a single known request.
+    let count_before = per_try_count.load(Ordering::Relaxed);
     let props = blob_client.get_properties(None).await?;
+    assert_eq!(
+        per_try_count.load(Ordering::Relaxed) - count_before,
+        1,
+        "expected exactly 1 per-try invocation (no retries)"
+    );
     assert_eq!(Some(15), props.content_length()?);
 
     container_client.delete(None).await?;
@@ -182,6 +195,9 @@ async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box
     Ok(())
 }
 
+// `#[tokio::test]` is intentional here: FailFirstPolicy exhausts all retry attempts
+// before ever forwarding to the real transport, so there is nothing to record or replay.
+// The test is pure in-process logic and does not need the recording harness.
 #[tokio::test]
 async fn test_retry_exhaustion() -> Result<(), Box<dyn std::error::Error>> {
     // max_retries=2 means 1 original attempt + 2 retry attempts = 3 total invocations

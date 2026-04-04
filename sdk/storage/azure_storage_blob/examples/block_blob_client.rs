@@ -5,8 +5,8 @@
 //!
 //! Block blobs are the most common blob type and are optimized for sequential
 //! reads/writes of large streams. This sample demonstrates:
-//! 1. Staged upload: stage three blocks individually, then commit them as one blob.
-//! 2. Get the block list to inspect committed and uncommitted blocks.
+//! 1. Staged upload: stage three blocks individually, then commit them as a single blob.
+//! 2. Inspect the committed block list and download to verify the assembled content.
 //! 3. Copy a blob from another URL using `upload_blob_from_url` with the
 //!    "if not exists" guard to prevent accidental overwrites.
 //!
@@ -86,20 +86,12 @@ async fn staged_upload(
         println!("Staged block '{}'", String::from_utf8_lossy(block_id));
     }
 
-    // Confirm all three blocks are visible as uncommitted.
-    let block_list = block_blob_client
-        .get_block_list(BlockListType::Uncommitted, None)
-        .await?
-        .into_model()?;
-    let uncommitted = block_list.uncommitted_blocks.as_deref().unwrap_or(&[]);
-    println!("Staged {} uncommitted block(s)", uncommitted.len());
-
     // Commit them all in order.
     let latest_blocks: Vec<Vec<u8>> = blocks.iter().map(|(id, _)| id.to_vec()).collect();
     let block_lookup_list = BlockLookupList {
-        committed: Some(Vec::new()),
+        committed: None,
         latest: Some(latest_blocks),
-        uncommitted: Some(Vec::new()),
+        uncommitted: None,
     };
     block_blob_client
         .commit_block_list(block_lookup_list.try_into()?, None)

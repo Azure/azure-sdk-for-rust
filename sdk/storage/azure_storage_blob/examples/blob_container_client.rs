@@ -8,8 +8,7 @@
 //! 2. Set and read container metadata.
 //! 3. Upload blobs and list them with continuation.
 //! 4. Set and read a stored access policy (for SAS delegation).
-//! 5. Acquire and release a container lease.
-//! 6. Delete the container.
+//! 5. Delete the container.
 //!
 //! # Prerequisites
 //!
@@ -30,9 +29,8 @@ use azure_core::{http::RequestContent, time::OffsetDateTime};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{
-        AccessPolicy, BlobContainerClientAcquireLeaseResultHeaders,
-        BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-        SignedIdentifiers,
+        AccessPolicy, BlobContainerClientGetPropertiesResultHeaders,
+        BlobContainerClientListBlobsOptions, SignedIdentifiers,
     },
     BlobContainerClient,
 };
@@ -56,7 +54,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     set_and_get_metadata(&container_client).await?;
     upload_and_list_blobs(&container_client).await?;
     set_and_get_access_policy(&container_client).await?;
-    acquire_and_release_lease(&container_client).await?;
 
     container_client.delete(None).await?;
     println!("Deleted container '{container_name}'");
@@ -164,39 +161,6 @@ async fn set_and_get_access_policy(
         .set_access_policy(empty.try_into()?, None)
         .await?;
     println!("Cleared all access policies on the container");
-
-    Ok(())
-}
-
-/// Acquires an infinite lease on the container, demonstrates that an unguarded
-/// delete is rejected (412), then releases the lease.
-///
-/// Container leases are useful for preventing concurrent deletes or metadata
-/// updates in distributed systems. Use a 15-60 second duration for
-/// auto-expiring leases, or -1 for infinite (must be released explicitly).
-async fn acquire_and_release_lease(
-    container_client: &BlobContainerClient,
-) -> Result<(), Box<dyn std::error::Error>> {
-    // -1 = infinite lease: never expires, must be released explicitly.
-    let lease_resp = container_client.acquire_lease(-1, None).await?;
-    let lease_id = lease_resp
-        .lease_id()?
-        .ok_or("service did not return a lease ID")?;
-    println!("Acquired container lease: {lease_id}");
-
-    // Attempting to delete without the lease ID is rejected (412 Precondition Failed).
-    match container_client.delete(None).await {
-        Ok(_) => println!("Unexpected success - container should be locked"),
-        Err(err) => println!(
-            "Delete without lease rejected (expected): {}",
-            err.http_status()
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| err.to_string())
-        ),
-    }
-
-    container_client.release_lease(lease_id, None).await?;
-    println!("Released container lease");
 
     Ok(())
 }

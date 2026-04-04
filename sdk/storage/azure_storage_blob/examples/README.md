@@ -7,9 +7,9 @@ This directory contains a set of examples for the use of the Blob Storage client
 | File | Description |
 | --- | --- |
 | `hello_world.rs` | Getting started: create a container, upload and download a blob |
-| `blob_client.rs` | Blob-level operations: exists, metadata, index tags, snapshots, access tier, leases |
-| `blob_container_client.rs` | Container-level operations: metadata, list blobs with continuation, access policies, leases |
-| `blob_service_client.rs` | Service-level operations: list containers, service properties (CORS), find blobs by tag, statistics |
+| `blob_client.rs` | Blob-level operations: exists, metadata, index tags, access tier |
+| `blob_container_client.rs` | Container-level operations: metadata, list blobs with continuation, access policies |
+| `blob_service_client.rs` | Service-level operations: list containers, service properties (CORS), find blobs by tags |
 | `block_blob_client.rs` | Block blob operations: staged block upload, copy from URL |
 | `append_blob_client.rs` | Append blob operations: create, append blocks, seal |
 | `page_blob_client.rs` | Page blob operations: create, upload/clear pages, list page ranges, resize |

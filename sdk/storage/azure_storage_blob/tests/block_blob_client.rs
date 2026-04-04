@@ -348,7 +348,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 }
 
 #[recorded::test(live)]
-async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
         stage_block_count.clone(),
@@ -413,7 +413,7 @@ async fn managed_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
@@ -456,7 +456,7 @@ async fn managed_upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn managed_upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
         stage_block_count.clone(),

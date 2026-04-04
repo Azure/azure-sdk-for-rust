@@ -166,7 +166,7 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
             blob_content_disposition: Some("inline".to_string()),
             blob_content_encoding: Some("identity".to_string()),
             blob_content_language: Some("es-ES".to_string()),
-            blob_content_type: Some("application/octet-stream".to_string()),
+            blob_content_type: Some("image/jpeg".to_string()),
             ..Default::default()
         }))
         .await?;
@@ -178,7 +178,7 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
     assert_eq!(Some("identity".to_string()), props.content_encoding()?);
     assert_eq!(Some("es-ES".to_string()), props.content_language()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+    assert_eq!(Some("image/jpeg".to_string()), content_type);
 
     container_client.delete(None).await?;
     Ok(())

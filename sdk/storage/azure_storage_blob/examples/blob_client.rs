@@ -7,9 +7,7 @@
 //! 1. Check existence with `exists`.
 //! 2. Set and read blob metadata via `set_metadata` / `get_properties`.
 //! 3. Set and retrieve blob index tags (searchable server-side without downloading).
-//! 4. Create a snapshot and download its frozen content via `create_snapshot` / `with_snapshot`.
-//! 5. Move a blob to a different access tier with `set_tier`.
-//! 6. Acquire a timed lease to demonstrate exclusive write access.
+//! 4. Move a blob to a different access tier with `set_tier`.
 //!
 //! # Prerequisites
 //!
@@ -29,10 +27,7 @@ use std::{collections::HashMap, env};
 use azure_core::http::RequestContent;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
-    models::{
-        AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientCreateSnapshotResultHeaders,
-        BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions, BlobTags,
-    },
+    models::{AccessTier, BlobClientGetPropertiesResultHeaders, BlobTags},
     BlobContainerClient,
 };
 
@@ -101,70 +96,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let retrieved: HashMap<String, String> = blob_client.get_tags(None).await?.into_model()?.into();
     println!("Tags: {retrieved:?}");
 
-    // Snapshot the blob to preserve its current content as an immutable point-in-time copy.
-    let snap_resp = blob_client.create_snapshot(None).await?;
-    let snapshot_id = snap_resp
-        .snapshot()?
-        .ok_or("service did not return a snapshot ID")?;
-    println!("Created snapshot: {snapshot_id}");
-
-    // Overwrite the live blob...
-    blob_client
-        .upload(
-            RequestContent::from(b"Updated content - snapshot holds original".to_vec()),
-            None,
-        )
-        .await?;
-
-    // ...but with_snapshot returns a BlobClient pointed at the frozen snapshot.
-    let snapshot_client = blob_client.with_snapshot(&snapshot_id)?;
-    let (_, _, body) = snapshot_client.download(None).await?.deconstruct();
-    let data = body.collect().await?;
-    println!("Snapshot content: {}", String::from_utf8_lossy(&data));
-
     // Move the blob to Cool tier (lower storage cost for infrequently-accessed data).
     // Requires a general-purpose v2 or Blob Storage account.
     blob_client.set_tier(AccessTier::Cool, None).await?;
     let props = blob_client.get_properties(None).await?;
     println!("Access tier after set_tier: {:?}", props.access_tier()?);
-
-    // Acquire a 30-second lease - an exclusive write lock on this blob.
-    // Use -1 instead of 30 for an infinite lease that must be released explicitly.
-    let lease_resp = blob_client.acquire_lease(30, None).await?;
-    let lease_id = lease_resp
-        .lease_id()?
-        .ok_or("service did not return a lease ID")?;
-    println!("Acquired blob lease: {lease_id}");
-
-    // Any mutating call without the lease ID is rejected (412 Precondition Failed).
-    match blob_client
-        .set_metadata(&HashMap::from([("k".to_string(), "v".to_string())]), None)
-        .await
-    {
-        Ok(_) => println!("Unexpected success - blob should be locked"),
-        Err(err) => println!(
-            "Write without lease rejected (expected): {}",
-            err.http_status()
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| err.to_string())
-        ),
-    }
-
-    // Supplying the lease ID in options lets the write succeed.
-    let set_meta_opts = BlobClientSetMetadataOptions {
-        lease_id: Some(lease_id.clone()),
-        ..Default::default()
-    };
-    blob_client
-        .set_metadata(
-            &HashMap::from([("locked-by".to_string(), "sample".to_string())]),
-            Some(set_meta_opts),
-        )
-        .await?;
-    println!("Set metadata while holding lease");
-
-    blob_client.release_lease(lease_id, None).await?;
-    println!("Released blob lease");
 
     container_client.delete(None).await?;
     println!("Deleted container '{container_name}'");

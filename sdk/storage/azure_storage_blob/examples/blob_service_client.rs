@@ -8,14 +8,12 @@
 //! 2. Set and read service properties (CORS).
 //! 3. List containers with a prefix.
 //! 4. Search for blobs across containers using blob index tag filters.
-//! 5. Query service statistics from the secondary endpoint when available.
-//! 6. Delete the temporary container.
+//! 5. Delete the temporary container.
 //!
 //! # Prerequisites
 //!
 //! - Set `AZURE_STORAGE_ACCOUNT_NAME` to your storage account name.
 //! - Sign in with `az login` (or any other credential flow supported by [`DeveloperToolsCredential`]).
-//! - For the statistics section, use a geo-redundant storage account with a readable secondary endpoint.
 //!
 //! # Usage
 //!
@@ -25,9 +23,9 @@
 //! cargo run --package azure_storage_blob --example blob_service_client
 //! ```
 
-use std::{collections::HashMap, env, sync::Arc};
+use std::{collections::HashMap, env};
 
-use azure_core::{credentials::TokenCredential, http::RequestContent};
+use azure_core::http::RequestContent;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{
@@ -47,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let container_name = "test-container-service-client";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let service_client = BlobServiceClient::new(&endpoint, Some(credential.clone()), None)?;
+    let service_client = BlobServiceClient::new(&endpoint, Some(credential), None)?;
     let container_client = service_client.blob_container_client(container_name);
 
     println!("Creating container '{container_name}'...");
@@ -62,7 +60,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     set_and_get_service_properties(&service_client).await?;
     list_containers(&service_client, container_name).await?;
     find_blobs_by_tags(&service_client, container_name).await?;
-    get_service_statistics(&account, credential).await?;
 
     container_client.delete(None).await?;
     println!("Deleted container '{container_name}'");
@@ -156,34 +153,6 @@ async fn find_blobs_by_tags(
             item.container_name.as_deref().unwrap_or("<?>"),
             item.name.as_deref().unwrap_or("<?>"),
         );
-    }
-
-    Ok(())
-}
-
-/// Queries geo-replication statistics from the secondary endpoint.
-/// Prints a message and continues if the account has no readable secondary.
-async fn get_service_statistics(
-    account: &str,
-    credential: Arc<dyn TokenCredential>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let secondary_endpoint = format!("https://{account}-secondary.blob.core.windows.net/");
-    let secondary_client = BlobServiceClient::new(&secondary_endpoint, Some(credential), None)?;
-    match secondary_client.get_statistics(None).await {
-        Ok(response) => {
-            let stats = response.into_model()?;
-            if let Some(geo_replication) = stats.geo_replication {
-                println!(
-                    "Geo-replication status: {:?}, last sync time: {:?}",
-                    geo_replication.status, geo_replication.last_sync_time
-                );
-            }
-        }
-        Err(err) => {
-            eprintln!(
-                "Skipping statistics example because the secondary endpoint is unavailable: {err}"
-            );
-        }
     }
 
     Ok(())
