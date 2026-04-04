@@ -313,6 +313,11 @@ impl AsyncResponseBody {
 
     /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
+        // Append each chunk directly into a growing BytesMut using reserve(),
+        // This avoids the intermediate Vec<Bytes> of the previous implementation.
+        // That it held in addition to the final buffer. 
+        // This reduces peak memory at the cost
+        // of amortized rather than single allocations.
         let mut result = BytesMut::new();
         while let Some(res) = self.next().await {
             let chunk = res?;
