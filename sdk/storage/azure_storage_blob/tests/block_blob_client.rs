@@ -8,10 +8,9 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        method_options::BlockBlobClientUploadOptions, BlobClientDownloadResultHeaders,
-        BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockListType, BlockLookupList,
+        method_options::BlockBlobClientUploadOptions, BlobClientGetPropertiesResultHeaders,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
+        BlockBlobClientUploadBlobFromUrlOptions, BlockListType, BlockLookupList,
     },
     BlobContainerClientOptions,
 };
@@ -109,14 +108,9 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(9, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(b"AAABBBCCC"),
-        response_body.collect().await?.as_ref(),
-    );
+    assert_eq!(9, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(b"AAABBBCCC"), &body_data[..],);
     assert_eq!(
         3,
         block_list
@@ -275,16 +269,13 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     // Committed Block Scenario
     let response = dest_blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-
     // Assert
-    assert!(status_code.is_success());
-    assert_eq!(source_content.len(), content_length.unwrap() as usize);
     assert_eq!(
-        Bytes::from_static(source_content),
-        response_body.collect().await?.as_ref(),
+        source_content.len(),
+        response.properties.content_length.unwrap() as usize
     );
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(source_content), &body_data[..],);
 
     // Source Authorization Scenario
     let access_token = format!(
@@ -332,14 +323,9 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
 
     let response = dest_blob_client.download(None).await?;
-    let (status_code, _, response_body) = response.deconstruct();
-
     // Assert
-    assert!(status_code.is_success());
-    assert_eq!(
-        Bytes::from_static(source_content_2),
-        response_body.collect().await?.as_ref(),
-    );
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(source_content_2), &body_data[..],);
 
     container_client.delete(None).await?;
     Ok(())
@@ -386,13 +372,9 @@ async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
                 .upload(bytes.clone().into(), Some(options))
                 .await?;
         }
+        let body_data = blob_client.download(None).await?.body.collect().await?;
         assert_eq!(
-            blob_client
-                .download(None)
-                .await?
-                .into_body()
-                .collect()
-                .await?[..],
+            body_data[..],
             data,
             "Failed parallel={},partition_size={}",
             parallel,
@@ -439,15 +421,8 @@ async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             .upload(bytes.clone().into(), Some(options))
             .await?;
     }
-    assert_eq!(
-        blob_client
-            .download(None)
-            .await?
-            .into_body()
-            .collect()
-            .await?[..],
-        data
-    );
+    let body_data = blob_client.download(None).await?.body.collect().await?;
+    assert_eq!(body_data[..], data);
     assert_eq!(request_count.load(Ordering::Relaxed), 1);
 
     Ok(())
@@ -489,15 +464,8 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         let _scope = count_policy.check_request_scope();
         block_blob_client.upload(bytes.clone().into(), None).await?;
     }
-    assert_eq!(
-        blob_client
-            .download(None)
-            .await?
-            .into_body()
-            .collect()
-            .await?[..],
-        bytes[..]
-    );
+    let body_data = blob_client.download(None).await?.body.collect().await?;
+    assert_eq!(body_data[..], bytes[..]);
     assert_eq!(
         stage_block_count.load(Ordering::Relaxed),
         expected_stage_block_count

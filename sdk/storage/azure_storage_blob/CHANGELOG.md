@@ -8,6 +8,11 @@
 
 ### Breaking Changes
 
+- Revised `download()` on `BlobClient` with the following breaking changes:
+  - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
+  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
+  - The previous `BlobClientDownloadResultHeaders` trait was removed.
+
 ### Bugs Fixed
 
 ### Other Changes

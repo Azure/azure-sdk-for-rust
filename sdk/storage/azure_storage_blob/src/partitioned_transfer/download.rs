@@ -16,7 +16,7 @@ use async_trait::async_trait;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
-    http::{response::PinnedStream, AsyncRawResponse, StatusCode},
+    http::{AsyncRawResponse, StatusCode},
     Error,
 };
 use bytes::Bytes;
@@ -55,7 +55,7 @@ pub(crate) async fn download<Behavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
-) -> AzureResult<PinnedStream>
+) -> AzureResult<AsyncRawResponse>
 where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
@@ -66,11 +66,18 @@ where
     let (initial_response, stats) =
         get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
 
+    let status = initial_response.status();
+    let headers = initial_response.headers().clone();
+
     let mut remaining_ranges = stats
         .map(|s| s.remaining_download_ranges)
         .unwrap_or_default();
     if remaining_ranges.is_empty() {
-        return Ok(Box::pin(initial_response.into_body()) as PinnedStream);
+        return Ok(AsyncRawResponse::new(
+            status,
+            headers,
+            Box::pin(initial_response.into_body()),
+        ));
     }
     let total_chunks = remaining_ranges.len() + 1;
 
@@ -139,7 +146,7 @@ where
         }
     };
 
-    Ok(Box::pin(stream))
+    Ok(AsyncRawResponse::new(status, headers, Box::pin(stream)))
 }
 
 pub(crate) async fn download_into<Behavior>(
@@ -752,15 +759,15 @@ mod tests {
         for args in single_range_args(DATA_LEN) {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let downloaded_data = download(
+            let mut body = download(
                 args.download_range.map(|r| r.0..r.1),
                 PARALLEL.try_into().unwrap(),
                 args.partition_len.try_into().unwrap(),
                 mock.clone(),
             )
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+            let downloaded_data = body.buffer_all().await?;
 
             assert_eq!(
                 &downloaded_data[..],
@@ -867,15 +874,15 @@ mod tests {
         for args in multi_range_args(DATA_LEN) {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let downloaded_data = download(
+            let mut body = download(
                 args.download_range.map(|r| r.0..r.1),
                 args.parallel.try_into().unwrap(),
                 args.partition_len.try_into().unwrap(),
                 mock.clone(),
             )
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+            let downloaded_data = body.buffer_all().await?;
 
             assert_eq!(
                 downloaded_data.len(),
@@ -980,10 +987,10 @@ mod tests {
             Some(1..5),
         ));
 
-        let downloaded_data = download(None, parallel, partition_size, mock.clone())
+        let mut body = download(None, parallel, partition_size, mock.clone())
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+        let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data[..], data[..]);
         assert_eq!(mock.invocations.lock().await.len(), segments);
@@ -1028,10 +1035,10 @@ mod tests {
         let data = get_random_data(0);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let downloaded_data = download(None, parallel, partition_len, mock.clone())
+        let mut body = download(None, parallel, partition_len, mock.clone())
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+        let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data.len(), 0);
 

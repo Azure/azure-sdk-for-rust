@@ -122,7 +122,7 @@ impl DownloadBlobTest {
     async fn collect_stream(&self, blob_client: BlobClient) -> azure_core::Result<()> {
         let response = blob_client.download(None).await?;
 
-        let mut body = response.into_body();
+        let mut body = response.body;
 
         while let Some(result) = body.next().await {
             // We don't actually care about the contents of the blob for this test, we just want to download it.
@@ -136,7 +136,7 @@ impl DownloadBlobTest {
         let response = blob_client.download(None).await?;
 
         let mut buffer = vec![0u8; self.size];
-        response.into_body().collect_into(&mut buffer).await?;
+        response.body.collect_into(&mut buffer).await?;
         black_box(buffer);
         Ok(())
     }
@@ -148,7 +148,7 @@ impl DownloadBlobTest {
     async fn collect_blob(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
-        let body = response.into_body().collect().await?;
+        let body = response.body.collect().await?;
         Ok(black_box(body))
     }
 
@@ -157,7 +157,7 @@ impl DownloadBlobTest {
     async fn collect_blob_simple(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
-        let mut body = response.into_body();
+        let mut body = response.body;
 
         let mut final_result: Vec<u8> = Vec::new();
         while let Some(res) = body.next().await {
@@ -171,7 +171,7 @@ impl DownloadBlobTest {
     async fn collect_blob_bytes_mut(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
-        let mut body = response.into_body();
+        let mut body = response.body;
 
         let mut final_result = BytesMut::new();
 
