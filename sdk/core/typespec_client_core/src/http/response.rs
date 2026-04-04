@@ -325,7 +325,6 @@ impl AsyncResponseBody {
         Ok(result.into())
     }
 
-
     /// Collect the stream into a caller supplied buffer.
     ///
     /// The buffer must be large enough to hold the entire body, otherwise an error is returned.
