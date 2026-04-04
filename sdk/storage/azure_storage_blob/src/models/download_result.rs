@@ -34,7 +34,7 @@ pub struct BlobClientDownloadResult {
     /// All headers from the initial response.
     ///
     /// Use this to access headers that are not surfaced as named fields, such as
-    /// `x-ms-encryption-key-sha256`, `x-ms-request-id`, and more.
+    /// `x-ms-request-id`, `x-ms-client-request-id`, and more.
     pub headers: Headers,
 }
 
@@ -157,6 +157,13 @@ pub struct BlobDownloadProperties {
 
     /// Number of tags on the blob (`x-ms-tag-count` header).
     pub tag_count: Option<i64>,
+
+    /// The name of the encryption scope used to encrypt the blob (`x-ms-encryption-scope` header).
+    pub encryption_scope: Option<String>,
+
+    /// Base64-encoded SHA-256 hash of the customer-provided encryption key
+    /// used to encrypt the blob (`x-ms-encryption-key-sha256` header).
+    pub encryption_key_sha256: Option<String>,
 }
 
 impl BlobClientDownloadResult {
@@ -243,6 +250,10 @@ impl BlobDownloadProperties {
             object_replication_policy_id: headers
                 .get_optional_as(&HeaderName::from_static("x-ms-or-policy-id"))?,
             tag_count: headers.get_optional_as(&HeaderName::from_static("x-ms-tag-count"))?,
+            encryption_scope: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-encryption-scope"))?,
+            encryption_key_sha256: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-encryption-key-sha256"))?,
             metadata,
             object_replication_rules,
         })
