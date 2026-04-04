@@ -68,7 +68,7 @@ impl AVSClient {
         }
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
             credential,
-            vec!["user_impersonation"],
+            vec!["https://management.azure.com/.default"],
         ));
         Ok(Self {
             endpoint,
