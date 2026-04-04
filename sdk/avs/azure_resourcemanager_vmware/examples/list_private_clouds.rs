@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let private_clouds_client = client.get_avs_private_clouds_client();
     let mut pager = private_clouds_client.list_in_subscription(None)?;
 
-    println!("{:<40} {:<15} {}", "NAME", "LOCATION", "ID");
+    println!("{:<40} {:<15} ID", "NAME", "LOCATION");
     println!("{}", "-".repeat(100));
 
     while let Some(cloud) = pager.try_next().await? {
