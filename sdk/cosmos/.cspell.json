@@ -122,6 +122,7 @@
         "PPCB",
         "purgeable",
         "pushback",
+        "pyroscope",
         "qname",
         "qself",
         "RAII",
