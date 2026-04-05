@@ -49,36 +49,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(all(feature = "tokio-metrics", not(tokio_unstable)))]
     eprintln!("Note: build with RUSTFLAGS='--cfg tokio_unstable' for full tokio metrics (polls, steals, overflow)");
 
-    // Initialize Pyroscope CPU profiling when the feature is enabled and server URL is set.
-    #[cfg(all(feature = "pyroscope", target_os = "linux"))]
-    let _pyroscope_guard = {
-        if let Ok(server_url) = std::env::var("PYROSCOPE_SERVER_URL") {
-            if !server_url.is_empty() {
-                match pyroscope::PyroscopeAgent::builder(&server_url, &"cosmos-perf".to_string())
-                    .backend(pyroscope_pprofrs::pprof_backend(
-                        pyroscope_pprofrs::PprofConfig::new().sample_rate(100),
-                    ))
-                    .build()
-                    .and_then(|agent| agent.start())
-                {
-                    Ok(guard) => {
-                        eprintln!("Pyroscope profiling enabled — pushing to {server_url}");
-                        Some(guard)
-                    }
-                    Err(e) => {
-                        eprintln!(
-                            "Warning: Pyroscope failed to start, continuing without profiling: {e}"
-                        );
-                        None
-                    }
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    };
+    // Log Pyroscope status (profiling is handled externally via eBPF auto-instrumentation)
+    if std::env::var("PYROSCOPE_SERVER_URL")
+        .map(|v| !v.is_empty())
+        .unwrap_or(false)
+    {
+        eprintln!("Pyroscope server configured — profiles collected via eBPF auto-instrumentation");
+    }
 
     use std::sync::Arc;
     use std::time::Duration;

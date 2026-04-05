@@ -30,16 +30,10 @@ console-subscriber = { version = "0.4", optional = true }
 # Optional: tokio runtime metrics (scheduling delay, poll times, worker utilization)
 tokio-metrics = { version = "0.4", optional = true }
 
-# Optional: continuous CPU profiling via Grafana Pyroscope (Linux only)
-[target.'cfg(target_os = "linux")'.dependencies]
-pyroscope = { version = "0.5", optional = true }
-pyroscope_pprofrs = { version = "0.2", optional = true }
-
 [features]
 default = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 tokio-metrics = ["dep:tokio-metrics"]
-pyroscope = ["dep:pyroscope", "dep:pyroscope_pprofrs"]
 
 [lints]
 workspace = true
