@@ -62,14 +62,6 @@ struct PerfResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     tokio_busy_pct: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    tokio_polls: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tokio_mean_poll_us: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tokio_steal_count: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tokio_overflow_count: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     tokio_park_count: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tokio_queue_depth: Option<u64>,
@@ -101,10 +93,6 @@ struct PerfResult {
 struct TokioSnapshot {
     workers: u64,
     busy_pct: f64,
-    polls: u64,
-    mean_poll_us: f64,
-    steal_count: u64,
-    overflow_count: u64,
     park_count: u64,
     queue_depth: u64,
 }
@@ -234,26 +222,19 @@ pub async fn run(config: RunConfig) {
                     let interval_secs = report_interval.as_secs_f64();
                     let busy_nanos = rt.total_busy_duration.as_nanos() as f64;
                     let total_nanos = interval_secs * 1e9 * workers as f64;
-                    let busy_pct = if total_nanos > 0.0 { busy_nanos / total_nanos * 100.0 } else { 0.0 };
-                    #[cfg(tokio_unstable)]
-                    let polls = rt.total_polls_count;
-                    #[cfg(not(tokio_unstable))]
-                    let polls = 0u64;
-                    #[cfg(tokio_unstable)]
-                    let mean_poll_us = rt.mean_poll_duration.as_micros() as f64;
-                    #[cfg(not(tokio_unstable))]
-                    let mean_poll_us = if rt.total_busy_duration.as_micros() > 0 && polls > 0 {
-                        rt.total_busy_duration.as_micros() as f64 / polls as f64
-                    } else { 0.0 };
-                    #[cfg(tokio_unstable)]
-                    let (steals, overflow) = (rt.total_steal_count, rt.total_overflow_count);
-                    #[cfg(not(tokio_unstable))]
-                    let (steals, overflow) = (0u64, 0u64);
-                    println!("  Tokio:   Workers={}, Busy={:.1}%, Polls={}, MeanPoll={:.1}\u{00b5}s, Steals={}, Overflow={}",
-                        workers, busy_pct, polls, mean_poll_us, steals, overflow);
+                    let busy_pct = if total_nanos > 0.0 {
+                        busy_nanos / total_nanos * 100.0
+                    } else {
+                        0.0
+                    };
+                    println!(
+                        "  Tokio:   Workers={}, Busy={:.1}%, ParkCount={}, QueueDepth={}",
+                        workers, busy_pct, rt.total_park_count, rt.global_queue_depth
+                    );
                     TokioSnapshot {
-                        workers, busy_pct, polls, mean_poll_us, steal_count: steals,
-                        overflow_count: overflow, park_count: rt.total_park_count,
+                        workers,
+                        busy_pct,
+                        park_count: rt.total_park_count,
                         queue_depth: rt.global_queue_depth as u64,
                     }
                 })
@@ -400,10 +381,6 @@ async fn upsert_results(
             system_used_memory_bytes: sys_used,
             tokio_workers: tokio_fields.map(|t| t.workers),
             tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
-            tokio_polls: tokio_fields.map(|t| t.polls),
-            tokio_mean_poll_us: tokio_fields.map(|t| t.mean_poll_us),
-            tokio_steal_count: tokio_fields.map(|t| t.steal_count),
-            tokio_overflow_count: tokio_fields.map(|t| t.overflow_count),
             tokio_park_count: tokio_fields.map(|t| t.park_count),
             tokio_queue_depth: tokio_fields.map(|t| t.queue_depth),
             config_concurrency: Some(config.concurrency),

@@ -45,10 +45,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("tokio-console enabled — connect with: tokio-console http://<pod-ip>:6669");
     }
 
-    // Warn if tokio-metrics is enabled without tokio_unstable (partial metrics only)
-    #[cfg(all(feature = "tokio-metrics", not(tokio_unstable)))]
-    eprintln!("Note: build with RUSTFLAGS='--cfg tokio_unstable' for full tokio metrics (polls, steals, overflow)");
-
     // Log Pyroscope status (profiling is handled externally via eBPF auto-instrumentation)
     if std::env::var("PYROSCOPE_SERVER_URL")
         .map(|v| !v.is_empty())

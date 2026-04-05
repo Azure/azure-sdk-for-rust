@@ -172,7 +172,7 @@ large_futures = "deny"
 uninlined_format_args = "allow"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)', 'cfg(tokio_unstable)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }
 
 [workspace.lints.rustdoc]
 bare_urls = "allow"
