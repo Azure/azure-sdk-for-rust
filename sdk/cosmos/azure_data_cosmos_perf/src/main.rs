@@ -235,14 +235,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         concurrency: config.concurrency as u64,
         application_region: config.application_region.clone(),
         excluded_regions: config.excluded_regions.join(", "),
-        tokio_threads: std::thread::available_parallelism()
-            .map(|n| n.get() as u64)
-            .unwrap_or(1),
+        tokio_threads: tokio::runtime::Handle::current().metrics().num_workers() as u64,
         ppcb_enabled: std::env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
-            .map(|v| v == "true" || v == "1")
+            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
             .unwrap_or(false),
         gateway20_allowed: std::env::var("COSMOS_GATEWAY20_ALLOWED")
-            .map(|v| v == "true" || v == "1")
+            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
             .unwrap_or(false),
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())

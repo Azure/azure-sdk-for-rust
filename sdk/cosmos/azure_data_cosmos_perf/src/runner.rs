@@ -219,9 +219,9 @@ pub async fn run(config: RunConfig) {
             let tokio_fields = {
                 runtime_intervals.next().map(|rt| {
                     let workers = rt.workers_count as u64;
-                    let interval_secs = report_interval.as_secs_f64();
+                    let elapsed_secs = rt.elapsed.as_secs_f64();
                     let busy_nanos = rt.total_busy_duration.as_nanos() as f64;
-                    let total_nanos = interval_secs * 1e9 * workers as f64;
+                    let total_nanos = elapsed_secs * 1e9 * workers as f64;
                     let busy_pct = if total_nanos > 0.0 {
                         busy_nanos / total_nanos * 100.0
                     } else {
