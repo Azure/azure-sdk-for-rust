@@ -7,6 +7,7 @@ use crate::models::{
     AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
     DatabaseReference, ItemReference, OperationType, PartitionKey, Precondition, ResourceType,
 };
+use std::borrow::Cow;
 
 /// Represents a Cosmos DB operation with its routing and execution context.
 ///
@@ -542,6 +543,43 @@ impl CosmosOperation {
     /// Returns true if this operation is idempotent.
     pub fn is_idempotent(&self) -> bool {
         self.operation_type.is_idempotent()
+    }
+
+    // -- Offer operations --
+
+    /// Queries offers in the account.
+    ///
+    /// Use `with_body()` to provide the query JSON and set `Content-Type` and
+    /// `x-ms-documentdb-isquery` headers via `OperationOptions::with_custom_headers()`.
+    pub fn query_offers(account: AccountReference) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .into_feed_reference();
+        Self::new(OperationType::Query, resource_ref)
+    }
+
+    /// Reads a specific offer by its ID.
+    ///
+    /// For offers, the JSON `"id"` field is the offer RID.
+    pub fn read_offer(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .with_rid(offer_id.into());
+        Self::new(OperationType::Read, resource_ref)
+    }
+
+    /// Replaces a specific offer by its ID.
+    ///
+    /// For offers, the JSON `"id"` field is the offer RID.
+    /// Use `with_body()` to provide the updated offer JSON.
+    pub fn replace_offer(
+        account: AccountReference,
+        offer_id: impl Into<Cow<'static, str>>,
+    ) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .with_rid(offer_id.into());
+        Self::new(OperationType::Replace, resource_ref)
     }
 }
 

@@ -39,6 +39,8 @@ pub(crate) mod response_header_names {
     pub static LSN: HeaderName = HeaderName::from_static("lsn");
     pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
     pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
+    pub static OFFER_REPLACE_PENDING: HeaderName =
+        HeaderName::from_static("x-ms-offer-replace-pending");
 }
 
 /// Header names used by the fault injection framework.
@@ -164,6 +166,11 @@ pub struct CosmosResponseHeaders {
     /// RID mismatch validation in container-recreate detection.
     #[allow(dead_code)] // Used in follow-up PR for RID validation
     pub(crate) owner_id: Option<String>,
+
+    /// Indicates whether an offer replace is still pending (`x-ms-offer-replace-pending`).
+    ///
+    /// When `true`, a throughput change is still being processed asynchronously.
+    pub offer_replace_pending: Option<bool>,
 }
 
 impl CosmosResponseHeaders {
@@ -241,6 +248,9 @@ impl CosmosResponseHeaders {
             owner_id: headers
                 .get_optional_str(&response_header_names::OWNER_ID)
                 .map(|s| s.to_owned()),
+            offer_replace_pending: headers
+                .get_optional_str(&response_header_names::OFFER_REPLACE_PENDING)
+                .and_then(|s| s.parse::<bool>().ok()),
         }
     }
 }
@@ -346,6 +356,7 @@ mod tests {
             lsn: Some(100),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
+            offer_replace_pending: None,
         };
 
         assert_eq!(

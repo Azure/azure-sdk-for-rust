@@ -49,7 +49,8 @@ pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
 
         // Replace throughput
         let new_throughput = db_client
-            .replace_throughput(ThroughputProperties::manual(500), None)
+            .begin_replace_throughput(ThroughputProperties::manual(500), None)
+            .await?
             .await?
             .into_model()?;
         assert_eq!(Some(500), new_throughput.throughput());
@@ -92,7 +93,8 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
             // Replace throughput
             let new_throughput = ThroughputProperties::manual(500);
             let throughput_response = container_client
-                .replace_throughput(new_throughput, None)
+                .begin_replace_throughput(new_throughput, None)
+                .await?
                 .await?
                 .into_model()?;
             assert_eq!(Some(500), throughput_response.throughput());

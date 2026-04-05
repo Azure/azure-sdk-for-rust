@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::OffersClient,
+    clients::offers_client,
     models::{
         BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
         ThroughputProperties,
@@ -16,6 +16,7 @@ use crate::{
 };
 use std::sync::Arc;
 
+use super::ThroughputPoller;
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
@@ -181,49 +182,55 @@ impl ContainerClient {
         )]
         options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
-        // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a container");
-
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.read(Context::default()).await
+        offers_client::find_offer(
+            &self.driver,
+            self.container_ref.account(),
+            self.container_ref.rid(),
+        )
+        .await
     }
 
-    /// Replaces the container throughput properties.
+    /// Begins replacing the container throughput properties.
     ///
-    /// Note that throughput changes may not take effect immediately.
-    /// The service processes the change asynchronously, so you may need to poll
-    /// [`ContainerClient::read_throughput()`] to confirm the new throughput is in effect.
+    /// The Cosmos DB service may process throughput changes asynchronously. The returned
+    /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
+    /// stream to observe progress.
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    pub async fn replace_throughput(
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::models::ThroughputProperties;
+    /// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_core::Result<()> {
+    /// let throughput = container_client
+    ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
+    ///     .await? // start the replace operation
+    ///     .await? // wait for completion (polls if async)
+    ///     .into_model()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<ResourceResponse<ThroughputProperties>> {
+    ) -> azure_core::Result<ThroughputPoller> {
         #[allow(
             unused_variables,
             reason = "The 'options' variable may be used in the future"
         )]
         let options = options.unwrap_or_default();
 
-        // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a container");
-
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client
-            .replace(Context::default(), throughput)
-            .await
-            .map(ResourceResponse::new)
+        offers_client::begin_replace(
+            self.driver.clone(),
+            self.container_ref.account().clone(),
+            self.container_ref.rid(),
+            throughput,
+        )
+        .await
     }
 
     /// Deletes this container.
@@ -797,7 +804,7 @@ mod tests {
         assert_send(client.read(todo!()));
         assert_send(client.replace(todo!(), todo!()));
         assert_send(client.read_throughput(todo!()));
-        assert_send(client.replace_throughput(todo!(), todo!()));
+        assert_send(client.begin_replace_throughput(todo!(), todo!()));
         assert_send(client.delete(todo!()));
 
         // Item operations (use "" for partition_key to avoid never-type fallback issues)
