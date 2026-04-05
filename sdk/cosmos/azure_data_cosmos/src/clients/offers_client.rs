@@ -8,7 +8,7 @@
 
 use crate::{
     cosmos_request::CosmosRequest,
-    models::{CosmosResponse, ThroughputProperties},
+    models::{CosmosResponse, ThroughputPoller, ThroughputProperties},
     operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -88,5 +88,59 @@ impl OffersClient {
             .build()?;
 
         self.pipeline.send(cosmos_request, context).await
+    }
+
+    /// Reads the throughput offer by its RID and returns the full response.
+    ///
+    /// This is the efficient polling path: a single GET by offer RID, with no query needed.
+    pub(crate) async fn read_offer_by_id(
+        &self,
+        offer_id: &str,
+        context: Context<'_>,
+    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+        let offer_link = ResourceLink::root(ResourceType::Offers).item_by_rid(offer_id);
+        let cosmos_request = CosmosRequest::builder(OperationType::Read, offer_link).build()?;
+        self.pipeline.send(cosmos_request, context).await
+    }
+
+    /// Reads the throughput offer and returns the full response (for use during polling).
+    ///
+    /// Unlike [`read()`](Self::read), this returns the full `CosmosResponse` instead of
+    /// just the deserialized model, allowing callers to inspect response headers.
+    /// This is the fallback polling path when the offer RID is not available.
+    pub(crate) async fn read_offer(
+        &self,
+        context: Context<'_>,
+    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+        let current_throughput = self.read(context.clone()).await?.ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "no throughput offer found for this resource",
+            )
+        })?;
+
+        let offer_link =
+            ResourceLink::root(ResourceType::Offers).item_by_rid(&current_throughput.offer_id);
+
+        let cosmos_request = CosmosRequest::builder(OperationType::Read, offer_link).build()?;
+
+        self.pipeline.send(cosmos_request, context).await
+    }
+
+    /// Replaces the throughput and returns a [`ThroughputPoller`] to track the async operation.
+    ///
+    /// The Cosmos DB service may process throughput changes asynchronously.
+    /// The returned poller can be awaited directly or polled as a stream.
+    pub(crate) async fn begin_replace(
+        &self,
+        context: Context<'_>,
+        throughput: ThroughputProperties,
+    ) -> azure_core::Result<ThroughputPoller> {
+        let response = self.replace(context.clone(), throughput).await?;
+        Ok(ThroughputPoller::new(
+            response,
+            self.clone(),
+            context.into_owned(),
+        ))
     }
 }
