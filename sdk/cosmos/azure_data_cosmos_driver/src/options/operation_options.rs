@@ -60,8 +60,14 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group name for request prioritization.
-    pub throughput_control_group_name: Option<ThroughputControlGroupName>,
+    /// Throughput control group names for request prioritization and throughput allocation.
+    ///
+    /// Multiple groups can be specified to combine different throughput control features
+    /// (e.g., a priority group and a throughput bucket group) on the same request.
+    ///
+    /// `Some(vec![])` explicitly disables throughput control for this request,
+    /// bypassing any default group registered for the container.
+    pub throughput_control_group_names: Option<Vec<ThroughputControlGroupName>>,
 
     /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
@@ -112,7 +118,7 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
-        assert!(options.throughput_control_group_name.is_none());
+        assert!(options.throughput_control_group_names.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
     }

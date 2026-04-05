@@ -2,22 +2,16 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::DatabaseClient,
+    clients::{ClientContext, DatabaseClient},
     cosmos_request::CosmosRequest,
     models::{DatabaseProperties, ResourceResponse},
     operation_context::OperationType,
-    pipeline::GatewayPipeline,
+    options::ThroughputControlGroupRegistry,
     resource_context::ResourceLink,
-    routing::{
-        global_endpoint_manager::GlobalEndpointManager,
-        global_partition_endpoint_manager::GlobalPartitionEndpointManager,
-    },
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
-use azure_data_cosmos_driver::CosmosDriver;
 use serde::Serialize;
-use std::sync::Arc;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
 
@@ -70,10 +64,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     pub(crate) databases_link: ResourceLink,
-    pub(crate) pipeline: Arc<GatewayPipeline>,
-    pub(crate) driver: Arc<CosmosDriver>,
-    pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
-    pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    pub(crate) context: ClientContext,
 }
 
 impl CosmosClient {
@@ -105,18 +96,20 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(
-            self.pipeline.clone(),
-            id,
-            self.driver.clone(),
-            self.global_endpoint_manager.clone(),
-            self.global_partition_endpoint_manager.clone(),
-        )
+        DatabaseClient::new(self.context.clone(), id)
     }
 
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
-        &self.pipeline.endpoint
+        &self.context.pipeline.endpoint
+    }
+
+    /// Returns the throughput control group registry.
+    ///
+    /// Groups are registered at client creation time via
+    /// [`CosmosClientBuilder::with_throughput_control_group()`].
+    pub fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
+        self.context.driver.runtime().throughput_control_groups()
     }
 
     /// Executes a query against databases in the account.
@@ -149,7 +142,7 @@ impl CosmosClient {
         _options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
         crate::query::executor::QueryExecutor::new(
-            self.pipeline.clone(),
+            self.context.pipeline.clone(),
             self.databases_link.clone(),
             Context::default(),
             query.into(),
@@ -184,7 +177,8 @@ impl CosmosClient {
                 .json(&RequestBody { id })
                 .build()?;
 
-        self.pipeline
+        self.context
+            .pipeline
             .send(cosmos_request, Context::default())
             .await
             .map(ResourceResponse::new)
