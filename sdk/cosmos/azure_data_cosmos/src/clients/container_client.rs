@@ -3,7 +3,7 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
+    models::{ContainerProperties, CosmosResponse, ThroughputPoller, ThroughputProperties},
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -188,36 +188,52 @@ impl ContainerClient {
         offers_client.read(Context::default()).await
     }
 
-    /// Replaces the container throughput properties.
+    /// Begins replacing the container throughput properties.
     ///
-    /// Note that throughput changes may not take effect immediately.
-    /// The service processes the change asynchronously, so you may need to poll
-    /// [`ContainerClient::read_throughput()`] to confirm the new throughput is in effect.
+    /// The Cosmos DB service may process throughput changes asynchronously. The returned
+    /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
+    /// stream to observe progress.
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::models::ThroughputProperties;
+    /// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_core::Result<()> {
+    /// let throughput = container_client
+    ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
+    ///     .await?
+    ///     .await?
+    ///     .into_model()?;
+    /// # Ok(())
+    /// # }
+    /// ```
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
-    pub async fn replace_throughput(
+    pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+    ) -> azure_core::Result<ThroughputPoller> {
         #[allow(
             unused_variables,
             reason = "The 'options' variable may be used in the future"
         )]
         let options = options.unwrap_or_default();
 
-        // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
-        let resource_id = db
+        // We need to get the RID for the container.
+        let container = self.read(None).await?.into_model()?;
+        let resource_id = container
             .system_properties
             .resource_id
             .expect("service should always return a '_rid' for a container");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.replace(Context::default(), throughput).await
+        offers_client
+            .begin_replace(Context::default(), throughput)
+            .await
     }
 
     /// Deletes this container.
