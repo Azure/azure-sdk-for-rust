@@ -184,18 +184,23 @@ impl ThroughputControlGroupOptions {
 
     /// Sets the throughput bucket (server-side bucket groups only).
     ///
-    /// Does nothing for other group types.
-    pub fn set_throughput_bucket(&self, bucket: u32) {
+    /// # Errors
+    ///
+    /// Returns an error if called on a non-bucket group variant.
+    pub fn set_throughput_bucket(&self, bucket: u32) -> azure_core::Result<()> {
         match self {
             Self::ServerSideThroughputBucket { mutable, .. } => {
                 mutable.write().unwrap().throughput_bucket = bucket;
+                Ok(())
             }
-            Self::ServerSidePriorityBasedThrottling { .. } => {
-                tracing::debug!(
-                    group_name = self.name().as_str(),
-                    "set_throughput_bucket called on non-bucket group variant, ignored"
-                );
-            }
+            Self::ServerSidePriorityBasedThrottling { .. } => Err(
+                azure_core::Error::with_message_fn(azure_core::error::ErrorKind::Other, || {
+                    format!(
+                        "cannot set throughput bucket on a priority-based throttling group '{}'",
+                        self.name()
+                    )
+                }),
+            ),
         }
     }
 
@@ -215,18 +220,24 @@ impl ThroughputControlGroupOptions {
 
     /// Sets the priority level (server-side priority groups only).
     ///
-    /// Does nothing for server-side bucket groups.
-    pub fn set_priority_level(&self, level: PriorityLevel) {
+    /// # Errors
+    ///
+    /// Returns an error if called on a non-priority group variant.
+    pub fn set_priority_level(&self, level: PriorityLevel) -> azure_core::Result<()> {
         match self {
             Self::ServerSidePriorityBasedThrottling { mutable, .. } => {
                 mutable.write().unwrap().priority_level = level;
+                Ok(())
             }
-            Self::ServerSideThroughputBucket { .. } => {
-                tracing::debug!(
-                    group_name = self.name().as_str(),
-                    "set_priority_level called on non-priority group variant, ignored"
-                );
-            }
+            Self::ServerSideThroughputBucket { .. } => Err(azure_core::Error::with_message_fn(
+                azure_core::error::ErrorKind::Other,
+                || {
+                    format!(
+                        "cannot set priority level on a throughput bucket group '{}'",
+                        self.name()
+                    )
+                },
+            )),
         }
     }
 }
@@ -817,5 +828,61 @@ mod tests {
         assert!(registry
             .get_by_container_and_name(&container, &missing)
             .is_none());
+    }
+
+    #[test]
+    fn set_throughput_bucket_on_bucket_group_succeeds() {
+        let container = test_container();
+        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
+            "bucket-group",
+            container,
+            100,
+            false,
+        );
+
+        group.set_throughput_bucket(200).unwrap();
+        assert_eq!(group.throughput_bucket(), Some(200));
+    }
+
+    #[test]
+    fn set_throughput_bucket_on_priority_group_returns_error() {
+        let container = test_container();
+        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
+            "priority-group",
+            container,
+            PriorityLevel::Low,
+            false,
+        );
+
+        let err = group.set_throughput_bucket(100).unwrap_err();
+        assert_eq!(*err.kind(), azure_core::error::ErrorKind::Other);
+    }
+
+    #[test]
+    fn set_priority_level_on_priority_group_succeeds() {
+        let container = test_container();
+        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
+            "priority-group",
+            container,
+            PriorityLevel::Low,
+            false,
+        );
+
+        group.set_priority_level(PriorityLevel::High).unwrap();
+        assert_eq!(group.priority_level(), Some(PriorityLevel::High));
+    }
+
+    #[test]
+    fn set_priority_level_on_bucket_group_returns_error() {
+        let container = test_container();
+        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
+            "bucket-group",
+            container,
+            100,
+            false,
+        );
+
+        let err = group.set_priority_level(PriorityLevel::Low).unwrap_err();
+        assert_eq!(*err.kind(), azure_core::error::ErrorKind::Other);
     }
 }
