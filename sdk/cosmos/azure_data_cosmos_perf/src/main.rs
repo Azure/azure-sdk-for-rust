@@ -43,7 +43,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let console_addr: IpAddr = match std::env::var("TOKIO_CONSOLE_ADDR") {
             Ok(val) => val.parse().unwrap_or_else(|e| {
-                eprintln!("WARNING: invalid TOKIO_CONSOLE_ADDR={val:?}: {e}; defaulting to 127.0.0.1");
+                eprintln!(
+                    "WARNING: invalid TOKIO_CONSOLE_ADDR={val:?}: {e}; defaulting to 127.0.0.1"
+                );
                 IpAddr::V4(Ipv4Addr::LOCALHOST)
             }),
             Err(_) => IpAddr::V4(Ipv4Addr::LOCALHOST),
