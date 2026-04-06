@@ -112,5 +112,5 @@ path = "perf/perf.rs"
 harness = false
 
 [[bench]]
-name = "collect_benchmark"
+name = "response_collect_benchmarks"
 harness = false

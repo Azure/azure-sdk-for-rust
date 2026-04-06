@@ -38,7 +38,7 @@ fn make_body(chunk_size: usize, chunk_count: usize) -> AsyncResponseBody {
     AsyncRawResponse::new(StatusCode::Ok, Headers::new(), stream::iter(chunks).boxed()).into_body()
 }
 
-fn collect_benchmark(c: &mut Criterion) {
+fn response_collect_benchmarks(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
     // (chunk_size_bytes, chunk_count, label)
@@ -49,7 +49,7 @@ fn collect_benchmark(c: &mut Criterion) {
         (1_024 * 1_024, 10, "10x1MB"),
     ];
 
-    let mut group = c.benchmark_group("collect");
+    let mut group = c.benchmark_group("response_collect");
     for &(chunk_size, chunk_count, label) in cases {
         group.bench_with_input(
             BenchmarkId::new("two_pass_pr3879", label),
@@ -76,5 +76,5 @@ fn collect_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, collect_benchmark);
+criterion_group!(benches, response_collect_benchmarks);
 criterion_main!(benches);
