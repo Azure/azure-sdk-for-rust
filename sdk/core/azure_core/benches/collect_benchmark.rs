@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    Bytes,
     http::{headers::Headers, AsyncRawResponse, AsyncResponseBody, StatusCode},
+    Bytes,
 };
 use bytes::BytesMut;
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use futures::{StreamExt, stream};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use futures::{stream, StreamExt};
 
 /// The PR #3879 two-pass approach: collect all chunks into a Vec<Bytes>,
 /// sum total length, allocate exact BytesMut, then copy everything in.
@@ -35,12 +35,7 @@ fn make_body(chunk_size: usize, chunk_count: usize) -> AsyncResponseBody {
     let chunks: Vec<azure_core::Result<Bytes>> = (0..chunk_count)
         .map(|_| Ok(Bytes::from(vec![0u8; chunk_size])))
         .collect();
-    AsyncRawResponse::new(
-        StatusCode::Ok,
-        Headers::new(),
-        stream::iter(chunks).boxed(),
-    )
-    .into_body()
+    AsyncRawResponse::new(StatusCode::Ok, Headers::new(), stream::iter(chunks).boxed()).into_body()
 }
 
 fn collect_benchmark(c: &mut Criterion) {
