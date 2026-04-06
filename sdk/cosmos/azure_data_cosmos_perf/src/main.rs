@@ -39,10 +39,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This must happen before any tokio tasks are spawned.
     #[cfg(feature = "tokio-console")]
     {
+        use std::net::{IpAddr, Ipv4Addr};
+
+        let console_addr: IpAddr = match std::env::var("TOKIO_CONSOLE_ADDR") {
+            Ok(val) => val.parse().unwrap_or_else(|e| {
+                eprintln!("WARNING: invalid TOKIO_CONSOLE_ADDR={val:?}: {e}; defaulting to 127.0.0.1");
+                IpAddr::V4(Ipv4Addr::LOCALHOST)
+            }),
+            Err(_) => IpAddr::V4(Ipv4Addr::LOCALHOST),
+        };
+        let console_port: u16 = match std::env::var("TOKIO_CONSOLE_PORT") {
+            Ok(val) => val.parse().unwrap_or_else(|e| {
+                eprintln!("WARNING: invalid TOKIO_CONSOLE_PORT={val:?}: {e}; defaulting to 6669");
+                6669
+            }),
+            Err(_) => 6669,
+        };
+
         console_subscriber::ConsoleLayer::builder()
-            .server_addr(([0, 0, 0, 0], 6669))
+            .server_addr((console_addr, console_port))
             .init();
-        eprintln!("tokio-console enabled — connect with: tokio-console http://<pod-ip>:6669");
+
+        let addr_display = if console_addr.is_ipv6() {
+            format!("[{}]", console_addr)
+        } else {
+            console_addr.to_string()
+        };
+
+        if console_addr.is_loopback() {
+            eprintln!(
+                "tokio-console enabled on loopback — connect with: tokio-console http://{}:{}",
+                addr_display, console_port
+            );
+        } else {
+            let scope = if console_addr.is_unspecified() {
+                "all interfaces"
+            } else {
+                "a non-loopback address"
+            };
+            eprintln!(
+                "WARNING: tokio-console enabled on {}:{} ({scope}). \
+                 Set TOKIO_CONSOLE_ADDR=127.0.0.1 to restrict to loopback.",
+                addr_display, console_port
+            );
+        }
     }
 
     // Log Pyroscope status (profiling is handled externally via eBPF auto-instrumentation)
