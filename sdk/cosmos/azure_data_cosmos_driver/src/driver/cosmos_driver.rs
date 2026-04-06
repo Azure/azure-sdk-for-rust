@@ -23,6 +23,7 @@ use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use url::Url;
 
 use super::{
     cache::AccountRegion,
@@ -165,10 +166,57 @@ impl CosmosDriver {
     /// incompatibility signal, falls back to HTTP/1.1 using the same
     /// emulator-aware metadata transport selection as the steady-state path.
     ///
+    /// If the primary endpoint fails, tries each backup endpoint in order.
+    ///
     /// Callers that need to force HTTP/1.1 can disable HTTP/2 in
     /// [`crate::options::ConnectionPoolOptionsBuilder::with_is_http2_allowed`].
     /// The returned version is used to create the per-account `CosmosTransport`.
     async fn probe_http_version(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
+        match Self::probe_http_version_for_endpoint(runtime, account).await {
+            Ok(result) => Ok(result),
+            Err(primary_error) if !account.backup_endpoints().is_empty() => {
+                tracing::warn!(
+                    endpoint = %AccountEndpoint::from(account),
+                    error = %primary_error,
+                    "primary endpoint probe failed; trying backup endpoints"
+                );
+
+                for backup_url in account.backup_endpoints() {
+                    let backup_account = Self::with_endpoint(account, backup_url.clone());
+                    match Self::probe_http_version_for_endpoint(runtime, &backup_account).await {
+                        Ok(result) => {
+                            // The HTTP version is negotiated with the backup's gateway,
+                            // which may differ from the primary. Any mismatch is
+                            // self-correcting: handle_refresh_failure will re-probe
+                            // when the primary recovers.
+                            return Ok(result);
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                backup_endpoint = %backup_url,
+                                error = %e,
+                                "backup endpoint probe failed; trying next"
+                            );
+                        }
+                    }
+                }
+
+                tracing::error!(
+                    endpoint = %AccountEndpoint::from(account),
+                    backup_count = account.backup_endpoints().len(),
+                    "all endpoints exhausted during HTTP version probe"
+                );
+                Err(primary_error)
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Probes the HTTP version for a single endpoint.
+    async fn probe_http_version_for_endpoint(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
     ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
@@ -215,6 +263,18 @@ impl CosmosDriver {
             }
             Err(error) => Err(error),
         }
+    }
+
+    /// Creates a temporary `AccountReference` targeting a single backup endpoint.
+    ///
+    /// `backup_endpoints` are intentionally omitted: this reference is used for
+    /// a single-endpoint probe inside the fallback loop and must not trigger
+    /// its own recursive fallback.
+    fn with_endpoint(account: &AccountReference, endpoint: Url) -> AccountReference {
+        AccountReference::builder(endpoint)
+            .auth(account.auth().clone())
+            .build()
+            .expect("auth is always present when cloned from existing AccountReference")
     }
 
     /// Fetches account properties using a specific adaptive transport.
@@ -292,7 +352,9 @@ impl CosmosDriver {
 
     /// Fetches account properties using the current per-account transport.
     ///
-    /// Uses the existing transport for the refresh.
+    /// Uses the existing transport for the refresh. If the primary endpoint
+    /// fails (including HTTP version fallback), tries regional endpoints from
+    /// the cached account metadata as a last resort.
     ///
     /// - **HTTP/1.1 success**: opportunistically re-probes HTTP/2 and upgrades
     ///   the transport on success.
@@ -300,6 +362,8 @@ impl CosmosDriver {
     ///   the transport.
     /// - **Other transport failure with HTTP/2**: re-probes fully (may discover
     ///   the gateway now requires HTTP/1.1).
+    /// - **All primary attempts fail**: tries regional endpoints discovered
+    ///   during the last successful account metadata fetch.
     ///
     /// This avoids creating transient transport infrastructure on every refresh
     /// cycle. A fresh probe only occurs when the driver is currently pinned to
@@ -335,7 +399,7 @@ impl CosmosDriver {
                 Ok(props)
             }
             Err(error) => {
-                Self::handle_refresh_failure(
+                match Self::handle_refresh_failure(
                     runtime,
                     account,
                     transport_holder,
@@ -344,8 +408,107 @@ impl CosmosDriver {
                     error,
                 )
                 .await
+                {
+                    Ok(props) => Ok(props),
+                    Err(primary_error) => {
+                        // Primary endpoint failed — try regional endpoints from cached metadata.
+                        Self::refresh_via_regional_endpoints(
+                            runtime,
+                            account,
+                            transport_holder,
+                            &endpoint,
+                            primary_error,
+                        )
+                        .await
+                    }
+                }
             }
         }
+    }
+
+    /// Attempts account metadata refresh via regional endpoints from the cache.
+    ///
+    /// Called when the primary global endpoint is unreachable. Iterates through
+    /// readable regional endpoints from the last successfully cached account
+    /// metadata and tries each one.
+    async fn refresh_via_regional_endpoints(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        primary_endpoint: &AccountEndpoint,
+        primary_error: azure_core::Error,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let cached = runtime.account_metadata_cache().get(primary_endpoint).await;
+
+        let Some(cached_props) = cached else {
+            return Err(primary_error);
+        };
+
+        // Parse regional URLs once, filtering out the primary and any unparseable URLs.
+        let regional_endpoints: Vec<Url> = cached_props
+            .readable_locations
+            .iter()
+            .filter_map(|loc| {
+                let url = Url::parse(&loc.database_account_endpoint).ok()?;
+                let ep = AccountEndpoint::from(url.clone());
+                if ep == *primary_endpoint {
+                    None
+                } else {
+                    Some(url)
+                }
+            })
+            .collect();
+
+        if regional_endpoints.is_empty() {
+            return Err(primary_error);
+        }
+
+        tracing::warn!(
+            endpoint = %primary_endpoint,
+            error = %primary_error,
+            "primary endpoint refresh failed; trying regional endpoints"
+        );
+
+        for regional_url in &regional_endpoints {
+            let regional_account = Self::with_endpoint(account, regional_url.clone());
+            let regional_ep = AccountEndpoint::from(&regional_account);
+            let current_transport = transport_holder.load_full();
+            let Ok(regional_transport) = current_transport.get_metadata_transport(&regional_ep)
+            else {
+                continue;
+            };
+
+            let user_agent = Self::user_agent_header(runtime);
+            match Self::fetch_account_properties_with_transport(
+                &regional_transport,
+                &regional_account,
+                &user_agent,
+            )
+            .await
+            {
+                Ok(props) => {
+                    // Regional metadata may differ slightly from the primary
+                    // (e.g., location ordering). This is acceptable as a transient
+                    // fallback; the next successful primary refresh will restore
+                    // canonical metadata.
+                    return Ok(props);
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        regional_endpoint = %regional_url,
+                        error = %e,
+                        "regional endpoint refresh failed; trying next"
+                    );
+                }
+            }
+        }
+
+        tracing::error!(
+            endpoint = %primary_endpoint,
+            regional_count = regional_endpoints.len(),
+            "all endpoints exhausted during account properties refresh"
+        );
+        Err(primary_error)
     }
 
     async fn maybe_restore_http2_after_refresh(

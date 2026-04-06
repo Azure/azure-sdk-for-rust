@@ -3,7 +3,7 @@
 
 //! Test framework for azure_data_cosmos_driver emulator tests.
 
-mod env;
+pub(crate) mod env;
 mod test_client;
 
 pub use test_client::DriverTestClient;
