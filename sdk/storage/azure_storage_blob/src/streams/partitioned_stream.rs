@@ -149,6 +149,8 @@ impl MultiBufferPartition {
     }
 }
 
+const MULTI_BUF_PARTITION_BUF_LEN: usize = 4 * 1024 * 1024;
+
 /// Converts the given AsyncRead into a Stream<Item = Vec<Bytes>>, where each item is a chunk of
 /// data that is exactly `partition_len` bytes. The last item may be smaller.
 pub(crate) fn stream_multi_buffer_partitions(
@@ -156,19 +158,18 @@ pub(crate) fn stream_multi_buffer_partitions(
     partition_len: NonZero<u64>,
 ) -> impl Stream<Item = Result<Vec<Bytes>>> {
     let partition_len = partition_len.get();
-    const INDIVIDUAL_BUF_LEN: usize = 4 * 1024 * 1024;
-    // supports a partition_len up to MAX_CONTIGUOUS_ELEMENT * INDIVIDUAL_BUF_LEN (= 8 petabytes)
+    // supports a partition_len up to MAX_CONTIGUOUS_ELEMENT * MULTI_BUF_PARTITION_BUF_LEN (= 8 petabytes)
     let vec_len = partition_len
-        .div_ceil(INDIVIDUAL_BUF_LEN as u64)
+        .div_ceil(MULTI_BUF_PARTITION_BUF_LEN as u64)
         .try_into()
         .unwrap_or(MAX_CONTIGUOUS_ELEMENTS);
     try_stream! {
-        let mut partition = MultiBufferPartition::new(INDIVIDUAL_BUF_LEN, vec_len);
+        let mut partition = MultiBufferPartition::new(MULTI_BUF_PARTITION_BUF_LEN, vec_len);
         loop {
             // If partition is at partition_len, yield it
             let mut remaining_partition_space = partition_len.saturating_sub(partition.len());
             if remaining_partition_space == 0 {
-                yield mem::replace(&mut partition, MultiBufferPartition::new(INDIVIDUAL_BUF_LEN, vec_len)).freeze();
+                yield mem::replace(&mut partition, MultiBufferPartition::new(MULTI_BUF_PARTITION_BUF_LEN, vec_len)).freeze();
                 remaining_partition_space = partition_len;
             }
             let remaining_partition_space = remaining_partition_space; // un-mut this variable
@@ -218,9 +219,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_exact_len() -> Result<()> {
-        for part_count in [2usize, 3, 11, 16] {
-            for part_len in [1024usize, 1000, 9999, 1] {
+    async fn single_partitions_exact_len() -> Result<()> {
+        for part_count in [2, 3, 11, 16] {
+            for part_len in [1024, 1000, 9999, 1] {
                 let data = get_random_data(part_len * part_count);
                 let stream = Box::pin(stream_single_buffer_partitions(
                     Box::new(BytesStream::new(data.clone())),
@@ -240,9 +241,32 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partitions_with_remainder() -> Result<()> {
-        for part_count in [2usize, 3, 11, 16] {
-            for part_len in [1024usize, 1000, 9999] {
+    async fn multi_partitions_exact_len() -> Result<()> {
+        for part_count in [2, 3, 11, 16] {
+            for part_len in [1024, 1000, 9999, 1] {
+                let data = get_random_data(part_len * part_count);
+                let stream = Box::pin(stream_multi_buffer_partitions(
+                    Box::new(BytesStream::new(data.clone())),
+                    NonZero::new(part_len as u64).unwrap(),
+                ));
+
+                let parts: Vec<_> = stream.try_collect().await?;
+
+                assert_eq!(parts.len(), part_count);
+                for (i, vec) in parts.iter().enumerate() {
+                    let bytes = vec.first().unwrap();
+                    assert_eq!(bytes.len(), part_len);
+                    assert_eq!(bytes[..], data[i * part_len..i * part_len + part_len]);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn single_partitions_with_remainder() -> Result<()> {
+        for part_count in [2, 3, 11, 16] {
+            for part_len in [1024, 1000, 9999] {
                 for dangling_len in [part_len / 2, 100, 128, 99] {
                     let data = get_random_data(part_len * (part_count - 1) + dangling_len);
                     let stream = Box::pin(stream_single_buffer_partitions(
@@ -269,8 +293,38 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn exactly_one_partition() -> Result<()> {
-        for len in [1024usize, 1000, 9999, 1] {
+    async fn multi_partitions_with_remainder() -> Result<()> {
+        for part_count in [2, 3, 11, 16] {
+            for part_len in [1024, 1000, 9999] {
+                for dangling_len in [part_len / 2, 100, 128, 99] {
+                    let data = get_random_data(part_len * (part_count - 1) + dangling_len);
+                    let stream = Box::pin(stream_multi_buffer_partitions(
+                        Box::new(BytesStream::new(data.clone())),
+                        NonZero::new(part_len as u64).unwrap(),
+                    ));
+
+                    let parts: Vec<_> = stream.try_collect().await?;
+
+                    assert_eq!(parts.len(), part_count);
+                    for (i, vec) in parts[..parts.len()].iter().enumerate() {
+                        let bytes = vec.first().unwrap();
+                        if i == parts.len() - 1 {
+                            assert_eq!(bytes.len(), dangling_len);
+                            assert_eq!(bytes[..], data[i * part_len..]);
+                        } else {
+                            assert_eq!(bytes.len(), part_len);
+                            assert_eq!(bytes[..], data[i * part_len..i * part_len + part_len]);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn single_exactly_one_partition() -> Result<()> {
+        for len in [1024, 1000, 9999, 1] {
             let data = get_random_data(len);
             let mut stream = Box::pin(stream_single_buffer_partitions(
                 Box::new(BytesStream::new(data.clone())),
@@ -286,9 +340,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn less_than_one_partition() -> Result<()> {
-        let part_len = 99999usize;
-        for len in [1024usize, 1000, 9999, 1] {
+    async fn multi_exactly_one_partition() -> Result<()> {
+        for len in [1024, 1000, 9999, 1] {
+            let data = get_random_data(len);
+            let mut stream = Box::pin(stream_multi_buffer_partitions(
+                Box::new(BytesStream::new(data.clone())),
+                NonZero::new(len as u64).unwrap(),
+            ));
+
+            let single_partition = stream.try_next().await?.unwrap().pop().unwrap();
+
+            assert_eq!(stream.try_next().await?, None);
+            assert_eq!(single_partition[..], data[..]);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn single_less_than_one_partition() -> Result<()> {
+        let part_len = 99999;
+        for len in [1024, 1000, 9999, 1] {
             let data = get_random_data(len);
             let mut stream = Box::pin(stream_single_buffer_partitions(
                 Box::new(BytesStream::new(data.clone())),
@@ -304,8 +375,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn successful_empty_stream_when_empty_source_stream() -> Result<()> {
-        for part_len in [1024usize, 1000, 9999, 1] {
+    async fn multi_less_than_one_partition() -> Result<()> {
+        let part_len = 99999;
+        for len in [1024, 1000, 9999, 1] {
+            let data = get_random_data(len);
+            let mut stream = Box::pin(stream_multi_buffer_partitions(
+                Box::new(BytesStream::new(data.clone())),
+                NonZero::new(part_len as u64).unwrap(),
+            ));
+
+            let single_partition = stream.try_next().await?.unwrap().pop().unwrap();
+
+            assert!(stream.try_next().await?.is_none());
+            assert_eq!(single_partition[..], data[..]);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn single_successful_empty_stream_when_empty_source_stream() -> Result<()> {
+        for part_len in [1024, 1000, 9999, 1] {
             let data = get_random_data(0);
             let mut stream = Box::pin(stream_single_buffer_partitions(
                 Box::new(BytesStream::new(data.clone())),
@@ -313,6 +402,44 @@ mod tests {
             ));
 
             assert!(stream.try_next().await?.is_none());
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn multi_successful_empty_stream_when_empty_source_stream() -> Result<()> {
+        for part_len in [1024, 1000, 9999, 1] {
+            let data = get_random_data(0);
+            let mut stream = Box::pin(stream_multi_buffer_partitions(
+                Box::new(BytesStream::new(data.clone())),
+                NonZero::new(part_len).unwrap(),
+            ));
+
+            assert!(stream.try_next().await?.is_none());
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn multi_buffer_partitions() -> Result<()> {
+        for part_len in [
+            MULTI_BUF_PARTITION_BUF_LEN + 1,
+            MULTI_BUF_PARTITION_BUF_LEN * 2,
+            MULTI_BUF_PARTITION_BUF_LEN * 2 + 1,
+        ] {
+            for part_count in [1, 2, 5] {
+                let data = get_random_data(part_len * part_count);
+                let stream = Box::pin(stream_multi_buffer_partitions(
+                    Box::new(BytesStream::new(data.clone())),
+                    NonZero::new(part_len as u64).unwrap(),
+                ));
+
+                let parts: Vec<_> = stream.try_collect().await?;
+                assert_eq!(parts.len(), part_count);
+                for part in parts {
+                    assert!(part.len() > 1)
+                }
+            }
         }
         Ok(())
     }

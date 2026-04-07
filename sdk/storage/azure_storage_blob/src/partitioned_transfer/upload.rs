@@ -8,8 +8,9 @@ use async_trait::async_trait;
 use azure_core::{error::ErrorKind, stream::SeekableStream};
 use futures::StreamExt;
 
-use crate::streams::partitioned_stream::{
-    stream_multi_buffer_partitions, stream_single_buffer_partitions,
+use crate::streams::{
+    multi_bytes_stream::MultiBytesStream,
+    partitioned_stream::{stream_multi_buffer_partitions, stream_single_buffer_partitions},
 };
 
 use super::*;
@@ -89,11 +90,12 @@ async fn upload_stream_partitions(
                 // SAFETY: this value comes out of an existing NonZero. We've only safely converted the bit size.
                 unsafe { NonZero::new_unchecked(partition_size_usize) },
             )
-            .map_ok(|bytes| bytes.into()),
+            .map_ok(Body::Bytes),
         ) as PartsStream,
         Err(_) => Box::pin(
-            stream_multi_buffer_partitions(content, partition_size)
-                .map_ok(|vec_bytes| Body::SeekableStream(todo!())),
+            stream_multi_buffer_partitions(content, partition_size).map_ok(|vec_bytes| {
+                Body::SeekableStream(Box::new(MultiBytesStream::new(vec_bytes)))
+            }),
         ) as PartsStream,
     }
     .scan(0u64, |enumerated_bytes, result| match result {
