@@ -6,13 +6,11 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     format_page_range,
     models::{
-        BlobClientCreateSnapshotResultHeaders, BlobClientDownloadResultHeaders,
-        BlobClientGetPropertiesResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-        BlobType, PageBlobClientCreateOptions, PageBlobClientCreateOptions,
-        PageBlobClientGetPageRangesOptions, PageBlobClientSetSequenceNumberOptions,
+        BlobClientCreateSnapshotResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+        PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions,
         PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
-        PageBlobClientSetSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
-        PageBlobClientUploadPagesOptions, SequenceNumberActionType, SequenceNumberActionType,
+        PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
+        SequenceNumberActionType,
     },
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};

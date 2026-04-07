@@ -78,8 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Download and verify the assembled log content.
     let response = blob_client.download(None).await?;
-    let (_, _, body) = response.deconstruct();
-    let data = body.collect().await?;
+    let data = response.body.collect().await?;
     println!("\nFull blob content:\n{}", String::from_utf8_lossy(&data));
 
     container_client.delete(None).await?;

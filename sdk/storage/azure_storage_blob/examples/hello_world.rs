@@ -54,8 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Download the blob and print its content.
     let response = blob_client.download(None).await?;
-    let (_, _, body) = response.deconstruct();
-    let data = body.collect().await?;
+    let data = response.body.collect().await?;
     println!("Downloaded: {}", String::from_utf8_lossy(&data));
 
     // Delete the container (also deletes all blobs inside it).

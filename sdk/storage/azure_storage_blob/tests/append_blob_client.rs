@@ -5,8 +5,7 @@ use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockOptions,
-    AppendBlobClientCreateOptions, AppendBlobClientCreateOptions, BlobClientDownloadResultHeaders,
-    BlobClientGetPropertiesResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType, BlobType,
+    AppendBlobClientCreateOptions, BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,

@@ -111,8 +111,7 @@ async fn staged_upload(
         .blob_client(blob_name)
         .download(None)
         .await?;
-    let (_, _, body) = response.deconstruct();
-    let data = body.collect().await?;
+    let data = response.body.collect().await?;
     println!("Downloaded: {}", String::from_utf8_lossy(&data));
 
     Ok(())

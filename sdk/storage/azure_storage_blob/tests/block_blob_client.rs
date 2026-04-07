@@ -8,13 +8,10 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        method_options::BlockBlobClientUploadOptions, BlobClientDownloadResultHeaders,
-        BlobClientGetPropertiesResultHeaders, BlobClientGetPropertiesResultHeaders,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockFromUrlOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
+        BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockOptions,
         BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, BlockListType,
-        BlockListType, BlockLookupList, BlockLookupList,
+        BlockLookupList,
     },
     BlobContainerClientOptions,
 };

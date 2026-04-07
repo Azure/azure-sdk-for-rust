@@ -132,12 +132,16 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
     // Assert: with RetryOptions::none(), each request is attempted exactly once.
     // Verify by counting per-try invocations for a single known request.
     let count_before = per_try_count.load(Ordering::Relaxed);
+    // `TestPolicy::send` only invokes its callback when `request_scope_counter > 0`.
+    // Without activating the scope here, the counter never increments and the assertion fails.
+    let _count_scope = count_policy.check_request_scope();
     let props = blob_client.get_properties(None).await?;
     assert_eq!(
         per_try_count.load(Ordering::Relaxed) - count_before,
         1,
         "expected exactly 1 per-try invocation (no retries)"
     );
+    drop(_count_scope);
     assert_eq!(Some(15), props.content_length()?);
 
     container_client.delete(None).await?;

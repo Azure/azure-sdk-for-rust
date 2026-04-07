@@ -10,20 +10,13 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
-        method_options::BlobClientManagedDownloadOptions, AccessTier, AccessTier, AccountKind,
-        AccountKind, BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResultHeaders,
-        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadOptions,
-        BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
+        AccessTier, AccountKind, BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
         BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobClientSetTierOptions,
-        BlobTags, BlobTags, BlockBlobClientUploadOptions, BlockBlobClientUploadOptions,
-        ImmutabilityPolicyMode, ImmutabilityPolicyMode, LeaseState, LeaseState, RehydratePriority,
-        StorageErrorCode,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
+        RehydratePriority, StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
@@ -154,22 +147,14 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
     // Working Case (overwrite=true)
-    let overwrite_response = blob_client
+    blob_client
         .upload(RequestContent::from(new_data.to_vec()), None)
         .await?;
     let response = blob_client.download(None).await?;
     // Assert
-    assert_eq!(
-        overwrite_response.raw_response.status(),
-        StatusCode::Created
-    );
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(29, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(new_data),
-        response_body.collect().await?.as_ref()
-    );
+    assert_eq!(29, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(new_data), body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -1136,11 +1121,11 @@ async fn test_upload_blob_content_headers(ctx: TestContext) -> Result<(), Box<dy
 
     // Assert Content Headers on Download Response
     let response = blob_client.download(None).await?;
-    assert_eq!(Some("no-cache".to_string()), response.cache_control()?);
-    assert_eq!(Some("inline".to_string()), response.content_disposition()?);
-    assert_eq!(Some("identity".to_string()), response.content_encoding()?);
-    assert_eq!(Some("en-US".to_string()), response.content_language()?);
-    let content_type: Option<String> = response.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("no-cache".to_string()), response.properties.cache_control);
+    assert_eq!(Some("inline".to_string()), response.properties.content_disposition);
+    assert_eq!(Some("identity".to_string()), response.properties.content_encoding);
+    assert_eq!(Some("en-US".to_string()), response.properties.content_language);
+    let content_type: Option<String> = response.headers.get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("image/png".to_string()), content_type);
 
     container_client.delete(None).await?;
