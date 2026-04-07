@@ -82,30 +82,45 @@ async fn upload_stream_partitions(
     partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    type PartsStream = Pin<Box<dyn Stream<Item = AzureResult<Body>>>>;
+    type PartsStream = Pin<Box<dyn Stream<Item = AzureResult<(u64, Body)>>>>;
     let partitions = match TryInto::<usize>::try_into(partition_size.get()) {
-        Ok(partition_size_usize) => Box::pin(
-            stream_single_buffer_partitions(
+        Ok(partition_size_usize) => {
+            let stream = stream_single_buffer_partitions(
                 content,
                 // SAFETY: this value comes out of an existing NonZero. We've only safely converted the bit size.
                 unsafe { NonZero::new_unchecked(partition_size_usize) },
             )
-            .map_ok(Body::Bytes),
-        ) as PartsStream,
-        Err(_) => Box::pin(
-            stream_multi_buffer_partitions(content, partition_size).map_ok(|vec_bytes| {
-                Body::SeekableStream(Box::new(MultiBytesStream::new(vec_bytes)))
-            }),
-        ) as PartsStream,
-    }
-    .scan(0u64, |enumerated_bytes, result| match result {
-        Ok(body) => {
-            let offset = *enumerated_bytes;
-            *enumerated_bytes += body.len();
-            future::ready(Some(Ok((offset, body))))
+            .scan(0u64, |enumerated_bytes, result| match result {
+                Ok(bytes) => {
+                    let offset = *enumerated_bytes;
+                    *enumerated_bytes += bytes.len() as u64;
+                    future::ready(Some(Ok((offset, Body::Bytes(bytes)))))
+                }
+                Err(e) => future::ready(Some(Err(e))),
+            });
+            Box::pin(stream) as PartsStream
         }
-        Err(e) => future::ready(Some(Err(e))),
-    });
+        Err(_) => {
+            let stream = stream_multi_buffer_partitions(content, partition_size).scan(
+                0u64,
+                |enumerated_bytes, result| match result {
+                    Ok(vec_bytes) => {
+                        let offset = *enumerated_bytes;
+                        *enumerated_bytes += vec_bytes
+                            .iter()
+                            .map(|bytes| bytes.len() as u64)
+                            .sum::<u64>();
+                        future::ready(Some(Ok((
+                            offset,
+                            Body::SeekableStream(Box::new(MultiBytesStream::new(vec_bytes))),
+                        ))))
+                    }
+                    Err(e) => future::ready(Some(Err(e))),
+                },
+            );
+            Box::pin(stream) as PartsStream
+        }
+    };
     let ops = partitions.map_ok(|(offset, body)| move || client.transfer_partition(offset, body));
     run_all_with_concurrency_limit(ops, parallel).await?;
     Ok(())
