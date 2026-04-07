@@ -323,20 +323,25 @@ impl ContainerClient {
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.operation.excluded_regions.clone();
-        let mut cosmos_request =
-            CosmosRequest::builder(OperationType::Create, self.items_link.clone())
-                .json(&item)
-                .partition_key(partition_key.into())
-                .excluded_regions(excluded_regions)
-                .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let options = options.unwrap_or_default();
+        let partition_key: PartitionKey = partition_key.into();
+        let body = serde_json::to_vec(&item)?;
+        let driver_pk = partition_key.into_driver_partition_key();
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ItemResponse::new)
+        // Create the driver operation.
+        let operation =
+            CosmosOperation::create_item(self.container_ref.clone(), driver_pk).with_body(body);
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Replaces an existing item in the container.
