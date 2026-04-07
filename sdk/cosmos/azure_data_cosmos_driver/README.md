@@ -6,7 +6,7 @@ Core implementation layer for Azure Cosmos DB, providing transport, routing, and
 
 `azure_data_cosmos_driver` is designed for:
 
-- **Cross-language SDK reuse**: Provides a common implementation that can be used by Rust, Java, .NET, and Python SDKs via the C API wrapper (`azure_data_cosmos_native`)
+- **Cross-language SDK reuse**: Provides a common implementation that can be reused across language SDKs
 - **Advanced scenarios**: Direct use by developers who need fine-grained control over Cosmos DB operations
 - **Internal implementation**: Used internally by `azure_data_cosmos` (the primary Rust SDK)
 
