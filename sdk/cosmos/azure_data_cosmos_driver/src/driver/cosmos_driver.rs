@@ -779,6 +779,10 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
+        // TODO: Remove this line. It is intentionally holding a non-Send type across an
+        // `.await` point to validate that the Send assertion test catches regressions.
+        let _non_send = std::rc::Rc::new(());
+
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(azure_core::Error::with_message(
@@ -1719,5 +1723,16 @@ mod tests {
             transport_holder.load().negotiated_version(),
             TransportHttpVersion::Http11
         );
+    }
+
+    /// Compile-time assertion that the `execute_operation` future is `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If the future returned by `execute_operation` is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_execute_operation_future_is_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let driver: &CosmosDriver = todo!();
+        assert_send(driver.execute_operation(todo!(), todo!()));
     }
 }

@@ -778,3 +778,35 @@ impl ContainerClient {
             .map(BatchResponse::new)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `ContainerClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &ContainerClient = todo!();
+
+        // Container operations
+        assert_send(client.read(todo!()));
+        assert_send(client.replace(todo!(), todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.replace_throughput(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+
+        // Item operations (use "" for partition_key to avoid never-type fallback issues)
+        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
+        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.delete_item("", todo!(), todo!()));
+
+        // Batch operations
+        assert_send(client.execute_transactional_batch(todo!(), todo!()));
+    }
+}

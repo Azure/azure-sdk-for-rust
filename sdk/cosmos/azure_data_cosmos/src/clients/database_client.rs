@@ -255,3 +255,24 @@ impl DatabaseClient {
             .map(ResourceResponse::new)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `DatabaseClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &DatabaseClient = todo!();
+        assert_send(client.container_client(todo!()));
+        assert_send(client.read(todo!()));
+        assert_send(client.create_container(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.replace_throughput(todo!(), todo!()));
+    }
+}
