@@ -3,7 +3,7 @@
 
 //! Logging configuration for Azure Storage Queue clients.
 //!
-//! These defaults are automatically applied to all Storage Queue clients and are additive with any user-specified logging options.
+//! These defaults are automatically applied to all Storage Queue clients and merged with any user-specified logging options.
 
 use azure_core::http::ClientOptions;
 use std::borrow::Cow;

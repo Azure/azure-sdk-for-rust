@@ -5,7 +5,7 @@ use azure_core::http::Body;
 use bytes::Bytes;
 
 use async_trait::async_trait;
-use azure_core::stream::SeekableStream;
+use azure_core::{error::ErrorKind, stream::SeekableStream};
 use futures::StreamExt;
 
 use crate::streams::partitioned_stream::PartitionedStream;
@@ -16,7 +16,7 @@ use super::*;
 pub(crate) trait PartitionedUploadBehavior {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()>;
     async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
-    async fn initialize(&self, content_len: usize) -> AzureResult<()>;
+    async fn initialize(&self, content_len: u64) -> AzureResult<()>;
     async fn finalize(&self) -> AzureResult<()>;
 }
 
@@ -26,12 +26,20 @@ pub(crate) async fn upload(
     partition_size: NonZero<usize>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    if content.len() <= partition_size.get() {
+    // cspell:ignore jaschrep
+    // TODO (jaschrep-msft) support oneshot given optional length
+    let Some(content_len) = content.len() else {
+        return Err(azure_core::Error::with_message(
+            ErrorKind::Io,
+            "length unknown",
+        ));
+    };
+    if content_len <= partition_size.get() as u64 {
         client.transfer_oneshot(content).await?;
         return Ok(());
     }
 
-    client.initialize(content.len()).await?;
+    client.initialize(content_len).await?;
 
     match content {
         Body::Bytes(bytes) => {
@@ -111,7 +119,7 @@ mod tests {
     /// Record of a call made to a PartitionedUploadBehavior
     #[derive(Debug)]
     enum MockPartitionedUploadBehaviorInvocation {
-        Initialize(usize),
+        Initialize(u64),
         TransferOneshot(Bytes, BodyType),
         TransferPartition(usize, Bytes, BodyType),
         Finalize(),
@@ -158,7 +166,7 @@ mod tests {
             Ok(())
         }
 
-        async fn initialize(&self, content_len: usize) -> AzureResult<()> {
+        async fn initialize(&self, content_len: u64) -> AzureResult<()> {
             self.invocations.lock().await.push(
                 MockPartitionedUploadBehaviorInvocation::Initialize(content_len),
             );
@@ -300,7 +308,7 @@ mod tests {
         assert_eq!(invocations.len(), expected_partitions + 2);
         assert!(matches!(
             &invocations[0],
-            MockPartitionedUploadBehaviorInvocation::Initialize(size) if *size == original_data.len()
+            MockPartitionedUploadBehaviorInvocation::Initialize(size) if *size == original_data.len() as u64
         ));
         assert!(matches!(
             &invocations[invocations.len() - 1],

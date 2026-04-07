@@ -59,8 +59,8 @@ mod blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(content.to_vec(), body_data);
 
         // Wrong Hash Download
         let err = blob_client
@@ -177,8 +177,8 @@ mod blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(content.to_vec(), body_data);
 
         container_client.delete(None).await?;
         Ok(())
@@ -284,8 +284,8 @@ mod block_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(content.to_vec(), body_data);
 
         // Invalid Scope Stage Block
         let invalid_blob =
@@ -351,8 +351,8 @@ mod block_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(source_content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(source_content.to_vec(), body_data);
 
         // Setup CPK Source
         let cpk_source_blob =
@@ -386,8 +386,8 @@ mod block_blob_client {
             )
             .await?;
         let response = dest_source_cpk_blob.download(None).await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(cpk_source_content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(cpk_source_content.to_vec(), body_data);
 
         // Source CPK Mismatch
         let dest_mismatch_blob =
@@ -482,8 +482,8 @@ mod block_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(source_content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(source_content.to_vec(), body_data);
 
         // Setup CPK Source
         let cpk_source_blob =
@@ -523,8 +523,8 @@ mod block_blob_client {
             .commit_block_list(block_lookup(block_id).try_into()?, None)
             .await?;
         let response = dest_source_cpk_blob.download(None).await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(cpk_source_content.to_vec(), body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(cpk_source_content.to_vec(), body_data);
 
         // Source CPK Mismatch
         let dest_mismatch_blob =
@@ -709,11 +709,11 @@ mod append_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
         let mut expected = append_content.to_vec();
         expected.extend_from_slice(plain_source_content);
         expected.extend_from_slice(cpk_source_content);
-        assert_eq!(expected, body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(expected, body_data);
 
         // Source CPK Mismatch
         let err = append_blob
@@ -839,8 +839,8 @@ mod page_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(content, body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(content, body_data);
 
         // Invalid Scope Upload Pages
         bad_scope_page_blob.create(512, None).await?;
@@ -877,8 +877,8 @@ mod page_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(vec![0; 512], body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(vec![0; 512], body_data);
 
         // Invalid Scope Clear Pages
         let err = bad_scope_page_blob
@@ -998,8 +998,8 @@ mod page_blob_client {
                 ..Default::default()
             }))
             .await?;
-        let (_, _, body) = response.deconstruct();
-        assert_eq!(source_content, body.collect().await?.to_vec());
+        let body_data = response.body.collect().await?;
+        assert_eq!(source_content, body_data);
 
         // Source CPK Mismatch
         let source_mismatch_dest_blob = container_client

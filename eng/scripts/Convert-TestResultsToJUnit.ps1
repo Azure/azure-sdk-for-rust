@@ -61,16 +61,42 @@ if (!$cargo2junitPath) {
 }
 
 $succeeded = $true
+$commandOutputDir = ([System.IO.Path]::Combine($OutputDirectory, "cargo2junit-errors"))
+if (!(Test-Path $commandOutputDir)) {
+  New-Item -ItemType Directory -Path $commandOutputDir | Out-Null
+}
+
 Write-Host "`nConverting $($jsonFiles.Count) JSON file(s) to JUnit XML..."
 foreach ($jsonFile in $jsonFiles) {
   $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile.Name)
   $junitFile = ([System.IO.Path]::Combine($OutputDirectory, "$baseName.xml"))
+  $stderrFile = ([System.IO.Path]::Combine($commandOutputDir, "$baseName-stderr.txt"))
 
   Write-Host "  Converting: $($jsonFile.Name) -> $([System.IO.Path]::GetFileName($junitFile))"
-  Get-Content $jsonFile.FullName | cargo2junit > $junitFile
-  if ($LASTEXITCODE) {
-    LogError "Failure during conversion of $($jsonFile.Name) to JUnit XML."
-    $succeeded = $false
+
+  $proc = Start-Process cargo2junit `
+    -Wait `
+    -PassThru `
+    -RedirectStandardInput $jsonFile.FullName `
+    -RedirectStandardOutput $junitFile `
+    -RedirectStandardError $stderrFile
+  $exitCode = $proc.ExitCode
+  $stderr = @(Get-Content $stderrFile)
+
+  # Always print stderr so it appears in CI logs for debugging
+  foreach ($line in $stderr) {
+    Write-Host "    stderr: $line"
+  }
+
+  if ($exitCode) {
+    # cargo2junit exits non-zero when tests fail, not just on conversion errors.
+    # Filter out the known "One or more tests failed." message and only treat
+    # remaining stderr lines as actual conversion failures.
+    $otherErrors = @($stderr | Where-Object { "$_" -notlike '*One or more tests failed.*' })
+    if ($otherErrors.Count -gt 0) {
+      LogError "Failure during conversion of $($jsonFile.Name) to JUnit XML."
+      $succeeded = $false
+    }
   }
 }
 

@@ -16,6 +16,8 @@ use std::collections::HashMap;
 #[non_exhaustive]
 pub struct BackupKeyResult {
     /// The backup blob containing the backed up key.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -70,6 +72,8 @@ pub struct DeletedKey {
     pub attributes: Option<KeyAttributes>,
 
     /// The time when the key was deleted, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "deletedDate",
@@ -83,6 +87,8 @@ pub struct DeletedKey {
     pub key: Option<JsonWebKey>,
 
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 
@@ -95,6 +101,8 @@ pub struct DeletedKey {
     pub release_policy: Option<KeyReleasePolicy>,
 
     /// The time when the key is scheduled to be purged, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "scheduledPurgeDate",
@@ -117,6 +125,8 @@ pub struct DeletedKeyProperties {
     pub attributes: Option<KeyAttributes>,
 
     /// The time when the key was deleted, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "deletedDate",
@@ -130,6 +140,8 @@ pub struct DeletedKeyProperties {
     pub kid: Option<String>,
 
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 
@@ -138,6 +150,8 @@ pub struct DeletedKeyProperties {
     pub recovery_id: Option<String>,
 
     /// The time when the key is scheduled to be purged, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "scheduledPurgeDate",
@@ -325,6 +339,8 @@ pub struct Key {
     pub key: Option<JsonWebKey>,
 
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 
@@ -380,10 +396,14 @@ pub struct KeyAttestation {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyAttributes {
     /// The key or key version attestation information.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attestation: Option<KeyAttestation>,
 
     /// Creation time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -410,6 +430,8 @@ pub struct KeyAttributes {
     pub exportable: Option<bool>,
 
     /// The underlying HSM Platform.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "hsmPlatform", skip_serializing_if = "Option::is_none")]
     pub hsm_platform: Option<String>,
 
@@ -423,16 +445,22 @@ pub struct KeyAttributes {
     pub not_before: Option<OffsetDateTime>,
 
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "recoverableDays", skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
 
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the
     /// key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention
     /// interval.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "recoveryLevel", skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<DeletionRecoveryLevel>,
 
     /// Last updated time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -492,6 +520,8 @@ pub struct KeyOperationParameters {
 #[non_exhaustive]
 pub struct KeyOperationResult {
     /// Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -502,6 +532,8 @@ pub struct KeyOperationResult {
     pub additional_authenticated_data: Option<Vec<u8>>,
 
     /// The tag to authenticate when performing decryption with an authenticated algorithm.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -512,6 +544,8 @@ pub struct KeyOperationResult {
     pub authentication_tag: Option<Vec<u8>>,
 
     /// Cryptographically random, non-repeating initialization vector for symmetric algorithms.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -521,10 +555,14 @@ pub struct KeyOperationResult {
     pub iv: Option<Vec<u8>>,
 
     /// Key identifier
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
 
     /// The result of the operation.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
@@ -548,6 +586,8 @@ pub struct KeyProperties {
     pub kid: Option<String>,
 
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 
@@ -584,6 +624,8 @@ pub struct KeyReleasePolicy {
 #[non_exhaustive]
 pub struct KeyReleaseResult {
     /// A signed object containing the released key.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -596,6 +638,8 @@ pub struct KeyRotationPolicy {
     pub attributes: Option<KeyRotationPolicyAttributes>,
 
     /// The key policy id.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
@@ -610,6 +654,8 @@ pub struct KeyRotationPolicy {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyRotationPolicyAttributes {
     /// The key rotation policy created time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -623,6 +669,8 @@ pub struct KeyRotationPolicyAttributes {
     pub expiry_time: Option<String>,
 
     /// The key rotation policy's last updated time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -631,11 +679,45 @@ pub struct KeyRotationPolicyAttributes {
     pub updated: Option<OffsetDateTime>,
 }
 
+/// The key vault error exception.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct KeyVaultError {
+    /// The key vault server error.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<KeyVaultErrorError>,
+}
+
+/// The key vault server error.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct KeyVaultErrorError {
+    /// The error code.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+
+    /// The key vault server error.
+    ///
+    /// Operational visibility: Read
+    #[serde(rename = "innererror", skip_serializing_if = "Option::is_none")]
+    pub inner_error: Option<Box<KeyVaultErrorError>>,
+
+    /// The error message.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
 /// The key verify result.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyVerifyResult {
     /// True if the signature is verified, otherwise false.
+    ///
+    /// Operational visibility: Read
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<bool>,
 }
@@ -678,10 +760,14 @@ pub struct LifetimeActionType {
 #[non_exhaustive]
 pub struct ListDeletedKeyPropertiesResult {
     /// The URL to get the next set of deleted keys.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 
     /// A response message containing a list of deleted keys in the key vault along with a link to the next page of deleted keys.
+    ///
+    /// Operational visibility: Read
     #[serde(default)]
     pub value: Vec<DeletedKeyProperties>,
 }
@@ -691,10 +777,14 @@ pub struct ListDeletedKeyPropertiesResult {
 #[non_exhaustive]
 pub struct ListKeyPropertiesResult {
     /// The URL to get the next set of keys.
+    ///
+    /// Operational visibility: Read
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 
     /// A response message containing a list of keys in the key vault along with a link to the next page of keys.
+    ///
+    /// Operational visibility: Read
     #[serde(default)]
     pub value: Vec<KeyProperties>,
 }
