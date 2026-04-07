@@ -9,8 +9,48 @@
 use crate::models::effective_partition_key::EffectivePartitionKey;
 use crate::models::partition_key_range::{PartitionKeyRange, PartitionKeyRangeStatus};
 use crate::models::ETag;
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;
+
+/// Length-aware EPK string comparison.
+///
+/// For hierarchical partition key (HPK) containers, the backend may return
+/// partition key ranges with mixed-length boundaries: a partial EPK (32 chars,
+/// one hash component) and a fully specified EPK (64 chars, two hash components
+/// zero-padded). For example:
+///
+///   - Partial:   `06AB34CFE4E482236BCACBBF50E234AB`
+///   - Full:      `06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000`
+///
+/// These represent the same partition boundary. Plain lexicographic comparison
+/// treats the shorter string as "less than" the longer one (since the shorter
+/// string is a prefix of the longer), causing incorrect overlap detection.
+///
+/// This function treats two strings as equal when one is a prefix of the other
+/// and the remainder consists entirely of `'0'` characters.
+///
+/// See: <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5260>
+fn epk_length_aware_cmp(a: &str, b: &str) -> Ordering {
+    let common = a.len().min(b.len());
+    match a[..common].cmp(&b[..common]) {
+        Ordering::Equal => {
+            let tail = if a.len() > b.len() {
+                &a[common..]
+            } else {
+                &b[common..]
+            };
+            if tail.bytes().all(|b| b == b'0') {
+                Ordering::Equal
+            } else if a.len() > b.len() {
+                Ordering::Greater
+            } else {
+                Ordering::Less
+            }
+        }
+        other => other,
+    }
+}
 
 /// Error returned when partition key range validation fails.
 #[derive(Debug)]
@@ -142,9 +182,12 @@ impl ContainerRoutingMap {
         let idx = self.find_range_index(epk_str);
 
         let range = &self.ordered_ranges[idx];
-        // Direct &str comparison avoids allocations on the hot path.
-        let min_ok = range.min_inclusive.as_str() <= epk_str;
-        let max_ok = epk_str < range.max_exclusive.as_str();
+        // Length-aware comparison handles HPK containers where the backend
+        // may use zero-padded fully-specified EPK boundaries that are
+        // semantically equal to the shorter client EPK.
+        let min_ok =
+            epk_length_aware_cmp(range.min_inclusive.as_str(), epk_str) != Ordering::Greater;
+        let max_ok = epk_length_aware_cmp(epk_str, range.max_exclusive.as_str()) == Ordering::Less;
         if min_ok && max_ok {
             Some(range)
         } else {
@@ -191,9 +234,9 @@ impl ContainerRoutingMap {
 
         // End: first range whose min_inclusive >= query max (all ranges from
         // start_idx up to but not including this index overlap the query).
-        let end_idx = self.ordered_ranges[start_idx..]
-            .partition_point(|r| r.min_inclusive.as_str() < max_str)
-            + start_idx;
+        let end_idx = self.ordered_ranges[start_idx..].partition_point(|r| {
+            epk_length_aware_cmp(r.min_inclusive.as_str(), max_str) == Ordering::Less
+        }) + start_idx;
 
         self.ordered_ranges[start_idx..end_idx].iter().collect()
     }
@@ -279,7 +322,7 @@ impl ContainerRoutingMap {
     fn find_range_index(&self, epk: &str) -> usize {
         match self
             .ordered_ranges
-            .binary_search_by(|r| r.min_inclusive.as_str().cmp(epk))
+            .binary_search_by(|r| epk_length_aware_cmp(r.min_inclusive.as_str(), epk))
         {
             Ok(i) => i,               // Exact match on min_inclusive.
             Err(i) if i > 0 => i - 1, // epk falls between ranges[i-1] and ranges[i].
@@ -616,5 +659,232 @@ mod tests {
 
         let result = map.try_combine(new_ranges, Some("etag".into()));
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
+    }
+
+    // -- Length-aware EPK comparison tests --
+
+    #[test]
+    fn epk_cmp_equal_strings() {
+        assert_eq!(
+            epk_length_aware_cmp("06AB34CF", "06AB34CF"),
+            Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn epk_cmp_shorter_less_than_longer_nonzero_suffix() {
+        assert_eq!(
+            epk_length_aware_cmp("06AB34CF", "06AB34CF11223344"),
+            Ordering::Less
+        );
+    }
+
+    #[test]
+    fn epk_cmp_prefix_with_zero_suffix_is_equal() {
+        assert_eq!(
+            epk_length_aware_cmp(
+                "06AB34CFE4E482236BCACBBF50E234AB",
+                "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000"
+            ),
+            Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn epk_cmp_zero_padded_first_arg() {
+        assert_eq!(
+            epk_length_aware_cmp(
+                "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000",
+                "06AB34CFE4E482236BCACBBF50E234AB"
+            ),
+            Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn epk_cmp_different_prefixes() {
+        assert_eq!(epk_length_aware_cmp("06AB34CF", "07AB34CF"), Ordering::Less);
+        assert_eq!(
+            epk_length_aware_cmp("07AB34CF", "06AB34CF"),
+            Ordering::Greater
+        );
+    }
+
+    // -- HPK mixed-length boundary tests (ported from .NET PR #5260) --
+
+    /// Builds a routing map with mixed-length EPK boundaries typical of
+    /// HPK containers, matching the .NET test GenerateRoutingMap.
+    fn hpk_ranges() -> Vec<PartitionKeyRange> {
+        vec![
+            make_range("0", "", "03559A67F2724111B5E565DFA8711A00", None),
+            make_range(
+                "1",
+                "03559A67F2724111B5E565DFA8711A00",
+                "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000",
+                None,
+            ),
+            make_range(
+                "2",
+                "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000",
+                "0BD3FBE846AF75790CE63F78B1A81620",
+                None,
+            ),
+            make_range(
+                "3",
+                "0BD3FBE846AF75790CE63F78B1A81620",
+                "0BD3FBE846AF75790CE63F78B1A8163100000000000000000000000000000000",
+                None,
+            ),
+            make_range(
+                "11",
+                "0BD3FBE846AF75790CE63F78B1A8163100000000000000000000000000000000",
+                "0BD3FBE846AF75790CE63F78B1A81631FF",
+                None,
+            ),
+            make_range(
+                "12",
+                "0BD3FBE846AF75790CE63F78B1A81631FF",
+                "0D4DC2CD8F49C65A8E0C5306B61B4343",
+                None,
+            ),
+            make_range(
+                "4",
+                "0D4DC2CD8F49C65A8E0C5306B61B4343",
+                "0D4EC2CD8F49C65A8E0C5306B61B4343",
+                None,
+            ),
+            make_range(
+                "44",
+                "0D4EC2CD8F49C65A8E0C5306B61B4343",
+                "0D5DC2CD8F49C65A8E0C5306B61B4343",
+                None,
+            ),
+            make_range(
+                "24",
+                "0D5DC2CD8F49C65A8E0C5306B61B4343",
+                "0DCEB8CE51C6BFE84F4BD9409F69B9BB2164DEBD78C50C850E0C1E3E3F0579ED",
+                None,
+            ),
+            make_range(
+                "5",
+                "0DCEB8CE51C6BFE84F4BD9409F69B9BB2164DEBD78C50C850E0C1E3E3F0579ED",
+                "FF",
+                None,
+            ),
+        ]
+    }
+
+    /// .NET scenario 1.1: Partial input EPK on boundary between ranges 1 and 2.
+    /// The partial EPK "06AB...AB" matches the fully-specified boundary
+    /// "06AB...AB00000000000000000000000000000000" — should resolve to range 2 only.
+    #[test]
+    fn hpk_partial_epk_on_boundary_returns_correct_range() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let overlapping = map.get_overlapping_ranges(
+            &epk("06AB34CFE4E482236BCACBBF50E234AB")..&epk("06AB34CFE4E482236BCACBBF50E234ABFF"),
+        );
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["2"]);
+    }
+
+    /// .NET scenario 1.2: Partial EPK on another boundary.
+    #[test]
+    fn hpk_partial_epk_boundary_second_split() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let overlapping = map.get_overlapping_ranges(
+            &epk("0BD3FBE846AF75790CE63F78B1A81631")..&epk("0BD3FBE846AF75790CE63F78B1A81631FF"),
+        );
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["11"]);
+    }
+
+    /// .NET scenario 1.2 (continued): Fully-specified input within a single range.
+    #[test]
+    fn hpk_full_epk_within_single_range() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let overlapping = map.get_overlapping_ranges(
+            &epk("0D4DC2CD8F49C65A8E0C5306B61B43440D4DC2CD8F49C65A8E0C5306B61B4343")
+                ..&epk("0D4DC2CD8F49C65A8E0C5306B61B43440D4DC2CD8F49C65A8E0C5306B61B4344"),
+        );
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["4"]);
+    }
+
+    /// .NET scenario 1.2 (continued): Range that falls inside range 3.
+    #[test]
+    fn hpk_range_inside_range_3() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let overlapping = map.get_overlapping_ranges(
+            &epk("0BD3FBE846AF75790CE63F78B1A81620")..&epk("0BD3FBE846AF75790CE63F78B1A81631"),
+        );
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["3"]);
+    }
+
+    /// .NET scenario 1.3: Partial EPK spans two overlapping ranges.
+    #[test]
+    fn hpk_partial_epk_spans_two_ranges() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let overlapping = map.get_overlapping_ranges(
+            &epk("0DCEB8CE51C6BFE84F4BD9409F69B9BB")..&epk("0DCEB8CE51C6BFE84F4BD9409F69B9BBFF"),
+        );
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["24", "5"]);
+    }
+
+    /// .NET scenario 1.4: Partial point EPK in the middle.
+    #[test]
+    fn hpk_partial_point_epk_in_middle() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let r = map
+            .get_range_by_effective_partition_key(&epk("02559A67F2724111B5E565DFA8711A00"))
+            .unwrap();
+        assert_eq!(r.id, "0");
+    }
+
+    /// .NET scenario 1.5: Partial point EPK where range has partial boundaries.
+    #[test]
+    fn hpk_partial_point_epk_in_partial_range() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let r = map
+            .get_range_by_effective_partition_key(&epk("0D4DC2CD8F49C65A8E0C5306B61B4345"))
+            .unwrap();
+        assert_eq!(r.id, "4");
+    }
+
+    /// .NET scenario 1.6: Fully-specified input against partially-specified backend range.
+    #[test]
+    fn hpk_full_epk_against_partial_backend_range() {
+        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+
+        let overlapping = map.get_overlapping_ranges(
+            &epk("0D4DC2CD8F49C65A8E0C5306B61B434300000000000000000000000000000000")
+                ..&epk("0D4EC2CD8F49C65A8E0C5306B61B434300000000000000000000000000000000"),
+        );
+        let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["4"]);
     }
 }
