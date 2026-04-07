@@ -89,8 +89,14 @@ impl EffectivePartitionKey {
     /// definition), returns a range `[prefix_epk, prefix_epk + "FF")` covering all
     /// possible completions of the prefix across multiple physical partitions.
     ///
-    /// For non-MultiHash containers, always returns a point range regardless of
-    /// component count, since all components are hashed together.
+    /// # Invariants
+    ///
+    /// - `pk_values` must not be empty.
+    /// - `pk_values.len()` must not exceed `pk_definition.paths().len()`.
+    /// - For non-MultiHash containers, `pk_values.len()` must equal
+    ///   `pk_definition.paths().len()` (prefix keys are only valid for MultiHash).
+    ///
+    /// These invariants are enforced via `debug_assert!` in debug builds.
     pub fn compute_range(
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
@@ -619,8 +625,8 @@ mod tests {
         assert!(range.end.as_str().ends_with("FF"));
     }
 
-    /// compute_range always returns a point for single-hash (non-MultiHash) keys,
-    /// even if fewer components than paths are provided.
+    /// compute_range returns a point for single-hash (non-MultiHash) keys
+    /// when the component count matches the definition path count.
     #[test]
     fn compute_range_single_hash_always_point() {
         let pk = vec![PartitionKeyValue::from("tenant1".to_string())];
