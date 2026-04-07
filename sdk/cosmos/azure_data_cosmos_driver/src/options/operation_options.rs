@@ -9,12 +9,9 @@ use std::time::Duration;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::{
-    models::ThroughputControlGroupName,
-    options::{
-        ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-        ReadConsistencyStrategy,
-    },
+use crate::options::{
+    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    ReadConsistencyStrategy, ThroughputControlGroupAssignment,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -60,14 +57,14 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group names for request prioritization and throughput allocation.
+    /// Throughput control group assignment for request prioritization and throughput allocation.
     ///
-    /// Multiple groups can be specified to combine different throughput control features
-    /// (e.g., a priority group and a throughput bucket group) on the same request.
+    /// Allows specifying at most one priority-based throttling group and/or one throughput
+    /// bucket group for this request.
     ///
-    /// `Some(vec![])` explicitly disables throughput control for this request,
-    /// bypassing any default group registered for the container.
-    pub throughput_control_group_names: Option<Vec<ThroughputControlGroupName>>,
+    /// `Some(ThroughputControlGroupAssignment::default())` explicitly disables throughput
+    /// control for this request, bypassing any default group registered for the container.
+    pub throughput_control_group: Option<ThroughputControlGroupAssignment>,
 
     /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
@@ -118,7 +115,7 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
-        assert!(options.throughput_control_group_names.is_none());
+        assert!(options.throughput_control_group.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
     }

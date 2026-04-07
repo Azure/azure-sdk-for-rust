@@ -170,7 +170,7 @@ impl CosmosClientBuilder {
     ///
     /// Groups define throughput policies (priority level, throughput bucket) that
     /// are applied to requests referencing the group name via
-    /// [`OperationOptions::throughput_control_group_names`](crate::OperationOptions::throughput_control_group_names).
+    /// [`OperationOptions::throughput_control_group`](crate::OperationOptions::throughput_control_group).
     pub fn with_throughput_control_group(mut self, group: ThroughputControlGroupOptions) -> Self {
         self.throughput_control_groups.push(group);
         self

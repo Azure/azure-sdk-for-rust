@@ -697,25 +697,26 @@ impl CosmosDriver {
     /// Computes the effective throughput control group for an operation.
     ///
     /// Resolution order:
-    /// 1. Explicit group names from the resolved options — all named groups are
-    ///    resolved and merged into a single snapshot, taking `priority_level` from
-    ///    the first group that has one and `throughput_bucket` from the first group
-    ///    that has one.
+    /// 1. Explicit group assignment from the resolved options — each named group is
+    ///    resolved from the registry and validated to match the expected variant
+    ///    (priority slot → priority variant, bucket slot → bucket variant).
     /// 2. Default group for the operation's container.
     ///
     /// Returns `Ok(None)` if no applicable control group is found.
     ///
     /// # Errors
     ///
-    /// Returns an error if any explicitly named group is not found in the registry.
+    /// Returns an error if:
+    /// - A named group is not found in the registry.
+    /// - A group's variant does not match the slot it was assigned to.
     pub(crate) fn effective_throughput_control_group(
         &self,
         effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
     ) -> azure_core::Result<Option<ThroughputControlGroupSnapshot>> {
-        if let Some(group_names) = effective_options.throughput_control_group_names() {
-            if group_names.is_empty() {
-                // Explicit empty list means no throughput control (no default fallback).
+        if let Some(assignment) = effective_options.throughput_control_group() {
+            if assignment.is_empty() {
+                // Explicit empty assignment means no throughput control (no default fallback).
                 return Ok(None);
             }
 
@@ -723,26 +724,58 @@ impl CosmosDriver {
             let mut priority_level: Option<PriorityLevel> = None;
             let mut throughput_bucket: Option<u32> = None;
 
-            for name in group_names {
-                if let Some(group) = self.runtime.get_throughput_control_group(container, name) {
-                    let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
-                    merged_name_parts.push(name.as_str());
-                    if priority_level.is_none() {
-                        priority_level = snapshot.priority_level();
-                    }
-                    if throughput_bucket.is_none() {
-                        throughput_bucket = snapshot.throughput_bucket();
-                    }
-                } else {
+            // Resolve priority group.
+            if let Some(name) = &assignment.priority_group {
+                let group = self
+                    .runtime
+                    .get_throughput_control_group(container, name)
+                    .ok_or_else(|| {
+                        azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::Other,
+                            format!(
+                                "throughput control group '{}' not found in registry for container '{}'",
+                                name, container.name()
+                            ),
+                        )
+                    })?;
+                if group.priority_level().is_none() {
                     return Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         format!(
-                            "throughput control group '{}' not found in registry for container '{}'",
-                            name,
-                            container.name()
+                            "group '{}' is not a priority-based throttling group but was assigned to the priority_group slot",
+                            name
                         ),
                     ));
                 }
+                priority_level = group.priority_level();
+                merged_name_parts.push(name.as_str());
+            }
+
+            // Resolve bucket group.
+            if let Some(name) = &assignment.bucket_group {
+                let group = self
+                    .runtime
+                    .get_throughput_control_group(container, name)
+                    .ok_or_else(|| {
+                        azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::Other,
+                            format!(
+                                "throughput control group '{}' not found in registry for container '{}'",
+                                name, container.name()
+                            ),
+                        )
+                    })?;
+                if group.throughput_bucket().is_none() {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!(
+                            "group '{}' is not a throughput bucket group but was assigned to the bucket_group slot",
+                            name
+                        ),
+                    ));
+                }
+                throughput_bucket = group.throughput_bucket();
+                merged_name_parts.push(name.as_str());
             }
 
             let merged_name = merged_name_parts.join("+");
@@ -760,7 +793,7 @@ impl CosmosDriver {
             return Ok(Some(merged));
         }
 
-        // No explicit names — fall back to the default group for the container.
+        // No explicit assignment — fall back to the default group for the container.
         Ok(self
             .runtime
             .get_default_throughput_control_group(container)
@@ -1170,7 +1203,7 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
             .operation_options()
-            .throughput_control_group_names
+            .throughput_control_group
             .is_none());
         assert!(runtime
             .operation_options()

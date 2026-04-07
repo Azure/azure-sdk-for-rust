@@ -43,7 +43,7 @@ pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
 pub use throughput_control::{
-    ThroughputControlGroupKey, ThroughputControlGroupOptions,
+    ThroughputControlGroupAssignment, ThroughputControlGroupKey, ThroughputControlGroupOptions,
     ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,
     ThroughputControlGroupSnapshot,
 };
