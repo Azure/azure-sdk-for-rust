@@ -112,10 +112,14 @@ async fn upload_stream_partitions(
                             .iter()
                             .map(|bytes| bytes.len() as u64)
                             .sum::<u64>();
-                        future::ready(Some(Ok((
-                            offset,
-                            Body::SeekableStream(Box::new(MultiBytesStream::new(vec_bytes))),
-                        ))))
+                        if vec_bytes.len() == 1 {
+                            future::ready(Some(Ok((offset, Body::Bytes(vec_bytes[0].clone())))))
+                        } else {
+                            future::ready(Some(Ok((
+                                offset,
+                                Body::SeekableStream(Box::new(MultiBytesStream::new(vec_bytes))),
+                            ))))
+                        }
                     }
                     Err(e) => future::ready(Some(Err(e))),
                 },
