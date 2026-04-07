@@ -79,6 +79,8 @@ rust_decimal
 rustc_version
 rustdoc_types
 rustdoc-types
+rustls_symcrypt
+rustls-symcrypt
 serde
 serde_amqp
 serde_bytes

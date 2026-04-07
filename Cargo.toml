@@ -29,7 +29,8 @@ members = [
   "sdk/storage/azure_storage_queue",
 ]
 exclude = [
-  "eng/scripts",
+  "eng/scripts/",
+  "samples/",
 ]
 
 [workspace.package]
