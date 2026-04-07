@@ -624,7 +624,6 @@ impl CosmosDriver {
     /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
-    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, err)]
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -769,20 +768,11 @@ impl CosmosDriver {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(level = tracing::Level::DEBUG, name = "operation", skip_all, fields(
-        runtime = self.runtime.id(),
-        operation_type = ?operation.operation_type(),
-        resource = %operation.resource_reference(),
-    ), err)]
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<crate::models::CosmosResponse> {
-        // TODO: Remove this line. It is intentionally holding a non-Send type across an
-        // `.await` point to validate that the Send assertion test catches regressions.
-        let _non_send = std::rc::Rc::new(());
-
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(azure_core::Error::with_message(

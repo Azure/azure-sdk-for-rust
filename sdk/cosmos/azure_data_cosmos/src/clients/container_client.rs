@@ -37,6 +37,7 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
+    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
     container_id: String,
     driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
@@ -106,7 +107,6 @@ impl ContainerClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read(
         &self,
         #[allow(
@@ -149,7 +149,6 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
@@ -174,7 +173,6 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_throughput(
         &self,
         #[allow(
@@ -203,7 +201,6 @@ impl ContainerClient {
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -235,7 +232,6 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete(
         &self,
         #[allow(
@@ -316,7 +312,6 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -403,7 +398,6 @@ impl ContainerClient {
     ///     .into_body().json::<Product>()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -494,7 +488,6 @@ impl ContainerClient {
     ///     .into_body().json::<Product>()?;
     /// Ok(())
     /// # }
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -546,7 +539,6 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -605,7 +597,6 @@ impl ContainerClient {
     ///     .await?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -686,7 +677,6 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
@@ -756,7 +746,6 @@ impl ContainerClient {
     /// * Maximum 100 operations per batch
     /// * Maximum payload size is 2 MB
     /// * All operations must target the same partition key
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn execute_transactional_batch(
         &self,
         batch: TransactionalBatch,

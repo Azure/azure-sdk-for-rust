@@ -101,7 +101,6 @@ impl DatabaseClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
@@ -138,7 +137,6 @@ impl DatabaseClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub fn query_containers(
         &self,
@@ -162,7 +160,6 @@ impl DatabaseClient {
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn create_container(
         &self,
@@ -188,7 +185,6 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
@@ -208,7 +204,6 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
@@ -234,7 +229,6 @@ impl DatabaseClient {
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn replace_throughput(
         &self,

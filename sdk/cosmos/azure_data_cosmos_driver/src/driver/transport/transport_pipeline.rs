@@ -155,12 +155,6 @@ pub(crate) struct TransportPipelineContext<'a> {
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
-#[tracing::instrument(level = tracing::Level::DEBUG, name = "transport", skip_all, fields(
-    method = ?request.method,
-    region = request.endpoint.region().map(|e| e.as_str()).unwrap_or("<global>"),
-    url = %request.url,
-    outcome = tracing::field::Empty,
-))]
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     ctx: &TransportPipelineContext<'_>,
