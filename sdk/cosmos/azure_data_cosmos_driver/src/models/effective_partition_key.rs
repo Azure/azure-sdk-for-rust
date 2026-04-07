@@ -21,7 +21,7 @@ use std::fmt::Write;
 /// into a hex string that determines which partition key range owns a given item.
 /// Using a newtype ensures callers cannot accidentally pass an arbitrary string
 /// where an EPK is expected.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub(crate) struct EffectivePartitionKey(String);
 
@@ -65,7 +65,7 @@ impl EffectivePartitionKey {
             PartitionKeyKind::MultiHash => {
                 // MultiHash is only supported with V2. All MultiHash container definitions
                 // are created with version=2; V1 MultiHash does not exist in Cosmos DB.
-                debug_assert!(
+                assert!(
                     version == PartitionKeyVersion::V2,
                     "MultiHash requires V2, got {:?}",
                     version
@@ -89,28 +89,33 @@ impl EffectivePartitionKey {
     /// definition), returns a range `[prefix_epk, prefix_epk + "FF")` covering all
     /// possible completions of the prefix across multiple physical partitions.
     ///
-    /// # Invariants
+    /// # Errors
     ///
-    /// - `pk_values` must not be empty.
-    /// - `pk_values.len()` must not exceed `pk_definition.paths().len()`.
-    /// - For non-MultiHash containers, `pk_values.len()` must equal
+    /// Returns an error if:
+    /// - `pk_values` is empty.
+    /// - `pk_values.len()` exceeds `pk_definition.paths().len()`.
+    /// - For non-MultiHash containers, `pk_values.len()` does not equal
     ///   `pk_definition.paths().len()` (prefix keys are only valid for MultiHash).
-    ///
-    /// These invariants are enforced via `debug_assert!` in debug builds.
     pub fn compute_range(
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
-    ) -> std::ops::Range<Self> {
-        debug_assert!(
-            !pk_values.is_empty(),
-            "compute_range called with empty pk_values"
-        );
-        debug_assert!(
-            pk_values.len() <= pk_definition.paths().len(),
-            "More partition key components ({}) than definition paths ({})",
-            pk_values.len(),
-            pk_definition.paths().len()
-        );
+    ) -> azure_core::Result<std::ops::Range<Self>> {
+        if pk_values.is_empty() {
+            return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                "compute_range called with empty pk_values",
+            ));
+        }
+        if pk_values.len() > pk_definition.paths().len() {
+            return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "more partition key components ({}) than definition paths ({})",
+                    pk_values.len(),
+                    pk_definition.paths().len()
+                ),
+            ));
+        }
 
         let kind = pk_definition.kind();
         let version = pk_definition.version();
@@ -119,12 +124,16 @@ impl EffectivePartitionKey {
         let is_prefix =
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
-        debug_assert!(
-            kind == PartitionKeyKind::MultiHash || pk_values.len() == pk_definition.paths().len(),
-            "Non-MultiHash containers require exactly as many components ({}) as paths ({})",
-            pk_values.len(),
-            pk_definition.paths().len()
-        );
+        if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
+            return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "non-MultiHash containers require exactly as many components ({}) as paths ({})",
+                    pk_values.len(),
+                    pk_definition.paths().len()
+                ),
+            ));
+        }
 
         if is_prefix {
             // "FF" is safe as an upper-bound sentinel because hash_v2_to_epk masks
@@ -132,9 +141,9 @@ impl EffectivePartitionKey {
             // is in [0-3]. "FF" is lexicographically greater than any valid suffix.
             let max_str = format!("{}FF", epk.as_str());
             let max = Self::from(max_str);
-            epk..max
+            Ok(epk..max)
         } else {
-            epk.clone()..epk
+            Ok(epk.clone()..epk)
         }
     }
 }
@@ -172,6 +181,55 @@ impl From<&str> for EffectivePartitionKey {
 impl AsRef<str> for EffectivePartitionKey {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+/// Length-aware ordering for effective partition keys.
+///
+/// For hierarchical partition key (HPK) containers, the backend may return
+/// partition key ranges with mixed-length boundaries: a partial EPK (32 chars,
+/// one hash component) and a fully specified EPK (64 chars, two hash components
+/// zero-padded). For example:
+///
+///   - Partial:   `06AB34CFE4E482236BCACBBF50E234AB`
+///   - Full:      `06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000`
+///
+/// These represent the same partition boundary. Plain lexicographic comparison
+/// treats the shorter string as "less than" the longer one when it is a prefix,
+/// causing incorrect overlap detection in routing maps.
+///
+/// This implementation treats two EPKs as equal when one is a prefix of the other
+/// and the remainder consists entirely of `'0'` characters.
+///
+/// See: <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5260>
+impl Ord for EffectivePartitionKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let a = self.0.as_str();
+        let b = other.0.as_str();
+        let common = a.len().min(b.len());
+        match a[..common].cmp(&b[..common]) {
+            std::cmp::Ordering::Equal => {
+                let tail = if a.len() > b.len() {
+                    &a[common..]
+                } else {
+                    &b[common..]
+                };
+                if tail.bytes().all(|b| b == b'0') {
+                    std::cmp::Ordering::Equal
+                } else if a.len() > b.len() {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Less
+                }
+            }
+            other => other,
+        }
+    }
+}
+
+impl PartialOrd for EffectivePartitionKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -472,7 +530,6 @@ mod tests {
         let single =
             EffectivePartitionKey::compute(&pk, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
         assert_eq!(multi.as_str(), single.as_str());
-        assert_eq!(multi.as_str().len(), 32);
     }
 
     /// Two-component MultiHash EPK should be 64 hex chars (2 × 32).
@@ -584,7 +641,7 @@ mod tests {
             PartitionKeyValue::from("session1".to_string()),
         ];
         let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
-        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def).unwrap();
 
         assert_eq!(
             range.start, range.end,
@@ -601,7 +658,7 @@ mod tests {
             PartitionKeyValue::from("user1".to_string()),
         ];
         let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
-        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def).unwrap();
 
         assert_ne!(range.start, range.end, "Prefix key should produce a range");
         // min EPK = hash(tenant1) + hash(user1) = 64 chars
@@ -617,7 +674,7 @@ mod tests {
     fn compute_range_prefix_one_of_three() {
         let pk = vec![PartitionKeyValue::from("tenant1".to_string())];
         let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
-        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def).unwrap();
 
         assert_ne!(range.start, range.end);
         assert_eq!(range.start.as_str().len(), 32);
@@ -631,7 +688,7 @@ mod tests {
     fn compute_range_single_hash_always_point() {
         let pk = vec![PartitionKeyValue::from("tenant1".to_string())];
         let pk_def = PartitionKeyDefinition::from("/tenantId");
-        let range = EffectivePartitionKey::compute_range(&pk, &pk_def);
+        let range = EffectivePartitionKey::compute_range(&pk, &pk_def).unwrap();
 
         assert_eq!(
             range.start, range.end,

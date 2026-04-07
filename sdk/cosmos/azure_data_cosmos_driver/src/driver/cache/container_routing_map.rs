@@ -9,48 +9,8 @@
 use crate::models::effective_partition_key::EffectivePartitionKey;
 use crate::models::partition_key_range::{PartitionKeyRange, PartitionKeyRangeStatus};
 use crate::models::ETag;
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;
-
-/// Length-aware EPK string comparison.
-///
-/// For hierarchical partition key (HPK) containers, the backend may return
-/// partition key ranges with mixed-length boundaries: a partial EPK (32 chars,
-/// one hash component) and a fully specified EPK (64 chars, two hash components
-/// zero-padded). For example:
-///
-///   - Partial:   `06AB34CFE4E482236BCACBBF50E234AB`
-///   - Full:      `06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000`
-///
-/// These represent the same partition boundary. Plain lexicographic comparison
-/// treats the shorter string as "less than" the longer one (since the shorter
-/// string is a prefix of the longer), causing incorrect overlap detection.
-///
-/// This function treats two strings as equal when one is a prefix of the other
-/// and the remainder consists entirely of `'0'` characters.
-///
-/// See: <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5260>
-fn epk_length_aware_cmp(a: &str, b: &str) -> Ordering {
-    let common = a.len().min(b.len());
-    match a[..common].cmp(&b[..common]) {
-        Ordering::Equal => {
-            let tail = if a.len() > b.len() {
-                &a[common..]
-            } else {
-                &b[common..]
-            };
-            if tail.bytes().all(|b| b == b'0') {
-                Ordering::Equal
-            } else if a.len() > b.len() {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            }
-        }
-        other => other,
-    }
-}
 
 /// Error returned when partition key range validation fails.
 #[derive(Debug)]
@@ -182,12 +142,8 @@ impl ContainerRoutingMap {
         let idx = self.find_range_index(epk_str);
 
         let range = &self.ordered_ranges[idx];
-        // Length-aware comparison handles HPK containers where the backend
-        // may use zero-padded fully-specified EPK boundaries that are
-        // semantically equal to the shorter client EPK.
-        let min_ok =
-            epk_length_aware_cmp(range.min_inclusive.as_str(), epk_str) != Ordering::Greater;
-        let max_ok = epk_length_aware_cmp(epk_str, range.max_exclusive.as_str()) == Ordering::Less;
+        let min_ok = range.min_inclusive <= *epk;
+        let max_ok = *epk < range.max_exclusive;
         if min_ok && max_ok {
             Some(range)
         } else {
@@ -222,21 +178,21 @@ impl ContainerRoutingMap {
             return Vec::new();
         }
 
-        let min_str = epk_range.start.as_str();
-        let max_str = epk_range.end.as_str();
+        let min_epk = epk_range.start;
+        let max_epk = epk_range.end;
 
         // Because ordered_ranges is sorted AND contiguous (no gaps/overlaps),
         // the overlapping ranges form a contiguous slice. We binary-search for
         // both the start and end indices to get O(log n) total.
 
         // Start: rightmost range whose min_inclusive <= query min.
-        let start_idx = self.find_range_index(min_str);
+        let start_idx = self.find_range_index(min_epk.as_str());
 
         // End: first range whose min_inclusive >= query max (all ranges from
         // start_idx up to but not including this index overlap the query).
-        let end_idx = self.ordered_ranges[start_idx..].partition_point(|r| {
-            epk_length_aware_cmp(r.min_inclusive.as_str(), max_str) == Ordering::Less
-        }) + start_idx;
+        let end_idx = self.ordered_ranges[start_idx..]
+            .partition_point(|r| r.min_inclusive < *max_epk)
+            + start_idx;
 
         self.ordered_ranges[start_idx..end_idx].iter().collect()
     }
@@ -320,9 +276,10 @@ impl ContainerRoutingMap {
     ///
     /// Callers must ensure `ordered_ranges` is non-empty and `epk` is non-empty.
     fn find_range_index(&self, epk: &str) -> usize {
+        let epk_val = EffectivePartitionKey::from(epk);
         match self
             .ordered_ranges
-            .binary_search_by(|r| epk_length_aware_cmp(r.min_inclusive.as_str(), epk))
+            .binary_search_by(|r| r.min_inclusive.cmp(&epk_val))
         {
             Ok(i) => i,               // Exact match on min_inclusive.
             Err(i) if i > 0 => i - 1, // epk falls between ranges[i-1] and ranges[i].
@@ -379,6 +336,7 @@ impl ContainerRoutingMap {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cmp::Ordering;
 
     fn epk(s: &str) -> EffectivePartitionKey {
         EffectivePartitionKey::from(s.to_string())
@@ -661,20 +619,17 @@ mod tests {
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
     }
 
-    // -- Length-aware EPK comparison tests --
+    // -- Length-aware EPK ordering tests --
 
     #[test]
     fn epk_cmp_equal_strings() {
-        assert_eq!(
-            epk_length_aware_cmp("06AB34CF", "06AB34CF"),
-            Ordering::Equal
-        );
+        assert_eq!(epk("06AB34CF").cmp(&epk("06AB34CF")), Ordering::Equal);
     }
 
     #[test]
     fn epk_cmp_shorter_less_than_longer_nonzero_suffix() {
         assert_eq!(
-            epk_length_aware_cmp("06AB34CF", "06AB34CF11223344"),
+            epk("06AB34CF").cmp(&epk("06AB34CF11223344")),
             Ordering::Less
         );
     }
@@ -682,10 +637,9 @@ mod tests {
     #[test]
     fn epk_cmp_prefix_with_zero_suffix_is_equal() {
         assert_eq!(
-            epk_length_aware_cmp(
-                "06AB34CFE4E482236BCACBBF50E234AB",
+            epk("06AB34CFE4E482236BCACBBF50E234AB").cmp(&epk(
                 "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000"
-            ),
+            )),
             Ordering::Equal
         );
     }
@@ -693,21 +647,16 @@ mod tests {
     #[test]
     fn epk_cmp_zero_padded_first_arg() {
         assert_eq!(
-            epk_length_aware_cmp(
-                "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000",
-                "06AB34CFE4E482236BCACBBF50E234AB"
-            ),
+            epk("06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000")
+                .cmp(&epk("06AB34CFE4E482236BCACBBF50E234AB")),
             Ordering::Equal
         );
     }
 
     #[test]
     fn epk_cmp_different_prefixes() {
-        assert_eq!(epk_length_aware_cmp("06AB34CF", "07AB34CF"), Ordering::Less);
-        assert_eq!(
-            epk_length_aware_cmp("07AB34CF", "06AB34CF"),
-            Ordering::Greater
-        );
+        assert_eq!(epk("06AB34CF").cmp(&epk("07AB34CF")), Ordering::Less);
+        assert_eq!(epk("07AB34CF").cmp(&epk("06AB34CF")), Ordering::Greater);
     }
 
     // -- HPK mixed-length boundary tests (ported from .NET PR #5260) --

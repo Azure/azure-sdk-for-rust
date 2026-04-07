@@ -125,7 +125,8 @@ impl PartitionKeyRangeCache {
         }
 
         let pk_def = container.partition_key_definition();
-        let epk_range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def);
+        let epk_range =
+            EffectivePartitionKey::compute_range(partition_key.values(), pk_def).ok()?;
 
         if epk_range.start == epk_range.end {
             // Full key — point lookup
@@ -620,8 +621,7 @@ mod tests {
         // (due to 0x3F mask). With ranges split at "80", the prefix range [epk, epk+"FF")
         // falls entirely within range "0" (["", "80")). So we expect 1 ID.
         // This validates the prefix path is exercised (via resolve_overlapping_ranges).
-        assert!(!ids.is_empty());
-        assert!(ids.contains(&"0".to_string()));
+        assert_eq!(ids, vec!["0".to_string()]);
     }
 
     #[tokio::test]
@@ -637,8 +637,7 @@ mod tests {
 
         assert!(result.is_some());
         let ids = result.unwrap();
-        assert_eq!(ids.len(), 1);
-        assert_eq!(ids[0], "0");
+        assert_eq!(ids, vec!["0".to_string()]);
     }
 
     #[tokio::test]
