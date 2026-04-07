@@ -637,14 +637,17 @@ mod tests {
 /// These tests operate at two levels:
 ///
 /// 1. **Full production pipeline** ([`EffectivePartitionKey::compute`]):
-///    For values representable as [`PartitionKeyValue`] in non-multi-hash cases,
-///    the test calls `EffectivePartitionKey::compute` to exercise the complete
-///    PK → EPK pipeline (encoding, hashing, V2 masking, V1 binary encoding).
-///    V2 results are compared against the Go baseline hash with top-2-bit masking
-///    applied.  V1 results cannot be directly compared to Go's V1 hash format
-///    (which is a zero-padded 32-bit hash, not the full V1 EPK), so the V1
-///    pipeline is exercised for correctness and separately checked by the
-///    `effective_partition_key_hash_v1` unit test.
+///    For values representable as [`PartitionKeyValue`] (no edge-cases like
+///    NaN, ±Infinity, −0.0), the test calls `EffectivePartitionKey::compute`
+///    to exercise the complete PK → EPK pipeline.  For single-hash keys this
+///    covers encoding, hashing, V2 masking, and V1 binary encoding.  For
+///    multi-hash (hierarchical PK) keys, it exercises per-component V2
+///    hashing with per-component masking (V1 MultiHash does not exist).
+///    V2 results are compared against the Go baseline hash with top-2-bit
+///    masking applied.  V1 results cannot be directly compared to Go's V1
+///    hash format (which is a zero-padded 32-bit hash, not the full V1 EPK),
+///    so the V1 pipeline is exercised for correctness and separately checked
+///    by the `effective_partition_key_hash_v1` unit test.
 ///
 /// 2. **Raw MurmurHash baseline** (encoding + hash, no masking/truncation):
 ///    Verifies that the byte encoding of each value type and the MurmurHash
@@ -925,6 +928,15 @@ mod baseline_tests {
         format!("{masked:02X}{}", &raw_v2_hash[2..])
     }
 
+    /// Applies V2 masking to each 32-char component of a multi-hash EPK.
+    fn apply_v2_masking_per_component(raw_v2_hash: &str) -> String {
+        let mut result = String::with_capacity(raw_v2_hash.len());
+        for chunk in raw_v2_hash.as_bytes().chunks(32) {
+            result.push_str(&apply_v2_masking(std::str::from_utf8(chunk).unwrap()));
+        }
+        result
+    }
+
     fn run_baseline(xml: &str, multi_hash: bool) {
         let cases = parse_baseline_xml(xml);
         assert!(!cases.is_empty(), "no test cases parsed from XML");
@@ -934,12 +946,10 @@ mod baseline_tests {
 
             // --- Full production pipeline (EffectivePartitionKey::compute) ---
             //
-            // For values representable as PartitionKeyValue (no edge-cases), run
-            // the complete PK → EPK pipeline.  Multi-hash (hierarchical PK) uses
-            // per-component hashing which is a different scheme than what
-            // `compute` produces, so full-pipeline assertions are limited to
-            // single-hash cases.
-            if !multi_hash && values.iter().all(|v| matches!(v, ParsedValue::Value(_))) {
+            // For values representable as PartitionKeyValue (no edge-cases like
+            // NaN, ±Infinity, -0.0), run the complete PK → EPK pipeline and
+            // compare against the Go baseline with V2 masking applied.
+            if values.iter().all(|v| matches!(v, ParsedValue::Value(_))) {
                 let pk_values: Vec<PartitionKeyValue> = values
                     .iter()
                     .map(|v| match v {
@@ -948,37 +958,54 @@ mod baseline_tests {
                     })
                     .collect();
 
-                // V2: EffectivePartitionKey::compute produces the Go V2 hash
-                // with top-2-bit masking applied.
-                let v2_epk = EffectivePartitionKey::compute(
-                    &pk_values,
-                    PartitionKeyKind::Hash,
-                    PartitionKeyVersion::V2,
-                );
-                let expected_v2 = apply_v2_masking(&tc.v2_hash);
-                assert_eq!(
-                    v2_epk.as_str(),
-                    expected_v2,
-                    "V2 full pipeline mismatch for {} (value: {})",
-                    tc.description,
-                    tc.partition_key_value,
-                );
+                if multi_hash {
+                    // MultiHash V2: per-component hashing, each component masked independently.
+                    let v2_epk = EffectivePartitionKey::compute(
+                        &pk_values,
+                        PartitionKeyKind::MultiHash,
+                        PartitionKeyVersion::V2,
+                    );
+                    let expected_v2 = apply_v2_masking_per_component(&tc.v2_hash);
+                    assert_eq!(
+                        v2_epk.as_str(),
+                        expected_v2,
+                        "V2 MultiHash full pipeline mismatch for {} (value: {})",
+                        tc.description,
+                        tc.partition_key_value,
+                    );
+                    // V1 MultiHash does not exist in Cosmos DB; skip V1 pipeline.
+                } else {
+                    // Single-hash V2: one hash of all components, masked once.
+                    let v2_epk = EffectivePartitionKey::compute(
+                        &pk_values,
+                        PartitionKeyKind::Hash,
+                        PartitionKeyVersion::V2,
+                    );
+                    let expected_v2 = apply_v2_masking(&tc.v2_hash);
+                    assert_eq!(
+                        v2_epk.as_str(),
+                        expected_v2,
+                        "V2 full pipeline mismatch for {} (value: {})",
+                        tc.description,
+                        tc.partition_key_value,
+                    );
 
-                // V1: Exercise the production V1 pipeline (with 100-byte string
-                // truncation and binary EPK encoding).  The V1 EPK format
-                // differs from Go's V1 hash format, so we verify the pipeline
-                // completes and produces a non-empty hex string.
-                let v1_epk = EffectivePartitionKey::compute(
-                    &pk_values,
-                    PartitionKeyKind::Hash,
-                    PartitionKeyVersion::V1,
-                );
-                assert!(
-                    !v1_epk.as_str().is_empty(),
-                    "V1 full pipeline produced empty EPK for {} (value: {})",
-                    tc.description,
-                    tc.partition_key_value,
-                );
+                    // V1: Exercise the production V1 pipeline (with 100-byte string
+                    // truncation and binary EPK encoding).  The V1 EPK format
+                    // differs from Go's V1 hash format, so we verify the pipeline
+                    // completes and produces a non-empty hex string.
+                    let v1_epk = EffectivePartitionKey::compute(
+                        &pk_values,
+                        PartitionKeyKind::Hash,
+                        PartitionKeyVersion::V1,
+                    );
+                    assert!(
+                        !v1_epk.as_str().is_empty(),
+                        "V1 full pipeline produced empty EPK for {} (value: {})",
+                        tc.description,
+                        tc.partition_key_value,
+                    );
+                }
             }
 
             // --- Cross-SDK raw hash baseline ---
