@@ -312,7 +312,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn initialize(&self, _content_len: u64) -> Result<()> {
+    async fn initialize(&self, _content_len: std::option::Option<u64>) -> Result<()> {
         Ok(())
     }
 

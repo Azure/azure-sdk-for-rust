@@ -62,14 +62,16 @@ impl SeekableStream for MultiBytesStream {
         Ok(())
     }
 
-    fn len(&self) -> u64 {
-        self.buffers
-            .iter()
-            .map(|bytes| bytes.len() as u64)
-            .sum::<u64>()
+    fn len(&self) -> Option<u64> {
+        Some(
+            self.buffers
+                .iter()
+                .map(|bytes| bytes.len() as u64)
+                .sum::<u64>(),
+        )
     }
 
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+    fn is_empty(&self) -> Option<bool> {
+        self.len().map(|len| len == 0)
     }
 }
