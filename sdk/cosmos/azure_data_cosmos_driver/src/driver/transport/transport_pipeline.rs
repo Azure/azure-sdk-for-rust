@@ -283,7 +283,7 @@ pub(crate) async fn execute_transport_pipeline(
         );
 
         #[cfg(feature = "fault_injection")]
-        let evaluation_collector = if diagnostics.fault_injection_enabled() {
+        let mut evaluation_collector = if diagnostics.fault_injection_enabled() {
             let collector = crate::fault_injection::EvaluationCollector::default();
             http_request.evaluation_collector = Some(collector.clone());
             Some(collector)
@@ -303,7 +303,7 @@ pub(crate) async fn execute_transport_pipeline(
         .await;
 
         #[cfg(feature = "fault_injection")]
-        if let Some(ref collector) = evaluation_collector {
+        if let Some(collector) = evaluation_collector.take() {
             let evals = collector.take();
             if !evals.is_empty() {
                 diagnostics.set_fault_injection_evaluations(request_handle, evals);

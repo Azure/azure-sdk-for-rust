@@ -65,9 +65,14 @@ impl EvaluationCollector {
     }
 
     /// Takes all collected evaluations, leaving the collector empty.
-    pub fn take(&self) -> Vec<FaultInjectionEvaluation> {
-        let mut evaluations = self.0.lock().unwrap_or_else(|e| e.into_inner());
-        std::mem::take(&mut *evaluations)
+    pub fn take(self) -> Vec<FaultInjectionEvaluation> {
+        match Arc::try_unwrap(self.0) {
+            Ok(mutex) => mutex.into_inner().unwrap_or_else(|e| e.into_inner()),
+            Err(arc) => {
+                let mut evaluations = arc.lock().unwrap_or_else(|e| e.into_inner());
+                std::mem::take(&mut *evaluations)
+            }
+        }
     }
 }
 

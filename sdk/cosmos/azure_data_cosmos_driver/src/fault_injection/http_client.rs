@@ -345,11 +345,6 @@ impl TransportClient for FaultClient {
 
             if let Some(ref collector) = request.evaluation_collector {
                 collector.push_all(&mut evaluations);
-            } else {
-                tracing::debug!(
-                    count = evaluations.len(),
-                    "fault injection evaluations dropped: no collector on request"
-                );
             }
         }
 
