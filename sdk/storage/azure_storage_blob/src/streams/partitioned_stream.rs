@@ -10,7 +10,7 @@ use futures::{AsyncReadExt, Stream};
 
 type Result<T> = azure_core::Result<T>;
 
-const MAX_CONTIGUOUS_ELEMENTS: usize = isize::MAX as usize;
+pub(crate) const MAX_CONTIGUOUS_ELEMENTS: usize = isize::MAX as usize;
 
 /// Converts the given AsyncRead into a Stream<Item = Bytes>, where each item is a chunk of data
 /// that is exactly `partition_len` bytes. The last item may be smaller.

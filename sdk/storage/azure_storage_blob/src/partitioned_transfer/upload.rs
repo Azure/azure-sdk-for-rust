@@ -10,7 +10,7 @@ use futures::StreamExt;
 
 use crate::streams::{
     multi_bytes_stream::MultiBytesStream,
-    partitioned_stream::{stream_multi_buffer_partitions, stream_single_buffer_partitions},
+    partitioned_stream::{self, stream_multi_buffer_partitions, stream_single_buffer_partitions},
 };
 
 use super::*;
@@ -83,7 +83,17 @@ async fn upload_stream_partitions(
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
     type PartsStream = Pin<Box<dyn Stream<Item = AzureResult<(u64, Body)>>>>;
-    let partitions = match TryInto::<usize>::try_into(partition_size.get()) {
+    let partitions = match TryInto::<usize>::try_into(partition_size.get())
+        .map_err(|_| ())
+        .map(|part_usize| {
+            if part_usize < partitioned_stream::MAX_CONTIGUOUS_ELEMENTS {
+                Ok(part_usize)
+            } else {
+                Err(())
+            }
+        })
+        .flatten()
+    {
         Ok(partition_size_usize) => {
             let stream = stream_single_buffer_partitions(
                 content,
