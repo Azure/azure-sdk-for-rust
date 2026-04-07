@@ -29,7 +29,6 @@ azure_storage_queue
 base64
 bytes
 cargo_metadata
-cbindgen
 clap
 criterion
 dotenvy
