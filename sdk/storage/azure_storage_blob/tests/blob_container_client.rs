@@ -13,8 +13,8 @@ use azure_storage_blob::models::{
     BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
     BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
     BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
-    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem,
-    SignedIdentifiers, StorageErrorCode,
+    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
+    StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use azure_storage_blob_test::{

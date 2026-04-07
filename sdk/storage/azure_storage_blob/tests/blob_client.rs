@@ -10,13 +10,14 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
-        AccessTier, AccountKind, BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResultHeaders,
-        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
-        BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
-        RehydratePriority, StorageErrorCode,
+        AccessTier, AccountKind, BlobClientAcquireLeaseOptions,
+        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
+        BlobClientDownloadOptions, BlobClientGetAccountInfoResultHeaders,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, RehydratePriority,
+        StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
@@ -1121,10 +1122,22 @@ async fn test_upload_blob_content_headers(ctx: TestContext) -> Result<(), Box<dy
 
     // Assert Content Headers on Download Response
     let response = blob_client.download(None).await?;
-    assert_eq!(Some("no-cache".to_string()), response.properties.cache_control);
-    assert_eq!(Some("inline".to_string()), response.properties.content_disposition);
-    assert_eq!(Some("identity".to_string()), response.properties.content_encoding);
-    assert_eq!(Some("en-US".to_string()), response.properties.content_language);
+    assert_eq!(
+        Some("no-cache".to_string()),
+        response.properties.cache_control
+    );
+    assert_eq!(
+        Some("inline".to_string()),
+        response.properties.content_disposition
+    );
+    assert_eq!(
+        Some("identity".to_string()),
+        response.properties.content_encoding
+    );
+    assert_eq!(
+        Some("en-US".to_string()),
+        response.properties.content_language
+    );
     let content_type: Option<String> = response.headers.get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("image/png".to_string()), content_type);
 
