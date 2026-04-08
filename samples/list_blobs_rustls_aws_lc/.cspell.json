@@ -3,6 +3,7 @@
     "../../.vscode/cspell.json"
   ],
   "ignoreWords": [
-    "awslc"
+    "awslc",
+    "nasm"
   ]
 }

@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - samples/
+      - samples/**
   pull_request:
     paths:
-      - samples/
+      - samples/**
   schedule:
     - cron: '0 11 * * 6' # Saturday at 3:00 AM PST (11:00 AM UTC)
   workflow_dispatch:
@@ -25,8 +25,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Register PMC repository
+        run: |
+          curl -sSL -O "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+          sudo dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+          sudo apt-get update
+
       - name: Install Rust toolchain
         run: rustup install
+
+      - name: Install dependencies
+        run: sudo apt-get install -y symcrypt
 
       - name: Build all samples
         run: |
