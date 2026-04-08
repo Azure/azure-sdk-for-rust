@@ -931,3 +931,166 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     )
     .await
 }
+
+/// Validates that `create_item` (driver-routed) returns 409 Conflict when the
+/// item already exists. This exercises the driver's error-path bridging.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("dup-{}", unique_id).into(),
+                partition_key: Some(format!("pk-{}", unique_id).into()),
+                value: 1,
+                nested: NestedItem {
+                    nested_value: "first".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("pk-{}", unique_id);
+
+            // First create should succeed.
+            let response = container_client.create_item(&pk, &item, None).await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Second create of the same item should fail with 409 Conflict.
+            let result = container_client.create_item(&pk, &item, None).await;
+            assert_eq!(
+                Some(StatusCode::Conflict),
+                result
+                    .expect_err("expected conflict on duplicate create")
+                    .http_status(),
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+/// Validates that `create_item` (driver-routed) returns the created item body
+/// when `ContentResponseOnWrite::Enabled` is set.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("cr-{}", unique_id).into(),
+                partition_key: Some(format!("pk-{}", unique_id).into()),
+                value: 99,
+                nested: NestedItem {
+                    nested_value: "content-response".into(),
+                },
+                bool_value: false,
+            };
+            let pk = format!("pk-{}", unique_id);
+
+            let mut operation = OperationOptions::default();
+            operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+            let options = ItemWriteOptions::default().with_operation_options(operation);
+
+            let response = container_client
+                .create_item(&pk, &item, Some(options))
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Deserialize the body and verify it matches the original item.
+            let created: TestItem = response.into_body().json()?;
+            assert_eq!(item, created);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+/// Validates that driver-routed `create_item` returns all expected response
+/// metadata: session token, activity ID, request charge, and server duration.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("meta-{}", unique_id).into(),
+                partition_key: Some(format!("pk-{}", unique_id).into()),
+                value: 7,
+                nested: NestedItem {
+                    nested_value: "metadata-check".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("pk-{}", unique_id);
+
+            let response = container_client.create_item(&pk, &item, None).await?;
+            assert_eq!(response.status(), StatusCode::Created);
+
+            // Session token must be present for session consistency.
+            assert!(
+                response.session_token().is_some(),
+                "expected session token on create_item response"
+            );
+
+            // Activity ID is required for tracing/support.
+            let activity_id = response.diagnostics().activity_id();
+            assert!(activity_id.is_some(), "expected activity ID");
+            assert!(
+                !activity_id.unwrap().is_empty(),
+                "activity ID must be non-empty"
+            );
+
+            // Request charge must be positive.
+            let charge = response.request_charge();
+            assert!(charge.is_some(), "expected request charge");
+            assert!(charge.unwrap() > 0.0, "request charge must be positive");
+
+            // Server duration must be present and non-negative.
+            let duration = response.diagnostics().server_duration_ms();
+            assert!(duration.is_some(), "expected server_duration_ms");
+            assert!(
+                duration.unwrap() >= 0.0,
+                "server_duration_ms must be non-negative"
+            );
+
+            // Response body should be empty when ContentResponseOnWrite is not enabled.
+            let body = response.into_body().into_string()?;
+            assert_eq!("", body);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}

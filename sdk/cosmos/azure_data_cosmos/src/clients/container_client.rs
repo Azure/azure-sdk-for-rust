@@ -324,9 +324,8 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.unwrap_or_default();
-        let partition_key: PartitionKey = partition_key.into();
         let body = serde_json::to_vec(&item)?;
-        let driver_pk = partition_key.into_driver_partition_key();
+        let driver_pk = partition_key.into().into_driver_partition_key();
 
         // Create the driver operation.
         let operation =
