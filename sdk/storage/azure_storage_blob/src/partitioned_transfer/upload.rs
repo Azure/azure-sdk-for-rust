@@ -76,7 +76,7 @@ async fn upload_stream_partitions(
     partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    type PartsStream = Pin<Box<dyn Stream<Item = AzureResult<(u64, Body)>>>>;
+    type PartsStream = Pin<Box<dyn Stream<Item = AzureResult<(u64, Body)>> + Send>>;
     let partitions = match TryInto::<usize>::try_into(partition_size.get())
         .map_err(|_| ())
         .and_then(|part_usize| {
