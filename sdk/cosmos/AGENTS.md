@@ -76,7 +76,6 @@ If you need a non-fallible parse internally, create a **private** helper method 
 - All I/O operations must be async
 - Async runtime
   - For `sdk/cosmos/azure_data_cosmos` and `sdk/cosmos/azure_data_cosmos_driver` keep using the same async runtime abstractions as `azure_core` does.
-  - Use `tokio` as the async runtime for `sdk/cosmos/azure_data_cosmos_native`
 - Streaming  (use of `futures::Stream`)
   - There is no need to consider streaming for payloads of individual requests/responses because the Cosmos DB service enforces rather strict limits on request and response payload size (max. 4 MB - only via config overrides extendable to 16 MB per response payload)
   - There is a need for pagination for example for query or change feed results (could return multiple pages - each page created by one or multiple responses) - so `futures::Stream` might be used there to achieve pagination - but for transport, assuming buffered transport is sufficient.
@@ -124,7 +123,7 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 - **API**: Public API available for advanced scenarios and cross-language SDK implementation
 - **Support**: Community/GitHub support only (no 24x7 Microsoft Support)
 - **Versioning**: Strict semantic versioning; can move to new major versions more frequently
-- **Consumers**: `azure_data_cosmos` (Rust SDK), `azure_data_cosmos_native` (C API), potentially other language SDKs
+- **Consumers**: `azure_data_cosmos` (Rust SDK), potentially other language SDKs
 
 #### **azure_data_cosmos** (Primary Rust SDK)
 
@@ -132,13 +131,6 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 - **API**: Full public SDK following Azure SDK Design Guidelines
 - **Support**: Full 24x7 Microsoft Support
 - **Versioning**: Strict semantic versioning; must maintain backward compatibility for years per major version
-- **Dependency**: Uses `azure_data_cosmos_driver` internally
-
-#### **azure_data_cosmos_native** (C API Wrapper)
-
-- **Purpose**: C-compatible FFI for cross-language reuse (Java, .NET, Python SDKs)
-- **API**: C ABI with cdylib/staticlib output
-- **Support**: Community/GitHub support (no 24x7 Microsoft Support)
 - **Dependency**: Uses `azure_data_cosmos_driver` internally
 
 ### Versioning Strategy: No Model Sharing

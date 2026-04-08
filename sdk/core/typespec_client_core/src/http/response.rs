@@ -313,24 +313,16 @@ impl AsyncResponseBody {
 
     /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
-        // Collect the received stream into an array of `Bytes` and then combine into a single `Bytes` to return.
-        // This consumes more memory than strictly necessary, but avoids multiple trips to the heap extending a single `BytesMut` buffer as we receive the stream.
-        //
-        // When the collected data is large, this can result in many fewer heap reallocations.
-        let mut bytes = Vec::<Bytes>::new();
-        let mut total_length = 0usize;
-
+        // Append each chunk directly into a growing BytesMut using reserve(),
+        // This avoids the intermediate Vec<Bytes> of the previous implementation,
+        // which was held in memory simultaneously with the final buffer.
+        let mut result = BytesMut::new();
         while let Some(res) = self.next().await {
-            let res = res?;
-            total_length += res.len();
-            bytes.push(res);
+            let chunk = res?;
+            result.reserve(chunk.len());
+            result.extend_from_slice(&chunk);
         }
-        let mut final_result = BytesMut::with_capacity(total_length);
-        for b in bytes {
-            final_result.extend(&b);
-        }
-
-        Ok(final_result.into())
+        Ok(result.into())
     }
 
     /// Collect the stream into a caller supplied buffer.
