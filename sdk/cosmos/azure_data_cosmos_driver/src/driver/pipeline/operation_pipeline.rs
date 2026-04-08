@@ -149,7 +149,7 @@ pub(crate) async fn execute_operation_pipeline(
         )?;
 
         // Apply content-response-on-write preference.
-        // By default (None or Disabled), suppress the response body for write
+        // By default, (None or Disabled), suppress the response body for write
         // operations to reduce bandwidth. Only omit the header when Enabled.
         // Only applies to write operations; reads always need the full body.
         if !operation.operation_type().is_read_only()
