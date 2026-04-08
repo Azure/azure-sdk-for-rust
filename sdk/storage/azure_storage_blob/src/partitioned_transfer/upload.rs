@@ -60,7 +60,7 @@ async fn upload_bytes_partitions(
 ) -> AzureResult<()> {
     let partition_size: usize = partition_size.get().try_into().unwrap_or(usize::MAX);
     let partitions = (0..content.len()).step_by(partition_size).map(|offset| {
-        let range = offset..std::cmp::min(offset + partition_size, content.len());
+        let range = offset..std::cmp::min(offset.saturating_add(partition_size), content.len());
         (offset, content.slice(range))
     });
     let ops = partitions.map(|(offset, bytes)| {

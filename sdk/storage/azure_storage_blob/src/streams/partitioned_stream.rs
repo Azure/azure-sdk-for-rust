@@ -53,8 +53,9 @@ pub(crate) fn stream_single_buffer_partitions(
                 let remaining = &small_buf[..count];
                 // len_hint proven inaccurate. discard and reallocate
                 len_hint = None;
-                partition.reserve(partition_len - partition.capacity());
+                partition.reserve(partition_len.saturating_sub(partition.capacity()));
                 partition.put(remaining);
+                total_read += count as u64;
                 // after special-case read, loop back around to recalculate next steps
                 continue;
             }
@@ -99,6 +100,7 @@ pub(crate) fn stream_single_buffer_partitions(
 #[derive(Default)]
 struct MultiBufferPartition {
     completed_buffers: Vec<Bytes>,
+    completed_buffers_total_bytes: u64,
     current_buffer: BytesMut,
     buffer_len: usize,
 }
@@ -107,33 +109,31 @@ impl MultiBufferPartition {
     fn new(buffer_len: usize, expected_buffers: usize) -> Self {
         Self {
             completed_buffers: Vec::with_capacity(expected_buffers),
+            completed_buffers_total_bytes: 0,
             current_buffer: BytesMut::with_capacity(buffer_len),
             buffer_len,
         }
     }
     fn len(&self) -> u64 {
-        self.current_buffer.len() as u64
-            + self
-                .completed_buffers
-                .iter()
-                .map(|bytes| bytes.len() as u64)
-                .sum::<u64>()
+        self.current_buffer.len() as u64 + self.completed_buffers_total_bytes
     }
     fn buf(&mut self) -> &mut BytesMut {
         if self.current_buffer.spare_capacity_mut().is_empty() {
-            self.completed_buffers.push(
-                mem::replace(
-                    &mut self.current_buffer,
-                    BytesMut::with_capacity(self.buffer_len),
-                )
-                .freeze(),
-            );
+            let bytes = mem::replace(
+                &mut self.current_buffer,
+                BytesMut::with_capacity(self.buffer_len),
+            )
+            .freeze();
+            self.completed_buffers_total_bytes += bytes.len() as u64;
+            self.completed_buffers.push(bytes);
         }
         &mut self.current_buffer
     }
     fn freeze(mut self) -> Vec<Bytes> {
-        self.completed_buffers
-            .push(mem::take(&mut self.current_buffer).freeze());
+        if !self.current_buffer.is_empty() {
+            self.completed_buffers
+                .push(mem::take(&mut self.current_buffer).freeze());
+        }
         self.completed_buffers
     }
 }
@@ -425,8 +425,15 @@ mod tests {
 
                 let parts: Vec<_> = stream.try_collect().await?;
                 assert_eq!(parts.len(), part_count);
-                for part in parts {
+                for part in &parts {
                     assert!(part.len() > 1)
+                }
+                let mut data_slice = &data[..];
+                for vec in parts {
+                    for bytes in vec {
+                        assert_eq!(bytes, data_slice[..bytes.len()]);
+                        data_slice = &data_slice[bytes.len()..];
+                    }
                 }
             }
         }

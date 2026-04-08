@@ -11,14 +11,18 @@ use futures::AsyncRead;
 #[derive(Clone, Debug, Default)]
 pub(crate) struct MultiBytesStream {
     buffers: Vec<Bytes>,
+    len: u64,
     vec_cursor: usize,
     bytes_cursor: usize,
 }
 
 impl MultiBytesStream {
     pub(crate) fn new<Iter: IntoIterator<Item = Bytes>>(data: Iter) -> Self {
+        let buffers: Vec<_> = data.into_iter().collect();
+        let len = buffers.iter().map(|bytes| bytes.len() as u64).sum::<u64>();
         Self {
-            buffers: data.into_iter().collect(),
+            buffers,
+            len,
             ..Default::default()
         }
     }
@@ -31,6 +35,12 @@ impl AsyncRead for MultiBytesStream {
         mut buf: &mut [u8],
     ) -> std::task::Poll<std::io::Result<usize>> {
         let this = self.get_mut();
+        // update cached len just in case
+        this.len = this
+            .buffers
+            .iter()
+            .map(|bytes| bytes.len() as u64)
+            .sum::<u64>();
         let mut total_copied = 0;
         while !buf.is_empty() {
             let bytes = match this.buffers.get(this.vec_cursor) {
@@ -63,12 +73,7 @@ impl SeekableStream for MultiBytesStream {
     }
 
     fn len(&self) -> Option<u64> {
-        Some(
-            self.buffers
-                .iter()
-                .map(|bytes| bytes.len() as u64)
-                .sum::<u64>(),
-        )
+        Some(self.len)
     }
 
     fn is_empty(&self) -> Option<bool> {

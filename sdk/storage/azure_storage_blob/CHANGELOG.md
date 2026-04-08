@@ -12,6 +12,8 @@
   - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
   - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
   - The previous `BlobClientDownloadResultHeaders` trait was removed.
+- Revised `upload()` on `BlobClient` `BlockBlobClient` with the following breaking changes:
+  - `partition_size` option changed from `Option<NonZero<usize>>` to `Option<NonZero<u64>>`
 
 ### Bugs Fixed
 
