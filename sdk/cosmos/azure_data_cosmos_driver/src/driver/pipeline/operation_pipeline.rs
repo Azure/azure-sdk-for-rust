@@ -160,7 +160,7 @@ pub(crate) async fn execute_operation_pipeline(
         {
             transport_request.headers.insert(
                 request_header_names::PREFER.clone(),
-                request_header_names::PREFER_RETURN_MINIMAL,
+                HeaderValue::from_static("return=minimal"),
             );
         }
 
