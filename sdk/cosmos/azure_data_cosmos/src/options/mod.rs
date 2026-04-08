@@ -16,9 +16,7 @@ pub use azure_data_cosmos_driver::models::{
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
     OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
-    ThroughputControlGroupKey, ThroughputControlGroupOptions,
-    ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,
-    ThroughputControlGroupSnapshot,
+    ThroughputControlGroupOptions,
 };
 
 // Temporary: these helpers allow the SDK pipeline to apply OperationOptions values

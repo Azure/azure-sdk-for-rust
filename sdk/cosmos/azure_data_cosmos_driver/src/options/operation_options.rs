@@ -63,7 +63,7 @@ pub struct OperationOptions {
     /// Throughput control group name for this request.
     ///
     /// References a group registered at runtime via
-    /// [`CosmosDriverRuntimeBuilder::with_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::with_throughput_control_group).
+    /// [`CosmosDriverRuntimeBuilder::register_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::register_throughput_control_group).
     ///
     /// `None` inherits from a lower-priority level or falls back to the
     /// container's default group.

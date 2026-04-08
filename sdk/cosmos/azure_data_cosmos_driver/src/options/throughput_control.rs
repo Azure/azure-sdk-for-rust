@@ -19,42 +19,11 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-/// Mutable runtime values for a server-side throughput bucket control group.
-#[derive(Clone, Debug)]
-pub(crate) struct ServerSideThroughputBucketMutableValues {
-    /// Throughput bucket assignment.
-    throughput_bucket: u32,
-}
-
-impl ServerSideThroughputBucketMutableValues {
-    /// Creates new mutable values.
-    pub(crate) fn new(throughput_bucket: u32) -> Self {
-        Self { throughput_bucket }
-    }
-
-    /// Returns the throughput bucket.
-    pub(crate) fn throughput_bucket(&self) -> u32 {
-        self.throughput_bucket
-    }
-}
-
-/// Mutable runtime values for a server-side priority-based throttling control group.
-#[derive(Clone, Debug)]
-pub(crate) struct ServerSidePriorityMutableValues {
-    /// Priority level for throttling.
-    priority_level: PriorityLevel,
-}
-
-impl ServerSidePriorityMutableValues {
-    /// Creates new mutable values.
-    pub(crate) fn new(priority_level: PriorityLevel) -> Self {
-        Self { priority_level }
-    }
-
-    /// Returns the priority level.
-    pub(crate) fn priority_level(&self) -> PriorityLevel {
-        self.priority_level
-    }
+/// Mutable runtime values for a throughput control group.
+#[derive(Clone, Debug, Default)]
+struct MutableValues {
+    throughput_bucket: Option<u32>,
+    priority_level: Option<PriorityLevel>,
 }
 
 /// Configuration for a throughput control group.
@@ -62,183 +31,89 @@ impl ServerSidePriorityMutableValues {
 /// Registered at the runtime level and associated with a container.
 /// Throughput control is enforced server-side.
 ///
+/// A group can have a throughput bucket, a priority level, or both.
+///
 /// # Immutability
 ///
-/// Once registered, the group's type and `is_default` flag are immutable.
+/// Once registered, the group's name, container, and `is_default` flag are immutable.
 /// Only the target values (priority level, bucket) can be modified at runtime.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
-#[allow(private_interfaces)] // mutable fields use crate-internal types, accessed via public methods
-pub enum ThroughputControlGroupOptions {
-    /// Server-side enforced throughput control using throughput buckets.
-    ///
-    /// The Cosmos DB service enforces the throughput limits.
-    /// See <https://learn.microsoft.com/azure/cosmos-db/nosql/throughput-buckets>
-    ServerSideThroughputBucket {
-        /// Unique name identifying this control group.
-        name: ThroughputControlGroupName,
-        /// Reference to the container this group applies to.
-        container: ContainerReference,
-        /// Whether this group is used by default for requests without explicit assignment.
-        is_default: bool,
-        /// Mutable runtime values (wrapped in RwLock for thread-safe updates).
-        mutable: Arc<RwLock<ServerSideThroughputBucketMutableValues>>,
-    },
-
-    /// Server-side enforced throughput control using priority-based throttling.
-    ///
-    /// The Cosmos DB service enforces the throughput limits.
-    /// See <https://learn.microsoft.com/azure/cosmos-db/priority-based-execution>
-    ServerSidePriorityBasedThrottling {
-        /// Unique name identifying this control group.
-        name: ThroughputControlGroupName,
-        /// Reference to the container this group applies to.
-        container: ContainerReference,
-        /// Whether this group is used by default for requests without explicit assignment.
-        is_default: bool,
-        /// Mutable runtime values (wrapped in RwLock for thread-safe updates).
-        mutable: Arc<RwLock<ServerSidePriorityMutableValues>>,
-    },
+pub struct ThroughputControlGroupOptions {
+    name: ThroughputControlGroupName,
+    container: ContainerReference,
+    is_default: bool,
+    mutable: Arc<RwLock<MutableValues>>,
 }
 
 impl ThroughputControlGroupOptions {
-    /// Creates a new server-side throughput bucket control group.
-    pub fn server_side_throughput_bucket(
+    /// Creates a new throughput control group.
+    pub fn new(
         name: impl Into<ThroughputControlGroupName>,
         container: ContainerReference,
-        throughput_bucket: u32,
         is_default: bool,
     ) -> Self {
-        Self::ServerSideThroughputBucket {
+        Self {
             name: name.into(),
             container,
             is_default,
-            mutable: Arc::new(RwLock::new(ServerSideThroughputBucketMutableValues::new(
-                throughput_bucket,
-            ))),
+            mutable: Arc::new(RwLock::new(MutableValues::default())),
         }
     }
 
-    /// Creates a new server-side priority-based throttling control group.
-    pub fn server_side_priority_based_throttling(
-        name: impl Into<ThroughputControlGroupName>,
-        container: ContainerReference,
-        priority_level: PriorityLevel,
-        is_default: bool,
-    ) -> Self {
-        Self::ServerSidePriorityBasedThrottling {
-            name: name.into(),
-            container,
-            is_default,
-            mutable: Arc::new(RwLock::new(ServerSidePriorityMutableValues::new(
-                priority_level,
-            ))),
-        }
+    /// Sets the initial throughput bucket value.
+    pub fn with_throughput_bucket(self, bucket: u32) -> Self {
+        self.mutable.write().unwrap().throughput_bucket = Some(bucket);
+        self
+    }
+
+    /// Sets the initial priority level.
+    pub fn with_priority_level(self, level: PriorityLevel) -> Self {
+        self.mutable.write().unwrap().priority_level = Some(level);
+        self
     }
 
     /// Returns the name of the throughput control group.
     pub fn name(&self) -> &ThroughputControlGroupName {
-        match self {
-            Self::ServerSideThroughputBucket { name, .. } => name,
-            Self::ServerSidePriorityBasedThrottling { name, .. } => name,
-        }
+        &self.name
     }
 
     /// Returns the container this group applies to.
     pub fn container(&self) -> &ContainerReference {
-        match self {
-            Self::ServerSideThroughputBucket { container, .. } => container,
-            Self::ServerSidePriorityBasedThrottling { container, .. } => container,
-        }
+        &self.container
     }
 
     /// Returns whether this group is the default for its container.
     pub fn is_default(&self) -> bool {
-        match self {
-            Self::ServerSideThroughputBucket { is_default, .. } => *is_default,
-            Self::ServerSidePriorityBasedThrottling { is_default, .. } => *is_default,
-        }
+        self.is_default
     }
 
     /// Returns the registry key for this group.
-    pub fn key(&self) -> ThroughputControlGroupKey {
+    pub(crate) fn key(&self) -> ThroughputControlGroupKey {
         ThroughputControlGroupKey {
-            container: self.container().clone(),
-            name: self.name().clone(),
+            container: self.container.clone(),
+            name: self.name.clone(),
         }
     }
 
-    // ========== Throughput bucket accessor ==========
-
-    /// Returns the current throughput bucket (server-side bucket groups only).
-    ///
-    /// Returns `None` for other group types.
+    /// Returns the current throughput bucket, if set.
     pub fn throughput_bucket(&self) -> Option<u32> {
-        match self {
-            Self::ServerSideThroughputBucket { mutable, .. } => {
-                Some(mutable.read().unwrap().throughput_bucket())
-            }
-            Self::ServerSidePriorityBasedThrottling { .. } => None,
-        }
+        self.mutable.read().unwrap().throughput_bucket
     }
 
-    /// Sets the throughput bucket (server-side bucket groups only).
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if called on a non-bucket group variant.
-    pub fn set_throughput_bucket(&self, bucket: u32) -> azure_core::Result<()> {
-        match self {
-            Self::ServerSideThroughputBucket { mutable, .. } => {
-                mutable.write().unwrap().throughput_bucket = bucket;
-                Ok(())
-            }
-            Self::ServerSidePriorityBasedThrottling { .. } => Err(
-                azure_core::Error::with_message_fn(azure_core::error::ErrorKind::Other, || {
-                    format!(
-                        "cannot set throughput bucket on a priority-based throttling group '{}'",
-                        self.name()
-                    )
-                }),
-            ),
-        }
+    /// Sets the throughput bucket.
+    pub fn set_throughput_bucket(&self, bucket: u32) {
+        self.mutable.write().unwrap().throughput_bucket = Some(bucket);
     }
 
-    // ========== Priority level accessors ==========
-
-    /// Returns the current priority level.
-    ///
-    /// Returns `None` for server-side bucket groups.
+    /// Returns the current priority level, if set.
     pub fn priority_level(&self) -> Option<PriorityLevel> {
-        match self {
-            Self::ServerSidePriorityBasedThrottling { mutable, .. } => {
-                Some(mutable.read().unwrap().priority_level())
-            }
-            Self::ServerSideThroughputBucket { .. } => None,
-        }
+        self.mutable.read().unwrap().priority_level
     }
 
-    /// Sets the priority level (server-side priority groups only).
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if called on a non-priority group variant.
-    pub fn set_priority_level(&self, level: PriorityLevel) -> azure_core::Result<()> {
-        match self {
-            Self::ServerSidePriorityBasedThrottling { mutable, .. } => {
-                mutable.write().unwrap().priority_level = level;
-                Ok(())
-            }
-            Self::ServerSideThroughputBucket { .. } => Err(azure_core::Error::with_message_fn(
-                azure_core::error::ErrorKind::Other,
-                || {
-                    format!(
-                        "cannot set priority level on a throughput bucket group '{}'",
-                        self.name()
-                    )
-                },
-            )),
-        }
+    /// Sets the priority level.
+    pub fn set_priority_level(&self, level: PriorityLevel) {
+        self.mutable.write().unwrap().priority_level = Some(level);
     }
 }
 
@@ -248,16 +123,20 @@ impl ThroughputControlGroupOptions {
 /// The same group name can be registered for different containers.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ThroughputControlGroupKey {
+pub(crate) struct ThroughputControlGroupKey {
     /// The container this group applies to.
-    pub container: ContainerReference,
+    pub(crate) container: ContainerReference,
     /// The group name.
-    pub name: ThroughputControlGroupName,
+    pub(crate) name: ThroughputControlGroupName,
 }
 
+#[allow(dead_code)] // used in tests
 impl ThroughputControlGroupKey {
     /// Creates a new key.
-    pub fn new(container: ContainerReference, name: impl Into<ThroughputControlGroupName>) -> Self {
+    pub(crate) fn new(
+        container: ContainerReference,
+        name: impl Into<ThroughputControlGroupName>,
+    ) -> Self {
         Self {
             container,
             name: name.into(),
@@ -270,7 +149,8 @@ impl ThroughputControlGroupKey {
 /// This provides an immutable view of the group's configuration at a point in time.
 #[non_exhaustive]
 #[derive(Clone, Debug)]
-pub struct ThroughputControlGroupSnapshot {
+#[allow(dead_code)] // name/container/is_default kept for diagnostics and future use
+pub(crate) struct ThroughputControlGroupSnapshot {
     /// The group name.
     pub(crate) name: ThroughputControlGroupName,
     /// The container this group applies to.
@@ -283,12 +163,13 @@ pub struct ThroughputControlGroupSnapshot {
     pub(crate) priority_level: Option<PriorityLevel>,
 }
 
+#[allow(dead_code)] // some methods kept for diagnostics and future use
 impl ThroughputControlGroupSnapshot {
     /// Creates a new snapshot with the required fields.
     ///
     /// Optional fields (`throughput_bucket`, `priority_level`)
     /// default to `None` and can be set via fluent `with_*` methods.
-    pub fn new(
+    pub(crate) fn new(
         name: ThroughputControlGroupName,
         container: ContainerReference,
         is_default: bool,
@@ -302,55 +183,56 @@ impl ThroughputControlGroupSnapshot {
         }
     }
 
-    /// Sets the throughput bucket (server-side only).
-    pub fn with_throughput_bucket(mut self, bucket: u32) -> Self {
+    /// Sets the throughput bucket.
+    pub(crate) fn with_throughput_bucket(mut self, bucket: u32) -> Self {
         self.throughput_bucket = Some(bucket);
         self
     }
 
     /// Sets the priority level.
-    pub fn with_priority_level(mut self, level: PriorityLevel) -> Self {
+    pub(crate) fn with_priority_level(mut self, level: PriorityLevel) -> Self {
         self.priority_level = Some(level);
         self
     }
 
     /// Returns the group name.
-    pub fn name(&self) -> &ThroughputControlGroupName {
+    pub(crate) fn name(&self) -> &ThroughputControlGroupName {
         &self.name
     }
 
     /// Returns the container reference.
-    pub fn container(&self) -> &ContainerReference {
+    pub(crate) fn container(&self) -> &ContainerReference {
         &self.container
     }
 
     /// Returns whether this is the default group.
-    pub fn is_default(&self) -> bool {
+    pub(crate) fn is_default(&self) -> bool {
         self.is_default
     }
 
     /// Returns the throughput bucket, if set.
-    pub fn throughput_bucket(&self) -> Option<u32> {
+    pub(crate) fn throughput_bucket(&self) -> Option<u32> {
         self.throughput_bucket
     }
 
     /// Returns the priority level, if set.
-    pub fn priority_level(&self) -> Option<PriorityLevel> {
+    pub(crate) fn priority_level(&self) -> Option<PriorityLevel> {
         self.priority_level
     }
 }
 
 impl From<&ThroughputControlGroupOptions> for ThroughputControlGroupSnapshot {
     fn from(group: &ThroughputControlGroupOptions) -> Self {
+        let mutable = group.mutable.read().unwrap();
         let mut snapshot = Self::new(
             group.name().clone(),
             group.container().clone(),
             group.is_default(),
         );
-        if let Some(bucket) = group.throughput_bucket() {
+        if let Some(bucket) = mutable.throughput_bucket {
             snapshot = snapshot.with_throughput_bucket(bucket);
         }
-        if let Some(level) = group.priority_level() {
+        if let Some(level) = mutable.priority_level {
             snapshot = snapshot.with_priority_level(level);
         }
         snapshot
@@ -362,7 +244,7 @@ impl From<&ThroughputControlGroupOptions> for ThroughputControlGroupSnapshot {
 /// This error type is intentionally not boxed since registration errors are
 /// configuration-time errors that should be rare and visible to developers.
 #[derive(Clone, Debug, PartialEq)]
-pub enum ThroughputControlGroupRegistrationError {
+pub(crate) enum ThroughputControlGroupRegistrationError {
     /// A group with the same key (container + name) already exists.
     DuplicateGroup(ThroughputControlGroupKey),
     /// Another group is already marked as default for this container.
@@ -404,16 +286,17 @@ impl std::error::Error for ThroughputControlGroupRegistrationError {}
 /// immutable after runtime creation (except for mutable values within groups).
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
-pub struct ThroughputControlGroupRegistry {
+pub(crate) struct ThroughputControlGroupRegistry {
     /// Groups keyed by (container, name) tuple.
     groups: HashMap<ThroughputControlGroupKey, Arc<ThroughputControlGroupOptions>>,
     /// Default group for each container.
     defaults: HashMap<ContainerReference, ThroughputControlGroupName>,
 }
 
+#[allow(dead_code)] // some methods only used in tests
 impl ThroughputControlGroupRegistry {
     /// Creates an empty registry.
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
@@ -425,7 +308,7 @@ impl ThroughputControlGroupRegistry {
     /// - A group with the same (container, name) key already exists
     /// - Another group is already marked as default for the same container
     #[allow(clippy::result_large_err)]
-    pub fn register(
+    pub(crate) fn register(
         &mut self,
         group: ThroughputControlGroupOptions,
     ) -> Result<(), ThroughputControlGroupRegistrationError> {
@@ -453,7 +336,7 @@ impl ThroughputControlGroupRegistry {
     }
 
     /// Returns a group by its key (container + name).
-    pub fn get(
+    pub(crate) fn get(
         &self,
         key: &ThroughputControlGroupKey,
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
@@ -461,7 +344,7 @@ impl ThroughputControlGroupRegistry {
     }
 
     /// Returns a group by container and name.
-    pub fn get_by_container_and_name(
+    pub(crate) fn get_by_container_and_name(
         &self,
         container: &ContainerReference,
         name: &ThroughputControlGroupName,
@@ -474,7 +357,7 @@ impl ThroughputControlGroupRegistry {
     }
 
     /// Returns the default group for a container, if one exists.
-    pub fn get_default_for_container(
+    pub(crate) fn get_default_for_container(
         &self,
         container: &ContainerReference,
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
@@ -488,7 +371,7 @@ impl ThroughputControlGroupRegistry {
     }
 
     /// Returns all groups registered for a specific container.
-    pub fn groups_for_container(
+    pub(crate) fn groups_for_container(
         &self,
         container: &ContainerReference,
     ) -> Vec<&Arc<ThroughputControlGroupOptions>> {
@@ -500,17 +383,17 @@ impl ThroughputControlGroupRegistry {
     }
 
     /// Returns the total number of registered groups.
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.groups.len()
     }
 
     /// Returns true if no groups are registered.
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.groups.is_empty()
     }
 
     /// Returns an iterator over all registered groups.
-    pub fn iter(
+    pub(crate) fn iter(
         &self,
     ) -> impl Iterator<
         Item = (
@@ -571,14 +454,10 @@ mod tests {
     }
 
     #[test]
-    fn server_side_bucket_group_creation() {
+    fn bucket_group_creation() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "bucket-group",
-            container.clone(),
-            100,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("bucket-group", container.clone(), false)
+            .with_throughput_bucket(100);
 
         assert_eq!(group.name().as_str(), "bucket-group");
         assert!(!group.is_default());
@@ -587,14 +466,10 @@ mod tests {
     }
 
     #[test]
-    fn server_side_priority_group_creation() {
+    fn priority_group_creation() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
-            "priority-group",
-            container.clone(),
-            PriorityLevel::Low,
-            true,
-        );
+        let group = ThroughputControlGroupOptions::new("priority-group", container.clone(), true)
+            .with_priority_level(PriorityLevel::Low);
 
         assert_eq!(group.name().as_str(), "priority-group");
         assert!(group.is_default());
@@ -607,12 +482,8 @@ mod tests {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container = test_container();
 
-        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "test-group",
-            container.clone(),
-            100,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("test-group", container.clone(), false)
+            .with_throughput_bucket(100);
 
         assert!(registry.register(group).is_ok());
         assert_eq!(registry.len(), 1);
@@ -626,18 +497,10 @@ mod tests {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container = test_container();
 
-        let group1 = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "same-name",
-            container.clone(),
-            100,
-            false,
-        );
-        let group2 = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "same-name",
-            container.clone(),
-            100,
-            false,
-        );
+        let group1 = ThroughputControlGroupOptions::new("same-name", container.clone(), false)
+            .with_throughput_bucket(100);
+        let group2 = ThroughputControlGroupOptions::new("same-name", container.clone(), false)
+            .with_throughput_bucket(100);
 
         assert!(registry.register(group1).is_ok());
         let result = registry.register(group2);
@@ -652,18 +515,18 @@ mod tests {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container = test_container();
 
-        let group1 = ThroughputControlGroupOptions::server_side_throughput_bucket(
+        let group1 = ThroughputControlGroupOptions::new(
             "default-1",
             container.clone(),
-            100,
             true, // default
-        );
-        let group2 = ThroughputControlGroupOptions::server_side_throughput_bucket(
+        )
+        .with_throughput_bucket(100);
+        let group2 = ThroughputControlGroupOptions::new(
             "default-2",
             container.clone(),
-            200,
             true, // also default - should fail
-        );
+        )
+        .with_throughput_bucket(200);
 
         assert!(registry.register(group1).is_ok());
         let result = registry.register(group2);
@@ -679,18 +542,14 @@ mod tests {
         let container1 = test_container();
         let container2 = test_container_2();
 
-        let group1 = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "shared-name",
-            container1.clone(),
-            100,
-            true,
-        );
-        let group2 = ThroughputControlGroupOptions::server_side_throughput_bucket(
+        let group1 = ThroughputControlGroupOptions::new("shared-name", container1.clone(), true)
+            .with_throughput_bucket(100);
+        let group2 = ThroughputControlGroupOptions::new(
             "shared-name",
             container2.clone(),
-            200,
             true, // Both can be default since different containers
-        );
+        )
+        .with_throughput_bucket(200);
 
         assert!(registry.register(group1).is_ok());
         assert!(registry.register(group2).is_ok());
@@ -702,18 +561,12 @@ mod tests {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container = test_container();
 
-        let default_group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "default-group",
-            container.clone(),
-            100,
-            true,
-        );
-        let other_group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "other-group",
-            container.clone(),
-            200,
-            false,
-        );
+        let default_group =
+            ThroughputControlGroupOptions::new("default-group", container.clone(), true)
+                .with_throughput_bucket(100);
+        let other_group =
+            ThroughputControlGroupOptions::new("other-group", container.clone(), false)
+                .with_throughput_bucket(200);
 
         registry.register(default_group).unwrap();
         registry.register(other_group).unwrap();
@@ -729,24 +582,12 @@ mod tests {
         let container1 = test_container();
         let container2 = test_container_2();
 
-        let group1 = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "group1",
-            container1.clone(),
-            100,
-            false,
-        );
-        let group2 = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "group2",
-            container1.clone(),
-            200,
-            false,
-        );
-        let group3 = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "group3",
-            container2.clone(),
-            300,
-            false,
-        );
+        let group1 = ThroughputControlGroupOptions::new("group1", container1.clone(), false)
+            .with_throughput_bucket(100);
+        let group2 = ThroughputControlGroupOptions::new("group2", container1.clone(), false)
+            .with_throughput_bucket(200);
+        let group3 = ThroughputControlGroupOptions::new("group3", container2.clone(), false)
+            .with_throughput_bucket(300);
 
         registry.register(group1).unwrap();
         registry.register(group2).unwrap();
@@ -762,12 +603,8 @@ mod tests {
     #[test]
     fn snapshot_captures_current_state() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
-            "snapshot-test",
-            container.clone(),
-            PriorityLevel::Low,
-            true,
-        );
+        let group = ThroughputControlGroupOptions::new("snapshot-test", container.clone(), true)
+            .with_priority_level(PriorityLevel::Low);
 
         let snapshot = ThroughputControlGroupSnapshot::from(&group);
         assert_eq!(snapshot.name().as_str(), "snapshot-test");
@@ -779,12 +616,8 @@ mod tests {
     #[test]
     fn snapshot_from_priority_group_has_no_bucket() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
-            "priority-only",
-            container,
-            PriorityLevel::High,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("priority-only", container, false)
+            .with_priority_level(PriorityLevel::High);
 
         let snapshot = ThroughputControlGroupSnapshot::from(&group);
         assert_eq!(snapshot.priority_level(), Some(PriorityLevel::High));
@@ -794,12 +627,8 @@ mod tests {
     #[test]
     fn snapshot_from_bucket_group_has_no_priority() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "bucket-only",
-            container,
-            42,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("bucket-only", container, false)
+            .with_throughput_bucket(42);
 
         let snapshot = ThroughputControlGroupSnapshot::from(&group);
         assert_eq!(snapshot.throughput_bucket(), Some(42));
@@ -811,12 +640,8 @@ mod tests {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container = test_container();
 
-        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "lookup-test",
-            container.clone(),
-            10,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("lookup-test", container.clone(), false)
+            .with_throughput_bucket(10);
         registry.register(group).unwrap();
 
         let name = ThroughputControlGroupName::new("lookup-test");
@@ -831,58 +656,48 @@ mod tests {
     }
 
     #[test]
-    fn set_throughput_bucket_on_bucket_group_succeeds() {
+    fn set_throughput_bucket_succeeds() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "bucket-group",
-            container,
-            100,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("bucket-group", container, false)
+            .with_throughput_bucket(100);
 
-        group.set_throughput_bucket(200).unwrap();
+        group.set_throughput_bucket(200);
         assert_eq!(group.throughput_bucket(), Some(200));
     }
 
     #[test]
-    fn set_throughput_bucket_on_priority_group_returns_error() {
+    fn set_priority_level_succeeds() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
-            "priority-group",
-            container,
-            PriorityLevel::Low,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("priority-group", container, false)
+            .with_priority_level(PriorityLevel::Low);
 
-        let err = group.set_throughput_bucket(100).unwrap_err();
-        assert_eq!(*err.kind(), azure_core::error::ErrorKind::Other);
-    }
-
-    #[test]
-    fn set_priority_level_on_priority_group_succeeds() {
-        let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_priority_based_throttling(
-            "priority-group",
-            container,
-            PriorityLevel::Low,
-            false,
-        );
-
-        group.set_priority_level(PriorityLevel::High).unwrap();
+        group.set_priority_level(PriorityLevel::High);
         assert_eq!(group.priority_level(), Some(PriorityLevel::High));
     }
 
     #[test]
-    fn set_priority_level_on_bucket_group_returns_error() {
+    fn group_with_both_bucket_and_priority() {
         let container = test_container();
-        let group = ThroughputControlGroupOptions::server_side_throughput_bucket(
-            "bucket-group",
-            container,
-            100,
-            false,
-        );
+        let group = ThroughputControlGroupOptions::new("both-group", container, false)
+            .with_throughput_bucket(42)
+            .with_priority_level(PriorityLevel::Low);
 
-        let err = group.set_priority_level(PriorityLevel::Low).unwrap_err();
-        assert_eq!(*err.kind(), azure_core::error::ErrorKind::Other);
+        assert_eq!(group.throughput_bucket(), Some(42));
+        assert_eq!(group.priority_level(), Some(PriorityLevel::Low));
+    }
+
+    #[test]
+    fn snapshot_reflects_mutation() {
+        let container = test_container();
+        let group = ThroughputControlGroupOptions::new("mutate-test", container, false)
+            .with_throughput_bucket(100)
+            .with_priority_level(PriorityLevel::Low);
+
+        group.set_throughput_bucket(200);
+        group.set_priority_level(PriorityLevel::High);
+
+        let snapshot = ThroughputControlGroupSnapshot::from(&group);
+        assert_eq!(snapshot.throughput_bucket(), Some(200));
+        assert_eq!(snapshot.priority_level(), Some(PriorityLevel::High));
     }
 }

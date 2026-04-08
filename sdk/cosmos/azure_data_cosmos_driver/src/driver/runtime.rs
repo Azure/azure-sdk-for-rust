@@ -18,8 +18,8 @@ use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
-        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
+        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
+        UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -300,7 +300,7 @@ impl CosmosDriverRuntime {
     /// Returns a throughput control group by container and name.
     ///
     /// This is a convenience method for looking up a specific group.
-    pub fn get_throughput_control_group(
+    pub(crate) fn get_throughput_control_group(
         &self,
         container: &ContainerReference,
         name: &ThroughputControlGroupName,
@@ -312,7 +312,7 @@ impl CosmosDriverRuntime {
     /// Returns the default throughput control group for a container.
     ///
     /// Returns `None` if no default group is registered for the container.
-    pub fn get_default_throughput_control_group(
+    pub(crate) fn get_default_throughput_control_group(
         &self,
         container: &ContainerReference,
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
@@ -551,24 +551,27 @@ impl CosmosDriverRuntimeBuilder {
     /// // Register a throughput control group on a new runtime builder.
     /// let runtime = CosmosDriverRuntimeBuilder::new()
     ///     .register_throughput_control_group(
-    ///         ThroughputControlGroupOptions::server_side_priority_based_throttling(
+    ///         ThroughputControlGroupOptions::new(
     ///             "default-group",
     ///             container.clone(),
-    ///             PriorityLevel::High,
     ///             true, // is_default
     ///         )
+    ///         .with_priority_level(PriorityLevel::High)
     ///     )?
     ///     .build()
     ///     .await;
     /// # Ok(())
     /// # }
     /// ```
-    #[allow(clippy::result_large_err)]
     pub fn register_throughput_control_group(
         mut self,
         group: ThroughputControlGroupOptions,
-    ) -> Result<Self, ThroughputControlGroupRegistrationError> {
-        self.throughput_control_groups.register(group)?;
+    ) -> azure_core::Result<Self> {
+        self.throughput_control_groups
+            .register(group)
+            .map_err(|e| {
+                azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+            })?;
         Ok(self)
     }
 
