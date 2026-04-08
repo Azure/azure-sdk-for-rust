@@ -148,6 +148,19 @@ pub(crate) async fn execute_operation_pipeline(
                 .flatten(),
         )?;
 
+        // Apply content-response-on-write preference.
+        // By default (None or Disabled), suppress the response body for write
+        // operations to reduce bandwidth. Only omit the header when Enabled.
+        if !matches!(
+            options.content_response_on_write(),
+            Some(&crate::options::ContentResponseOnWrite::Enabled)
+        ) {
+            transport_request.headers.insert(
+                request_header_names::PREFER.clone(),
+                request_header_names::PREFER_RETURN_MINIMAL,
+            );
+        }
+
         // Apply custom headers from resolved options.
         // Inserted conditionally so they don't override SDK-set headers.
         if let Some(custom_headers) = options.custom_headers() {

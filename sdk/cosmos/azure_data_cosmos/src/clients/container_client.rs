@@ -322,9 +322,15 @@ impl ContainerClient {
         let body = serde_json::to_vec(&item)?;
         let driver_pk = partition_key.into().into_driver_partition_key();
 
-        // Create the driver operation.
-        let operation =
+        // Create the driver operation and apply ItemWriteOptions fields.
+        let mut operation =
             CosmosOperation::create_item(self.container_ref.clone(), driver_pk).with_body(body);
+        if let Some(session_token) = options.session_token {
+            operation = operation.with_session_token(session_token);
+        }
+        if let Some(precondition) = options.precondition {
+            operation = operation.with_precondition(precondition);
+        }
 
         // Execute through the driver.
         let driver_response = self

@@ -13,12 +13,14 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 /// type normalizes header names to lowercase on insertion, so lookups are case-sensitive
 /// but will always match since both sides are lowercase.
 pub(crate) mod request_header_names {
-    use azure_core::http::headers::HeaderName;
+    use azure_core::http::headers::{HeaderName, HeaderValue};
 
     pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
     pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
     pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+    pub static PREFER: HeaderName = HeaderName::from_static("prefer");
+    pub const PREFER_RETURN_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");
 }
 
 /// Standard Cosmos DB response header names.
