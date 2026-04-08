@@ -1181,7 +1181,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
 /// Uploads a gzip-compressed blob with `content-encoding: gzip` and downloads it with the
 /// default client to document reqwest's auto-decompression behavior.
 #[recorded::test]
-async fn test_gzip_blob_autodecompression_baseline(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_gzip_blob_baseline_a(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -1230,7 +1230,7 @@ async fn test_gzip_blob_autodecompression_baseline(ctx: TestContext) -> Result<(
 /// The service therefore still returns `content-encoding: gzip` and reqwest still decompresses.
 /// The assertions mirror the baseline test: code sees plaintext with no content-encoding header.
 #[recorded::test]
-async fn test_gzip_blob_suppress_accept_encoding(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_gzip_blob_policy_suppress_attempt_b(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let strip_policy = Arc::new(StripAcceptEncodingPolicy);
@@ -1285,9 +1285,7 @@ async fn test_gzip_blob_suppress_accept_encoding(ctx: TestContext) -> Result<(),
 /// What the assertions verify: `content-encoding: gzip` is present in the download response
 /// and the body bytes are the raw gzip stream, not the decompressed plaintext.
 #[recorded::test]
-async fn test_gzip_blob_raw_without_autodecompression(
-    ctx: TestContext,
-) -> Result<(), Box<dyn Error>> {
+async fn test_gzip_blob_reqwest_disable_gzip_c(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
 
     // Build a reqwest client that does NOT auto-decompress gzip responses.
@@ -1360,7 +1358,7 @@ async fn test_gzip_blob_raw_without_autodecompression(
 /// response reaches our code unchanged: `content-encoding: gzip` is present and the body is
 /// the raw gzip stream that decodes back to the original plaintext.
 #[recorded::test]
-async fn test_gzip_blob_raw_without_gzip_or_deflate(
+async fn test_gzip_blob_reqwest_disable_gzip_and_deflate(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
