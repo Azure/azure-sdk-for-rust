@@ -23,11 +23,11 @@
   },
   "exclude": [
     {
-      "Pool": "env:LINUXPOOL",
+      "Pool": "env:MACPOOL",
       "RustToolchainName": "msrv"
     },
     {
-      "Pool": "env:LINUXPOOL",
+      "Pool": "env:MACPOOL",
       "RustToolchainName": "nightly"
     },
     {
