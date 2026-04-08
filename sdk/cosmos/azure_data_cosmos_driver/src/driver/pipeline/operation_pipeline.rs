@@ -151,10 +151,13 @@ pub(crate) async fn execute_operation_pipeline(
         // Apply content-response-on-write preference.
         // By default (None or Disabled), suppress the response body for write
         // operations to reduce bandwidth. Only omit the header when Enabled.
-        if !matches!(
-            options.content_response_on_write(),
-            Some(&crate::options::ContentResponseOnWrite::Enabled)
-        ) {
+        // Only applies to write operations; reads always need the full body.
+        if !operation.operation_type().is_read_only()
+            && !matches!(
+                options.content_response_on_write(),
+                Some(&crate::options::ContentResponseOnWrite::Enabled)
+            )
+        {
             transport_request.headers.insert(
                 request_header_names::PREFER.clone(),
                 request_header_names::PREFER_RETURN_MINIMAL,
