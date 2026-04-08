@@ -35,7 +35,12 @@ parameters:
     #   Location: 'centraluseuap'
 - name: MatrixConfigs
   type: object
-  default: []
+  default:
+  - Name: rust_ci_test_base
+    Path: eng/pipelines/templates/stages/platform-matrix.json
+    Selection: sparse
+    NonSparseParameters: RustToolchainName
+    GenerateVMJobs: true
 - name: LiveTestMatrixConfigs
   type: object
   default:
@@ -91,22 +96,7 @@ extends:
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
           MatrixConfigs:
-          - ${{ if ne(length(parameters.MatrixConfigs), 0) }}:
-            # Use MatrixConfigs if provided 
-            - ${{ parameters.MatrixConfigs }}
-          - ${{ elseif eq(variables['Build.Reason'], 'PullRequest') }}:
-            # Pull Request builds use pr-platform-matrix which has a smaller set of configurations
-            - Name: rust_ci_test_base
-              Path: eng/pipelines/templates/stages/pr-platform-matrix.json
-              Selection: all
-              GenerateVMJobs: true
-          - ${{ else }}:
-            # Non-PR builds use the more complete platform matrix with all Rust toolchains
-            - Name: rust_ci_test_base
-              Path: eng/pipelines/templates/stages/platform-matrix.json
-              Selection: sparse
-              NonSparseParameters: RustToolchainName
-              GenerateVMJobs: true
+          - ${{ parameters.MatrixConfigs }}
           - ${{ parameters.AdditionalMatrixConfigs }}
           MatrixFilters: ${{ parameters.MatrixFilters }}
           MatrixReplace: ${{ parameters.MatrixReplace }}
