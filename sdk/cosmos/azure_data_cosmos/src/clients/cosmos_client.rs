@@ -142,7 +142,6 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all)]
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -165,7 +164,6 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all)]
     pub async fn create_database(
         &self,
         id: &str,
@@ -188,5 +186,21 @@ impl CosmosClient {
             .send(cosmos_request, Context::default())
             .await
             .map(ResourceResponse::new)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `CosmosClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &CosmosClient = todo!();
+        assert_send(client.create_database(todo!(), todo!()));
     }
 }

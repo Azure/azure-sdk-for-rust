@@ -35,6 +35,66 @@ fn create_aad_credential(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tokio-console subscriber when the feature is enabled.
+    // This must happen before any tokio tasks are spawned.
+    #[cfg(feature = "tokio-console")]
+    {
+        use std::net::{IpAddr, Ipv4Addr};
+
+        let console_addr: IpAddr = match std::env::var("TOKIO_CONSOLE_ADDR") {
+            Ok(val) => val.parse().unwrap_or_else(|e| {
+                eprintln!(
+                    "WARNING: invalid TOKIO_CONSOLE_ADDR={val:?}: {e}; defaulting to 127.0.0.1"
+                );
+                IpAddr::V4(Ipv4Addr::LOCALHOST)
+            }),
+            Err(_) => IpAddr::V4(Ipv4Addr::LOCALHOST),
+        };
+        let console_port: u16 = match std::env::var("TOKIO_CONSOLE_PORT") {
+            Ok(val) => val.parse().unwrap_or_else(|e| {
+                eprintln!("WARNING: invalid TOKIO_CONSOLE_PORT={val:?}: {e}; defaulting to 6669");
+                6669
+            }),
+            Err(_) => 6669,
+        };
+
+        console_subscriber::ConsoleLayer::builder()
+            .server_addr((console_addr, console_port))
+            .init();
+
+        let addr_display = if console_addr.is_ipv6() {
+            format!("[{}]", console_addr)
+        } else {
+            console_addr.to_string()
+        };
+
+        if console_addr.is_loopback() {
+            eprintln!(
+                "tokio-console enabled on loopback — connect with: tokio-console http://{}:{}",
+                addr_display, console_port
+            );
+        } else {
+            let scope = if console_addr.is_unspecified() {
+                "all interfaces"
+            } else {
+                "a non-loopback address"
+            };
+            eprintln!(
+                "WARNING: tokio-console enabled on {}:{} ({scope}). \
+                 Set TOKIO_CONSOLE_ADDR=127.0.0.1 to restrict to loopback.",
+                addr_display, console_port
+            );
+        }
+    }
+
+    // Log Pyroscope status (profiling is handled externally via eBPF auto-instrumentation)
+    if std::env::var("PYROSCOPE_SERVER_URL")
+        .map(|v| !v.is_empty())
+        .unwrap_or(false)
+    {
+        eprintln!("Pyroscope server configured — profiles collected via eBPF auto-instrumentation");
+    }
+
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -46,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use crate::config::{AuthMethod, Config};
     use crate::operations::create_operations;
-    use crate::runner::RunConfig;
+    use crate::runner::{ConfigSnapshot, RunConfig};
     use crate::stats::Stats;
 
     let config = Config::parse();
@@ -212,6 +272,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|h| h.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string());
 
+    // Build config snapshot for Grafana dashboard visibility
+    let config_snapshot = ConfigSnapshot {
+        concurrency: config.concurrency as u64,
+        application_region: config.application_region.clone(),
+        excluded_regions: config.excluded_regions.join(", "),
+        tokio_threads: tokio::runtime::Handle::current().metrics().num_workers() as u64,
+        ppcb_enabled: std::env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
+            .ok()
+            .and_then(|v| v.parse::<bool>().ok())
+            .unwrap_or(true),
+        gateway20_allowed: std::env::var("AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")
+            .ok()
+            .and_then(|v| v.parse::<bool>().ok())
+            .unwrap_or(false),
+        pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
+            .map(|v| !v.is_empty())
+            .unwrap_or(false),
+        tokio_console_enabled: cfg!(feature = "tokio-console"),
+        tokio_metrics_enabled: cfg!(feature = "tokio-metrics"),
+        valgrind_tool: std::env::var("VALGRIND_TOOL").unwrap_or_default(),
+    };
+
     // Run the perf test
     let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
     let stats = Arc::new(Stats::new(&op_names));
@@ -226,6 +308,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         workload_id: config.workload_id,
         commit_sha,
         hostname,
+        config_snapshot,
     })
     .await;
 

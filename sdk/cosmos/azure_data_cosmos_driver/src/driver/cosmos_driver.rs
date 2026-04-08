@@ -230,6 +230,8 @@ impl CosmosDriver {
             headers: azure_core::http::headers::Headers::new(),
             body: None,
             timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request_signing::sign_request(
@@ -624,7 +626,6 @@ impl CosmosDriver {
     /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
-    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, err)]
     pub async fn initialize(&self) -> azure_core::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -769,11 +770,6 @@ impl CosmosDriver {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(level = tracing::Level::DEBUG, name = "operation", skip_all, fields(
-        runtime = self.runtime.id(),
-        operation_type = ?operation.operation_type(),
-        resource = %operation.resource_reference(),
-    ), err)]
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
@@ -1719,5 +1715,16 @@ mod tests {
             transport_holder.load().negotiated_version(),
             TransportHttpVersion::Http11
         );
+    }
+
+    /// Compile-time assertion that the `execute_operation` future is `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If the future returned by `execute_operation` is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_execute_operation_future_is_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let driver: &CosmosDriver = todo!();
+        assert_send(driver.execute_operation(todo!(), todo!()));
     }
 }
