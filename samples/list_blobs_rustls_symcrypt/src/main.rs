@@ -6,36 +6,48 @@ use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
 use clap::Parser;
 use futures::TryStreamExt;
+use rustls::{ClientConfig, RootCertStore};
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    // Install the SymCrypt crypto provider as the default for rustls.
-    // This enables FIPS-compatible cryptography for all TLS connections.
-    // reqwest's `rustls` feature will automatically use this provider.
-    rustls_symcrypt::default_symcrypt_provider()
-        .install_default()
-        .expect("failed to install SymCrypt crypto provider");
+    // Build a rustls ClientConfig using the SymCrypt crypto provider and the
+    // webpki-roots certificate store. This ensures that aws-lc-rs is not
+    // pulled in as a dependency and used for TLS when SymCrypt must be used.
+    //
+    // A simpler alternative is to install SymCrypt as the default provider:
+    //   rustls_symcrypt::default_symcrypt_provider()
+    //       .install_default()
+    //       .expect("failed to install SymCrypt crypto provider");
+    // However, that approach requires reqwest's `rustls` feature, which pulls
+    // in aws-lc-rs. Using `rustls-no-provider` with an explicitly constructed
+    // ClientConfig ensures only SymCrypt is used for TLS.
+    let root_store = RootCertStore {
+        roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+    };
+    let tls_config =
+        ClientConfig::builder_with_provider(Arc::new(rustls_symcrypt::default_symcrypt_provider()))
+            .with_safe_default_protocol_versions()?
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
 
-    // Build a reqwest client that uses the installed SymCrypt provider.
-    // Disable redirects to match the Azure SDK's default behavior.
-    let http_client = reqwest::ClientBuilder::new()
+    let reqwest_client = reqwest::ClientBuilder::new()
         .redirect(reqwest::redirect::Policy::none())
+        .use_preconfigured_tls(tls_config)
         .build()?;
 
-    let credential = DeveloperToolsCredential::new(None)?;
-    let endpoint = format!("https://{}.blob.core.windows.net/", args.account_name);
-
-    // Pass the custom reqwest client to the Azure SDK via Transport.
     let options = BlobContainerClientOptions {
         client_options: ClientOptions {
-            transport: Some(Transport::new(Arc::new(http_client))),
+            transport: Some(Transport::new(Arc::new(reqwest_client))),
             ..Default::default()
         },
         ..Default::default()
     };
+
+    let credential = DeveloperToolsCredential::new(None)?;
+    let endpoint = format!("https://{}.blob.core.windows.net/", args.account_name);
 
     let container_client = BlobContainerClient::new(
         &endpoint,
