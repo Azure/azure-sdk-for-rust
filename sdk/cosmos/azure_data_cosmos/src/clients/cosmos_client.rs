@@ -6,7 +6,6 @@ use crate::{
     cosmos_request::CosmosRequest,
     models::{DatabaseProperties, ResourceResponse},
     operation_context::OperationType,
-    options::ThroughputControlGroupRegistry,
     resource_context::ResourceLink,
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
@@ -102,14 +101,6 @@ impl CosmosClient {
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         &self.context.pipeline.endpoint
-    }
-
-    /// Returns the throughput control group registry.
-    ///
-    /// Groups are registered at client creation time via
-    /// [`CosmosClientBuilder::with_throughput_control_group()`].
-    pub fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
-        self.context.driver.runtime().throughput_control_groups()
     }
 
     /// Executes a query against databases in the account.

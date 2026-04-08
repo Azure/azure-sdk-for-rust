@@ -265,51 +265,6 @@ impl ThroughputControlGroupKey {
     }
 }
 
-/// Throughput control group assignment for a single request.
-///
-/// A request can optionally reference one priority-based throttling group
-/// and/or one throughput bucket group. At most one of each type can be set.
-///
-/// # Semantics
-///
-/// When used in [`OperationOptions`](crate::options::OperationOptions):
-/// - `None` — inherit from a lower-priority layer; fall back to the container's default group.
-/// - `Some(default)` — explicitly disable throughput control (no default fallback).
-/// - `Some({ priority_group: Some(..), .. })` — apply the named priority group.
-/// - `Some({ bucket_group: Some(..), .. })` — apply the named bucket group.
-/// - Both fields set — apply both groups to the request.
-#[non_exhaustive]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ThroughputControlGroupAssignment {
-    /// Name of the priority-based throttling group to apply.
-    pub priority_group: Option<ThroughputControlGroupName>,
-    /// Name of the throughput bucket group to apply.
-    pub bucket_group: Option<ThroughputControlGroupName>,
-}
-
-impl ThroughputControlGroupAssignment {
-    /// Creates an assignment with only a priority group.
-    pub fn with_priority_group(name: impl Into<ThroughputControlGroupName>) -> Self {
-        Self {
-            priority_group: Some(name.into()),
-            bucket_group: None,
-        }
-    }
-
-    /// Creates an assignment with only a bucket group.
-    pub fn with_bucket_group(name: impl Into<ThroughputControlGroupName>) -> Self {
-        Self {
-            priority_group: None,
-            bucket_group: Some(name.into()),
-        }
-    }
-
-    /// Returns `true` if neither group is set.
-    pub fn is_empty(&self) -> bool {
-        self.priority_group.is_none() && self.bucket_group.is_none()
-    }
-}
-
 /// A snapshot of a throughput control group's current state.
 ///
 /// This provides an immutable view of the group's configuration at a point in time.
@@ -929,40 +884,5 @@ mod tests {
 
         let err = group.set_priority_level(PriorityLevel::Low).unwrap_err();
         assert_eq!(*err.kind(), azure_core::error::ErrorKind::Other);
-    }
-
-    #[test]
-    fn assignment_with_priority_group_only() {
-        let assignment = ThroughputControlGroupAssignment::with_priority_group("my-priority-group");
-        assert!(assignment.priority_group.is_some());
-        assert!(assignment.bucket_group.is_none());
-        assert!(!assignment.is_empty());
-    }
-
-    #[test]
-    fn assignment_with_bucket_group_only() {
-        let assignment = ThroughputControlGroupAssignment::with_bucket_group("my-bucket-group");
-        assert!(assignment.priority_group.is_none());
-        assert!(assignment.bucket_group.is_some());
-        assert!(!assignment.is_empty());
-    }
-
-    #[test]
-    fn assignment_default_is_empty() {
-        let assignment = ThroughputControlGroupAssignment::default();
-        assert!(assignment.is_empty());
-        assert!(assignment.priority_group.is_none());
-        assert!(assignment.bucket_group.is_none());
-    }
-
-    #[test]
-    fn assignment_with_both_groups() {
-        let assignment = ThroughputControlGroupAssignment {
-            priority_group: Some(ThroughputControlGroupName::new("priority")),
-            bucket_group: Some(ThroughputControlGroupName::new("bucket")),
-        };
-        assert!(!assignment.is_empty());
-        assert_eq!(assignment.priority_group.unwrap().as_str(), "priority");
-        assert_eq!(assignment.bucket_group.unwrap().as_str(), "bucket");
     }
 }

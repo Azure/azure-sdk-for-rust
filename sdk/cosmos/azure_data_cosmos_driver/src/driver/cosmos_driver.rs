@@ -10,11 +10,11 @@ use crate::{
     driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference, ThroughputControlGroupName,
+        CosmosOperation, DatabaseProperties, DatabaseReference,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
-        OperationOptionsView, PriorityLevel, ThroughputControlGroupSnapshot,
+        OperationOptionsView, ThroughputControlGroupSnapshot,
     },
 };
 use arc_swap::ArcSwap;
@@ -697,103 +697,38 @@ impl CosmosDriver {
     /// Computes the effective throughput control group for an operation.
     ///
     /// Resolution order:
-    /// 1. Explicit group assignment from the resolved options — each named group is
-    ///    resolved from the registry and validated to match the expected variant
-    ///    (priority slot → priority variant, bucket slot → bucket variant).
+    /// 1. Explicit group name from the resolved options — looked up in the registry
+    ///    and snapshotted.
     /// 2. Default group for the operation's container.
     ///
     /// Returns `Ok(None)` if no applicable control group is found.
     ///
     /// # Errors
     ///
-    /// Returns an error if:
-    /// - A named group is not found in the registry.
-    /// - A group's variant does not match the slot it was assigned to.
+    /// Returns an error if an explicitly named group is not found in the registry.
     pub(crate) fn effective_throughput_control_group(
         &self,
         effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
     ) -> azure_core::Result<Option<ThroughputControlGroupSnapshot>> {
-        if let Some(assignment) = effective_options.throughput_control_group() {
-            if assignment.is_empty() {
-                // Explicit empty assignment means no throughput control (no default fallback).
-                return Ok(None);
-            }
-
-            let mut merged_name_parts: Vec<&str> = Vec::new();
-            let mut priority_level: Option<PriorityLevel> = None;
-            let mut throughput_bucket: Option<u32> = None;
-
-            // Resolve priority group.
-            if let Some(name) = &assignment.priority_group {
-                let group = self
-                    .runtime
-                    .get_throughput_control_group(container, name)
-                    .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
-                            format!(
-                                "throughput control group '{}' not found in registry for container '{}'",
-                                name, container.name()
-                            ),
-                        )
-                    })?;
-                if group.priority_level().is_none() {
-                    return Err(azure_core::Error::with_message(
+        if let Some(name) = effective_options.throughput_control_group() {
+            let group = self
+                .runtime
+                .get_throughput_control_group(container, name)
+                .ok_or_else(|| {
+                    azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         format!(
-                            "group '{}' is not a priority-based throttling group but was assigned to the priority_group slot",
-                            name
+                            "throughput control group '{}' not found in registry for container '{}'",
+                            name,
+                            container.name()
                         ),
-                    ));
-                }
-                priority_level = group.priority_level();
-                merged_name_parts.push(name.as_str());
-            }
-
-            // Resolve bucket group.
-            if let Some(name) = &assignment.bucket_group {
-                let group = self
-                    .runtime
-                    .get_throughput_control_group(container, name)
-                    .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
-                            format!(
-                                "throughput control group '{}' not found in registry for container '{}'",
-                                name, container.name()
-                            ),
-                        )
-                    })?;
-                if group.throughput_bucket().is_none() {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!(
-                            "group '{}' is not a throughput bucket group but was assigned to the bucket_group slot",
-                            name
-                        ),
-                    ));
-                }
-                throughput_bucket = group.throughput_bucket();
-                merged_name_parts.push(name.as_str());
-            }
-
-            let merged_name = merged_name_parts.join("+");
-            let mut merged = ThroughputControlGroupSnapshot::new(
-                ThroughputControlGroupName::new(merged_name),
-                container.clone(),
-                false,
-            );
-            if let Some(level) = priority_level {
-                merged = merged.with_priority_level(level);
-            }
-            if let Some(bucket) = throughput_bucket {
-                merged = merged.with_throughput_bucket(bucket);
-            }
-            return Ok(Some(merged));
+                    )
+                })?;
+            return Ok(Some(ThroughputControlGroupSnapshot::from(group.as_ref())));
         }
 
-        // No explicit assignment — fall back to the default group for the container.
+        // No explicit name — fall back to the default group for the container.
         Ok(self
             .runtime
             .get_default_throughput_control_group(container)

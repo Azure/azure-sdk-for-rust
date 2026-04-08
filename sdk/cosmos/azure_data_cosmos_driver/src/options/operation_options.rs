@@ -9,9 +9,12 @@ use std::time::Duration;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::options::{
-    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    ReadConsistencyStrategy, ThroughputControlGroupAssignment,
+use crate::{
+    models::ThroughputControlGroupName,
+    options::{
+        ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+        ReadConsistencyStrategy,
+    },
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -57,14 +60,14 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group assignment for request prioritization and throughput allocation.
+    /// Throughput control group name for this request.
     ///
-    /// Allows specifying at most one priority-based throttling group and/or one throughput
-    /// bucket group for this request.
+    /// References a group registered at runtime via
+    /// [`CosmosDriverRuntimeBuilder::with_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::with_throughput_control_group).
     ///
-    /// `Some(ThroughputControlGroupAssignment::default())` explicitly disables throughput
-    /// control for this request, bypassing any default group registered for the container.
-    pub throughput_control_group: Option<ThroughputControlGroupAssignment>,
+    /// `None` inherits from a lower-priority level or falls back to the
+    /// container's default group.
+    pub throughput_control_group: Option<ThroughputControlGroupName>,
 
     /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,

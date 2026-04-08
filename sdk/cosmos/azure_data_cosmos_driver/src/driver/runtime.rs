@@ -297,14 +297,6 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Returns the throughput control group registry.
-    ///
-    /// The registry contains all groups registered during runtime construction.
-    /// Groups are identified by the combination of container reference and group name.
-    pub fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
-        &self.throughput_control_groups
-    }
-
     /// Returns a throughput control group by container and name.
     ///
     /// This is a convenience method for looking up a specific group.
