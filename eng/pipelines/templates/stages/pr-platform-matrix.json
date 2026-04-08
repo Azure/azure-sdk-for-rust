@@ -23,19 +23,19 @@
   },
   "exclude": [
     {
-      "Pool": "env:MACVMIMAGEM1",
+      "OSVmImage": "env:MACVMIMAGEM1",
       "RustToolchainName": "msrv"
     },
     {
-      "Pool": "env:MACVMIMAGEM1",
+      "OSVmImage": "env:MACVMIMAGEM1",
       "RustToolchainName": "nightly"
     },
     {
-      "Pool": "env:WINDOWSVMIMAGE",
+      "OSVmImage": "env:WINDOWSVMIMAGE",
       "RustToolchainName": "msrv"
     },
     {
-      "Pool": "env:WINDOWSVMIMAGE",
+      "OSVmImage": "env:WINDOWSVMIMAGE",
       "RustToolchainName": "nightly"
     }
   ]
