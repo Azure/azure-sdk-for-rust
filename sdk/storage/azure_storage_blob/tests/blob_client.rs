@@ -1350,3 +1350,74 @@ async fn test_gzip_blob_raw_without_autodecompression(
     container_client.delete(None).await?;
     Ok(())
 }
+
+/// Downloads a gzip-encoded blob using a custom reqwest transport with both gzip and deflate
+/// auto-decompression disabled, proving that disabling deflate alongside gzip still yields
+/// the raw wire response.
+///
+/// Builds a reqwest client with `.gzip(false).deflate(false)` and injects it as the transport.
+/// With all standard content-encoding decompression turned off in reqwest the raw compressed
+/// response reaches our code unchanged: `content-encoding: gzip` is present and the body is
+/// the raw gzip stream that decodes back to the original plaintext.
+#[recorded::test]
+async fn test_gzip_blob_raw_without_gzip_or_deflate(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+
+    // Build a reqwest client with both gzip and deflate decompression disabled.
+    let no_compression_client = Arc::new(
+        ::reqwest::ClientBuilder::new()
+            .gzip(false)
+            .deflate(false)
+            .redirect(::reqwest::redirect::Policy::none())
+            .build()?,
+    );
+    let mut client_options = ClientOptions::default();
+    client_options.transport = Some(Transport::new(no_compression_client));
+
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions {
+            client_options,
+            ..Default::default()
+        }),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Arrange — compress plaintext and upload with blob_content_encoding: gzip
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes.clone()),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Act — download; reqwest does not decompress because both gzip and deflate are disabled.
+    let response = blob_client.download(None).await?;
+
+    // Assert — the raw wire response is visible: content-encoding header is present and the
+    // body is a valid gzip stream that decodes back to the original plaintext.
+    let content_encoding = response.content_encoding()?;
+    let (_, _, body) = response.deconstruct();
+    let downloaded_bytes = body.collect().await?.to_vec();
+    assert_eq!(Some("gzip".to_string()), content_encoding);
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_slice());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(plaintext.to_vec(), decompressed);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
