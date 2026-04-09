@@ -11,9 +11,9 @@ rust-version.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { version = "0.33.0", features = ["reqwest"] }
+azure_core = { workspace = true, features = ["reqwest"] }
 azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
-azure_identity = "0.33.0"
+azure_identity.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }
 futures.workspace = true
 hdrhistogram.workspace = true
@@ -25,6 +25,15 @@ sysinfo.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "signal"] }
 uuid.workspace = true
+console-subscriber = { version = "0.4", optional = true }
+
+# Optional: tokio runtime metrics (scheduling delay, poll times, worker utilization)
+tokio-metrics = { version = "0.4", optional = true }
+
+[features]
+default = []
+tokio-console = ["dep:console-subscriber", "tokio/tracing"]
+tokio-metrics = ["dep:tokio-metrics"]
 
 [lints]
 workspace = true

@@ -3,7 +3,7 @@
 
 //! Models for deserializing the Cosmos DB Account (DatabaseAccount) JSON payload.
 
-use crate::regions::RegionName;
+use crate::regions::Region;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -13,7 +13,7 @@ use url::Url;
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AccountRegion {
-    pub name: RegionName,
+    pub name: Region,
 
     #[serde(with = "crate::serde::url")]
     pub database_account_endpoint: Url,

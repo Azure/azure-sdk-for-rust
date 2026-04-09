@@ -22,7 +22,7 @@ use crate::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{OperationOptions, ReadConsistencyStrategy, RuntimeOptions},
+    options::{OperationOptionsView, ReadConsistencyStrategy},
 };
 
 use super::{
@@ -45,8 +45,8 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
-    options: &OperationOptions,
-    effective_options: &RuntimeOptions,
+    options: &OperationOptionsView<'_>,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
     account_endpoint: &AccountEndpoint,
@@ -61,19 +61,22 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
-    let max_failover_retries = effective_options.max_failover_retry_count.unwrap_or(3);
+    let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
-    let session_capturing_disabled = effective_options
-        .session_capturing_disabled
+    let session_capturing_disabled = options
+        .session_capturing_disabled()
+        .copied()
         .unwrap_or(false);
-    let read_consistency_strategy = effective_options
-        .read_consistency_strategy
+    let read_consistency_strategy = options
+        .read_consistency_strategy()
+        .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
-    let max_session_retries = effective_options
-        .max_session_retry_count
+    let max_session_retries = options
+        .max_session_retry_count()
+        .copied()
         .unwrap_or_else(|| {
             // Java SDK parity: 2 for single-write, endpoints.len() for multi-write.
             // Uses the original endpoint count (before unavailability filtering).
@@ -91,29 +94,19 @@ pub(crate) async fn execute_operation_pipeline(
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,
         location_snapshot.account.multiple_write_locations_enabled,
-        effective_options
-            .excluded_regions
-            .as_ref()
+        options
+            .excluded_regions()
             .map(|r| r.0.clone())
             .unwrap_or_default(),
         max_failover_retries,
         max_session_retries,
     );
 
-    let deadline = effective_options
-        .end_to_end_latency_policy
-        .as_ref()
+    let deadline = options
+        .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
 
-    let mut attempt = 0;
     loop {
-        attempt += 1;
-        let attempt_span = tracing::debug_span!(
-            "attempt",
-            attempt = attempt,
-            context = tracing::field::Empty
-        )
-        .entered();
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -136,21 +129,36 @@ pub(crate) async fn execute_operation_pipeline(
         } else {
             ExecutionContext::RegionFailover
         };
-        attempt_span.record("context", tracing::field::debug(&execution_context));
         tracing::debug!(routing_decision = %routing, "routing decision made");
 
-        let transport_request = build_transport_request(
+        let mut transport_request = build_transport_request(
             operation,
+            custom_headers,
             &routing,
             activity_id,
             execution_context,
             deadline,
             session_consistency_active
                 .then(|| {
-                    session_manager.resolve_session_token(operation, options.session_token_ref())
+                    session_manager.resolve_session_token(
+                        operation,
+                        operation.request_headers().session_token.as_ref(),
+                    )
                 })
                 .flatten(),
         )?;
+
+        // Apply custom headers from resolved options.
+        // Inserted conditionally so they don't override SDK-set headers.
+        if let Some(custom_headers) = options.custom_headers() {
+            for (name, value) in custom_headers {
+                if !transport_request.headers.iter().any(|(n, _)| n == name) {
+                    transport_request
+                        .headers
+                        .insert(name.clone(), value.clone());
+                }
+            }
+        }
         tracing::trace!(
             method = ?transport_request.method,
             url = %transport_request.url,
@@ -164,6 +172,7 @@ pub(crate) async fn execute_operation_pipeline(
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
+
         let result = execute_transport_pipeline(
             transport_request,
             &TransportPipelineContext {
@@ -215,8 +224,10 @@ pub(crate) async fn execute_operation_pipeline(
             }
             OperationAction::FailoverRetry { new_state, delay } => {
                 if let Some(delay) = delay {
-                    if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
-                        azure_core::sleep(duration).await;
+                    if !delay.is_zero() {
+                        if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
+                            azure_core::sleep(duration).await;
+                        }
                     }
                 }
 
@@ -234,9 +245,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
-                        let timeout_duration = effective_options
-                            .end_to_end_latency_policy
-                            .as_ref()
+                        let timeout_duration = options
+                            .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
 
@@ -272,9 +282,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // Check deadline before retrying
                 if let Some(d) = deadline {
                     if Instant::now() >= d {
-                        let timeout_duration = effective_options
-                            .end_to_end_latency_policy
-                            .as_ref()
+                        let timeout_duration = options
+                            .end_to_end_latency_policy()
                             .map(|p| p.timeout())
                             .unwrap_or_default();
 
@@ -402,6 +411,7 @@ fn endpoint_is_available(
 /// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     routing: &RoutingDecision,
     activity_id: &ActivityId,
     execution_context: ExecutionContext,
@@ -430,8 +440,16 @@ fn build_transport_request(
 
     let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
 
-    // Build headers from the operation
+    // Build headers from the operation.
+    // Custom headers are inserted first so that SDK-set headers below always
+    // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
+    // pattern where custom headers are added before SDK headers).
     let mut headers = azure_core::http::headers::Headers::new();
+    if let Some(custom) = custom_headers {
+        for (name, value) in custom {
+            headers.insert(name.clone(), value.clone());
+        }
+    }
     operation.request_headers().write_to_headers(&mut headers);
 
     // Add activity ID if not already set by the operation
@@ -616,6 +634,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -634,6 +653,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -652,6 +672,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -675,6 +696,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &test_routing(),
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Retry,
@@ -706,6 +728,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,
@@ -734,6 +757,7 @@ mod tests {
 
         let request = build_transport_request(
             &operation,
+            None,
             &routing,
             &ActivityId::from_string("default-activity".to_string()),
             ExecutionContext::Initial,

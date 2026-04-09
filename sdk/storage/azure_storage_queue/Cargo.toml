@@ -20,6 +20,7 @@ default = ["azure_core/default"]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 serde = { workspace = true }
+time.workspace = true
 
 [lints]
 workspace = true
@@ -28,6 +29,7 @@ workspace = true
 azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
+clap.workspace = true
 futures.workspace = true
 opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true

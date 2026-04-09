@@ -26,8 +26,8 @@ If you wish to create a new storage account, you can use the
 [Azure Portal], [Azure PowerShell], or [Azure CLI]:
 
 ```sh
-# Create a new resource group to hold the storage account -
-# if using an existing resource group, skip this step
+# Create a new resource group to hold the storage account.
+# Skip this step if using an existing resource group.
 az group create --name my-resource-group --location westus2
 
 # Create the storage account
@@ -47,10 +47,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a QueueClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
     let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/", // endpoint
-        "queue-name",                                            // queue name
-        Some(credential),                                        // credential
-        Some(QueueClientOptions::default()),                     // QueueClient options
+        "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
+        "queue-name",                                             // Queue Name
+        Some(credential),                                         // Credential
+        Some(QueueClientOptions::default()),                      // QueueClient Options
     )?;
     Ok(())
 }
@@ -64,8 +64,11 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 You can find executable examples for all major SDK functions in:
 
-* [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs)
-* [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs)
+* [hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/hello_world.rs) - Getting started: create a queue, send and receive messages
+* [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs) - Queue-level operations: metadata, send/peek/receive/delete, TTL/visibility options
+* [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs) - Service-level operations: list queues, service properties, statistics
+* [access_policy.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/access_policy.rs) - Set and get queue access policies (stored access policies for SAS)
+* [queue_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
 
 ## Next steps
 
@@ -92,6 +95,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [API reference documentation]: https://docs.rs/crate/azure_storage_queue/latest
 [Package (crates.io)]: https://crates.io/crates/azure_storage_queue
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue
-[REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
-[Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
+[REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/queue-service-rest-api
+[Product documentation]: https://learn.microsoft.com/azure/storage/queues/storage-queues-introduction
 [Assign an Azure role for access to queue data]: https://learn.microsoft.com/azure/storage/queues/assign-azure-role-data-access?tabs=portal

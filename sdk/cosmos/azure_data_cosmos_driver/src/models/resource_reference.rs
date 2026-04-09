@@ -432,9 +432,7 @@ impl StoredProcedureReference {
 /// A reference to a Cosmos DB trigger resource.
 ///
 /// Contains the parent container and either the name or RID of the trigger.
-///
-/// Note: This is different from `TriggerInvocation` which specifies which trigger
-/// to invoke during an operation. This type is for referencing trigger definitions.
+/// This type is for referencing trigger definitions.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct TriggerReference {

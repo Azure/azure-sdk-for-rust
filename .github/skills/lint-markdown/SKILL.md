@@ -19,11 +19,11 @@ For markdownlint rules configuration, nest it under the `config` property follow
 
 ## Check Markdown
 
-Run `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2` from the repository root to lint Markdown files according to the configuration.
+Run `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2` from the repository root with a list of modified markdown files to lint.
 
 ## Fix issues
 
-Run with the `--fix` flag to automatically fix supported issues:
+Run with the `--fix` flag with a list of modified markdown files to automatically fix supported issues:
 
 ```bash
 npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 --fix

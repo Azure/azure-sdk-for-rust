@@ -5,7 +5,7 @@ use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::cosmos_request::CosmosRequest;
 use crate::models::AccountProperties;
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::regions::Region;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
@@ -92,8 +92,8 @@ impl GlobalEndpointManager {
     /// A new `GlobalEndpointManager` instance ready for request routing
     pub fn new(
         default_endpoint: Url,
-        preferred_locations: Vec<RegionName>,
-        excluded_regions: Vec<RegionName>,
+        preferred_locations: Vec<Region>,
+        excluded_regions: Vec<Region>,
         pipeline: Pipeline,
     ) -> Arc<Self> {
         let location_cache = Mutex::new(LocationCache::new(
@@ -245,7 +245,7 @@ impl GlobalEndpointManager {
     pub fn applicable_endpoints(
         &self,
         operation_type: OperationType,
-        excluded_regions: Option<&Vec<RegionName>>,
+        excluded_regions: Option<&Vec<Region>>,
     ) -> Vec<Url> {
         self.location_cache
             .lock()
@@ -379,7 +379,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap containing the location names with their corresponding write endpoint URLs
     #[allow(dead_code)]
-    fn available_write_endpoints_by_location(&self) -> HashMap<RegionName, Url> {
+    fn available_write_endpoints_by_location(&self) -> HashMap<Region, Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -399,7 +399,7 @@ impl GlobalEndpointManager {
     /// # Returns
     /// A HashMap mapping location names to read endpoint URLs
     #[allow(dead_code)]
-    fn available_read_endpoints_by_location(&self) -> HashMap<RegionName, Url> {
+    fn available_read_endpoints_by_location(&self) -> HashMap<Region, Url> {
         self.location_cache
             .lock()
             .unwrap()
@@ -572,7 +572,7 @@ mod tests {
     fn create_test_manager() -> Arc<GlobalEndpointManager> {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             create_test_pipeline(),
         )
@@ -644,7 +644,7 @@ mod tests {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
         let account_region = AccountRegion {
-            name: RegionName::from("West US".to_string()),
+            name: Region::from("West US".to_string()),
             database_account_endpoint: "https://test.documents.azure.com".parse().unwrap(),
         };
         // Populate the location cache's regions
@@ -667,7 +667,7 @@ mod tests {
         let manager = create_test_manager();
         let endpoint = "https://test.documents.azure.com".parse().unwrap();
         let account_region = AccountRegion {
-            name: RegionName::from("West US".to_string()),
+            name: Region::from("West US".to_string()),
             database_account_endpoint: "https://test.documents.azure.com".parse().unwrap(),
         };
         // Populate the location cache's regions
@@ -748,8 +748,7 @@ mod tests {
     async fn test_applicable_excluded_endpoints() {
         let manager = create_test_manager();
         // Exclude all regions to test behavior - should still return default endpoint
-        let excluded_regions: Vec<RegionName> =
-            vec![RegionName::from("West US"), RegionName::from("East US")];
+        let excluded_regions: Vec<Region> = vec![Region::from("West US"), Region::from("East US")];
         let endpoints = manager.applicable_endpoints(OperationType::Read, Some(&excluded_regions));
         assert!(!endpoints.is_empty());
         let endpoints =

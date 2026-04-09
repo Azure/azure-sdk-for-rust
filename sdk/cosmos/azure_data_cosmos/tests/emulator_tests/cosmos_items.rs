@@ -10,8 +10,10 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
-use azure_data_cosmos::{ItemOptions, PartitionKey};
+use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
+use azure_data_cosmos::{
+    ContentResponseOnWrite, ETag, ItemWriteOptions, OperationOptions, PartitionKey, Precondition,
+};
 use framework::get_effective_hub_endpoint;
 use framework::TestClient;
 use framework::TestRunContext;
@@ -34,9 +36,9 @@ struct TestItem {
 
 /// Helper function to assert common response properties.
 /// Verifies status code, that request charge is present and positive, endpoint is correct,
-/// and that session token and activity ID are present.
+/// and that session token, activity ID, and server duration are present.
 fn assert_response<T>(
-    response: &CosmosResponse<T>,
+    response: &ItemResponse<T>,
     expected_status: StatusCode,
     expected_endpoint: &str,
     read_operation: bool,
@@ -55,17 +57,41 @@ fn assert_response<T>(
         // ETag is only returned on read operations
         let etag = response.etag();
         assert!(etag.is_some(), "expected etag to be present");
-        assert!(etag.unwrap() != "", "expected etag to be non-empty");
+        assert!(
+            !etag.unwrap().to_string().is_empty(),
+            "expected etag to be non-empty"
+        );
     }
 
-    assert_eq!(
-        response.request_url().host_str().unwrap(),
-        expected_endpoint,
-        "unexpected endpoint"
-    );
+    // request_url() returns None for driver-routed operations (e.g., read_item).
+    // Only assert the endpoint when the URL is available.
+    if let Some(url) = response.request_url() {
+        assert_eq!(
+            url.host_str().unwrap(),
+            expected_endpoint,
+            "unexpected endpoint"
+        );
+    }
     assert!(
         response.session_token().is_some(),
         "expected session token to be present"
+    );
+    assert!(
+        response.diagnostics().activity_id().is_some(),
+        "expected activity ID to be present"
+    );
+    assert!(
+        !response.diagnostics().activity_id().unwrap().is_empty(),
+        "expected activity ID to be non-empty"
+    );
+    // Server duration is returned by the Cosmos DB service on all operations
+    assert!(
+        response.diagnostics().server_duration_ms().is_some(),
+        "expected server_duration_ms to be present"
+    );
+    assert!(
+        response.diagnostics().server_duration_ms().unwrap() >= 0.0,
+        "expected server_duration_ms to be non-negative"
     );
 }
 
@@ -79,12 +105,16 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await;
+    let container_client = db_client.container_client(&container_id).await?;
 
     Ok(container_client)
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -148,12 +178,11 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             item.value = 12;
             item.nested.nested_value = "UpdatedAgain".into();
             let response = container_client
-                .replace_item(
-                    &pk,
-                    &item_id,
-                    &item,
-                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
-                )
+                .replace_item(&pk, &item_id, &item, {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                })
                 .await?;
             assert_response(
                 &response,
@@ -204,6 +233,10 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -260,6 +293,10 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -307,6 +344,10 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -337,11 +378,11 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "Updated".into();
 
             let upsert_response = container_client
-                .upsert_item(
-                    &pk,
-                    &item,
-                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
-                )
+                .upsert_item(&pk, &item, {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                })
                 .await?;
             assert_response(
                 &upsert_response,
@@ -360,6 +401,10 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -451,6 +496,10 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -495,7 +544,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag(etag)),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                    ),
                 )
                 .await?;
             assert_response(
@@ -514,7 +566,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                    ),
                 )
                 .await;
 
@@ -533,6 +588,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -575,7 +634,10 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag(etag)),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                    ),
                 )
                 .await?;
             assert_response(
@@ -593,7 +655,10 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .upsert_item(
                     &pk,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                    ),
                 )
                 .await;
 
@@ -612,6 +677,10 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -652,7 +721,10 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions::default().with_if_match_etag(etag)),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                    ),
                 )
                 .await?;
             assert_response(
@@ -676,7 +748,10 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                    ),
                 )
                 .await;
 
@@ -710,6 +785,10 @@ struct ExplicitPkItem {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {

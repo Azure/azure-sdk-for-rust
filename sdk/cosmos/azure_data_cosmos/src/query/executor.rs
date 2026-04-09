@@ -13,7 +13,7 @@ use std::sync::Arc;
 use crate::{
     constants, cosmos_request::CosmosRequest, cosmos_request::CosmosRequestBuilder, feed::FeedBody,
     operation_context::OperationType, pipeline::GatewayPipeline, resource_context::ResourceLink,
-    FeedPage, Query,
+    Query, QueryFeedPage,
 };
 
 /// A query executor that sends queries directly to the gateway endpoint.
@@ -69,8 +69,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     /// Fetches the next page of query results.
     ///
     /// Returns `None` if there are no more pages to fetch.
-    #[tracing::instrument(skip_all)]
-    pub async fn next_page(&mut self) -> azure_core::Result<Option<FeedPage<T>>> {
+    pub async fn next_page(&mut self) -> azure_core::Result<Option<QueryFeedPage<T>>> {
         if self.complete {
             return Ok(None);
         }
@@ -96,7 +95,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             .send::<FeedBody<T>>(cosmos_request, self.context.to_borrowed())
             .await?;
 
-        let page = FeedPage::<T>::from_response(resp).await?;
+        let page = QueryFeedPage::<T>::from_response(resp).await?;
 
         match page.continuation() {
             Some(token) => self.continuation = Some(token.to_string()),

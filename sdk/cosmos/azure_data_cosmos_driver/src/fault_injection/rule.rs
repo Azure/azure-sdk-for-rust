@@ -4,6 +4,7 @@
 //! Defines fault injection rules that combine conditions and results.
 
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 
 use super::condition::FaultInjectionCondition;
@@ -16,8 +17,8 @@ pub struct FaultInjectionRule {
     condition: FaultInjectionCondition,
     result: FaultInjectionResult,
     id: String,
-    enabled: AtomicBool,
-    hit_count: AtomicU32,
+    enabled: Arc<AtomicBool>,
+    hit_count: Arc<AtomicU32>,
     start_time: Option<Instant>,
     end_time: Option<Instant>,
     hit_limit: Option<u32>,
@@ -88,6 +89,8 @@ pub struct FaultInjectionRuleBuilder {
     end_time: Option<Instant>,
     hit_limit: Option<u32>,
     id: String,
+    shared_enabled: Option<Arc<AtomicBool>>,
+    shared_hit_count: Option<Arc<AtomicU32>>,
 }
 
 impl FaultInjectionRuleBuilder {
@@ -102,6 +105,8 @@ impl FaultInjectionRuleBuilder {
             end_time: None,
             hit_limit: None,
             id: id.into(),
+            shared_enabled: None,
+            shared_hit_count: None,
         }
     }
 
@@ -135,6 +140,18 @@ impl FaultInjectionRuleBuilder {
         self
     }
 
+    /// Sets externally-owned enabled/hit_count state so that multiple rules
+    /// (e.g., across SDK and driver) share the same mutable state.
+    pub fn with_shared_state(
+        mut self,
+        enabled: Arc<AtomicBool>,
+        hit_count: Arc<AtomicU32>,
+    ) -> Self {
+        self.shared_enabled = Some(enabled);
+        self.shared_hit_count = Some(hit_count);
+        self
+    }
+
     /// Builds the FaultInjectionRule.
     pub fn build(self) -> FaultInjectionRule {
         FaultInjectionRule {
@@ -144,8 +161,12 @@ impl FaultInjectionRuleBuilder {
             end_time: self.end_time,
             hit_limit: self.hit_limit,
             id: self.id,
-            enabled: AtomicBool::new(true),
-            hit_count: AtomicU32::new(0),
+            enabled: self
+                .shared_enabled
+                .unwrap_or_else(|| Arc::new(AtomicBool::new(true))),
+            hit_count: self
+                .shared_hit_count
+                .unwrap_or_else(|| Arc::new(AtomicU32::new(0))),
         }
     }
 }

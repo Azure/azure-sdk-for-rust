@@ -8,7 +8,7 @@ use super::{
 use crate::constants::SubStatusCode;
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::regions::Region;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use azure_core::http::{RawResponse, StatusCode};
@@ -33,7 +33,7 @@ pub(crate) struct MetadataRequestRetryPolicy {
     unavailable_endpoint_retry_count: usize,
 
     /// Regions excluded from routing for the current request.
-    excluded_regions: Option<Vec<RegionName>>,
+    excluded_regions: Option<Vec<Region>>,
 }
 
 /// A helper struct containing the required attributes for metadata retry context.
@@ -81,7 +81,7 @@ impl MetadataRequestRetryPolicy {
     pub(crate) async fn before_send_request(&mut self, request: &mut CosmosRequest) {
         let _stat = self.global_endpoint_manager.refresh_location(false).await;
 
-        self.excluded_regions = request.excluded_regions.clone();
+        self.excluded_regions = request.excluded_regions.clone().map(|e| e.0);
 
         // Clear the previous location-based routing directive
         request.request_context.clear_route_to_location();
@@ -266,9 +266,9 @@ impl MetadataRequestRetryPolicy {
 mod tests {
     use super::*;
     use crate::operation_context::OperationType;
+    use crate::options::ExcludedRegions;
     use crate::partition_key::PartitionKey;
-    use crate::regions;
-    use crate::regions::RegionName;
+    use crate::regions::Region;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use azure_core::http::headers::Headers;
@@ -288,7 +288,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             pipeline,
         )
@@ -324,11 +324,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![
-                regions::EAST_ASIA,
-                regions::WEST_US,
-                regions::NORTH_CENTRAL_US,
-            ],
+            vec![Region::EAST_ASIA, Region::WEST_US, Region::NORTH_CENTRAL_US],
             vec![],
             pipeline,
         )
@@ -652,7 +648,7 @@ mod tests {
         let resource_link = ResourceLink::root(ResourceType::Databases);
         let mut request = CosmosRequest::builder(OperationType::Read, resource_link)
             .partition_key(PartitionKey::from("test"))
-            .excluded_regions(Some(vec![regions::EAST_ASIA]))
+            .excluded_regions(Some(ExcludedRegions::from_iter([Region::EAST_ASIA])))
             .build()
             .unwrap();
         request.request_context.location_endpoint_to_route =
@@ -664,7 +660,7 @@ mod tests {
         assert_eq!(policy.excluded_regions.as_ref().unwrap().len(), 1);
         assert_eq!(
             policy.excluded_regions.as_ref().unwrap()[0],
-            regions::EAST_ASIA
+            Region::EAST_ASIA
         );
     }
 
@@ -673,7 +669,7 @@ mod tests {
         let mut policy = create_test_policy_with_preferred_locations();
         // 3 preferred locations: EAST_ASIA, WEST_US, NORTH_CENTRAL_US
         // Exclude 2 of them so only 1 endpoint remains
-        policy.excluded_regions = Some(vec![regions::EAST_ASIA, regions::WEST_US]);
+        policy.excluded_regions = Some(vec![Region::EAST_ASIA, Region::WEST_US]);
 
         let error = create_error_with_status(StatusCode::ServiceUnavailable);
 

@@ -9,7 +9,7 @@ use super::{
 use crate::constants::{self, SubStatusCode};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::regions::Region;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::error::ErrorKind;
@@ -83,7 +83,7 @@ pub(crate) struct ClientRetryPolicy {
     retry_context: Option<RetryContext>,
 
     /// Regions excluded from routing for the current request
-    excluded_regions: Option<Vec<RegionName>>,
+    excluded_regions: Option<Vec<Region>>,
 
     /// Underlying policy for handling resource throttling (429) with exponential backoff
     throttling_retry: ResourceThrottleRetryPolicy,
@@ -107,7 +107,7 @@ impl ClientRetryPolicy {
     pub fn new(
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
-        excluded_regions: Option<Vec<RegionName>>,
+        excluded_regions: Option<Vec<Region>>,
     ) -> Self {
         Self {
             global_endpoint_manager,
@@ -157,7 +157,7 @@ impl ClientRetryPolicy {
         // Hence, the outcome of the operation is ignored here.
         _ = self.global_endpoint_manager.refresh_location(false).await;
         self.operation_type = Some(request.operation_type);
-        self.excluded_regions = request.excluded_regions.clone();
+        self.excluded_regions = request.excluded_regions.clone().map(|e| e.0);
         self.can_use_multiple_write_locations = self
             .global_endpoint_manager
             .can_use_multiple_write_locations(request);
@@ -742,8 +742,7 @@ mod tests {
     use crate::models::AccountRegion;
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
-    use crate::regions;
-    use crate::regions::RegionName;
+    use crate::regions::Region;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use crate::routing::partition_key_range::PartitionKeyRange;
@@ -764,7 +763,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             pipeline,
         )
@@ -800,11 +799,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![
-                regions::EAST_ASIA,
-                regions::WEST_US,
-                regions::NORTH_CENTRAL_US,
-            ],
+            vec![Region::EAST_ASIA, Region::WEST_US, Region::NORTH_CENTRAL_US],
             vec![],
             pipeline,
         )
@@ -893,17 +888,17 @@ mod tests {
 
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             pipeline,
         );
 
         let west = AccountRegion {
-            name: RegionName::from("West US"),
+            name: Region::from("West US"),
             database_account_endpoint: "https://test-westus.documents.azure.com".parse().unwrap(),
         };
         let east = AccountRegion {
-            name: RegionName::from("East US"),
+            name: Region::from("East US"),
             database_account_endpoint: "https://test-eastus.documents.azure.com".parse().unwrap(),
         };
 

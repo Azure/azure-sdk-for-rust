@@ -85,7 +85,8 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// Creates a new queue under the specified account. If the queue with the same name already exists, the operation fails.
+    /// Creates a new queue under the specified account. If a queue with the same name already exists, the operation succeeds
+    /// when the metadata is identical and returns 204; if the metadata differs, the operation returns 409.
     ///
     /// # Arguments
     ///
@@ -117,7 +118,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[201],
+                        success_codes: &[201, 204],
                     },
                     ..Default::default()
                 }),
@@ -476,8 +477,8 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
+        request.insert_header("content-type", "application/xml");
         request.set_body(queue_acl);
         let rsp = self
             .pipeline
@@ -581,9 +582,9 @@ impl QueueClient {
         query_builder.set_pair("visibilitytimeout", visibility_timeout.to_string());
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-version", &self.version);
         if let Some(queue_message) = options.queue_message.clone() {
+            request.insert_header("content-type", "application/xml");
             request.set_body(queue_message);
         }
         let rsp = self
@@ -603,11 +604,14 @@ impl QueueClient {
     }
 }
 
+/// Default value for [`QueueClientOptions::version`].
+pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+
 impl Default for QueueClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
+            version: String::from(DEFAULT_VERSION),
         }
     }
 }

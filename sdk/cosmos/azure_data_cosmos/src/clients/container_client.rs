@@ -3,25 +3,29 @@
 
 use crate::{
     clients::OffersClient,
-    models::{ContainerProperties, CosmosResponse, ThroughputProperties},
+    models::{
+        BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
+        ThroughputProperties,
+    },
     options::{BatchOptions, QueryOptions, ReadContainerOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
-    transactional_batch::{TransactionalBatch, TransactionalBatchResponse},
-    DeleteContainerOptions, FeedItemIterator, ItemOptions, PartitionKey, Query,
-    ReplaceContainerOptions, ThroughputOptions,
+    transactional_batch::TransactionalBatch,
+    DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
+    Query, ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
 use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
-use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
+use azure_data_cosmos_driver::models::{ContainerReference, CosmosOperation, ItemReference};
+use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -33,7 +37,10 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
+    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
     container_id: String,
+    driver: Arc<CosmosDriver>,
+    container_ref: ContainerReference,
 }
 
 impl ContainerClient {
@@ -41,39 +48,47 @@ impl ContainerClient {
         pipeline: Arc<GatewayPipeline>,
         database_link: &ResourceLink,
         container_id: &str,
+        database_id: &str,
+        driver: Arc<CosmosDriver>,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
-    ) -> Self {
+    ) -> azure_core::Result<Self> {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Documents);
 
-        let container_cache = Arc::from(ContainerCache::new(
-            pipeline.clone(),
-            link.clone(),
-            global_endpoint_manager.clone(),
-        ));
+        // Eagerly resolve immutable container metadata from the driver.
+        let container_ref = driver
+            .resolve_container(database_id, container_id)
+            .await
+            .map_err(|e| {
+                e.with_context(format!(
+                    "failed to resolve container metadata for '{database_id}/{container_id}'"
+                ))
+            })?;
+
         let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
             pipeline.clone(),
             database_link.clone(),
-            container_cache.clone(),
             global_endpoint_manager.clone(),
         ));
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),
-            container_cache,
             partition_key_range_cache,
             global_partition_endpoint_manager.clone(),
+            container_ref.clone(),
         ));
 
-        Self {
+        Ok(Self {
             link,
             items_link,
             pipeline,
             container_connection,
             container_id: container_id.to_string(),
-        }
+            driver,
+            container_ref,
+        })
     }
 
     /// Reads the properties of the container.
@@ -92,7 +107,6 @@ impl ContainerClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read(
         &self,
         #[allow(
@@ -100,7 +114,7 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
         let response: CosmosResponse<ContainerProperties> = self
@@ -108,16 +122,7 @@ impl ContainerClient {
             .send(cosmos_request, Context::default())
             .await?;
 
-        // Populate the container cache so that subsequent item operations
-        // (which resolve container properties for partition-level routing)
-        // find them already cached and avoid an extra metadata fetch.
-        if let Ok(properties) = response.deserialize_body::<ContainerProperties>() {
-            self.container_connection
-                .populate_container_cache(self.container_id.clone(), properties)
-                .await;
-        }
-
-        Ok(response)
+        Ok(ResourceResponse::new(response))
     }
 
     /// Updates the indexing policy of the container.
@@ -144,7 +149,6 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
@@ -153,13 +157,14 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ReplaceContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
             .json(&properties)
             .build()?;
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ResourceResponse::new)
     }
 
     /// Reads container throughput properties, if any.
@@ -168,7 +173,6 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_throughput(
         &self,
         #[allow(
@@ -197,12 +201,11 @@ impl ContainerClient {
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ThroughputProperties>> {
         #[allow(
             unused_variables,
             reason = "The 'options' variable may be used in the future"
@@ -217,7 +220,10 @@ impl ContainerClient {
             .expect("service should always return a '_rid' for a container");
 
         let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.replace(Context::default(), throughput).await
+        offers_client
+            .replace(Context::default(), throughput)
+            .await
+            .map(ResourceResponse::new)
     }
 
     /// Deletes this container.
@@ -226,7 +232,6 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete(
         &self,
         #[allow(
@@ -234,12 +239,13 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<DeleteContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+    ) -> azure_core::Result<ResourceResponse<()>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ResourceResponse::new)
     }
 
     /// Creates a new item in the container.
@@ -276,11 +282,11 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
-    /// If you want the new item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// If you want the new item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::ItemOptions;
+    /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
@@ -296,7 +302,9 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
+    /// let mut operation = OperationOptions::default();
+    /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+    /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
@@ -304,15 +312,14 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
-        options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+        options: Option<ItemWriteOptions>,
+    ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.operation.excluded_regions.clone();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Create, self.items_link.clone())
                 .json(&item)
@@ -324,6 +331,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ItemResponse::new)
     }
 
     /// Replaces an existing item in the container.
@@ -361,11 +369,11 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
-    /// If you want the replaced item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// If you want the replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::ItemOptions;
+    /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
@@ -381,24 +389,25 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
+    /// let mut operation = OperationOptions::default();
+    /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+    /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
     ///     .into_body().json::<Product>()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         item: T,
-        options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+        options: Option<ItemWriteOptions>,
+    ) -> azure_core::Result<ItemResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.operation.excluded_regions.clone();
         let mut cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
             .json(&item)
             .partition_key(partition_key.into())
@@ -409,6 +418,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ItemResponse::new)
     }
 
     /// Creates or replaces an item in the container.
@@ -449,11 +459,11 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
-    /// If you want the created/replaced item to be returned, set the [`ItemOptions::with_content_response_on_write_enabled()`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`CosmosResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// If you want the created/replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::ItemOptions;
+    /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
@@ -469,22 +479,23 @@ impl ContainerClient {
     ///     product_name: "Product #1".to_string(),
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let options = ItemOptions::default().with_content_response_on_write_enabled(true);
+    /// let mut operation = OperationOptions::default();
+    /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+    /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
     ///     .into_body().json::<Product>()?;
     /// Ok(())
     /// # }
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
-        options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+        options: Option<ItemWriteOptions>,
+    ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.operation.excluded_regions.clone();
         let mut cosmos_request =
             CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
                 .json(&item)
@@ -496,7 +507,8 @@ impl ContainerClient {
         return self
             .container_connection
             .send(cosmos_request, Context::default())
-            .await;
+            .await
+            .map(ItemResponse::new);
     }
 
     /// Reads a specific item from the container.
@@ -505,8 +517,6 @@ impl ContainerClient {
     /// * `partition_key` - The partition key of the item to read. See [`PartitionKey`] for more information on how to specify a partition key.
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
-    ///
-    /// NOTE: The read item is always returned, so the [`ItemOptions::with_content_response_on_write_enabled()`] option is ignored.
     ///
     /// # Examples
     ///
@@ -529,29 +539,42 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<T>> {
-        let mut options = options.unwrap_or_default();
+        options: Option<ItemReadOptions>,
+    ) -> azure_core::Result<ItemResponse<T>> {
+        let options = options.unwrap_or_default();
 
-        // Read APIs should always return the item, ignoring whatever the user set.
-        options = options.with_content_response_on_write_enabled(true);
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
 
-        let link = self.items_link.item(item_id);
-        let excluded_regions = options.excluded_regions.clone();
-        let mut cosmos_request = CosmosRequest::builder(OperationType::Read, link)
-            .partition_key(partition_key.into())
-            .excluded_regions(excluded_regions)
-            .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        // Create the driver operation.
+        let mut operation = CosmosOperation::read_item(item_ref);
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
+        // Wire session token and precondition from SDK options onto the operation.
+        if let Some(session_token) = options.session_token {
+            operation = operation.with_session_token(session_token);
+        }
+        if let Some(precondition) = options.precondition {
+            operation = operation.with_precondition(precondition);
+        }
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Deletes an item from the container.
@@ -561,7 +584,7 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to delete.
     /// * `options` - Optional parameters for the request
     ///
-    /// NOTE: The deleted item is never returned by the Cosmos API, so the [`ItemOptions::with_content_response_on_write_enabled()`] option is ignored.
+    /// NOTE: The deleted item is never returned by the Cosmos API, so any content response option is ignored.
     ///
     /// # Examples
     ///
@@ -574,16 +597,15 @@ impl ContainerClient {
     ///     .await?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
+        options: Option<ItemWriteOptions>,
+    ) -> azure_core::Result<ItemResponse<()>> {
         let link = self.items_link.item(item_id);
         let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.excluded_regions.clone();
+        let excluded_regions = options.operation.excluded_regions.clone();
         let mut cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
             .partition_key(partition_key.into())
             .excluded_regions(excluded_regions)
@@ -593,6 +615,7 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(ItemResponse::new)
     }
 
     /// Executes a single-partition query against items in the container.
@@ -654,7 +677,6 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
@@ -724,12 +746,11 @@ impl ContainerClient {
     /// * Maximum 100 operations per batch
     /// * Maximum payload size is 2 MB
     /// * All operations must target the same partition key
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn execute_transactional_batch(
         &self,
         batch: TransactionalBatch,
         options: Option<BatchOptions>,
-    ) -> azure_core::Result<CosmosResponse<TransactionalBatchResponse>> {
+    ) -> azure_core::Result<BatchResponse> {
         let options = options.unwrap_or_default();
         let partition_key = batch.partition_key().clone();
 
@@ -743,5 +764,38 @@ impl ContainerClient {
         self.container_connection
             .send(cosmos_request, Context::default())
             .await
+            .map(BatchResponse::new)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `ContainerClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &ContainerClient = todo!();
+
+        // Container operations
+        assert_send(client.read(todo!()));
+        assert_send(client.replace(todo!(), todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.replace_throughput(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+
+        // Item operations (use "" for partition_key to avoid never-type fallback issues)
+        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
+        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.delete_item("", todo!(), todo!()));
+
+        // Batch operations
+        assert_send(client.execute_transactional_batch(todo!(), todo!()));
     }
 }

@@ -24,6 +24,10 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     // Due to the significant performance impact when disabling connection pooling,
     // it is enabled here by default. See the `azure_core` troubleshooting guide to disable pooling.
     let client = ::reqwest::ClientBuilder::new()
+        // By default, reqwest will chase 3xx redirects up to 10 links. REST API guidelines
+        // discourage services from using 3xx redirects, so disabling the reqwest redirect logic
+        // simplifies the client logic.
+        .redirect(::reqwest::redirect::Policy::none())
         .build()
         .expect("failed to build `reqwest` client");
 

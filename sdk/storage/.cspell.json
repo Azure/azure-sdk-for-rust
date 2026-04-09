@@ -24,6 +24,9 @@
     "legalhold",
     "messagettl",
     "missingcontainer",
+    "myblob",
+    "mycontainer",
+    "myqueue",
     "numofmessages",
     "pagelist",
     "peekonly",
@@ -54,6 +57,7 @@
     "Undeletes",
     "visibilitytimeout",
     "westus",
-    "yourtagname"
+    "yourtagname",
+    "Ünïcödé"
   ]
 }

@@ -1107,7 +1107,7 @@ mod tests {
     use crate::cosmos_request::CosmosRequest;
     use crate::models::AccountRegion;
     use crate::operation_context::OperationType;
-    use crate::regions::RegionName;
+    use crate::regions::Region;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use crate::routing::partition_key_range::PartitionKeyRange;
@@ -1133,7 +1133,7 @@ mod tests {
     fn create_single_region_manager() -> Arc<GlobalEndpointManager> {
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US")],
+            vec![Region::from("West US")],
             vec![],
             create_test_pipeline(),
         )
@@ -1142,17 +1142,17 @@ mod tests {
     fn create_multi_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             create_test_pipeline(),
         );
 
         let west = AccountRegion {
-            name: RegionName::from("West US"),
+            name: Region::from("West US"),
             database_account_endpoint: "https://test-westus.documents.azure.com".parse().unwrap(),
         };
         let east = AccountRegion {
-            name: RegionName::from("East US"),
+            name: Region::from("East US"),
             database_account_endpoint: "https://test-eastus.documents.azure.com".parse().unwrap(),
         };
 
@@ -1164,24 +1164,24 @@ mod tests {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
             vec![
-                RegionName::from("West US"),
-                RegionName::from("East US"),
-                RegionName::from("Central US"),
+                Region::from("West US"),
+                Region::from("East US"),
+                Region::from("Central US"),
             ],
             vec![],
             create_test_pipeline(),
         );
 
         let west = AccountRegion {
-            name: RegionName::from("West US"),
+            name: Region::from("West US"),
             database_account_endpoint: "https://test-westus.documents.azure.com".parse().unwrap(),
         };
         let east = AccountRegion {
-            name: RegionName::from("East US"),
+            name: Region::from("East US"),
             database_account_endpoint: "https://test-eastus.documents.azure.com".parse().unwrap(),
         };
         let central = AccountRegion {
-            name: RegionName::from("Central US"),
+            name: Region::from("Central US"),
             database_account_endpoint: "https://test-centralus.documents.azure.com"
                 .parse()
                 .unwrap(),
@@ -1199,17 +1199,17 @@ mod tests {
     fn create_single_master_multi_region_manager() -> Arc<GlobalEndpointManager> {
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             create_test_pipeline(),
         );
 
         let west = AccountRegion {
-            name: RegionName::from("West US"),
+            name: Region::from("West US"),
             database_account_endpoint: "https://test-westus.documents.azure.com".parse().unwrap(),
         };
         let east = AccountRegion {
-            name: RegionName::from("East US"),
+            name: Region::from("East US"),
             database_account_endpoint: "https://test-eastus.documents.azure.com".parse().unwrap(),
         };
 

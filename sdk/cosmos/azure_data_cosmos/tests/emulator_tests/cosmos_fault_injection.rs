@@ -51,6 +51,10 @@ fn create_test_item(unique_id: &str) -> TestItem {
 /// Test probability fault injection - fault should only apply based on probability.
 /// With probability 0.0, the fault should never be applied.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -89,7 +93,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // With probability 0.0, all reads should succeed
             for i in 1..=5 {
@@ -113,6 +117,10 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
 /// Test probability fault injection - with probability 1.0, fault should always apply.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -151,7 +159,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // With probability 1.0, all reads should fail
             for i in 1..=5 {
@@ -178,6 +186,10 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 /// Test retry on transient errors with hit_limit.
 /// Injects 429 for the first 2 requests, verifies 3rd succeeds.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::TooManyRequests)
@@ -216,7 +228,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // First request - should succeed after retries
             let result = fault_container_client
@@ -231,10 +243,10 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
-            assert_eq!(
-                response.request_url().host_str().unwrap(),
-                get_effective_hub_endpoint()
-            );
+            // request_url() returns None for driver-routed operations.
+            if let Some(url) = response.request_url() {
+                assert_eq!(url.host_str().unwrap(), get_effective_hub_endpoint());
+            }
 
             Ok(())
         },
@@ -245,6 +257,10 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
 /// Test DeleteItem fault - verify CRUD operations unaffected.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -283,7 +299,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed
             let read_result = fault_container_client
@@ -327,6 +343,10 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 
 /// Test container-specific fault - verify other containers unaffected.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -367,7 +387,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed since container name doesn't match "FaultyContainer"
             let result = fault_container_client
@@ -391,8 +411,9 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
                 .await?;
 
             // Now try to read using the fault client - should fail because container name contains "FaultyContainer"
-            let faulty_fault_container_client =
-                fault_db_client.container_client(faulty_container_id).await;
+            let faulty_fault_container_client = fault_db_client
+                .container_client(faulty_container_id)
+                .await?;
             let faulty_result = faulty_fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
@@ -414,6 +435,10 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
 /// Test multiple rules priority - first matching rule wins.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem
     let error1 = FaultInjectionResultBuilder::new()
@@ -463,7 +488,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let result = fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
@@ -487,6 +512,10 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 /// Test that first rule is skipped because its start_time is in the future.
 /// Second rule applies immediately and should win.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with a future start_time (won't be active yet)
     let error1 = FaultInjectionResultBuilder::new()
@@ -537,7 +566,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let result = fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
@@ -561,6 +590,10 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 /// Test that first rule is expired because its end_time is in the past.
 /// Second rule should win.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with an end_time in the past (already expired)
     let error1 = FaultInjectionResultBuilder::new()
@@ -611,7 +644,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Small delay to ensure duration has passed
             tokio::time::sleep(Duration::from_millis(100)).await;
@@ -637,6 +670,10 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 
 /// Test hit_limit behavior - fault stops after N applications.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::InternalServerError)
@@ -646,9 +683,12 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
 
+    // The driver retries 500 errors internally (up to 3 failover retries per call),
+    // so each read_item call consumes up to 4 fault injection hits. Setting
+    // hit_limit to 8 ensures 2 calls fail completely before the limit is exhausted.
     let rule = FaultInjectionRuleBuilder::new("hit-limit-test", server_error)
         .with_condition(condition)
-        .with_hit_limit(4)
+        .with_hit_limit(8)
         .build();
 
     let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
@@ -675,7 +715,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // First 2 requests should fail with one in region retry
             for i in 1..=2 {
@@ -699,7 +739,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                 .await;
             assert!(
                 result.is_ok(),
-                "request 4 should succeed after hit_limit exhausted: {:?}",
+                "request 3 should succeed after hit_limit exhausted: {:?}",
                 result.err()
             );
 
@@ -712,6 +752,10 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
 /// Test empty rules - no fault injection, operations should succeed.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
     let fault_builder = FaultInjectionClientBuilder::new();
 
@@ -737,7 +781,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed with no fault rules
             let result = fault_container_client
@@ -759,6 +803,10 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
 /// Test that item operations succeed when metadata operations are faulted.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::InternalServerError)
@@ -801,7 +849,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Cache warmup: read the container with the rule disabled so that
             // ContainerClient::read() populates the internal container cache.
@@ -862,6 +910,10 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 /// Test that disabling a rule at runtime prevents fault injection,
 /// and re-enabling it resumes injection.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -906,7 +958,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
                 .fault_client()
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
-            let fault_container_client = fault_db_client.container_client(&container_id).await;
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Rule is enabled — read should fail
             let result = fault_container_client
@@ -937,6 +989,87 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
             assert!(result.is_err(), "read should fail after re-enabling rule");
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+    )
+    .await
+}
+
+/// Verifies that the pkranges request uses the correct URL and returns 200.
+///
+/// Uses a "spy" fault injection rule with no error or custom response. The rule
+/// matches `MetadataPartitionKeyRanges` requests but lets them pass through to the
+/// real service, recording the response status code. This proves:
+/// 1. The pkranges code path is exercised (`hit_count >= 1`).
+/// 2. The service returns 200 (the URL uses name-based addressing, not mixed RID).
+/// 3. The item operation succeeds end-to-end with correct partition key routing.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn Error>> {
+    // Spy rule: no error, no custom response → passthrough with status recording.
+    let spy_result = FaultInjectionResultBuilder::new().build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("pkrange-spy", spy_result)
+            .with_condition(condition)
+            .build(),
+    );
+
+    let rule_handle = Arc::clone(&rule);
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+
+    TestClient::run_with_unique_db(
+        async move |run_context, db_client| {
+            let container_id = format!("PkRangeTest-{}", Uuid::new_v4());
+            let _container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+
+            // Use the fault client so the spy rule is in the HTTP pipeline.
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // Create an item — this triggers partition key range resolution
+            // through the fault client's pipeline where the spy rule can observe.
+            fault_container_client
+                .create_item(&pk, &item, None)
+                .await?;
+
+            // The spy rule should have been hit during the pkrange fetch.
+            assert!(
+                rule_handle.hit_count() >= 1,
+                "Expected the MetadataPartitionKeyRanges spy rule to be hit at least once, but hit_count was {}",
+                rule_handle.hit_count()
+            );
+
+            // Verify the pkranges request returned 200 from the service.
+            let statuses = rule_handle.passthrough_statuses();
+            assert!(
+                statuses.contains(&StatusCode::Ok),
+                "Expected pkranges request to return 200, got: {:?}",
+                statuses
+            );
 
             Ok(())
         },

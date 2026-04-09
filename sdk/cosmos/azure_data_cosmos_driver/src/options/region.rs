@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell: disable
+
 //! Azure region identifier types.
 //!
 //! This module provides the [`Region`] type for representing Azure regions in a type-safe manner
@@ -139,6 +141,44 @@ impl Region {
     pub const SWEDEN_SOUTH: Region = Region::new_const("swedensouth");
     pub const KOREA_SOUTH_2: Region = Region::new_const("koreasouth2");
     pub const USSEC_WEST_CENTRAL: Region = Region::new_const("ussecwestcentral");
+    pub const AUSTRIA_EAST: Region = Region::new_const("austriaeast");
+    pub const BELGIUM_CENTRAL: Region = Region::new_const("belgiumcentral");
+    pub const BLEU_FRANCE_CENTRAL: Region = Region::new_const("bleufrancecentral");
+    pub const BLEU_FRANCE_SOUTH: Region = Region::new_const("bleufrancesouth");
+    pub const BRAZIL_SOUTHEAST: Region = Region::new_const("brazilsoutheast");
+    pub const CHILE_CENTRAL: Region = Region::new_const("chilecentral");
+    pub const CHINA_EAST_3: Region = Region::new_const("chinaeast3");
+    pub const CHINA_NORTH_3: Region = Region::new_const("chinanorth3");
+    pub const DELOS_CLOUD_GERMANY_CENTRAL: Region = Region::new_const("deloscloudgermanycentral");
+    pub const DELOS_CLOUD_GERMANY_NORTH: Region = Region::new_const("deloscloudgermanynorth");
+    pub const DENMARK_EAST: Region = Region::new_const("denmarkeast");
+    pub const EAST_US_3: Region = Region::new_const("eastus3");
+    pub const EAST_US_SLV: Region = Region::new_const("eastusslv");
+    pub const INDIA_SOUTH_CENTRAL: Region = Region::new_const("indiasouthcentral");
+    pub const INDONESIA_CENTRAL: Region = Region::new_const("indonesiacentral");
+    pub const ISRAEL_CENTRAL: Region = Region::new_const("israelcentral");
+    pub const ISRAEL_NORTHWEST: Region = Region::new_const("israelnorthwest");
+    pub const ITALY_NORTH: Region = Region::new_const("italynorth");
+    pub const JIO_INDIA_CENTRAL: Region = Region::new_const("jioindiacentral");
+    pub const JIO_INDIA_WEST: Region = Region::new_const("jioindiawest");
+    pub const MALAYSIA_SOUTH: Region = Region::new_const("malaysiasouth");
+    pub const MALAYSIA_WEST: Region = Region::new_const("malaysiawest");
+    pub const MEXICO_CENTRAL: Region = Region::new_const("mexicocentral");
+    pub const NEW_ZEALAND_NORTH: Region = Region::new_const("newzealandnorth");
+    pub const NORTHEAST_US_5: Region = Region::new_const("northeastus5");
+    pub const POLAND_CENTRAL: Region = Region::new_const("polandcentral");
+    pub const QATAR_CENTRAL: Region = Region::new_const("qatarcentral");
+    pub const SINGAPORE_CENTRAL: Region = Region::new_const("singaporecentral");
+    pub const SINGAPORE_NORTH: Region = Region::new_const("singaporenorth");
+    pub const SOUTH_CENTRAL_US_2: Region = Region::new_const("southcentralus2");
+    pub const SOUTHEAST_US: Region = Region::new_const("southeastus");
+    pub const SOUTHEAST_US_3: Region = Region::new_const("southeastus3");
+    pub const SOUTHEAST_US_5: Region = Region::new_const("southeastus5");
+    pub const SOUTHWEST_US: Region = Region::new_const("southwestus");
+    pub const SPAIN_CENTRAL: Region = Region::new_const("spaincentral");
+    pub const TAIWAN_NORTH: Region = Region::new_const("taiwannorth");
+    pub const TAIWAN_NORTHWEST: Region = Region::new_const("taiwannorthwest");
+    pub const WEST_US_3: Region = Region::new_const("westus3");
 
     /// Creates a new region from a string, normalizing the input.
     ///
@@ -414,6 +454,44 @@ const DISPLAY_NAME_MAPPING: &[(&str, &str)] = &[
     ("swedensouth", "Sweden South"),
     ("koreasouth2", "Korea South 2"),
     ("ussecwestcentral", "USSec West Central"),
+    ("austriaeast", "Austria East"),
+    ("belgiumcentral", "Belgium Central"),
+    ("bleufrancecentral", "Bleu France Central"),
+    ("bleufrancesouth", "Bleu France South"),
+    ("brazilsoutheast", "Brazil Southeast"),
+    ("chilecentral", "Chile Central"),
+    ("chinaeast3", "China East 3"),
+    ("chinanorth3", "China North 3"),
+    ("deloscloudgermanycentral", "Delos Cloud Germany Central"),
+    ("deloscloudgermanynorth", "Delos Cloud Germany North"),
+    ("denmarkeast", "Denmark East"),
+    ("eastus3", "East US 3"),
+    ("eastusslv", "East US SLV"),
+    ("indiasouthcentral", "India South Central"),
+    ("indonesiacentral", "Indonesia Central"),
+    ("israelcentral", "Israel Central"),
+    ("israelnorthwest", "Israel Northwest"),
+    ("italynorth", "Italy North"),
+    ("jioindiacentral", "Jio India Central"),
+    ("jioindiawest", "Jio India West"),
+    ("malaysiasouth", "Malaysia South"),
+    ("malaysiawest", "Malaysia West"),
+    ("mexicocentral", "Mexico Central"),
+    ("newzealandnorth", "New Zealand North"),
+    ("northeastus5", "Northeast US 5"),
+    ("polandcentral", "Poland Central"),
+    ("qatarcentral", "Qatar Central"),
+    ("singaporecentral", "Singapore Central"),
+    ("singaporenorth", "Singapore North"),
+    ("southcentralus2", "South Central US 2"),
+    ("southeastus", "Southeast US"),
+    ("southeastus3", "Southeast US 3"),
+    ("southeastus5", "Southeast US 5"),
+    ("southwestus", "Southwest US"),
+    ("spaincentral", "Spain Central"),
+    ("taiwannorth", "Taiwan North"),
+    ("taiwannorthwest", "Taiwan Northwest"),
+    ("westus3", "West US 3"),
 ];
 
 #[cfg(test)]

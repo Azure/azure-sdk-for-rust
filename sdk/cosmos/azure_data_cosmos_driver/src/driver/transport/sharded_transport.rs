@@ -10,16 +10,17 @@ use std::{
         atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc, Mutex,
     },
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use arc_swap::ArcSwap;
 
-use azure_core::{
-    error::ErrorKind,
-    http::{AsyncRawResponse, HttpClient, Request},
-};
-#[cfg(feature = "tokio")]
+use azure_core::error::ErrorKind;
+
+use super::cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError};
+#[cfg(any(feature = "tokio", test))]
+use std::time::Duration;
+#[cfg(any(feature = "tokio", test))]
 use tracing::debug;
 use tracing::trace;
 use url::Url;
@@ -32,7 +33,7 @@ use super::background_task_manager::BackgroundTaskManager;
 use super::http_client_factory::{HttpClientConfig, HttpClientFactory};
 
 pub(crate) struct TransportDispatch {
-    pub(crate) result: azure_core::Result<AsyncRawResponse>,
+    pub(crate) result: Result<HttpResponse, TransportError>,
     pub(crate) shard_id: Option<u64>,
     pub(crate) shard_diagnostics: Option<TransportShardDiagnostics>,
 }
@@ -70,7 +71,7 @@ impl ShardedHttpTransport {
 
     pub(crate) async fn send(
         &self,
-        request: &Request,
+        request: &HttpRequest,
         excluded_shard_id: Option<u64>,
         endpoint_key: &EndpointKey,
         preferred_shard_id: Option<u64>,
@@ -79,7 +80,10 @@ impl ShardedHttpTransport {
             Ok(pool) => pool,
             Err(error) => {
                 return TransportDispatch {
-                    result: Err(error),
+                    result: Err(TransportError::new(
+                        error,
+                        crate::diagnostics::RequestSentStatus::NotSent,
+                    )),
                     shard_id: None,
                     shard_diagnostics: None,
                 };
@@ -90,7 +94,10 @@ impl ShardedHttpTransport {
             Ok(shard) => shard,
             Err(error) => {
                 return TransportDispatch {
-                    result: Err(error),
+                    result: Err(TransportError::new(
+                        error,
+                        crate::diagnostics::RequestSentStatus::NotSent,
+                    )),
                     shard_id: None,
                     shard_diagnostics: None,
                 };
@@ -99,7 +106,7 @@ impl ShardedHttpTransport {
 
         let shard_id = shard.id;
         let guard = shard.start_request();
-        let result = shard.client.execute_request(request).await;
+        let result = shard.client.send(request).await;
         guard.finish(&result);
         let shard_diagnostics = Some(shard.transport_diagnostics());
 
@@ -391,7 +398,10 @@ impl EndpointShardPool {
             client,
         ))
     }
+}
 
+#[cfg(any(feature = "tokio", test))]
+impl EndpointShardPool {
     fn run_health_sweep(&self) -> azure_core::Result<()> {
         let now = Instant::now();
         let threshold = self.connection_pool.http2_consecutive_failure_threshold();
@@ -546,7 +556,7 @@ const TIMESTAMP_BIAS_NANOS: u64 = 30_000_000_000; // 30 seconds
 
 struct ClientShard {
     id: u64,
-    client: Arc<dyn HttpClient>,
+    client: Arc<dyn TransportClient>,
     /// Monotonic base used for all timestamp offsets on this shard.
     creation_time: Instant,
     // -- Hot-path atomic counters (no Mutex needed) --
@@ -566,7 +576,7 @@ struct ClientShard {
 }
 
 impl ClientShard {
-    fn new(id: u64, client: Arc<dyn HttpClient>) -> Self {
+    fn new(id: u64, client: Arc<dyn TransportClient>) -> Self {
         Self {
             id,
             client,
@@ -579,16 +589,6 @@ impl ClientShard {
             total_requests: AtomicU64::new(0),
             total_failures: AtomicU64::new(0),
             total_cancellations: AtomicU64::new(0),
-        }
-    }
-
-    /// Converts a biased nanos offset to an `Instant` relative to this shard's creation time.
-    fn nanos_to_instant(&self, biased_nanos: u64) -> Instant {
-        if biased_nanos >= TIMESTAMP_BIAS_NANOS {
-            self.creation_time + Duration::from_nanos(biased_nanos - TIMESTAMP_BIAS_NANOS)
-        } else {
-            // Time before creation_time: subtract the deficit.
-            self.creation_time - Duration::from_nanos(TIMESTAMP_BIAS_NANOS - biased_nanos)
         }
     }
 
@@ -622,7 +622,7 @@ impl ClientShard {
         }
     }
 
-    fn record_request_outcome(&self, result: &azure_core::Result<AsyncRawResponse>) {
+    fn record_request_outcome(&self, result: &Result<HttpResponse, TransportError>) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
         let now_nanos = self.instant_to_nanos(Instant::now());
         self.last_request_at_nanos
@@ -659,7 +659,7 @@ impl<'a> InflightGuard<'a> {
     /// Records the request outcome and consumes the guard.
     ///
     /// This decrements the inflight counter and updates success/failure state.
-    fn finish(mut self, result: &azure_core::Result<AsyncRawResponse>) {
+    fn finish(mut self, result: &Result<HttpResponse, TransportError>) {
         self.finished = true;
         self.shard.record_request_outcome(result);
     }
@@ -674,45 +674,12 @@ impl Drop for InflightGuard<'_> {
 }
 
 impl ClientShard {
-    fn snapshot(&self) -> ClientShardHealthSnapshot {
-        let last_success_nanos = self.last_success_at_nanos.load(Ordering::Relaxed);
-        ClientShardHealthSnapshot {
-            id: self.id,
-            inflight: self.inflight(),
-            last_request_at: self
-                .nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed)),
-            last_success_at: if last_success_nanos == TIMESTAMP_NONE {
-                None
-            } else {
-                Some(self.nanos_to_instant(last_success_nanos))
-            },
-            consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
-            total_requests: self.total_requests.load(Ordering::Relaxed),
-            total_failures: self.total_failures.load(Ordering::Relaxed),
-            marked_for_eviction: self.is_marked_for_eviction(),
-        }
-    }
-
-    fn mark_for_eviction(&self) {
-        self.marked_for_eviction.store(true, Ordering::Relaxed);
-    }
-
     fn is_marked_for_eviction(&self) -> bool {
         self.marked_for_eviction.load(Ordering::Relaxed)
     }
 
     fn is_selectable(&self, excluded_shard_id: Option<u64>) -> bool {
         excluded_shard_id != Some(self.id) && !self.is_marked_for_eviction()
-    }
-
-    fn is_idle_for(&self, now: Instant, idle_timeout: Duration) -> bool {
-        if self.inflight() != 0 {
-            return false;
-        }
-
-        let last_request_at =
-            self.nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed));
-        now.duration_since(last_request_at) >= idle_timeout
     }
 
     fn transport_diagnostics(&self) -> TransportShardDiagnostics {
@@ -738,7 +705,7 @@ impl ClientShard {
 
     /// Records outcome for test setup (not cancellation-safe; use `InflightGuard::finish` in production).
     #[cfg(test)]
-    fn record_request_finish(&self, result: &azure_core::Result<AsyncRawResponse>) {
+    fn record_request_finish(&self, result: &Result<HttpResponse, TransportError>) {
         self.record_request_outcome(result);
     }
 
@@ -769,6 +736,53 @@ impl ClientShard {
     }
 }
 
+#[cfg(any(feature = "tokio", test))]
+impl ClientShard {
+    /// Converts a biased nanos offset to an `Instant` relative to this shard's creation time.
+    fn nanos_to_instant(&self, biased_nanos: u64) -> Instant {
+        if biased_nanos >= TIMESTAMP_BIAS_NANOS {
+            self.creation_time + Duration::from_nanos(biased_nanos - TIMESTAMP_BIAS_NANOS)
+        } else {
+            // Time before creation_time: subtract the deficit.
+            self.creation_time - Duration::from_nanos(TIMESTAMP_BIAS_NANOS - biased_nanos)
+        }
+    }
+
+    fn snapshot(&self) -> ClientShardHealthSnapshot {
+        let last_success_nanos = self.last_success_at_nanos.load(Ordering::Relaxed);
+        ClientShardHealthSnapshot {
+            id: self.id,
+            inflight: self.inflight(),
+            last_request_at: self
+                .nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed)),
+            last_success_at: if last_success_nanos == TIMESTAMP_NONE {
+                None
+            } else {
+                Some(self.nanos_to_instant(last_success_nanos))
+            },
+            consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
+            total_requests: self.total_requests.load(Ordering::Relaxed),
+            total_failures: self.total_failures.load(Ordering::Relaxed),
+            marked_for_eviction: self.is_marked_for_eviction(),
+        }
+    }
+
+    fn mark_for_eviction(&self) {
+        self.marked_for_eviction.store(true, Ordering::Relaxed);
+    }
+
+    fn is_idle_for(&self, now: Instant, idle_timeout: Duration) -> bool {
+        if self.inflight() != 0 {
+            return false;
+        }
+
+        let last_request_at =
+            self.nanos_to_instant(self.last_request_at_nanos.load(Ordering::Relaxed));
+        now.duration_since(last_request_at) >= idle_timeout
+    }
+}
+
+#[cfg(any(feature = "tokio", test))]
 #[derive(Clone, Copy, Debug)]
 struct ClientShardHealthSnapshot {
     id: u64,
@@ -781,6 +795,7 @@ struct ClientShardHealthSnapshot {
     marked_for_eviction: bool,
 }
 
+#[cfg(any(feature = "tokio", test))]
 impl ClientShardHealthSnapshot {
     fn has_recent_success(self, now: Instant, grace_period: Duration) -> bool {
         self.last_success_at
@@ -858,6 +873,7 @@ fn active_shard_count(
     needed.max(min_connections).min(selectable_count).max(1)
 }
 
+#[cfg(any(feature = "tokio", test))]
 fn pick_probe_candidate(
     snapshots: &[ClientShardHealthSnapshot],
     threshold: u32,
@@ -905,6 +921,9 @@ impl fmt::Debug for ClientShard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::driver::transport::cosmos_transport_client::{
+        HttpRequest, HttpResponse, TransportError,
+    };
     use async_trait::async_trait;
 
     #[derive(Debug, Default)]
@@ -926,27 +945,27 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             self.idle_ping_flags
                 .lock()
                 .expect("tracking lock poisoned")
                 .push(config.http2_keep_alive_while_idle);
-            Ok(Arc::new(NoopHttpClient))
+            Ok(Arc::new(NoopTransportClient))
         }
     }
 
     #[derive(Debug)]
-    struct NoopHttpClient;
+    struct NoopTransportClient;
 
     #[async_trait]
-    impl HttpClient for NoopHttpClient {
-        async fn execute_request(
-            &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
-            Err(azure_core::Error::with_message(
-                ErrorKind::Other,
-                "noop client should not execute requests in shard unit tests",
+    impl TransportClient for NoopTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Err(TransportError::new(
+                azure_core::Error::with_message(
+                    ErrorKind::Other,
+                    "noop client should not execute requests in shard unit tests",
+                ),
+                crate::diagnostics::RequestSentStatus::NotSent,
             ))
         }
     }
@@ -1007,20 +1026,20 @@ mod tests {
         first.record_request_start();
         let overflow = pool.select_shard(None, None).unwrap();
         overflow.record_request_start();
-        overflow.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        overflow.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
 
         overflow.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
-        first.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        first.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
-        first.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        first.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
 
         first.set_consecutive_failures(0);
@@ -1074,24 +1093,24 @@ mod tests {
         first.record_request_start();
         let second = pool.select_shard(None, None).unwrap();
 
-        first.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        first.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
-        first.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        first.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
 
         second.record_request_start();
-        second.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        second.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
         second.record_request_start();
-        second.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        second.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
 
         {
@@ -1132,13 +1151,13 @@ mod tests {
         first.record_request_start();
         let second = pool.select_shard(None, None).unwrap();
 
-        first.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        first.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
-        first.record_request_finish(&Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "synthetic",
+        first.record_request_finish(&Err(TransportError::new(
+            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+            crate::diagnostics::RequestSentStatus::NotSent,
         )));
 
         for shard in [&first, &second] {
@@ -1202,9 +1221,9 @@ mod tests {
         // Mark the second shard with consecutive failures above threshold.
         for _ in 0..3 {
             second.record_request_start();
-            second.record_request_finish(&Err(azure_core::Error::with_message(
-                ErrorKind::Other,
-                "synthetic",
+            second.record_request_finish(&Err(TransportError::new(
+                azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
+                crate::diagnostics::RequestSentStatus::NotSent,
             )));
         }
 
@@ -1213,16 +1232,16 @@ mod tests {
         second.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
         // Ensure the first shard is healthy so eviction can proceed.
-        first.record_request_finish(&Ok(azure_core::http::AsyncRawResponse::from_bytes(
-            azure_core::http::StatusCode::Ok,
-            azure_core::http::headers::Headers::new(),
-            Vec::<u8>::new(),
-        )));
-        first.record_request_finish(&Ok(azure_core::http::AsyncRawResponse::from_bytes(
-            azure_core::http::StatusCode::Ok,
-            azure_core::http::headers::Headers::new(),
-            Vec::<u8>::new(),
-        )));
+        first.record_request_finish(&Ok(HttpResponse {
+            status: 200,
+            headers: azure_core::http::headers::Headers::new(),
+            body: Vec::new(),
+        }));
+        first.record_request_finish(&Ok(HttpResponse {
+            status: 200,
+            headers: azure_core::http::headers::Headers::new(),
+            body: Vec::new(),
+        }));
 
         let second_id = second.id;
 

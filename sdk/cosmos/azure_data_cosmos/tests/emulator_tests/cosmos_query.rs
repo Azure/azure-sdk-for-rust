@@ -5,12 +5,18 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
+use std::collections::HashMap;
 use std::error::Error;
 
+use azure_core::http::headers::HeaderValue;
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{constants, Query};
+use azure_data_cosmos::{
+    constants,
+    options::{OperationOptions, QueryOptions},
+    Query,
+};
 use framework::{test_data, MockItem, TestClient};
-use futures::TryStreamExt;
+use futures::{StreamExt, TryStreamExt};
 
 fn collect_matching_items(
     items: &[MockItem],
@@ -20,6 +26,10 @@ fn collect_matching_items(
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -43,6 +53,10 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -76,6 +90,10 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -103,6 +121,10 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -135,6 +157,10 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -166,6 +192,86 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 
             // 1004 = CrossPartitionQueryNotServable
             assert_eq!(Some("1004"), sub_status);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(5, 1);
+            let container_client =
+                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+
+            // Enable both index metrics and query metrics via custom headers
+            let mut custom_headers = HashMap::new();
+            custom_headers.insert(
+                constants::COSMOS_POPULATEINDEXMETRICS,
+                HeaderValue::from("true"),
+            );
+            custom_headers.insert(
+                constants::DOCUMENTDB_POPULATEQUERYMETRICS,
+                HeaderValue::from("true"),
+            );
+            let operation = OperationOptions::default().with_custom_headers(custom_headers);
+            let options = QueryOptions::default().with_operation_options(operation);
+
+            let mut pages = container_client
+                .query_items::<MockItem>("select * from c", "partition0", Some(options))?
+                .into_pages();
+
+            // Get the first page and check metrics headers
+            let page = pages
+                .next()
+                .await
+                .expect("expected at least one page")?;
+
+            assert!(!page.items().is_empty(), "expected items in first page");
+
+            // Query metrics should be populated (semicolon-delimited key=value pairs)
+            let query_metrics = page.query_metrics();
+            assert!(
+                query_metrics.is_some(),
+                "expected query metrics to be present when x-ms-documentdb-populatequerymetrics is set"
+            );
+            assert!(
+                query_metrics.unwrap().contains("totalExecutionTimeInMs"),
+                "expected query metrics to contain totalExecutionTimeInMs"
+            );
+
+            // Index metrics should be populated (base64-decoded JSON from service)
+            let index_metrics = page.index_metrics();
+            assert!(
+                index_metrics.is_some(),
+                "expected index metrics to be present when x-ms-cosmos-populateindexmetrics is set"
+            );
+
+            // Verify common response metadata is also available on QueryFeedPage
+            assert!(
+                page.request_charge().is_some(),
+                "expected request charge on feed page"
+            );
+            assert!(
+                page.diagnostics().activity_id().is_some(),
+                "expected activity ID on feed page"
+            );
+            assert!(
+                page.diagnostics().server_duration_ms().is_some(),
+                "expected server_duration_ms on feed page"
+            );
+            assert!(
+                page.session_token().is_some(),
+                "expected session token on feed page"
+            );
 
             Ok(())
         },

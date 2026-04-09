@@ -3,12 +3,13 @@
 
 //! ETag types for optimistic concurrency control.
 
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 /// An ETag value used for optimistic concurrency control.
 ///
 /// ETags are opaque identifiers representing a specific version of a resource.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ETag(pub Cow<'static, str>);
 
 impl ETag {

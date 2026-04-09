@@ -56,6 +56,45 @@ struct PerfResult {
     system_cpu_percent: f32,
     system_total_memory_bytes: u64,
     system_used_memory_bytes: u64,
+    // Tokio runtime metrics (present only when tokio-metrics feature is enabled)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tokio_workers: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tokio_busy_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tokio_park_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tokio_queue_depth: Option<u64>,
+    // Runtime configuration snapshot (for Grafana dashboard)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_concurrency: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_application_region: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_excluded_regions: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_tokio_threads: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_ppcb_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_gateway20_allowed: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_pyroscope_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_tokio_console_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_tokio_metrics_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_valgrind_tool: Option<String>,
+}
+
+/// Tokio runtime metrics snapshot for a single reporting interval.
+#[derive(Clone, Copy)]
+struct TokioSnapshot {
+    workers: u64,
+    busy_pct: f64,
+    park_count: u64,
+    queue_depth: u64,
 }
 
 /// Error document written to the results container for each individual operation failure.
@@ -85,6 +124,22 @@ pub struct RunConfig {
     pub workload_id: String,
     pub commit_sha: String,
     pub hostname: String,
+    pub config_snapshot: ConfigSnapshot,
+}
+
+/// Snapshot of runtime configuration emitted with each PerfResult document.
+#[derive(Clone)]
+pub struct ConfigSnapshot {
+    pub concurrency: u64,
+    pub application_region: String,
+    pub excluded_regions: String,
+    pub tokio_threads: u64,
+    pub ppcb_enabled: bool,
+    pub gateway20_allowed: bool,
+    pub pyroscope_enabled: bool,
+    pub tokio_console_enabled: bool,
+    pub tokio_metrics_enabled: bool,
+    pub valgrind_tool: String,
 }
 
 /// Runs operations concurrently until cancelled or duration expires.
@@ -105,6 +160,7 @@ pub async fn run(config: RunConfig) {
         workload_id,
         commit_sha,
         hostname,
+        config_snapshot,
     } = config;
     let cancelled = Arc::new(AtomicBool::new(false));
 
@@ -128,6 +184,10 @@ pub async fn run(config: RunConfig) {
         });
     }
 
+    // Set up tokio runtime metrics monitor
+    #[cfg(feature = "tokio-metrics")]
+    let runtime_monitor = tokio_metrics::RuntimeMonitor::new(&tokio::runtime::Handle::current());
+
     // Start periodic reporter
     let report_stats = stats.clone();
     let report_cancel = cancelled.clone();
@@ -135,6 +195,10 @@ pub async fn run(config: RunConfig) {
     let report_workload_id = workload_id.clone();
     let report_commit_sha = commit_sha.clone();
     let report_hostname = hostname.clone();
+    let report_config = config_snapshot.clone();
+    #[cfg(feature = "tokio-metrics")]
+    let mut runtime_intervals = runtime_monitor.intervals();
+
     let reporter = tokio::spawn(async move {
         let mut sys = System::new();
         let mut interval = tokio::time::interval(report_interval);
@@ -149,12 +213,43 @@ pub async fn run(config: RunConfig) {
             if let Some(ref m) = metrics {
                 stats::print_process_metrics(m);
             }
+
+            // Collect tokio runtime metrics (delta since last interval)
+            #[cfg(feature = "tokio-metrics")]
+            let tokio_fields = {
+                runtime_intervals.next().map(|rt| {
+                    let workers = rt.workers_count as u64;
+                    let elapsed_secs = rt.elapsed.as_secs_f64();
+                    let busy_nanos = rt.total_busy_duration.as_nanos() as f64;
+                    let total_nanos = elapsed_secs * 1e9 * workers as f64;
+                    let busy_pct = if total_nanos > 0.0 {
+                        busy_nanos / total_nanos * 100.0
+                    } else {
+                        0.0
+                    };
+                    println!(
+                        "  Tokio:   Workers={}, Busy={:.1}%, ParkCount={}, QueueDepth={}",
+                        workers, busy_pct, rt.total_park_count, rt.global_queue_depth
+                    );
+                    TokioSnapshot {
+                        workers,
+                        busy_pct,
+                        park_count: rt.total_park_count,
+                        queue_depth: rt.global_queue_depth as u64,
+                    }
+                })
+            };
+            #[cfg(not(feature = "tokio-metrics"))]
+            let tokio_fields: Option<TokioSnapshot> = None;
+
             let summaries = report_stats.drain_summaries();
             stats::print_report(&summaries);
             upsert_results(
                 &report_results_container,
                 &summaries,
                 metrics.as_ref(),
+                tokio_fields,
+                &report_config,
                 &report_workload_id,
                 &report_commit_sha,
                 &report_hostname,
@@ -224,6 +319,8 @@ pub async fn run(config: RunConfig) {
         &results_container,
         &summaries,
         metrics.as_ref(),
+        None,
+        &config_snapshot,
         &workload_id,
         &commit_sha,
         &hostname,
@@ -234,10 +331,13 @@ pub async fn run(config: RunConfig) {
 }
 
 /// Upserts perf result documents into the results container.
+#[allow(clippy::too_many_arguments)]
 async fn upsert_results(
     container: &ContainerClient,
     summaries: &[stats::Summary],
     metrics: Option<&stats::ProcessMetrics>,
+    tokio_fields: Option<TokioSnapshot>,
+    config: &ConfigSnapshot,
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,
@@ -279,6 +379,28 @@ async fn upsert_results(
             system_cpu_percent: sys_cpu,
             system_total_memory_bytes: sys_total,
             system_used_memory_bytes: sys_used,
+            tokio_workers: tokio_fields.map(|t| t.workers),
+            tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
+            tokio_park_count: tokio_fields.map(|t| t.park_count),
+            tokio_queue_depth: tokio_fields.map(|t| t.queue_depth),
+            config_concurrency: Some(config.concurrency),
+            config_application_region: Some(config.application_region.clone()),
+            config_excluded_regions: if config.excluded_regions.is_empty() {
+                None
+            } else {
+                Some(config.excluded_regions.clone())
+            },
+            config_tokio_threads: Some(config.tokio_threads),
+            config_ppcb_enabled: Some(config.ppcb_enabled),
+            config_gateway20_allowed: Some(config.gateway20_allowed),
+            config_pyroscope_enabled: Some(config.pyroscope_enabled),
+            config_tokio_console_enabled: Some(config.tokio_console_enabled),
+            config_tokio_metrics_enabled: Some(config.tokio_metrics_enabled),
+            config_valgrind_tool: if config.valgrind_tool.is_empty() {
+                None
+            } else {
+                Some(config.valgrind_tool.clone())
+            },
         };
 
         if let Err(e) = container

@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+use crate::async_runtime::AbortableTask;
 use crate::time::Duration;
 use futures::{executor::LocalPool, task::SpawnExt};
+use std::error::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     future,
@@ -25,6 +27,17 @@ struct ThreadJoinState {
         Option<thread::JoinHandle<std::result::Result<(), Box<dyn std::error::Error + Send>>>>,
     waker: Option<Waker>,
     thread_finished: bool,
+}
+
+impl AbortableTask for ThreadJoinFuture {
+    fn abort(&self) {
+        // We cannot actually abort the thread, but we can drop the join handle
+        // to avoid blocking on it when the future is dropped.
+        if let Ok(mut join_state) = self.join_state.lock() {
+            join_state.thread_finished = true;
+            join_state.join_handle = None;
+        }
+    }
 }
 
 impl Future for ThreadJoinFuture {
@@ -72,6 +85,24 @@ impl Future for ThreadJoinFuture {
     }
 }
 
+struct ThreadJoinError {
+    error: Option<Box<dyn Error + Send>>,
+}
+
+impl Future for ThreadJoinError {
+    type Output = std::result::Result<(), Box<dyn std::error::Error + Send>>;
+
+    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Poll::Ready(Err(self.error.take().unwrap()))
+    }
+}
+
+impl AbortableTask for ThreadJoinError {
+    fn abort(&self) {
+        // No-op since the thread never started
+    }
+}
+
 /// An [`AsyncRuntime`] using [`std::thread::spawn`].
 pub(crate) struct StdRuntime;
 
@@ -80,11 +111,13 @@ impl AsyncRuntime for StdRuntime {
         let join_state = Arc::new(Mutex::new(ThreadJoinState::default()));
         {
             let Ok(mut js) = join_state.lock() else {
-                return Box::pin(future::ready(Err(Box::new(crate::Error::with_message(
+                // Set thread_finished to true and return a ThreadJoinFuture that will immediately return the error
+                let error = Box::new(crate::Error::with_message(
                     crate::error::ErrorKind::Other,
                     "Thread panicked.",
-                ))
-                    as Box<dyn std::error::Error + Send>)));
+                )) as Box<dyn std::error::Error + Send>;
+
+                return Box::pin(ThreadJoinError { error: Some(error) });
             };
 
             // Clone the join state so it can be moved into the thread

@@ -20,7 +20,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -33,7 +33,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -42,6 +42,7 @@ pub struct AccessPolicy {
 /// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
 /// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "CorsRule")]
 pub struct CorsRule {
     /// The allowed headers.
     #[serde(rename = "AllowedHeaders", skip_serializing_if = "Option::is_none")]
@@ -62,6 +63,57 @@ pub struct CorsRule {
     /// The maximum age in seconds.
     #[serde(rename = "MaxAgeInSeconds", skip_serializing_if = "Option::is_none")]
     pub max_age_in_seconds: Option<i32>,
+}
+
+/// The error response.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct Error {
+    /// The error code.
+    #[serde(rename = "Code", skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+
+    /// Copy source error code
+    #[serde(
+        rename = "CopySourceErrorCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub copy_source_error_code: Option<String>,
+
+    /// Copy source error message
+    #[serde(
+        rename = "CopySourceErrorMessage",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub copy_source_error_message: Option<String>,
+
+    /// Copy source status code
+    #[serde(
+        rename = "CopySourceStatusCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub copy_source_status_code: Option<i32>,
+
+    /// The error code.
+    #[serde(rename = "errorCode", skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+
+    /// The error message.
+    #[serde(rename = "Message", skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+
+    /// The error code for the copy source.
+    #[serde(
+        rename = "xMsCopySourceErrorCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub x_ms_copy_source_error_code: Option<String>,
+
+    /// The status code for the copy source.
+    #[serde(
+        rename = "xMsCopySourceStatusCode",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub x_ms_copy_source_status_code: Option<i32>,
 }
 
 /// Geo-Replication information for the Secondary Storage Service
@@ -166,6 +218,7 @@ pub struct Metrics {
 /// a Queue
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessage")]
 pub struct PeekedMessage {
     /// The number of times the message has been dequeued.
     #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
@@ -274,6 +327,7 @@ pub struct QueueServiceStats {
 /// a Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessage")]
 pub struct ReceivedMessage {
     /// The number of times the message has been dequeued.
     #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
@@ -346,6 +400,7 @@ pub struct RetentionPolicy {
 /// Queue
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessage")]
 pub struct SentMessageInternal {
     /// The time that the Message will expire and be automatically deleted.
     #[serde(

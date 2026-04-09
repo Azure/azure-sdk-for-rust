@@ -18,9 +18,12 @@ mod authorization_policy;
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;
 pub(crate) mod cosmos_headers;
+pub(crate) mod cosmos_transport_client;
 mod emulator;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
+#[cfg(feature = "reqwest")]
+pub(crate) mod reqwest_transport_client;
 mod sharded_transport;
 mod tracked_transport;
 pub(crate) mod transport_pipeline;

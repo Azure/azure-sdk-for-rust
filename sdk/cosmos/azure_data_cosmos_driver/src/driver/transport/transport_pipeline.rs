@@ -14,7 +14,6 @@
 use std::time::{Duration, Instant};
 
 use azure_core::error::ErrorKind;
-use azure_core::http::Request;
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
@@ -29,7 +28,8 @@ use crate::{
 
 use super::{
     adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
-    infer_request_sent_status, request_signing::sign_request, sharded_transport::EndpointKey,
+    cosmos_transport_client::HttpRequest, infer_request_sent_status, request_signing::sign_request,
+    sharded_transport::EndpointKey,
 };
 
 use crate::driver::pipeline::components::{
@@ -155,12 +155,6 @@ pub(crate) struct TransportPipelineContext<'a> {
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
-#[tracing::instrument(level = tracing::Level::DEBUG, name = "transport", skip_all, fields(
-    method = ?request.method,
-    region = request.endpoint.region().map(|e| e.as_str()).unwrap_or("<global>"),
-    url = %request.url,
-    outcome = tracing::field::Empty,
-))]
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     ctx: &TransportPipelineContext<'_>,
@@ -187,16 +181,7 @@ pub(crate) async fn execute_transport_pipeline(
         }
     };
 
-    let mut attempt = 0;
     loop {
-        attempt += 1;
-        let attempt_span = tracing::span!(
-            tracing::Level::DEBUG,
-            "transport_attempt",
-            attempt = attempt,
-            outcome = tracing::field::Empty
-        )
-        .entered();
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
@@ -231,17 +216,15 @@ pub(crate) async fn execute_transport_pipeline(
         }
 
         // Build HTTP request from TransportRequest
-        let mut http_request = Request::new(request.url.clone(), request.method);
-
-        // Copy headers from TransportRequest
-        for (name, value) in request.headers.iter() {
-            http_request.insert_header(name.clone(), value.clone());
-        }
-
-        // Set body
-        if let Some(body) = &request.body {
-            http_request.set_body(body.clone());
-        }
+        let mut http_request = HttpRequest {
+            url: request.url.clone(),
+            method: request.method,
+            headers: request.headers.clone(),
+            body: request.body.clone(),
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
 
         let per_request_timeout = remaining_request_timeout(request.deadline);
         // TODO(azure_core): Apply per-request timeout directly on Request/HttpClient
@@ -279,6 +262,15 @@ pub(crate) async fn execute_transport_pipeline(
             RequestEvent::new(RequestEventType::TransportStart),
         );
 
+        #[cfg(feature = "fault_injection")]
+        let mut evaluation_collector = if diagnostics.fault_injection_enabled() {
+            let collector = crate::fault_injection::EvaluationCollector::default();
+            http_request.evaluation_collector = Some(collector.clone());
+            Some(collector)
+        } else {
+            None
+        };
+
         let result = execute_http_attempt(
             &http_request,
             ctx.transport,
@@ -289,8 +281,13 @@ pub(crate) async fn execute_transport_pipeline(
             &endpoint_key,
         )
         .await;
-        if !attempt_span.is_disabled() {
-            attempt_span.record("outcome", format!("{}", result.result.outcome));
+
+        #[cfg(feature = "fault_injection")]
+        if let Some(collector) = evaluation_collector.take() {
+            let evals = collector.take();
+            if !evals.is_empty() {
+                diagnostics.set_fault_injection_evaluations(request_handle, evals);
+            }
         }
         tracing::debug!("transport request complete");
 
@@ -378,7 +375,7 @@ fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult 
 }
 
 async fn execute_http_attempt(
-    http_request: &Request,
+    http_request: &HttpRequest,
     transport: &AdaptiveTransport,
     per_request_timeout: Option<Duration>,
     request_handle: RequestHandle,
@@ -444,7 +441,7 @@ async fn execute_http_attempt(
 }
 
 async fn execute_http_attempt_future(
-    http_request: &Request,
+    http_request: &HttpRequest,
     transport: &AdaptiveTransport,
     excluded_shard_id: Option<u64>,
     endpoint_key: &EndpointKey,
@@ -460,28 +457,16 @@ async fn execute_http_attempt_future(
         .await;
 
     match dispatch.result {
-        Ok(response) => {
-            let status_code = response.status();
-            let headers = response.headers().clone();
-            match response.try_into_raw_response().await {
-                Ok(raw) => HttpAttemptResult::Response {
-                    status_code,
-                    headers,
-                    body: raw.body().to_vec(),
-                    shard_id: dispatch.shard_id,
-                    shard_diagnostics: dispatch.shard_diagnostics,
-                },
-                Err(error) => HttpAttemptResult::Error {
-                    error,
-                    headers_received: true,
-                    shard_id: dispatch.shard_id,
-                    shard_diagnostics: dispatch.shard_diagnostics,
-                },
-            }
-        }
-        Err(error) => HttpAttemptResult::Error {
-            error,
-            headers_received: false,
+        Ok(response) => HttpAttemptResult::Response {
+            status_code: azure_core::http::StatusCode::from(response.status),
+            headers: response.headers,
+            body: response.body,
+            shard_id: dispatch.shard_id,
+            shard_diagnostics: dispatch.shard_diagnostics,
+        },
+        Err(transport_err) => HttpAttemptResult::Error {
+            error: transport_err.error,
+            headers_received: transport_err.request_sent == RequestSentStatus::Sent,
             shard_id: dispatch.shard_id,
             shard_diagnostics: dispatch.shard_diagnostics,
         },
@@ -667,6 +652,9 @@ fn map_http_response_payload(
         if let Some(token) = cosmos_headers.session_token.clone() {
             req.with_session_token(token.to_string());
         }
+        if let Some(duration) = cosmos_headers.server_duration_ms {
+            req.with_server_duration_ms(duration);
+        }
     });
 
     diagnostics.complete_request(request_handle, status_code, sub_status);
@@ -682,30 +670,42 @@ mod tests {
     };
 
     use async_trait::async_trait;
-    use azure_core::http::{AsyncRawResponse, Request};
 
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
-        driver::{routing::CosmosEndpoint, transport::adaptive_transport::AdaptiveTransport},
+        driver::{
+            routing::CosmosEndpoint,
+            transport::{
+                adaptive_transport::AdaptiveTransport,
+                cosmos_transport_client::{
+                    HttpRequest, HttpResponse, TransportClient, TransportError,
+                },
+                http_client_factory::{HttpClientConfig, HttpClientFactory},
+            },
+        },
         models::{ActivityId, Credential, ResourceType},
         options::DiagnosticsOptions,
     };
 
     #[derive(Debug)]
-    struct HangingHttpClient {
+    struct HangingTransportClient {
         delay: Duration,
     }
 
     #[async_trait]
-    impl azure_core::http::HttpClient for HangingHttpClient {
-        async fn execute_request(
-            &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
-            tokio::time::sleep(self.delay).await;
-            Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                "request should have timed out before completion",
+    impl TransportClient for HangingTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(self.delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO),
+            )
+            .await;
+            Err(TransportError::new(
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Io,
+                    "request should have timed out before completion",
+                ),
+                crate::diagnostics::RequestSentStatus::Unknown,
             ))
         }
     }
@@ -903,7 +903,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
-        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
             delay: Duration::from_secs(2),
         }));
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -937,46 +937,46 @@ mod tests {
     }
 
     #[derive(Debug)]
-    struct ScriptedHttpClient {
+    struct ScriptedTransportClient {
         error_kind: azure_core::error::ErrorKind,
         message: &'static str,
     }
 
     #[async_trait]
-    impl azure_core::http::HttpClient for ScriptedHttpClient {
-        async fn execute_request(
-            &self,
-            _request: &Request,
-        ) -> azure_core::Result<AsyncRawResponse> {
+    impl TransportClient for ScriptedTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             let error_kind = match &self.error_kind {
                 ErrorKind::Connection => ErrorKind::Connection,
                 ErrorKind::Io => ErrorKind::Io,
                 ErrorKind::Other => ErrorKind::Other,
                 _ => ErrorKind::Other,
             };
-            Err(azure_core::Error::with_message(error_kind, self.message))
+            Err(TransportError::new(
+                azure_core::Error::with_message(error_kind, self.message),
+                crate::diagnostics::RequestSentStatus::Unknown,
+            ))
         }
     }
 
     #[derive(Debug)]
     struct ScriptedFactory {
-        clients: Mutex<Vec<Arc<dyn azure_core::http::HttpClient>>>,
+        clients: Mutex<Vec<Arc<dyn TransportClient>>>,
     }
 
     impl ScriptedFactory {
-        fn new(clients: Vec<Arc<dyn azure_core::http::HttpClient>>) -> Self {
+        fn new(clients: Vec<Arc<dyn TransportClient>>) -> Self {
             Self {
                 clients: Mutex::new(clients.into_iter().rev().collect()),
             }
         }
     }
 
-    impl super::super::http_client_factory::HttpClientFactory for ScriptedFactory {
+    impl HttpClientFactory for ScriptedFactory {
         fn build(
             &self,
             _connection_pool: &crate::options::ConnectionPoolOptions,
-            _config: super::super::http_client_factory::HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn azure_core::http::HttpClient>> {
+            _config: HttpClientConfig,
+        ) -> azure_core::Result<Arc<dyn TransportClient>> {
             self.clients.lock().unwrap().pop().ok_or_else(|| {
                 azure_core::Error::with_message(ErrorKind::Other, "no scripted client available")
             })
@@ -996,11 +996,11 @@ mod tests {
             .build()
             .unwrap();
         let factory = Arc::new(ScriptedFactory::new(vec![
-            Arc::new(ScriptedHttpClient {
+            Arc::new(ScriptedTransportClient {
                 error_kind: error_kind_a,
                 message: message_a,
             }),
-            Arc::new(ScriptedHttpClient {
+            Arc::new(ScriptedTransportClient {
                 error_kind: error_kind_b,
                 message: message_b,
             }),
@@ -1009,7 +1009,7 @@ mod tests {
         AdaptiveTransport::from_config(
             &pool,
             factory,
-            super::super::http_client_factory::HttpClientConfig::dataplane_gateway(
+            HttpClientConfig::dataplane_gateway(
                 &pool,
                 crate::diagnostics::TransportHttpVersion::Http2,
             ),
@@ -1157,7 +1157,7 @@ mod tests {
 
     #[tokio::test]
     async fn execute_transport_pipeline_preserves_client_generated_401_in_diagnostics() {
-        let client = AdaptiveTransport::Gateway(Arc::new(HangingHttpClient {
+        let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
             delay: Duration::from_secs(1),
         }));
         let mut diagnostics = DiagnosticsContextBuilder::new(

@@ -6,6 +6,7 @@ mod cosmos_databases;
 mod cosmos_fault_injection;
 mod cosmos_items;
 mod cosmos_offers;
+mod cosmos_proxy;
 mod cosmos_query;
 
 #[path = "../framework/mod.rs"]

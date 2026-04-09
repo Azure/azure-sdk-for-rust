@@ -4,7 +4,7 @@
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultOperationType;
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::options::ExcludedRegions;
 use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
@@ -59,7 +59,7 @@ pub(crate) struct CosmosRequest {
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
-    pub excluded_regions: Option<Vec<RegionName>>,
+    pub excluded_regions: Option<ExcludedRegions>,
 }
 
 impl CosmosRequest {
@@ -99,11 +99,6 @@ impl CosmosRequest {
     /// Determines if the given operation type is read only.
     pub fn is_read_only_request(&self) -> bool {
         self.operation_type.is_read_only()
-    }
-
-    /// Returns the container ID extracted from the request's resource link, if present.
-    pub fn container_id(&self) -> Option<String> {
-        self.resource_link.container_id()
     }
 
     /// Gets the corresponding http method for the given `OperationType`.
@@ -186,7 +181,7 @@ pub(crate) struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
-    excluded_regions: Option<Vec<RegionName>>,
+    excluded_regions: Option<ExcludedRegions>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -234,7 +229,7 @@ impl CosmosRequestBuilder {
         self
     }
 
-    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<RegionName>>) -> Self {
+    pub fn excluded_regions(mut self, excluded_regions: Option<ExcludedRegions>) -> Self {
         // Sets the excluded regions for the given request. If None is provided,
         // client-level excluded regions will be used. If an empty vector is provided,
         // no regions will be excluded for this request.
@@ -297,7 +292,10 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::resource_context::ResourceType;
-    use crate::{constants, CosmosClientOptions, ItemOptions, PartitionKey};
+    use crate::{
+        constants, CosmosClientOptions, ItemWriteOptions, OperationOptions, PartitionKey,
+        SessionToken,
+    };
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
@@ -412,9 +410,12 @@ mod tests {
             HeaderValue::from_static("custom_value"),
         );
 
-        let item_options = ItemOptions::default()
-            .with_session_token("RequestSession".to_string().into())
-            .with_custom_headers(request_custom_headers);
+        let operation = OperationOptions::default().with_custom_headers(request_custom_headers);
+        let item_options = ItemWriteOptions {
+            operation,
+            ..Default::default()
+        }
+        .with_session_token(SessionToken::from("RequestSession"));
         let mut req = CosmosRequest::builder(
             OperationType::Create,
             ResourceLink::root(ResourceType::Documents),
@@ -432,8 +433,10 @@ mod tests {
             HeaderValue::from_static("custom_value-2"),
         );
 
+        let client_operation =
+            OperationOptions::default().with_custom_headers(client_custom_headers);
         let client_options =
-            CosmosClientOptions::default().with_custom_headers(client_custom_headers);
+            CosmosClientOptions::default().with_operation_options(client_operation);
         client_options.apply_headers(&mut req.headers);
 
         let raw = req.into_raw_request();

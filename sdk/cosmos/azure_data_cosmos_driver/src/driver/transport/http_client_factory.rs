@@ -5,7 +5,7 @@
 
 use std::{fmt, sync::Arc};
 
-use azure_core::http::HttpClient;
+use super::cosmos_transport_client::TransportClient;
 
 use crate::diagnostics::TransportHttpVersion;
 use crate::options::ConnectionPoolOptions;
@@ -141,7 +141,7 @@ pub(crate) trait HttpClientFactory: fmt::Debug + Send + Sync {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn HttpClient>>;
+    ) -> azure_core::Result<Arc<dyn TransportClient>>;
 }
 
 #[derive(Debug)]
@@ -159,7 +159,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn HttpClient>> {
+    ) -> azure_core::Result<Arc<dyn TransportClient>> {
         let mut builder = reqwest::Client::builder();
 
         builder =
@@ -172,7 +172,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         builder = builder.connect_timeout(connection_pool.max_connect_timeout());
         builder = builder.timeout(config.request_timeout);
 
-        if !connection_pool.is_proxy_allowed() {
+        if !connection_pool.proxy_allowed() {
             builder = builder.no_proxy();
         }
 
@@ -213,7 +213,9 @@ impl HttpClientFactory for DefaultHttpClientFactory {
                 format!("Failed to create HTTP client: {error}"),
             )
         })?;
-        Ok(Arc::new(client))
+        Ok(Arc::new(
+            super::reqwest_transport_client::ReqwestTransportClient::new(client),
+        ))
     }
 }
 
@@ -223,7 +225,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn HttpClient>> {
+    ) -> azure_core::Result<Arc<dyn TransportClient>> {
         Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
