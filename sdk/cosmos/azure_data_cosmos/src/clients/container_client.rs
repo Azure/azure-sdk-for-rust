@@ -417,20 +417,37 @@ impl ContainerClient {
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
-        let link = self.items_link.item(item_id);
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.operation.excluded_regions.clone();
-        let mut cosmos_request = CosmosRequest::builder(OperationType::Replace, link)
-            .json(&item)
-            .partition_key(partition_key.into())
-            .excluded_regions(excluded_regions)
-            .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let options = options.unwrap_or_default();
+        let body = serde_json::to_vec(&item)?;
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ItemResponse::new)
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
+
+        // Create the driver operation and apply ItemWriteOptions fields.
+        let mut operation = CosmosOperation::replace_item(item_ref).with_body(body);
+
+        // Wire session token and precondition from SDK options onto the operation.
+        if let Some(session_token) = options.session_token {
+            operation = operation.with_session_token(session_token);
+        }
+        if let Some(precondition) = options.precondition {
+            operation = operation.with_precondition(precondition);
+        }
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Creates or replaces an item in the container.
@@ -506,21 +523,32 @@ impl ContainerClient {
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.operation.excluded_regions.clone();
-        let mut cosmos_request =
-            CosmosRequest::builder(OperationType::Upsert, self.items_link.clone())
-                .json(&item)
-                .partition_key(partition_key.into())
-                .excluded_regions(excluded_regions)
-                .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let options = options.unwrap_or_default();
+        let body = serde_json::to_vec(&item)?;
+        let driver_pk = partition_key.into().into_driver_partition_key();
 
-        return self
-            .container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ItemResponse::new);
+        // Create the driver operation and apply ItemWriteOptions fields.
+        let mut operation =
+            CosmosOperation::upsert_item(self.container_ref.clone(), driver_pk).with_body(body);
+
+        // Wire session token and precondition from SDK options onto the operation.
+        if let Some(session_token) = options.session_token {
+            operation = operation.with_session_token(session_token);
+        }
+        if let Some(precondition) = options.precondition {
+            operation = operation.with_precondition(precondition);
+        }
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Reads a specific item from the container.
@@ -615,19 +643,36 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
-        let link = self.items_link.item(item_id);
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.operation.excluded_regions.clone();
-        let mut cosmos_request = CosmosRequest::builder(OperationType::Delete, link)
-            .partition_key(partition_key.into())
-            .excluded_regions(excluded_regions)
-            .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let options = options.unwrap_or_default();
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ItemResponse::new)
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
+
+        // Create the driver operation (no body for delete).
+        let mut operation = CosmosOperation::delete_item(item_ref);
+
+        // Wire session token and precondition from SDK options onto the operation.
+        if let Some(session_token) = options.session_token {
+            operation = operation.with_session_token(session_token);
+        }
+        if let Some(precondition) = options.precondition {
+            operation = operation.with_precondition(precondition);
+        }
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Executes a single-partition query against items in the container.
