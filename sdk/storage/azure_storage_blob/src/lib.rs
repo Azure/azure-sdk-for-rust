@@ -19,5 +19,6 @@ pub use clients::*;
 pub use parsers::*;
 mod logging;
 pub mod models;
+pub use models::content_adapters::*;
 pub use models::error;
 pub use models::error::{Result, StorageError};

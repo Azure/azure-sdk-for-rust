@@ -1,0 +1,92 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use azure_core::stream::SeekableStream;
+use futures::AsyncRead;
+
+pub enum StorageUploadBody {
+    Bytes(bytes::Bytes),
+    AsyncRead(Box<dyn AsyncReadWithLenHint>),
+}
+
+impl StorageUploadBody {
+    pub fn len(&self) -> Option<u64> {
+        match self {
+            Self::Bytes(bytes) => Some(bytes.len() as u64),
+            Self::AsyncRead(read) => read.len(),
+        }
+    }
+    pub fn is_empty(&self) -> Option<bool> {
+        self.len().map(|len| len == 0)
+    }
+}
+
+pub trait AsyncReadWithLenHint: AsyncRead + Send + Sync + Unpin {
+    fn len(&self) -> Option<u64>;
+    fn is_empty(&self) -> Option<bool> {
+        self.len().map(|len| len == 0)
+    }
+}
+
+impl<T: SeekableStream> AsyncReadWithLenHint for T {
+    fn len(&self) -> Option<u64> {
+        self.len()
+    }
+}
+
+struct AsyncReadLenHintWrapper<T> {
+    pub async_read: T,
+    pub len_hint: Option<u64>,
+}
+impl<T: AsyncRead> AsyncRead for AsyncReadLenHintWrapper<T> {
+    fn poll_read(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+        _buf: &mut [u8],
+    ) -> std::task::Poll<std::io::Result<usize>> {
+        todo!()
+    }
+}
+impl<T: AsyncRead + Send + Sync + Unpin> AsyncReadWithLenHint for AsyncReadLenHintWrapper<T> {
+    fn len(&self) -> Option<u64> {
+        self.len_hint
+    }
+}
+
+pub trait AsyncReadExt {
+    fn with_len_hint(self, len_hint: Option<u64>) -> impl AsyncReadWithLenHint;
+}
+
+impl<T> AsyncReadExt for T
+where
+    T: AsyncRead + Send + Sync + Unpin,
+{
+    fn with_len_hint(self, len_hint: Option<u64>) -> impl AsyncReadWithLenHint {
+        AsyncReadLenHintWrapper {
+            async_read: self,
+            len_hint,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::stream::SeekableStream;
+
+    /// Sanity check that types do as expected.
+    fn seekable_stream_convert<T>(stream: T) -> StorageUploadBody
+    where
+        T: SeekableStream + 'static,
+    {
+        StorageUploadBody::AsyncRead(Box::new(stream))
+    }
+
+    /// Sanity check that types do as expected.
+    fn async_read_convert<T>(stream: T) -> StorageUploadBody
+    where
+        T: AsyncRead + Clone + std::fmt::Debug + Send + Sync + Unpin + 'static,
+    {
+        StorageUploadBody::AsyncRead(Box::new(stream.with_len_hint(None)))
+    }
+}

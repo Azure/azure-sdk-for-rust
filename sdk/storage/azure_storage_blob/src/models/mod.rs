@@ -3,6 +3,7 @@
 
 //! Model types for Azure Blob Storage.
 
+pub(crate) mod content_adapters;
 mod download_result;
 pub(crate) mod drains;
 pub mod error;
