@@ -45,7 +45,7 @@ extends:
         ServiceConnection: azure-sdk-tests-cosmos
     MatrixConfigs:
       - Name: Cosmos_release
-        Path: sdk/cosmos/live-platform-matrix.json
+        Path: sdk/cosmos/release-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
     LiveTestMatrixConfigs:
