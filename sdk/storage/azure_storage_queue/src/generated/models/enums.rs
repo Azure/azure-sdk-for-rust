@@ -19,9 +19,9 @@ pub enum GeoReplicationStatus {
     UnknownValue(String),
 }
 
-/// Include this parameter to specify that the queue's metadata be returned as part of the response body.
+/// Specify to include additional, optional information.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ListQueuesIncludeType {
-    /// Include metadata
+    /// Include queue metadata.
     Metadata,
 }

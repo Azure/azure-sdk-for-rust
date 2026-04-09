@@ -21,5 +21,22 @@
       "nightly"
     ]
   },
-  "include": []
+  "exclude": [
+    {
+      "OSVmImage": "env:MACVMIMAGEM1",
+      "RustToolchainName": "msrv"
+    },
+    {
+      "OSVmImage": "env:MACVMIMAGEM1",
+      "RustToolchainName": "nightly"
+    },
+    {
+      "OSVmImage": "env:WINDOWSVMIMAGE",
+      "RustToolchainName": "msrv"
+    },
+    {
+      "OSVmImage": "env:WINDOWSVMIMAGE",
+      "RustToolchainName": "nightly"
+    }
+  ]
 }
