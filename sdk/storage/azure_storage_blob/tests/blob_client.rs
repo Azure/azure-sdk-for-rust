@@ -1419,3 +1419,114 @@ async fn test_gzip_blob_reqwest_disable_gzip_and_deflate(
     container_client.delete(None).await?;
     Ok(())
 }
+
+/// Uploads a g-zipped compressed blob, doesn't utilize test-proxy, and completely strips both: 'deflate' and 'gzip'
+/// from reqwests.
+///
+/// This leaves only the service behavior. The assertions confirm the service returns raw gzip bytes with
+/// `content-encoding: gzip` present.
+///
+/// The gzip magic number (`1f 8b`) should appear as the first two bytes if we are in fact gzipped.
+///
+#[tokio::test]
+async fn test_gzip_blob_no_proxy_live_only() -> Result<(), Box<dyn Error>> {
+    // Skip if not in a live environment.
+    let Ok(account) = std::env::var("AZURE_STORAGE_ACCOUNT_NAME") else {
+        eprintln!("Skipping test_gzip_blob_no_proxy_live_only: AZURE_STORAGE_ACCOUNT_NAME not set");
+        return Ok(());
+    };
+
+    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+
+    // Build a reqwest client with all auto-decompression disabled.
+    let no_decompress_client = Arc::new(
+        ::reqwest::ClientBuilder::new()
+            .gzip(false)
+            .deflate(false)
+            .redirect(::reqwest::redirect::Policy::none())
+            .build()?,
+    );
+    let mut client_options = ClientOptions::default();
+    client_options.transport = Some(Transport::new(no_decompress_client));
+
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let container_name = format!("gzip-noproxy-{ts}");
+    let blob_name = "gzip-diagnostic-blob";
+
+    // Authenticate via Azure CLI.
+    let credential = azure_identity::AzureCliCredential::new(None)?;
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        &container_name,
+        Some(credential),
+        Some(BlobContainerClientOptions {
+            client_options,
+            ..Default::default()
+        }),
+    )?;
+    container_client.create(None).await?;
+    let blob_client = container_client.blob_client(blob_name);
+
+    // Compress plaintext and upload with blob_content_encoding: gzip.
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+    let gzip_len = gzip_bytes.len();
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Download with no proxy and no reqwest decompression.
+    let response = blob_client.download(None).await?;
+    let content_encoding = response.content_encoding()?;
+    let (_, _, body) = response.deconstruct();
+    let downloaded_bytes = body.collect().await?.to_vec();
+
+    // Print first 16 bytes as hex for output.
+    let hex_preview = downloaded_bytes
+        .iter()
+        .take(16)
+        .map(|b| format!("{b:02x}"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    // If the service had auto-decompressed, downloaded_len would equal the plaintext length (16).
+    // Matching gzip_len proves the body came back as raw compressed bytes.
+    eprintln!(
+        "[gzip diagnostic] content-encoding: {:?} | downloaded_len: {} (uploaded gzip_len: {gzip_len}, plaintext_len: {}) | first 16 bytes: {hex_preview}",
+        content_encoding,
+        downloaded_bytes.len(),
+        plaintext.len(),
+    );
+
+    assert_eq!(
+        Some("gzip".to_string()),
+        content_encoding,
+        "content-encoding: gzip must be present - service does not decompress server-side"
+    );
+    assert!(
+        downloaded_bytes.starts_with(&[0x1f, 0x8b]),
+        "Expected gzip magic bytes 0x1f 0x8b at body start; got: {hex_preview}"
+    );
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_slice());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(
+        plaintext.to_vec(),
+        decompressed,
+        "Decompressed body must match original plaintext"
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
