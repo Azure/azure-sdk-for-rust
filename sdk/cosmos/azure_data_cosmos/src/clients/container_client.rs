@@ -328,6 +328,7 @@ impl ContainerClient {
 
         // Execute through the driver.
         let driver_response = self
+            .context
             .driver
             .execute_operation(operation, options.operation)
             .await?;
