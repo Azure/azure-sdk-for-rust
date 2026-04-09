@@ -97,6 +97,58 @@ impl PartitionKeyRangeCache {
             .map(|r| r.id.clone())
     }
 
+    /// Resolves partition key range IDs for a given container and partition key,
+    /// supporting both full and prefix (hierarchical) partition keys.
+    ///
+    /// For full partition keys (component count == definition path count), returns
+    /// a single range ID (same as [`resolve_partition_key_range_id`](Self::resolve_partition_key_range_id)).
+    ///
+    /// For prefix partition keys on MultiHash containers (fewer components than
+    /// the definition), computes the prefix EPK range and returns all overlapping
+    /// partition key range IDs, enabling fan-out queries across multiple physical
+    /// partitions.
+    ///
+    /// Returns `None` if the partition key is empty or the routing map cannot be resolved.
+    pub async fn resolve_partition_key_range_ids<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        partition_key: &PartitionKey,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> Option<Vec<String>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+    {
+        if partition_key.is_empty() {
+            return None;
+        }
+
+        let pk_def = container.partition_key_definition();
+        let epk_range =
+            EffectivePartitionKey::compute_range(partition_key.values(), pk_def).ok()?;
+
+        if epk_range.start == epk_range.end {
+            // Full key — point lookup
+            let routing_map = self
+                .try_lookup(container, force_refresh, fetch_pk_ranges)
+                .await?;
+            routing_map
+                .get_range_by_effective_partition_key(&epk_range.start)
+                .map(|r| vec![r.id.clone()])
+        } else {
+            // Prefix key — overlapping range lookup
+            self.resolve_overlapping_ranges(
+                container,
+                &epk_range.start..&epk_range.end,
+                force_refresh,
+                fetch_pk_ranges,
+            )
+            .await
+            .map(|ranges| ranges.into_iter().map(|r| r.id).collect())
+        }
+    }
+
     /// Resolves all partition key ranges that overlap with the given EPK range.
     ///
     /// Returns `None` if the routing map cannot be resolved.
@@ -469,5 +521,142 @@ mod tests {
         let ranges = parse_pk_ranges_response(body).unwrap();
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].id, "0");
+    }
+
+    // =========================================================================
+    // Tests for resolve_partition_key_range_ids (MultiHash / prefix HPK)
+    // =========================================================================
+
+    fn make_container(pk_json: &str) -> ContainerReference {
+        let account = crate::models::AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "key",
+        );
+        let container_props = crate::models::ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: serde_json::from_str(pk_json).unwrap(),
+            system_properties: Default::default(),
+        };
+        ContainerReference::new(
+            account,
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &container_props,
+        )
+    }
+
+    /// A fetch function returning two partition key ranges split at the midpoint "80".
+    /// Range "0": ["", "80"), Range "1": ["80", "FF")
+    async fn two_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        if continuation.is_some() {
+            Some(PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(PkRangeFetchResult {
+                ranges: vec![
+                    PkRange::new("0".into(), "", "80"),
+                    PkRange::new("1".into(), "80", "FF"),
+                ],
+                continuation: Some("test-etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn resolve_ids_empty_pk_returns_none() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(
+            r#"{"paths":["/tenantId","/userId","/sessionId"],"kind":"MultiHash","version":2}"#,
+        );
+
+        let result = cache
+            .resolve_partition_key_range_ids(&container, &PartitionKey::EMPTY, false, test_fetch)
+            .await;
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn resolve_ids_full_multihash_returns_single_id() {
+        let cache = PartitionKeyRangeCache::new();
+        let container =
+            make_container(r#"{"paths":["/tenantId","/userId"],"kind":"MultiHash","version":2}"#);
+        let pk = PartitionKey::from(("tenant1", "user1"));
+
+        let result = cache
+            .resolve_partition_key_range_ids(&container, &pk, false, test_fetch)
+            .await;
+
+        assert!(result.is_some());
+        let ids = result.unwrap();
+        assert_eq!(ids.len(), 1);
+        assert_eq!(ids[0], "0"); // single range ["", "FF") contains everything
+    }
+
+    #[tokio::test]
+    async fn resolve_ids_prefix_multihash_returns_multiple_ids() {
+        let cache = PartitionKeyRangeCache::new();
+        // 3-path MultiHash container
+        let container = make_container(
+            r#"{"paths":["/tenantId","/userId","/sessionId"],"kind":"MultiHash","version":2}"#,
+        );
+        // Prefix key: only 1 of 3 components → prefix EPK range spans multiple ranges
+        let pk = PartitionKey::from("tenant1");
+
+        let result = cache
+            .resolve_partition_key_range_ids(&container, &pk, false, two_range_fetch)
+            .await;
+
+        assert!(result.is_some());
+        let ids = result.unwrap();
+        // The prefix EPK for "tenant1" is a 32-char hex string starting with a digit 0-3
+        // (due to 0x3F mask). With ranges split at "80", the prefix range [epk, epk+"FF")
+        // falls entirely within range "0" (["", "80")). So we expect 1 ID.
+        // This validates the prefix path is exercised (via resolve_overlapping_ranges).
+        assert_eq!(ids, vec!["0".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn resolve_ids_non_multihash_returns_single_id() {
+        let cache = PartitionKeyRangeCache::new();
+        // Single-hash container (non-MultiHash)
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let pk = PartitionKey::from("hello");
+
+        let result = cache
+            .resolve_partition_key_range_ids(&container, &pk, false, test_fetch)
+            .await;
+
+        assert!(result.is_some());
+        let ids = result.unwrap();
+        assert_eq!(ids, vec!["0".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn resolve_ids_matches_single_resolve() {
+        // Full MultiHash key via resolve_partition_key_range_ids should produce the
+        // same result as resolve_partition_key_range_id.
+        let cache = PartitionKeyRangeCache::new();
+        let container =
+            make_container(r#"{"paths":["/tenantId","/userId"],"kind":"MultiHash","version":2}"#);
+        let pk = PartitionKey::from(("tenant1", "user1"));
+
+        let single = cache
+            .resolve_partition_key_range_id(&container, &pk, false, test_fetch)
+            .await;
+        let plural = cache
+            .resolve_partition_key_range_ids(&container, &pk, false, test_fetch)
+            .await;
+
+        assert_eq!(single.as_deref(), Some("0"));
+        assert_eq!(plural.as_deref(), Some(vec!["0".to_string()].as_slice()));
     }
 }

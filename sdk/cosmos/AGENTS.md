@@ -54,6 +54,8 @@ impl std::str::FromStr for MyType {
 
 If you need a non-fallible parse internally, create a **private** helper method and have the trait implementation call it.
 
+**Encode domain semantics in trait impls**: When a type has a domain-specific comparison rule, ordering, or equality definition, implement it directly in the type's `Ord`/`PartialOrd`/`Eq` traits rather than creating standalone helper functions that callers must remember to use. This prevents inconsistency — every comparison automatically gets the right semantics, and you can't accidentally use the wrong one.
+
 ### Cosmos-Specific Patterns
 
 #### Request Building
@@ -65,6 +67,7 @@ If you need a non-fallible parse internally, create a **private** helper method 
 #### Error Handling
 
 - Use `azure_core::Result<T>` for all fallible operations
+- **Prefer returning `Result::Err` over panicking** in public methods whose inputs could originate from user-constructed types (even indirectly). Callers can then decide whether to propagate, log, or handle — rather than crashing their application. Use `assert!`/`panic!` only for true invariant violations that indicate programmer error in internal code.
 - Cosmos-specific errors should provide:
   - HTTP status code
   - Request charge (RU/s) when available
@@ -379,6 +382,7 @@ let driver = Driver::builder()
   - Continuation token pagination
 - Tests should use standard trait implementations (e.g., `.parse::<T>()` instead of calling `T::from_str()` directly)
 - Use `assert!` for boolean assertions instead of `assert_eq!(value, true/false)`
+- **Prefer the strongest assertion that matches the contract**: Use `assert_eq!(vec, expected_vec)` instead of `assert!(vec.contains(x))` — the former catches both missing and extra elements. In general, assert exact values over partial properties.
 
 ## Code Quality and Validation
 
