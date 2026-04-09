@@ -48,9 +48,8 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
 
     // Download Snapshot Content
     let download_response = snapshot_1_client.download(None).await?;
-    let (status_code, _, response_body) = download_response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(data_v1.to_vec(), response_body.collect().await?.to_vec());
+    let body_data = download_response.body.collect().await?;
+    assert_eq!(data_v1.to_vec(), body_data);
 
     // Modify Base Blob
     let data_v2 = b"snapshot version 2";
@@ -64,9 +63,8 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
 
     // Verify First Snapshot is Unchanged
     let download_response = snapshot_1_client.download(None).await?;
-    let (status_code, _, response_body) = download_response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(data_v1.to_vec(), response_body.collect().await?.to_vec());
+    let body_data = download_response.body.collect().await?;
+    assert_eq!(data_v1.to_vec(), body_data);
 
     // Test Snapshot Parameter Replacement (Options Override Client)
     let snapshot_2_client = blob_client.with_snapshot(&snapshot_2)?;
@@ -75,16 +73,14 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
         ..Default::default()
     };
     let download_response = snapshot_2_client.download(Some(download_options)).await?;
-    let (status_code, _, response_body) = download_response.deconstruct();
-    assert!(status_code.is_success());
+    let body_data = download_response.body.collect().await?;
     // Should get snapshot_1 content, not snapshot_2
-    assert_eq!(data_v1.to_vec(), response_body.collect().await?.to_vec());
+    assert_eq!(data_v1.to_vec(), body_data);
 
     // Verify Base Blob Has New Content
     let download_response = blob_client.download(None).await?;
-    let (status_code, _, response_body) = download_response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(data_v2.to_vec(), response_body.collect().await?.to_vec());
+    let body_data = download_response.body.collect().await?;
+    assert_eq!(data_v2.to_vec(), body_data);
 
     container_client.delete(None).await?;
     Ok(())

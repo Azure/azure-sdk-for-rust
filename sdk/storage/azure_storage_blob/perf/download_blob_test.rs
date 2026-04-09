@@ -122,7 +122,7 @@ impl DownloadBlobTest {
     async fn collect_stream(&self, blob_client: BlobClient) -> azure_core::Result<()> {
         let response = blob_client.download(None).await?;
 
-        let mut body = response.into_body();
+        let mut body = response.body;
 
         while let Some(result) = body.next().await {
             // We don't actually care about the contents of the blob for this test, we just want to download it.
@@ -136,7 +136,7 @@ impl DownloadBlobTest {
         let response = blob_client.download(None).await?;
 
         let mut buffer = vec![0u8; self.size];
-        response.into_body().collect_into(&mut buffer).await?;
+        response.body.collect_into(&mut buffer).await?;
         black_box(buffer);
         Ok(())
     }
@@ -148,7 +148,7 @@ impl DownloadBlobTest {
     async fn collect_blob(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
-        let body = response.into_body().collect().await?;
+        let body = response.body.collect().await?;
         Ok(black_box(body))
     }
 
@@ -157,7 +157,7 @@ impl DownloadBlobTest {
     async fn collect_blob_simple(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
-        let mut body = response.into_body();
+        let mut body = response.body;
 
         let mut final_result: Vec<u8> = Vec::new();
         while let Some(res) = body.next().await {
@@ -168,15 +168,22 @@ impl DownloadBlobTest {
     }
 
     /// This method collects the entire blob into memory using a `BytesMut` buffer.
-    async fn collect_blob_bytes_mut(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
+    async fn collect_blob_vec_bytes(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
         let response = blob_client.download(None).await?;
 
-        let mut body = response.into_body();
-
-        let mut final_result = BytesMut::new();
+        let mut body = response.body;
+        let mut bytes = Vec::<Bytes>::new();
+        let mut total_length = 0usize;
 
         while let Some(res) = body.next().await {
-            final_result.extend(&res?);
+            let res = res?;
+            total_length += res.len();
+            bytes.push(res);
+        }
+
+        let mut final_result = BytesMut::with_capacity(total_length);
+        for b in bytes {
+            final_result.extend(b);
         }
 
         Ok(black_box(final_result.freeze()))
@@ -240,7 +247,7 @@ impl PerfTest for DownloadBlobTest {
                     self.collect_blob_simple(blob_client).await?;
                 }
                 CollectOptions::VecBytes => {
-                    self.collect_blob_bytes_mut(blob_client).await?;
+                    self.collect_blob_vec_bytes(blob_client).await?;
                 }
                 CollectOptions::Into => {
                     self.collect_into(blob_client).await?;

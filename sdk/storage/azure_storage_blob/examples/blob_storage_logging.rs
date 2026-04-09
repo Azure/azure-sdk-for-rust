@@ -147,8 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Download the file
     println!("\nDownloading blob '{}'...", blob_name);
     let response = blob_client.download(None).await?;
-    let (_, _, body) = response.deconstruct();
-    let downloaded_content = body.collect().await?;
+    let downloaded_content = response.body.collect().await?;
 
     // Print the contents to stdout
     println!("\n=== File Contents ===");

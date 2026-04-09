@@ -110,3 +110,7 @@ harness = false
 name = "perf"
 path = "perf/perf.rs"
 harness = false
+
+[[bench]]
+name = "response_collect_benchmarks"
+harness = false

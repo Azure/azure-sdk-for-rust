@@ -21,6 +21,7 @@ pub(crate) mod request_header_names {
     pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
     pub static MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
     pub static A_IM: HeaderName = HeaderName::from_static("a-im");
+    pub static PREFER: HeaderName = HeaderName::from_static("prefer");
 }
 
 /// Standard Cosmos DB response header names.
@@ -50,10 +51,6 @@ pub(crate) mod fault_injection_header_names {
     /// Operation type header set on requests for fault injection rule matching.
     pub static FAULT_INJECTION_OPERATION: HeaderName =
         HeaderName::from_static("x-ms-fault-injection-operation");
-    /// Header carrying the evaluation request ID for correlating FaultClient evaluations
-    /// with the transport pipeline's diagnostics context.
-    pub static FAULT_INJECTION_REQUEST_ID: HeaderName =
-        HeaderName::from_static("x-ms-fault-injection-request-id");
 }
 
 /// Cosmos request headers for operation-level customization.

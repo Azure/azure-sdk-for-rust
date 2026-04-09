@@ -54,6 +54,8 @@ impl std::str::FromStr for MyType {
 
 If you need a non-fallible parse internally, create a **private** helper method and have the trait implementation call it.
 
+**Encode domain semantics in trait impls**: When a type has a domain-specific comparison rule, ordering, or equality definition, implement it directly in the type's `Ord`/`PartialOrd`/`Eq` traits rather than creating standalone helper functions that callers must remember to use. This prevents inconsistency — every comparison automatically gets the right semantics, and you can't accidentally use the wrong one.
+
 ### Cosmos-Specific Patterns
 
 #### Request Building
@@ -65,6 +67,7 @@ If you need a non-fallible parse internally, create a **private** helper method 
 #### Error Handling
 
 - Use `azure_core::Result<T>` for all fallible operations
+- **Prefer returning `Result::Err` over panicking** in public methods whose inputs could originate from user-constructed types (even indirectly). Callers can then decide whether to propagate, log, or handle — rather than crashing their application. Use `assert!`/`panic!` only for true invariant violations that indicate programmer error in internal code.
 - Cosmos-specific errors should provide:
   - HTTP status code
   - Request charge (RU/s) when available
@@ -76,7 +79,6 @@ If you need a non-fallible parse internally, create a **private** helper method 
 - All I/O operations must be async
 - Async runtime
   - For `sdk/cosmos/azure_data_cosmos` and `sdk/cosmos/azure_data_cosmos_driver` keep using the same async runtime abstractions as `azure_core` does.
-  - Use `tokio` as the async runtime for `sdk/cosmos/azure_data_cosmos_native`
 - Streaming  (use of `futures::Stream`)
   - There is no need to consider streaming for payloads of individual requests/responses because the Cosmos DB service enforces rather strict limits on request and response payload size (max. 4 MB - only via config overrides extendable to 16 MB per response payload)
   - There is a need for pagination for example for query or change feed results (could return multiple pages - each page created by one or multiple responses) - so `futures::Stream` might be used there to achieve pagination - but for transport, assuming buffered transport is sufficient.
@@ -124,7 +126,7 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 - **API**: Public API available for advanced scenarios and cross-language SDK implementation
 - **Support**: Community/GitHub support only (no 24x7 Microsoft Support)
 - **Versioning**: Strict semantic versioning; can move to new major versions more frequently
-- **Consumers**: `azure_data_cosmos` (Rust SDK), `azure_data_cosmos_native` (C API), potentially other language SDKs
+- **Consumers**: `azure_data_cosmos` (Rust SDK), potentially other language SDKs
 
 #### **azure_data_cosmos** (Primary Rust SDK)
 
@@ -132,13 +134,6 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 - **API**: Full public SDK following Azure SDK Design Guidelines
 - **Support**: Full 24x7 Microsoft Support
 - **Versioning**: Strict semantic versioning; must maintain backward compatibility for years per major version
-- **Dependency**: Uses `azure_data_cosmos_driver` internally
-
-#### **azure_data_cosmos_native** (C API Wrapper)
-
-- **Purpose**: C-compatible FFI for cross-language reuse (Java, .NET, Python SDKs)
-- **API**: C ABI with cdylib/staticlib output
-- **Support**: Community/GitHub support (no 24x7 Microsoft Support)
 - **Dependency**: Uses `azure_data_cosmos_driver` internally
 
 ### Versioning Strategy: No Model Sharing
@@ -387,6 +382,7 @@ let driver = Driver::builder()
   - Continuation token pagination
 - Tests should use standard trait implementations (e.g., `.parse::<T>()` instead of calling `T::from_str()` directly)
 - Use `assert!` for boolean assertions instead of `assert_eq!(value, true/false)`
+- **Prefer the strongest assertion that matches the contract**: Use `assert_eq!(vec, expected_vec)` instead of `assert!(vec.contains(x))` — the former catches both missing and extra elements. In general, assert exact values over partial properties.
 
 ### No Round-Trip Tests
 

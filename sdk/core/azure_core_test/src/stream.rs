@@ -177,8 +177,8 @@ where
         Ok(())
     }
 
-    fn len(&self) -> u64 {
-        LENGTH as u64
+    fn len(&self) -> Option<u64> {
+        Some(LENGTH as u64)
     }
 }
 

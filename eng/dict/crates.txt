@@ -14,7 +14,6 @@ azure_core_opentelemetry
 azure_core_test
 azure_core_test_macros
 azure_data_cosmos
-azure_data_cosmos_native
 azure_identity
 azure_messaging_eventhubs
 azure_messaging_eventhubs_checkpointstore_blob
@@ -80,6 +79,8 @@ rust_decimal
 rustc_version
 rustdoc_types
 rustdoc-types
+rustls_symcrypt
+rustls-symcrypt
 serde
 serde_amqp
 serde_bytes

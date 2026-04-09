@@ -175,6 +175,7 @@ impl CosmosDriverRuntime {
     }
 
     /// Returns a unique identifier for the runtime, for internal tracing.
+    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
     pub(crate) fn id(&self) -> usize {
         self.id
     }
@@ -368,10 +369,6 @@ impl CosmosDriverRuntime {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(level = tracing::Level::DEBUG, skip_all, fields(
-        runtime = &self.id,
-        account = %account.endpoint(),
-    ), err)]
     pub async fn get_or_create_driver(
         self: &Arc<Self>,
         account: AccountReference,

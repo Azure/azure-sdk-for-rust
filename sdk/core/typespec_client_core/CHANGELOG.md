@@ -1,6 +1,6 @@
 # Release History
 
-## 0.13.0 (Unreleased)
+## 0.13.0 (2026-04-07)
 
 ### Features Added
 
@@ -8,13 +8,10 @@
 
 ### Breaking Changes
 
-- `SeekableStream::len()` and `Body::len()` now return `u64` instead of `usize` to align with `std::fs::Metadata::len()` and support large file sizes.
+- `SeekableStream::len()` and `Body::len()` now return `Option<u64>` instead of `usize` to support streams with unknown length and to align with `std::fs::Metadata::len()` for large file sizes.
+- `SeekableStream::is_empty()` and `Body::is_empty()` now return `Option<bool>`.
 - Added `tokio` feature to `default` features.
 - Changed `async_runtime::spawn` to return a `SpawnedTask` trait (supports `abort()`) instead of a raw future.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.12.0 (2026-03-05)
 

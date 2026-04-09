@@ -69,7 +69,6 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     /// Fetches the next page of query results.
     ///
     /// Returns `None` if there are no more pages to fetch.
-    #[tracing::instrument(skip_all)]
     pub async fn next_page(&mut self) -> azure_core::Result<Option<QueryFeedPage<T>>> {
         if self.complete {
             return Ok(None);

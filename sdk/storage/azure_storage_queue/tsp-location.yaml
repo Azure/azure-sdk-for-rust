@@ -1,4 +1,4 @@
 directory: specification/storage/Microsoft.QueueStorage
-commit: 4a11d11ea3f348ad61c528c1783859b8bf7577ad
+commit: 8bcabc8f5c629e2a426bc919deb43b7669d1290d
 repo: Azure/azure-rest-api-specs
-additionalDirectories:
+additionalDirectories: 

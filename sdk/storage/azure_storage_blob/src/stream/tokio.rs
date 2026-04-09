@@ -112,8 +112,8 @@ impl SeekableStream for FileStream {
     ///
     /// `len()` is the file size returned from [`Metadata::len()`](std::fs::Metadata)
     /// regardless of the initial position of the [`File`].
-    fn len(&self) -> u64 {
-        self.file_size
+    fn len(&self) -> Option<u64> {
+        Some(self.file_size)
     }
 
     fn buffer_size(&self) -> usize {
@@ -156,7 +156,7 @@ mod tests {
     #[tokio::test]
     async fn stream_large_chunks() {
         let mut stream = open_this_file(None).await;
-        let expected_len: usize = stream.len().try_into().unwrap();
+        let expected_len: usize = stream.len().unwrap().try_into().unwrap();
         assert!(expected_len > 0);
 
         let mut buf = vec![0u8; expected_len];
@@ -171,7 +171,7 @@ mod tests {
         let stream = open_this_file(Some(BUFFER_SIZE)).await;
         assert_eq!(stream.buffer_size(), BUFFER_SIZE);
 
-        let expected_len: usize = stream.len().try_into().unwrap();
+        let expected_len: usize = stream.len().unwrap().try_into().unwrap();
         let mut total_read = 0;
         let mut buf = vec![0u8; BUFFER_SIZE];
         loop {
@@ -187,7 +187,7 @@ mod tests {
     #[tokio::test]
     async fn reset() {
         let mut stream = open_this_file(None).await;
-        let expected_len: usize = stream.len().try_into().unwrap();
+        let expected_len: usize = stream.len().unwrap().try_into().unwrap();
 
         // First full read.
         let mut buf1 = vec![0u8; expected_len];

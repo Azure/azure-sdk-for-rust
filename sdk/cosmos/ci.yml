@@ -15,6 +15,10 @@ parameters:
   displayName: Run live tests
   type: boolean
   default: false
+- name: release_azure_data_cosmos_driver
+  displayName: azure_data_cosmos_driver
+  type: boolean
+  default: false
 - name: release_azure_data_cosmos
   displayName: azure_data_cosmos
   type: boolean
@@ -26,6 +30,8 @@ extends:
     ServiceDirectory: cosmos
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
     Artifacts:
+    - name: azure_data_cosmos_driver
+      releaseInBatch: ${{ parameters.release_azure_data_cosmos_driver }}
     - name: azure_data_cosmos
       releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
     CloudConfig:

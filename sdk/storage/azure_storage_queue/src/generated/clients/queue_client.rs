@@ -48,7 +48,7 @@ impl QueueClient {
         &self.endpoint
     }
 
-    /// The Clear operation deletes all messages from the specified queue.
+    /// Deletes all messages from the specified queue.
     ///
     /// # Arguments
     ///
@@ -85,8 +85,8 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// Creates a new queue under the specified account. If a queue with the same name already exists, the operation succeeds
-    /// when the metadata is identical and returns 204; if the metadata differs, the operation returns 409.
+    /// Creates a new queue. If a queue with the same name already exists, the operation succeeds when the metadata
+    /// is identical. If the metadata differs, the operation fails.
     ///
     /// # Arguments
     ///
@@ -127,7 +127,7 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// operation permanently deletes the specified queue
+    /// Permanently deletes the specified queue.
     ///
     /// # Arguments
     ///
@@ -163,13 +163,13 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// The Delete operation deletes the specified message.
+    /// Deletes the specified message.
     ///
     /// # Arguments
     ///
-    /// * `message_id` - The id of the queue message.
-    /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
-    ///   Update Message operation.
+    /// * `message_id` - The ID of the queue message.
+    /// * `pop_receipt` - An opaque value required to delete the message. If deletion fails using this
+    /// PopReceipt then the message has been dequeued by another client.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.QueueClient.deleteMessage")]
     pub async fn delete_message(
@@ -214,7 +214,7 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// gets the permissions for the specified queue. The permissions indicate whether queue data may be accessed publicly.
+    /// Gets the access policy for the specified queue.
     ///
     /// # Arguments
     ///
@@ -252,7 +252,7 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// returns all user-defined metadata and system properties for the specified queue.
+    /// Returns all user-defined metadata and system properties for the specified queue.
     ///
     /// # Arguments
     ///
@@ -314,8 +314,7 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// The Peek operation retrieves one or more messages from the front of the queue,
-    /// but does not alter the visibility of the message.
+    /// Retrieves one or more messages from the front of the queue, but does not alter the visibility of the message.
     ///
     /// # Arguments
     ///
@@ -357,8 +356,7 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// The Dequeue operation retrieves one or more messages from the front of the
-    /// queue.
+    /// Retrieves one or more messages from the front of the queue.
     ///
     /// # Arguments
     ///
@@ -402,16 +400,14 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// The Enqueue operation adds a new message to the back of the message queue. A
-    /// visibility timeout can also be specified to make the message invisible until
-    /// the visibility timeout expires. A message must be in a format that can be
-    /// included in an XML request with UTF-8 encoding. The encoded message can be up
-    /// to 64 KB in size for versions 2011-08-18 and newer, or 8 KB in size for
-    /// previous versions.
+    /// Adds a new message to the back of the message queue. A visibility timeout
+    /// can also be specified to make the message invisible until the visibility timeout
+    /// expires.
     ///
     /// # Arguments
     ///
-    /// * `queue_message` - A Message object which can be stored in a Queue
+    /// * `queue_message` - The queue message. The message must be in a format that can be included in an XML request with UTF-8
+    /// encoding. The encoded message can be up to 64 KB in size.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.QueueClient.sendMessage")]
     pub async fn send_message(
@@ -455,11 +451,11 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// sets the permissions for the specified queue.
+    /// Sets the permissions for the specified queue.
     ///
     /// # Arguments
     ///
-    /// * `queue_acl` - The access control list for the queue.
+    /// * `queue_acl` - The access control list.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.QueueClient.setAccessPolicy")]
     pub async fn set_access_policy(
@@ -496,7 +492,7 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// operation sets one or more user-defined name-value pairs for the specified queue.
+    /// Sets user-defined metadata for the specified queue.
     ///
     /// # Arguments
     ///
@@ -538,21 +534,17 @@ impl QueueClient {
         Ok(rsp.into())
     }
 
-    /// The Update operation was introduced with version 2011-08-18 of the Queue
-    /// service API. The Update Message operation updates the visibility timeout of a
-    /// message. You can also use this operation to update the contents of a message. A
-    /// message must be in a format that can be included in an XML request with UTF-8
-    /// encoding, and the encoded message can be up to 64KB in size.
+    /// Updates the visibility timeout of a message. This operation can also be used to update the contents of a message.
     ///
     /// # Arguments
     ///
-    /// * `message_id` - The id of the queue message.
-    /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
-    ///   Update Message operation.
-    /// * `visibility_timeout` - Specifies the new visibility timeout value, in seconds, relative to server time. The default
-    ///   value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or
-    ///   larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be
-    ///   set to a value later than the expiry time.
+    /// * `message_id` - The ID of the queue message.
+    /// * `pop_receipt` - An opaque value required to delete the message. If deletion fails using this
+    /// PopReceipt then the message has been dequeued by another client.
+    /// * `visibility_timeout` - Specifies the new visibility timeout value, in seconds, relative to server time. A specified
+    ///   value must be
+    /// larger than or equal to 1 second, and cannot be larger than 7 days. The visibility timeout of a message
+    /// can be set to a value later than the expiry time.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.QueueClient.updateMessage")]
     pub async fn update_message(

@@ -38,6 +38,7 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
+    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
     container_id: String,
     driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
@@ -107,7 +108,6 @@ impl ContainerClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read(
         &self,
         #[allow(
@@ -150,7 +150,6 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
@@ -175,7 +174,6 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_throughput(
         &self,
         #[allow(
@@ -204,7 +202,6 @@ impl ContainerClient {
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -236,7 +233,6 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete(
         &self,
         #[allow(
@@ -317,27 +313,38 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
-        let options = options.clone().unwrap_or_default();
-        let excluded_regions = options.operation.excluded_regions.clone();
-        let mut cosmos_request =
-            CosmosRequest::builder(OperationType::Create, self.items_link.clone())
-                .json(&item)
-                .partition_key(partition_key.into())
-                .excluded_regions(excluded_regions)
-                .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let options = options.unwrap_or_default();
+        let body = serde_json::to_vec(&item)?;
+        let driver_pk = partition_key.into().into_driver_partition_key();
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ItemResponse::new)
+        // Create the driver operation and apply ItemWriteOptions fields.
+        let mut operation =
+            CosmosOperation::create_item(self.container_ref.clone(), driver_pk).with_body(body);
+
+        // Wire session token and precondition from SDK options onto the operation.
+        if let Some(session_token) = options.session_token {
+            operation = operation.with_session_token(session_token);
+        }
+        if let Some(precondition) = options.precondition {
+            operation = operation.with_precondition(precondition);
+        }
+
+        // Execute through the driver.
+        let driver_response = self
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Replaces an existing item in the container.
@@ -404,7 +411,6 @@ impl ContainerClient {
     ///     .into_body().json::<Product>()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -495,7 +501,6 @@ impl ContainerClient {
     ///     .into_body().json::<Product>()?;
     /// Ok(())
     /// # }
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -547,7 +552,6 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -606,7 +610,6 @@ impl ContainerClient {
     ///     .await?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -687,7 +690,6 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
@@ -757,7 +759,6 @@ impl ContainerClient {
     /// * Maximum 100 operations per batch
     /// * Maximum payload size is 2 MB
     /// * All operations must target the same partition key
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn execute_transactional_batch(
         &self,
         batch: TransactionalBatch,
@@ -888,5 +889,37 @@ impl ContainerClient {
             }
         };
         Ok(FeedRange::from_partition_key_range(&pkr))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `ContainerClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &ContainerClient = todo!();
+
+        // Container operations
+        assert_send(client.read(todo!()));
+        assert_send(client.replace(todo!(), todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.replace_throughput(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+
+        // Item operations (use "" for partition_key to avoid never-type fallback issues)
+        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
+        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.delete_item("", todo!(), todo!()));
+
+        // Batch operations
+        assert_send(client.execute_transactional_batch(todo!(), todo!()));
     }
 }

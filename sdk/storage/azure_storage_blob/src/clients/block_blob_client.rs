@@ -135,7 +135,7 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
-        // construct exhaustively to ensure we catch new options when added
+        // Construct exhaustively to catch new options.
         let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),
@@ -262,7 +262,11 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
-        let content_len = content.len();
+        // cspell:ignore jaschrep
+        // TODO (jaschrep-msft) support oneshot given optional length
+        let content_len = content.len().ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
+        })?;
         let rsp = self
             .client
             .upload_internal(
@@ -287,7 +291,10 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
 
     async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
         let block_id = Uuid::new_v4();
-        let content_len = content.len();
+        // TODO (jaschrep-msft) support oneshot given optional length
+        let content_len = content.len().ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
+        })?;
         {
             self.blocks.lock().await.push(BlockInfo {
                 offset: offset as u64,

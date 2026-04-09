@@ -1,6 +1,6 @@
 # Release History
 
-## 0.34.0 (Unreleased)
+## 0.34.0 (2026-04-07)
 
 ### Features Added
 
@@ -9,13 +9,14 @@
 
 ### Breaking Changes
 
-- `SeekableStream::len()` and `Body::len()` now return `u64` instead of `usize` to align with `std::fs::Metadata::len()` and support large file sizes.
+- `SeekableStream::len()` and `Body::len()` now return `Option<u64>` instead of `usize` to support streams with unknown length and to align with `std::fs::Metadata::len()` for large file sizes.
+- `SeekableStream::is_empty()` and `Body::is_empty()` now return `Option<bool>`.
 - Added `tokio` feature to `default` features.
 - Changed `async_runtime::spawn`/`SpawnedTask` to return a trait object that supports `abort()`.
 
-### Bugs Fixed
-
 ### Other Changes
+
+- The `url.full` span attribute in distributed traces now has query parameter values sanitized. Only parameters in `LoggingOptions::additional_allowed_query_params` and the default allow list (e.g., `api-version`) retain their values; all others are replaced with `REDACTED`.
 
 ## 0.33.0 (2026-03-05)
 
