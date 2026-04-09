@@ -38,7 +38,6 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
-    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
     container_id: String,
     driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
