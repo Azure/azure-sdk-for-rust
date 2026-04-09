@@ -6,7 +6,7 @@
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc,
+        Arc, Weak,
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -15,18 +15,19 @@ use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
 
 use crate::{
-    driver::cache::{AccountMetadataCache, AccountProperties},
+    driver::{
+        cache::{AccountMetadataCache, AccountProperties},
+        transport::background_task_manager::BackgroundTaskManager,
+    },
     models::AccountEndpoint,
 };
 
 use super::{
-    build_account_endpoint_state, expire_unavailable_endpoints, mark_endpoint_unavailable,
+    build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
+    mark_endpoint_unavailable, mark_partition_unavailable,
+    partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
     AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
-
-/// Placeholder for partition-level state (not yet implemented).
-#[derive(Clone, Debug, Default)]
-pub(crate) struct PartitionEndpointState;
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
 #[derive(Clone, Debug)]
@@ -41,7 +42,7 @@ impl LocationSnapshot {
     pub(crate) fn for_tests(account: Arc<AccountEndpointState>) -> Self {
         Self {
             account,
-            partitions: Arc::new(PartitionEndpointState),
+            partitions: Arc::new(PartitionEndpointState::default()),
         }
     }
 }
@@ -70,6 +71,9 @@ pub(crate) struct LocationStateStore {
     /// `account_version`, `snapshot()` returns `Arc::clone()` of the cached
     /// arcs (refcount increment only) instead of a full clone.
     cached_snapshot: std::sync::Mutex<(u64, LocationSnapshot)>,
+    /// Manages the background failback loop task.
+    /// Dropping this manager aborts the failback task.
+    background_task_manager: BackgroundTaskManager,
 }
 
 impl std::fmt::Debug for LocationStateStore {
@@ -117,15 +121,16 @@ impl LocationStateStore {
         endpoint_unavailability_ttl: Duration,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
+        let partition_state = PartitionEndpointState::default();
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
-            partitions: Arc::new(PartitionEndpointState),
+            partitions: Arc::new(partition_state.clone()),
         };
 
         Self {
             account: Atomic::new(account_state),
-            partitions: Atomic::new(PartitionEndpointState),
+            partitions: Atomic::new(partition_state),
             account_metadata_cache,
             account_endpoint,
             account_refresh_fn,
@@ -138,6 +143,7 @@ impl LocationStateStore {
             last_synced_etag: std::sync::Mutex::new(String::new()),
             account_version: AtomicU64::new(0),
             cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
+            background_task_manager: BackgroundTaskManager::new(),
         }
     }
 
@@ -215,8 +221,22 @@ impl LocationStateStore {
                         mark_endpoint_unavailable(current, &endpoint, reason.clone())
                     });
                 }
-                LocationEffect::MarkPartitionUnavailable(_) => {
-                    // TODO(partition-routing): Apply partition-level unavailability.
+                LocationEffect::MarkPartitionUnavailable(partition) => {
+                    if partition.partition_key_range_id.is_empty() {
+                        // No partition key range ID available (first attempt);
+                        // skip partition-level marking.
+                        continue;
+                    }
+                    let is_partitioned = partition.is_partitioned_resource;
+                    self.apply_partition(|current_partitions| {
+                        let account = self.account_snapshot();
+                        mark_partition_unavailable(
+                            current_partitions,
+                            &account,
+                            partition,
+                            is_partitioned,
+                        )
+                    });
                 }
                 LocationEffect::RefreshAccountProperties => {
                     self.refresh_account_properties_if_due().await;
@@ -244,6 +264,37 @@ impl LocationStateStore {
                 Ok(_) => {
                     // `current` is the old value that was just replaced.
                     unsafe { guard.defer_destroy(current) };
+                    self.account_version.fetch_add(1, Ordering::Release);
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+
+    /// CAS loop on partition-level state.
+    pub fn apply_partition(
+        &self,
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
+    ) {
+        let guard = epoch::pin();
+
+        loop {
+            let current = self.partitions.load(Ordering::Acquire, &guard);
+            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
+            let current_ref = unsafe { current.deref() };
+            let next_state = f(current_ref);
+
+            match self.partitions.compare_exchange(
+                current,
+                Owned::new(next_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(old) => {
+                    // SAFETY: old pointer is detached after successful exchange.
+                    unsafe { guard.defer_destroy(old) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
                 }
@@ -331,6 +382,18 @@ impl LocationStateStore {
             let mut last = self.last_synced_etag.lock().unwrap();
             *last = properties.etag.clone();
         }
+
+        // Update partition-level PPAF/PPCB flags from account properties.
+        let per_partition_automatic_failover_enabled =
+            properties.enable_per_partition_failover_behavior;
+        self.apply_partition(|current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled =
+                per_partition_automatic_failover_enabled;
+            next.per_partition_circuit_breaker_enabled =
+                per_partition_automatic_failover_enabled || current.circuit_breaker_option_enabled;
+            next
+        });
     }
 
     fn prune_expired_unavailable_endpoints(&self) {
@@ -348,6 +411,42 @@ impl LocationStateStore {
         }
 
         self.apply_account(|current| expire_unavailable_endpoints(current, now, ttl));
+    }
+
+    /// Starts the background failback loop that periodically sweeps expired
+    /// partition override entries.
+    ///
+    /// The loop holds a `Weak` reference to `self` so it self-terminates when
+    /// the store is dropped. The `BackgroundTaskManager` provides abort-on-drop
+    /// as an additional safety layer.
+    pub fn start_failback_loop(self: &Arc<Self>) {
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        let config = self.snapshot().partitions.config.clone();
+        self.background_task_manager.spawn(async move {
+            failback_loop(weak_store, config).await;
+        });
+    }
+}
+
+/// Background failback loop that periodically sweeps expired partition overrides.
+///
+/// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
+async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
+    loop {
+        tokio::time::sleep(config.failback_sweep_interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store.apply_partition(|current_partitions| {
+            expire_partition_overrides(
+                current_partitions,
+                Instant::now(),
+                config.partition_unavailability_duration,
+            )
+        });
     }
 }
 

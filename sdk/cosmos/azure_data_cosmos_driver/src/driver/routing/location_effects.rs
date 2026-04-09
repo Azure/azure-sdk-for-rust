@@ -15,8 +15,7 @@ pub(crate) enum LocationEffect {
         endpoint: CosmosEndpoint,
         reason: UnavailableReason,
     },
-    /// Marks a partition unavailable (placeholder; applied by partition-level routing).
-    #[allow(dead_code)]
+    /// Marks a partition unavailable, applied by partition-level routing.
     MarkPartitionUnavailable(UnavailablePartition),
     /// Requests a rate-limited account metadata refresh.
     RefreshAccountProperties,
@@ -25,10 +24,8 @@ pub(crate) enum LocationEffect {
 /// Identifies a partition-region pair to mark unavailable.
 #[derive(Clone, Debug)]
 pub(crate) struct UnavailablePartition {
-    #[allow(dead_code)]
     pub partition_key_range_id: String,
-    #[allow(dead_code)]
     pub region: Option<Region>,
-    #[allow(dead_code)]
     pub is_read: bool,
+    pub is_partitioned_resource: bool,
 }

@@ -10,8 +10,9 @@
 //! - Transport error (Sent/Unknown, non-idempotent) → Abort
 //! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
 //! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
+//! - 408 RequestTimeout → FailoverRetry + mark partition/endpoint unavailable
 //! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
-//! - 500 (reads only) → FailoverRetry
+//! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
 
 use azure_core::http::headers::Headers;
@@ -61,6 +62,15 @@ pub(crate) fn evaluate_transport_result(
                             endpoint: endpoint.clone(),
                             reason: UnavailableReason::WriteForbidden,
                         },
+                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                            partition_key_range_id: retry_state
+                                .partition_key_range_id
+                                .clone()
+                                .unwrap_or_default(),
+                            region: endpoint.region().cloned(),
+                            is_read: false, // WriteForbidden is always a write
+                            is_partitioned_resource: operation.resource_type().is_partitioned(),
+                        }),
                     ],
                 );
             }
@@ -91,8 +101,13 @@ pub(crate) fn evaluate_transport_result(
             let is_service_unavailable =
                 status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
             let is_gone = status.is_gone();
+            let is_request_timeout =
+                status.status_code() == azure_core::http::StatusCode::RequestTimeout;
 
-            if (is_system_resource_unavailable || is_service_unavailable || is_gone)
+            if (is_system_resource_unavailable
+                || is_service_unavailable
+                || is_gone
+                || is_request_timeout)
                 && retry_state.can_retry_failover()
             {
                 if request_definitely_not_sent {
@@ -115,6 +130,12 @@ pub(crate) fn evaluate_transport_result(
                     );
                 }
 
+                let unavailable_reason = if is_request_timeout {
+                    UnavailableReason::RequestTimeout
+                } else {
+                    UnavailableReason::ServiceUnavailable
+                };
+
                 return (
                     OperationAction::FailoverRetry {
                         new_state: retry_state.clone().advance_failover(),
@@ -122,16 +143,17 @@ pub(crate) fn evaluate_transport_result(
                     },
                     vec![
                         LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
-                            // TODO(partition-routing): Wire the actual partition key range ID from
-                            // TransportResult or CosmosOperation once partition-level
-                            // routing is implemented.
-                            partition_key_range_id: String::new(),
+                            partition_key_range_id: retry_state
+                                .partition_key_range_id
+                                .clone()
+                                .unwrap_or_default(),
                             region: endpoint.region().cloned(),
                             is_read: operation.is_read_only(),
+                            is_partitioned_resource: operation.resource_type().is_partitioned(),
                         }),
                         LocationEffect::MarkEndpointUnavailable {
                             endpoint: endpoint.clone(),
-                            reason: UnavailableReason::ServiceUnavailable,
+                            reason: unavailable_reason,
                         },
                     ],
                 );
@@ -146,10 +168,21 @@ pub(crate) fn evaluate_transport_result(
                         new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
-                    vec![LocationEffect::MarkEndpointUnavailable {
-                        endpoint: endpoint.clone(),
-                        reason: UnavailableReason::InternalServerError,
-                    }],
+                    vec![
+                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                            partition_key_range_id: retry_state
+                                .partition_key_range_id
+                                .clone()
+                                .unwrap_or_default(),
+                            region: endpoint.region().cloned(),
+                            is_read: true,
+                            is_partitioned_resource: operation.resource_type().is_partitioned(),
+                        }),
+                        LocationEffect::MarkEndpointUnavailable {
+                            endpoint: endpoint.clone(),
+                            reason: UnavailableReason::InternalServerError,
+                        },
+                    ],
                 );
             }
 
@@ -448,6 +481,7 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
         };
 
         let endpoint = CosmosEndpoint::global(
@@ -591,5 +625,44 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn internal_server_error_on_read_marks_partition_unavailable() {
+        let op = make_read_operation();
+        let result = make_http_error(StatusCode::InternalServerError);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[test]
+    fn request_timeout_from_server_marks_partition_and_endpoint_unavailable() {
+        let op = make_read_operation();
+        let result = make_http_error(StatusCode::RequestTimeout);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(effects.iter().any(|e| matches!(
+            e,
+            LocationEffect::MarkEndpointUnavailable {
+                reason: UnavailableReason::RequestTimeout,
+                ..
+            }
+        )));
     }
 }
