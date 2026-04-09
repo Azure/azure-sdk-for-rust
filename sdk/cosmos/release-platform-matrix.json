@@ -1,0 +1,30 @@
+{
+  "displayNames": {},
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      },
+      "windows": {
+        "OSVmImage": "env:WINDOWSVMIMAGE",
+        "Pool": "env:WINDOWSPOOL"
+      },
+      "macos": {
+        "OSVmImage": "env:MACVMIMAGEM1",
+        "Pool": "env:MACPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "stable",
+      "msrv",
+      "nightly"
+    ]
+  },
+  "exclude": [
+    {
+      "OSVmImage": "env:WINDOWSVMIMAGE",
+      "RustToolchainName": "nightly"
+    }
+  ]
+}
