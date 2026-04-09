@@ -153,6 +153,10 @@
     "westus",
     "yxxx"
   ],
+  "ignorePaths": [
+    "live-platform-matrix.json",
+    "release-platform-matrix.json"
+  ],
   "overrides": [
     {
       "filename": [
