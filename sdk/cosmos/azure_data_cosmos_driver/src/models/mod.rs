@@ -263,8 +263,6 @@ pub enum PartitionKeyKind {
     MultiHash,
     /// Range partitioning (legacy).
     Range,
-    /// Multi-hash partitioning (hierarchical partition keys).
-    MultiHash,
 }
 
 /// System-managed properties present on all Cosmos DB resources.
