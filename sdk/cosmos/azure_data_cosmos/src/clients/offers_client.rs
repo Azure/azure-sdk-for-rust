@@ -36,6 +36,10 @@ pub(crate) async fn find_offer(
     let mut headers = HashMap::new();
     headers.insert(constants::QUERY, HeaderValue::from("True"));
     headers.insert(CONTENT_TYPE, HeaderValue::from("application/query+json"));
+    headers.insert(
+        constants::QUERY_ENABLE_CROSS_PARTITION,
+        HeaderValue::from("True"),
+    );
     let options = OperationOptions::default().with_custom_headers(headers);
 
     let driver_response = driver.execute_operation(operation, options).await?;
