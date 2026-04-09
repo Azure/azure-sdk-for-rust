@@ -36,17 +36,17 @@ pub enum Body {
 }
 
 impl Body {
-    /// Returns the length of the body in bytes.
-    pub fn len(&self) -> u64 {
+    /// Returns the length of the body in bytes, if known.
+    pub fn len(&self) -> Option<u64> {
         match self {
-            Body::Bytes(bytes) => bytes.len() as u64,
+            Body::Bytes(bytes) => Some(bytes.len() as u64),
             Body::SeekableStream(stream) => stream.len(),
         }
     }
 
-    /// Returns `true` if the body is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
+    /// Returns `true` if the body is empty, if known.
+    pub fn is_empty(&self) -> Option<bool> {
+        self.len().map(|len| len == 0)
     }
 
     /// Resets the body to the beginning, if it is a seekable stream.
@@ -88,7 +88,9 @@ impl fmt::Debug for Body {
             #[cfg(not(test))]
             Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { .. }"),
             Self::Bytes(_) => f.write_str("Bytes {}"),
-            Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { .. }"),
+            Self::SeekableStream(v) if v.is_empty() != Some(true) => {
+                f.write_str("SeekableStream { .. }")
+            }
             Self::SeekableStream(_) => f.write_str("SeekableStream {}"),
         }
     }
@@ -722,7 +724,7 @@ mod tests {
             _ => panic!("expected Bytes"),
         };
 
-        assert!(body.is_empty());
+        assert_eq!(body.is_empty(), Some(true));
     }
 
     #[tokio::test]
@@ -748,6 +750,6 @@ mod tests {
             _ => panic!("expected SeekableStream"),
         }
 
-        assert!(body.is_empty());
+        assert_eq!(body.is_empty(), Some(true));
     }
 }

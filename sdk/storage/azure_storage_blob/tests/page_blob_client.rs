@@ -6,9 +6,9 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     format_page_range,
     models::{
-        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-        PageBlobClientCreateOptions, PageBlobClientSetSequenceNumberOptions,
-        PageBlobClientSetSequenceNumberResultHeaders, SequenceNumberActionType,
+        BlobClientGetPropertiesResultHeaders, BlobType, PageBlobClientCreateOptions,
+        PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
+        SequenceNumberActionType,
     },
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
@@ -76,11 +76,9 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(512, content_length.unwrap());
-    assert_eq!(data, response_body.collect().await?.to_vec());
+    assert_eq!(512, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data, body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -111,11 +109,9 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(512, content_length.unwrap());
-    assert_eq!(vec![0; 512], response_body.collect().await?.to_vec());
+    assert_eq!(512, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(vec![0; 512], body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -159,11 +155,9 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.resize(512, None).await?;
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(512, content_length.unwrap());
-    assert_eq!(vec![b'A'; 512], response_body.collect().await?.to_vec());
+    assert_eq!(512, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(vec![b'A'; 512], body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -261,12 +255,10 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     // Assert
     let response = blob_client_2.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(1024, content_length.unwrap());
+    assert_eq!(1024, response.properties.content_length.unwrap());
     data_a.extend(&data_b);
-    assert_eq!(data_a, response_body.collect().await?.to_vec());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data_a, body_data);
 
     container_client.delete(None).await?;
     Ok(())

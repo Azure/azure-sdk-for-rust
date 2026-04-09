@@ -4,8 +4,7 @@
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AppendBlobClientCreateOptions, BlobClientDownloadResultHeaders,
-    BlobClientGetPropertiesResultHeaders, BlobType,
+    AppendBlobClientCreateOptions, BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
@@ -65,12 +64,10 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
+    assert_eq!(17, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
     block_1.extend(&block_2);
-    assert_eq!(block_1, response_body.collect().await?.to_vec());
+    assert_eq!(block_1, body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -95,14 +92,9 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
-    assert_eq!(
-        b"hello rusty world".to_vec(),
-        response_body.collect().await?.to_vec(),
-    );
+    assert_eq!(17, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(b"hello rusty world".to_vec(), body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -135,13 +127,10 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Check Read-Only
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-
     // Assert
-    assert!(status_code.is_success());
-    assert_eq!(0, content_length.unwrap());
-    assert_eq!(b"".to_vec(), response_body.collect().await?.to_vec());
+    assert_eq!(0, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(b"".to_vec(), body_data);
 
     container_client.delete(None).await?;
     Ok(())

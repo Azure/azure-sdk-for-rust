@@ -23,12 +23,17 @@ pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + Dy
     /// Resets the stream position to the beginning.
     async fn reset(&mut self) -> Result<()>;
 
-    /// Returns the total length of the stream in bytes.
-    fn len(&self) -> u64;
+    /// Returns the total length of the stream in bytes, if known.
+    ///
+    /// # Notes
+    ///
+    /// [`TransportPolicy`](crate::http::policies::TransportPolicy) implementations will most often want to send a `content-length` header when `len` returns `Some`
+    /// but use `transfer-encoding: chunked` when `len` returns None.
+    fn len(&self) -> Option<u64>;
 
-    /// Returns `true` if the stream is empty.
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+    /// Returns `true` if the stream is empty, if known.
+    fn is_empty(&self) -> Option<bool> {
+        self.len().map(|len| len == 0)
     }
 
     /// Returns the size of the buffer to use when reading from the stream.

@@ -155,12 +155,6 @@ pub(crate) struct TransportPipelineContext<'a> {
 /// operation pipeline for higher-level decision making.
 ///
 /// This is the core transport loop described in §5.2 of the spec.
-#[tracing::instrument(level = tracing::Level::DEBUG, name = "transport", skip_all, fields(
-    method = ?request.method,
-    region = request.endpoint.region().map(|e| e.as_str()).unwrap_or("<global>"),
-    url = %request.url,
-    outcome = tracing::field::Empty,
-))]
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     ctx: &TransportPipelineContext<'_>,
@@ -187,18 +181,7 @@ pub(crate) async fn execute_transport_pipeline(
         }
     };
 
-    let mut attempt = 0;
     loop {
-        attempt += 1;
-        let attempt_span = tracing::span!(
-            tracing::Level::DEBUG,
-            "transport_attempt",
-            attempt = attempt,
-            outcome = tracing::field::Empty
-        );
-        // Enter the span for sync work but drop the guard before the first
-        // `.await` so the future remains `Send` (`Entered` is `!Send`).
-        let attempt_guard = attempt_span.enter();
         // Check deadline before each attempt
         if let Some(deadline) = request.deadline {
             if Instant::now() >= deadline {
@@ -239,6 +222,8 @@ pub(crate) async fn execute_transport_pipeline(
             headers: request.headers.clone(),
             body: request.body.clone(),
             timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
         };
 
         let per_request_timeout = remaining_request_timeout(request.deadline);
@@ -252,9 +237,6 @@ pub(crate) async fn execute_transport_pipeline(
 
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
-
-        // Drop the span guard before the first `.await` to keep the future `Send`.
-        drop(attempt_guard);
 
         // Sign the request
         if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
@@ -281,15 +263,12 @@ pub(crate) async fn execute_transport_pipeline(
         );
 
         #[cfg(feature = "fault_injection")]
-        let eval_id = {
-            use crate::fault_injection::next_evaluation_id;
-            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REQUEST_ID;
-            let id = next_evaluation_id();
-            http_request.headers.insert(
-                FAULT_INJECTION_REQUEST_ID.clone(),
-                azure_core::http::headers::HeaderValue::from(id.to_string()),
-            );
-            id
+        let mut evaluation_collector = if diagnostics.fault_injection_enabled() {
+            let collector = crate::fault_injection::EvaluationCollector::default();
+            http_request.evaluation_collector = Some(collector.clone());
+            Some(collector)
+        } else {
+            None
         };
 
         let result = execute_http_attempt(
@@ -304,14 +283,11 @@ pub(crate) async fn execute_transport_pipeline(
         .await;
 
         #[cfg(feature = "fault_injection")]
-        {
-            let evals = crate::fault_injection::take_evaluations(eval_id);
+        if let Some(collector) = evaluation_collector.take() {
+            let evals = collector.take();
             if !evals.is_empty() {
                 diagnostics.set_fault_injection_evaluations(request_handle, evals);
             }
-        }
-        if !attempt_span.is_disabled() {
-            attempt_span.record("outcome", format!("{}", result.result.outcome));
         }
         tracing::debug!("transport request complete");
 

@@ -11,9 +11,12 @@ use crate::{
     http::{headers, Context, Request},
     tracing::{Span, SpanKind},
 };
-use std::sync::Arc;
+use std::{borrow::Cow, collections::HashSet, sync::Arc};
 use typespec_client_core::{
-    http::policies::{Policy, PolicyResult, RetryPolicyCount},
+    http::{
+        policies::{Policy, PolicyResult, RetryPolicyCount},
+        Sanitizer,
+    },
     tracing::Attribute,
 };
 
@@ -21,24 +24,35 @@ use typespec_client_core::{
 #[derive(Clone, Debug)]
 pub(crate) struct RequestInstrumentationPolicy {
     tracer: Option<Arc<dyn crate::tracing::Tracer>>,
+    allowed_query_params: HashSet<Cow<'static, str>>,
 }
 
 impl RequestInstrumentationPolicy {
     /// Creates a new `RequestInstrumentationPolicy`.
     ///
     /// # Arguments
+    ///
     /// - `tracer`: Pre-configured tracer to use for instrumentation.
+    /// - `allowed_query_params`: Set of query parameter names whose values are safe to include
+    ///   in the `url.full` span attribute. All other query parameter values will be redacted.
     ///
     /// # Returns
+    ///
     /// A new instance of `RequestInstrumentationPolicy`.
     ///
-    /// # Note
+    /// # Notes
     ///
     /// The tracer provided is a "fallback" tracer which is used if the `ctx` parameter
     /// to the `send` method does not contain a tracer.
     ///
-    pub fn new(tracer: Option<Arc<dyn crate::tracing::Tracer>>) -> Self {
-        Self { tracer }
+    pub fn new(
+        tracer: Option<Arc<dyn crate::tracing::Tracer>>,
+        allowed_query_params: HashSet<Cow<'static, str>>,
+    ) -> Self {
+        Self {
+            tracer,
+            allowed_query_params,
+        }
     }
 }
 
@@ -85,7 +99,7 @@ impl Policy for RequestInstrumentationPolicy {
         if request.url().username().is_empty() && request.url().password().is_none() {
             span_attributes.push(Attribute {
                 key: URL_FULL_ATTRIBUTE.into(),
-                value: request.url().into(),
+                value: request.url().sanitize(&self.allowed_query_params).into(),
             });
         }
 
@@ -200,11 +214,34 @@ pub(crate) mod tests {
         atomic::{AtomicBool, Ordering},
         Arc,
     };
+    use typespec_client_core::http::DEFAULT_ALLOWED_QUERY_PARAMETERS;
 
     async fn run_instrumentation_test<C>(
         test_namespace: Option<&'static str>,
         crate_name: Option<&'static str>,
         version: Option<&'static str>,
+        request: &mut Request,
+        callback: C,
+    ) -> Arc<MockTracingProvider>
+    where
+        C: FnMut(&Request) -> BoxFuture<'_, Result<AsyncRawResponse>> + Send + Sync + 'static,
+    {
+        run_instrumentation_test_with_allowed_query_params(
+            test_namespace,
+            crate_name,
+            version,
+            (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone(),
+            request,
+            callback,
+        )
+        .await
+    }
+
+    async fn run_instrumentation_test_with_allowed_query_params<C>(
+        test_namespace: Option<&'static str>,
+        crate_name: Option<&'static str>,
+        version: Option<&'static str>,
+        allowed_query_params: HashSet<Cow<'static, str>>,
         request: &mut Request,
         callback: C,
     ) -> Arc<MockTracingProvider>
@@ -217,7 +254,10 @@ pub(crate) mod tests {
             crate_name.unwrap_or("unknown"),
             version,
         );
-        let policy = Arc::new(RequestInstrumentationPolicy::new(Some(tracer.clone())));
+        let policy = Arc::new(RequestInstrumentationPolicy::new(
+            Some(tracer.clone()),
+            allowed_query_params,
+        ));
 
         let transport =
             TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
@@ -250,8 +290,10 @@ pub(crate) mod tests {
             crate_name.unwrap_or("unknown"),
             version,
         );
-        let instrumentation_policy =
-            Arc::new(RequestInstrumentationPolicy::new(Some(tracer.clone()))) as Arc<dyn Policy>;
+        let instrumentation_policy = Arc::new(RequestInstrumentationPolicy::new(
+            Some(tracer.clone()),
+            (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone(),
+        )) as Arc<dyn Policy>;
 
         let transport =
             TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
@@ -322,9 +364,11 @@ pub(crate) mod tests {
                         (SERVER_PORT_ATTRIBUTE, AttributeValue::from(80)),
                         (
                             URL_FULL_ATTRIBUTE,
-                            AttributeValue::from(
-                                "http://example.com/path?query=value&api-version=2024-01-01",
-                            ),
+                            AttributeValue::from(if cfg!(feature = "debug") {
+                                "http://example.com/path?query=value&api-version=2024-01-01"
+                            } else {
+                                "http://example.com/path?query=REDACTED&api-version=2024-01-01"
+                            }),
                         ),
                     ],
                     ..Default::default()
@@ -419,9 +463,11 @@ pub(crate) mod tests {
                         (SERVER_PORT_ATTRIBUTE, AttributeValue::from(80)),
                         (
                             URL_FULL_ATTRIBUTE,
-                            AttributeValue::from(
-                                "http://example.com/path?query=value&api-version=2024-01-01",
-                            ),
+                            AttributeValue::from(if cfg!(feature = "debug") {
+                                "http://example.com/path?query=value&api-version=2024-01-01"
+                            } else {
+                                "http://example.com/path?query=REDACTED&api-version=2024-01-01"
+                            }),
                         ),
                     ],
                     ..Default::default()
@@ -432,19 +478,24 @@ pub(crate) mod tests {
 
     #[test]
     fn test_request_instrumentation_policy_creation() {
-        let policy = RequestInstrumentationPolicy::new(None);
+        let policy =
+            RequestInstrumentationPolicy::new(None, (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone());
         assert!(policy.tracer.is_none());
 
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
         let tracer =
             mock_tracer_provider.get_tracer(Some("test namespace"), "test_crate", Some("1.0.0"));
-        let policy_with_tracer = RequestInstrumentationPolicy::new(Some(tracer));
+        let policy_with_tracer = RequestInstrumentationPolicy::new(
+            Some(tracer),
+            (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone(),
+        );
         assert!(policy_with_tracer.tracer.is_some());
     }
 
     #[test]
     fn test_request_instrumentation_policy_without_tracer() {
-        let policy = RequestInstrumentationPolicy::new(None);
+        let policy =
+            RequestInstrumentationPolicy::new(None, (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone());
         assert!(policy.tracer.is_none());
     }
 
@@ -624,6 +675,130 @@ pub(crate) mod tests {
                         (
                             URL_FULL_ATTRIBUTE,
                             AttributeValue::from("https://microsoft.com/request_failed.htm"),
+                        ),
+                    ],
+                    ..Default::default()
+                }],
+            }],
+        );
+    }
+
+    #[tokio::test]
+    async fn url_sanitized_with_custom_allowed_query_params() {
+        let url = "http://example.com/path?query=value&api-version=2024-01-01&sig=secret";
+        let mut request = Request::new(url.parse().unwrap(), Method::Get);
+
+        let mut allowed = (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone();
+        allowed.insert(Cow::Borrowed("query"));
+
+        let mock_tracer = run_instrumentation_test_with_allowed_query_params(
+            Some("test namespace"),
+            Some("test_crate"),
+            Some("1.0.0"),
+            allowed,
+            &mut request,
+            |_req| {
+                Box::pin(async move {
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            },
+        )
+        .await;
+
+        check_instrumentation_result(
+            mock_tracer,
+            vec![ExpectedTracerInformation {
+                namespace: Some("test namespace"),
+                name: "test_crate",
+                version: Some("1.0.0"),
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "GET",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
+                    attributes: vec![
+                        (
+                            AZ_NAMESPACE_ATTRIBUTE,
+                            AttributeValue::from("test namespace"),
+                        ),
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(200),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
+                        (
+                            SERVER_ADDRESS_ATTRIBUTE,
+                            AttributeValue::from("example.com"),
+                        ),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(80)),
+                        (
+                            URL_FULL_ATTRIBUTE,
+                            AttributeValue::from(if cfg!(feature = "debug") {
+                                "http://example.com/path?query=value&api-version=2024-01-01&sig=secret"
+                            } else {
+                                "http://example.com/path?query=value&api-version=2024-01-01&sig=REDACTED"
+                            }),
+                        ),
+                    ],
+                    ..Default::default()
+                }],
+            }],
+        );
+    }
+
+    #[tokio::test]
+    async fn url_without_query_params_unchanged() {
+        let url = "https://example.com/path";
+        let mut request = Request::new(url.parse().unwrap(), Method::Get);
+
+        let mock_tracer = run_instrumentation_test(
+            None,
+            Some("test_crate"),
+            Some("1.0.0"),
+            &mut request,
+            |_req| {
+                Box::pin(async move {
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            },
+        )
+        .await;
+
+        check_instrumentation_result(
+            mock_tracer,
+            vec![ExpectedTracerInformation {
+                namespace: None,
+                name: "test_crate",
+                version: Some("1.0.0"),
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "GET",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Client,
+                    span_id: Uuid::new_v4(),
+                    parent_id: None,
+                    attributes: vec![
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(200),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
+                        (
+                            SERVER_ADDRESS_ATTRIBUTE,
+                            AttributeValue::from("example.com"),
+                        ),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(443)),
+                        (
+                            URL_FULL_ATTRIBUTE,
+                            AttributeValue::from("https://example.com/path"),
                         ),
                     ],
                     ..Default::default()

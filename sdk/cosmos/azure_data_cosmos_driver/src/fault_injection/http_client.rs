@@ -12,9 +12,7 @@ use crate::diagnostics::RequestSentStatus;
 use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
-use crate::models::cosmos_headers::fault_injection_header_names::{
-    FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
-};
+use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
 use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
 use async_trait::async_trait;
@@ -147,9 +145,9 @@ impl FaultClient {
     /// and no delay is applied.
     ///
     /// When a fault is injected, pushes an `Applied` evaluation to the provided
-    /// `evaluations` list. The caller (`execute_request`) stores these in the
-    /// concurrent evaluation store keyed by request ID, which the transport
-    /// pipeline reads via `take_evaluations()`.
+    /// `evaluations` list. The caller writes these into the evaluation collector
+    /// attached to the request, which the transport pipeline reads after the
+    /// request completes.
     async fn apply_fault(
         &self,
         server_error: &FaultInjectionResult,
@@ -202,7 +200,7 @@ impl FaultClient {
         };
 
         // Connection-level faults return simple errors with the appropriate ErrorKind.
-        // Evaluations are propagated via the concurrent evaluation store for all paths.
+        // Evaluations are propagated via the evaluation collector attached to the request for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 return ApplyResult::Injected(Err(TransportError::new(
@@ -318,7 +316,7 @@ impl TransportClient for FaultClient {
 
         // Apply the fault if we found a matching rule.
         // `apply_fault` pushes the Applied evaluation; all evaluations are then
-        // stored in the concurrent evaluation store keyed by request ID.
+        // written into the request's evaluation collector.
         let fault_response = if let Some(ref rule) = matched_rule {
             match self
                 .apply_fault(rule.result(), rule, &mut evaluations)
@@ -338,40 +336,34 @@ impl TransportClient for FaultClient {
             None
         };
 
-        // Log evaluations at trace level
+        // Write evaluations into the collector and log them.
         if !evaluations.is_empty() {
             tracing::trace!(
                 evaluations = ?evaluations,
                 "fault injection rule evaluation"
             );
-        }
 
-        // Store evaluations keyed by the request ID set by the transport pipeline.
-        if !evaluations.is_empty() {
-            if let Some(id_str) = request
-                .headers
-                .get_optional_str(&FAULT_INJECTION_REQUEST_ID)
-            {
-                if let Ok(id) = id_str.parse::<u64>() {
-                    super::store_evaluations(id, evaluations);
-                }
+            if let Some(ref collector) = request.evaluation_collector {
+                collector.push_all(&mut evaluations);
             }
         }
 
         if let Some(fault_response) = fault_response {
             fault_response
         } else {
-            // Build a clean request without fault injection headers before forwarding
+            // Build a clean request without the fault injection operation header
+            // before forwarding to the real transport.
             let mut clean_headers = request.headers.clone();
             clean_headers.remove(FAULT_INJECTION_OPERATION.clone());
-            clean_headers.remove(FAULT_INJECTION_REQUEST_ID.clone());
 
+            // Collector intentionally omitted: evaluations already captured above.
             let clean_request = HttpRequest {
                 url: request.url.clone(),
                 method: request.method,
                 headers: clean_headers,
                 body: request.body.clone(),
                 timeout: request.timeout,
+                evaluation_collector: None,
             };
 
             // No fault injection, proceed with actual request
@@ -387,13 +379,11 @@ mod tests {
         HttpRequest, HttpResponse, TransportClient, TransportError,
     };
     use crate::fault_injection::{
-        next_evaluation_id, take_evaluations, CustomResponseBuilder,
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionEvaluation,
-        FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+        CustomResponseBuilder, EvaluationCollector, FaultInjectionConditionBuilder,
+        FaultInjectionErrorType, FaultInjectionEvaluation, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::models::cosmos_headers::fault_injection_header_names::{
-        FAULT_INJECTION_OPERATION, FAULT_INJECTION_REQUEST_ID,
-    };
+    use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
     use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
     use crate::options::Region;
@@ -436,18 +426,17 @@ mod tests {
         }
     }
 
-    fn create_test_request() -> (HttpRequest, u64) {
-        let eval_id = next_evaluation_id();
-        let mut headers = Headers::new();
-        headers.insert(FAULT_INJECTION_REQUEST_ID.clone(), eval_id.to_string());
+    fn create_test_request() -> (HttpRequest, EvaluationCollector) {
+        let collector = EvaluationCollector::default();
         let request = HttpRequest {
             url: Url::parse("https://test.cosmos.azure.com/dbs/testdb").unwrap(),
             method: Method::Get,
-            headers,
+            headers: Headers::new(),
             body: None,
             timeout: None,
+            evaluation_collector: Some(collector.clone()),
         };
-        (request, eval_id)
+        (request, collector)
     }
 
     #[tokio::test]
@@ -468,7 +457,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request without operation type header shouldn't match
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
 
         assert!(result.is_ok());
@@ -480,7 +469,7 @@ mod tests {
         let mock_client = Arc::new(MockTransportClient::new());
         let fault_client = FaultClient::new(mock_client.clone(), vec![]);
 
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
 
         assert!(result.is_ok());
@@ -499,7 +488,7 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         // First two requests should hit the fault
         let result1 = fault_client.send(&request).await;
@@ -526,7 +515,7 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         // Request should pass through because start_time is in the future
         let result = fault_client.send(&request).await;
@@ -544,7 +533,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
 
@@ -569,7 +558,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
 
@@ -593,7 +582,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         // Delay-only should pass through to actual request after delay
         let start = std::time::Instant::now();
@@ -628,7 +617,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "westus", should pass through
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
 
         assert!(result.is_ok());
@@ -652,7 +641,7 @@ mod tests {
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
         // Request URL doesn't contain "my-container", should pass through
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
 
         assert!(result.is_ok());
@@ -672,7 +661,7 @@ mod tests {
             .build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         // First request should hit the fault
         let result1 = fault_client.send(&request).await;
@@ -733,7 +722,7 @@ mod tests {
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
             let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
-            let (request, _eval_id) = create_test_request();
+            let (request, _collector) = create_test_request();
 
             let result = fault_client.send(&request).await;
             assert!(result.is_err(), "{:?} should produce an error", error_type);
@@ -786,7 +775,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
         assert!(result.is_err(), "should produce an error");
@@ -810,7 +799,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
         assert!(result.is_err(), "should produce an error");
@@ -839,7 +828,7 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
-        let (request, _eval_id) = create_test_request();
+        let (request, _collector) = create_test_request();
 
         let response = fault_client.send(&request).await;
         assert!(response.is_ok(), "custom response should succeed");
@@ -866,7 +855,7 @@ mod tests {
 
         let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
 
-        let (mut request, _eval_id) = create_test_request();
+        let (mut request, _collector) = create_test_request();
         request
             .headers
             .insert(FAULT_INJECTION_OPERATION.clone(), "ReadItem");
@@ -893,12 +882,12 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("header-test-rule", result).build();
 
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
 
         let response = fault_client.send(&request).await;
         assert!(response.is_ok());
 
-        let evals = take_evaluations(eval_id);
+        let evals = collector.take();
         assert_eq!(evals.len(), 1);
         assert!(evals[0].was_applied());
         assert_eq!(evals[0].rule_id(), "header-test-rule");
@@ -914,12 +903,12 @@ mod tests {
         rule.disable();
 
         let fault_client = FaultClient::new(mock_client, vec![rule]);
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
         let result = fault_client.send(&request).await;
         assert!(result.is_ok(), "Request should succeed with disabled rule");
 
-        // Verify evaluation was recorded and clean up the store
-        let evals = take_evaluations(eval_id);
+        // Verify evaluation was recorded
+        let evals = collector.take();
         assert_eq!(
             evals.len(),
             1,
@@ -941,10 +930,10 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("test-rule", error).build();
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
 
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
 
-        let evals = take_evaluations(eval_id);
+        let evals = collector.take();
         assert_eq!(evals.len(), 1);
         assert!(evals[0].was_applied());
         assert_eq!(evals[0].rule_id(), "test-rule");
@@ -959,10 +948,10 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("conn-rule", error).build();
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
 
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
 
-        let evals = take_evaluations(eval_id);
+        let evals = collector.take();
         assert_eq!(evals.len(), 1);
         assert!(evals[0].was_applied());
         assert_eq!(evals[0].rule_id(), "conn-rule");
@@ -977,10 +966,10 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("timeout-rule", error).build();
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
 
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
 
-        let evals = take_evaluations(eval_id);
+        let evals = collector.take();
         assert_eq!(evals.len(), 1);
         assert!(evals[0].was_applied());
         assert_eq!(evals[0].rule_id(), "timeout-rule");
@@ -1006,10 +995,10 @@ mod tests {
         let rule3 = Arc::new(FaultInjectionRuleBuilder::new("superseded-rule", error3).build());
 
         let fault_client = FaultClient::new(mock_client, vec![rule1, rule2, rule3]);
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
 
-        let evals = take_evaluations(eval_id);
+        let evals = collector.take();
         assert_eq!(evals.len(), 3);
 
         // Iteration order: Disabled first, then Superseded (third rule), then Applied (second rule).
@@ -1044,10 +1033,10 @@ mod tests {
         let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
 
         // Request without matching operation header
-        let (request, eval_id) = create_test_request();
+        let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
 
-        let evals = take_evaluations(eval_id);
+        let evals = collector.take();
         assert_eq!(evals.len(), 1);
         assert!(matches!(
             &evals[0],

@@ -5,6 +5,7 @@ use std::{
     cmp::min,
     collections::VecDeque,
     ops::Range,
+    pin::pin,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -15,18 +16,22 @@ use async_trait::async_trait;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
-    http::{response::PinnedStream, AsyncRawResponse, StatusCode},
-    stream::BytesStream,
+    http::{AsyncRawResponse, StatusCode},
     Error,
 };
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use futures::{
     channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
-    future::Either,
-    SinkExt, TryStream,
+    future::{self, Either},
+    stream, SinkExt, StreamExt,
 };
 
-use crate::models::{drains::SequentialBoundedDrain, http_ranges::ContentRange};
+use crate::models::{
+    drains::{SequentialBoundedDrain, UnorderedFuturesDrain},
+    http_ranges::ContentRange,
+    response_ext::AsyncResponseBodyExt,
+    slice::SendSlice,
+};
 
 use super::*;
 
@@ -50,7 +55,7 @@ pub(crate) async fn download<Behavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
-) -> AzureResult<PinnedStream>
+) -> AzureResult<AsyncRawResponse>
 where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
@@ -58,35 +63,23 @@ where
     let max_buffers = parallel * 2;
     let partition_size = partition_size.get();
 
-    // Outer bound estimate of the resource range that will be downloaded. The actual download
-    // range will never exceed these bounds, but it may be smaller, based on the actual size
-    // of the remote resource.
-    let max_download_range = range.unwrap_or(0..usize::MAX);
-    if max_download_range.is_empty() {
-        let raw_stream: PinnedStream = Box::pin(BytesStream::new_empty());
-        return Ok(raw_stream);
-    }
+    let (initial_response, stats) =
+        get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
 
-    let initial_response = download_with_empty_blob_safety(
-        client.as_ref(),
-        max_download_range.start
-            ..min(
-                max_download_range.end,
-                max_download_range.start.saturating_add(partition_size),
-            ),
-    )
-    .await?;
-
-    let stats =
-        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
+    let status = initial_response.status();
+    let headers = initial_response.headers().clone();
 
     let mut remaining_ranges = stats
         .map(|s| s.remaining_download_ranges)
         .unwrap_or_default();
-    let total_chunks = remaining_ranges.len() + 1;
     if remaining_ranges.is_empty() {
-        return Ok(Box::pin(initial_response.into_body()));
+        return Ok(AsyncRawResponse::new(
+            status,
+            headers,
+            Box::pin(initial_response.into_body()),
+        ));
     }
+    let total_chunks = remaining_ranges.len() + 1;
 
     // channel for download workers to send results to their coordinator.
     let (tx, mut rx) = mpsc::unbounded();
@@ -153,7 +146,211 @@ where
         }
     };
 
-    Ok(Box::pin(stream))
+    Ok(AsyncRawResponse::new(status, headers, Box::pin(stream)))
+}
+
+pub(crate) async fn download_into<Behavior>(
+    mut buffer: &mut [u8],
+    range: Option<Range<usize>>,
+    parallel: NonZero<usize>,
+    partition_size: NonZero<usize>,
+    client: Arc<Behavior>,
+) -> AzureResult<usize>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    let parallel = parallel.get();
+    let partition_size = partition_size.get();
+    let mut tasks = UnorderedFuturesDrain::with_capacity(parallel);
+
+    // SAFETY: This function includes unsafe code that sends slices of `buffer` to other worker threads.
+    // Those threads MUST ALL terminate before this function returns.
+    // We accomplish this by emulating a try-finally block. The ENTIRE implementation is wrapped in a
+    // closure and it's awaited result stored, allowing idiomatic `?` error returns to be assigned to
+    // that result, rather than exit this whole function. Before returning that result, ensure ALL
+    // tasks in `tasks` are joined.
+    let overall_result = async {
+        let (initial_response, stats_opt) =
+            get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
+
+        let mut stats = match stats_opt {
+            Some(s) => s,
+            // If no information on ranges, no subsequent ranges to get.
+            // Write whatever we have and return.
+            None => return initial_response.into_body().collect_into(buffer).await,
+        };
+
+        // fail fast if we know we'll receive too much data
+        if stats.overall_download_range.len() > buffer.len() {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                format!(
+                    "Buffer with length {} cannot fit payload with length {}.",
+                    buffer.len(),
+                    stats.overall_download_range.len()
+                ),
+            ));
+        }
+
+        let total_ranges = stats.remaining_download_ranges.len() + 1;
+
+        // if no real parallelism, take the simple option of executing downloads sequentially.
+        // no worker spawning.
+        if parallel == 1 || stats.remaining_download_ranges.is_empty() {
+            // sequence the initial response with a stream that fetches responses for each subsequent range
+            let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
+                stream::iter(stats.remaining_download_ranges).then(|range| {
+                    let client = client.clone();
+                    async move { client.transfer_range(Some(range)).await }
+                }),
+            ));
+
+            let mut total_written = 0;
+            while let Some(response) = all_responses.try_next().await? {
+                let written = response.into_body().collect_into(buffer).await?;
+                buffer = &mut buffer[written..];
+                total_written += written;
+            }
+            return Ok(total_written);
+        }
+
+        // channel for download workers to send results to their coordinator.
+        let (tx, mut rx) = mpsc::unbounded();
+
+        // Start collecting the body of the initial download.
+        // Special-cased since we already have the response for it.
+
+        // SAFETY: Ensure mutable reference safety for the SendSlice created from `buffer`.
+        // This memory address is being sent to a separate worker thread. That worker thread CANNOT
+        // live longer than the lifetime of `buffer`, and therefore MUST be cleaned up before
+        // this function returns. Storing those worker references in `tasks` allows this function
+        // to guarantee that cleanup at the end.
+        unsafe {
+            let init_dst;
+            (init_dst, buffer) = buffer.split_at_mut(stats.initial_download_range.len());
+            let init_dst = SendSlice::from_raw(init_dst.as_mut_ptr(), init_dst.len());
+            tasks.push(start_initial_download_into_task(
+                initial_response,
+                init_dst,
+                tx.clone(),
+            ));
+        }
+
+        // tracking of completed work
+        let mut received_result_count = 0;
+        let mut bytes_copied = 0;
+        let mut consume_available_messages = || {
+            while received_result_count < total_ranges {
+                match rx.try_recv() {
+                    Ok(worker_result) => {
+                        bytes_copied += worker_result?;
+                        received_result_count += 1;
+                    }
+                    Err(mpsc::TryRecvError::Empty) => break,
+                    Err(mpsc::TryRecvError::Closed) => Err(Error::with_message(
+                        ErrorKind::Other,
+                        "Download incomplete. Premature channel close.",
+                    ))?,
+                }
+            }
+            Ok::<(), Error>(())
+        };
+
+        // Download all remaining ranges, parallel-many at a time
+        while let Some(range) = stats.remaining_download_ranges.pop_front() {
+            // If at parallel limit, wait for a slot to open
+            while tasks.len() >= parallel {
+                if let Some(result) = tasks.next().await {
+                    result.map_err(map_spawned_task_error)?;
+                } else {
+                    break;
+                }
+            }
+            consume_available_messages()?;
+
+            // SAFETY: Ensure mutable reference safety for the SendSlice created from `buffer`.
+            // This memory address is being sent to a separate worker thread. That worker thread CANNOT
+            // live longer than the lifetime of `buffer`, and therefore MUST be cleaned up before
+            // this function returns. Storing those worker references in `tasks` allows this function
+            // to guarantee that cleanup at the end.
+            unsafe {
+                let dst;
+                (dst, buffer) = buffer.split_at_mut(range.len());
+                let dst = SendSlice::from_raw(dst.as_mut_ptr(), dst.len());
+                tasks.push(start_download_into_task(
+                    client.clone(),
+                    dst,
+                    range,
+                    tx.clone(),
+                ));
+            }
+        }
+
+        // wait on all remaining tasks, failing fast on error
+        while let Some(join_result) = tasks.next().await {
+            join_result.map_err(map_spawned_task_error)?;
+            consume_available_messages()?;
+        }
+
+        // final validation of work done
+        if tasks.total_completed() != received_result_count {
+            Err(Error::with_message(
+                ErrorKind::Other,
+                format!(
+                    "download completion count mismatch: tasks_completed={} messages_received={}",
+                    tasks.total_completed(),
+                    received_result_count
+                ),
+            ))
+        } else {
+            Ok(bytes_copied)
+        }
+    }
+    .await;
+
+    // SAFETY: This is where we prevent any tasks from living beyond this method return,
+    // guaranteeing no references to `buffer` exist.
+    // TODO: Implement aborting spawned runtime workers.
+    while let Some(worker_result) = tasks.next().await {
+        worker_result.map_err(map_spawned_task_error)?;
+    }
+
+    overall_result
+}
+
+async fn get_initial_response_and_analyze<Behavior>(
+    range: Option<Range<usize>>,
+    partition_size: usize,
+    client: Arc<Behavior>,
+) -> AzureResult<(AsyncRawResponse, Option<InitialResponseAnalysis>)>
+where
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+{
+    // Outer bound estimate of the resource range that will be downloaded. The actual download
+    // range will never exceed these bounds, but it may be smaller, based on the actual size
+    // of the remote resource.
+    let max_download_range = range.unwrap_or(0..usize::MAX);
+    if max_download_range.is_empty() {
+        return Err(Error::with_message(
+            ErrorKind::Other,
+            "Provided range must have length > 0.",
+        ));
+    }
+
+    let initial_response = download_with_empty_blob_safety(
+        client.as_ref(),
+        max_download_range.start
+            ..min(
+                max_download_range.end,
+                max_download_range.start.saturating_add(partition_size),
+            ),
+    )
+    .await?;
+
+    let stats =
+        analyze_initial_response(&initial_response, partition_size, max_download_range.end)?;
+
+    Ok((initial_response, stats))
 }
 
 /// Race awaiting a message vs checking if tasks have completed successfully,
@@ -183,7 +380,7 @@ async fn await_message_while_joining_workers<T>(
                 return Ok((message.map_err(on_recv_err)?, task_select.into_inner()));
             }
             Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
-                completed_task.map_err(|e| Error::with_message(ErrorKind::Other, e.to_string()))?;
+                completed_task.map_err(map_spawned_task_error)?;
                 task_bucket = remaining_tasks;
                 message_fut = m_fut;
             }
@@ -193,31 +390,8 @@ async fn await_message_while_joining_workers<T>(
     Ok((message_fut.await.map_err(on_recv_err)?, task_bucket))
 }
 
-async fn download_range_to_bytes(
-    client: Arc<impl PartitionedDownloadBehavior>,
-    range: Range<usize>,
-) -> AzureResult<Bytes> {
-    let mut dst = vec![0u8; range.len()];
-    let count = client
-        .transfer_range(Some(range))
-        .await?
-        .into_body()
-        .collect_into(&mut dst)
-        .await?;
-    dst.truncate(count);
-    Ok(dst.into())
-}
-
-async fn collect_into<S: TryStream<Ok = Bytes> + Unpin>(
-    mut stream: S,
-    mut destination: BytesMut,
-) -> Result<Bytes, S::Error> {
-    while let Some(bytes) = stream.try_next().await? {
-        destination.extend_from_slice(&bytes);
-    }
-    Ok(destination.freeze())
-}
-
+/// Spawns a worker to take the given raw response and stream it into a buffer.
+/// That buffer result is then sent through sender with chunk index 0.
 fn start_initial_download_task(
     initial_response: AsyncRawResponse,
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
@@ -225,17 +399,42 @@ fn start_initial_download_task(
     partition_size: usize,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
-        let res = collect_into(
-            initial_response.into_body(),
-            BytesMut::with_capacity(partition_size),
-        )
-        .await
-        .map(|bytes| (0usize, bytes));
+        let mut dst = vec![0u8; partition_size];
+        let res = initial_response
+            .into_body()
+            .collect_into(&mut dst)
+            .await
+            // this is the initial download task, it's chunk index is 0
+            .map(|_| (0usize, dst.into()));
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
         let _send_res = sender.send(res).await;
     }))
 }
 
+/// Spawns a worker to take the given raw response and stream it into the given buffer.
+/// A result of the number of bytes written is then sent through sender.
+///
+/// If the body does not *exactly* fill the buffer, an error will be sent instead.
+///
+/// # Safety
+/// Caller must ensure the slice represented by `buffer` is unused elsewhere until the returned future completes.
+unsafe fn start_initial_download_into_task(
+    initial_response: AsyncRawResponse,
+    mut buffer: SendSlice<u8>,
+    mut sender: UnboundedSender<Result<usize, Error>>,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = initial_response
+            .into_body()
+            .collect_into_exact(buffer.as_mut_slice())
+            .await
+            .map(|_| buffer.len());
+        let _send_res = sender.send(res).await;
+    }))
+}
+
+/// Spawns a worker to request the given range and stream it into a buffer.
+/// That buffer result is then sent through sender with the given chunk index.
 fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'static>(
     client: Arc<Behavior>,
     range: Range<usize>,
@@ -244,10 +443,50 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
     chunk_idx: usize,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
-        let res = download_range_to_bytes(client, range)
-            .await
-            .map(|bytes| (chunk_idx, bytes));
+        let mut dst = vec![0u8; range.len()];
+        let res = async {
+            client
+                .transfer_range(Some(range))
+                .await?
+                .into_body()
+                .collect_into(&mut dst)
+                .await
+        }
+        .await;
+        if let Ok(count) = res {
+            dst.truncate(count);
+        }
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
+        let _send_res = sender.send(res.map(|_| (chunk_idx, dst.into()))).await;
+    }))
+}
+
+/// Spawns a worker to request the given range and stream it into the given buffer.
+/// The success result is then sent through sender.
+///
+/// If the body does not *exactly* fill the buffer, an error will be sent instead.
+///
+/// # Safety
+/// Caller must ensure the slice represented by `buffer` is unused elsewhere until the returned future completes.
+unsafe fn start_download_into_task<
+    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
+>(
+    client: Arc<Behavior>,
+    mut buffer: SendSlice<u8>,
+    range: Range<usize>,
+    mut sender: UnboundedSender<Result<usize, Error>>,
+) -> SpawnedTask {
+    get_async_runtime().spawn(Box::pin(async move {
+        let res = async {
+            client
+                .transfer_range(Some(range))
+                .await?
+                .into_body()
+                .collect_into_exact(buffer.as_mut_slice())
+                .await
+        }
+        .await
+        .map(|_| buffer.len());
         let _send_res = sender.send(res).await;
     }))
 }
@@ -297,28 +536,30 @@ fn analyze_initial_response(
     partition_len: usize,
     max_range_end: usize,
 ) -> AzureResult<Option<InitialResponseAnalysis>> {
-    let content_range = match initial_response
+    if let Some(content_range) = initial_response
         .headers()
         .get_optional_as::<ContentRange, _>(&"content-range".into())?
     {
-        Some(content_range) => content_range,
-        None => return Ok(None),
-    };
-    match (content_range.range, content_range.total_len) {
-        (Some(received_range), Some(resource_len)) => {
+        if let (Some(received_range), Some(resource_len)) =
+            (content_range.range, content_range.total_len)
+        {
             let remainder_start = received_range.1;
             let remainder_end = min(max_range_end, resource_len);
-            Ok(Some(InitialResponseAnalysis {
+            return Ok(Some(InitialResponseAnalysis {
                 overall_download_range: received_range.0..remainder_end,
                 initial_download_range: received_range.0..received_range.1,
                 remaining_download_ranges: (remainder_start..remainder_end)
                     .step_by(partition_len)
                     .map(|i| i..min(i.saturating_add(partition_len), remainder_end))
                     .collect(),
-            }))
+            }));
         }
-        _ => Ok(None),
     }
+    Ok(None)
+}
+
+fn map_spawned_task_error(err: Box<dyn std::error::Error + Send>) -> Error {
+    Error::with_message(ErrorKind::Other, err.to_string())
 }
 
 trait DownloadRangeFuture: Future + Send {}
@@ -329,7 +570,10 @@ mod tests {
     use std::cmp::min;
 
     use azure_core::{
-        http::{headers::Headers, StatusCode},
+        http::{
+            headers::{Header, Headers},
+            StatusCode,
+        },
         stream::BytesStream,
     };
 
@@ -385,6 +629,15 @@ mod tests {
                 sleep(Duration::from_millis(millis)).await
             }
 
+            struct ContentLength(usize);
+            impl Header for ContentLength {
+                fn name(&self) -> azure_core::http::headers::HeaderName {
+                    "content-length".into()
+                }
+                fn value(&self) -> azure_core::http::headers::HeaderValue {
+                    self.0.to_string().into()
+                }
+            }
             let mut headers = Headers::new();
             match (requested_range, self.data.len()) {
                 (Some(range), data_len) => {
@@ -397,10 +650,13 @@ mod tests {
                         .into_error());
                     }
                     let range = range.start..min(range.end, data_len);
-                    headers.add(ContentRange {
-                        range: Some((range.start, range.end - 1)),
-                        total_len: Some(self.data.len()),
-                    })?;
+                    if !range.is_empty() {
+                        headers.add(ContentRange {
+                            range: Some((range.start, range.end - 1)),
+                            total_len: Some(self.data.len()),
+                        })?
+                    };
+                    headers.add(ContentLength(range.len()))?;
                     let range = range.start..range.end;
                     Ok(AsyncRawResponse::new(
                         StatusCode::PartialContent,
@@ -413,6 +669,7 @@ mod tests {
                         range: None,
                         total_len: None,
                     })?;
+                    headers.add(ContentLength(0))?;
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
@@ -424,6 +681,7 @@ mod tests {
                         range: Some((0, data_len - 1)),
                         total_len: Some(data_len),
                     })?;
+                    headers.add(ContentLength(data_len))?;
                     Ok(AsyncRawResponse::new(
                         StatusCode::Ok,
                         headers,
@@ -434,6 +692,63 @@ mod tests {
         }
     }
 
+    struct SingleRangeArgSet {
+        partition_len: usize,
+        download_range: Option<(usize, usize)>,
+    }
+    fn single_range_args(data_len: usize) -> impl IntoIterator<Item = SingleRangeArgSet> {
+        // trait not implemented for usize
+        let part_len = data_len / 5;
+        let extra = data_len / 5;
+        let offset = data_len / 5;
+
+        let start_range = (0, part_len);
+        let mid_range = (offset, offset + part_len);
+        let end_range = (data_len - part_len, data_len);
+        [
+            // exact len
+            SingleRangeArgSet {
+                partition_len: data_len,
+                download_range: None,
+            },
+            // oversize len
+            SingleRangeArgSet {
+                partition_len: data_len + extra,
+                download_range: None,
+            },
+            // exact range len (start)
+            SingleRangeArgSet {
+                partition_len: part_len,
+                download_range: Some(start_range),
+            },
+            // oversize range len (start)
+            SingleRangeArgSet {
+                partition_len: part_len + extra,
+                download_range: Some(start_range),
+            },
+            // exact range len (mid))
+            SingleRangeArgSet {
+                partition_len: part_len,
+                download_range: Some(mid_range),
+            },
+            // oversize range len (mid))
+            SingleRangeArgSet {
+                partition_len: part_len + extra,
+                download_range: Some(mid_range),
+            },
+            // exact range len (end)
+            SingleRangeArgSet {
+                partition_len: part_len,
+                download_range: Some(end_range),
+            },
+            // oversize range len (end)
+            SingleRangeArgSet {
+                partition_len: part_len + extra,
+                download_range: Some(end_range),
+            },
+        ]
+    }
+
     #[tokio::test]
     async fn download_single_range() -> AzureResult<()> {
         const DATA_LEN: usize = 1024;
@@ -441,40 +756,22 @@ mod tests {
 
         let data = get_random_data(DATA_LEN);
 
-        // trait not implemented for usize
-        let part_len = (rand::random::<u64>() as usize % 100) + 100;
-        let extra = (rand::random::<u64>() as usize % 100) + 100;
-        let offset = (rand::random::<u64>() as usize % 100) + 100;
-
-        let start_range = (0, part_len);
-        let mid_range = (offset, offset + part_len);
-        let end_range = (DATA_LEN - part_len, DATA_LEN);
-
-        for (partition_size, download_range) in [
-            (DATA_LEN, None),                      // exact len
-            (DATA_LEN + extra, None),              // oversize len
-            (part_len, Some(start_range)),         // exact range len (start)
-            (part_len + extra, Some(start_range)), // oversize range len (start)
-            (part_len, Some(mid_range)),           // exact range len (mid))
-            (part_len + extra, Some(mid_range)),   // oversize range len (mid))
-            (part_len, Some(end_range)),           // exact range len (end)
-            (part_len + extra, Some(end_range)),   // oversize range len (end)
-        ] {
+        for args in single_range_args(DATA_LEN) {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let downloaded_data = download(
-                download_range.map(|r| r.0..r.1),
+            let mut body = download(
+                args.download_range.map(|r| r.0..r.1),
                 PARALLEL.try_into().unwrap(),
-                partition_size.try_into().unwrap(),
+                args.partition_len.try_into().unwrap(),
                 mock.clone(),
             )
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+            let downloaded_data = body.buffer_all().await?;
 
             assert_eq!(
                 &downloaded_data[..],
-                match download_range {
+                match args.download_range {
                     Some(r) => &data[r.0..r.1],
                     None => &data[..],
                 }
@@ -486,83 +783,192 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn download_into_single_range() -> AzureResult<()> {
+        const DATA_LEN: usize = 1024;
+        const PARALLEL: usize = 2;
+
+        let data = get_random_data(DATA_LEN);
+
+        for args in single_range_args(DATA_LEN) {
+            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+            let mut destination = vec![
+                0u8;
+                if let Some((start, end)) = args.download_range {
+                    end - start
+                } else {
+                    DATA_LEN
+                }
+            ];
+
+            let written = download_into(
+                &mut destination,
+                args.download_range.map(|r| r.0..r.1),
+                PARALLEL.try_into().unwrap(),
+                args.partition_len.try_into().unwrap(),
+                mock.clone(),
+            )
+            .await?;
+
+            assert_eq!(destination.len(), written);
+            assert_eq!(
+                &destination,
+                match args.download_range {
+                    Some(r) => &data[r.0..r.1],
+                    None => &data[..],
+                }
+            );
+            assert_eq!(mock.invocations.lock().await.len(), 1);
+        }
+
+        Ok(())
+    }
+
+    struct MultiRangeArgSet {
+        pub parallel: usize,
+        pub partition_len: usize,
+        pub download_range: Option<(usize, usize)>,
+        pub expected_parts: usize,
+    }
+    fn multi_range_args(data_len: usize) -> impl IntoIterator<Item = MultiRangeArgSet> {
+        let offset = data_len / 9;
+        let range_len = data_len / 9;
+
+        let mut combos = Vec::new();
+        for parallel in [1, 4] {
+            for blob_range in [
+                (0, range_len),
+                (offset, offset + range_len),
+                (data_len - range_len, data_len),
+            ] {
+                for (partition_len, download_range) in [
+                    (data_len - 1, None),              // barely smaller
+                    (data_len / 2, None),              // half size
+                    (data_len / 41, None),             // oddball size
+                    (range_len - 1, Some(blob_range)), // barely smaller, range
+                    (range_len / 2, Some(blob_range)), // half size, range
+                    (data_len / 41, Some(blob_range)), // oddball size, range
+                ] {
+                    let expected_parts = match download_range {
+                        Some((start, end)) => (end - start).div_ceil(partition_len),
+                        None => data_len.div_ceil(partition_len),
+                    };
+                    combos.push(MultiRangeArgSet {
+                        parallel,
+                        partition_len,
+                        download_range,
+                        expected_parts,
+                    });
+                }
+            }
+        }
+
+        combos
+    }
+
+    #[tokio::test]
     async fn download_multi_range() -> AzureResult<()> {
         const DATA_LEN: usize = 4096;
 
         let data = get_random_data(DATA_LEN);
 
-        // trait not implemented for usize??
-        let part_len = (rand::random::<u64>() as usize % 100) + 100;
-        let expected_whole_blob_parts = DATA_LEN / part_len
-            + if DATA_LEN.is_multiple_of(part_len) {
-                0
-            } else {
-                1
-            };
+        for args in multi_range_args(DATA_LEN) {
+            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let range_len = (rand::random::<u64>() as usize % 500) + 500;
-        let expected_range_parts = range_len / part_len
-            + if range_len.is_multiple_of(part_len) {
-                0
-            } else {
-                1
-            };
-        let offset = (rand::random::<u64>() as usize % 500) + 500;
+            let mut body = download(
+                args.download_range.map(|r| r.0..r.1),
+                args.parallel.try_into().unwrap(),
+                args.partition_len.try_into().unwrap(),
+                mock.clone(),
+            )
+            .await?
+            .into_body();
+            let downloaded_data = body.buffer_all().await?;
 
-        for parallel in [1, 4] {
-            for blob_range in [
-                (0, range_len),                   // start of blob
-                (offset, offset + range_len),     // middle of blob
-                (DATA_LEN - range_len, DATA_LEN), // end of blob
-            ] {
-                for (partition_len, download_range, expected_parts) in [
-                    (DATA_LEN - 1, None, 2),                              // barely smaller
-                    (DATA_LEN / 2, None, 2),                              // half size
-                    (part_len, None, expected_whole_blob_parts),          // oddball size
-                    (range_len - 1, Some(blob_range), 2),                 // barely smaller, range
-                    (range_len / 2, Some(blob_range), 2 + range_len % 2), // half size, range
-                    (part_len, Some(blob_range), expected_range_parts),   // oddball size, range
-                ] {
-                    let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+            assert_eq!(
+                downloaded_data.len(),
+                args.download_range
+                    .map_or(DATA_LEN, |range| range.1 - range.0),
+                "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
+                args.partition_len,
+                args.download_range,
+                args.expected_parts
+            );
+            assert_eq!(
+                &downloaded_data[..],
+                match args.download_range {
+                    Some(r) => &data[r.0..r.1],
+                    None => &data[..],
+                },
+                "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
+                args.partition_len,
+                args.download_range,
+                args.expected_parts
+            );
+            assert_eq!(
+                mock.invocations.lock().await.len(),
+                args.expected_parts,
+                "Unexpected invocation count. partition_len={}. download_range={:?}, expected_parts={}",
+                args.partition_len,
+                args.download_range,
+                args.expected_parts);
+        }
 
-                    let downloaded_data = download(
-                        download_range.map(|r| r.0..r.1),
-                        parallel.try_into().unwrap(),
-                        partition_len.try_into().unwrap(),
-                        mock.clone(),
-                    )
-                    .await?
-                    .buffer_all()
-                    .await?;
+        Ok(())
+    }
 
-                    assert_eq!(
-                        downloaded_data.len(),
-                        download_range.map_or(DATA_LEN, |range| range.1 - range.0),
-                        "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
-                        partition_len,
-                        download_range,
-                        expected_parts
-                    );
-                    assert_eq!(
-                        &downloaded_data[..],
-                        match download_range {
-                            Some(r) => &data[r.0..r.1],
-                            None => &data[..],
-                        },
-                        "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
-                        partition_len,
-                        download_range,
-                        expected_parts
-                    );
-                    assert_eq!(
-                        mock.invocations.lock().await.len(),
-                        expected_parts,
-                        "Unexpected invocation count. partition_len={}. download_range={:?}, expected_parts={}",
-                        partition_len,
-                        download_range,
-                        expected_parts);
+    #[tokio::test]
+    async fn download_into_multi_range() -> AzureResult<()> {
+        const DATA_LEN: usize = 4096;
+
+        let data = get_random_data(DATA_LEN);
+
+        for args in multi_range_args(DATA_LEN) {
+            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+            let mut downloaded_data = vec![
+                0u8;
+                if let Some((start, end)) = args.download_range {
+                    end - start
+                } else {
+                    DATA_LEN
                 }
-            }
+            ];
+
+            let written = download_into(
+                &mut downloaded_data,
+                args.download_range.map(|r| r.0..r.1),
+                args.parallel.try_into().unwrap(),
+                args.partition_len.try_into().unwrap(),
+                mock.clone(),
+            )
+            .await?;
+
+            assert_eq!(
+                written,
+                args.download_range
+                    .map_or(DATA_LEN, |range| range.1 - range.0),
+                "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
+                args.partition_len,
+                args.download_range,
+                args.expected_parts
+            );
+            assert_eq!(
+                &downloaded_data,
+                match args.download_range {
+                    Some(r) => &data[r.0..r.1],
+                    None => &data,
+                },
+                "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
+                args.partition_len,
+                args.download_range,
+                args.expected_parts
+            );
+            assert_eq!(
+                mock.invocations.lock().await.len(),
+                args.expected_parts,
+                "Unexpected invocation count. partition_len={}. download_range={:?}, expected_parts={}",
+                args.partition_len,
+                args.download_range,
+                args.expected_parts);
         }
 
         Ok(())
@@ -581,10 +987,10 @@ mod tests {
             Some(1..5),
         ));
 
-        let downloaded_data = download(None, parallel, partition_size, mock.clone())
+        let mut body = download(None, parallel, partition_size, mock.clone())
             .await?
-            .buffer_all()
-            .await?;
+            .into_body();
+        let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data[..], data[..]);
         assert_eq!(mock.invocations.lock().await.len(), segments);
@@ -593,30 +999,103 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn download_empty() -> AzureResult<()> {
+    async fn download_into_ranges_parallel_maintain_order() -> AzureResult<()> {
+        let segments: usize = 20;
+        let partition_size = NonZero::new(3).unwrap();
+        let parallel = NonZero::new(16).unwrap();
+        let data_size: usize = partition_size.get() * segments;
+
+        let data = get_random_data(data_size);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
+            data.clone(),
+            Some(1..5),
+        ));
+
+        let mut destination = vec![0u8; data.len()];
+        let written = download_into(
+            &mut destination,
+            None,
+            parallel,
+            partition_size,
+            mock.clone(),
+        )
+        .await?;
+
+        assert_eq!(written, data_size);
+        assert_eq!(&destination, &data);
+        assert_eq!(mock.invocations.lock().await.len(), segments);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_empty_resource() -> AzureResult<()> {
         let parallel = NonZero::new(1).unwrap();
         let partition_len = NonZero::new(MB).unwrap();
-        for (empty_source, empty_range) in [(true, false), (false, true), (true, true)] {
-            let data = get_random_data(if empty_source { 0 } else { KB });
-            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+        let data = get_random_data(0);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-            let downloaded_data = download(
-                if empty_range { Some(0..0) } else { None },
+        let mut body = download(None, parallel, partition_len, mock.clone())
+            .await?
+            .into_body();
+        let downloaded_data = body.buffer_all().await?;
+
+        assert_eq!(downloaded_data.len(), 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_into_empty_resource() -> AzureResult<()> {
+        let parallel = NonZero::new(1).unwrap();
+        let partition_len = NonZero::new(MB).unwrap();
+        let data = get_random_data(0);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+
+        let mut destination = Vec::new();
+        let written = download_into(
+            &mut destination,
+            None,
+            parallel,
+            partition_len,
+            mock.clone(),
+        )
+        .await?;
+
+        assert_eq!(written, 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_into_insufficient_buffer() -> AzureResult<()> {
+        let partition_len = NonZero::new(3).unwrap();
+        let parallel = NonZero::new(2).unwrap();
+        let data_len = 1024;
+
+        let data = get_random_data(data_len);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+
+        for buffer_len in [0, data_len - 1, data_len / 2] {
+            let mut buffer = vec![0; buffer_len];
+            assert!(
+                download_into(&mut buffer, None, parallel, partition_len, mock.clone())
+                    .await
+                    .is_err()
+            );
+        }
+
+        for range_len in [1, data_len, data_len / 2] {
+            let mut buffer = vec![0; range_len - 1];
+            assert!(download_into(
+                &mut buffer,
+                Some(0..range_len),
                 parallel,
                 partition_len,
-                mock.clone(),
+                mock.clone()
             )
-            .await?
-            .buffer_all()
-            .await?;
-
-            assert_eq!(
-                downloaded_data.len(),
-                0,
-                "empty_source={}. empty_range={}.",
-                empty_source,
-                empty_range
-            );
+            .await
+            .is_err());
         }
 
         Ok(())

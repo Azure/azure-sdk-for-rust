@@ -10,9 +10,8 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
-        method_options::BlobClientManagedDownloadOptions, AccessTier, AccountKind,
-        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-        BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
+        AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
         BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
@@ -138,14 +137,9 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(data),
-        response_body.collect().await?.as_ref()
-    );
+    assert_eq!(17, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(data), body_data);
 
     // Overwrite Scenarios
     let new_data = b"hello overwritten rusty world";
@@ -168,16 +162,10 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload(RequestContent::from(new_data.to_vec()), None)
         .await?;
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-
     // Assert
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(29, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(new_data),
-        response_body.collect().await?.as_ref()
-    );
+    assert_eq!(29, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(new_data), body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -250,14 +238,9 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
-    assert_eq!(
-        b"hello rusty world".to_vec(),
-        response_body.collect().await?.to_vec(),
-    );
+    assert_eq!(17, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(b"hello rusty world".as_ref(), &body_data[..]);
 
     container_client.delete(None).await?;
     Ok(())
@@ -465,11 +448,9 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     let response = blob_client.download(Some(download_options)).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(10, content_length.unwrap());
-    assert_eq!(data.to_vec(), response_body.collect().await?.to_vec());
+    assert_eq!(10, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.as_ref(), &body_data[..]);
 
     blob_client.break_lease(None).await?;
     container_client.delete(None).await?;
@@ -923,10 +904,39 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
     Ok(())
 }
 
+struct TestManagedDownloadArgSet {
+    data_len: usize,
+    parallel: usize,
+    partition_len: usize,
+    download_range: Option<(usize, usize)>,
+    expected_gets: usize,
+}
+fn test_managed_download_args() -> impl IntoIterator<Item = TestManagedDownloadArgSet> {
+    const DATA_LEN: usize = 1024;
+    [
+        (2, DATA_LEN, None, 1),
+        (2, DATA_LEN * 2, None, 1),
+        (2, 512, None, 2),
+        (1, 256, None, 4),
+        (8, 31, None, 34),
+        (1, 16, Some((0, 16)), 1),
+        (4, 16, Some((16, 20)), 1),
+        (4, 256, Some((0, 12345)), 4),
+        (4, 100, Some((123, 223)), 1),
+    ]
+    .map(|(parallel, partition_len, download_range, expected_gets)| {
+        TestManagedDownloadArgSet {
+            data_len: DATA_LEN,
+            parallel,
+            partition_len,
+            download_range,
+            expected_gets,
+        }
+    })
+}
+
 #[recorded::test]
 async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    const DATA_LEN: usize = 1024;
-
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
@@ -940,33 +950,30 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     .await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    let data: [u8; DATA_LEN] = recording.random();
+    for TestManagedDownloadArgSet {
+        data_len,
+        parallel,
+        partition_len,
+        download_range,
+        expected_gets,
+    } in test_managed_download_args()
+    {
+        let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
+        blob_client
+            .upload(RequestContent::from(data.to_vec()), None)
+            .await?;
 
-    blob_client
-        .upload(RequestContent::from(data.to_vec()), None)
-        .await?;
-
-    for (parallel, partition_len, download_range, expected_gets) in [
-        (2, DATA_LEN, None, 1),
-        (2, DATA_LEN * 2, None, 1),
-        (2, 512, None, 2),
-        (1, 256, None, 4),
-        (8, 31, None, 34),
-        (1, 16, Some((0, 16)), 1),
-        (4, 16, Some((16, 20)), 1),
-        (4, 256, Some((0, 12345)), 4),
-        (4, 100, Some((123, 223)), 1),
-    ] {
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
         let mut download_stream = blob_client
-            .managed_download(Some(BlobClientManagedDownloadOptions {
+            .download(Some(BlobClientDownloadOptions {
                 partition_size: Some(NonZero::new(partition_len).unwrap()),
                 parallel: Some(NonZero::new(parallel).unwrap()),
                 range: download_range.map(|r| r.0..r.1),
                 ..Default::default()
             }))
-            .await?;
+            .await?
+            .body;
 
         let mut downloaded_data = BytesMut::new();
         while let Some(bytes) = download_stream.try_next().await? {
@@ -976,7 +983,72 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         assert_eq!(
             &downloaded_data,
             match download_range {
-                Some(r) => &data[r.0..min(r.1, DATA_LEN)],
+                Some(r) => &data[r.0..min(r.1, data_len)],
+                None => &data,
+            }
+        );
+        assert_eq!(request_count.load(Ordering::Relaxed), expected_gets);
+    }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    for TestManagedDownloadArgSet {
+        data_len,
+        parallel,
+        partition_len,
+        download_range,
+        expected_gets,
+    } in test_managed_download_args()
+    {
+        let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
+        blob_client
+            .upload(RequestContent::from(data.to_vec()), None)
+            .await?;
+
+        request_count.store(0, Ordering::Relaxed);
+        let _scope = count_policy.check_request_scope();
+        let mut destination = vec![0u8; data_len];
+        let written = blob_client
+            .download_into(
+                &mut destination,
+                Some(BlobClientDownloadOptions {
+                    partition_size: Some(NonZero::new(partition_len).unwrap()),
+                    parallel: Some(NonZero::new(parallel).unwrap()),
+                    range: download_range.map(|r| r.0..r.1),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        assert_eq!(
+            written,
+            match download_range {
+                Some(r) => min(r.1 - r.0, data_len),
+                None => data_len,
+            }
+        );
+        assert_eq!(
+            match download_range {
+                Some(r) => &destination[0..min(r.1 - r.0, data_len)],
+                None => &destination,
+            },
+            match download_range {
+                Some(r) => &data[r.0..min(r.1, data_len)],
                 None => &data,
             }
         );
@@ -1008,7 +1080,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
 
     request_count.store(0, Ordering::Relaxed);
     let _scope = count_policy.check_request_scope();
-    let mut download_stream = blob_client.managed_download(None).await?;
+    let mut download_stream = blob_client.download(None).await?.body;
 
     let mut downloaded_data = BytesMut::new();
     while let Some(bytes) = download_stream.try_next().await? {
@@ -1017,6 +1089,36 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     let downloaded_data = downloaded_data.freeze();
 
     assert_eq!(downloaded_data.len(), 0);
+    // 1 op with a range, 1 op without after the first one fails
+    assert_eq!(request_count.load(Ordering::Relaxed), 2);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_download_into_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    blob_client
+        .upload(RequestContent::from(vec![]), None)
+        .await?;
+
+    request_count.store(0, Ordering::Relaxed);
+    let _scope = count_policy.check_request_scope();
+    let written = blob_client.download_into(&mut [], None).await?;
+
+    assert_eq!(written, 0);
     // 1 op with a range, 1 op without after the first one fails
     assert_eq!(request_count.load(Ordering::Relaxed), 2);
 
@@ -1060,14 +1162,28 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
 
     // Assert Content Headers Also Present on Download Response
     let response = blob_client.download(None).await?;
-    assert_eq!(Some("no-cache".to_string()), response.cache_control()?);
-    assert_eq!(Some("inline".to_string()), response.content_disposition()?);
-    assert_eq!(Some("identity".to_string()), response.content_encoding()?);
-    assert_eq!(Some("en-US".to_string()), response.content_language()?);
-    let content_type: Option<String> = response.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+    assert_eq!(
+        Some("no-cache".to_string()),
+        response.properties.cache_control
+    );
+    assert_eq!(
+        Some("inline".to_string()),
+        response.properties.content_disposition
+    );
+    assert_eq!(
+        Some("identity".to_string()),
+        response.properties.content_encoding
+    );
+    assert_eq!(
+        Some("en-US".to_string()),
+        response.properties.content_language
+    );
+    assert_eq!(
+        Some("application/octet-stream".to_string()),
+        response.properties.content_type
+    );
 
-    // Overwrite with Different Content Headers — new headers replace old ones
+    // Overwrite with Different Content Headers - new headers replace old ones
     blob_client
         .upload(
             RequestContent::from(b"overwrite-content-headers".to_vec()),
@@ -1131,7 +1247,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("application/octet-stream".to_string()), content_type);
 
-    // Set only Content-Type — omitted headers are cleared by the service
+    // Set only Content-Type - omitted headers are cleared by the service
     blob_client
         .set_properties(Some(BlobClientSetPropertiesOptions {
             blob_content_type: Some("image/png".to_string()),
