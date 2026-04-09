@@ -635,6 +635,14 @@ mod tests {
     }
 
     #[test]
+    fn epk_cmp_prefix_with_partial_zero_suffix_is_equal() {
+        assert_eq!(
+            epk("06AB34CF").cmp(&epk("06AB34CF00000000")),
+            Ordering::Equal
+        );
+    }
+
+    #[test]
     fn epk_cmp_prefix_with_zero_suffix_is_equal() {
         assert_eq!(
             epk("06AB34CFE4E482236BCACBBF50E234AB").cmp(&epk(
