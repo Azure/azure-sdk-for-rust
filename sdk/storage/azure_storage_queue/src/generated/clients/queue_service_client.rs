@@ -41,8 +41,8 @@ impl QueueServiceClient {
         &self.endpoint
     }
 
-    /// Retrieves properties of a storage account's Queue service, including properties for Storage Analytics and CORS (Cross-Origin
-    /// Resource Sharing) rules.
+    /// Retrieves properties of a storage account's Queue service, including properties for Storage Analytics and
+    /// CORS (Cross-Origin Resource Sharing) rules.
     ///
     /// # Arguments
     ///
@@ -82,8 +82,8 @@ impl QueueServiceClient {
         Ok(rsp.into())
     }
 
-    /// Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint
-    /// when read-access geo-redundant replication is enabled for the storage account.
+    /// Retrieves statistics related to replication for the Queue service. It is only available on the secondary
+    /// location endpoint when read-access geo-redundant replication is enabled for the storage account.
     ///
     /// # Arguments
     ///
@@ -123,7 +123,7 @@ impl QueueServiceClient {
         Ok(rsp.into())
     }
 
-    /// returns a list of the queues under the specified account
+    /// Returns a list of queues.
     ///
     /// # Arguments
     ///
@@ -203,8 +203,8 @@ impl QueueServiceClient {
         ))
     }
 
-    /// Sets properties for a storage account's Queue service endpoint, including properties for Storage Analytics and CORS (Cross-Origin
-    /// Resource Sharing) rules
+    /// Sets properties for a storage account's Queue service endpoint, including properties for Storage Analytics
+    /// and CORS (Cross-Origin Resource Sharing) rules.
     ///
     /// # Arguments
     ///

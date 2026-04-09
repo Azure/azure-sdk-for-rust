@@ -1,6 +1,6 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.32.0 (2026-04-09)
 
 ### Features Added
 
@@ -22,8 +22,13 @@
 ### Bugs Fixed
 
 - Fixes Circuit Breaker Failover Logic for Multi-Master Writes on 403/3. ([#3861](https://github.com/Azure/azure-sdk-for-rust/pull/3861))
+- Fixed partition key range fetch using mixed name/RID addressing, which caused 404 errors on certain operations. ([#4047](https://github.com/Azure/azure-sdk-for-rust/pull/4047))
 
 ### Other Changes
+
+- `ContainerClient::read_item` now executes through the `azure_data_cosmos_driver` pipeline, gaining driver-level transport, routing, and retry capabilities. ([#4053](https://github.com/Azure/azure-sdk-for-rust/pull/4053))
+- Removed internal OpenTelemetry tracing spans pending alignment with [Cosmos DB semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/azure/#azure-cosmos-db-attributes). Spans will return in a future release. ([#4104](https://github.com/Azure/azure-sdk-for-rust/pull/4104))
+- Added `azure_data_cosmos_driver` as a runtime dependency for internal transport and caching. ([#4005](https://github.com/Azure/azure-sdk-for-rust/pull/4005))
 
 ## 0.31.0 (2026-02-25)
 

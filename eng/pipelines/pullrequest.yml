@@ -14,3 +14,8 @@ extends:
     ServiceDirectory: auto
     IncludeRelease: false
     RunLiveTests: false
+    MatrixConfigs:
+      - Name: rust_pr_test_base
+        Path: eng/pipelines/templates/stages/pr-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true

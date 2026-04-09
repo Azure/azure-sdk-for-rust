@@ -12,7 +12,7 @@ use azure_core::{fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Represents an access policy.
+/// The access policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct AccessPolicy {
     /// The date-time the policy expires.
@@ -24,7 +24,7 @@ pub struct AccessPolicy {
     )]
     pub expiry: Option<OffsetDateTime>,
 
-    /// The permissions for acl the policy.
+    /// The permissions for the policy.
     #[serde(rename = "Permission", skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 
@@ -38,9 +38,7 @@ pub struct AccessPolicy {
     pub start: Option<OffsetDateTime>,
 }
 
-/// CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain.
-/// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
-/// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
+/// The CORS rules.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "CorsRule")]
 pub struct CorsRule {
@@ -72,21 +70,21 @@ pub struct Error {
     #[serde(rename = "Code", skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 
-    /// Copy source error code
+    /// Copy source error code.
     #[serde(
         rename = "CopySourceErrorCode",
         skip_serializing_if = "Option::is_none"
     )]
     pub copy_source_error_code: Option<String>,
 
-    /// Copy source error message
+    /// Copy source error message.
     #[serde(
         rename = "CopySourceErrorMessage",
         skip_serializing_if = "Option::is_none"
     )]
     pub copy_source_error_message: Option<String>,
 
-    /// Copy source status code
+    /// Copy source status code.
     #[serde(
         rename = "CopySourceStatusCode",
         skip_serializing_if = "Option::is_none"
@@ -116,12 +114,13 @@ pub struct Error {
     pub x_ms_copy_source_status_code: Option<i32>,
 }
 
-/// Geo-Replication information for the Secondary Storage Service
+/// Geo replication information for the secondary storage location.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct GeoReplication {
-    /// A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read
-    /// operations at the secondary. Primary writes after this point in time may or may not be available for reads.
+    /// A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available
+    /// for read operations at the secondary. Primary writes after this point in time may or may not be available
+    /// for reads.
     #[serde(
         default,
         rename = "LastSyncTime",
@@ -130,25 +129,25 @@ pub struct GeoReplication {
     )]
     pub last_sync_time: Option<OffsetDateTime>,
 
-    /// The status of the secondary location
+    /// The status of the secondary location.
     #[serde(rename = "Status", skip_serializing_if = "Option::is_none")]
     pub status: Option<GeoReplicationStatus>,
 }
 
-/// The list queue segment response
+/// The list queues response.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 pub struct ListQueuesResponse {
-    /// The marker of the queues.
+    /// Identifies the current position in the list queues operation.
     #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
     pub marker: Option<String>,
 
-    /// The max results of the queues.
+    /// The max results.
     #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i32>,
 
-    /// The next marker of the queues.
+    /// Identifies the portion of the list of queues to be returned with the next listing operation.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 
@@ -156,7 +155,7 @@ pub struct ListQueuesResponse {
     #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
 
-    /// The queue segment.
+    /// The list of queues.
     #[serde(
         default,
         deserialize_with = "Queue_itemsQueue::unwrap",
@@ -214,8 +213,7 @@ pub struct Metrics {
     pub version: Option<String>,
 }
 
-/// The object returned in the QueueMessageList array when calling Peek Messages on
-/// a Queue
+/// The peeked queue message.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessage")]
@@ -224,7 +222,7 @@ pub struct PeekedMessage {
     #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
     pub dequeue_count: Option<i64>,
 
-    /// The time that the Message will expire and be automatically deleted.
+    /// The time that the message will expire and be automatically deleted.
     #[serde(
         default,
         rename = "ExpirationTime",
@@ -233,7 +231,7 @@ pub struct PeekedMessage {
     )]
     pub expiration_time: Option<OffsetDateTime>,
 
-    /// The time the Message was inserted into the Queue.
+    /// The time the message was inserted into the queue.
     #[serde(
         default,
         rename = "InsertionTime",
@@ -242,16 +240,16 @@ pub struct PeekedMessage {
     )]
     pub insertion_time: Option<OffsetDateTime>,
 
-    /// The Id of the Message.
+    /// The ID of the message.
     #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
 
-    /// The content of the Message.
+    /// The content of the message.
     #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
     pub message_text: Option<String>,
 }
 
-/// List wrapper for PeekedMessageItem array
+/// The response of peek messages.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessagesList")]
@@ -270,7 +268,7 @@ pub struct QueueClientGetPropertiesResult;
 #[non_exhaustive]
 #[serde(rename = "Queue")]
 pub struct QueueItem {
-    /// The metadata of the container.
+    /// The metadata of the queue.
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]
     pub metadata: Option<HashMap<String, String>>,
 
@@ -279,10 +277,10 @@ pub struct QueueItem {
     pub name: Option<String>,
 }
 
-/// A Message object which can be stored in a Queue
+/// The queue message.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct QueueMessage {
-    /// The content of the message
+    /// The content of the message.
     #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
     pub message_text: Option<String>,
 }
@@ -314,7 +312,7 @@ pub struct QueueServiceProperties {
     pub minute_metrics: Option<Metrics>,
 }
 
-/// Stats for the storage service.
+/// Statistics for the storage queue service.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct QueueServiceStats {
@@ -323,8 +321,7 @@ pub struct QueueServiceStats {
     pub geo_replication: Option<GeoReplication>,
 }
 
-/// The object returned in the QueueMessageList array when calling Get Messages on
-/// a Queue.
+/// The received queue message.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessage")]
@@ -333,7 +330,7 @@ pub struct ReceivedMessage {
     #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
     pub dequeue_count: Option<i64>,
 
-    /// The time that the Message will expire and be automatically deleted.
+    /// The time that the message will expire and be automatically deleted.
     #[serde(
         default,
         rename = "ExpirationTime",
@@ -342,7 +339,7 @@ pub struct ReceivedMessage {
     )]
     pub expiration_time: Option<OffsetDateTime>,
 
-    /// The time the Message was inserted into the Queue.
+    /// The time the message was inserted into the queue.
     #[serde(
         default,
         rename = "InsertionTime",
@@ -351,20 +348,20 @@ pub struct ReceivedMessage {
     )]
     pub insertion_time: Option<OffsetDateTime>,
 
-    /// The Id of the Message.
+    /// The ID of the message.
     #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
 
-    /// The content of the message
+    /// The content of the message.
     #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
     pub message_text: Option<String>,
 
-    /// This value is required to delete the Message. If deletion fails using this
+    /// An opaque value required to delete the message. If deletion fails using this
     /// PopReceipt then the message has been dequeued by another client.
     #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
     pub pop_receipt: Option<String>,
 
-    /// The time that the message will again become visible in the Queue.
+    /// The time that the message will again become visible in the queue.
     #[serde(
         default,
         rename = "TimeNextVisible",
@@ -374,12 +371,12 @@ pub struct ReceivedMessage {
     pub time_next_visible: Option<OffsetDateTime>,
 }
 
-/// List wrapper for DequeuedMessageItem array
+/// The response of receive messages.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessagesList")]
 pub struct ReceivedMessages {
-    /// The list of dequeued messages.
+    /// The list of received messages.
     #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<ReceivedMessage>>,
 }
@@ -396,13 +393,12 @@ pub struct RetentionPolicy {
     pub enabled: Option<bool>,
 }
 
-/// The object returned in the QueueMessageList array when calling Put Message on a
-/// Queue
+/// The sent queue message.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessage")]
 pub struct SentMessageInternal {
-    /// The time that the Message will expire and be automatically deleted.
+    /// The time that the message will expire and be automatically deleted.
     #[serde(
         default,
         rename = "ExpirationTime",
@@ -411,7 +407,7 @@ pub struct SentMessageInternal {
     )]
     pub expiration_time: Option<OffsetDateTime>,
 
-    /// The time the Message was inserted into the Queue.
+    /// The time the message was inserted into the queue.
     #[serde(
         default,
         rename = "InsertionTime",
@@ -420,16 +416,16 @@ pub struct SentMessageInternal {
     )]
     pub insertion_time: Option<OffsetDateTime>,
 
-    /// The Id of the Message.
+    /// The ID of the message.
     #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
 
-    /// This value is required to delete the Message. If deletion fails using this
+    /// An opaque value required to delete the message. If deletion fails using this
     /// PopReceipt then the message has been dequeued by another client.
     #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
     pub pop_receipt: Option<String>,
 
-    /// The time that the message will again become visible in the Queue.
+    /// The time that the message will again become visible in the queue.
     #[serde(
         default,
         rename = "TimeNextVisible",
@@ -451,7 +447,7 @@ pub struct SignedIdentifier {
     pub id: Option<String>,
 }
 
-/// Represents an array of signed identifiers
+/// An array of signed identifiers.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "SignedIdentifiers")]
 pub struct SignedIdentifiers {
