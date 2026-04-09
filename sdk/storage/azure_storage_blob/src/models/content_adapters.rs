@@ -2,10 +2,11 @@
 // Licensed under the MIT License.
 
 use azure_core::stream::SeekableStream;
+use bytes::Bytes;
 use futures::AsyncRead;
 
 pub enum StorageUploadBody {
-    Bytes(bytes::Bytes),
+    Bytes(Bytes),
     AsyncRead(Box<dyn AsyncReadWithLenHint>),
 }
 
@@ -18,6 +19,30 @@ impl StorageUploadBody {
     }
     pub fn is_empty(&self) -> Option<bool> {
         self.len().map(|len| len == 0)
+    }
+}
+
+impl<B> From<B> for StorageUploadBody
+where
+    B: Into<Bytes>,
+{
+    fn from(bytes: B) -> Self {
+        Self::Bytes(bytes.into())
+    }
+}
+
+impl From<&StorageUploadBody> for Bytes {
+    fn from(value: &StorageUploadBody) -> Self {
+        match value {
+            StorageUploadBody::Bytes(bytes) => bytes.clone(),
+            StorageUploadBody::AsyncRead(_) => unimplemented!(),
+        }
+    }
+}
+
+impl From<Box<dyn AsyncReadWithLenHint>> for StorageUploadBody {
+    fn from(async_read: Box<dyn AsyncReadWithLenHint>) -> Self {
+        Self::AsyncRead(async_read)
     }
 }
 
