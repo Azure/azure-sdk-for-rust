@@ -94,7 +94,7 @@ version = "0.11.0"
 
 [workspace.dependencies.azure_data_cosmos_driver]
 default-features = false
-version = "0.1.0"
+version = "0.2.0"
 path = "sdk/cosmos/azure_data_cosmos_driver"
 
 [workspace.dependencies]
@@ -103,7 +103,7 @@ async-stream = { version = "0.3.6" }
 async-trait = "0.1"
 base64 = "0.22"
 arc-swap = "1.7"
-azure_data_cosmos_macros = { version = "0.1.0", path = "sdk/cosmos/azure_data_cosmos_macros" }
+azure_data_cosmos_macros = { version = "0.2.0", path = "sdk/cosmos/azure_data_cosmos_macros" }
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
