@@ -175,20 +175,22 @@ impl FeedRange {
     /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
     ///
     /// Partition key ranges from the service always use `[min, max)` semantics
-    /// (min inclusive, max exclusive). This method asserts that invariant.
+    /// (min inclusive, max exclusive). Returns an error if the range is inverted.
     #[allow(
         dead_code,
         reason = "will be used when feed range methods route through the driver's routing map"
     )]
-    pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> Self {
-        debug_assert!(
-            pkr.min_inclusive <= pkr.max_exclusive,
-            "partition key range min_inclusive must be <= max_exclusive"
-        );
-        Self {
+    pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> azure_core::Result<Self> {
+        if pkr.min_inclusive > pkr.max_exclusive {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "partition key range min_inclusive must be <= max_exclusive",
+            ));
+        }
+        Ok(Self {
             min_inclusive: pkr.min_inclusive.as_str().to_owned(),
             max_exclusive: pkr.max_exclusive.as_str().to_owned(),
-        }
+        })
     }
 
     /// Creates a `FeedRange` from the SDK's internal `PartitionKeyRange`.
@@ -444,7 +446,7 @@ mod tests {
     #[test]
     fn from_partition_key_range() {
         let pkr = PartitionKeyRange::new("0".to_string(), "".to_string(), "FF".to_string());
-        let feed_range = FeedRange::from_partition_key_range(&pkr);
+        let feed_range = FeedRange::from_partition_key_range(&pkr).unwrap();
         assert_eq!(feed_range.min_inclusive.as_str(), "");
         assert_eq!(feed_range.max_exclusive.as_str(), "FF");
     }
