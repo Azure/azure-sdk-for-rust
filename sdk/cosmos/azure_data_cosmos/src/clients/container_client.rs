@@ -8,7 +8,7 @@ use crate::{
         BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
         ThroughputProperties,
     },
-    options::{BatchOptions, FeedRangeOptions, QueryOptions, ReadContainerOptions},
+    options::{BatchOptions, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
@@ -25,7 +25,10 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
-use azure_data_cosmos_driver::models::{ContainerReference, CosmosOperation, ItemReference};
+use azure_data_cosmos_driver::models::{
+    effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
+    CosmosOperation, ItemReference, PartitionKeyKind,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -782,19 +785,17 @@ impl ContainerClient {
     /// Gets the feed ranges for this container.
     ///
     /// Each [`FeedRange`] represents a contiguous range of the container's partition key space,
-    /// corresponding to one physical partition. The returned feed ranges cover the entire
-    /// partition key space.
+    /// corresponding to one physical partition.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional [`ReadFeedRangesOptions`] to control cache behavior.
     ///
     /// # Examples
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// // Get feed ranges aligned to physical partitions:
     /// let ranges = container_client.read_feed_ranges(None).await?;
     /// println!("Container has {} physical partitions", ranges.len());
     /// # Ok(())
@@ -803,44 +804,61 @@ impl ContainerClient {
     #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_feed_ranges(
         &self,
-        options: Option<FeedRangeOptions>,
+        options: Option<ReadFeedRangesOptions>,
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
 
         let routing_map = self
-            .driver
-            .resolve_routing_map(&self.container_ref, options.force_refresh())
-            .await?;
+            .container_connection
+            .resolve_routing_map(options.force_refresh())
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })?;
 
         let feed_ranges = routing_map
-            .ranges()
+            .ordered_partition_key_ranges()
             .iter()
-            .map(FeedRange::from_partition_key_range)
+            .map(FeedRange::from_sdk_partition_key_range)
             .collect();
 
         Ok(feed_ranges)
     }
 
-    /// Returns the [`FeedRange`] of the physical partition containing the given partition key.
+    /// Returns the [`FeedRange`]s of the physical partitions covering the given partition key.
     ///
-    /// This hashes the partition key to its effective partition key (EPK) value and looks up the
-    /// physical partition that contains it. The returned feed range spans the full EPK range of
-    /// that physical partition, not just the single EPK point.
+    /// For full partition keys (all components provided), this returns a single-element
+    /// `Vec` containing the feed range of the physical partition that owns the key.
+    ///
+    /// For prefix partition keys on MultiHash (hierarchical) containers, this returns
+    /// one or more feed ranges covering all physical partitions that overlap the prefix's
+    /// effective partition key range.
     ///
     /// # Arguments
     ///
-    /// * `partition_key` - The partition key value to convert.
-    /// * `options` - Optional [`FeedRangeOptions`] to control cache behavior.
+    /// * `partition_key` - The partition key value (full or prefix for HPK containers).
+    /// * `options` - Optional [`ReadFeedRangesOptions`] to control cache behavior.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The partition key has no components (empty).
+    /// - The partition key has more components than the container's partition key definition.
+    /// - A prefix key is provided for a non-MultiHash (single-hash) container.
     ///
     /// # Examples
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-    /// let feed_range = container_client
+    /// // Full key — returns one feed range:
+    /// let ranges = container_client
     ///     .feed_range_from_partition_key("my_partition_key", None)
     ///     .await?;
-    /// println!("Partition key maps to feed range: {}", feed_range);
+    /// assert_eq!(ranges.len(), 1);
     /// # Ok(())
     /// # }
     /// ```
@@ -848,46 +866,108 @@ impl ContainerClient {
     pub async fn feed_range_from_partition_key(
         &self,
         partition_key: impl Into<PartitionKey>,
-        options: Option<FeedRangeOptions>,
-    ) -> azure_core::Result<FeedRange> {
+        options: Option<ReadFeedRangesOptions>,
+    ) -> azure_core::Result<Vec<FeedRange>> {
         let partition_key = partition_key.into();
+        let driver_pk = partition_key.into_driver_partition_key();
         let options = options.unwrap_or_default();
-
-        // Get partition key definition from the eagerly-resolved container reference.
         let pk_def = self.container_connection.partition_key_definition();
-        let pk_version = pk_def.version().value() as u8;
-        let epk = partition_key.get_hashed_partition_key_string(pk_def.kind(), pk_version);
-        let driver_epk =
-            azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey::from(
-                epk.as_str(),
-            );
+        let values = driver_pk.values();
 
-        // Look up the physical partition range containing this EPK.
+        // Validate inputs.
+        if values.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "partition key must have at least one component",
+            ));
+        }
+        if values.len() > pk_def.paths().len() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "partition key has {} components but container definition has {} paths",
+                    values.len(),
+                    pk_def.paths().len()
+                ),
+            ));
+        }
+
+        let is_prefix =
+            pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
+
+        if !is_prefix && values.len() != pk_def.paths().len() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "prefix partition keys are only supported for MultiHash (hierarchical) containers",
+            ));
+        }
+
         let routing_map = self
-            .driver
-            .resolve_routing_map(&self.container_ref, options.force_refresh())
-            .await?;
+            .container_connection
+            .resolve_routing_map(options.force_refresh())
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })?;
 
-        let pkr = match routing_map.get_range_by_effective_partition_key(&driver_epk) {
-            Some(pkr) => pkr.clone(),
-            None => {
+        if is_prefix {
+            // Prefix key — compute EPK range, find all overlapping partitions.
+            let epk_range = DriverEpk::compute_range(values, pk_def)?;
+            let query_range = crate::routing::range::Range::new(
+                epk_range.start.as_str().to_owned(),
+                epk_range.end.as_str().to_owned(),
+                true,
+                false,
+            );
+            let pkranges = routing_map.get_overlapping_ranges(&query_range);
+            if pkranges.is_empty() {
                 // Routing map may be stale (e.g. after a partition split). Refresh and retry once.
                 let refreshed = self
-                    .driver
-                    .resolve_routing_map(&self.container_ref, true)
-                    .await?;
-                refreshed
-                    .get_range_by_effective_partition_key(&driver_epk)
+                    .container_connection
+                    .resolve_routing_map(true)
+                    .await?
                     .ok_or_else(|| {
                         azure_core::Error::with_message(
                             azure_core::error::ErrorKind::Other,
-                            "partition key range not found for effective partition key",
+                            "failed to resolve routing map for container after refresh",
                         )
-                    })?
-                    .clone()
+                    })?;
+                Ok(refreshed
+                    .get_overlapping_ranges(&query_range)
+                    .iter()
+                    .map(FeedRange::from_sdk_partition_key_range)
+                    .collect())
+            } else {
+                Ok(pkranges
+                    .iter()
+                    .map(FeedRange::from_sdk_partition_key_range)
+                    .collect())
             }
-        };
-        Ok(FeedRange::from_partition_key_range(&pkr))
+        } else {
+            // Full key — compute single EPK, point lookup for one partition.
+            let epk = DriverEpk::compute(values, pk_def.kind(), pk_def.version());
+            match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
+                Ok(pkr) => Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)]),
+                Err(_) => {
+                    // Routing map may be stale. Refresh and retry once.
+                    let refreshed = self
+                        .container_connection
+                        .resolve_routing_map(true)
+                        .await?
+                        .ok_or_else(|| {
+                            azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::Other,
+                                "failed to resolve routing map for container after refresh",
+                            )
+                        })?;
+                    let pkr = refreshed.get_range_by_effective_partition_key(epk.as_str())?;
+                    Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)])
+                }
+            }
+        }
     }
 }
 
@@ -920,5 +1000,9 @@ mod tests {
 
         // Batch operations
         assert_send(client.execute_transactional_batch(todo!(), todo!()));
+
+        // Feed range operations
+        assert_send(client.read_feed_ranges(todo!()));
+        assert_send(client.feed_range_from_partition_key("", todo!()));
     }
 }
