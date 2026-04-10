@@ -24,10 +24,7 @@ use std::error::Error;
     ignore = "requires test_category 'emulator'"
 )]
 async fn driver_initializes_via_backup_when_primary_unreachable() -> Result<(), Box<dyn Error>> {
-    let Some(env) = resolve_test_env()? else {
-        println!("Skipping test: Cosmos DB environment not configured");
-        return Ok(());
-    };
+    let env = resolve_test_env()?.expect("Cosmos DB environment must be configured");
 
     // Create an account with a non-routable primary and the real endpoint as backup.
     let fake_primary: url::Url = "https://192.0.2.1:443/".parse()?;
@@ -60,10 +57,7 @@ async fn driver_initializes_via_backup_when_primary_unreachable() -> Result<(), 
     ignore = "requires test_category 'emulator'"
 )]
 async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>> {
-    let Some(env) = resolve_test_env()? else {
-        println!("Skipping test: Cosmos DB environment not configured");
-        return Ok(());
-    };
+    let env = resolve_test_env()?.expect("Cosmos DB environment must be configured");
 
     let fake_primary: url::Url = "https://192.0.2.1:443/".parse()?;
     let account = AccountReference::builder(fake_primary)
