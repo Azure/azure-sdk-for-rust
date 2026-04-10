@@ -105,8 +105,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data = b"hello world";
     blob_client
         .upload(
-            RequestContent::from(data.to_vec()), // Data
-            None,                                // Upload Options
+            data.to_vec().into(),   // Data
+            None,                   // Upload Options
         )
         .await?;
     Ok(())
