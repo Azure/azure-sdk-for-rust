@@ -6,8 +6,8 @@ use crate::murmur_hash::{murmurhash3_128, murmurhash3_32};
 use std::fmt::Write;
 
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
-const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
-const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
+pub(crate) const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
+pub(crate) const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
 
 /// A strongly-typed wrapper around the hex-encoded effective partition key string.
 ///
