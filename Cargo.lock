@@ -531,6 +531,7 @@ dependencies = [
  "azure_storage_blob_test",
  "bytes",
  "clap",
+ "flate2",
  "futures",
  "opentelemetry",
  "opentelemetry-stdout",

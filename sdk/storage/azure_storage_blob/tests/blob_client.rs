@@ -26,11 +26,13 @@ use azure_storage_blob_test::{
     StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
+use flate2::{write::GzEncoder, Compression};
 use futures::TryStreamExt;
 use std::{
     cmp::min,
     collections::HashMap,
     error::Error,
+    io::Write,
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -1356,6 +1358,98 @@ async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dy
     assert_eq!(
         Some(RehydratePriority::High),
         response.rehydrate_priority()?
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_gzip_blob_no_metadata_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Compress plaintext and upload with no content metadata.
+    let plaintext = b"hello world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(RequestContent::from(gzip_bytes.clone()), None)
+        .await?;
+
+    // Download with the default client.
+    let response = blob_client.download(None).await?;
+
+    // No content-encoding means no decompression; body is raw gzip.
+    assert_eq!(
+        None, response.properties.content_encoding,
+        "content-encoding must be absent: the service did not inject a transfer-coding header"
+    );
+    let downloaded_bytes = response.body.collect().await?;
+    assert_eq!(
+        gzip_bytes,
+        downloaded_bytes.to_vec(),
+        "body must be the raw gzip stream unchanged"
+    );
+
+    // Verify the raw bytes gunzip back to the original plaintext.
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_ref());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(plaintext.to_vec(), decompressed);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Compress plaintext and upload with blob_content_encoding: gzip.
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes.clone()),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Download - auto-decompression is disabled so we get raw bytes.
+    let response = blob_client.download(None).await?;
+
+    // content-encoding header is present because reqwest did not strip it.
+    assert_eq!(
+        Some("gzip".to_string()),
+        response.properties.content_encoding,
+        "content-encoding: gzip must be present when auto-decompression is disabled"
+    );
+
+    let downloaded_bytes = response.body.collect().await?;
+    // The body is a valid gzip stream that decodes back to the original plaintext.
+    // Note: we compare decompressed output rather than raw bytes because the service
+    // may normalize the OS byte in the gzip header.
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_ref());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(
+        plaintext.to_vec(),
+        decompressed,
+        "decompressed body must match original plaintext"
     );
 
     container_client.delete(None).await?;

@@ -14,8 +14,9 @@ use tracing::{debug, warn};
 use typespec::error::{Error, ErrorKind, Result, ResultExt};
 
 /// Create a new [`HttpClient`] with the `reqwest` backend.
-pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
+pub fn new_reqwest_client(options: Option<super::HttpClientOptions>) -> Arc<dyn HttpClient> {
     debug!("creating an http client using `reqwest`");
+    let options = options.unwrap_or_default();
 
     // Some customers in the past have reported challenges associated with enabling
     // connection pooling in reqwest. See <https://github.com/hyperium/hyper/issues/2312>
@@ -23,13 +24,23 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     //
     // Due to the significant performance impact when disabling connection pooling,
     // it is enabled here by default. See the `azure_core` troubleshooting guide to disable pooling.
-    let client = ::reqwest::ClientBuilder::new()
+    let mut builder = ::reqwest::ClientBuilder::new()
         // By default, reqwest will chase 3xx redirects up to 10 links. REST API guidelines
         // discourage services from using 3xx redirects, so disabling the reqwest redirect logic
         // simplifies the client logic.
-        .redirect(::reqwest::redirect::Policy::none())
-        .build()
-        .expect("failed to build `reqwest` client");
+        .redirect(::reqwest::redirect::Policy::none());
+
+    #[cfg(feature = "reqwest_gzip")]
+    {
+        builder = builder.gzip(options.automatic_decompression);
+    }
+
+    #[cfg(feature = "reqwest_deflate")]
+    {
+        builder = builder.deflate(options.automatic_decompression);
+    }
+
+    let client = builder.build().expect("failed to build `reqwest` client");
 
     Arc::new(client)
 }

@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression.
+
 ### Bugs Fixed
 
 ### Other Changes
