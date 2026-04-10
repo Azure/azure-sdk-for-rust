@@ -248,7 +248,12 @@ impl HttpRange {
 impl fmt::Display for HttpRange {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.length {
-            Some(length) => write!(f, "bytes={}-{}", self.offset, self.offset + length - 1),
+            Some(length) => write!(
+                f,
+                "bytes={}-{}",
+                self.offset,
+                self.offset.saturating_add(length).saturating_sub(1)
+            ),
             None => write!(f, "bytes={}-", self.offset),
         }
     }
@@ -308,5 +313,20 @@ mod http_range_tests {
         let range = HttpRange::new(0, 512);
         let header_value: HeaderValue = range.into();
         assert_eq!(header_value.as_str(), "bytes=0-511");
+    }
+
+    #[test]
+    fn display_zero_length_does_not_panic() {
+        // length == 0 would underflow without saturating arithmetic; must not panic
+        let range = HttpRange::new(0, 0);
+        // saturating_add(0).saturating_sub(1) on offset 0 saturates to 0
+        let _ = range.to_string();
+    }
+
+    #[test]
+    fn display_overflow_does_not_panic() {
+        // offset + length would overflow u64 without saturating arithmetic; must not panic
+        let range = HttpRange::new(u64::MAX, u64::MAX);
+        let _ = range.to_string();
     }
 }
