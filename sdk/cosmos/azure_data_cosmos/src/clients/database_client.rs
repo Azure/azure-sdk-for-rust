@@ -195,8 +195,12 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        offers_client::find_offer(&self.context.driver, self.context.driver.account(), &resource_id)
-            .await
+        offers_client::find_offer(
+            &self.context.driver,
+            self.context.driver.account(),
+            &resource_id,
+        )
+        .await
     }
 
     /// Begins replacing the database throughput properties.
