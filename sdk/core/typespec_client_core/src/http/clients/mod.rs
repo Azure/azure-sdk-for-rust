@@ -21,7 +21,7 @@ use typespec::error::Result;
 /// Options to construct an [`HttpClient`] from [`new_http_client()`].
 #[derive(Clone, Debug)]
 pub struct HttpClientOptions {
-    /// Automatically decompress responses if `content-type` indicates compression.
+    /// Automatically decompress responses if the `content-encoding` header indicates a supported compression encoding.
     /// Defaults to `true`.
     ///
     /// # Notes

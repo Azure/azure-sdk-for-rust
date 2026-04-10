@@ -216,7 +216,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     )
     .await?;
 
-    // Sleep in live mode to allow tags to be indexed on the service
+    // Sleep in live and record modes to allow tags to be indexed on the service
     if recording.test_mode() != TestMode::Playback {
         time::sleep(Duration::from_secs(5)).await;
     }

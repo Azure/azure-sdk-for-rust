@@ -14,6 +14,10 @@ use tracing::{debug, warn};
 use typespec::error::{Error, ErrorKind, Result, ResultExt};
 
 /// Create a new [`HttpClient`] with the `reqwest` backend.
+#[cfg_attr(
+    not(any(feature = "reqwest_gzip", feature = "reqwest_deflate")),
+    allow(unused_variable)
+)]
 pub fn new_reqwest_client(options: Option<super::HttpClientOptions>) -> Arc<dyn HttpClient> {
     debug!("creating an http client using `reqwest`");
     let options = options.unwrap_or_default();

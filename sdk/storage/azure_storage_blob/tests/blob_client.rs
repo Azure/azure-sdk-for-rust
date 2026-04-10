@@ -1387,7 +1387,7 @@ async fn test_gzip_blob_no_metadata_roundtrip(ctx: TestContext) -> Result<(), Bo
     // No content-encoding means no decompression; body is raw gzip.
     assert_eq!(
         None, response.properties.content_encoding,
-        "content-encoding must be absent: the service did not inject a transfer-coding header"
+        "content-encoding must be absent: the service did not inject a content-coding header"
     );
     let downloaded_bytes = response.body.collect().await?;
     assert_eq!(
