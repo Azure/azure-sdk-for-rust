@@ -211,9 +211,9 @@ mod tests {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRange {
     /// The starting byte offset.
-    pub offset: u64,
+    offset: u64,
     /// The length of the range. If `None`, the range extends to the end of the resource.
-    pub length: Option<u64>,
+    length: Option<u64>,
 }
 
 impl HttpRange {
