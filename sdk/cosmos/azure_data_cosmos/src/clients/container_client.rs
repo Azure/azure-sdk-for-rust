@@ -24,7 +24,9 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
-use azure_data_cosmos_driver::models::{ContainerReference, CosmosOperation, ItemReference};
+use azure_data_cosmos_driver::models::{
+    ContainerReference, CosmosOperation, ItemReference, Precondition, SessionToken,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -323,16 +325,9 @@ impl ContainerClient {
         let driver_pk = partition_key.into().into_driver_partition_key();
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let mut operation =
+        let operation =
             CosmosOperation::create_item(self.container_ref.clone(), driver_pk).with_body(body);
-
-        // Wire session token and precondition from SDK options onto the operation.
-        if let Some(session_token) = options.session_token {
-            operation = operation.with_session_token(session_token);
-        }
-        if let Some(precondition) = options.precondition {
-            operation = operation.with_precondition(precondition);
-        }
+        let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
         let driver_response = self
@@ -428,15 +423,8 @@ impl ContainerClient {
         );
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let mut operation = CosmosOperation::replace_item(item_ref).with_body(body);
-
-        // Wire session token and precondition from SDK options onto the operation.
-        if let Some(session_token) = options.session_token {
-            operation = operation.with_session_token(session_token);
-        }
-        if let Some(precondition) = options.precondition {
-            operation = operation.with_precondition(precondition);
-        }
+        let operation = CosmosOperation::replace_item(item_ref).with_body(body);
+        let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
         let driver_response = self
@@ -528,16 +516,9 @@ impl ContainerClient {
         let driver_pk = partition_key.into().into_driver_partition_key();
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let mut operation =
+        let operation =
             CosmosOperation::upsert_item(self.container_ref.clone(), driver_pk).with_body(body);
-
-        // Wire session token and precondition from SDK options onto the operation.
-        if let Some(session_token) = options.session_token {
-            operation = operation.with_session_token(session_token);
-        }
-        if let Some(precondition) = options.precondition {
-            operation = operation.with_precondition(precondition);
-        }
+        let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
         let driver_response = self
@@ -595,15 +576,8 @@ impl ContainerClient {
         );
 
         // Create the driver operation.
-        let mut operation = CosmosOperation::read_item(item_ref);
-
-        // Wire session token and precondition from SDK options onto the operation.
-        if let Some(session_token) = options.session_token {
-            operation = operation.with_session_token(session_token);
-        }
-        if let Some(precondition) = options.precondition {
-            operation = operation.with_precondition(precondition);
-        }
+        let operation = CosmosOperation::read_item(item_ref);
+        let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
         let driver_response = self
@@ -653,15 +627,8 @@ impl ContainerClient {
         );
 
         // Create the driver operation (no body for delete).
-        let mut operation = CosmosOperation::delete_item(item_ref);
-
-        // Wire session token and precondition from SDK options onto the operation.
-        if let Some(session_token) = options.session_token {
-            operation = operation.with_session_token(session_token);
-        }
-        if let Some(precondition) = options.precondition {
-            operation = operation.with_precondition(precondition);
-        }
+        let operation = CosmosOperation::delete_item(item_ref);
+        let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
         let driver_response = self
@@ -823,6 +790,24 @@ impl ContainerClient {
             .await
             .map(BatchResponse::new)
     }
+}
+
+/// Applies optional `session_token` and `precondition` to a [`CosmosOperation`].
+///
+/// Both [`ItemReadOptions`] and [`ItemWriteOptions`] carry these fields;
+/// this helper avoids duplicating the wiring logic in every item operation.
+fn apply_item_options(
+    mut operation: CosmosOperation,
+    session_token: Option<SessionToken>,
+    precondition: Option<Precondition>,
+) -> CosmosOperation {
+    if let Some(session_token) = session_token {
+        operation = operation.with_session_token(session_token);
+    }
+    if let Some(precondition) = precondition {
+        operation = operation.with_precondition(precondition);
+    }
+    operation
 }
 
 #[cfg(test)]
