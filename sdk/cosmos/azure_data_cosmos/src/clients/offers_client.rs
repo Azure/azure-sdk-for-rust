@@ -96,9 +96,16 @@ pub(crate) async fn begin_replace(
     let operation =
         CosmosOperation::replace_offer(account.clone(), offer_id.clone()).with_body(body);
 
-    let driver_response = driver
-        .execute_operation(operation, OperationOptions::default())
-        .await?;
+    // The Offers API always requires the full response body (the service does not
+    // support Prefer: return=minimal for offers), so explicitly enable content response.
+    let replace_options = {
+        let mut opts = OperationOptions::default();
+        opts.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+        opts
+    };
+
+    let driver_response = driver.execute_operation(operation, replace_options).await?;
 
     let response = crate::driver_bridge::driver_response_to_cosmos_response(driver_response);
 
