@@ -5,12 +5,16 @@ use azure_core::http::Body;
 use bytes::Bytes;
 
 use async_trait::async_trait;
-use azure_core::stream::SeekableStream;
 use futures::StreamExt;
 
-use crate::streams::{
-    multi_bytes_stream::MultiBytesStream,
-    partitioned_stream::{self, stream_multi_buffer_partitions, stream_single_buffer_partitions},
+use crate::{
+    streams::{
+        multi_bytes_stream::MultiBytesStream,
+        partitioned_stream::{
+            self, stream_multi_buffer_partitions, stream_single_buffer_partitions,
+        },
+    },
+    AsyncReadWithLenHint, StorageUploadBody,
 };
 
 use super::*;
@@ -24,26 +28,26 @@ pub(crate) trait PartitionedUploadBehavior {
 }
 
 pub(crate) async fn upload(
-    content: Body,
+    content: StorageUploadBody,
     parallel: NonZero<usize>,
     partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    if let Some(content_len) = content.len() {
-        if content_len <= partition_size.get() {
-            client.transfer_oneshot(content).await?;
-            return Ok(());
-        }
-    };
+    // if let Some(content_len) = content.len() {
+    //     if content_len <= partition_size.get() {
+    //         client.transfer_oneshot(content).await?;
+    //         return Ok(());
+    //     }
+    // };
 
     client.initialize(content.len()).await?;
 
     match content {
-        Body::Bytes(bytes) => {
+        StorageUploadBody::Bytes(bytes) => {
             upload_bytes_partitions(bytes, parallel, partition_size, client).await?;
         }
-        Body::SeekableStream(seekable_stream) => {
-            upload_stream_partitions(seekable_stream, parallel, partition_size, client).await?;
+        StorageUploadBody::AsyncRead(async_read) => {
+            upload_stream_partitions(async_read, parallel, partition_size, client).await?;
         }
     }
 
@@ -71,7 +75,7 @@ async fn upload_bytes_partitions(
 }
 
 async fn upload_stream_partitions(
-    content: Box<dyn SeekableStream>,
+    content: Box<dyn AsyncReadWithLenHint>,
     parallel: NonZero<usize>,
     partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
@@ -227,7 +231,7 @@ mod tests {
         let src_data = get_random_data(data_size);
 
         upload(
-            Body::Bytes(Bytes::from(src_data.clone())),
+            StorageUploadBody::Bytes(Bytes::from(src_data.clone())),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
             &mock,
@@ -249,7 +253,7 @@ mod tests {
         let src_data = get_random_data(data_size);
 
         upload(
-            Body::Bytes(Bytes::from(src_data.clone())),
+            StorageUploadBody::Bytes(Bytes::from(src_data.clone())),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
             &mock,
@@ -277,7 +281,7 @@ mod tests {
         let src_data = get_random_data(data_size);
 
         upload(
-            Body::SeekableStream(Box::new(BytesStream::new(Bytes::from(src_data.clone())))),
+            StorageUploadBody::AsyncRead(Box::new(BytesStream::new(Bytes::from(src_data.clone())))),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
             &mock,
@@ -299,7 +303,7 @@ mod tests {
         let src_data = get_random_data(data_size);
 
         upload(
-            Body::SeekableStream(Box::new(BytesStream::new(Bytes::from(src_data.clone())))),
+            StorageUploadBody::AsyncRead(Box::new(BytesStream::new(Bytes::from(src_data.clone())))),
             NonZero::new(concurrency).unwrap(),
             NonZero::new(partition_size).unwrap(),
             &mock,

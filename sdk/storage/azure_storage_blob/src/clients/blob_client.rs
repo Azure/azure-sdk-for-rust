@@ -4,8 +4,9 @@
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient,
-    generated::models::BlobClientDownloadInternalOptions,
+    generated::{
+        clients::BlobClient as GeneratedBlobClient, models::BlobClientDownloadInternalOptions,
+    },
     logging::apply_storage_logging_defaults,
     models::{
         http_ranges::IntoRangeHeader, BlobClientDownloadOptions, BlobClientDownloadResult,
@@ -13,7 +14,7 @@ use crate::{
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     pipeline::StorageHeadersPolicy,
-    AppendBlobClient, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient, StorageUploadBody,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -21,10 +22,9 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, ClientMethodOptions, NoFormat, Pipeline, RequestContent, StatusCode, Url,
-        UrlExt,
+        AsyncRawResponse, ClientMethodOptions, Pipeline, StatusCode, Url, UrlExt,
     },
-    tracing, Bytes, Result,
+    tracing, Result,
 };
 use std::{num::NonZero, ops::Range, sync::Arc};
 
@@ -321,7 +321,7 @@ impl BlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn upload(
         &self,
-        content: RequestContent<Bytes, NoFormat>,
+        content: StorageUploadBody,
         options: Option<BlobClientUploadOptions<'_>>,
     ) -> Result<BlobClientUploadResult> {
         self.block_blob_client().upload(content, options).await

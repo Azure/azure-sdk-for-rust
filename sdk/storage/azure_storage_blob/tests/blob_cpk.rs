@@ -42,7 +42,7 @@ mod blob_client {
             container_client.blob_client(&format!("{}-cpk-key-only", get_blob_name(recording)));
         let result = key_only_blob
             .upload(
-                RequestContent::from(b"key-only".to_vec()),
+                b"key-only".to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_key: Some(encryption_key.clone()),
                     ..Default::default()
@@ -58,7 +58,7 @@ mod blob_client {
         ));
         let result = key_plus_algorithm_blob
             .upload(
-                RequestContent::from(b"key-plus-algorithm".to_vec()),
+                b"key-plus-algorithm".to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(encryption_algorithm),
                     encryption_key: Some(encryption_key),
@@ -86,7 +86,7 @@ mod blob_client {
         let content = b"blob-cpk-operations";
         blob_client
             .upload(
-                RequestContent::from(content.to_vec()),
+                content.to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -203,7 +203,7 @@ mod blob_client {
         let v2 = b"blob-cpk-operations-v2";
         blob_client
             .upload(
-                RequestContent::from(v2.to_vec()),
+                v2.to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -244,7 +244,7 @@ mod blob_client {
         let content = b"scope-success";
         blob_client
             .upload(
-                RequestContent::from(content.to_vec()),
+                content.to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_scope: Some(scope.clone()),
                     ..Default::default()
@@ -264,7 +264,7 @@ mod blob_client {
             container_client.blob_client(&format!("{}-bad-scope", get_blob_name(recording)));
         let err = invalid_blob
             .upload(
-                RequestContent::from(b"bad scope".to_vec()),
+                b"bad scope".to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_scope: Some(get_invalid_encryption_scope()),
                     ..Default::default()
@@ -414,12 +414,7 @@ mod block_blob_client {
         let source_blob =
             container_client.blob_client(&format!("{}-source", get_blob_name(recording)));
         let source_content = b"upload-from-url-source";
-        create_test_blob(
-            &source_blob,
-            Some(RequestContent::from(source_content.to_vec())),
-            None,
-        )
-        .await?;
+        create_test_blob(&source_blob, Some(source_content.to_vec().into()), None).await?;
 
         // Upload from URL with Destination CPK
         let dest_blob =
@@ -453,7 +448,7 @@ mod block_blob_client {
         let cpk_source_content = b"upload-from-url-cpk-source";
         cpk_source_blob
             .upload(
-                RequestContent::from(cpk_source_content.to_vec()),
+                cpk_source_content.to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -531,12 +526,7 @@ mod block_blob_client {
         let source_blob =
             container_client.blob_client(&format!("{}-source", get_blob_name(recording)));
         let source_content = b"stage-from-url-source";
-        create_test_blob(
-            &source_blob,
-            Some(RequestContent::from(source_content.to_vec())),
-            None,
-        )
-        .await?;
+        create_test_blob(&source_blob, Some(source_content.to_vec().into()), None).await?;
 
         // Stage from URL with Destination CPK
         let dest_blob =
@@ -584,7 +574,7 @@ mod block_blob_client {
         let cpk_source_content = b"stage-from-url-cpk-source";
         cpk_source_blob
             .upload(
-                RequestContent::from(cpk_source_content.to_vec()),
+                cpk_source_content.to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -728,7 +718,7 @@ mod append_blob_client {
         let plain_source_content = b"append-from-url-plain";
         create_test_blob(
             &plain_source_blob,
-            Some(RequestContent::from(plain_source_content.to_vec())),
+            Some(plain_source_content.to_vec().into()),
             None,
         )
         .await?;
@@ -739,7 +729,7 @@ mod append_blob_client {
         let cpk_source_content = b"append-from-url-cpk";
         cpk_source_blob
             .upload(
-                RequestContent::from(cpk_source_content.to_vec()),
+                cpk_source_content.to_vec().into(),
                 Some(BlockBlobClientUploadOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),

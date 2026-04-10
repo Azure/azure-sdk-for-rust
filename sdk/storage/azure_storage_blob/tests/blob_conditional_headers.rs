@@ -1104,7 +1104,7 @@ async fn test_block_blob_client_conditional_headers(
     // if_match Failure
     let err = blob_client
         .upload(
-            RequestContent::from(b"new-content".to_vec()),
+            b"new-content".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
                 ..Default::default()
@@ -1118,7 +1118,7 @@ async fn test_block_blob_client_conditional_headers(
     // if_none_match Failure
     let err = blob_client
         .upload(
-            RequestContent::from(b"new-content".to_vec()),
+            b"new-content".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 if_none_match: Some(etag.clone().into()),
                 ..Default::default()
@@ -1132,7 +1132,7 @@ async fn test_block_blob_client_conditional_headers(
     // if_modified_since Failure
     let err = blob_client
         .upload(
-            RequestContent::from(b"new-content".to_vec()),
+            b"new-content".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 if_modified_since: Some(after),
                 ..Default::default()
@@ -1146,7 +1146,7 @@ async fn test_block_blob_client_conditional_headers(
     // if_unmodified_since Failure
     let err = blob_client
         .upload(
-            RequestContent::from(b"new-content".to_vec()),
+            b"new-content".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 if_unmodified_since: Some(before),
                 ..Default::default()
@@ -1160,7 +1160,7 @@ async fn test_block_blob_client_conditional_headers(
     // if_tags Failure
     let err = blob_client
         .upload(
-            RequestContent::from(b"new-content".to_vec()),
+            b"new-content".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 if_tags: Some("\"env\"='wrong'".to_string()),
                 ..Default::default()
@@ -1174,7 +1174,7 @@ async fn test_block_blob_client_conditional_headers(
     // if_match Success
     blob_client
         .upload(
-            RequestContent::from(b"updated".to_vec()),
+            b"updated".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 if_match: Some(etag.clone().into()),
                 ..Default::default()
@@ -1290,7 +1290,7 @@ async fn test_block_blob_client_conditional_headers(
     // Upload Blob With Tag
     blob_client
         .upload(
-            RequestContent::from(b"tagged".to_vec()),
+            b"tagged".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 blob_tags_string: Some("kind=block".to_string()),
                 ..Default::default()

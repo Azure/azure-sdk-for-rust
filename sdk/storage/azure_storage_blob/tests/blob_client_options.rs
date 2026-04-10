@@ -30,21 +30,11 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
 
     // Create Multiple Versions
     let data_v1 = b"version 1 content";
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(data_v1.to_vec())),
-        None,
-    )
-    .await?;
+    create_test_blob(&blob_client, Some(data_v1.to_vec().into()), None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_1 = response.version_id()?.unwrap();
     let data_v2 = b"version 2 content";
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(data_v2.to_vec())),
-        None,
-    )
-    .await?;
+    create_test_blob(&blob_client, Some(data_v2.to_vec().into()), None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_2 = response.version_id()?.unwrap();
 
@@ -100,7 +90,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
     };
     create_test_blob(
         &blob_client,
-        Some(RequestContent::from(b"content v1".to_vec())),
+        Some(b"content v1".to_vec().into()),
         Some(upload_options),
     )
     .await?;
@@ -123,12 +113,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
     assert_ne!(version_1, version_2);
 
     // Upload New Content (Creates Version 3)
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"content v3".to_vec())),
-        None,
-    )
-    .await?;
+    create_test_blob(&blob_client, Some(b"content v3".to_vec().into()), None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_3 = response.version_id()?.unwrap();
     assert_ne!(version_2, version_3);
@@ -180,7 +165,7 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
     // Create Version 2
     create_test_blob(
         &blob_client,
-        Some(RequestContent::from(b"version 2 content".to_vec())),
+        Some(b"version 2 content".to_vec().into()),
         None,
     )
     .await?;
@@ -303,25 +288,25 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     // Create Source Blob with Multiple Versions
     let data_v1 = b"source version 1";
     source_blob_client
-        .upload(RequestContent::from(data_v1.to_vec()), None)
+        .upload(data_v1.to_vec().into(), None)
         .await?;
 
     let data_v2 = b"source version 2";
     source_blob_client
-        .upload(RequestContent::from(data_v2.to_vec()), None)
+        .upload(data_v2.to_vec().into(), None)
         .await?;
 
     // Test: Lease on Current Version
     let lease_blob_name = format!("{}-lease", get_blob_name(recording));
     let lease_blob_client = container_client.blob_client(&lease_blob_name);
     lease_blob_client
-        .upload(RequestContent::from(b"v1".to_vec()), None)
+        .upload(b"v1".to_vec().into(), None)
         .await?;
     let response = lease_blob_client.get_properties(None).await?;
     let lease_version_1 = response.version_id()?.unwrap();
 
     lease_blob_client
-        .upload(RequestContent::from(b"v2".to_vec()), None)
+        .upload(b"v2".to_vec().into(), None)
         .await?;
 
     // Acquire Lease on Current Version
@@ -363,12 +348,7 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
     create_test_blob(&blob_client, None, None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_1 = response.version_id()?.unwrap();
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"version 2".to_vec())),
-        None,
-    )
-    .await?;
+    create_test_blob(&blob_client, Some(b"version 2".to_vec().into()), None).await?;
     let response = blob_client.get_properties(None).await?;
     let version_2 = response.version_id()?.unwrap();
 
@@ -449,7 +429,7 @@ async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn E
     assert!(error == Some(StatusCode::NotFound));
 
     // Test: Delete Non-Current Version and Verify It's Gone
-    create_test_blob(&blob_client, Some(RequestContent::from(b"v2".into())), None).await?;
+    create_test_blob(&blob_client, Some(b"v2".to_vec().into()), None).await?;
     let version_1_client = blob_client.with_version(&valid_version)?;
     let delete_options = BlobClientDeleteOptions {
         version_id: Some(valid_version.clone()),
@@ -477,12 +457,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
     let data_v1 = b"snapshot version 1";
 
     // Create Base Blob
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(data_v1.to_vec())),
-        None,
-    )
-    .await?;
+    create_test_blob(&blob_client, Some(data_v1.to_vec().into()), None).await?;
 
     // Create Snapshot
     let snapshot_response = blob_client.create_snapshot(None).await?;
@@ -504,9 +479,7 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
 
     // Modify Base Blob
     let data_v2 = b"snapshot version 2";
-    blob_client
-        .upload(RequestContent::from(data_v2.to_vec()), None)
-        .await?;
+    blob_client.upload(data_v2.to_vec().into(), None).await?;
 
     // Create Second Snapshot
     let snapshot_response_2 = blob_client.create_snapshot(None).await?;
@@ -553,7 +526,7 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
     };
     create_test_blob(
         &blob_client,
-        Some(RequestContent::from(b"based model".to_vec())),
+        Some(b"based model".to_vec().into()),
         Some(upload_options),
     )
     .await?;
@@ -843,9 +816,7 @@ async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn 
 
     // Try to Upload to Snapshot
     let data = b"squash data";
-    let result = snapshot_client
-        .upload(RequestContent::from(data.to_vec()), None)
-        .await;
+    let result = snapshot_client.upload(data.to_vec().into(), None).await;
     assert!(result.is_err());
 
     container_client.delete(None).await?;

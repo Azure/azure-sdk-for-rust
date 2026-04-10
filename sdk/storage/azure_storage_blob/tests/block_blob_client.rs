@@ -133,7 +133,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let source_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(
         &source_blob_client,
-        Some(RequestContent::from(b"initialD ata".to_vec())),
+        Some(b"initialD ata".to_vec().into()),
         None,
     )
     .await?;
@@ -143,7 +143,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let overwrite_blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(
         &overwrite_blob_client,
-        Some(RequestContent::from(b"overruled!".to_vec())),
+        Some(b"overruled!".to_vec().into()),
         None,
     )
     .await?;
@@ -222,7 +222,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let source_content = b"Hello from source blob!";
     create_test_blob(
         &source_blob_client,
-        Some(RequestContent::from(source_content.to_vec())),
+        Some(source_content.to_vec().into()),
         None,
     )
     .await?;
@@ -298,7 +298,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let source_content_2 = b"Authorized content!";
     create_test_blob(
         &source_blob_client_2,
-        Some(RequestContent::from(source_content_2.to_vec())),
+        Some(source_content_2.to_vec().into()),
         None,
     )
     .await?;

@@ -120,9 +120,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     // No Overwrite Scenario
-    let upload_result = blob_client
-        .upload(RequestContent::from(data.to_vec()), None)
-        .await?;
+    let upload_result = blob_client.upload(data.to_vec().into(), None).await?;
 
     // Assert upload result fields and raw response
     assert!(upload_result.etag.is_some());
@@ -147,7 +145,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Error Case (overwrite=false/none)
     let response = blob_client
         .upload(
-            RequestContent::from(new_data.to_vec()),
+            new_data.to_vec().into(),
             Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
         )
         .await;
@@ -158,9 +156,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
     // Working Case (overwrite=true)
-    blob_client
-        .upload(RequestContent::from(new_data.to_vec()), None)
-        .await?;
+    blob_client.upload(new_data.to_vec().into(), None).await?;
     let response = blob_client.download(None).await?;
     // Assert
     assert_eq!(29, response.properties.content_length.unwrap());
@@ -232,9 +228,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
-    blob_client
-        .upload(RequestContent::from(data.to_vec()), None)
-        .await?;
+    blob_client.upload(data.to_vec().into(), None).await?;
     let response = blob_client.download(None).await?;
 
     // Assert
@@ -264,10 +258,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         ..Default::default()
     };
     blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            Some(options_with_metadata),
-        )
+        .upload(data.to_vec().into(), Some(options_with_metadata))
         .await?;
     // Assert
     let response = blob_client.get_properties(None).await?;
@@ -439,7 +430,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     blob_client
-        .upload(RequestContent::from(data.to_vec()), Some(upload_options))
+        .upload(data.to_vec().into(), Some(upload_options))
         .await?;
 
     // Assert
@@ -587,7 +578,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         // Upload Blob
         blob_client_new
-            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
+            .upload(b"hello rusty world".to_vec().into(), None)
             .await?;
 
         // Get Properties
@@ -610,7 +601,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         // Upload Blob
         blob_client_from_url
-            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
+            .upload(b"hello rusty world".to_vec().into(), None)
             .await?;
 
         // Get Properties
@@ -622,7 +613,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         // Upload Blob
         blob_client_from_cc
-            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
+            .upload(b"hello rusty world".to_vec().into(), None)
             .await?;
 
         // Get Properties
@@ -857,7 +848,7 @@ async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<()
     let overwrite_blob_client = container_client.blob_client(&blob_name);
     create_test_blob(
         &overwrite_blob_client,
-        Some(RequestContent::from(b"overruled!".to_vec())),
+        Some(b"overruled!".to_vec().into()),
         None,
     )
     .await?;
@@ -959,9 +950,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     } in test_managed_download_args()
     {
         let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
-        blob_client
-            .upload(RequestContent::from(data.to_vec()), None)
-            .await?;
+        blob_client.upload(data.to_vec().into(), None).await?;
 
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
@@ -1017,9 +1006,7 @@ async fn test_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     } in test_managed_download_args()
     {
         let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
-        blob_client
-            .upload(RequestContent::from(data.to_vec()), None)
-            .await?;
+        blob_client.upload(data.to_vec().into(), None).await?;
 
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
@@ -1074,9 +1061,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     .await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    blob_client
-        .upload(RequestContent::from(vec![]), None)
-        .await?;
+    blob_client.upload(vec![].into(), None).await?;
 
     request_count.store(0, Ordering::Relaxed);
     let _scope = count_policy.check_request_scope();
@@ -1110,9 +1095,7 @@ async fn test_download_into_empty(ctx: TestContext) -> Result<(), Box<dyn Error>
     .await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    blob_client
-        .upload(RequestContent::from(vec![]), None)
-        .await?;
+    blob_client.upload(vec![].into(), None).await?;
 
     request_count.store(0, Ordering::Relaxed);
     let _scope = count_policy.check_request_scope();
@@ -1139,7 +1122,7 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
     // here; it is tested as stored metadata via set_properties in test_set_properties_content_headers.
     blob_client
         .upload(
-            RequestContent::from(content.to_vec()),
+            content.to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 blob_cache_control: Some("no-cache".to_string()),
                 blob_content_disposition: Some("inline".to_string()),
@@ -1186,7 +1169,7 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
     // Overwrite with Different Content Headers - new headers replace old ones
     blob_client
         .upload(
-            RequestContent::from(b"overwrite-content-headers".to_vec()),
+            b"overwrite-content-headers".to_vec().into(),
             Some(BlockBlobClientUploadOptions {
                 blob_cache_control: Some("max-age=3600".to_string()),
                 blob_content_type: Some("image/png".to_string()),
@@ -1215,9 +1198,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     let md5: Vec<u8> = (0u8..16).collect();
 
     // Upload with Default Content Headers
-    blob_client
-        .upload(RequestContent::from(content.to_vec()), None)
-        .await?;
+    blob_client.upload(content.to_vec().into(), None).await?;
 
     // Set All Content Headers via Set Properties
     // Note: set_properties does not validate blob_content_md5 against actual content,

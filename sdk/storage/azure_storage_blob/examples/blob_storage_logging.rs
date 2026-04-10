@@ -48,7 +48,7 @@
 //! ```
 
 use azure_core::{
-    http::{ClientOptions, InstrumentationOptions, RequestContent},
+    http::{ClientOptions, InstrumentationOptions},
     tracing::TracerProvider,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -139,9 +139,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Upload the file
     println!("\nUploading blob '{}'...", blob_name);
-    blob_client
-        .upload(RequestContent::from(content.to_vec()), None)
-        .await?;
+    blob_client.upload(content.to_vec().into(), None).await?;
     println!("Blob uploaded successfully");
 
     // Download the file

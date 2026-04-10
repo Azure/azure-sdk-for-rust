@@ -195,7 +195,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let blob1_name = get_blob_name(recording);
     create_test_blob(
         &container_client_1.blob_client(&blob1_name.clone()),
-        Some(RequestContent::from("hello world".as_bytes().into())),
+        Some("hello world".as_bytes().into()),
         Some(
             BlockBlobClientUploadOptions::default()
                 .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
@@ -205,7 +205,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let blob2_name = get_blob_name(recording);
     create_test_blob(
         &container_client_1.blob_client(&blob2_name.clone()),
-        Some(RequestContent::from("ferris the crab".as_bytes().into())),
+        Some("ferris the crab".as_bytes().into()),
         Some(
             BlockBlobClientUploadOptions::default()
                 .with_tags(HashMap::from([("fizz".to_string(), "buzz".to_string())])),
@@ -216,7 +216,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let blob3_tags = HashMap::from([("tagged".to_string(), "true".to_string())]);
     create_test_blob(
         &container_client_1.blob_client(&blob3_name.clone()),
-        Some(RequestContent::from("six seven".as_bytes().into())),
+        Some("six seven".as_bytes().into()),
         Some(BlockBlobClientUploadOptions::default().with_tags(blob3_tags.clone())),
     )
     .await?;

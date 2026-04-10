@@ -6,10 +6,10 @@
 use azure_core::{
     http::{
         headers::{ETAG, LAST_MODIFIED},
-        Etag, NoFormat, RequestContent, StatusCode,
+        Etag, StatusCode,
     },
     time::parse_rfc7231,
-    Bytes, Result,
+    Result,
 };
 use azure_messaging_eventhubs::{
     models::{Checkpoint, Ownership},
@@ -20,7 +20,7 @@ use azure_storage_blob::{
         BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
         BlockBlobClientUploadOptions, ListBlobsIncludeItem,
     },
-    BlobContainerClient,
+    BlobContainerClient, StorageUploadBody,
 };
 use futures::TryStreamExt;
 use std::{collections::HashMap, sync::Arc};
@@ -79,7 +79,7 @@ impl BlobCheckpointStore {
             Err(e) => match e.http_status() {
                 Some(StatusCode::NotFound) => {
                     info!("Blob {blob_name} not found, creating.");
-                    let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
+                    let blob_content = Vec::new().into();
                     let options = BlockBlobClientUploadOptions {
                         metadata: Some(metadata),
                         ..Default::default()
@@ -124,7 +124,7 @@ impl BlobCheckpointStore {
         }
         debug!("Claiming ownership for {} without etag", blob_name);
 
-        let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
+        let blob_content = Vec::new().into();
         let options = BlockBlobClientUploadOptions {
             metadata: metadata.clone(),
             if_none_match: Some(Etag::from("*")), // Upload without an etag, creating a new blob

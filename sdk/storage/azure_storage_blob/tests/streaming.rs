@@ -7,7 +7,9 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
-use azure_storage_blob::{format_page_range, models::BlockLookupList, BlobClient};
+use azure_storage_blob::{
+    format_page_range, models::BlockLookupList, BlobClient, StorageUploadBody,
+};
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
@@ -43,10 +45,9 @@ async fn stream_blob_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     let data = b"streaming a stream";
-    let content = request_content_from_bytes(data);
 
     // Upload via BlobClient using a seekable stream body
-    blob_client.upload(content, None).await?;
+    blob_client.upload(data.to_vec().into(), None).await?;
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -213,7 +214,9 @@ async fn upload<const CONTENT_LENGTH: usize>(client: &BlobClient) -> azure_core:
     // but to avoid consuming a large amount of drive space generate content.
     let stream = GeneratedStream::<_, CONTENT_LENGTH>::default();
 
-    client.upload(stream.into(), None).await?;
+    client
+        .upload(StorageUploadBody::AsyncRead(Box::new(stream)), None)
+        .await?;
 
     Ok(())
 }

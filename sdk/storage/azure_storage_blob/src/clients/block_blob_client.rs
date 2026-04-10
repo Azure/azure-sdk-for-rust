@@ -15,15 +15,16 @@ use crate::{
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
     pipeline::StorageHeadersPolicy,
+    StorageUploadBody,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
+        Body, Pipeline, Url,
     },
-    tracing, Bytes, Result, Uuid,
+    tracing, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
@@ -129,7 +130,7 @@ impl BlockBlobClient {
     #[tracing::function("Storage.Blob.BlockBlob.upload")]
     pub async fn upload(
         &self,
-        content: RequestContent<Bytes, NoFormat>,
+        content: StorageUploadBody,
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<BlockBlobClientUploadResult> {
         let options = options.unwrap_or_default();
@@ -213,7 +214,7 @@ impl BlockBlobClient {
             stage_block_options,
             commit_block_list_options,
         );
-        partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
+        partitioned_transfer::upload(content, parallel, partition_size, &behavior).await?;
         behavior.result.into_inner().ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,

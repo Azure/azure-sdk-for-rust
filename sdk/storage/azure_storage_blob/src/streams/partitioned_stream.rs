@@ -4,9 +4,10 @@
 use async_stream::try_stream;
 use std::{cmp::min, mem, num::NonZero, slice};
 
-use azure_core::stream::SeekableStream;
 use bytes::{BufMut, Bytes, BytesMut};
 use futures::{AsyncReadExt, Stream};
+
+use crate::AsyncReadWithLenHint;
 
 type Result<T> = azure_core::Result<T>;
 
@@ -15,7 +16,7 @@ pub(crate) const MAX_CONTIGUOUS_ELEMENTS: usize = isize::MAX as usize;
 /// Converts the given AsyncRead into a Stream<Item = Bytes>, where each item is a chunk of data
 /// that is exactly `partition_len` bytes. The last item may be smaller.
 pub(crate) fn stream_single_buffer_partitions(
-    mut inner: Box<dyn SeekableStream>,
+    mut inner: Box<dyn AsyncReadWithLenHint>,
     partition_len: NonZero<usize>,
 ) -> impl Stream<Item = Result<Bytes>> {
     let partition_len = partition_len.get();
@@ -143,7 +144,7 @@ const MULTI_BUF_PARTITION_BUF_LEN: usize = 4 * 1024 * 1024;
 /// Converts the given AsyncRead into a Stream<Item = Vec<Bytes>>, where each item is a chunk of
 /// data that is exactly `partition_len` bytes. The last item may be smaller.
 pub(crate) fn stream_multi_buffer_partitions(
-    mut inner: Box<dyn SeekableStream>,
+    mut inner: Box<dyn AsyncReadWithLenHint>,
     partition_len: NonZero<u64>,
 ) -> impl Stream<Item = Result<Vec<Bytes>>> {
     let partition_len = partition_len.get();

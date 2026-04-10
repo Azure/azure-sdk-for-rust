@@ -14,7 +14,7 @@ use azure_core::{
     http::StatusCode,
     http::{
         policies::{Policy, PolicyResult},
-        AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
+        AsyncRawResponse, Body, ClientOptions, Context, Request,
     },
     Bytes, Result,
 };
@@ -25,7 +25,7 @@ use azure_storage_blob::{
         EncryptionAlgorithmType,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
-    BlobServiceClient, BlobServiceClientOptions,
+    BlobServiceClient, BlobServiceClientOptions, StorageUploadBody,
 };
 use bytes::BytesMut;
 use futures::{AsyncRead, AsyncReadExt};
@@ -209,14 +209,14 @@ pub async fn get_container_client(
 /// * `options` - Optional configuration for the upload request.
 pub async fn create_test_blob(
     blob_client: &BlobClient,
-    data: Option<RequestContent<Bytes, NoFormat>>,
+    data: Option<StorageUploadBody>,
     options: Option<BlockBlobClientUploadOptions<'_>>,
 ) -> Result<BlockBlobClientUploadResult> {
     match data {
         Some(content) => blob_client.upload(content, options).await,
         None => {
             blob_client
-                .upload(RequestContent::from(b"hello rusty world".to_vec()), options)
+                .upload(b"hello rusty world".to_vec().into(), options)
                 .await
         }
     }

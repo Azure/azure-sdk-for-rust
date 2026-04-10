@@ -31,7 +31,10 @@
 
 use azure_core::{http::Body, stream::DEFAULT_BUFFER_SIZE};
 use azure_identity::AzureCliCredential;
-use azure_storage_blob::{models::BlobClientUploadOptions, stream::tokio::FileStream, BlobClient};
+use azure_storage_blob::{
+    models::BlobClientUploadOptions, stream::tokio::FileStream, AsyncReadWithLenHint, BlobClient,
+    StorageUploadBody,
+};
 use clap::Parser;
 use std::{num::NonZero, path::PathBuf};
 
@@ -51,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let file_size = std::fs::metadata(&args.file_path)?.len();
 
-    let body: Body = if file_size <= DEFAULT_BUFFER_SIZE as u64 {
+    let body: StorageUploadBody = if file_size <= DEFAULT_BUFFER_SIZE as u64 {
         // Small file: read entirely into memory.
         let bytes = std::fs::read(&args.file_path)?;
         println!("Uploading {} bytes from memory...", bytes.len());
@@ -63,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(buffer_size) = args.buffer_size {
             builder = builder.with_buffer_size(buffer_size);
         }
-        let stream = builder.build().await?;
+        let stream: Box<dyn AsyncReadWithLenHint> = Box::new(builder.build().await?);
         println!("Streaming {} bytes from disk...", file_size);
         stream.into()
     };
@@ -77,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    client.upload(body.into(), options).await?;
+    client.upload(body, options).await?;
     println!(
         "Uploaded {} bytes from {}",
         file_size,
