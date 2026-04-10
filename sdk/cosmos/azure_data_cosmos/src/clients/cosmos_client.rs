@@ -3,9 +3,7 @@
 
 use crate::{
     clients::DatabaseClient,
-    cosmos_request::CosmosRequest,
     models::{DatabaseProperties, ResourceResponse},
-    operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::ResourceLink,
     routing::{
@@ -15,6 +13,7 @@ use crate::{
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
+use azure_data_cosmos_driver::models::CosmosOperation;
 use azure_data_cosmos_driver::CosmosDriver;
 use serde::Serialize;
 use std::sync::Arc;
@@ -176,16 +175,21 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
-                .request_headers(&options.throughput)
-                .json(&RequestBody { id })
-                .build()?;
+        let body = serde_json::to_vec(&RequestBody { id })?;
+        let operation =
+            CosmosOperation::create_database(self.driver.account().clone()).with_body(body);
 
-        self.pipeline
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let operation_options =
+            crate::driver_bridge::apply_throughput_headers(options.operation, &options.throughput)?;
+
+        let driver_response = self
+            .driver
+            .execute_operation(operation, operation_options)
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 }
 

@@ -14,6 +14,8 @@
 
 ### Other Changes
 
+- Database and container CRUD operations (`create_database`, `read`, `create_container`, `delete`) now route through the Cosmos driver pipeline with support for `OperationOptions` (custom headers, excluded regions, etc.). ([#4147](https://github.com/Azure/azure-sdk-for-rust/pull/4147))
+
 ## 0.32.0 (2026-04-09)
 
 ### Features Added

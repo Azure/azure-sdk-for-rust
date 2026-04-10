@@ -87,15 +87,28 @@ impl CosmosClientOptions {
 }
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
+///
+/// General-purpose settings such as custom headers and excluded regions are configured
+/// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateContainerOptions {
+    /// General-purpose options that apply to this request.
+    pub operation: OperationOptions,
+
     pub(crate) throughput: Option<ThroughputProperties>,
 }
 
 impl CreateContainerOptions {
+    /// Sets the throughput properties for the new container.
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
+        self
+    }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
 }
@@ -106,15 +119,28 @@ impl CreateContainerOptions {
 pub struct ReplaceContainerOptions;
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
+///
+/// General-purpose settings such as custom headers and excluded regions are configured
+/// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    pub operation: OperationOptions,
+
     pub(crate) throughput: Option<ThroughputProperties>,
 }
 
 impl CreateDatabaseOptions {
+    /// Sets the throughput properties for the new database.
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
+        self
+    }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
 }
@@ -125,9 +151,23 @@ impl CreateDatabaseOptions {
 pub struct DeleteContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
+///
+/// General-purpose settings such as custom headers and excluded regions are configured
+/// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteDatabaseOptions;
+pub struct DeleteDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    pub operation: OperationOptions,
+}
+
+impl DeleteDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Specifies consistency levels for Cosmos DB accounts.
 ///
@@ -388,9 +428,23 @@ impl QueryOptions {
 pub struct ReadContainerOptions;
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
+///
+/// General-purpose settings such as custom headers and excluded regions are configured
+/// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadDatabaseOptions;
+pub struct ReadDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    pub operation: OperationOptions,
+}
+
+impl ReadDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
