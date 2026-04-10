@@ -66,7 +66,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            HttpRange::new(0, 512).into(),
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -95,13 +95,13 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data),
             512,
-            HttpRange::new(0, 512).into(),
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
 
     page_blob_client
-        .clear_pages(HttpRange::new(0, 512).into(), None)
+        .clear_pages(HttpRange::new(0, 512).to_string(), None)
         .await?;
 
     // Assert
@@ -130,7 +130,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             1024,
-            HttpRange::new(0, 1024).into(),
+            HttpRange::new(0, 1024).to_string(),
             None,
         )
         .await;
@@ -143,7 +143,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             1024,
-            HttpRange::new(0, 1024).into(),
+            HttpRange::new(0, 1024).to_string(),
             None,
         )
         .await?;
@@ -225,7 +225,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_pages(
             RequestContent::from(data_b.clone()),
             512,
-            HttpRange::new(0, 512).into(),
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -236,16 +236,16 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_pages(
             RequestContent::from(data_a.clone()),
             512,
-            HttpRange::new(0, 512).into(),
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
     page_blob_client_2
         .upload_pages_from_url(
             blob_client_1.url().as_str().into(),
-            HttpRange::new(0, data_b.len() as u64).into(),
+            HttpRange::new(0, data_b.len() as u64).to_string(),
             data_b.len() as u64,
-            HttpRange::new(512, data_b.len() as u64).into(),
+            HttpRange::new(512, data_b.len() as u64).to_string(),
             None,
         )
         .await?;
@@ -284,7 +284,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            HttpRange::new(0, 512).into(),
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;

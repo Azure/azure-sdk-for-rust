@@ -259,12 +259,6 @@ impl fmt::Display for HttpRange {
     }
 }
 
-impl From<HttpRange> for String {
-    fn from(range: HttpRange) -> Self {
-        range.to_string()
-    }
-}
-
 impl From<HttpRange> for HeaderValue {
     fn from(range: HttpRange) -> Self {
         HeaderValue::from(range.to_string())
@@ -278,15 +272,13 @@ mod http_range_tests {
     #[test]
     fn new_creates_bounded_range() {
         let range = HttpRange::new(0, 512);
-        assert_eq!(range.offset, 0);
-        assert_eq!(range.length, Some(512));
+        assert_eq!(range.to_string(), "bytes=0-511");
     }
 
     #[test]
     fn from_offset_creates_open_ended_range() {
         let range = HttpRange::from_offset(255);
-        assert_eq!(range.offset, 255);
-        assert_eq!(range.length, None);
+        assert_eq!(range.to_string(), "bytes=255-");
     }
 
     #[test]
@@ -302,10 +294,9 @@ mod http_range_tests {
     }
 
     #[test]
-    fn into_string() {
+    fn to_string_bounded_range() {
         let range = HttpRange::new(100, 101);
-        let s: String = range.into();
-        assert_eq!(s, "bytes=100-200");
+        assert_eq!(range.to_string(), "bytes=100-200");
     }
 
     #[test]

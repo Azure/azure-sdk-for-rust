@@ -942,7 +942,7 @@ mod page_blob_client {
             .upload_pages(
                 RequestContent::from(vec![b'P'; 512]),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesOptions {
                     encryption_algorithm: Some(encryption_algorithm),
                     encryption_key: Some(encryption_key),
@@ -1013,7 +1013,7 @@ mod page_blob_client {
             .upload_pages(
                 RequestContent::from(content.clone()),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -1039,7 +1039,7 @@ mod page_blob_client {
             .upload_pages(
                 RequestContent::from(vec![b'B'; 512]),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesOptions {
                     encryption_scope: Some(get_invalid_encryption_scope()),
                     ..Default::default()
@@ -1051,7 +1051,7 @@ mod page_blob_client {
         // Clear Pages with CPK
         page_blob
             .clear_pages(
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientClearPagesOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -1074,7 +1074,7 @@ mod page_blob_client {
         // Invalid Scope Clear Pages
         let err = bad_scope_page_blob
             .clear_pages(
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientClearPagesOptions {
                     encryption_scope: Some(get_invalid_encryption_scope()),
                     ..Default::default()
@@ -1138,7 +1138,7 @@ mod page_blob_client {
             .upload_pages(
                 RequestContent::from(source_content.clone()),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -1167,9 +1167,9 @@ mod page_blob_client {
         dest_page_blob
             .upload_pages_from_url(
                 source_blob.url().as_str().into(),
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesFromUrlOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(key.clone()),
@@ -1200,9 +1200,9 @@ mod page_blob_client {
         let err = source_mismatch_dest_page_blob
             .upload_pages_from_url(
                 source_blob.url().as_str().into(),
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesFromUrlOptions {
                     source_encryption_algorithm: Some(algo),
                     source_encryption_key: Some(wrong_key.clone()),
@@ -1222,7 +1222,7 @@ mod page_blob_client {
             .upload_pages(
                 RequestContent::from(vec![b'T'; 512]),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 None,
             )
             .await?;
@@ -1245,9 +1245,9 @@ mod page_blob_client {
         let err = dest_mismatch_page_blob
             .upload_pages_from_url(
                 plain_source_blob.url().as_str().into(),
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesFromUrlOptions {
                     encryption_algorithm: Some(algo),
                     encryption_key: Some(wrong_key),
@@ -1266,9 +1266,9 @@ mod page_blob_client {
         let err = bad_scope_dest_page_blob
             .upload_pages_from_url(
                 plain_source_blob.url().as_str().into(),
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 512,
-                HttpRange::new(0, 512).into(),
+                HttpRange::new(0, 512).to_string(),
                 Some(PageBlobClientUploadPagesFromUrlOptions {
                     encryption_scope: Some(get_invalid_encryption_scope()),
                     ..Default::default()

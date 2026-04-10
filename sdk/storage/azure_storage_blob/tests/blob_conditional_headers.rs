@@ -1681,7 +1681,7 @@ async fn test_page_blob_client_conditional_headers(ctx: TestContext) -> Result<(
     // Upload Pages - PageBlobClientUploadPagesOptions
 
     let page_data = RequestContent::from(vec![1u8; PAGE_SIZE]);
-    let range: String = HttpRange::new(0, PAGE_SIZE as u64).into();
+    let range = HttpRange::new(0, PAGE_SIZE as u64).to_string();
 
     // if_match Failure
     let err = page_blob_client
