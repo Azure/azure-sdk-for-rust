@@ -444,7 +444,7 @@ impl CosmosDriver {
             return Err(primary_error);
         };
 
-        // Parse regional URLs once, filtering out the primary and any unparseable URLs.
+        // Parse regional URLs once, filtering out the primary and any invalid URLs.
         let regional_endpoints: Vec<Url> = cached_props
             .readable_locations
             .iter()
