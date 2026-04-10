@@ -238,6 +238,16 @@ pub(crate) async fn execute_transport_pipeline(
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
 
+        tracing::info!(
+            url = %http_request.url,
+            method = ?http_request.method,
+            attempt = throttle_state.attempt_count,
+            local_retry = local_connectivity_retry_count,
+            pipeline_type = ?ctx.pipeline_type,
+            transport_security = ?ctx.transport_security,
+            "transport pipeline: sending HTTP request",
+        );
+
         // Sign the request
         if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
         {
@@ -289,7 +299,12 @@ pub(crate) async fn execute_transport_pipeline(
                 diagnostics.set_fault_injection_evaluations(request_handle, evals);
             }
         }
-        tracing::debug!("transport request complete");
+        tracing::info!(
+            url = %request.url,
+            outcome = %result.result.outcome,
+            shard_id = ?result.shard_id,
+            "transport request complete",
+        );
 
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
@@ -559,6 +574,13 @@ fn transport_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
+    tracing::warn!(
+        error_kind = ?error.kind(),
+        error = %error,
+        error_chain = %format_transport_error_details(&error),
+        headers_received = headers_received,
+        "transport error occurred",
+    );
     let sent_status = if headers_received {
         RequestSentStatus::Sent
     } else {

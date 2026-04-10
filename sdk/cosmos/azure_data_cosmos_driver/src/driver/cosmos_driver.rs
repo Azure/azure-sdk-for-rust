@@ -243,7 +243,7 @@ impl CosmosDriver {
             account.auth(),
             &AuthorizationContext::new(
                 azure_core::http::Method::Get,
-                crate::models::ResourceType::DatabaseAccount,
+                ResourceType::DatabaseAccount,
                 "",
             ),
         )
@@ -588,6 +588,7 @@ impl CosmosDriver {
         ));
 
         // Spawn the background failback loop for partition-level overrides.
+        #[cfg(feature = "tokio")]
         location_state_store.start_failback_loop();
 
         Self {
@@ -745,88 +746,62 @@ impl CosmosDriver {
         container: ContainerReference,
         continuation: Option<String>,
     ) -> Option<PkRangeFetchResult> {
-        let transport = self.transport();
-        let account = container.account().clone();
-        let endpoint = AccountEndpoint::from(&account);
+        // Build the operation through the standard pipeline to get correct
+        // URL construction, signing, and retry behaviour.
+        let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
 
-        let metadata_transport = transport.get_metadata_transport(&endpoint).ok()?;
+        // Set changefeed If-None-Match precondition for continuation.
+        if let Some(ref token) = continuation {
+            operation = operation
+                .with_precondition(crate::models::Precondition::if_none_match(token.clone()));
+        }
 
-        // Build the pkranges request URL.
-        let pk_ranges_path = format!("{}/pkranges", container.rid_based_path());
-        let mut url = endpoint.join_path(&pk_ranges_path);
-        // Request all ranges in a single page.
-        url.query_pairs_mut()
-            .append_pair("$maxItemCount", "-1")
-            .finish();
-
-        let mut request = Request::new(url, azure_core::http::Method::Get);
-        cosmos_headers::apply_cosmos_headers(
-            &mut request,
-            &azure_core::http::headers::HeaderValue::from(
-                self.runtime.user_agent().as_str().to_owned(),
-            ),
-        );
-
-        // Sign against the parent collection resource (pkranges is a feed under it).
-        let signing_link = format!("dbs/{}/colls/{}", container.database_rid(), container.rid());
-        request_signing::sign_request(
-            &mut request,
-            account.auth(),
-            &AuthorizationContext::new(
-                azure_core::http::Method::Get,
-                ResourceType::PartitionKeyRange,
-                &signing_link,
-            ),
-        )
-        .await
-        .ok()?;
-
-        // Add changefeed headers.
-        request.insert_header(
+        // Custom headers for changefeed (a-im, max item count).
+        let mut custom_headers = std::collections::HashMap::new();
+        custom_headers.insert(
             azure_core::http::headers::HeaderName::from_static("a-im"),
             azure_core::http::headers::HeaderValue::from_static("Incremental feed"),
         );
-        if let Some(ref token) = continuation {
-            request.insert_header(
-                azure_core::http::headers::HeaderName::from_static("if-none-match"),
-                azure_core::http::headers::HeaderValue::from(token.clone()),
-            );
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static("x-ms-max-item-count"),
+            azure_core::http::headers::HeaderValue::from_static("-1"),
+        );
+        let options = OperationOptions::default().with_custom_headers(custom_headers);
+
+        match self.execute_operation(operation, options).await {
+            Ok(response) => {
+                let etag = response.headers().etag.as_ref().map(|e| e.to_string());
+
+                // Pipeline treats 2xx as success; 304 is routed to the error path.
+                let ranges = parse_pk_ranges_response(response.body())?;
+                Some(PkRangeFetchResult {
+                    ranges,
+                    continuation: etag,
+                    not_modified: false,
+                })
+            }
+            Err(e) => {
+                // 304 Not Modified is returned as an error by the pipeline
+                // because it is not a 2xx status. Treat it as a success
+                // indicating the cached routing map is still current.
+                if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
+                    if *status == azure_core::http::StatusCode::NotModified {
+                        return Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        });
+                    }
+                }
+
+                tracing::warn!(
+                    container = %container.name(),
+                    error = %e,
+                    "Failed to fetch partition key ranges from service"
+                );
+                None
+            }
         }
-
-        let response = metadata_transport.send(&request).await.ok()?;
-        let raw = response.try_into_raw_response().await.ok()?;
-
-        let status = raw.status();
-        let etag = raw
-            .headers()
-            .get_optional_string(&azure_core::http::headers::HeaderName::from_static("etag"))
-            .map(|s| s.to_owned());
-
-        if status == azure_core::http::StatusCode::NotModified {
-            return Some(PkRangeFetchResult {
-                ranges: vec![],
-                continuation: etag.or(continuation),
-                not_modified: true,
-            });
-        }
-
-        if !status.is_success() {
-            tracing::warn!(
-                status = %status,
-                container = %container.name(),
-                "Failed to fetch partition key ranges"
-            );
-            return None;
-        }
-
-        let body = raw.body();
-        let ranges = parse_pk_ranges_response(body)?;
-
-        Some(PkRangeFetchResult {
-            ranges,
-            continuation: etag,
-            not_modified: false,
-        })
     }
 
     /// Pre-resolves the partition key range ID for a data plane operation.
@@ -867,7 +842,7 @@ impl CosmosDriver {
 
         self.pk_range_cache
             .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                self.fetch_pk_ranges_from_service(c, cont)
+                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
             })
             .await
     }
@@ -973,11 +948,32 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
+        tracing::info!(
+            activity_id = %activity_id,
+            operation_type = ?operation.operation_type(),
+            resource_type = ?operation.resource_type(),
+            account_endpoint = %AccountEndpoint::from(account),
+            resolved_endpoint = %endpoint,
+            write_region = ?account_properties.write_account_region().map(|r| &r.name),
+            multi_write = account_properties.writable_locations.len() > 1,
+            container = ?operation.container().map(|c| c.name().to_owned()),
+            partition_key = ?operation.partition_key().map(|pk| format!("{:?}", pk)),
+            "execute_operation: resolved account metadata",
+        );
+
         // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
         let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(&operation).await;
+
+        if pre_resolved_pk_range_id.is_some() {
+            tracing::info!(
+                activity_id = %activity_id,
+                pk_range_id = ?pre_resolved_pk_range_id,
+                "execute_operation: pre-resolved partition key range ID",
+            );
+        }
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();

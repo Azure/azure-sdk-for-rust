@@ -14,11 +14,10 @@ use std::{
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
 
+#[cfg(feature = "tokio")]
+use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
-    driver::{
-        cache::{AccountMetadataCache, AccountProperties},
-        transport::background_task_manager::BackgroundTaskManager,
-    },
+    driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
 };
 
@@ -73,6 +72,7 @@ pub(crate) struct LocationStateStore {
     cached_snapshot: std::sync::Mutex<(u64, LocationSnapshot)>,
     /// Manages the background failback loop task.
     /// Dropping this manager aborts the failback task.
+    #[cfg(feature = "tokio")]
     background_task_manager: BackgroundTaskManager,
 }
 
@@ -143,6 +143,7 @@ impl LocationStateStore {
             last_synced_etag: std::sync::Mutex::new(String::new()),
             account_version: AtomicU64::new(0),
             cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
+            #[cfg(feature = "tokio")]
             background_task_manager: BackgroundTaskManager::new(),
         }
     }
@@ -419,6 +420,7 @@ impl LocationStateStore {
     /// The loop holds a `Weak` reference to `self` so it self-terminates when
     /// the store is dropped. The `BackgroundTaskManager` provides abort-on-drop
     /// as an additional safety layer.
+    #[cfg(feature = "tokio")]
     pub fn start_failback_loop(self: &Arc<Self>) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
         let config = self.snapshot().partitions.config.clone();
@@ -431,6 +433,7 @@ impl LocationStateStore {
 /// Background failback loop that periodically sweeps expired partition overrides.
 ///
 /// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
+#[cfg(feature = "tokio")]
 async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
     loop {
         tokio::time::sleep(config.failback_sweep_interval).await;

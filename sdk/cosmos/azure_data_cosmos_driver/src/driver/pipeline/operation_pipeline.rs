@@ -142,7 +142,27 @@ pub(crate) async fn execute_operation_pipeline(
         } else {
             ExecutionContext::RegionFailover
         };
-        tracing::debug!(routing_decision = %routing, "routing decision made");
+        tracing::info!(
+            routing_decision = %routing,
+            activity_id = %activity_id,
+            operation_type = ?operation.operation_type(),
+            resource_type = ?operation.resource_type(),
+            is_read_only = operation.is_read_only(),
+            failover_retry = retry_state.failover_retry_count,
+            session_retry = retry_state.session_token_retry_count,
+            pk_range_id = ?retry_state.partition_key_range_id,
+            pipeline = ?pipeline_type,
+            execution_context = ?execution_context,
+            preferred_write_endpoints = ?location.account.preferred_write_endpoints.iter().map(|e| e.url().to_string()).collect::<Vec<_>>(),
+            preferred_read_endpoints = ?location.account.preferred_read_endpoints.iter().map(|e| e.url().to_string()).collect::<Vec<_>>(),
+            unavailable_endpoints = ?location.account.unavailable_endpoints.iter().map(|(e, (_, r))| format!("{}={:?}", e.url(), r)).collect::<Vec<_>>(),
+            multi_write = location.account.multiple_write_locations_enabled,
+            ppaf_enabled = location.partitions.per_partition_automatic_failover_enabled,
+            ppcb_enabled = location.partitions.per_partition_circuit_breaker_enabled,
+            failover_overrides = ?location.partitions.failover_overrides.keys().collect::<Vec<_>>(),
+            circuit_breaker_overrides = ?location.partitions.circuit_breaker_overrides.keys().collect::<Vec<_>>(),
+            "routing decision made",
+        );
 
         let mut transport_request = build_transport_request(
             operation,
@@ -188,10 +208,14 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
         }
-        tracing::trace!(
+        tracing::info!(
             method = ?transport_request.method,
             url = %transport_request.url,
-        "transport request created");
+            activity_id = %activity_id,
+            resource_link = %transport_request.auth_context.resource_link,
+            resource_type = ?transport_request.auth_context.resource_type,
+            "transport request created",
+        );
 
         let selected_transport = match pipeline_type {
             PipelineType::DataPlane => {
@@ -251,6 +275,11 @@ pub(crate) async fn execute_operation_pipeline(
         }
 
         // ── STAGE 5: Evaluate result → action ──────────────────────────
+        tracing::info!(
+            activity_id = %activity_id,
+            outcome = %result.outcome,
+            "transport pipeline result",
+        );
         let (action, effects) =
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
@@ -279,6 +308,13 @@ pub(crate) async fn execute_operation_pipeline(
                 return build_cosmos_response(result, diagnostics);
             }
             OperationAction::FailoverRetry { new_state, delay } => {
+                tracing::warn!(
+                    activity_id = %activity_id,
+                    failover_attempt = new_state.failover_retry_count,
+                    delay = ?delay,
+                    effects = ?effects,
+                    "failover retry triggered",
+                );
                 if let Some(delay) = delay {
                     if !delay.is_zero() {
                         if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
@@ -355,6 +391,35 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
             OperationAction::Abort { error, status } => {
+                // 304 Not Modified is an expected response for changefeed-based
+                // pagination (e.g., partition key range refresh). Log it at debug
+                // level instead of error to avoid noisy false alarms.
+                let is_not_modified = status
+                    .as_ref()
+                    .is_some_and(|s| s.status_code() == azure_core::http::StatusCode::NotModified);
+                if is_not_modified {
+                    tracing::debug!(
+                        activity_id = %activity_id,
+                        status = ?status,
+                        operation_type = ?operation.operation_type(),
+                        resource_type = ?operation.resource_type(),
+                        "operation completed with 304 Not Modified",
+                    );
+                } else {
+                    tracing::error!(
+                        activity_id = %activity_id,
+                        status = ?status,
+                        error = %error,
+                        operation_type = ?operation.operation_type(),
+                        resource_type = ?operation.resource_type(),
+                        is_read_only = operation.is_read_only(),
+                        is_idempotent = operation.is_idempotent(),
+                        failover_retries = retry_state.failover_retry_count,
+                        session_retries = retry_state.session_token_retry_count,
+                        pk_range_id = ?retry_state.partition_key_range_id,
+                        "operation aborted",
+                    );
+                }
                 if let Some(cosmos_status) = status {
                     diagnostics.set_operation_status(
                         cosmos_status.status_code(),
