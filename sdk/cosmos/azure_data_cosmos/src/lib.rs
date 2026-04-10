@@ -11,6 +11,7 @@ mod connection_string;
 pub mod constants;
 mod credential;
 mod feed;
+mod feed_range;
 pub mod options;
 mod partition_key;
 pub(crate) mod pipeline;
@@ -42,6 +43,7 @@ pub use transactional_batch::{
 };
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
+pub use feed_range::FeedRange;
 mod background_task_manager;
 mod cosmos_request;
 mod driver_bridge;
