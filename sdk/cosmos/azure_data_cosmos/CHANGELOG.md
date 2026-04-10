@@ -1,11 +1,49 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.33.0 (Unreleased)
+
+### Features Added
+
+- Added `ThroughputPoller` type that implements `IntoFuture` and `Stream` for tracking asynchronous throughput replacement operations.
 
 ### Breaking Changes
 
-- Added `tokio` feature to `default` features.
+- Renamed `replace_throughput` to `begin_replace_throughput` on `ContainerClient` and `DatabaseClient`. The return type changed from `ResourceResponse<ThroughputProperties>` to `ThroughputPoller`.
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.32.0 (2026-04-09)
+
+### Features Added
+
+- Added `CosmosClientBuilder::with_proxy_allowed(bool)` for explicit opt-in to HTTP proxy usage with documented support limitations. ([#4062](https://github.com/Azure/azure-sdk-for-rust/pull/4062))
+- Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
+
+### Breaking Changes
+
+- HTTP proxies (`HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY` environment variables) are now ignored by default. Use `CosmosClientBuilder::with_proxy_allowed(true)` to opt in. ([#4062](https://github.com/Azure/azure-sdk-for-rust/pull/4062))
+- Client methods now return dedicated response types instead of `CosmosResponse<T>`: `ItemResponse<T>` for point operations, `ResourceResponse<T>` for resource management, `BatchResponse` for transactional batch, and `QueryFeedPage<T>` for query pages. `etag()` returns `Option<&Etag>` instead of `Option<&str>`, and `activity_id()` / `server_duration_ms()` are accessed via `response.diagnostics()`. ([#3960](https://github.com/Azure/azure-sdk-for-rust/pull/3960))
+- `FeedPage::deconstruct()` has been removed. Use `into_items()`, `continuation()`, `headers()`, and `diagnostics()` instead. ([#3960](https://github.com/Azure/azure-sdk-for-rust/pull/3960))
+- Replaced `CosmosClientBuilder::with_application_region()` with a mandatory `RoutingStrategy` parameter on `build()`. Use `RoutingStrategy::ProximityTo(region)` to specify the application region. Also removed `CosmosClientOptions::with_application_region()`. ([#3889](https://github.com/Azure/azure-sdk-for-rust/pull/3889))
 - Changed `default_ttl` and `analytical_storage_ttl` fields on `ContainerProperties` from `Option<Duration>` to `TimeToLive`, a new enum with variants `Forever`, `NoDefault`, and `Seconds(u32)`, to correctly handle the `-1` wire value (TTL enabled with no default expiration).
+- `DatabaseClient::container_client()` now returns `azure_core::Result<ContainerClient>`, eagerly resolving container metadata (RID, partition key definition) at construction time. ([#4005](https://github.com/Azure/azure-sdk-for-rust/pull/4005))
+- `PartitionKeyDefinition` fields (`paths`, `kind`, `version`) are now private; use accessor methods `paths()`, `kind()`, and `version()` instead. `PartitionKeyKind` changed from a string newtype to an enum with variants `Hash`, `MultiHash`, and `Range`. `PartitionKeyVersion` is now an enum (`V1`, `V2`) instead of `Option<i32>`. ([#4005](https://github.com/Azure/azure-sdk-for-rust/pull/4005))
+- Replaced `ItemOptions` with `ItemReadOptions` (for `read_item`) and `ItemWriteOptions` (for `create_item`, `replace_item`, `upsert_item`, `delete_item`). `QueryOptions` and `BatchOptions` now also embed `OperationOptions` for general-purpose settings like custom headers, excluded regions, and content response behavior. Replaced per-operation `with_custom_headers` and `with_content_response_on_write_enabled` helpers with `with_operation_options`. Removed `CosmosClientOptions::with_custom_headers()`. ([#4059](https://github.com/Azure/azure-sdk-for-rust/pull/4059))
+- Replaced `SessionToken`, `RegionName`, ETag-based conditional fields, content response, and excluded regions types with driver-aligned equivalents: `SessionToken` (now `Cow<'static, str>`), `Region` (use `Region::EAST_US` instead of `regions::EAST_US`), `precondition: Option<Precondition>` (replacing `if_match_etag`/`if_match`/`if_none_match`), `OperationOptions::content_response_on_write: Option<ContentResponseOnWrite>` (replacing `content_response_on_write_enabled: bool`), and `OperationOptions::excluded_regions: Option<ExcludedRegions>`. ([#4059](https://github.com/Azure/azure-sdk-for-rust/pull/4059))
+
+### Bugs Fixed
+
+- Fixes Circuit Breaker Failover Logic for Multi-Master Writes on 403/3. ([#3861](https://github.com/Azure/azure-sdk-for-rust/pull/3861))
+- Fixed partition key range fetch using mixed name/RID addressing, which caused 404 errors on certain operations. ([#4047](https://github.com/Azure/azure-sdk-for-rust/pull/4047))
+
+### Other Changes
+
+- `ContainerClient::read_item` now executes through the `azure_data_cosmos_driver` pipeline, gaining driver-level transport, routing, and retry capabilities. ([#4053](https://github.com/Azure/azure-sdk-for-rust/pull/4053))
+- `ContainerClient::create_item` now executes through the `azure_data_cosmos_driver` pipeline, gaining driver-level transport, routing, and retry capabilities. ([#4111](https://github.com/Azure/azure-sdk-for-rust/pull/4111))
+- Removed internal OpenTelemetry tracing spans pending alignment with [Cosmos DB semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/azure/#azure-cosmos-db-attributes). Spans will return in a future release. ([#4104](https://github.com/Azure/azure-sdk-for-rust/pull/4104))
+- Added `azure_data_cosmos_driver` as a runtime dependency for internal transport and caching. ([#4005](https://github.com/Azure/azure-sdk-for-rust/pull/4005))
 
 ## 0.31.0 (2026-02-25)
 

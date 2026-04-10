@@ -89,6 +89,7 @@
     "schannel",
     "seekable",
     "servicebus",
+    "splitmix",
     "spector",
     "stylesheet",
     "subclient",

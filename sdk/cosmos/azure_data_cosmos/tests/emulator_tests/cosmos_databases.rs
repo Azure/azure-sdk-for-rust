@@ -12,6 +12,10 @@ use framework::TestClient;
 use futures::TryStreamExt;
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let cosmos_client = run_context.client();
@@ -57,8 +61,12 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     })
     .await
 }
-#[tokio::test]
 #[cfg(feature = "key_auth")]
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
         let cosmos_client = run_context.client();
@@ -91,7 +99,8 @@ pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
         assert!(current_throughput.autoscale_maximum().is_none());
 
         let new_throughput = db_client
-            .replace_throughput(ThroughputProperties::manual(500), None)
+            .begin_replace_throughput(ThroughputProperties::manual(500), None)
+            .await?
             .await?
             .into_model()?;
         assert_eq!(Some(500), new_throughput.throughput());

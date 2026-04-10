@@ -3,7 +3,7 @@
 
 //! Models for deserializing the Cosmos DB Account (DatabaseAccount) JSON payload.
 
-use crate::regions::RegionName;
+use crate::regions::Region;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -13,7 +13,7 @@ use url::Url;
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AccountRegion {
-    pub name: RegionName,
+    pub name: Region,
 
     #[serde(with = "crate::serde::url")]
     pub database_account_endpoint: Url,
@@ -33,6 +33,10 @@ pub(crate) struct AccountProperties {
 
     /// Regions from which the account can be read (includes writable regions plus any read regions).
     pub readable_locations: Vec<AccountRegion>,
+
+    /// Allows failover at a per-partition granularity instead of full-region only.
+    #[serde(default)]
+    pub enable_per_partition_failover_behavior: bool,
 }
 
 #[cfg(test)]
@@ -45,7 +49,8 @@ mod tests {
       "id" : "test",
       "writableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://test-westus2.documents.azure.com:443/" } ],
       "readableLocations" : [ { "name" : "West US 2", "databaseAccountEndpoint" : "https://test-westus2.documents.azure.com:443/" } ],
-      "enableMultipleWriteLocations" : false
+      "enableMultipleWriteLocations" : false,
+      "enable_per_partition_failover_behavior" : true
     }"#;
 
     #[test]

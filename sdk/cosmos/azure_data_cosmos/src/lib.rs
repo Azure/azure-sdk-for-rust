@@ -28,20 +28,23 @@ pub use clients::CosmosClientBuilder;
 
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
+pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
-pub use models::CosmosResponse;
+pub use models::{BatchResponse, CosmosDiagnostics, ItemResponse, ResourceResponse};
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
+pub use routing_strategy::RoutingStrategy;
 pub use transactional_batch::{
     BatchDeleteOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
     TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
 };
 
-pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
+pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
 mod background_task_manager;
 mod cosmos_request;
+mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
 mod handler;
@@ -53,4 +56,5 @@ pub mod regions;
 mod request_context;
 mod retry_policies;
 mod routing;
+mod routing_strategy;
 mod serde;

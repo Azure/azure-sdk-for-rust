@@ -4,7 +4,9 @@
 use std::error::Error;
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{CosmosClient, ItemOptions, PartitionKey};
+use azure_data_cosmos::{
+    ContentResponseOnWrite, CosmosClient, ItemWriteOptions, OperationOptions, PartitionKey,
+};
 use clap::{Args, Subcommand};
 
 use crate::utils::ThroughputOptions;
@@ -72,16 +74,21 @@ impl ReplaceCommand {
                 show_updated,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container).await;
+                let container_client = db_client.container_client(&container).await?;
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let options =
-                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
+                let options = if show_updated {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                } else {
+                    None
+                };
 
                 let response = container_client
-                    .replace_item(pk, &item_id, item, Some(options))
+                    .replace_item(pk, &item_id, item, options)
                     .await;
                 match response {
                     Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
@@ -107,7 +114,8 @@ impl ReplaceCommand {
                 let throughput_properties = throughput_options.try_into()?;
                 let db_client = client.database_client(&database);
                 let new_throughput = db_client
-                    .replace_throughput(throughput_properties, None)
+                    .begin_replace_throughput(throughput_properties, None)
+                    .await?
                     .await?
                     .into_model()?;
                 println!("New Throughput:");
@@ -121,9 +129,10 @@ impl ReplaceCommand {
             } => {
                 let throughput_properties = throughput_options.try_into()?;
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container).await;
+                let container_client = db_client.container_client(&container).await?;
                 let new_throughput = container_client
-                    .replace_throughput(throughput_properties, None)
+                    .begin_replace_throughput(throughput_properties, None)
+                    .await?
                     .await?
                     .into_model()?;
                 println!("New Throughput:");

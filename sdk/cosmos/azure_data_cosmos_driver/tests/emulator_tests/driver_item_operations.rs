@@ -30,6 +30,10 @@ struct TestItem {
 /// 4. Validates the response body matches the created item
 /// 5. Validates diagnostics for both operations
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
         // Create a container
@@ -49,7 +53,7 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 
         // Create the item
         let create_result = context
-            .create_item(&container, &item.id, item.pk.clone(), &item_json)
+            .create_item(&container, item.pk.clone(), &item_json)
             .await?;
 
         // Validate create diagnostics
@@ -95,6 +99,10 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 
 /// Tests that control plane operations use the metadata pipeline.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
         // Create a container and verify it used the metadata pipeline
@@ -118,7 +126,7 @@ pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>
         let item_json = serde_json::to_vec(&test_item)?;
 
         let result = context
-            .create_item(&container, &test_item.id, test_item.pk.clone(), &item_json)
+            .create_item(&container, test_item.pk.clone(), &item_json)
             .await?;
 
         // Verify item creation succeeded
@@ -132,6 +140,10 @@ pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>
 
 /// Tests diagnostics content for emulator operations.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
         // Create a container
@@ -150,7 +162,7 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
         let item_json = serde_json::to_vec(&item)?;
 
         let result = context
-            .create_item(&container, &item.id, item.pk.clone(), &item_json)
+            .create_item(&container, item.pk.clone(), &item_json)
             .await?;
 
         let diagnostics = result.diagnostics();
@@ -196,6 +208,16 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
             request.pipeline_type(),
             PipelineType::DataPlane,
             "Item operations should use data plane pipeline"
+        );
+
+        // Verify server-side duration is captured from response headers
+        assert!(
+            request.server_duration_ms().is_some(),
+            "Server duration should be captured from x-ms-request-duration-ms header"
+        );
+        assert!(
+            request.server_duration_ms().unwrap() >= 0.0,
+            "Server duration should be non-negative"
         );
 
         Ok(())

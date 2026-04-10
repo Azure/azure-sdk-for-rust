@@ -6,19 +6,32 @@
 use azure_core::http::ClientOptions;
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, RwLock,
+    },
+    time::Duration,
 };
 
 use crate::{
+    diagnostics::ProxyConfiguration,
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        ConnectionPoolOptions, CorrelationId, DriverOptions, RuntimeOptions, SharedRuntimeOptions,
-        ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
+        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
         ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
+    system::{CpuMemoryMonitor, VmMetadataService},
 };
 
-use super::{transport::CosmosTransport, CosmosDriver};
+use super::cache::{AccountMetadataCache, ContainerCache};
+use super::{
+    transport::{
+        http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
+        CosmosTransport,
+    },
+    CosmosDriver,
+};
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -37,17 +50,17 @@ use super::{transport::CosmosTransport, CosmosDriver};
 /// use azure_data_cosmos_driver::driver::{
 ///     CosmosDriverRuntime, CosmosDriverRuntimeBuilder,
 /// };
-/// use azure_data_cosmos_driver::options::{RuntimeOptions, ContentResponseOnWrite};
+/// use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
 /// # async fn example() -> azure_core::Result<()> {
-/// let runtime = RuntimeOptions::builder()
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+/// let operation_options = OperationOptionsBuilder::new()
+///     .with_max_failover_retry_count(5)
 ///     .build();
 ///
 /// let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
-///     .with_runtime_options(runtime)
+///     .with_operation_options(operation_options)
 ///     .build()
 ///     .await?;
 ///
@@ -59,28 +72,44 @@ use super::{transport::CosmosTransport, CosmosDriver};
 ///
 /// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
 ///
-/// // Later, modify defaults at runtime
-/// cosmos_runtime.runtime_options().set_content_response_on_write(Some(ContentResponseOnWrite::Enabled));
+/// // Later, replace runtime defaults atomically
+/// // cosmos_runtime.set_operation_options(new_options);
 /// # Ok(())
 /// # }
 /// ```
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct CosmosDriverRuntime {
+    /// Unique ID of the driver runtime internally. Used in traces to identify multi-runtime scenarios.
+    id: usize,
+
     /// Core HTTP client options from azure_core.
     client_options: ClientOptions,
 
     /// Connection pool configuration for managing TCP connections.
     connection_pool: ConnectionPoolOptions,
 
-    /// HTTP transport manager with connection pools.
+    /// Bootstrap HTTP transport for initial metadata probes.
     ///
-    /// Manages separate pools for metadata and data plane operations,
-    /// with lazy initialization of emulator-specific pools.
-    transport: Arc<CosmosTransport>,
+    /// Uses HTTP/2-only to detect protocol support. Individual drivers
+    /// create their own `CosmosTransport` after the probe with the
+    /// negotiated HTTP version.
+    ///
+    /// Kept in `Arc` because drivers seed their `ArcSwap<CosmosTransport>`
+    /// from this transport during initialization.
+    bootstrap_transport: Arc<CosmosTransport>,
 
-    /// Thread-safe runtime options for operation options.
-    runtime_options: SharedRuntimeOptions,
+    /// Factory for creating HTTP clients, shared across per-account transports.
+    http_client_factory: Arc<dyn HttpClientFactory>,
+
+    /// Environment-level operation options, populated once from env vars at build time.
+    env_operation_options: Arc<OperationOptions>,
+
+    /// User-provided default operation options, swappable via interior mutability.
+    ///
+    /// Wrapped in `RwLock<Arc<...>>` so that shared references can atomically
+    /// replace the options while readers obtain a cheap `Arc` snapshot.
+    operation_options: RwLock<Arc<OperationOptions>>,
 
     /// Computed user agent string for HTTP requests.
     ///
@@ -113,13 +142,42 @@ pub struct CosmosDriverRuntime {
     /// Registry of driver instances keyed by account endpoint.
     ///
     /// Ensures singleton driver per account reference.
-    driver_registry: Arc<RwLock<HashMap<String, Arc<CosmosDriver>>>>,
+    driver_registry: RwLock<HashMap<String, Arc<CosmosDriver>>>,
+
+    /// Shared container metadata cache used by drivers in this runtime.
+    container_cache: ContainerCache,
+
+    /// Shared account metadata cache used by drivers in this runtime.
+    ///
+    /// Kept in `Arc` because it is shared with `LocationStateStore` instances
+    /// which independently hold a reference.
+    account_metadata_cache: Arc<AccountMetadataCache>,
+
+    /// CPU and memory monitor for diagnostics.
+    cpu_monitor: CpuMemoryMonitor,
+
+    /// Machine identifier for diagnostics (VM ID on Azure, generated UUID otherwise).
+    ///
+    /// Kept in `Arc` because it is cloned into every diagnostics context.
+    machine_id: Arc<String>,
+
+    /// Whether fault injection is enabled for this runtime.
+    fault_injection_enabled: bool,
+
+    /// Proxy configuration snapshot for diagnostics.
+    proxy_configuration: ProxyConfiguration,
 }
 
 impl CosmosDriverRuntime {
     /// Returns a new builder for creating a runtime.
     pub fn builder() -> CosmosDriverRuntimeBuilder {
         CosmosDriverRuntimeBuilder::new()
+    }
+
+    /// Returns a unique identifier for the runtime, for internal tracing.
+    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
+    pub(crate) fn id(&self) -> usize {
+        self.id
     }
 
     /// Returns the HTTP client options.
@@ -132,19 +190,77 @@ impl CosmosDriverRuntime {
         &self.connection_pool
     }
 
-    /// Returns the HTTP transport manager.
-    ///
-    /// The transport provides access to connection pools configured for
-    /// metadata and data plane operations, with automatic emulator detection.
-    pub(crate) fn transport(&self) -> &Arc<CosmosTransport> {
-        &self.transport
+    /// Returns the bootstrap transport for initial metadata probes.
+    pub(crate) fn bootstrap_transport(&self) -> &Arc<CosmosTransport> {
+        &self.bootstrap_transport
     }
 
-    /// Returns the thread-safe runtime options.
+    /// Returns the shared HTTP client factory for creating per-account transports.
+    pub(crate) fn http_client_factory(&self) -> &Arc<dyn HttpClientFactory> {
+        &self.http_client_factory
+    }
+
+    /// Returns the shared container cache.
+    pub(crate) fn container_cache(&self) -> &ContainerCache {
+        &self.container_cache
+    }
+
+    /// Returns the shared account metadata cache.
+    pub(crate) fn account_metadata_cache(&self) -> &Arc<AccountMetadataCache> {
+        &self.account_metadata_cache
+    }
+
+    /// Returns the CPU/memory monitor for diagnostics.
+    pub(crate) fn cpu_monitor(&self) -> &CpuMemoryMonitor {
+        &self.cpu_monitor
+    }
+
+    /// Returns the machine identifier for diagnostics.
+    pub(crate) fn machine_id(&self) -> &Arc<String> {
+        &self.machine_id
+    }
+
+    /// Returns whether fault injection is enabled for this runtime.
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
+    }
+
+    /// Returns the proxy configuration snapshot.
     ///
-    /// Use this to modify default operation options at runtime.
-    pub fn runtime_options(&self) -> &SharedRuntimeOptions {
-        &self.runtime_options
+    /// Captures whether proxy is allowed and the proxy environment variable
+    /// values at client creation time, for diagnostic purposes.
+    pub fn proxy_configuration(&self) -> &ProxyConfiguration {
+        &self.proxy_configuration
+    }
+
+    /// Returns the environment-level operation options (populated from env vars at build time).
+    pub fn env_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_operation_options
+    }
+
+    /// Returns a snapshot of the default operation options.
+    ///
+    /// The returned `Arc` is a cheap clone of the current value.
+    /// In-flight readers are unaffected by concurrent calls to
+    /// [`set_operation_options`](Self::set_operation_options).
+    pub fn operation_options(&self) -> Arc<OperationOptions> {
+        // Poisoning is safe to ignore: the write side is an atomic Arc swap with no
+        // multi-step mutation, so the value is always in a consistent state.
+        self.operation_options
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+    }
+
+    /// Replaces the default operation options atomically.
+    ///
+    /// In-flight operations that already obtained a snapshot via
+    /// [`operation_options`](Self::operation_options) are unaffected.
+    pub fn set_operation_options(&self, options: OperationOptions) {
+        *self
+            .operation_options
+            .write()
+            .unwrap_or_else(|e| e.into_inner()) = Arc::new(options);
     }
 
     /// Returns the computed user agent string.
@@ -254,42 +370,43 @@ impl CosmosDriverRuntime {
     /// # }
     /// ```
     pub async fn get_or_create_driver(
-        &self,
+        self: &Arc<Self>,
         account: AccountReference,
         driver_options: Option<DriverOptions>,
     ) -> azure_core::Result<Arc<CosmosDriver>> {
         let key = account.endpoint().to_string();
 
-        // Check if driver already exists (read lock)
+        // Fast path: return an already-initialized driver.
         {
             let registry = self.driver_registry.read().unwrap();
             if let Some(driver) = registry.get(&key) {
+                tracing::trace!("retrieved existing driver");
                 return Ok(driver.clone());
             }
         }
 
-        // Create new driver (write lock)
-        let mut registry = self.driver_registry.write().unwrap();
+        tracing::trace!("creating new driver");
 
-        // Double-check after acquiring write lock
-        if let Some(driver) = registry.get(&key) {
-            return Ok(driver.clone());
-        }
-
-        // Build driver options if not provided
+        // Slow path: create and initialize the driver *before* inserting into
+        // the registry. This ensures concurrent callers never observe an
+        // uninitialized driver. If two callers race, both will probe — but the
+        // first to finish inserts; the second discovers the existing entry and
+        // drops its duplicate.
         let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
+        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), options));
 
-        let driver = Arc::new(CosmosDriver::new(self.clone(), options));
-        registry.insert(key, driver.clone());
+        driver.initialize().await?;
 
-        Ok(driver)
+        let mut registry = self.driver_registry.write().unwrap();
+        let entry = registry.entry(key).or_insert_with(|| driver.clone());
+        Ok(entry.clone())
     }
 }
 
 /// Builder for creating [`CosmosDriverRuntime`].
 ///
-/// Use [`RuntimeOptions::builder()`] to create runtime options, then pass them
-/// to this builder via [`with_runtime_options()`](Self::with_runtime_options).
+/// Use `OperationOptionsBuilder` to create operation options, then pass them
+/// to this builder via [`with_operation_options()`](Self::with_operation_options).
 ///
 /// # User Agent
 ///
@@ -310,11 +427,16 @@ impl CosmosDriverRuntime {
 pub struct CosmosDriverRuntimeBuilder {
     client_options: Option<ClientOptions>,
     connection_pool: Option<ConnectionPoolOptions>,
-    runtime_options: Option<RuntimeOptions>,
+    operation_options: Option<OperationOptions>,
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
+    cpu_refresh_interval: Option<Duration>,
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
+    #[cfg(test)]
+    http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -335,11 +457,11 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Sets the runtime options (defaults for operations).
+    /// Sets the operation options (defaults for operations at the runtime layer).
     ///
-    /// Use [`RuntimeOptions::builder()`] to create the runtime options.
-    pub fn with_runtime_options(mut self, options: RuntimeOptions) -> Self {
-        self.runtime_options = Some(options);
+    /// Use `OperationOptionsBuilder` to create the operation options.
+    pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
+        self.operation_options = Some(options);
         self
     }
 
@@ -382,6 +504,25 @@ impl CosmosDriverRuntimeBuilder {
     /// app name with region.
     pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
         self.user_agent_suffix = Some(suffix);
+        self
+    }
+
+    /// Sets the CPU/memory monitoring refresh interval.
+    ///
+    /// Controls how frequently the background CPU and memory sampling thread
+    /// collects new data points. If not set, the value is read from the
+    /// `AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS` environment variable. If the
+    /// environment variable is also absent, the default of 5000 ms is used.
+    ///
+    /// Valid range: 1000–60000 ms (1–60 seconds).
+    pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
+        self.cpu_refresh_interval = Some(interval);
+        self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
+        self.http_client_factory = Some(factory);
         self
     }
 
@@ -440,6 +581,20 @@ impl CosmosDriverRuntimeBuilder {
         Ok(self)
     }
 
+    /// Sets the fault injection rules for testing.
+    ///
+    /// When set, all HTTP clients created by the transport layer will
+    /// evaluate these rules before delegating to the real transport
+    /// (per Transport Pipeline Spec §7).
+    #[cfg(feature = "fault_injection")]
+    pub fn with_fault_injection_rules(
+        mut self,
+        rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
+    ) -> Self {
+        self.fault_injection_rules = Some(rules);
+        self
+    }
+
     /// Builds the [`CosmosDriverRuntime`].
     ///
     /// The user agent is computed from (in priority order):
@@ -453,7 +608,7 @@ impl CosmosDriverRuntimeBuilder {
     /// Returns an error if the HTTP transport cannot be created (e.g., TLS
     /// configuration failure).
     ///
-    pub async fn build(self) -> azure_core::Result<CosmosDriverRuntime> {
+    pub async fn build(self) -> azure_core::Result<Arc<CosmosDriverRuntime>> {
         // Compute user agent from suffix/workloadId/correlationId (in priority order)
         let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
             UserAgent::from_suffix(suffix)
@@ -466,24 +621,123 @@ impl CosmosDriverRuntimeBuilder {
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
-        let transport = Arc::new(CosmosTransport::new(
+        let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
+        #[allow(unused_mut)]
+        let mut fault_injection_enabled = false;
+        let http_client_factory: Arc<dyn HttpClientFactory> = {
+            let base_factory: Arc<dyn HttpClientFactory> = {
+                #[cfg(test)]
+                {
+                    self.http_client_factory
+                        .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
+                }
+
+                #[cfg(not(test))]
+                {
+                    Arc::new(DefaultHttpClientFactory::new())
+                }
+            };
+
+            #[cfg(feature = "fault_injection")]
+            {
+                if let Some(rules) = self.fault_injection_rules {
+                    fault_injection_enabled = true;
+                    Arc::new(
+                        crate::fault_injection::FaultInjectingHttpClientFactory::new(
+                            base_factory,
+                            rules,
+                        ),
+                    )
+                } else {
+                    base_factory
+                }
+            }
+
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                base_factory
+            }
+        };
+
+        // Bootstrap transport: lightweight metadata-only transport for the
+        // initial HTTP version probe. Uses an unsharded client (no per-endpoint
+        // shard pools, no background health sweep) since it only performs
+        // one-shot metadata requests during driver initialization.
+        let bootstrap_version = if connection_pool.is_http2_allowed() {
+            crate::diagnostics::TransportHttpVersion::Http2
+        } else {
+            crate::diagnostics::TransportHttpVersion::Http11
+        };
+        let bootstrap_transport = Arc::new(CosmosTransport::bootstrap_metadata_only(
             connection_pool.clone(),
-            user_agent.as_str(),
+            http_client_factory.clone(),
+            bootstrap_version,
         )?);
 
-        Ok(CosmosDriverRuntime {
+        // Initialize system monitoring singletons.
+        // CpuMemoryMonitor starts a background thread on first call;
+        // VmMetadataService makes a single IMDS request (or falls back to a UUID).
+        let refresh_interval = parse_duration_millis_from_env(
+            self.cpu_refresh_interval,
+            "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
+            5_000,
+            1_000,
+            60_000,
+        )?;
+        let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
+        let vm_metadata = VmMetadataService::get_or_init().await;
+
+        Ok(Arc::new(CosmosDriverRuntime {
+            id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
-            transport,
-            runtime_options: SharedRuntimeOptions::from_options(
-                self.runtime_options.unwrap_or_default(),
-            ),
+            bootstrap_transport,
+            http_client_factory,
+            env_operation_options: Arc::new(OperationOptions::from_env()),
+            operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
             throughput_control_groups: self.throughput_control_groups,
-            driver_registry: Arc::new(RwLock::new(HashMap::new())),
-        })
+            driver_registry: RwLock::new(HashMap::new()),
+            container_cache: ContainerCache::new(),
+            account_metadata_cache: Arc::new(AccountMetadataCache::new()),
+            cpu_monitor,
+            machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
+            fault_injection_enabled,
+            proxy_configuration,
+        }))
+    }
+}
+
+static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use url::Url;
+
+    #[tokio::test]
+    async fn get_or_create_driver_removes_failed_initialization_from_registry() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "***not-base64***",
+        );
+
+        let error = runtime
+            .get_or_create_driver(account.clone(), None)
+            .await
+            .expect_err("invalid signing key should fail initialization");
+        assert!(!error.to_string().is_empty());
+        assert!(runtime.driver_registry.read().unwrap().is_empty());
+
+        let second_error = runtime
+            .get_or_create_driver(account, None)
+            .await
+            .expect_err("failed initialization should not poison the driver registry");
+        assert!(!second_error.to_string().is_empty());
+        assert!(runtime.driver_registry.read().unwrap().is_empty());
     }
 }

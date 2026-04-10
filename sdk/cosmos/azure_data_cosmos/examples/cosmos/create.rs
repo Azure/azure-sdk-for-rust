@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::error::Error;
+use std::{borrow::Cow, error::Error};
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, ItemOptions, PartitionKey,
+    ContentResponseOnWrite, CosmosClient, CreateContainerOptions, CreateDatabaseOptions,
+    ItemWriteOptions, OperationOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -83,17 +84,20 @@ impl CreateCommand {
                 show_updated,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container).await;
+                let container_client = db_client.container_client(&container).await?;
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let options =
-                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
+                let options = if show_updated {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                } else {
+                    None
+                };
 
-                let response = container_client
-                    .create_item(pk, item, Some(options))
-                    .await?;
+                let response = container_client.create_item(pk, item, options).await?;
 
                 println!("Created item successfully");
 
@@ -145,7 +149,9 @@ impl CreateCommand {
 
                         ContainerProperties::new(
                             id.expect("the ID is required when not using '--json'"),
-                            PartitionKeyDefinition::new(partition_key),
+                            PartitionKeyDefinition::new(
+                                partition_key.into_iter().map(Cow::Owned).collect(),
+                            ),
                         )
                     }
                 };

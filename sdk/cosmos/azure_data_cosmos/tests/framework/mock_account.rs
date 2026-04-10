@@ -6,7 +6,7 @@
 
 use azure_core::http::{headers::Headers, StatusCode};
 use azure_data_cosmos::fault_injection::CustomResponse;
-use azure_data_cosmos::regions::RegionName;
+use azure_data_cosmos::regions::Region;
 
 /// Builds a [`CustomResponse`] containing a valid `AccountProperties` JSON payload
 /// with the specified writable and readable regions.
@@ -20,11 +20,34 @@ use azure_data_cosmos::regions::RegionName;
 /// * `readable` - Regions that accept reads.
 /// * `multi_write` - Whether multi-write (multi-master) is enabled.
 pub fn mock_database_account_response(
-    writable: &[RegionName],
-    readable: &[RegionName],
+    writable: &[Region],
+    readable: &[Region],
     multi_write: bool,
 ) -> CustomResponse {
-    let body = mock_database_account_json("test", writable, readable, multi_write);
+    mock_database_account_response_for_account("test", writable, readable, multi_write)
+}
+
+/// Builds a [`CustomResponse`] with a valid `AccountProperties` JSON payload
+/// using the given account name for endpoint URLs.
+///
+/// Use this when testing against a real Cosmos DB account so that the
+/// regional endpoint URLs in the mock response (e.g.,
+/// `https://{account_name}-{region}.documents.azure.com:443/`) resolve
+/// correctly.
+///
+/// # Arguments
+///
+/// * `account_name` - The Cosmos DB account name (e.g., `"myaccount"`).
+/// * `writable` - Regions that accept writes.
+/// * `readable` - Regions that accept reads.
+/// * `multi_write` - Whether multi-write (multi-master) is enabled.
+pub fn mock_database_account_response_for_account(
+    account_name: &str,
+    writable: &[Region],
+    readable: &[Region],
+    multi_write: bool,
+) -> CustomResponse {
+    let body = mock_database_account_json(account_name, writable, readable, multi_write);
     CustomResponse {
         status_code: StatusCode::Ok,
         headers: Headers::new(),
@@ -35,8 +58,8 @@ pub fn mock_database_account_response(
 /// Builds a valid `AccountProperties` JSON string with the specified regions.
 fn mock_database_account_json(
     account_name: &str,
-    writable: &[RegionName],
-    readable: &[RegionName],
+    writable: &[Region],
+    readable: &[Region],
     multi_write: bool,
 ) -> String {
     let writable_json = regions_to_json(account_name, writable);
@@ -66,13 +89,13 @@ fn mock_database_account_json(
 }
 
 /// Converts a slice of regions into a JSON array body for writable/readable locations.
-fn regions_to_json(account_name: &str, regions: &[RegionName]) -> String {
+fn regions_to_json(account_name: &str, regions: &[Region]) -> String {
     regions
         .iter()
         .map(|r| {
             let canonical = r.as_str();
             // Display name uses the canonical form here; the service uses display names
-            // like "East US 2" but AccountRegion.name deserializes via RegionName::new()
+            // like "East US 2" but AccountRegion.name deserializes via Region::new()
             // which canonicalizes anyway, so the canonical form works fine for tests.
             format!(
                 r#"{{ "name": "{canonical}", "databaseAccountEndpoint": "https://{account_name}-{canonical}.documents.azure.com:443/" }}"#
@@ -85,13 +108,13 @@ fn regions_to_json(account_name: &str, regions: &[RegionName]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_data_cosmos::regions;
+    use azure_data_cosmos::Region;
 
     #[test]
     fn mock_account_deserializes() {
         let response = mock_database_account_response(
-            &[regions::EAST_US_2, regions::WEST_US],
-            &[regions::EAST_US_2, regions::WEST_US],
+            &[Region::EAST_US_2, Region::WEST_US],
+            &[Region::EAST_US_2, Region::WEST_US],
             false,
         );
 
@@ -104,17 +127,14 @@ mod tests {
         assert_eq!(readable.len(), 2);
         assert_eq!(writable[0]["name"].as_str().unwrap(), "eastus2");
         assert_eq!(writable[1]["name"].as_str().unwrap(), "westus");
-        assert_eq!(
-            value["enableMultipleWriteLocations"].as_bool().unwrap(),
-            false
-        );
+        assert!(!value["enableMultipleWriteLocations"].as_bool().unwrap());
     }
 
     #[test]
     fn mock_account_multi_write() {
         let response = mock_database_account_response(
-            &[regions::EAST_US, regions::WEST_US],
-            &[regions::EAST_US, regions::WEST_US],
+            &[Region::EAST_US, Region::WEST_US],
+            &[Region::EAST_US, Region::WEST_US],
             true,
         );
 

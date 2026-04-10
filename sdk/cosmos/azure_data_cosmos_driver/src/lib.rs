@@ -20,11 +20,16 @@
 //! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
 //! the consuming SDK in its native language.
 
+pub mod diagnostics;
 pub mod driver;
+#[cfg(feature = "fault_injection")]
+pub mod fault_injection;
 pub mod models;
 pub mod options;
+pub(crate) mod system;
 
 // Re-export key types at crate root
+pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 pub use models::{ActivityId, CosmosResponse, CosmosStatus, RequestCharge};
-pub use options::DriverOptions;
+pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};

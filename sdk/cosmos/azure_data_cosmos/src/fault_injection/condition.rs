@@ -4,7 +4,7 @@
 //! Defines conditions for when fault injection rules should be applied.
 
 use super::FaultOperationType;
-use crate::regions::RegionName;
+use crate::regions::Region;
 
 /// Defines the condition under which a fault injection rule should be applied.
 #[derive(Clone, Default, Debug)]
@@ -12,7 +12,7 @@ pub struct FaultInjectionCondition {
     /// The type of operation to which the fault injection applies.
     pub operation_type: Option<FaultOperationType>,
     /// The region to which the fault injection applies.
-    pub region: Option<RegionName>,
+    pub region: Option<Region>,
     /// The container ID to which the fault injection applies.
     pub container_id: Option<String>,
 }
@@ -21,7 +21,7 @@ pub struct FaultInjectionCondition {
 #[derive(Default)]
 pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
-    region: Option<RegionName>,
+    region: Option<Region>,
     container_id: Option<String>,
 }
 
@@ -42,7 +42,7 @@ impl FaultInjectionConditionBuilder {
     }
 
     /// Sets the region to which the fault injection applies.
-    pub fn with_region(mut self, region: RegionName) -> Self {
+    pub fn with_region(mut self, region: Region) -> Self {
         self.region = Some(region);
         self
     }

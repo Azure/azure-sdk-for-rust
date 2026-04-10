@@ -19,6 +19,7 @@
     "centralindia",
     "centralus",
     "centraluseuap",
+    "changefeed",
     "chinaeast",
     "chinanorth",
     "cloneable",
@@ -52,6 +53,7 @@
     "hostnames",
     "hotfixes",
     "IMDS",
+    "isquery",
     "japaneast",
     "japanwest",
     "keepalive",
@@ -60,6 +62,7 @@
     "linearizability",
     "MEMORYSTATUSEX",
     "moka",
+    "multihash",
     "murmurhash",
     "myaccount",
     "mycoll",
@@ -84,9 +87,13 @@
     "pkranges",
     "pksysdocs",
     "pluggable",
+    "populateindexmetrics",
+    "populatequerymetrics",
     "PPAF",
     "PPCB",
     "pushback",
+    "qname",
+    "readfeed",
     "reqs",
     "Retriable",
     "retryable",
@@ -110,6 +117,7 @@
     "switzerlandwest",
     "TEAMPROJECTID",
     "testcontainer",
+    "testdata",
     "testdb",
     "uaecentral",
     "uaenorth",
@@ -145,6 +153,10 @@
     "westindia",
     "westus",
     "yxxx"
+  ],
+  "ignorePaths": [
+    "live-platform-matrix.json",
+    "release-platform-matrix.json"
   ],
   "overrides": [
     {

@@ -4,7 +4,7 @@
 use crate::{
     clients::DatabaseClient,
     cosmos_request::CosmosRequest,
-    models::{CosmosResponse, DatabaseProperties},
+    models::{DatabaseProperties, ResourceResponse},
     operation_context::OperationType,
     pipeline::GatewayPipeline,
     resource_context::ResourceLink,
@@ -15,6 +15,7 @@ use crate::{
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
+use azure_data_cosmos_driver::CosmosDriver;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -29,7 +30,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
 /// use std::sync::Arc;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -40,7 +41,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 ///     .unwrap();
 /// let account = CosmosAccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClient::builder()
-///     .build(account)
+///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -49,7 +50,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
 /// use azure_core::credentials::Secret;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -61,7 +62,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 ///     Secret::from("my_account_key"),
 /// );
 /// let client = CosmosClient::builder()
-///     .build(account)
+///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -70,6 +71,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 pub struct CosmosClient {
     pub(crate) databases_link: ResourceLink,
     pub(crate) pipeline: Arc<GatewayPipeline>,
+    pub(crate) driver: Arc<CosmosDriver>,
     pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
     pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
@@ -80,7 +82,7 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
     ///
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
@@ -90,7 +92,7 @@ impl CosmosClient {
     ///     .unwrap();
     /// let account = CosmosAccountReference::with_credential(endpoint, credential);
     /// let client = CosmosClient::builder()
-    ///     .build(account)
+    ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -106,6 +108,7 @@ impl CosmosClient {
         DatabaseClient::new(
             self.pipeline.clone(),
             id,
+            self.driver.clone(),
             self.global_endpoint_manager.clone(),
             self.global_partition_endpoint_manager.clone(),
         )
@@ -139,7 +142,6 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all)]
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -162,12 +164,11 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all)]
     pub async fn create_database(
         &self,
         id: &str,
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
+    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
 
         #[derive(Serialize)]
@@ -181,6 +182,25 @@ impl CosmosClient {
                 .json(&RequestBody { id })
                 .build()?;
 
-        self.pipeline.send(cosmos_request, Context::default()).await
+        self.pipeline
+            .send(cosmos_request, Context::default())
+            .await
+            .map(ResourceResponse::new)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `CosmosClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &CosmosClient = todo!();
+        assert_send(client.create_database(todo!(), todo!()));
     }
 }
