@@ -397,6 +397,32 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
+/// Options for feed range operations on a [`ContainerClient`](crate::clients::ContainerClient).
+///
+/// Used by both [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
+/// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
+#[derive(Clone, Default, Debug)]
+#[non_exhaustive]
+pub struct FeedRangeOptions {
+    force_refresh: bool,
+}
+
+impl FeedRangeOptions {
+    /// When `true`, bypasses the local partition key range cache and fetches
+    /// fresh partition information from the service.
+    ///
+    /// This is useful after container split/merge operations when the cached
+    /// routing map may be stale. Defaults to `false`.
+    pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
+        self.force_refresh = force_refresh;
+        self
+    }
+
+    pub(crate) fn force_refresh(&self) -> bool {
+        self.force_refresh
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

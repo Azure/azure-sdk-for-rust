@@ -15,7 +15,7 @@ use std::ops::Range;
 /// Error returned when partition key range validation fails.
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) enum RoutingMapError {
+pub enum RoutingMapError {
     /// The ranges overlap, indicating data corruption.
     OverlappingRanges,
     /// The ranges have gaps and do not cover the full EPK space.
@@ -40,7 +40,7 @@ impl std::error::Error for RoutingMapError {}
 /// Holds all partition key ranges for a container, sorted by `min_inclusive`,
 /// enabling O(log n) lookup of which range owns a given effective partition key.
 #[derive(Debug, Clone)]
-pub(crate) struct ContainerRoutingMap {
+pub struct ContainerRoutingMap {
     /// O(1) lookup by range ID.
     range_by_id: HashMap<String, PartitionKeyRange>,
     /// Sorted by `min_inclusive` for binary search.

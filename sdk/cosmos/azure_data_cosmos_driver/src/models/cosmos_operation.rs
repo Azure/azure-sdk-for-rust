@@ -293,6 +293,23 @@ impl CosmosOperation {
         Self::new(OperationType::ReadFeed, resource_ref)
     }
 
+    /// Reads (lists) all partition key ranges for a container.
+    ///
+    /// Returns a feed of partition key range resources. Used internally by the
+    /// routing cache to discover how a container's partition keys are split across
+    /// physical partitions.
+    pub(crate) fn read_all_pk_ranges(container: ContainerReference) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::PartitionKeyRange)
+            .into_feed_reference();
+        let headers = CosmosRequestHeaders {
+            max_item_count: Some(-1),
+            a_im: Some("Incremental Feed".to_owned()),
+            ..Default::default()
+        };
+        Self::new(OperationType::ReadFeed, resource_ref).with_request_headers(headers)
+    }
+
     /// Queries containers in a database.
     ///
     /// Use `with_body()` to provide the query JSON.

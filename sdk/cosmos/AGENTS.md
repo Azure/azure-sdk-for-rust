@@ -384,6 +384,36 @@ let driver = Driver::builder()
 - Use `assert!` for boolean assertions instead of `assert_eq!(value, true/false)`
 - **Prefer the strongest assertion that matches the contract**: Use `assert_eq!(vec, expected_vec)` instead of `assert!(vec.contains(x))` — the former catches both missing and extra elements. In general, assert exact values over partial properties.
 
+### No Round-Trip Tests
+
+**Parse and format/display tests must be one-directional**, never round-trip.
+
+Round-tripping (parse → format → parse → assert equality) hides symmetric bugs: if both
+parse and format interpret a value wrong in the same way, the test still passes.
+
+Every test must be exactly one of:
+
+1. **Parse test** — hardcoded string input → `assert_eq!` against a directly-constructed expected structure.
+2. **Format test** — directly-constructed structure → `assert_eq!` against a hardcoded expected string.
+
+```rust
+// ❌ BAD: round-trip — symmetric bugs are invisible
+let t = "some_input".parse::<MyType>().unwrap();
+let s = t.to_string();
+let t2 = s.parse::<MyType>().unwrap();
+assert_eq!(t, t2);
+
+// ✅ GOOD: parse test — string in, assert structure
+let t = "some_input".parse::<MyType>().unwrap();
+assert_eq!(t.field, expected_value);
+
+// ✅ GOOD: format test — structure in, assert string
+let t = MyType { field: value };
+assert_eq!(t.to_string(), "expected_output");
+```
+
+This also applies to `serde_json::to_string` / `serde_json::from_str` pairs and any other serialize/deserialize combinations.
+
 ## Code Quality and Validation
 
 ### Automatic Formatting (CRITICAL)

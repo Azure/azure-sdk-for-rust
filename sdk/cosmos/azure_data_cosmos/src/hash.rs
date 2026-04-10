@@ -9,11 +9,14 @@ const MAX_STRING_BYTES_TO_APPEND: usize = 100;
 const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
 const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
 
+pub(crate) const EPK_MIN: &str = "";
+pub(crate) const EPK_MAX: &str = "FF";
+
 /// A strongly-typed wrapper around the hex-encoded effective partition key string.
 ///
 /// Use [`AsRef<str>`] to obtain the underlying string when passing to APIs
 /// that accept `&str`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EffectivePartitionKey(String);
 
 impl EffectivePartitionKey {
@@ -26,6 +29,18 @@ impl EffectivePartitionKey {
 impl AsRef<str> for EffectivePartitionKey {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl From<String> for EffectivePartitionKey {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<&str> for EffectivePartitionKey {
+    fn from(s: &str) -> Self {
+        Self(s.to_owned())
     }
 }
 

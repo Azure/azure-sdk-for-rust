@@ -3,9 +3,10 @@
 #![allow(dead_code)]
 
 use crate::cosmos_request::CosmosRequest;
-use crate::models::{ContainerReference, CosmosResponse};
+use crate::models::{ContainerReference, CosmosResponse, PartitionKeyDefinition};
 use crate::pipeline::GatewayPipeline;
 use crate::resource_context::ResourceType;
+use crate::routing::collection_routing_map::CollectionRoutingMap;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::Context;
@@ -39,6 +40,54 @@ impl ContainerConnection {
             global_partition_endpoint_manager,
             container_ref,
         }
+    }
+
+    /// Returns the partition key definition for this container.
+    pub(crate) fn partition_key_definition(&self) -> &PartitionKeyDefinition {
+        self.container_ref.partition_key_definition()
+    }
+
+    /// Returns the collection RID for this container.
+    pub(crate) fn collection_rid(&self) -> &str {
+        self.container_ref.rid()
+    }
+
+    /// Resolves the routing map for this container.
+    ///
+    /// When `force_refresh` is `true`, fetches a fresh routing map from the service
+    /// even if a cached version exists.
+    pub(crate) async fn resolve_routing_map(
+        &self,
+        force_refresh: bool,
+    ) -> azure_core::Result<CollectionRoutingMap> {
+        let collection_name = self.container_ref.name();
+        let collection_rid = self.container_ref.rid();
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(collection_name, collection_rid, None)
+            .await?;
+        if force_refresh {
+            if let Some(rm) = routing_map {
+                return self
+                    .pk_range_cache
+                    .try_lookup(collection_name, collection_rid, Some(rm))
+                    .await
+                    .and_then(|opt| {
+                        opt.ok_or_else(|| {
+                            azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::Other,
+                                "failed to resolve routing map for container",
+                            )
+                        })
+                    });
+            }
+        }
+        routing_map.ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "failed to resolve routing map for container",
+            )
+        })
     }
 
     pub async fn send<T>(
