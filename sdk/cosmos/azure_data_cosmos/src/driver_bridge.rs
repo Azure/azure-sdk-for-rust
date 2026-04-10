@@ -15,8 +15,8 @@ use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosR
 
 use crate::{
     constants::{
-        ACTIVITY_ID, CONTINUATION, INDEX_METRICS, ITEM_COUNT, QUERY_METRICS, REQUEST_CHARGE,
-        REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
+        ACTIVITY_ID, CONTINUATION, INDEX_METRICS, ITEM_COUNT, OFFER_REPLACE_PENDING, QUERY_METRICS,
+        REQUEST_CHARGE, REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
     },
     models::CosmosResponse,
 };
@@ -74,6 +74,9 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     }
     if let Some(query_metrics) = &cosmos_headers.query_metrics {
         headers.insert(QUERY_METRICS, query_metrics.clone());
+    }
+    if let Some(pending) = cosmos_headers.offer_replace_pending {
+        headers.insert(OFFER_REPLACE_PENDING, pending.to_string());
     }
 
     headers
@@ -218,6 +221,7 @@ mod tests {
         h.continuation = Some("cont-token".to_string());
         h.item_count = Some(42);
         h.substatus = Some(SubStatusCode::new(0));
+        h.offer_replace_pending = Some(true);
         h
     }
 
@@ -238,6 +242,10 @@ mod tests {
         assert_eq!(headers.get_optional_str(&CONTINUATION), Some("cont-token"));
         assert_eq!(headers.get_optional_str(&ITEM_COUNT), Some("42"));
         assert_eq!(headers.get_optional_str(&SUB_STATUS), Some("0"));
+        assert_eq!(
+            headers.get_optional_str(&OFFER_REPLACE_PENDING),
+            Some("true")
+        );
     }
 
     #[test]
@@ -254,5 +262,6 @@ mod tests {
         assert_eq!(headers.get_optional_str(&CONTINUATION), None);
         assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
         assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
+        assert_eq!(headers.get_optional_str(&OFFER_REPLACE_PENDING), None);
     }
 }

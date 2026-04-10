@@ -4,7 +4,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::{
-    clients::{ClientContext, ContainerClient, OffersClient},
+    clients::{offers_client, ClientContext, ContainerClient},
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
     resource_context::{ResourceLink, ResourceType},
@@ -12,6 +12,8 @@ use crate::{
     ThroughputOptions,
 };
 use azure_core::http::Context;
+
+use super::ThroughputPoller;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -193,25 +195,43 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.context.pipeline.clone(), resource_id);
-        offers_client.read(Context::default()).await
+        offers_client::find_offer(&self.context.driver, self.context.driver.account(), &resource_id)
+            .await
     }
 
-    /// Replaces the database throughput properties.
+    /// Begins replacing the database throughput properties.
     ///
-    /// Note that throughput changes may not take effect immediately.
-    /// The service processes the change asynchronously, so you may need to poll
-    /// [`DatabaseClient::read_throughput()`] to confirm the new throughput is in effect.
+    /// The Cosmos DB service may process throughput changes asynchronously. The returned
+    /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
+    /// stream to observe progress.
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
-    pub async fn replace_throughput(
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::models::ThroughputProperties;
+    /// # async fn example(db_client: azure_data_cosmos::clients::DatabaseClient) -> azure_core::Result<()> {
+    /// let throughput = db_client
+    ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
+    ///     .await? // start the replace operation
+    ///     .await? // wait for completion (polls if async)
+    ///     .into_model()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<ResourceResponse<ThroughputProperties>> {
+    ) -> azure_core::Result<ThroughputPoller> {
+        #[allow(
+            unused_variables,
+            reason = "The 'options' variable may be used in the future"
+        )]
+        let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -219,11 +239,13 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.context.pipeline.clone(), resource_id);
-        offers_client
-            .replace(Context::default(), throughput)
-            .await
-            .map(ResourceResponse::new)
+        offers_client::begin_replace(
+            self.context.driver.clone(),
+            self.context.driver.account().clone(),
+            &resource_id,
+            throughput,
+        )
+        .await
     }
 }
 
@@ -244,6 +266,6 @@ mod tests {
         assert_send(client.create_container(todo!(), todo!()));
         assert_send(client.delete(todo!()));
         assert_send(client.read_throughput(todo!()));
-        assert_send(client.replace_throughput(todo!(), todo!()));
+        assert_send(client.begin_replace_throughput(todo!(), todo!()));
     }
 }

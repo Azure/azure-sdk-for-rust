@@ -112,7 +112,8 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             let new_throughput = ThroughputProperties::manual(500);
             let throughput_response = container_client
-                .replace_throughput(new_throughput, None)
+                .begin_replace_throughput(new_throughput, None)
+                .await?
                 .await?
                 .into_model()?;
             assert_eq!(Some(500), throughput_response.throughput());
