@@ -20,7 +20,7 @@ use azure_storage_blob::{
         BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
         BlockBlobClientUploadOptions, ListBlobsIncludeItem,
     },
-    BlobContainerClient, StorageUploadBody,
+    BlobContainerClient,
 };
 use futures::TryStreamExt;
 use std::{collections::HashMap, sync::Arc};
