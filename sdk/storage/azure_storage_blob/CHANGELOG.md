@@ -5,8 +5,11 @@
 ### Features Added
 
 - Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
+- Added `models::HttpRange` for specifying byte ranges in blob operations, replacing the removed `format_page_range()` helper.
 
 ### Breaking Changes
+
+- Removed `format_page_range()`. Use `HttpRange::new(offset, length)` or `HttpRange::from_offset(offset)` instead.
 
 - Revised `download()` on `BlobClient` with the following breaking changes:
   - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
