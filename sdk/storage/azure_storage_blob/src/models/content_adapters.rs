@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::future::Future;
+
 use azure_core::stream::SeekableStream;
 use bytes::Bytes;
-use futures::AsyncRead;
+use futures::{AsyncRead, AsyncReadExt};
 
 pub enum StorageUploadBody {
     Bytes(Bytes),
@@ -63,13 +65,15 @@ struct AsyncReadLenHintWrapper<T> {
     pub async_read: T,
     pub len_hint: Option<u64>,
 }
-impl<T: AsyncRead> AsyncRead for AsyncReadLenHintWrapper<T> {
+impl<T: AsyncRead + Unpin> AsyncRead for AsyncReadLenHintWrapper<T> {
     fn poll_read(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-        _buf: &mut [u8],
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &mut [u8],
     ) -> std::task::Poll<std::io::Result<usize>> {
-        todo!()
+        let fut = self.async_read.read(buf);
+        futures::pin_mut!(fut);
+        fut.poll(cx)
     }
 }
 impl<T: AsyncRead + Send + Sync + Unpin> AsyncReadWithLenHint for AsyncReadLenHintWrapper<T> {
@@ -78,11 +82,11 @@ impl<T: AsyncRead + Send + Sync + Unpin> AsyncReadWithLenHint for AsyncReadLenHi
     }
 }
 
-pub trait AsyncReadExt {
+pub trait AsyncReadLenExt {
     fn with_len_hint(self, len_hint: Option<u64>) -> impl AsyncReadWithLenHint;
 }
 
-impl<T> AsyncReadExt for T
+impl<T> AsyncReadLenExt for T
 where
     T: AsyncRead + Send + Sync + Unpin,
 {
