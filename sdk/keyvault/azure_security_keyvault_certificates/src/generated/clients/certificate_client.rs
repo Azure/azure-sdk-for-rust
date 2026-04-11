@@ -1428,4 +1428,4 @@ impl CertificateClient {
 /// SDK author provides a custom options type and should reference this constant
 /// in their `Default` implementation rather than hardcoding the value.
 #[allow(dead_code)]
-pub(crate) const DEFAULT_API_VERSION: &str = "2025-07-01";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-01-01-preview";
