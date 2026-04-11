@@ -246,11 +246,6 @@ impl AccountMetadataCache {
         }
     }
 
-    /// Returns cached account properties for the given endpoint, if present.
-    pub(crate) async fn get(&self, endpoint: &AccountEndpoint) -> Option<Arc<AccountProperties>> {
-        self.cache.get(endpoint).await
-    }
-
     /// Gets account properties from cache, or fetches and caches them.
     ///
     /// If the fetch fails, the error is propagated and nothing is cached,

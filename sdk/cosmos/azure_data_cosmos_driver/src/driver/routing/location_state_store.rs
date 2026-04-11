@@ -46,8 +46,13 @@ impl LocationSnapshot {
     }
 }
 
-type AccountRefreshFn =
-    Arc<dyn Fn() -> BoxFuture<'static, azure_core::Result<AccountProperties>> + Send + Sync>;
+type AccountRefreshFn = Arc<
+    dyn Fn(
+            Option<Arc<AccountProperties>>,
+        ) -> BoxFuture<'static, azure_core::Result<AccountProperties>>
+        + Send
+        + Sync,
+>;
 
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
@@ -269,7 +274,9 @@ impl LocationStateStore {
             return;
         }
 
-        let _ = self
+        // Capture the previous properties before invalidation so the refresh
+        // callback can use them for regional fallback if the primary fails.
+        let previous_props = self
             .account_metadata_cache
             .invalidate(&self.account_endpoint)
             .await;
@@ -278,7 +285,7 @@ impl LocationStateStore {
         let refreshed = self
             .account_metadata_cache
             .get_or_fetch(self.account_endpoint.clone(), || async move {
-                (refresh_fn)().await
+                (refresh_fn)(previous_props).await
             })
             .await;
 
@@ -397,7 +404,7 @@ mod tests {
     #[tokio::test]
     async fn apply_marks_endpoint_unavailable() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|| {
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
             let payload = test_refresh_payload();
             let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
                 Box::pin(async move { Ok(payload) });
@@ -429,7 +436,7 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh_calls = Arc::new(AtomicUsize::new(0));
         let refresh_calls_clone = Arc::clone(&refresh_calls);
-        let refresh = Arc::new(move || {
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
             let refresh_calls = Arc::clone(&refresh_calls_clone);
             let payload = test_refresh_payload();
             let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
@@ -463,7 +470,7 @@ mod tests {
     #[test]
     fn sync_account_properties_prunes_expired_marks_even_when_etag_is_unchanged() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|| {
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
             let payload = test_refresh_payload();
             let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
                 Box::pin(async move { Ok(payload) });
