@@ -23,7 +23,7 @@ use std::fmt::Write;
 /// where an EPK is expected.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub(crate) struct EffectivePartitionKey(String);
+pub struct EffectivePartitionKey(String);
 
 impl EffectivePartitionKey {
     /// Returns the minimum EPK (empty string), representing the start of the EPK space.

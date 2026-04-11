@@ -3,11 +3,12 @@
 
 use crate::{
     clients::offers_client,
+    feed_range::FeedRange,
     models::{
         BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
         ThroughputProperties,
     },
-    options::{BatchOptions, QueryOptions, ReadContainerOptions},
+    options::{BatchOptions, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions},
     pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
@@ -25,7 +26,10 @@ use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointMa
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
-use azure_data_cosmos_driver::models::{ContainerReference, CosmosOperation, ItemReference};
+use azure_data_cosmos_driver::models::{
+    effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
+    CosmosOperation, ItemReference, PartitionKeyKind,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -38,7 +42,6 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
-    #[expect(dead_code, reason = "will be used when tracing spans are re-added")]
     container_id: String,
     driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
@@ -785,36 +788,159 @@ impl ContainerClient {
             .await
             .map(BatchResponse::new)
     }
+
+    /// Gets the feed ranges for this container.
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub async fn read_feed_ranges(
+        &self,
+        options: Option<ReadFeedRangesOptions>,
+    ) -> azure_core::Result<Vec<FeedRange>> {
+        let options = options.unwrap_or_default();
+        let routing_map = self
+            .container_connection
+            .resolve_routing_map(options.force_refresh())
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })?;
+        Ok(routing_map
+            .ordered_partition_key_ranges()
+            .iter()
+            .map(FeedRange::from_sdk_partition_key_range)
+            .collect())
+    }
+
+    /// Returns the [`FeedRange`]s covering the given partition key.
+    ///
+    /// Full keys return a single-element `Vec`. Prefix keys on MultiHash
+    /// containers return one or more feed ranges.
+    #[tracing::instrument(skip_all, fields(id = self.container_id))]
+    pub async fn feed_range_from_partition_key(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        options: Option<ReadFeedRangesOptions>,
+    ) -> azure_core::Result<Vec<FeedRange>> {
+        let partition_key = partition_key.into();
+        let driver_pk = partition_key.into_driver_partition_key();
+        let options = options.unwrap_or_default();
+        let pk_def = self.container_connection.partition_key_definition();
+        let values = driver_pk.values();
+
+        if values.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "partition key must have at least one component",
+            ));
+        }
+        if values.len() > pk_def.paths().len() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "partition key has {} components but container definition has {} paths",
+                    values.len(),
+                    pk_def.paths().len()
+                ),
+            ));
+        }
+
+        let is_prefix =
+            pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
+        if !is_prefix && values.len() != pk_def.paths().len() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "prefix partition keys are only supported for MultiHash (hierarchical) containers",
+            ));
+        }
+
+        let routing_map = self
+            .container_connection
+            .resolve_routing_map(options.force_refresh())
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "failed to resolve routing map for container",
+                )
+            })?;
+
+        if is_prefix {
+            let epk_range = DriverEpk::compute_range(values, pk_def)?;
+            let query_range = crate::routing::range::Range::new(
+                epk_range.start.as_str().to_owned(),
+                epk_range.end.as_str().to_owned(),
+                true,
+                false,
+            );
+            let pkranges = routing_map.get_overlapping_ranges(&query_range);
+            if pkranges.is_empty() {
+                let refreshed = self
+                    .container_connection
+                    .resolve_routing_map(true)
+                    .await?
+                    .ok_or_else(|| {
+                        azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::Other,
+                            "failed to resolve routing map after refresh",
+                        )
+                    })?;
+                Ok(refreshed
+                    .get_overlapping_ranges(&query_range)
+                    .iter()
+                    .map(FeedRange::from_sdk_partition_key_range)
+                    .collect())
+            } else {
+                Ok(pkranges
+                    .iter()
+                    .map(FeedRange::from_sdk_partition_key_range)
+                    .collect())
+            }
+        } else {
+            let epk = DriverEpk::compute(values, pk_def.kind(), pk_def.version());
+            match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
+                Ok(pkr) => Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)]),
+                Err(_) => {
+                    let refreshed = self
+                        .container_connection
+                        .resolve_routing_map(true)
+                        .await?
+                        .ok_or_else(|| {
+                            azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::Other,
+                                "failed to resolve routing map after refresh",
+                            )
+                        })?;
+                    let pkr = refreshed.get_range_by_effective_partition_key(epk.as_str())?;
+                    Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)])
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// Compile-time assertion that `ContainerClient` async method futures are `Send`.
-    ///
-    /// This function is never called; it only needs to compile.
-    /// If any future is not `Send`, compilation will fail.
     #[allow(dead_code, unreachable_code, unused_variables)]
     fn _assert_futures_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let client: &ContainerClient = todo!();
 
-        // Container operations
         assert_send(client.read(todo!()));
         assert_send(client.replace(todo!(), todo!()));
         assert_send(client.read_throughput(todo!()));
         assert_send(client.begin_replace_throughput(todo!(), todo!()));
         assert_send(client.delete(todo!()));
-
-        // Item operations (use "" for partition_key to avoid never-type fallback issues)
         assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!()));
         assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
         assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!()));
         assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
         assert_send(client.delete_item("", todo!(), todo!()));
-
-        // Batch operations
         assert_send(client.execute_transactional_batch(todo!(), todo!()));
+        assert_send(client.read_feed_ranges(todo!()));
+        assert_send(client.feed_range_from_partition_key("", todo!()));
     }
 }

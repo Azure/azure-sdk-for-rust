@@ -18,6 +18,7 @@ async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
 azure_data_cosmos_driver = { workspace = true }
+base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }

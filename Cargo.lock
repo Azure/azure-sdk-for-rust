@@ -375,6 +375,7 @@ dependencies = [
  "azure_core_test",
  "azure_data_cosmos_driver",
  "azure_identity",
+ "base64 0.22.1",
  "clap",
  "futures",
  "pin-project",
