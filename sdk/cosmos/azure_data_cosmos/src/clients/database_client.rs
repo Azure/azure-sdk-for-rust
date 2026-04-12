@@ -14,6 +14,7 @@ use crate::{
 };
 use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
+use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
 use std::sync::Arc;
 
@@ -106,16 +107,16 @@ impl DatabaseClient {
     ///     .into_model()?;
     /// # }
     /// ```
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
-        let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
         let driver_response = self
             .driver
-            .execute_operation(operation, options.operation)
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -176,15 +177,17 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&properties)?;
-        let operation =
+        let mut operation =
             CosmosOperation::create_container(self.database_ref.clone()).with_body(body);
 
-        let operation_options =
-            crate::driver_bridge::apply_throughput_headers(options.operation, &options.throughput)?;
+        if let Some(throughput) = &options.throughput {
+            operation = operation
+                .with_request_headers(crate::throughput_headers::from_throughput(throughput)?);
+        }
 
         let driver_response = self
             .driver
-            .execute_operation(operation, operation_options)
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -198,16 +201,16 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<()>> {
-        let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
         let driver_response = self
             .driver
-            .execute_operation(operation, options.operation)
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(

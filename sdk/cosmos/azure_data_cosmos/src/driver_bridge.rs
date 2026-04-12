@@ -82,34 +82,6 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     headers
 }
 
-/// Merges throughput headers into an [`OperationOptions`], preserving any existing custom headers.
-///
-/// If `throughput` is `None` or produces no headers, `options` is returned unchanged.
-/// Throughput headers are inserted only if the key is not already present in existing
-/// custom headers, so user-provided values take precedence.
-pub(crate) fn apply_throughput_headers(
-    options: azure_data_cosmos_driver::options::OperationOptions,
-    throughput: &Option<crate::models::ThroughputProperties>,
-) -> azure_core::Result<azure_data_cosmos_driver::options::OperationOptions> {
-    use azure_core::http::headers::AsHeaders;
-
-    let throughput = match throughput {
-        Some(t) => t,
-        None => return Ok(options),
-    };
-
-    let throughput_headers: Vec<_> = throughput.as_headers()?.collect();
-    if throughput_headers.is_empty() {
-        return Ok(options);
-    }
-
-    let mut merged = options.custom_headers().cloned().unwrap_or_default();
-    for (name, value) in throughput_headers {
-        merged.entry(name).or_insert(value);
-    }
-    Ok(options.with_custom_headers(merged))
-}
-
 /// Translates SDK fault injection rules into driver fault injection rules.
 ///
 /// The `enabled` and `hit_count` state is shared between the SDK and driver
@@ -235,12 +207,10 @@ pub(crate) fn sdk_fi_rules_to_driver_fi_rules(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::ThroughputProperties;
     use azure_data_cosmos_driver::models::{
         ActivityId, CosmosResponseHeaders, ETag, RequestCharge, SessionToken as DriverSessionToken,
         SubStatusCode,
     };
-    use azure_data_cosmos_driver::options::OperationOptions;
 
     fn make_headers_all_some() -> CosmosResponseHeaders {
         let mut h = CosmosResponseHeaders::new();
@@ -293,106 +263,5 @@ mod tests {
         assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
         assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
         assert_eq!(headers.get_optional_str(&OFFER_REPLACE_PENDING), None);
-    }
-
-    #[test]
-    fn apply_throughput_headers_none_returns_unchanged() {
-        let options = OperationOptions::default();
-        let result = apply_throughput_headers(options, &None).unwrap();
-        assert!(result.custom_headers().is_none());
-    }
-
-    #[test]
-    fn apply_throughput_headers_empty_offer_returns_unchanged() {
-        let options = OperationOptions::default();
-        let throughput = Some(ThroughputProperties::default());
-        let result = apply_throughput_headers(options, &throughput).unwrap();
-        // Default ThroughputProperties has no offer_throughput or autopilot, so no headers.
-        assert!(result.custom_headers().is_none());
-    }
-
-    #[test]
-    fn apply_throughput_headers_adds_manual_throughput() {
-        let options = OperationOptions::default();
-        let throughput = Some(ThroughputProperties::manual(400));
-        let result = apply_throughput_headers(options, &throughput).unwrap();
-
-        let headers = result.custom_headers().expect("should have custom headers");
-        assert_eq!(
-            headers
-                .get(&crate::constants::OFFER_THROUGHPUT)
-                .map(|v| v.as_str()),
-            Some("400")
-        );
-    }
-
-    #[test]
-    fn apply_throughput_headers_preserves_existing_custom_headers() {
-        use azure_core::http::headers::{HeaderName, HeaderValue};
-
-        let custom_key = HeaderName::from("x-custom-header");
-        let mut existing = std::collections::HashMap::new();
-        existing.insert(custom_key.clone(), HeaderValue::from("custom-value"));
-        let options = OperationOptions::default().with_custom_headers(existing);
-
-        let throughput = Some(ThroughputProperties::manual(400));
-        let result = apply_throughput_headers(options, &throughput).unwrap();
-
-        let headers = result.custom_headers().expect("should have custom headers");
-        // Both the custom header and throughput header should be present.
-        assert_eq!(
-            headers.get(&custom_key).map(|v| v.as_str()),
-            Some("custom-value")
-        );
-        assert_eq!(
-            headers
-                .get(&crate::constants::OFFER_THROUGHPUT)
-                .map(|v| v.as_str()),
-            Some("400")
-        );
-    }
-
-    #[test]
-    fn apply_throughput_headers_user_headers_take_precedence() {
-        use azure_core::http::headers::HeaderValue;
-
-        // User sets a custom value for the same header key the throughput would use.
-        let mut existing = std::collections::HashMap::new();
-        existing.insert(
-            crate::constants::OFFER_THROUGHPUT,
-            HeaderValue::from("user-value"),
-        );
-        let options = OperationOptions::default().with_custom_headers(existing);
-
-        let throughput = Some(ThroughputProperties::manual(400));
-        let result = apply_throughput_headers(options, &throughput).unwrap();
-
-        let headers = result.custom_headers().expect("should have custom headers");
-        // User-provided value takes precedence via or_insert.
-        assert_eq!(
-            headers
-                .get(&crate::constants::OFFER_THROUGHPUT)
-                .map(|v| v.as_str()),
-            Some("user-value")
-        );
-    }
-
-    #[test]
-    fn apply_throughput_headers_adds_autoscale_throughput() {
-        let options = OperationOptions::default();
-        let throughput = Some(ThroughputProperties::autoscale(4000, None));
-        let result = apply_throughput_headers(options, &throughput).unwrap();
-
-        let headers = result.custom_headers().expect("should have custom headers");
-        let autopilot_value = headers
-            .get(&crate::constants::OFFER_AUTOPILOT_SETTINGS)
-            .expect("should have autopilot header");
-        // The header value is a JSON-serialized OfferAutoscaleSettings containing maxThroughput.
-        assert!(
-            autopilot_value.as_str().contains("4000"),
-            "autopilot header should contain the max throughput value"
-        );
-        // Manual throughput header should not be present.
-        assert!(headers.get(&crate::constants::OFFER_THROUGHPUT).is_none());
     }
 }

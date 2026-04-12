@@ -20,6 +20,9 @@ pub(crate) mod request_header_names {
     pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
     pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
     pub static PREFER: HeaderName = HeaderName::from_static("prefer");
+    pub static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
+    pub static OFFER_AUTOPILOT_SETTINGS: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 }
 
 /// Standard Cosmos DB response header names.
@@ -67,6 +70,12 @@ pub struct CosmosRequestHeaders {
 
     /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
     pub precondition: Option<Precondition>,
+
+    /// Manual throughput in RU/s (`x-ms-offer-throughput`).
+    pub offer_throughput: Option<usize>,
+
+    /// JSON-serialized autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
+    pub offer_autopilot_settings: Option<String>,
 }
 
 impl CosmosRequestHeaders {
@@ -100,6 +109,18 @@ impl CosmosRequestHeaders {
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
             }
+        }
+        if let Some(throughput) = self.offer_throughput {
+            headers.insert(
+                request_header_names::OFFER_THROUGHPUT.clone(),
+                HeaderValue::from(throughput.to_string()),
+            );
+        }
+        if let Some(autopilot) = self.offer_autopilot_settings.as_ref() {
+            headers.insert(
+                request_header_names::OFFER_AUTOPILOT_SETTINGS.clone(),
+                HeaderValue::from(autopilot.clone()),
+            );
         }
     }
 }
@@ -397,6 +418,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
 
         assert_eq!(
@@ -415,6 +438,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -436,6 +461,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -457,6 +484,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -478,6 +507,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -499,6 +530,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
             session_token: Some(SessionToken::new("session:100".to_string())),
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 

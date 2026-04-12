@@ -14,6 +14,7 @@ use crate::{
 };
 use azure_core::http::{Context, Url};
 use azure_data_cosmos_driver::models::CosmosOperation;
+use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
 use serde::Serialize;
 use std::sync::Arc;
@@ -176,15 +177,17 @@ impl CosmosClient {
         }
 
         let body = serde_json::to_vec(&RequestBody { id })?;
-        let operation =
+        let mut operation =
             CosmosOperation::create_database(self.driver.account().clone()).with_body(body);
 
-        let operation_options =
-            crate::driver_bridge::apply_throughput_headers(options.operation, &options.throughput)?;
+        if let Some(throughput) = &options.throughput {
+            operation = operation
+                .with_request_headers(crate::throughput_headers::from_throughput(throughput)?);
+        }
 
         let driver_response = self
             .driver
-            .execute_operation(operation, operation_options)
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
