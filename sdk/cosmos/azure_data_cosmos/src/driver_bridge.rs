@@ -376,4 +376,23 @@ mod tests {
             Some("user-value")
         );
     }
+
+    #[test]
+    fn apply_throughput_headers_adds_autoscale_throughput() {
+        let options = OperationOptions::default();
+        let throughput = Some(ThroughputProperties::autoscale(4000, None));
+        let result = apply_throughput_headers(options, &throughput).unwrap();
+
+        let headers = result.custom_headers().expect("should have custom headers");
+        let autopilot_value = headers
+            .get(&crate::constants::OFFER_AUTOPILOT_SETTINGS)
+            .expect("should have autopilot header");
+        // The header value is a JSON-serialized OfferAutoscaleSettings containing maxThroughput.
+        assert!(
+            autopilot_value.as_str().contains("4000"),
+            "autopilot header should contain the max throughput value"
+        );
+        // Manual throughput header should not be present.
+        assert!(headers.get(&crate::constants::OFFER_THROUGHPUT).is_none());
+    }
 }
