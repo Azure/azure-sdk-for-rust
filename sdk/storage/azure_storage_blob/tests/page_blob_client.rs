@@ -3,15 +3,12 @@
 
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{
-    format_page_range,
-    models::{
-        BlobClientCreateSnapshotResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-        PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions,
-        PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
-        PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
-        SequenceNumberActionType,
-    },
+use azure_storage_blob::models::{
+    BlobClientCreateSnapshotResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+    HttpRange, PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions,
+    PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
+    PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
+    SequenceNumberActionType,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use std::{collections::HashMap, error::Error};
@@ -71,7 +68,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -100,13 +97,13 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
 
     page_blob_client
-        .clear_pages(format_page_range(0, 512)?, None)
+        .clear_pages(HttpRange::new(0, 512).to_string(), None)
         .await?;
 
     // Assert
@@ -135,7 +132,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             1024,
-            format_page_range(0, 1024)?,
+            HttpRange::new(0, 1024).to_string(),
             None,
         )
         .await;
@@ -148,7 +145,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             1024,
-            format_page_range(0, 1024)?,
+            HttpRange::new(0, 1024).to_string(),
             None,
         )
         .await?;
@@ -230,7 +227,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_pages(
             RequestContent::from(data_b.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -241,16 +238,16 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_pages(
             RequestContent::from(data_a.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
     page_blob_client_2
         .upload_pages_from_url(
             blob_client_1.url().as_str().into(),
-            format_page_range(0, data_b.len() as u64)?,
+            HttpRange::new(0, data_b.len() as u64).to_string(),
             data_b.len() as u64,
-            format_page_range(512, data_b.len() as u64)?,
+            HttpRange::new(512, data_b.len() as u64).to_string(),
             None,
         )
         .await?;
@@ -289,7 +286,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -307,13 +304,13 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             RequestContent::from(vec![b'B'; 512]),
             512,
-            format_page_range(512, 512)?,
+            HttpRange::new(512, 512).to_string(),
             None,
         )
         .await?;
     let response = page_blob_client
         .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-            range: Some(format_page_range(0, 512)?),
+            range: Some(HttpRange::new(0, 512).to_string()),
             ..Default::default()
         }))
         .await?
@@ -396,7 +393,7 @@ async fn test_upload_pages_sequence_number_condition(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 if_sequence_number_equal_to: Some(3),
                 ..Default::default()
@@ -415,7 +412,7 @@ async fn test_upload_pages_sequence_number_condition(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 if_sequence_number_equal_to: Some(5),
                 ..Default::default()
@@ -428,7 +425,7 @@ async fn test_upload_pages_sequence_number_condition(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 if_sequence_number_less_than: Some(3),
                 ..Default::default()
@@ -447,7 +444,7 @@ async fn test_upload_pages_sequence_number_condition(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 if_sequence_number_less_than: Some(6),
                 ..Default::default()
@@ -460,7 +457,7 @@ async fn test_upload_pages_sequence_number_condition(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 if_sequence_number_less_than_or_equal_to: Some(3),
                 ..Default::default()
@@ -479,7 +476,7 @@ async fn test_upload_pages_sequence_number_condition(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 if_sequence_number_less_than_or_equal_to: Some(5),
                 ..Default::default()
@@ -506,7 +503,7 @@ async fn test_get_page_ranges_snapshot(ctx: TestContext) -> Result<(), Box<dyn E
         .upload_pages(
             RequestContent::from(vec![b'A'; 512]),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -558,7 +555,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 transactional_content_md5: Some(vec![0u8; 16]),
                 ..Default::default()
@@ -575,7 +572,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 transactional_content_md5: Some(correct_md5),
                 ..Default::default()
@@ -588,7 +585,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 transactional_content_crc64: Some(vec![0u8; 8]),
                 ..Default::default()
@@ -605,7 +602,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesOptions {
                 transactional_content_crc64: Some(correct_crc64),
                 ..Default::default()
@@ -618,7 +615,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
         .upload_pages(
             RequestContent::from(data),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -672,7 +669,7 @@ async fn test_upload_pages_from_url_source_if_match(
         .upload_pages(
             RequestContent::from(vec![b'S'; 512]),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
@@ -691,9 +688,9 @@ async fn test_upload_pages_from_url_source_if_match(
     dest_page_blob
         .upload_pages_from_url(
             source_blob_client.url().as_str().into(),
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesFromUrlOptions {
                 source_if_match: Some(etag.clone().into()),
                 ..Default::default()
@@ -705,9 +702,9 @@ async fn test_upload_pages_from_url_source_if_match(
     let response = dest_page_blob
         .upload_pages_from_url(
             source_blob_client.url().as_str().into(),
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             Some(PageBlobClientUploadPagesFromUrlOptions {
                 source_if_none_match: Some(etag.into()),
                 ..Default::default()

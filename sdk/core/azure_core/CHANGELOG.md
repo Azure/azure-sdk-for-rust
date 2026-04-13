@@ -1,6 +1,6 @@
 # Release History
 
-## 0.34.0 (Unreleased)
+## 0.34.0 (2026-04-07)
 
 ### Features Added
 
@@ -13,8 +13,6 @@
 - `SeekableStream::is_empty()` and `Body::is_empty()` now return `Option<bool>`.
 - Added `tokio` feature to `default` features.
 - Changed `async_runtime::spawn`/`SpawnedTask` to return a trait object that supports `abort()`.
-
-### Bugs Fixed
 
 ### Other Changes
 

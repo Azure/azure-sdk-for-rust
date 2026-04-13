@@ -7,7 +7,10 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
-use azure_storage_blob::{format_page_range, models::BlockLookupList, BlobClient};
+use azure_storage_blob::{
+    models::{BlockLookupList, HttpRange},
+    BlobClient,
+};
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
@@ -182,7 +185,7 @@ async fn stream_upload_pages(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             request_content_from_bytes(&data),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;

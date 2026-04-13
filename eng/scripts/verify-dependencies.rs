@@ -23,7 +23,6 @@ static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core", "ureq"),
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),
-    ("azure_data_cosmos_native", "cbindgen"),
 ];
 
 fn main() {

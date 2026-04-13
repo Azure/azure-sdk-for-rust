@@ -120,5 +120,5 @@ struct Args {
     /// Larger values reduce the number of requests, while smaller values reduce memory
     /// used per in-flight request. When omitted, the client chooses a default.
     #[arg(long, value_name = "BYTES")]
-    partition_size: Option<NonZero<usize>>,
+    partition_size: Option<NonZero<u64>>,
 }

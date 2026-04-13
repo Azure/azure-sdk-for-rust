@@ -7,7 +7,7 @@
 //! All reads and writes must be aligned to 512-byte page boundaries. This sample
 //! demonstrates:
 //! 1. Create a page blob (512 bytes) with the "if not exists" guard.
-//! 2. Upload a page of data using `format_page_range`.
+//! 2. Upload a page of data using `HttpRange`.
 //! 3. List the valid page ranges to confirm the write.
 //! 4. Clear a page range to zero out the data.
 //! 5. Resize the blob to a larger size.
@@ -30,8 +30,7 @@ use std::env;
 use azure_core::http::RequestContent;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
-    format_page_range,
-    models::{BlobClientGetPropertiesResultHeaders, PageBlobClientCreateOptions},
+    models::{BlobClientGetPropertiesResultHeaders, HttpRange, PageBlobClientCreateOptions},
     BlobContainerClient,
 };
 
@@ -65,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write 512 bytes of data to bytes 0–511.
     let page_data = vec![b'A'; 512];
-    let range = format_page_range(0, 512)?;
+    let range = HttpRange::new(0, 512).to_string();
     page_blob_client
         .upload_pages(RequestContent::from(page_data), 512, range, None)
         .await?;
@@ -81,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Clear the page range (zeroes out those bytes).
     page_blob_client
-        .clear_pages(format_page_range(0, 512)?, None)
+        .clear_pages(HttpRange::new(0, 512).to_string(), None)
         .await?;
     println!("Cleared page range 0–511");
 

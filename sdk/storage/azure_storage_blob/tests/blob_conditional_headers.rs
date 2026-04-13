@@ -3,29 +3,25 @@
 
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{
-    format_page_range,
-    models::{
-        AccessTier, AppendBlobClientAppendBlockOptions, AppendBlobClientCreateOptions,
-        AppendBlobClientSealOptions, BlobClientAcquireLeaseOptions,
-        BlobClientAcquireLeaseResultHeaders, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientChangeLeaseResultHeaders,
-        BlobClientCreateSnapshotOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
-        BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTierOptions, BlobContainerClientAcquireLeaseOptions,
-        BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
-        BlobContainerClientChangeLeaseOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetAccessPolicyOptions,
-        BlobContainerClientSetMetadataOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientGetBlockListOptions, BlockBlobClientUploadOptions, BlockListType,
-        BlockLookupList, DeleteSnapshotsOptionType, PageBlobClientClearPagesOptions,
-        PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions,
-        PageBlobClientResizeOptions, PageBlobClientSetSequenceNumberOptions,
-        PageBlobClientUploadPagesOptions, SequenceNumberActionType, SignedIdentifiers,
-    },
+use azure_storage_blob::models::{
+    AccessTier, AppendBlobClientAppendBlockOptions, AppendBlobClientCreateOptions,
+    AppendBlobClientSealOptions, BlobClientAcquireLeaseOptions,
+    BlobClientAcquireLeaseResultHeaders, BlobClientBreakLeaseOptions, BlobClientChangeLeaseOptions,
+    BlobClientChangeLeaseResultHeaders, BlobClientCreateSnapshotOptions, BlobClientDeleteOptions,
+    BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
+    BlobClientGetPropertiesResultHeaders, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
+    BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
+    BlobClientSetTagsOptions, BlobClientSetTierOptions, BlobContainerClientAcquireLeaseOptions,
+    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
+    BlobContainerClientChangeLeaseOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientRenewLeaseOptions, BlobContainerClientSetAccessPolicyOptions,
+    BlobContainerClientSetMetadataOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientUploadOptions, BlockListType,
+    BlockLookupList, DeleteSnapshotsOptionType, HttpRange, PageBlobClientClearPagesOptions,
+    PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+    PageBlobClientSetSequenceNumberOptions, PageBlobClientUploadPagesOptions,
+    SequenceNumberActionType, SignedIdentifiers,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
@@ -1698,7 +1694,7 @@ mod page_blob_client {
         // Upload Pages – PageBlobClientUploadPagesOptions
 
         let page_data = RequestContent::from(vec![1u8; PAGE_SIZE]);
-        let range = format_page_range(0, PAGE_SIZE as u64)?;
+        let range = HttpRange::new(0, PAGE_SIZE as u64).to_string();
 
         // if_match Failure
         let err = page_blob_client

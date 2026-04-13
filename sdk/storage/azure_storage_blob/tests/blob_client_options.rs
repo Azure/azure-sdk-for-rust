@@ -9,7 +9,8 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    models::BlobClientGetPropertiesResultHeaders, BlobContainerClient, BlobContainerClientOptions,
+    models::{BlobClientDownloadOptions, BlobClientGetPropertiesResultHeaders},
+    BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, ClientOptionsExt, FailFirstPolicy,
@@ -24,10 +25,61 @@ use std::{
 };
 
 #[recorded::test]
+async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello rusty world";
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(data.to_vec())),
+        None,
+    )
+    .await?;
+
+    // Bounded Range Download (first 5 bytes: "hello")
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some(0..5),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(5, response.properties.content_length.unwrap());
+    let body = response.body.collect().await?;
+    assert_eq!(b"hello".to_vec(), body.to_vec());
+
+    // Bounded Range Download (middle 6 bytes: " rusty")
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some(5..11),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(6, response.properties.content_length.unwrap());
+    let body = response.body.collect().await?;
+    assert_eq!(b" rusty".to_vec(), body.to_vec());
+
+    // Bounded Range Download (last 6 bytes: " world")
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some(11..17),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(6, response.properties.content_length.unwrap());
+    let body = response.body.collect().await?;
+    assert_eq!(b" world".to_vec(), body.to_vec());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
-
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(

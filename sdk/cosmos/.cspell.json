@@ -12,7 +12,6 @@
     "autoscale",
     "azurecosmos",
     "backoff",
-    "brazilsouth",
     "bytearray",
     "canadacentral",
     "canadaeast",
@@ -23,11 +22,8 @@
     "chinaeast",
     "chinanorth",
     "cloneable",
-    "cmake",
     "colls",
     "cosmosclient",
-    "cstring",
-    "ctest",
     "Daad",
     "dedicatedgateway",
     "Dmaster",
@@ -61,12 +57,9 @@
     "keepalive",
     "koreacentral",
     "koreasouth",
-    "libazurecosmos",
     "linearizability",
-    "makefiles",
     "MEMORYSTATUSEX",
     "moka",
-    "msvc",
     "murmurhash",
     "myaccount",
     "mycoll",
@@ -151,14 +144,12 @@
     "westeurope",
     "westindia",
     "westus",
-    "winget",
     "yxxx"
   ],
   "overrides": [
     {
       "filename": [
-        "**/*.ps1",
-        "**/*.h"
+        "**/*.ps1"
       ],
       "dictionaries": [
         "crates",
