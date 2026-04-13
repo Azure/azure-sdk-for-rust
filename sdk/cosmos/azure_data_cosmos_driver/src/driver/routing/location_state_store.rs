@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore Replicaset
+
 //! Unified lock-free location state store.
 
 use std::{
