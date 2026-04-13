@@ -48,7 +48,7 @@ impl From<Box<dyn AsyncReadWithLenHint>> for StorageUploadBody {
     }
 }
 
-pub trait AsyncReadWithLenHint: AsyncRead + Send + Sync + Unpin {
+pub trait AsyncReadWithLenHint: AsyncRead + Send + Unpin {
     fn len(&self) -> Option<u64>;
     fn is_empty(&self) -> Option<bool> {
         self.len().map(|len| len == 0)
@@ -76,7 +76,7 @@ impl<T: AsyncRead + Unpin> AsyncRead for AsyncReadLenHintWrapper<T> {
         fut.poll(cx)
     }
 }
-impl<T: AsyncRead + Send + Sync + Unpin> AsyncReadWithLenHint for AsyncReadLenHintWrapper<T> {
+impl<T: AsyncRead + Send + Unpin> AsyncReadWithLenHint for AsyncReadLenHintWrapper<T> {
     fn len(&self) -> Option<u64> {
         self.len_hint
     }
@@ -88,7 +88,7 @@ pub trait AsyncReadLenExt {
 
 impl<T> AsyncReadLenExt for T
 where
-    T: AsyncRead + Send + Sync + Unpin,
+    T: AsyncRead + Send + Unpin,
 {
     fn with_len_hint(self, len_hint: Option<u64>) -> impl AsyncReadWithLenHint {
         AsyncReadLenHintWrapper {
@@ -114,7 +114,7 @@ mod tests {
     /// Sanity check that types do as expected.
     fn async_read_convert<T>(stream: T) -> StorageUploadBody
     where
-        T: AsyncRead + Clone + std::fmt::Debug + Send + Sync + Unpin + 'static,
+        T: AsyncRead + Clone + std::fmt::Debug + Send + Unpin + 'static,
     {
         StorageUploadBody::AsyncRead(Box::new(stream.with_len_hint(None)))
     }
