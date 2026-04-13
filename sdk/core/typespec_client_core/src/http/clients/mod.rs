@@ -40,6 +40,13 @@ impl Default for HttpClientOptions {
 }
 
 /// Create a new [`HttpClient`].
+///
+/// # Arguments
+///
+/// * `options` - Optional configuration for the [`Client`](::reqwest::Client).
+///   Automatic decompression is enabled if `reqwest_gzip` or `reqwest_deflate` are enabled.
+///   Client libraries can disable this without impacting other client libraries by disabling it
+///   when calling this function.
 #[cfg_attr(not(feature = "reqwest"), allow(unused_variables))]
 pub fn new_http_client(options: Option<HttpClientOptions>) -> Arc<dyn HttpClient> {
     #[cfg(feature = "reqwest")]

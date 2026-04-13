@@ -14,6 +14,13 @@ use tracing::{debug, warn};
 use typespec::error::{Error, ErrorKind, Result, ResultExt};
 
 /// Create a new [`HttpClient`] with the `reqwest` backend.
+///
+/// # Arguments
+///
+/// * `options` - Optional configuration for the [`Client`](::reqwest::Client).
+///   Automatic decompression is enabled if `reqwest_gzip` or `reqwest_deflate` are enabled.
+///   Client libraries can disable this without impacting other client libraries by disabling it
+///   when calling this function.
 #[cfg_attr(
     not(any(feature = "reqwest_gzip", feature = "reqwest_deflate")),
     allow(unused_variable)
