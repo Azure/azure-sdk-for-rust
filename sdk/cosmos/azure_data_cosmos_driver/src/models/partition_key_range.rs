@@ -53,7 +53,7 @@ pub struct PartitionKeyRange {
 
     /// Status of the partition key range
     #[serde(rename = "status", default)]
-    pub status: PartitionKeyRangeStatus,
+    pub(crate) status: PartitionKeyRangeStatus,
 
     /// Log Sequence Number
     #[serde(rename = "_lsn", default)]
@@ -116,7 +116,7 @@ impl PartitionKeyRange {
     }
 
     /// Returns a view of this partition key range as an `EpkRange<&EffectivePartitionKey>`.
-    pub fn as_range(&self) -> EpkRange<&EffectivePartitionKey> {
+    pub(crate) fn as_range(&self) -> EpkRange<&EffectivePartitionKey> {
         EpkRange {
             min: &self.min_inclusive,
             max: &self.max_exclusive,
