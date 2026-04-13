@@ -61,16 +61,16 @@ use crate::routing::range::Range;
 ///
 /// `FeedRange` supports two distinct serialization formats:
 ///
-/// - **[`Display`](std::fmt::Display)/[`FromStr`]** ΓÇö base64-encoded JSON, intended for string storage and cross-SDK transfer.
-/// - **[`Serialize`]/[`Deserialize`]** ΓÇö structured JSON (`{"Range": {...}}`), intended for embedding in JSON documents.
+/// - **[`Display`](std::fmt::Display)/[`FromStr`]** — base64-encoded JSON, intended for string storage and cross-SDK transfer.
+/// - **[`Serialize`]/[`Deserialize`]** — structured JSON (`{"Range": {...}}`), intended for embedding in JSON documents.
 ///
 /// These formats are **not interchangeable**: a value serialized with one cannot be deserialized with the other.
 ///
 /// # Comparison Methods
 ///
 /// Feed ranges support containment and overlap checks:
-/// - [`contains()`](FeedRange::contains) ΓÇö checks if another feed range is entirely within this one
-/// - [`overlaps()`](FeedRange::overlaps) ΓÇö checks if two feed ranges share any portion of the EPK space
+/// - [`contains()`](FeedRange::contains) — checks if another feed range is entirely within this one
+/// - [`overlaps()`](FeedRange::overlaps) — checks if two feed ranges share any portion of the EPK space
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct FeedRange {

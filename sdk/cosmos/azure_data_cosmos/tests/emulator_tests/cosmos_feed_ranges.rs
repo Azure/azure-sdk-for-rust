@@ -15,6 +15,10 @@ use base64::Engine;
 use framework::TestClient;
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -97,6 +101,10 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
