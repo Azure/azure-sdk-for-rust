@@ -876,6 +876,7 @@ impl ContainerClient {
             );
             let pkranges = routing_map.get_overlapping_ranges(&query_range);
             if pkranges.is_empty() {
+                tracing::debug!("routing map lookup returned no overlapping ranges for prefix key, retrying with force_refresh");
                 let refreshed = self
                     .container_connection
                     .resolve_routing_map(true)
@@ -902,6 +903,7 @@ impl ContainerClient {
             match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
                 Ok(pkr) => Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)]),
                 Err(_) => {
+                    tracing::debug!("routing map lookup failed for effective partition key, retrying with force_refresh");
                     let refreshed = self
                         .container_connection
                         .resolve_routing_map(true)

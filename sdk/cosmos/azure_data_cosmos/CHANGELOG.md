@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added `ThroughputPoller` type that implements `IntoFuture` and `Stream` for tracking asynchronous throughput replacement operations.
-- Added `FeedRange` type with `ContainerClient::read_feed_ranges()` and `ContainerClient::feed_range_from_partition_key()`. Supports hierarchical partition keys (MultiHash) including prefix partition keys that return multiple feed ranges. ([#3987](https://github.com/Azure/azure-sdk-for-rust/pull/3987))
+- Added `FeedRange` type with `ContainerClient::read_feed_ranges()` and `ContainerClient::feed_range_from_partition_key()`. Supports hierarchical partition keys (MultiHash) including prefix partition keys that return multiple feed ranges. ([#4149](https://github.com/Azure/azure-sdk-for-rust/pull/4149))
 
 ### Breaking Changes
 

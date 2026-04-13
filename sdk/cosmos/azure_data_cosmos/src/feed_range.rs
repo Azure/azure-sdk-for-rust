@@ -198,6 +198,10 @@ impl FeedRange {
     pub(crate) fn from_sdk_partition_key_range(
         pkr: &crate::routing::partition_key_range::PartitionKeyRange,
     ) -> Self {
+        debug_assert!(
+            pkr.min_inclusive.as_str() <= pkr.max_exclusive.as_str(),
+            "partition key range min_inclusive must be <= max_exclusive"
+        );
         Self {
             min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
             max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),

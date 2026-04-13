@@ -13,6 +13,11 @@ pub(crate) const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
 ///
 /// Use [`AsRef<str>`] to obtain the underlying string when passing to APIs
 /// that accept `&str`.
+///
+/// Ordering is lexicographic on the underlying hex string. This is correct because:
+/// - All actual EPK hash values are uppercase hex strings of consistent length
+/// - The sentinel MAX ("FF") sorts after all real hashes by the Cosmos DB EPK space design
+/// - The sentinel MIN ("") sorts before everything
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EffectivePartitionKey(String);
 

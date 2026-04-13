@@ -51,7 +51,9 @@ pub struct PartitionKeyRange {
     #[serde(rename = "targetThroughput", skip_serializing_if = "Option::is_none")]
     pub target_throughput: Option<f64>,
 
-    /// Status of the partition key range
+    /// Status of the partition key range.
+    ///
+    /// Not part of the public API surface; uses a crate-internal enum type.
     #[serde(rename = "status", default)]
     pub(crate) status: PartitionKeyRangeStatus,
 
