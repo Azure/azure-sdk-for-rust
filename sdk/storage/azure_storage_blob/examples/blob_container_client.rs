@@ -6,7 +6,7 @@
 //! This sample shows a small end-to-end container workflow:
 //! 1. Create a container.
 //! 2. Set and read container metadata.
-//! 3. Upload blobs and list them with continuation.
+//! 3. Upload blobs and list them (with the `include` option to request metadata).
 //! 4. Set and read a stored access policy (for SAS delegation).
 //! 5. Delete the container.
 //!
@@ -30,11 +30,11 @@ use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{
         AccessPolicy, BlobContainerClientGetPropertiesResultHeaders,
-        BlobContainerClientListBlobsOptions, SignedIdentifiers,
+        BlobContainerClientListBlobsOptions, ListBlobsIncludeItem, SignedIdentifiers,
     },
     BlobContainerClient,
 };
-use futures::StreamExt;
+use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -81,8 +81,7 @@ async fn set_and_get_metadata(
     Ok(())
 }
 
-/// Uploads three small blobs, then pages through the listing two at a time to
-/// demonstrate the continuation-token flow.
+/// Uploads three small blobs, then lists them, demonstrating the `include` option.
 async fn upload_and_list_blobs(
     container_client: &BlobContainerClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -96,19 +95,17 @@ async fn upload_and_list_blobs(
     }
     println!("Uploaded {} blobs", blob_names.len());
 
+    // Use the `include` option to request additional blob metadata in the listing.
     let options = BlobContainerClientListBlobsOptions {
-        maxresults: Some(2),
+        include: Some(vec![ListBlobsIncludeItem::Metadata]),
         ..Default::default()
     };
-    let mut pages = container_client.list_blobs(Some(options))?.into_pages();
+    let mut blobs = container_client.list_blobs(Some(options))?;
     let mut total = 0usize;
-    println!("Listing blobs (page size = 2):");
-    while let Some(page) = pages.next().await {
-        let segment = page?.into_model()?.segment;
-        for blob in segment.blob_items {
-            println!("  {}", blob.name.unwrap_or_default());
-            total += 1;
-        }
+    println!("Listing blobs:");
+    while let Some(blob) = blobs.try_next().await? {
+        println!("  {}", blob.name.unwrap_or_default());
+        total += 1;
     }
     println!("Found {total} blob(s) total");
 

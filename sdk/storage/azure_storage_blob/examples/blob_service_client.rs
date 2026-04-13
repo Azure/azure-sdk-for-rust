@@ -34,7 +34,7 @@ use azure_storage_blob::{
     },
     BlobServiceClient,
 };
-use futures::StreamExt;
+use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -105,15 +105,12 @@ async fn list_containers(
         include: Some(vec![ListContainersIncludeType::Metadata]),
         ..Default::default()
     };
-    let mut pages = service_client.list_containers(Some(options))?.into_pages();
+    let mut containers = service_client.list_containers(Some(options))?;
     println!("Listing containers with prefix '{prefix}'...");
-    while let Some(page) = pages.next().await {
-        let container_list = page?.into_model()?.container_items;
-        for container in container_list {
-            println!("  Container: {}", container.name.unwrap_or_default());
-            for (key, value) in container.metadata.unwrap_or_default() {
-                println!("    {key}: {value}");
-            }
+    while let Some(container) = containers.try_next().await? {
+        println!("  Container: {}", container.name.unwrap_or_default());
+        for (key, value) in container.metadata.unwrap_or_default() {
+            println!("    {key}: {value}");
         }
     }
 
