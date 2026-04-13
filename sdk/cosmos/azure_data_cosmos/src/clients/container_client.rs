@@ -790,7 +790,6 @@ impl ContainerClient {
     }
 
     /// Gets the feed ranges for this container.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn read_feed_ranges(
         &self,
         options: Option<ReadFeedRangesOptions>,
@@ -817,7 +816,6 @@ impl ContainerClient {
     ///
     /// Full keys return a single-element `Vec`. Prefix keys on MultiHash
     /// containers return one or more feed ranges.
-    #[tracing::instrument(skip_all, fields(id = self.container_id))]
     pub async fn feed_range_from_partition_key(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -876,7 +874,6 @@ impl ContainerClient {
             );
             let pkranges = routing_map.get_overlapping_ranges(&query_range);
             if pkranges.is_empty() {
-                tracing::debug!("routing map lookup returned no overlapping ranges for prefix key, retrying with force_refresh");
                 let refreshed = self
                     .container_connection
                     .resolve_routing_map(true)
@@ -903,7 +900,6 @@ impl ContainerClient {
             match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
                 Ok(pkr) => Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)]),
                 Err(_) => {
-                    tracing::debug!("routing map lookup failed for effective partition key, retrying with force_refresh");
                     let refreshed = self
                         .container_connection
                         .resolve_routing_map(true)
