@@ -19,7 +19,7 @@ use crate::{
         LocationStateStore,
     },
     models::{
-        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
+        header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
@@ -160,7 +160,7 @@ pub(crate) async fn execute_operation_pipeline(
             )
         {
             transport_request.headers.insert(
-                request_header_names::PREFER.clone(),
+                header_names::PREFER,
                 HeaderValue::from_static("return=minimal"),
             );
         }
@@ -504,14 +504,14 @@ fn build_transport_request(
             )
         {
             use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-            headers.insert(FAULT_INJECTION_OPERATION.clone(), fault_op.as_str());
+            headers.insert(FAULT_INJECTION_OPERATION, fault_op.as_str());
         }
     }
 
     // Add resolved session token
     if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
-            request_header_names::SESSION_TOKEN.clone(),
+            header_names::SESSION_TOKEN,
             HeaderValue::from(token.as_str().to_owned()),
         );
     }

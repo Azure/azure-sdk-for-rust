@@ -27,7 +27,7 @@ pub(crate) mod resource_id;
 mod resource_reference;
 mod user_agent;
 pub(crate) mod vector_session_token;
-pub(crate) use cosmos_headers::request_header_names;
+pub(crate) use cosmos_headers::header_names;
 #[allow(dead_code)]
 pub mod effective_partition_key;
 #[allow(dead_code)]
