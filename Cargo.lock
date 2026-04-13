@@ -284,7 +284,7 @@ dependencies = [
  "dotenvy",
  "flate2",
  "futures",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "reqwest",
  "serde",
@@ -390,7 +390,7 @@ dependencies = [
  "criterion",
  "fe2o3-amqp",
  "futures",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
  "tokio",
@@ -435,7 +435,7 @@ dependencies = [
  "azure_identity",
  "azure_messaging_servicebus",
  "futures",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "serde",
  "serde_json",
@@ -459,7 +459,7 @@ dependencies = [
  "futures",
  "include-file",
  "openssl",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rustc_version",
  "serde",
  "serde_json",
@@ -480,7 +480,7 @@ dependencies = [
  "criterion",
  "futures",
  "include-file",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
  "serde",
@@ -502,7 +502,7 @@ dependencies = [
  "azure_security_keyvault_test",
  "futures",
  "include-file",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rustc_version",
  "serde",
  "serde_json",
@@ -537,7 +537,7 @@ dependencies = [
  "opentelemetry_sdk",
  "percent-encoding",
  "pin-project",
- "rand 0.10.0",
+ "rand 0.10.1",
  "serde",
  "serde_json",
  "time",
@@ -576,7 +576,7 @@ dependencies = [
  "futures",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
- "rand 0.10.0",
+ "rand 0.10.1",
  "serde",
  "time",
  "tokio",
@@ -2330,9 +2330,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc266eb313df6c5c09c1c7b1fbe2510961e5bcd3add930c1e31f7ed9da0feff8"
+checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
 dependencies = [
  "chacha20",
  "getrandom 0.4.2",
@@ -3375,7 +3375,7 @@ dependencies = [
  "futures",
  "gloo-timers",
  "pin-project",
- "rand 0.10.0",
+ "rand 0.10.1",
  "reqwest",
  "rust_decimal",
  "serde",
@@ -3497,7 +3497,7 @@ checksum = "5ac8b6f42ead25368cf5b098aeb3dc8a1a2c05a3eee8a9a1a68c640edbfc79d9"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
- "rand 0.10.0",
+ "rand 0.10.1",
  "uuid-rng-internal",
  "wasm-bindgen",
 ]
