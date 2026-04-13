@@ -28,6 +28,7 @@ pub use clients::CosmosClientBuilder;
 
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
+pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::{BatchResponse, CosmosDiagnostics, ItemResponse, ResourceResponse};

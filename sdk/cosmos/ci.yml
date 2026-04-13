@@ -15,6 +15,10 @@ parameters:
   displayName: Run live tests
   type: boolean
   default: false
+- name: release_azure_data_cosmos_macros
+  displayName: azure_data_cosmos_macros
+  type: boolean
+  default: false
 - name: release_azure_data_cosmos_driver
   displayName: azure_data_cosmos_driver
   type: boolean
@@ -30,6 +34,8 @@ extends:
     ServiceDirectory: cosmos
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
     Artifacts:
+    - name: azure_data_cosmos_macros
+      releaseInBatch: ${{ parameters.release_azure_data_cosmos_macros }}
     - name: azure_data_cosmos_driver
       releaseInBatch: ${{ parameters.release_azure_data_cosmos_driver }}
     - name: azure_data_cosmos
@@ -37,6 +43,12 @@ extends:
     CloudConfig:
       Public:
         ServiceConnection: azure-sdk-tests-cosmos
+    MatrixConfigs:
+      - Name: Cosmos_release
+        Path: sdk/cosmos/release-platform-matrix.json
+        Selection: sparse
+        NonSparseParameters: RustToolchainName
+        GenerateVMJobs: true
     LiveTestMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json

@@ -53,6 +53,7 @@
     "hostnames",
     "hotfixes",
     "IMDS",
+    "isquery",
     "japaneast",
     "japanwest",
     "keepalive",
@@ -152,6 +153,10 @@
     "westindia",
     "westus",
     "yxxx"
+  ],
+  "ignorePaths": [
+    "live-platform-matrix.json",
+    "release-platform-matrix.json"
   ],
   "overrides": [
     {
