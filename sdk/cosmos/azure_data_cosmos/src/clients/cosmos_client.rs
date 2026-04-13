@@ -181,8 +181,9 @@ impl CosmosClient {
             CosmosOperation::create_database(self.driver.account().clone()).with_body(body);
 
         if let Some(throughput) = &options.throughput {
-            operation = operation
-                .with_request_headers(crate::throughput_headers::from_throughput(throughput)?);
+            operation = operation.with_request_headers(
+                azure_data_cosmos_driver::models::CosmosRequestHeaders::try_from(throughput)?,
+            );
         }
 
         let driver_response = self
