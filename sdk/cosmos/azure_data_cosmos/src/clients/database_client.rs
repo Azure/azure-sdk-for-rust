@@ -186,9 +186,15 @@ impl DatabaseClient {
             );
         }
 
+        // Control-plane creates always need the full response body so the
+        // caller can inspect the created resource properties.
+        let mut operation_options = OperationOptions::default();
+        operation_options.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+
         let driver_response = self
             .driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(
