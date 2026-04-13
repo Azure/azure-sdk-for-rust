@@ -72,18 +72,7 @@ fn build_preferred_endpoints(
 
     let mut endpoints = Vec::with_capacity(standard_locations.len());
     for region in standard_locations {
-        let url = match url::Url::parse(&region.database_account_endpoint) {
-            Ok(url) => url,
-            Err(err) => {
-                warn!(
-                    region = %region.name,
-                    endpoint = %region.database_account_endpoint,
-                    error = %err,
-                    "Ignoring malformed standard endpoint URL from AccountProperties"
-                );
-                continue;
-            }
-        };
+        let url = region.database_account_endpoint.url().clone();
 
         let endpoint = thin_client_urls
             .get(&region.name)
@@ -109,18 +98,7 @@ fn parse_thin_client_locations(
     let mut urls = HashMap::new();
 
     for region in thin_client_locations {
-        let url = match url::Url::parse(&region.database_account_endpoint) {
-            Ok(url) => url,
-            Err(err) => {
-                warn!(
-                    region = %region.name,
-                    endpoint = %region.database_account_endpoint,
-                    error = %err,
-                    "Ignoring malformed thin-client endpoint URL from AccountProperties"
-                );
-                continue;
-            }
-        };
+        let url = region.database_account_endpoint.url().clone();
 
         if url.scheme() != "https" {
             warn!(
