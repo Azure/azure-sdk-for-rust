@@ -161,7 +161,7 @@ async fn copy_from_url(
         .upload_blob_from_url(source_client.url().as_str().into(), Some(guard_options))
         .await
     {
-        Ok(_) => println!("Unexpected success – blob should already exist"),
+        Ok(_) => println!("Unexpected success - blob should already exist"),
         Err(err) => println!(
             "Copy blocked as expected (blob already exists): {}",
             err.http_status()

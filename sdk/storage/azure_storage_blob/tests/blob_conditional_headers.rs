@@ -45,7 +45,7 @@ mod blob_client {
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
 
-        // Read Operations – if_match Success + if_none_match 304
+        // Read Operations - if_match Success + if_none_match 304
 
         // Download
         blob_client
@@ -133,7 +133,7 @@ mod blob_client {
 
         // Write Operations (Mutating)
 
-        // Set Metadata – Failure First, Then Success
+        // Set Metadata - Failure First, Then Success
         let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
         let err = blob_client
             .set_metadata(
@@ -157,7 +157,7 @@ mod blob_client {
                 }),
             )
             .await?;
-        // Set Metadata Changes the ETag – Refresh
+        // Set Metadata Changes the ETag - Refresh
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
 
@@ -176,7 +176,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Set Properties – Failure First, Then Success
+        // Set Properties - Failure First, Then Success
         let err = blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
@@ -195,11 +195,11 @@ mod blob_client {
                 ..Default::default()
             }))
             .await?;
-        // Set Properties Changes the ETag – Refresh
+        // Set Properties Changes the ETag - Refresh
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
 
-        // Set Tags – Does Not Change the ETag, so etag remains valid for repeated use
+        // Set Tags - Does Not Change the ETag, so etag remains valid for repeated use
         let err = blob_client
             .set_tags(
                 RequestContent::try_from(BlobTags::from(HashMap::from([(
@@ -231,7 +231,7 @@ mod blob_client {
 
         // Lease Operations
 
-        // Acquire Lease – Failure
+        // Acquire Lease - Failure
         let err = blob_client
             .acquire_lease(
                 -1,
@@ -246,7 +246,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Acquire Lease – Success
+        // Acquire Lease - Success
         let lease_resp = blob_client
             .acquire_lease(
                 -1,
@@ -258,7 +258,7 @@ mod blob_client {
             .await?;
         let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
 
-        // Renew Lease – Failure
+        // Renew Lease - Failure
         let err = blob_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -273,7 +273,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Renew Lease – Success
+        // Renew Lease - Success
         blob_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -284,7 +284,7 @@ mod blob_client {
             )
             .await?;
 
-        // Change Lease – Failure
+        // Change Lease - Failure
         let proposed_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa".to_string();
         let err = blob_client
             .change_lease(
@@ -301,7 +301,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Change Lease – Success
+        // Change Lease - Success
         let change_resp = blob_client
             .change_lease(
                 lease_id_1,
@@ -314,7 +314,7 @@ mod blob_client {
             .await?;
         let lease_id_2 = change_resp.lease_id()?.unwrap().to_string();
 
-        // Release Lease – Failure
+        // Release Lease - Failure
         let err = blob_client
             .release_lease(
                 lease_id_2.clone(),
@@ -329,7 +329,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Release Lease – Success
+        // Release Lease - Success
         blob_client
             .release_lease(
                 lease_id_2,
@@ -340,7 +340,7 @@ mod blob_client {
             )
             .await?;
 
-        // Break Lease – Acquire Fresh Lease, Then Test Break With Conditions
+        // Break Lease - Acquire Fresh Lease, Then Test Break With Conditions
         let fresh_lease_resp = blob_client.acquire_lease(-1, None).await?;
         let _fresh_lease_id = fresh_lease_resp.lease_id()?.unwrap().to_string();
 
@@ -361,7 +361,7 @@ mod blob_client {
             }))
             .await?;
 
-        // Delete – Last (Destructive)
+        // Delete - Last (Destructive)
         let err = blob_client
             .delete(Some(BlobClientDeleteOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
@@ -399,14 +399,14 @@ mod blob_client {
         let after = last_modified + Duration::from_secs(60);
 
         // Download
-        // if_modified_since=before – Success
+        // if_modified_since=before - Success
         blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_modified_since: Some(before),
                 ..Default::default()
             }))
             .await?;
-        // if_modified_since=after – Not Modified (304)
+        // if_modified_since=after - Not Modified (304)
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_modified_since: Some(after),
@@ -417,14 +417,14 @@ mod blob_client {
             StatusCode::NotModified,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_unmodified_since=after – Success
+        // if_unmodified_since=after - Success
         blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_unmodified_since: Some(after),
                 ..Default::default()
             }))
             .await?;
-        // if_unmodified_since=before – Failure
+        // if_unmodified_since=before - Failure
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_unmodified_since: Some(before),
@@ -506,7 +506,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Set Metadata – Mutating, Test Failure + One Success Then Re-Capture Timestamp
+        // Set Metadata - Mutating, Test Failure + One Success Then Re-Capture Timestamp
         let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
         let err = blob_client
             .set_metadata(
@@ -560,7 +560,7 @@ mod blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Set Tags – Tags Do Not Change last_modified
+        // Set Tags - Tags Do Not Change last_modified
         blob_client
             .set_tags(
                 RequestContent::try_from(BlobTags::from(HashMap::new()))?,
@@ -584,9 +584,9 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Lease Operations – Lease Operations Do Not Change Blob's last_modified
+        // Lease Operations - Lease Operations Do Not Change Blob's last_modified
 
-        // Acquire Lease – Failure
+        // Acquire Lease - Failure
         let err = blob_client
             .acquire_lease(
                 -1,
@@ -600,7 +600,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Acquire Lease – Success
+        // Acquire Lease - Success
         let lease_resp = blob_client
             .acquire_lease(
                 -1,
@@ -612,7 +612,7 @@ mod blob_client {
             .await?;
         let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
 
-        // Renew Lease – Failure
+        // Renew Lease - Failure
         let err = blob_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -626,7 +626,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Renew Lease – Success
+        // Renew Lease - Success
         blob_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -637,7 +637,7 @@ mod blob_client {
             )
             .await?;
 
-        // Change Lease – Failure
+        // Change Lease - Failure
         let proposed_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb".to_string();
         let err = blob_client
             .change_lease(
@@ -653,7 +653,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Change Lease – Success
+        // Change Lease - Success
         blob_client
             .change_lease(
                 lease_id_1,
@@ -666,7 +666,7 @@ mod blob_client {
             .await?;
         let lease_id_2 = proposed_id;
 
-        // Release Lease – Failure
+        // Release Lease - Failure
         let err = blob_client
             .release_lease(
                 lease_id_2.clone(),
@@ -680,7 +680,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Release Lease – Success
+        // Release Lease - Success
         blob_client
             .release_lease(
                 lease_id_2,
@@ -902,7 +902,7 @@ mod blob_client {
             )
             .await?;
 
-        // Set Tier – if_tags Only (No ETag/Time Conditions on This Method)
+        // Set Tier - if_tags Only (No ETag/Time Conditions on This Method)
         let err = blob_client
             .set_tier(
                 AccessTier::Cool,
@@ -928,7 +928,7 @@ mod blob_client {
 
         // Lease Operations
 
-        // Acquire Lease – Failure
+        // Acquire Lease - Failure
         let err = blob_client
             .acquire_lease(
                 -1,
@@ -942,7 +942,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Acquire Lease – Success
+        // Acquire Lease - Success
         let lease_resp = blob_client
             .acquire_lease(
                 -1,
@@ -954,7 +954,7 @@ mod blob_client {
             .await?;
         let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
 
-        // Renew Lease – Failure
+        // Renew Lease - Failure
         let err = blob_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -968,7 +968,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Renew Lease – Success
+        // Renew Lease - Success
         blob_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -979,7 +979,7 @@ mod blob_client {
             )
             .await?;
 
-        // Change Lease – Failure
+        // Change Lease - Failure
         let proposed_id = "cccccccc-cccc-cccc-cccc-cccccccccccc".to_string();
         let err = blob_client
             .change_lease(
@@ -995,7 +995,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Change Lease – Success
+        // Change Lease - Success
         let change_resp = blob_client
             .change_lease(
                 lease_id_1,
@@ -1008,7 +1008,7 @@ mod blob_client {
             .await?;
         let lease_id_2 = change_resp.lease_id()?.unwrap().to_string();
 
-        // Release Lease – Failure
+        // Release Lease - Failure
         let err = blob_client
             .release_lease(
                 lease_id_2.clone(),
@@ -1022,7 +1022,7 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Release Lease – Success
+        // Release Lease - Success
         blob_client
             .release_lease(
                 lease_id_2,
@@ -1090,7 +1090,7 @@ mod block_blob_client {
         let blob_client = container_client.blob_client(&get_blob_name(recording));
         let block_blob_client = blob_client.block_blob_client();
 
-        // Upload – BlockBlobClientUploadOptions
+        // Upload - BlockBlobClientUploadOptions
 
         // Upload Initial Blob
         create_test_blob(&blob_client, None, None).await?;
@@ -1156,7 +1156,7 @@ mod block_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_tags Failure – Upload With Tag First
+        // if_tags Failure - Upload With Tag First
         let err = blob_client
             .upload(
                 RequestContent::from(b"new-content".to_vec()),
@@ -1181,7 +1181,7 @@ mod block_blob_client {
             )
             .await?;
 
-        // Commit Block List – BlockBlobClientCommitBlockListOptions
+        // Commit Block List - BlockBlobClientCommitBlockListOptions
 
         // Stage a Block to Commit
         let block_id: Vec<u8> = b"1".to_vec();
@@ -1284,7 +1284,7 @@ mod block_blob_client {
             )
             .await?;
 
-        // Get Block List – if_tags Only
+        // Get Block List - if_tags Only
 
         // Upload Blob With Tag
         blob_client
@@ -1347,7 +1347,7 @@ mod append_blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Create – AppendBlobClientCreateOptions
+        // Create - AppendBlobClientCreateOptions
 
         // if_match Failure
         let err = append_blob_client
@@ -1419,7 +1419,7 @@ mod append_blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Append Block – AppendBlobClientAppendBlockOptions
+        // Append Block - AppendBlobClientAppendBlockOptions
 
         let chunk = RequestContent::from(b"hello".to_vec());
 
@@ -1516,7 +1516,7 @@ mod append_blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Seal – AppendBlobClientSealOptions (No if_tags)
+        // Seal - AppendBlobClientSealOptions (No if_tags)
 
         // if_match Failure
         let err = append_blob_client
@@ -1593,7 +1593,7 @@ mod page_blob_client {
         const PAGE_SIZE: usize = 512;
         const BLOB_SIZE: u64 = PAGE_SIZE as u64;
 
-        // Create – PageBlobClientCreateOptions
+        // Create - PageBlobClientCreateOptions
 
         // Create Initial Page Blob
         page_blob_client.create(BLOB_SIZE, None).await?;
@@ -1691,7 +1691,7 @@ mod page_blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Upload Pages – PageBlobClientUploadPagesOptions
+        // Upload Pages - PageBlobClientUploadPagesOptions
 
         let page_data = RequestContent::from(vec![1u8; PAGE_SIZE]);
         let range = HttpRange::new(0, PAGE_SIZE as u64).to_string();
@@ -1794,7 +1794,7 @@ mod page_blob_client {
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
 
-        // Clear Pages – PageBlobClientClearPagesOptions
+        // Clear Pages - PageBlobClientClearPagesOptions
 
         // if_match Failure
         let err = page_blob_client
@@ -1855,7 +1855,7 @@ mod page_blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Get Page Ranges – PageBlobClientGetPageRangesOptions
+        // Get Page Ranges - PageBlobClientGetPageRangesOptions
 
         // if_match Failure
         let err = page_blob_client
@@ -1879,7 +1879,7 @@ mod page_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_modified_since – Not Modified (304)
+        // if_modified_since - Not Modified (304)
         let err = page_blob_client
             .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
                 if_modified_since: Some(after),
@@ -1898,7 +1898,7 @@ mod page_blob_client {
             }))
             .await?;
 
-        // Resize – PageBlobClientResizeOptions
+        // Resize - PageBlobClientResizeOptions
 
         // if_match Failure
         let err = page_blob_client
@@ -1959,7 +1959,7 @@ mod page_blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Set Sequence Number – PageBlobClientSetSequenceNumberOptions
+        // Set Sequence Number - PageBlobClientSetSequenceNumberOptions
 
         // if_match Failure
         let err = page_blob_client
@@ -2072,7 +2072,7 @@ mod blob_container_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Delete – Failure Cases Only (Container Survives for Subsequent Operations)
+        // Delete - Failure Cases Only (Container Survives for Subsequent Operations)
 
         // if_unmodified_since=before: Container Was Modified Since before, 412
         let err = container_client
@@ -2097,7 +2097,7 @@ mod blob_container_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Set Metadata – if_modified_since Only (No if_unmodified_since for Containers)
+        // Set Metadata - if_modified_since Only (No if_unmodified_since for Containers)
 
         let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
         // if_modified_since=after Failure
@@ -2130,7 +2130,7 @@ mod blob_container_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Set Access Policy – if_modified_since and if_unmodified_since
+        // Set Access Policy - if_modified_since and if_unmodified_since
 
         // if_unmodified_since=before Failure
         let err = container_client
@@ -2177,9 +2177,9 @@ mod blob_container_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Lease Operations – if_modified_since and if_unmodified_since
+        // Lease Operations - if_modified_since and if_unmodified_since
 
-        // Acquire Lease – Failure
+        // Acquire Lease - Failure
         let err = container_client
             .acquire_lease(
                 -1,
@@ -2193,7 +2193,7 @@ mod blob_container_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Acquire Lease – Success
+        // Acquire Lease - Success
         let lease_resp = container_client
             .acquire_lease(
                 -1,
@@ -2205,7 +2205,7 @@ mod blob_container_client {
             .await?;
         let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
 
-        // Renew Lease – Failure
+        // Renew Lease - Failure
         let err = container_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -2219,7 +2219,7 @@ mod blob_container_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Renew Lease – Success
+        // Renew Lease - Success
         container_client
             .renew_lease(
                 lease_id_1.clone(),
@@ -2230,7 +2230,7 @@ mod blob_container_client {
             )
             .await?;
 
-        // Change Lease – Failure
+        // Change Lease - Failure
         let proposed_id = "dddddddd-dddd-dddd-dddd-dddddddddddd".to_string();
         let err = container_client
             .change_lease(
@@ -2246,7 +2246,7 @@ mod blob_container_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Change Lease – Success
+        // Change Lease - Success
         container_client
             .change_lease(
                 lease_id_1,
@@ -2259,7 +2259,7 @@ mod blob_container_client {
             .await?;
         let lease_id_2 = proposed_id;
 
-        // Release Lease – Failure
+        // Release Lease - Failure
         let err = container_client
             .release_lease(
                 lease_id_2.clone(),
@@ -2273,7 +2273,7 @@ mod blob_container_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // Release Lease – Success
+        // Release Lease - Success
         container_client
             .release_lease(
                 lease_id_2,
@@ -2284,7 +2284,7 @@ mod blob_container_client {
             )
             .await?;
 
-        // Break Lease – Acquire Fresh Lease, Then Test Break Conditions
+        // Break Lease - Acquire Fresh Lease, Then Test Break Conditions
         container_client.acquire_lease(-1, None).await?;
         let err = container_client
             .break_lease(Some(BlobContainerClientBreakLeaseOptions {
@@ -2303,7 +2303,7 @@ mod blob_container_client {
             }))
             .await?;
 
-        // Delete – Success
+        // Delete - Success
         container_client
             .delete(Some(BlobContainerClientDeleteOptions {
                 if_modified_since: Some(before),

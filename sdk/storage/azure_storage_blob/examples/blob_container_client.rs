@@ -129,7 +129,7 @@ async fn set_and_get_access_policy(
         // r = read, l = list
         permission: Some("rl".to_string()),
     };
-    // Build SignedIdentifiers from a HashMap via the From impl – one entry per policy ID.
+    // Build SignedIdentifiers from a HashMap via the From impl - one entry per policy ID.
     let identifiers: SignedIdentifiers = HashMap::from([("read-list".to_string(), policy)]).into();
 
     container_client

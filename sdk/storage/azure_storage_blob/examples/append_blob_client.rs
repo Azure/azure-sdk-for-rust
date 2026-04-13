@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Seal the blob to mark it as read-only (no further appends allowed).
     append_blob_client.seal(None).await?;
-    println!("Sealed blob '{blob_name}' – no further appends are accepted");
+    println!("Sealed blob '{blob_name}' - no further appends are accepted");
 
     // Download and verify the assembled log content.
     let response = blob_client.download(None).await?;

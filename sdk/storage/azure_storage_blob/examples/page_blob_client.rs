@@ -62,13 +62,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     println!("Created page blob '{blob_name}' ({initial_size} bytes)");
 
-    // Write 512 bytes of data to bytes 0–511.
+    // Write 512 bytes of data to bytes 0-511.
     let page_data = vec![b'A'; 512];
     let range = HttpRange::new(0, 512).to_string();
     page_blob_client
         .upload_pages(RequestContent::from(page_data), 512, range, None)
         .await?;
-    println!("Uploaded page at bytes 0–511");
+    println!("Uploaded page at bytes 0-511");
 
     // List the valid (non-zero) page ranges.
     let page_ranges = page_blob_client.get_page_ranges(None).await?.into_model()?;
@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     page_blob_client
         .clear_pages(HttpRange::new(0, 512).to_string(), None)
         .await?;
-    println!("Cleared page range 0–511");
+    println!("Cleared page range 0-511");
 
     // Verify the page range is gone after clearing.
     let page_ranges = page_blob_client.get_page_ranges(None).await?.into_model()?;

@@ -868,7 +868,7 @@ async fn test_upload_blob_from_url_source_timestamp_conditions(
     let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
     let block_blob_client = dest_blob_client.block_blob_client();
 
-    // source_if_modified_since=before – Succeeds (source was modified after 'before')
+    // source_if_modified_since=before - Succeeds (source was modified after 'before')
     block_blob_client
         .upload_blob_from_url(
             source_blob_client.url().as_str().into(),
@@ -879,7 +879,7 @@ async fn test_upload_blob_from_url_source_timestamp_conditions(
         )
         .await?;
 
-    // source_if_modified_since=after – Not Modified (source was not modified after 'after')
+    // source_if_modified_since=after - Not Modified (source was not modified after 'after')
     let err = block_blob_client
         .upload_blob_from_url(
             source_blob_client.url().as_str().into(),
@@ -894,7 +894,7 @@ async fn test_upload_blob_from_url_source_timestamp_conditions(
         err.unwrap_err().http_status().unwrap()
     );
 
-    // source_if_unmodified_since=after – Succeeds (source was not modified after 'after')
+    // source_if_unmodified_since=after - Succeeds (source was not modified after 'after')
     block_blob_client
         .upload_blob_from_url(
             source_blob_client.url().as_str().into(),
@@ -905,7 +905,7 @@ async fn test_upload_blob_from_url_source_timestamp_conditions(
         )
         .await?;
 
-    // source_if_unmodified_since=before – Precondition Failed (source was modified after 'before')
+    // source_if_unmodified_since=before - Precondition Failed (source was modified after 'before')
     let err = block_blob_client
         .upload_blob_from_url(
             source_blob_client.url().as_str().into(),
