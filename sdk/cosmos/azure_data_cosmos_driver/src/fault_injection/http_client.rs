@@ -13,7 +13,7 @@ use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
 use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
+use crate::models::cosmos_headers::header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
@@ -384,7 +384,7 @@ mod tests {
         FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-    use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
+    use crate::models::cosmos_headers::header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
     use crate::options::Region;
     use async_trait::async_trait;

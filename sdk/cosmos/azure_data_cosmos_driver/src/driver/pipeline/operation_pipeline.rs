@@ -19,8 +19,8 @@ use crate::{
         LocationStateStore,
     },
     models::{
-        header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
+        header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, Credential,
+        DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -216,13 +216,12 @@ pub(crate) async fn execute_operation_pipeline(
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
         if session_consistency_active {
-            if let Some(headers) = result.response_headers() {
-                let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
+            if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
                     &result.outcome,
                 ) {
-                    session_manager.capture_session_token(operation, &cosmos_headers);
+                    session_manager.capture_session_token(operation, cosmos_headers);
                 }
             }
         }
@@ -445,9 +444,11 @@ fn build_transport_request(
     ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
-    let request_path = resource_ref.request_path();
+    // Compute both paths in a single pass with a single allocation.
+    let paths = resource_ref.compute_paths();
     let url = {
         let mut base = ctx.routing.selected_url.clone();
+        let request_path = paths.request_path();
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -461,10 +462,9 @@ fn build_transport_request(
 
     let method = operation.operation_type().http_method();
     let resource_type = operation.resource_type();
-    let resource_link = resource_ref.link_for_signing();
-    let signing_link = resource_link.trim_start_matches('/');
-
-    let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
+    // Move `paths` into AuthorizationContext so the signing link is a zero-copy
+    // sub-slice of the path buffer — no additional string allocation needed.
+    let auth_context = AuthorizationContext::from_paths(method, resource_type, paths);
 
     // Build headers from the operation.
     // Custom headers are inserted first so that SDK-set headers below always
@@ -552,10 +552,9 @@ fn build_cosmos_response(
     match result.outcome {
         TransportOutcome::Success {
             status,
-            headers,
+            cosmos_headers,
             body,
         } => {
-            let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
             diagnostics.set_operation_status(status.status_code(), status.sub_status());
 
             let diagnostics_ctx = Arc::new(diagnostics.complete());
@@ -1040,7 +1039,7 @@ mod tests {
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
-            models::{CosmosStatus, SubStatusCode},
+            models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode},
         };
 
         use super::super::should_capture_session_token_from_status;
@@ -1048,7 +1047,7 @@ mod tests {
         fn success_outcome() -> TransportOutcome {
             TransportOutcome::Success {
                 status: CosmosStatus::new(StatusCode::Ok),
-                headers: Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
             }
         }
@@ -1057,6 +1056,7 @@ mod tests {
             TransportOutcome::HttpError {
                 status: CosmosStatus::new(status),
                 headers: Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
                 request_sent: crate::diagnostics::RequestSentStatus::Sent,
             }

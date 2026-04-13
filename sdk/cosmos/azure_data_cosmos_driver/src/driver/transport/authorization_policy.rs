@@ -10,22 +10,55 @@ use crate::models::{Credential, ResourceType};
 use azure_core::http::Method;
 use tracing::trace;
 
+use crate::models::ResourcePaths;
+
 /// Cosmos DB AAD scope for token authentication.
 const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
 
+/// The resource link used when signing a Cosmos DB request.
+///
+/// `Paths` owns a [`ResourcePaths`] so the signing link is derived as a
+/// zero-copy sub-slice of the pre-computed path buffer (the hot path).
+/// `Owned` holds an independently allocated `String` for call sites that
+/// construct an `AuthorizationContext` outside of the normal request pipeline.
+pub(crate) enum ResourceLink {
+    /// Signing link is derived from the pre-computed [`ResourcePaths`] buffer.
+    Paths(ResourcePaths),
+    /// Signing link is an independently owned string.
+    Owned(String),
+}
+
+impl ResourceLink {
+    pub(crate) fn as_str(&self) -> &str {
+        match self {
+            Self::Paths(p) => p.signing_link(),
+            Self::Owned(s) => s.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Debug for ResourceLink {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// Authorization context needed to build a Cosmos DB signature.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct AuthorizationContext {
     /// The HTTP method of the request.
     pub(crate) method: Method,
     /// The resource type being accessed.
     pub(crate) resource_type: ResourceType,
     /// The resource link for signing (path without leading slash, unencoded).
-    pub(crate) resource_link: String,
+    pub(crate) resource_link: ResourceLink,
 }
 
 impl AuthorizationContext {
-    /// Creates a new authorization context.
+    /// Creates a new authorization context with an owned resource link string.
+    ///
+    /// Use [`AuthorizationContext::from_paths`] on the hot path to avoid copying
+    /// the signing link out of the pre-computed [`ResourcePaths`].
     pub(crate) fn new(
         method: Method,
         resource_type: ResourceType,
@@ -34,7 +67,21 @@ impl AuthorizationContext {
         Self {
             method,
             resource_type,
-            resource_link: resource_link.into(),
+            resource_link: ResourceLink::Owned(resource_link.into()),
+        }
+    }
+
+    /// Creates a new authorization context that derives the signing link directly
+    /// from `paths`, avoiding any additional string allocation.
+    pub(crate) fn from_paths(
+        method: Method,
+        resource_type: ResourceType,
+        paths: ResourcePaths,
+    ) -> Self {
+        Self {
+            method,
+            resource_type,
+            resource_link: ResourceLink::Paths(paths),
         }
     }
 }
@@ -82,7 +129,7 @@ fn build_string_to_sign(auth_ctx: &AuthorizationContext, date_string: &str) -> S
         "{}\n{}\n{}\n{}\n\n",
         method_str,
         auth_ctx.resource_type.path_segment(),
-        auth_ctx.resource_link,
+        auth_ctx.resource_link.as_str(),
         date_string,
     )
 }

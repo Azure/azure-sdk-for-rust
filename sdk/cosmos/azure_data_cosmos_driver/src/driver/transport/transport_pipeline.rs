@@ -658,7 +658,7 @@ fn map_http_response_payload(
     });
 
     diagnostics.complete_request(request_handle, status_code, sub_status);
-    TransportResult::from_http_response(cosmos_status, headers, body)
+    TransportResult::from_http_response(cosmos_status, headers, cosmos_headers, body)
 }
 
 #[cfg(test)]
@@ -715,6 +715,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
                 headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -728,6 +729,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
                 headers,
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -738,7 +740,7 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::Success {
                 status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
-                headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
             },
         }
