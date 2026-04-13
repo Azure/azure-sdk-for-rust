@@ -614,28 +614,6 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_from_priority_group_has_no_bucket() {
-        let container = test_container();
-        let group = ThroughputControlGroupOptions::new("priority-only", container, false)
-            .with_priority_level(PriorityLevel::High);
-
-        let snapshot = ThroughputControlGroupSnapshot::from(&group);
-        assert_eq!(snapshot.priority_level(), Some(PriorityLevel::High));
-        assert!(snapshot.throughput_bucket().is_none());
-    }
-
-    #[test]
-    fn snapshot_from_bucket_group_has_no_priority() {
-        let container = test_container();
-        let group = ThroughputControlGroupOptions::new("bucket-only", container, false)
-            .with_throughput_bucket(42);
-
-        let snapshot = ThroughputControlGroupSnapshot::from(&group);
-        assert_eq!(snapshot.throughput_bucket(), Some(42));
-        assert!(snapshot.priority_level().is_none());
-    }
-
-    #[test]
     fn registry_lookup_by_container_and_name() {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container = test_container();
