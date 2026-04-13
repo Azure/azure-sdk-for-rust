@@ -42,7 +42,6 @@ pub struct ContainerClient {
     items_link: ResourceLink,
     pipeline: Arc<GatewayPipeline>,
     container_connection: Arc<ContainerConnection>,
-    container_id: String,
     driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
 }
@@ -89,7 +88,6 @@ impl ContainerClient {
             items_link,
             pipeline,
             container_connection,
-            container_id: container_id.to_string(),
             driver,
             container_ref,
         })
