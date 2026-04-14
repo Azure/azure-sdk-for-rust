@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -565,7 +565,7 @@ version = "0.1.0"
 
 [[package]]
 name = "azure_storage_queue"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
