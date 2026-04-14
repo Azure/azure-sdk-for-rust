@@ -9,8 +9,9 @@ use crate::{
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
+use azure_data_cosmos_driver::options::ConnectionPoolOptions;
 #[cfg(feature = "allow_invalid_certificates")]
-use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation};
+use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
 

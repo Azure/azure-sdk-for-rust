@@ -106,19 +106,26 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     }
 
     let endpoint: azure_data_cosmos::CosmosAccountEndpoint = parsed.account_endpoint.parse()?;
-    let client = builder
-        .build(
-            azure_data_cosmos::CosmosAccountReference::with_master_key(
-                endpoint,
-                parsed.account_key,
-            ),
-            azure_data_cosmos::RoutingStrategy::ProximityTo(azure_data_cosmos::Region::EAST_US),
-        )
-        .await?;
 
-    // Spawn the request so we can wait on the proxy signal instead.
+    // Spawn the build + request so we can wait on the proxy signal instead.
+    // The driver probes the endpoint during build(), which will go through the
+    // proxy. The probe will fail (our fake proxy doesn't implement CONNECT),
+    // but the connection attempt itself proves proxy routing works.
     let request_handle = tokio::spawn(async move {
-        let _ = client.database_client("nonexistent").read(None).await;
+        let client = builder
+            .build(
+                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                    endpoint,
+                    parsed.account_key,
+                ),
+                azure_data_cosmos::RoutingStrategy::ProximityTo(azure_data_cosmos::Region::EAST_US),
+            )
+            .await;
+        // Ignore the result — the driver's init probe will fail through the fake proxy,
+        // but we only care that the proxy was contacted.
+        if let Ok(client) = client {
+            let _ = client.database_client("nonexistent").read(None).await;
+        }
     });
 
     // Wait for the proxy listener to accept a connection, with a timeout fallback.
