@@ -42,7 +42,7 @@ fn main() {
         .expect("failed to create tokio runtime");
 
     // Setup and cache priming — outside the profiled region.
-    let (driver, item_ref) = rt.block_on(common::setup(std::time::Duration::ZERO));
+    let (driver, item_ref) = rt.block_on(common::setup());
 
     // Warmup iterations — ensure all lazy state is initialised before profiling.
     for _ in 0..5 {

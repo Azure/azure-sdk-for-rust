@@ -3,12 +3,16 @@
 
 //! Criterion microbenchmark for `CosmosDriver::execute_operation` — point read.
 //!
-//! The reqwest transport is replaced with an in-memory mock so that the benchmark
-//! measures driver overhead (routing, signing, retry state, response parsing, session
-//! token management) without any network I/O.
+//! By default the reqwest transport is replaced with an in-memory mock so that
+//! the benchmark measures driver overhead (routing, signing, retry state,
+//! response parsing, session token management) without any network I/O.
 //!
-//! Cache priming (account metadata, container metadata) is performed in setup, outside
-//! the measured iteration loop.
+//! Set `AZURE_BENCH_MODE=live` to run against a real Cosmos DB endpoint. See
+//! `azure_data_cosmos_benchmarks::setup_live` for the required environment
+//! variables.
+//!
+//! Cache priming (account metadata, container metadata) is performed in setup,
+//! outside the measured iteration loop.
 //!
 //! # CPU flamegraph profiling
 //!
@@ -20,66 +24,13 @@
 //!
 //! Output: `target/criterion/point_read/profile/flamegraph.svg`
 
-use azure_data_cosmos_benchmarks as common;
+use azure_data_cosmos_benchmarks::{self as common, BenchConfig};
 
-use std::path::Path;
+use std::time::Duration;
 
 use azure_data_cosmos_driver::{models::CosmosOperation, options::OperationOptions};
-use criterion::{criterion_group, criterion_main, profiler::Profiler, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use tokio::runtime::Builder;
-
-// ---------------------------------------------------------------------------
-// pprof adapter for criterion 0.8
-//
-// pprof's built-in `criterion` feature targets criterion 0.5. We implement
-// the criterion 0.8 `Profiler` trait ourselves using pprof's core API.
-// ---------------------------------------------------------------------------
-
-struct PprofAdapter {
-    frequency: i32,
-    guard: Option<pprof::ProfilerGuard<'static>>,
-}
-
-impl PprofAdapter {
-    fn new(frequency: i32) -> Self {
-        Self {
-            frequency,
-            guard: None,
-        }
-    }
-}
-
-impl Profiler for PprofAdapter {
-    fn start_profiling(&mut self, _benchmark_id: &str, _benchmark_dir: &Path) {
-        let guard = pprof::ProfilerGuardBuilder::default()
-            .frequency(self.frequency)
-            .blocklist(&["libc", "libgcc", "pthread", "vdso"])
-            .build()
-            .expect("failed to start pprof profiler");
-        self.guard = Some(guard);
-    }
-
-    fn stop_profiling(&mut self, benchmark_id: &str, benchmark_dir: &Path) {
-        let Some(guard) = self.guard.take() else {
-            return;
-        };
-        match guard.report().build() {
-            Ok(report) => {
-                std::fs::create_dir_all(benchmark_dir).ok();
-                let flamegraph_path = benchmark_dir.join(format!("{benchmark_id}.svg"));
-                match std::fs::File::create(&flamegraph_path) {
-                    Ok(file) => {
-                        if let Err(e) = report.flamegraph(file) {
-                            eprintln!("pprof: failed to write flamegraph: {e}");
-                        }
-                    }
-                    Err(e) => eprintln!("pprof: failed to create {flamegraph_path:?}: {e}"),
-                }
-            }
-            Err(e) => eprintln!("pprof: failed to build report: {e}"),
-        }
-    }
-}
 
 fn bench_point_read(c: &mut Criterion) {
     let rt = Builder::new_current_thread()
@@ -87,36 +38,45 @@ fn bench_point_read(c: &mut Criterion) {
         .build()
         .expect("failed to create tokio runtime");
 
-    let latencies: &[(&str, std::time::Duration)] = &[
-        ("latency_0ms", std::time::Duration::ZERO),
-        ("latency_2ms", std::time::Duration::from_millis(2)),
-        ("latency_10ms", std::time::Duration::from_millis(10)),
-    ];
-
     let mut group = c.benchmark_group("point_read");
-    for (name, latency) in latencies {
-        let (driver, item_ref) = rt.block_on(common::setup(*latency));
-        group.bench_function(*name, |b| {
-            b.to_async(&rt).iter(|| async {
-                driver
-                    .execute_operation(
-                        CosmosOperation::read_item(item_ref.clone()),
-                        OperationOptions::default(),
-                    )
-                    .await
-                    .expect("execute_operation failed")
+    group.throughput(Throughput::Elements(1));
+
+    match common::load_bench_config() {
+        BenchConfig::Mock => {
+            let (driver, item_ref) = rt.block_on(common::setup());
+            group.bench_function("mock", |b| {
+                b.to_async(&rt).iter(|| async {
+                    driver
+                        .execute_operation(
+                            CosmosOperation::read_item(item_ref.clone()),
+                            OperationOptions::default(),
+                        )
+                        .await
+                        .expect("execute_operation failed")
+                });
             });
-        });
+        }
+        BenchConfig::Live => {
+            let (driver, item_ref) = rt.block_on(common::setup_live());
+            group
+                .sample_size(50)
+                .measurement_time(Duration::from_secs(30));
+            group.bench_function("live", |b| {
+                b.to_async(&rt).iter(|| async {
+                    driver
+                        .execute_operation(
+                            CosmosOperation::read_item(item_ref.clone()),
+                            OperationOptions::default(),
+                        )
+                        .await
+                        .expect("execute_operation failed")
+                });
+            });
+        }
     }
+
     group.finish();
 }
 
-// 997 Hz — prime frequency to avoid aliasing with timer interrupts.
-// Profiling is only active when Criterion is invoked with `--profile-time`;
-// normal `cargo bench` runs have zero pprof overhead.
-criterion_group!(
-    name = benches;
-    config = Criterion::default().with_profiler(PprofAdapter::new(997));
-    targets = bench_point_read
-);
+criterion_group!(benches, bench_point_read);
 criterion_main!(benches);

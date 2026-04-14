@@ -1,7 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Shared mock transport infrastructure for `azure_data_cosmos_benchmarks`.
+//! Shared transport infrastructure for `azure_data_cosmos_benchmarks`.
+//!
+//! Provides both a mock transport (zero-latency, in-memory) and a live-transport
+//! setup backed by a real Cosmos DB endpoint. The active mode is controlled by the
+//! `AZURE_BENCH_MODE` environment variable.
 //!
 //! Re-used by both the Criterion benchmarks (`benches/`) and the Valgrind
 //! example (`examples/`).
@@ -11,7 +15,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
-    models::{AccountReference, ItemReference, PartitionKey},
+    models::{AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey},
+    options::OperationOptions,
     testing::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
@@ -166,13 +171,17 @@ impl TransportClient for MockTransportClient {
 
 /// HTTP client factory that always produces a [`MockTransportClient`] with a given latency.
 #[derive(Debug)]
-pub struct MockHttpClientFactory {
-    latency: std::time::Duration,
-}
+pub struct MockHttpClientFactory;
 
 impl MockHttpClientFactory {
-    pub fn new(latency: std::time::Duration) -> Self {
-        Self { latency }
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for MockHttpClientFactory {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -182,7 +191,7 @@ impl HttpClientFactory for MockHttpClientFactory {
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
     ) -> azure_core::Result<Arc<dyn TransportClient>> {
-        Ok(Arc::new(MockTransportClient::with_latency(self.latency)))
+        Ok(Arc::new(MockTransportClient::new()))
     }
 }
 
@@ -190,16 +199,150 @@ impl HttpClientFactory for MockHttpClientFactory {
 // Shared setup
 // ---------------------------------------------------------------------------
 
-/// Builds a fully-initialized driver backed by the mock transport.
+/// Benchmark run mode.
 ///
-/// `latency` is injected into every mock response to simulate network RTT.
-/// Use `Duration::ZERO` for pure CPU-overhead measurement, `Duration::from_millis(2)`
-/// for same-DC SLA baseline, or `Duration::from_millis(10)` for cross-region baseline.
+/// Controlled by the `AZURE_BENCH_MODE` environment variable. Use
+/// [`load_bench_config`] to read the active mode at startup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BenchConfig {
+    /// Use the in-memory mock transport (default).
+    Mock,
+    /// Use a real Cosmos DB endpoint configured via environment variables.
+    Live,
+}
+
+/// Reads `AZURE_BENCH_MODE` and returns the corresponding [`BenchConfig`].
+///
+/// Returns [`BenchConfig::Live`] when the variable is set to `live`
+/// (case-insensitive). Any other value, or an absent variable, returns
+/// [`BenchConfig::Mock`].
+pub fn load_bench_config() -> BenchConfig {
+    match std::env::var("AZURE_COSMOS_BENCH_MODE") {
+        Ok(v) if v.eq_ignore_ascii_case("live") => BenchConfig::Live,
+        _ => BenchConfig::Mock,
+    }
+}
+
+/// Builds a fully-initialized driver backed by the real Cosmos DB transport.
+///
+/// Reads configuration from environment variables:
+///
+/// | Variable | Required | Default |
+/// |---|---|---|
+/// | `AZURE_COSMOS_ENDPOINT` | yes | — |
+/// | `AZURE_COSMOS_KEY` | yes | — |
+/// | `AZURE_COSMOS_DATABASE` | no | `bench` |
+/// | `AZURE_COSMOS_CONTAINER` | no | `bench` |
+/// | `AZURE_COSMOS_PARTITION_KEY` | no | `pk1` |
+/// | `AZURE_COSMOS_ITEM_ID` | no | `item1` |
+///
+/// Creates the target database, container, and item if they do not already
+/// exist (409 Conflict responses are silently ignored). All cache priming
+/// happens here so that callers benchmark the fully-warm hot path only.
+pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
+    let endpoint = std::env::var("AZURE_COSMOS_ENDPOINT")
+        .expect("AZURE_COSMOS_ENDPOINT must be set for live benchmarks");
+    let key = std::env::var("AZURE_COSMOS_KEY")
+        .expect("AZURE_COSMOS_KEY must be set for live benchmarks");
+    let database = std::env::var("AZURE_COSMOS_DATABASE").unwrap_or_else(|_| "bench".to_string());
+    let container = std::env::var("AZURE_COSMOS_CONTAINER").unwrap_or_else(|_| "bench".to_string());
+    let pk_value =
+        std::env::var("AZURE_COSMOS_PARTITION_KEY").unwrap_or_else(|_| "pk1".to_string());
+    let item_id = std::env::var("AZURE_COSMOS_ITEM_ID").unwrap_or_else(|_| "item1".to_string());
+
+    let endpoint_url = Url::parse(&endpoint).expect("AZURE_COSMOS_ENDPOINT is not a valid URL");
+    let account = AccountReference::with_master_key(endpoint_url, key.clone());
+
+    let runtime = CosmosDriverRuntimeBuilder::new()
+        .build()
+        .await
+        .expect("failed to build runtime");
+
+    let driver = runtime
+        .get_or_create_driver(account.clone(), None)
+        .await
+        .expect("failed to create driver");
+
+    // Create the database if it doesn't exist.
+    let db_body = format!(r#"{{"id": "{}"}}"#, database);
+    ignore_conflict(
+        driver
+            .execute_operation(
+                CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes()),
+                OperationOptions::default(),
+            )
+            .await,
+    )
+    .expect("failed to create database");
+
+    let database_ref = DatabaseReference::from_name(account.clone(), database.clone());
+
+    // Create the container if it doesn't exist.
+    let container_body = format!(
+        r#"{{"id": "{}", "partitionKey": {{"paths": ["/pk"], "kind": "Hash", "version": 2}}}}"#,
+        container
+    );
+    ignore_conflict(
+        driver
+            .execute_operation(
+                CosmosOperation::create_container(database_ref)
+                    .with_body(container_body.into_bytes()),
+                OperationOptions::default(),
+            )
+            .await,
+    )
+    .expect("failed to create container");
+
+    // Resolve the container (primes the container cache).
+    let container_ref = driver
+        .resolve_container(database.as_str(), container.as_str())
+        .await
+        .expect("failed to resolve container");
+
+    // Upsert the benchmark item to ensure it exists.
+    let item_ref = ItemReference::from_name(
+        &container_ref,
+        PartitionKey::from(pk_value.clone()),
+        item_id.clone(),
+    );
+    let item_body = format!(r#"{{"id": "{}", "pk": "{}"}}"#, item_id, pk_value);
+    driver
+        .execute_operation(
+            CosmosOperation::upsert_item(item_ref.clone()).with_body(item_body.into_bytes()),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("failed to upsert benchmark item");
+
+    (driver, item_ref)
+}
+
+/// Returns `Ok(())` for a successful result or a 409 Conflict error.
+///
+/// Used during setup to ignore "resource already exists" responses when
+/// creating the benchmark database, container, and item.
+fn ignore_conflict(
+    result: azure_core::Result<azure_data_cosmos_driver::CosmosResponse>,
+) -> azure_core::Result<()> {
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
+                if *status == azure_core::http::StatusCode::Conflict {
+                    return Ok(());
+                }
+            }
+            Err(e)
+        }
+    }
+}
+
+/// Builds a fully-initialized driver backed by the mock transport.
 ///
 /// All cache priming (account metadata, container metadata) happens here so
 /// that callers can benchmark or profile the fully-warm hot path only.
-pub async fn setup(latency: std::time::Duration) -> (Arc<CosmosDriver>, ItemReference) {
-    let factory = Arc::new(MockHttpClientFactory::new(latency));
+pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
+    let factory = Arc::new(MockHttpClientFactory::new());
     let runtime = CosmosDriverRuntimeBuilder::new()
         .with_mock_http_client_factory(factory)
         .build()
