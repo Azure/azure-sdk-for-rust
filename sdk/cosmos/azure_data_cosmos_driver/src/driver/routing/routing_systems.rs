@@ -5,6 +5,7 @@
 
 use std::{
     collections::HashMap,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -51,8 +52,8 @@ pub(crate) fn build_account_endpoint_state(
 
     AccountEndpointState {
         generation,
-        preferred_read_endpoints,
-        preferred_write_endpoints,
+        preferred_read_endpoints: preferred_read_endpoints.into(),
+        preferred_write_endpoints: preferred_write_endpoints.into(),
         unavailable_endpoints: Default::default(),
         multiple_write_locations_enabled: properties.enable_multiple_write_locations,
         default_endpoint,
@@ -134,11 +135,15 @@ pub(crate) fn mark_endpoint_unavailable(
     reason: UnavailableReason,
 ) -> AccountEndpointState {
     let mut unavailable = state.unavailable_endpoints.clone();
-    unavailable.insert(endpoint.clone(), (Instant::now(), reason));
+    unavailable.insert(endpoint.url().clone(), (Instant::now(), reason));
 
     AccountEndpointState {
+        generation: state.generation,
+        preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
+        preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
         unavailable_endpoints: unavailable,
-        ..state.clone()
+        multiple_write_locations_enabled: state.multiple_write_locations_enabled,
+        default_endpoint: state.default_endpoint.clone(),
     }
 }
 
@@ -158,8 +163,12 @@ pub(crate) fn expire_unavailable_endpoints(
         .retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < expiry_duration);
 
     AccountEndpointState {
+        generation: state.generation,
+        preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
+        preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
         unavailable_endpoints: unavailable,
-        ..state.clone()
+        multiple_write_locations_enabled: state.multiple_write_locations_enabled,
+        default_endpoint: state.default_endpoint.clone(),
     }
 }
 

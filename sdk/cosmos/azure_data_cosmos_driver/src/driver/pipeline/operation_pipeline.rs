@@ -407,7 +407,7 @@ fn endpoint_is_available(
 ) -> bool {
     !account
         .unavailable_endpoints
-        .get(endpoint)
+        .get(endpoint.url())
         .is_some_and(|(marked_at, reason)| {
             if operation.is_read_only()
                 && matches!(
@@ -839,8 +839,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint],
-            preferred_write_endpoints: vec![write_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: write_endpoint.clone(),
@@ -880,7 +880,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            read_endpoint.clone(),
+            read_endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::TransportError,
@@ -889,8 +889,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint],
-            preferred_write_endpoints: vec![default_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -928,7 +928,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            read_endpoint.clone(),
+            read_endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::WriteForbidden,
@@ -937,8 +937,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint.clone()],
-            preferred_write_endpoints: vec![read_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![read_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: read_endpoint.clone(),
@@ -988,12 +988,14 @@ mod tests {
                 endpoint_a.clone(),
                 endpoint_b.clone(),
                 endpoint_c.clone(),
-            ],
+            ]
+            .into(),
             preferred_write_endpoints: vec![
                 endpoint_a.clone(),
                 endpoint_b.clone(),
                 endpoint_c.clone(),
-            ],
+            ]
+            .into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: endpoint_a.clone(),
@@ -1152,8 +1154,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![endpoint.clone()],
-            preferred_write_endpoints: vec![endpoint.clone()],
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: endpoint.clone(),
@@ -1201,7 +1203,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            endpoint.clone(),
+            endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::TransportError,
@@ -1210,8 +1212,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()],
-            preferred_write_endpoints: vec![endpoint],
+            preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: fallback_endpoint.clone(),

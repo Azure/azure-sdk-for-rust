@@ -496,7 +496,7 @@ mod tests {
         store.apply_account(|current| {
             let mut next = current.clone();
             next.unavailable_endpoints.insert(
-                expired_endpoint.clone(),
+                expired_endpoint.url().clone(),
                 (
                     Instant::now() - Duration::from_secs(120),
                     UnavailableReason::TransportError,
