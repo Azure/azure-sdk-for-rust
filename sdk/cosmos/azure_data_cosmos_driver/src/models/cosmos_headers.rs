@@ -240,6 +240,20 @@ mod tests {
     }
 
     #[test]
+    fn cosmos_response_headers_malformed_numeric_values_are_none() {
+        let mut headers = Headers::new();
+        headers.insert("lsn", "not-a-number");
+        headers.insert("x-ms-item-lsn", "abc");
+        headers.insert("x-ms-item-count", "12.5");
+
+        let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+
+        assert!(cosmos_headers.lsn.is_none());
+        assert!(cosmos_headers.item_lsn.is_none());
+        assert!(cosmos_headers.item_count.is_none());
+    }
+
+    #[test]
     fn cosmos_request_headers_builder_pattern() {
         let headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
