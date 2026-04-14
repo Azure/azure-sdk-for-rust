@@ -41,7 +41,7 @@ pub use account_reference::{AccountReference, AccountReferenceBuilder, Credentia
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub(crate) use consistency_level::DefaultConsistencyLevel;
-pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
+pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders, OfferAutoscaleSettings};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub use cosmos_response::CosmosResponse;

@@ -6,6 +6,7 @@
 use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use serde::Serialize;
 
 /// Standard Cosmos DB request header names.
 ///
@@ -74,8 +75,10 @@ pub struct CosmosRequestHeaders {
     /// Manual throughput in RU/s (`x-ms-offer-throughput`).
     pub offer_throughput: Option<usize>,
 
-    /// JSON-serialized autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
-    pub offer_autopilot_settings: Option<String>,
+    /// Autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
+    ///
+    /// The driver serializes this to JSON for the header value.
+    pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
 
 impl CosmosRequestHeaders {
@@ -117,11 +120,29 @@ impl CosmosRequestHeaders {
             );
         }
         if let Some(autopilot) = self.offer_autopilot_settings.as_ref() {
-            headers.insert(
-                request_header_names::OFFER_AUTOPILOT_SETTINGS.clone(),
-                HeaderValue::from(autopilot.clone()),
-            );
+            if let Ok(json) = serde_json::to_string(autopilot) {
+                headers.insert(
+                    request_header_names::OFFER_AUTOPILOT_SETTINGS.clone(),
+                    HeaderValue::from(json),
+                );
+            }
         }
+    }
+}
+
+/// Autoscale throughput settings for the `x-ms-cosmos-offer-autopilot-settings` header.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct OfferAutoscaleSettings {
+    /// Maximum throughput in RU/s for autoscale.
+    pub max_throughput: usize,
+}
+
+impl OfferAutoscaleSettings {
+    /// Creates autoscale settings with the given maximum throughput.
+    pub fn new(max_throughput: usize) -> Self {
+        Self { max_throughput }
     }
 }
 

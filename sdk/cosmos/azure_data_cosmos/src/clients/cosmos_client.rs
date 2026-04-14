@@ -181,9 +181,9 @@ impl CosmosClient {
             CosmosOperation::create_database(self.driver.account().clone()).with_body(body);
 
         if let Some(throughput) = &options.throughput {
-            operation = operation.with_request_headers(
-                azure_data_cosmos_driver::models::CosmosRequestHeaders::try_from(throughput)?,
-            );
+            let mut headers = azure_data_cosmos_driver::models::CosmosRequestHeaders::new();
+            throughput.apply_headers(&mut headers);
+            operation = operation.with_request_headers(headers);
         }
 
         // Control-plane creates always need the full response body so the
