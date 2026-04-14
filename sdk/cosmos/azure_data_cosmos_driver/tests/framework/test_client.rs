@@ -29,15 +29,15 @@ pub struct DriverTestClient {
 }
 
 /// Resolved test environment containing account and connection pool configuration.
-struct TestEnv {
-    account: AccountReference,
-    connection_pool: ConnectionPoolOptions,
+pub struct TestEnv {
+    pub account: AccountReference,
+    pub connection_pool: ConnectionPoolOptions,
 }
 
 /// Resolves the test environment from environment variables.
 ///
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
-fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
+pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .try_init();

@@ -24,6 +24,9 @@ pub(crate) mod request_header_names {
     pub static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
     pub static OFFER_AUTOPILOT_SETTINGS: HeaderName =
         HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
+    pub static PRIORITY_LEVEL: HeaderName = HeaderName::from_static("x-ms-cosmos-priority-level");
+    pub static THROUGHPUT_BUCKET: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-throughput-bucket");
 }
 
 /// Standard Cosmos DB response header names.

@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added throughput control API: re-exported `ThroughputControlGroupOptions` and `PriorityLevel` from the driver. Users can register throughput control groups on `CosmosClientBuilder` via `with_throughput_control_group()` to configure priority-based execution and throughput bucket server features. ([#4078](https://github.com/Azure/azure-sdk-for-rust/pull/4078))
 - Added `ThroughputPoller` type that implements `IntoFuture` and `Stream` for tracking asynchronous throughput replacement operations.
 
 ### Breaking Changes
@@ -20,6 +21,7 @@
 
 ### Features Added
 
+- Added `CosmosClientBuilder::with_backup_endpoints()` for specifying fallback endpoints when the primary global endpoint is unavailable during initialization. Regional endpoints discovered during bootstrap are automatically used as fallback for subsequent account metadata refreshes. ([#4099](https://github.com/Azure/azure-sdk-for-rust/issues/4099))
 - Added `CosmosClientBuilder::with_proxy_allowed(bool)` for explicit opt-in to HTTP proxy usage with documented support limitations. ([#4062](https://github.com/Azure/azure-sdk-for-rust/pull/4062))
 - Added `CustomResponseBuilder` and `FaultInjectionRule::hit_count()` APIs for fault injection, enabling ergonomic construction of synthetic HTTP responses and test verification of rule activation counts. ([#3888](https://github.com/Azure/azure-sdk-for-rust/pull/3888))
 
