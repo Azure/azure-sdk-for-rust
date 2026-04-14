@@ -13,7 +13,8 @@ use azure_storage_blob::models::{
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use std::{collections::HashMap, error::Error};
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
 
@@ -54,7 +55,8 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -83,7 +85,8 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -116,7 +119,8 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -162,7 +166,8 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
 
@@ -209,7 +214,8 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -263,7 +269,8 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -325,8 +332,8 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_create_page_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -366,8 +373,8 @@ async fn test_create_page_blob_content_headers(ctx: TestContext) -> Result<(), B
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_upload_pages_sequence_number_condition(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -490,8 +497,8 @@ async fn test_upload_pages_sequence_number_condition(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_get_page_ranges_snapshot(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -535,8 +542,8 @@ async fn test_get_page_ranges_snapshot(ctx: TestContext) -> Result<(), Box<dyn E
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -628,8 +635,8 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_create_page_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -657,8 +664,8 @@ async fn test_create_page_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_upload_pages_from_url_source_if_match(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {

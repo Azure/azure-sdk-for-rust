@@ -24,7 +24,8 @@ use std::{
     },
 };
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -76,8 +77,8 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -112,7 +113,9 @@ async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║ TOP SUSPECT #5: Per-try policy - May cause live pipeline hangs              ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
 #[recorded::test(playback)]
 async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
@@ -149,7 +152,9 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║ TOP SUSPECT #4: Retry options - May cause live pipeline hangs               ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
 #[recorded::test(playback)]
 async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let per_try_count = Arc::new(AtomicUsize::new(0));
@@ -203,7 +208,9 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║ TOP SUSPECT #3: Retry logic - May cause live pipeline hangs                 ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
 #[recorded::test(playback)]
 async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let call_count = Arc::new(AtomicUsize::new(0));

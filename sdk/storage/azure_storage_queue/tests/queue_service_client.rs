@@ -19,7 +19,8 @@ use std::{collections::HashMap, time::Duration};
 use tokio::time;
 
 /// Creates a new queue under the given account.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -50,7 +51,8 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 }
 
 /// Deletes an existing queue.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -79,7 +81,8 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 }
 
 /// Gets the properties of the Queue service.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -99,7 +102,8 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets Queue service properties.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -127,7 +131,8 @@ async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
 }
 
 /// Lists all queues in the storage account, ensuring that at least one queue is present.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -248,7 +253,8 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
 }
 
 /// Lists queues filtered by a prefix and checks that all returned queues share the prefix.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -334,7 +340,8 @@ pub async fn test_list_queues_with_prefix(ctx: TestContext) -> Result<()> {
 }
 
 /// Lists queues with metadata included and checks the metadata on the matching queue.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -410,7 +417,8 @@ pub async fn test_list_queues_include_metadata(ctx: TestContext) -> Result<()> {
 }
 
 /// Gets Queue service statistics.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -442,7 +450,9 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets account-level service properties and verifies they all round-trip correctly.
-/// Temporarily marking as playback-only to investigate timing issue further wrt live test pipeline failures.
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║ TOP SUSPECT #1: 15-SECOND SLEEP - May cause live pipeline hangs             ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
 #[recorded::test(playback)]
 async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -617,7 +627,8 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
 }
 
 /// Setting more than 5 CORS rules is rejected by the service with 400 Bad Request.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_set_cors_too_many_rules(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -671,7 +682,8 @@ async fn test_set_cors_too_many_rules(ctx: TestContext) -> Result<()> {
 }
 
 /// Setting a retention policy with days > 365 is rejected by the service with 400 Bad Request.
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_set_retention_too_long(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();

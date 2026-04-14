@@ -18,7 +18,8 @@ use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -35,7 +36,8 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -79,7 +81,8 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -133,7 +136,8 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -157,7 +161,8 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -176,7 +181,8 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -299,8 +305,8 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -335,8 +341,8 @@ async fn test_list_containers_with_metadata_include(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -376,7 +382,9 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║ TOP SUSPECT #2: Service properties - May cause live pipeline hangs          ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
 #[recorded::test(playback)]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
@@ -439,8 +447,8 @@ async fn test_set_service_properties_cors_and_metrics(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+// Investigation: Re-enabling for live test pipeline investigation.
+#[recorded::test]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

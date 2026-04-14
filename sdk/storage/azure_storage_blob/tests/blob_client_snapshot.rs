@@ -16,7 +16,8 @@ use azure_storage_blob_test::{
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -86,7 +87,8 @@ async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -144,7 +146,8 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -214,7 +217,8 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -279,7 +283,8 @@ async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Bo
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -340,7 +345,8 @@ async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

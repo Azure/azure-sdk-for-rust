@@ -15,7 +15,8 @@ use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccoun
 use futures::TryStreamExt as _;
 use std::error::Error;
 
-#[recorded::test(live)]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Setup
     let recording = ctx.recording();
@@ -37,7 +38,8 @@ async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn stream_blob_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -64,7 +66,8 @@ async fn stream_blob_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn stream_stage_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -122,7 +125,8 @@ async fn stream_stage_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn stream_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -167,7 +171,8 @@ async fn stream_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+// Temporarily disabled for live test pipeline investigation.
+#[recorded::test(playback)]
 async fn stream_upload_pages(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
