@@ -60,8 +60,14 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group name for request prioritization.
-    pub throughput_control_group_name: Option<ThroughputControlGroupName>,
+    /// Throughput control group name for this request.
+    ///
+    /// References a group registered at runtime via
+    /// [`CosmosDriverRuntimeBuilder::register_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::register_throughput_control_group).
+    ///
+    /// `None` inherits from a lower-priority level or falls back to the
+    /// container's default group.
+    pub throughput_control_group: Option<ThroughputControlGroupName>,
 
     /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
@@ -112,7 +118,7 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
-        assert!(options.throughput_control_group_name.is_none());
+        assert!(options.throughput_control_group.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
     }

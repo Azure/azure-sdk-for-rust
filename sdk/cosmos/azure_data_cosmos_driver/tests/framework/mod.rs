@@ -6,4 +6,4 @@
 mod env;
 mod test_client;
 
-pub use test_client::DriverTestClient;
+pub use test_client::{resolve_test_env, DriverTestClient};

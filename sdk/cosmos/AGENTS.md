@@ -438,6 +438,7 @@ Always add a comment explaining **why** the warning is allowed.
 - Always run `cargo fmt` on generated or modified Rust code before considering the task complete.
 - When editing existing files, ensure the changes conform to `rustfmt` standards.
 - **The CI pipeline will reject any code that is not properly formatted.**
+- When editing non-Rust files (JSON, YAML, TOML, etc.), respect the root `.editorconfig` settings. For example, JSON files use 2-space indentation. Do not reformat entire files when making small changes — preserve the existing formatting.
 
 ### Spell Checking
 
