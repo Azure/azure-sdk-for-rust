@@ -199,6 +199,7 @@ pub(crate) async fn execute_operation_pipeline(
                 user_agent,
                 pipeline_type,
                 transport_security,
+                endpoint_key: routing.endpoint.endpoint_key(),
             },
             &mut diagnostics,
         )
