@@ -29,6 +29,8 @@ mod response_header_names {
     pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
     pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
     pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+    pub static LSN: HeaderName = HeaderName::from_static("lsn");
+    pub static ITEM_LSN: HeaderName = HeaderName::from_static("x-ms-item-lsn");
 }
 
 /// Cosmos request headers for operation-level customization.
@@ -94,6 +96,12 @@ pub struct CosmosResponseHeaders {
 
     /// Cosmos substatus code (`x-ms-substatus`).
     pub substatus: Option<SubStatusCode>,
+
+    /// Logical Sequence Number (`lsn`).
+    pub lsn: Option<u64>,
+
+    /// Item Logical Sequence Number (`x-ms-item-lsn`).
+    pub item_lsn: Option<u64>,
 }
 
 impl CosmosResponseHeaders {
@@ -129,6 +137,12 @@ impl CosmosResponseHeaders {
             substatus: headers
                 .get_optional_str(&response_header_names::SUBSTATUS)
                 .and_then(SubStatusCode::from_header_value),
+            lsn: headers
+                .get_optional_str(&response_header_names::LSN)
+                .and_then(|s| s.parse().ok()),
+            item_lsn: headers
+                .get_optional_str(&response_header_names::ITEM_LSN)
+                .and_then(|s| s.parse().ok()),
         }
     }
 }
@@ -148,6 +162,8 @@ mod tests {
         headers.insert("etag", "\"version-1\"");
         headers.insert("x-ms-continuation", "next-page-token");
         headers.insert("x-ms-item-count", "10");
+        headers.insert("lsn", "42");
+        headers.insert("x-ms-item-lsn", "37");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -173,6 +189,8 @@ mod tests {
         );
         assert_eq!(cosmos_headers.item_count, Some(10));
         assert_eq!(cosmos_headers.substatus, Some(SubStatusCode::new(3200)));
+        assert_eq!(cosmos_headers.lsn, Some(42));
+        assert_eq!(cosmos_headers.item_lsn, Some(37));
     }
 
     #[test]
@@ -185,6 +203,8 @@ mod tests {
             continuation: Some("cont".to_string()),
             item_count: Some(5),
             substatus: Some(SubStatusCode::new(1002)),
+            lsn: Some(100),
+            item_lsn: Some(99),
         };
 
         assert_eq!(
@@ -200,6 +220,8 @@ mod tests {
         assert_eq!(headers.continuation.as_deref(), Some("cont"));
         assert_eq!(headers.item_count, Some(5));
         assert_eq!(headers.substatus, Some(SubStatusCode::new(1002)));
+        assert_eq!(headers.lsn, Some(100));
+        assert_eq!(headers.item_lsn, Some(99));
     }
 
     #[test]
@@ -213,6 +235,8 @@ mod tests {
         assert!(headers.continuation.is_none());
         assert!(headers.item_count.is_none());
         assert!(headers.substatus.is_none());
+        assert!(headers.lsn.is_none());
+        assert!(headers.item_lsn.is_none());
     }
 
     #[test]

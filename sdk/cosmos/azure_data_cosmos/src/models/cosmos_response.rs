@@ -87,6 +87,23 @@ impl<T> CosmosResponse<T> {
         self.get_optional_header_str(&azure_core::http::headers::ETAG)
     }
 
+    /// Returns the Logical Sequence Number (LSN) from this response, if available.
+    ///
+    /// The LSN is returned by item operations (create, read, replace, upsert, delete).
+    pub fn lsn(&self) -> Option<u64> {
+        self.get_optional_header_str(&crate::constants::LSN)
+            .and_then(|s| s.parse().ok())
+    }
+
+    /// Returns the item Logical Sequence Number from this response, if available.
+    ///
+    /// The item LSN (`x-ms-item-lsn`) is returned by item operations
+    /// (create, read, replace, upsert, delete).
+    pub fn item_lsn(&self) -> Option<u64> {
+        self.get_optional_header_str(&crate::constants::ITEM_LSN)
+            .and_then(|s| s.parse().ok())
+    }
+
     /// Deserializes the response body without consuming the response.
     ///
     /// This is used internally to extract a copy of the response model (e.g.,
@@ -203,5 +220,43 @@ mod tests {
             "Expected missing field error, got: {}",
             error_message
         );
+    }
+
+    fn create_response_with_headers(headers: Headers) -> CosmosResponse<TestModel> {
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id": "test-id", "value": 1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        CosmosResponse::new(typed_response, create_mock_request())
+    }
+
+    #[test]
+    fn lsn_returns_parsed_value() {
+        let mut headers = Headers::new();
+        headers.insert("lsn", "42");
+        let response = create_response_with_headers(headers);
+        assert_eq!(response.lsn(), Some(42));
+    }
+
+    #[test]
+    fn lsn_returns_none_when_missing() {
+        let response = create_response_with_headers(Headers::new());
+        assert_eq!(response.lsn(), None);
+    }
+
+    #[test]
+    fn item_lsn_returns_parsed_value() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-item-lsn", "37");
+        let response = create_response_with_headers(headers);
+        assert_eq!(response.item_lsn(), Some(37));
+    }
+
+    #[test]
+    fn item_lsn_returns_none_when_missing() {
+        let response = create_response_with_headers(Headers::new());
+        assert_eq!(response.item_lsn(), None);
     }
 }
