@@ -453,7 +453,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║ TOP SUSPECT #1: 15-SECOND SLEEP - May cause live pipeline hangs             ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();

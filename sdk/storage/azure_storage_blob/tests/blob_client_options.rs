@@ -151,6 +151,7 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     container_client.delete(None).await?;
     Ok(())
 }
+}
 
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║ TOP SUSPECT #4: Retry options - May cause live pipeline hangs               ║
