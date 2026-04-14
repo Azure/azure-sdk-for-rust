@@ -1,6 +1,6 @@
 # Release History
 
-## 0.11.0 (Unreleased)
+## 0.11.0 (2026-04-14)
 
 ### Features Added
 
@@ -17,10 +17,6 @@
   - The previous `BlobClientDownloadResultHeaders` trait was removed.
 - Revised `upload()` on `BlobClient` `BlockBlobClient` with the following breaking changes:
   - `partition_size` option changed from `Option<NonZero<usize>>` to `Option<NonZero<u64>>`
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.10.1 (2026-03-18)
 
