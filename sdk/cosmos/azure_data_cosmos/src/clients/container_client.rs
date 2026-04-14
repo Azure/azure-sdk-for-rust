@@ -27,7 +27,6 @@ use azure_data_cosmos_driver::models::{
     effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
     CosmosOperation, ItemReference, PartitionKeyKind,
 };
-use azure_data_cosmos_driver::CosmosDriver;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
