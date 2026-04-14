@@ -87,19 +87,29 @@ fn bench_point_read(c: &mut Criterion) {
         .enable_all()
         .build()
         .expect("failed to create tokio runtime");
-    let (driver, item_ref) = rt.block_on(common::setup());
 
-    c.bench_function("point_read", |b| {
-        b.to_async(&rt).iter(|| async {
-            driver
-                .execute_operation(
-                    CosmosOperation::read_item(item_ref.clone()),
-                    OperationOptions::default(),
-                )
-                .await
-                .expect("execute_operation failed")
+    let latencies: &[(&str, std::time::Duration)] = &[
+        ("latency_0ms", std::time::Duration::ZERO),
+        ("latency_2ms", std::time::Duration::from_millis(2)),
+        ("latency_10ms", std::time::Duration::from_millis(10)),
+    ];
+
+    let mut group = c.benchmark_group("point_read");
+    for (name, latency) in latencies {
+        let (driver, item_ref) = rt.block_on(common::setup(*latency));
+        group.bench_function(*name, |b| {
+            b.to_async(&rt).iter(|| async {
+                driver
+                    .execute_operation(
+                        CosmosOperation::read_item(item_ref.clone()),
+                        OperationOptions::default(),
+                    )
+                    .await
+                    .expect("execute_operation failed")
+            });
         });
-    });
+    }
+    group.finish();
 }
 
 // 997 Hz — prime frequency to avoid aliasing with timer interrupts.

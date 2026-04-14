@@ -91,12 +91,36 @@ pub const ITEM_PAYLOAD: &str = r#"{
 /// - Depth 2 (`/dbs/<name>`)       → database properties (200)
 /// - Depth 4 (`/dbs/.../colls/<name>`) → container properties (200)
 /// - All other depths              → item document (200)
+///
+/// An optional `latency` delay is injected before each response to simulate
+/// network RTT. Typical values: `0` (no delay), `2 ms` (same-DC SLA), `10 ms`
+/// (cross-region baseline).
 #[derive(Debug)]
-pub struct MockTransportClient;
+pub struct MockTransportClient {
+    pub latency: std::time::Duration,
+}
+
+impl MockTransportClient {
+    /// Creates a `MockTransportClient` with no artificial latency.
+    pub fn new() -> Self {
+        Self {
+            latency: std::time::Duration::ZERO,
+        }
+    }
+
+    /// Creates a `MockTransportClient` with the given simulated network latency.
+    pub fn with_latency(latency: std::time::Duration) -> Self {
+        Self { latency }
+    }
+}
 
 #[async_trait]
 impl TransportClient for MockTransportClient {
     async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+        if !self.latency.is_zero() {
+            tokio::time::sleep(self.latency).await;
+        }
+
         let depth = request
             .url
             .path()
@@ -134,9 +158,17 @@ impl TransportClient for MockTransportClient {
 // Mock factory
 // ---------------------------------------------------------------------------
 
-/// HTTP client factory that always produces a [`MockTransportClient`].
+/// HTTP client factory that always produces a [`MockTransportClient`] with a given latency.
 #[derive(Debug)]
-pub struct MockHttpClientFactory;
+pub struct MockHttpClientFactory {
+    latency: std::time::Duration,
+}
+
+impl MockHttpClientFactory {
+    pub fn new(latency: std::time::Duration) -> Self {
+        Self { latency }
+    }
+}
 
 impl HttpClientFactory for MockHttpClientFactory {
     fn build(
@@ -144,7 +176,7 @@ impl HttpClientFactory for MockHttpClientFactory {
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
     ) -> azure_core::Result<Arc<dyn TransportClient>> {
-        Ok(Arc::new(MockTransportClient))
+        Ok(Arc::new(MockTransportClient::with_latency(self.latency)))
     }
 }
 
@@ -154,10 +186,14 @@ impl HttpClientFactory for MockHttpClientFactory {
 
 /// Builds a fully-initialized driver backed by the mock transport.
 ///
+/// `latency` is injected into every mock response to simulate network RTT.
+/// Use `Duration::ZERO` for pure CPU-overhead measurement, `Duration::from_millis(2)`
+/// for same-DC SLA baseline, or `Duration::from_millis(10)` for cross-region baseline.
+///
 /// All cache priming (account metadata, container metadata) happens here so
 /// that callers can benchmark or profile the fully-warm hot path only.
-pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
-    let factory = Arc::new(MockHttpClientFactory);
+pub async fn setup(latency: std::time::Duration) -> (Arc<CosmosDriver>, ItemReference) {
+    let factory = Arc::new(MockHttpClientFactory::new(latency));
     let runtime = CosmosDriverRuntimeBuilder::new()
         .with_mock_http_client_factory(factory)
         .build()
