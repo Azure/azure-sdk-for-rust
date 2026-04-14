@@ -9,7 +9,7 @@
 //! # Usage
 //!
 //! ```text
-//! cargo bench -p azure_data_cosmos_benchmarks --bench heap_profile
+//! cargo run -p azure_data_cosmos_benchmarks --example heap_profile --profile valgrind
 //! ```
 //!
 //! Output: `dhat-heap.json` in the current working directory.
@@ -27,8 +27,7 @@
 //!    call and dropped immediately after, producing a clean single-iteration
 //!    allocation snapshot.
 
-#[path = "common.rs"]
-mod common;
+use azure_data_cosmos_benchmarks as common;
 
 use azure_data_cosmos_driver::{models::CosmosOperation, options::OperationOptions};
 use tokio::runtime::Builder;

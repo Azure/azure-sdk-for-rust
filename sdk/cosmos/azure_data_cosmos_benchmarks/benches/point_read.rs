@@ -20,8 +20,7 @@
 //!
 //! Output: `target/criterion/point_read/profile/flamegraph.svg`
 
-#[path = "common.rs"]
-mod common;
+use azure_data_cosmos_benchmarks as common;
 
 use std::path::Path;
 

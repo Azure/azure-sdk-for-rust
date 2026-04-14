@@ -13,23 +13,20 @@ rust-version.workspace = true
 name = "point_read"
 harness = false
 
-[[bench]]
-name = "heap_profile"
-harness = false
-
-[dev-dependencies]
+[dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true }
 azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
   "reqwest_native_tls",
   "__internal_mocking",
 ] }
-bytes.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+url.workspace = true
+
+[dev-dependencies]
 criterion.workspace = true
 dhat.workspace = true
 pprof.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
-url.workspace = true
 
 [lints]
 workspace = true

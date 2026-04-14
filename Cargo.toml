@@ -178,6 +178,18 @@ windows = { version = "0.62", default-features = false }
 zip = { version = "8.2", default-features = false, features = ["deflate"] }
 pprof = { version = "0.15", features = ["flamegraph"] }
 
+# Profile for running binaries under Valgrind.
+# Inherits release optimisations but keeps debug symbols so that Valgrind
+# (massif, callgrind, etc.) can produce annotated output.
+#
+# Usage:
+#   cargo build --profile valgrind --bin heap_profile
+#   valgrind --tool=massif target/valgrind/heap_profile
+#   ms_print massif.out.<pid>
+[profile.valgrind]
+inherits = "release"
+debug = 1
+
 [workspace.lints.clippy]
 large_futures = "deny"
 uninlined_format_args = "allow"

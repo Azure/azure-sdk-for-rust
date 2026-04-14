@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Shared mock transport infrastructure for benchmarks.
+//! Shared mock transport infrastructure for `azure_data_cosmos_benchmarks`.
 //!
-//! Both `point_read` and `heap_profile` bench binaries include this module via
-//! `#[path = "common.rs"] mod common;`.
+//! Re-used by both the Criterion benchmarks (`benches/`) and the Valgrind
+//! example (`examples/`).
 
 use std::sync::Arc;
 
@@ -111,6 +111,12 @@ impl MockTransportClient {
     /// Creates a `MockTransportClient` with the given simulated network latency.
     pub fn with_latency(latency: std::time::Duration) -> Self {
         Self { latency }
+    }
+}
+
+impl Default for MockTransportClient {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
