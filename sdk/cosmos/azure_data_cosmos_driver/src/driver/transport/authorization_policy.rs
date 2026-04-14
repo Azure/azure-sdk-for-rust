@@ -100,13 +100,20 @@ pub(crate) async fn generate_authorization(
                 .token
                 .secret()
                 .to_string();
-            format!("type=aad&ver=1.0&sig={token}")
+            let mut s = String::with_capacity(20 + token.len());
+            s.push_str("type=aad&ver=1.0&sig=");
+            s.push_str(&token);
+            s
         }
         Credential::MasterKey(key) => {
             let string_to_sign = build_string_to_sign(auth_ctx, date_string);
             trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
             let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key)?;
-            format!("type=master&ver=1.0&sig={signature}")
+            // HMAC-SHA256 base64 is always 44 bytes; fixed prefix is 24 bytes.
+            let mut s = String::with_capacity(24 + signature.len());
+            s.push_str("type=master&ver=1.0&sig=");
+            s.push_str(&signature);
+            s
         }
     };
 
@@ -125,18 +132,27 @@ fn build_string_to_sign(auth_ctx: &AuthorizationContext, date_string: &str) -> S
         _ => "extension",
     };
 
-    format!(
-        "{}\n{}\n{}\n{}\n\n",
-        method_str,
-        auth_ctx.resource_type.path_segment(),
-        auth_ctx.resource_link.as_str(),
-        date_string,
-    )
+    let resource_type = auth_ctx.resource_type.path_segment();
+    let resource_link = auth_ctx.resource_link.as_str();
+
+    // method (≤9) + resource_type (≤12) + resource_link + date_string (29) + 6 separator bytes
+    let capacity =
+        method_str.len() + resource_type.len() + resource_link.len() + date_string.len() + 6;
+    let mut s = String::with_capacity(capacity);
+    use std::fmt::Write as _;
+    let _ = write!(
+        s,
+        "{method_str}\n{resource_type}\n{resource_link}\n{date_string}\n\n"
+    );
+    s
 }
 
 /// URL-encodes a string using form URL encoding.
 fn url_encode(s: &str) -> String {
-    url::form_urlencoded::byte_serialize(s.as_bytes()).collect()
+    // Pre-allocate with the input length; most auth token chars are ASCII-safe.
+    let mut out = String::with_capacity(s.len());
+    out.extend(url::form_urlencoded::byte_serialize(s.as_bytes()));
+    out
 }
 
 #[cfg(test)]
