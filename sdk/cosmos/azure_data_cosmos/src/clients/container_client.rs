@@ -9,7 +9,6 @@ use crate::{
         ThroughputProperties,
     },
     options::{BatchOptions, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions},
-    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
@@ -83,7 +82,7 @@ impl ContainerClient {
             link,
             items_link,
             container_connection,
-            driver,
+            driver: context.driver.clone(),
             container_ref,
             context,
         })
