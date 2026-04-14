@@ -299,20 +299,27 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
         .await
         .expect("failed to resolve container");
 
-    // Upsert the benchmark item to ensure it exists.
+    // Create the benchmark item if it doesn't already exist.
+    let item_body = format!(r#"{{"id": "{}", "pk": "{}"}}"#, item_id, pk_value);
+    ignore_conflict(
+        driver
+            .execute_operation(
+                CosmosOperation::create_item(
+                    container_ref.clone(),
+                    PartitionKey::from(pk_value.clone()),
+                )
+                .with_body(item_body.into_bytes()),
+                OperationOptions::default(),
+            )
+            .await,
+    )
+    .expect("failed to create benchmark item");
+
     let item_ref = ItemReference::from_name(
         &container_ref,
         PartitionKey::from(pk_value.clone()),
         item_id.clone(),
     );
-    let item_body = format!(r#"{{"id": "{}", "pk": "{}"}}"#, item_id, pk_value);
-    driver
-        .execute_operation(
-            CosmosOperation::upsert_item(item_ref.clone()).with_body(item_body.into_bytes()),
-            OperationOptions::default(),
-        )
-        .await
-        .expect("failed to upsert benchmark item");
 
     (driver, item_ref)
 }
