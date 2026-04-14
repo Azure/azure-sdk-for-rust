@@ -9,6 +9,7 @@ use super::{
     ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
     RehydratePriority,
 };
+use crate::models::HttpRange;
 use azure_core::{
     fmt::SafeDebug,
     http::{pager::PagerOptions, ClientMethodOptions, Etag},
@@ -102,7 +103,7 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
     pub source_if_unmodified_since: Option<OffsetDateTime>,
 
     /// Bytes of source data in the specified range.
-    pub source_range: Option<String>,
+    pub source_range: Option<HttpRange>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
@@ -532,7 +533,7 @@ pub struct BlobClientDownloadInternalOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 
     /// Return only the bytes of the blob in the specified range.
-    pub range: Option<String>,
+    pub range: Option<HttpRange>,
 
     /// Optional. When this header is set to true and specified together with the Range header, the service returns the CRC64
     /// hash for the range, as long as the range is less than or equal to 4 MB in size.
@@ -1476,7 +1477,7 @@ pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
     pub source_if_unmodified_since: Option<OffsetDateTime>,
 
     /// Bytes of source data in the specified range.
-    pub source_range: Option<String>,
+    pub source_range: Option<HttpRange>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
@@ -1926,7 +1927,7 @@ pub struct PageBlobClientGetPageRangesOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 
     /// Return only the bytes of the blob in the specified range.
-    pub range: Option<String>,
+    pub range: Option<HttpRange>,
 
     /// The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more
     /// information on working with blob snapshots, see [Creating a Snapshot of a Blob.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob)

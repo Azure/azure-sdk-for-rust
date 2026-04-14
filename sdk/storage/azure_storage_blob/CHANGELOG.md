@@ -10,6 +10,7 @@
 ### Breaking Changes
 
 - Removed `format_page_range()`. Use `HttpRange::new(offset, length)` or `HttpRange::from_offset(offset)` instead.
+- Changed `range` parameters in `PageBlobClient::upload_pages()`, `clear_pages()`, and `upload_pages_from_url()` from `String` to `HttpRange`.
 
 - Revised `download()` on `BlobClient` with the following breaking changes:
   - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.

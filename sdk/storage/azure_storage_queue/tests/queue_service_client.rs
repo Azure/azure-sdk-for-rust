@@ -506,16 +506,35 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
             .set_properties(props.try_into()?, None)
             .await?;
 
-        // Allow settings to propagate in live/record mode
-        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+        // Allow settings to propagate in live/record mode; wait a minimum of 15 seconds,
+        // then poll every 5 seconds up to a 30-second total timeout.
+        let updated = if recording.test_mode() == TestMode::Live
+            || recording.test_mode() == TestMode::Record
+        {
             time::sleep(Duration::from_secs(15)).await;
-        }
-
-        // Act - read back
-        let updated = queue_service_client
-            .get_properties(None)
-            .await?
-            .into_model()?;
+            let deadline = std::time::Instant::now() + Duration::from_secs(15);
+            loop {
+                let current = queue_service_client
+                    .get_properties(None)
+                    .await?
+                    .into_model()?;
+                let propagated = current
+                    .logging
+                    .as_ref()
+                    .and_then(|l| l.delete)
+                    .unwrap_or(false);
+                if propagated || std::time::Instant::now() >= deadline {
+                    break current;
+                }
+                time::sleep(Duration::from_secs(5)).await;
+            }
+        } else {
+            // Act - read back
+            queue_service_client
+                .get_properties(None)
+                .await?
+                .into_model()?
+        };
 
         // Assert - logging
         let logging = updated.logging.as_ref().expect("Expected logging settings");

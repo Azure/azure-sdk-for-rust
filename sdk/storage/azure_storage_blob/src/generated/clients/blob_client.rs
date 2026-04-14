@@ -665,7 +665,7 @@ impl BlobClient {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(range) = options.range.as_ref() {
-            request.insert_header("range", range);
+            request.insert_header("range", range.to_string());
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
