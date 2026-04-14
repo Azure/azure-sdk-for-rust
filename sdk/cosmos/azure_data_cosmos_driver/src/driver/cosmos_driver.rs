@@ -450,7 +450,7 @@ impl CosmosDriver {
             .readable_locations
             .iter()
             .filter_map(|loc| {
-                let url = Url::parse(&loc.database_account_endpoint).ok()?;
+                let url = loc.database_account_endpoint.url().clone();
                 let ep = AccountEndpoint::from(url.clone());
                 if ep == *primary_endpoint {
                     None

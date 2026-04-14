@@ -7,12 +7,12 @@ use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken,
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
-/// Standard Cosmos DB header names.
+/// Standard Cosmos DB request header names.
 ///
 /// All names are lowercase as required by HTTP/1.1. The azure_core [`Headers`]
 /// type normalizes header names to lowercase on insertion, so lookups are
 /// case-sensitive but will always match since both sides are lowercase.
-pub(crate) mod header_names {
+pub(crate) mod request_header_names {
     pub const ACTIVITY_ID: &str = "x-ms-activity-id";
     pub const SESSION_TOKEN: &str = "x-ms-session-token";
     pub const IF_MATCH: &str = "if-match";
@@ -20,7 +20,13 @@ pub(crate) mod header_names {
     pub const PREFER: &str = "prefer";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
+}
+
+/// Standard Cosmos DB response header names.
+pub(crate) mod response_header_names {
+    pub const ACTIVITY_ID: &str = "x-ms-activity-id";
     pub const REQUEST_CHARGE: &str = "x-ms-request-charge";
+    pub const SESSION_TOKEN: &str = "x-ms-session-token";
     pub const ETAG: &str = "etag";
     pub const CONTINUATION: &str = "x-ms-continuation";
     pub const ITEM_COUNT: &str = "x-ms-item-count";
@@ -67,24 +73,24 @@ impl CosmosRequestHeaders {
     pub(crate) fn write_to_headers(&self, headers: &mut Headers) {
         if let Some(activity_id) = self.activity_id.as_ref() {
             headers.insert(
-                header_names::ACTIVITY_ID,
+                request_header_names::ACTIVITY_ID,
                 HeaderValue::from(activity_id.as_str().to_owned()),
             );
         }
         if let Some(session_token) = self.session_token.as_ref() {
             headers.insert(
-                header_names::SESSION_TOKEN,
+                request_header_names::SESSION_TOKEN,
                 HeaderValue::from(session_token.as_str().to_owned()),
             );
         }
         if let Some(precondition) = self.precondition.as_ref() {
             match precondition {
                 Precondition::IfMatch(etag) => headers.insert(
-                    header_names::IF_MATCH,
+                    request_header_names::IF_MATCH,
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
                 Precondition::IfNoneMatch(etag) => headers.insert(
-                    header_names::IF_NONE_MATCH,
+                    request_header_names::IF_NONE_MATCH,
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
             }
@@ -177,35 +183,35 @@ impl CosmosResponseHeaders {
         let mut result = Self::default();
         for (name, value) in headers.iter() {
             match name.as_str() {
-                header_names::ACTIVITY_ID => {
+                response_header_names::ACTIVITY_ID => {
                     result.activity_id = Some(ActivityId::from_string(value.as_str().to_owned()));
                 }
-                header_names::REQUEST_CHARGE => {
+                response_header_names::REQUEST_CHARGE => {
                     result.request_charge =
                         value.as_str().parse::<f64>().ok().map(RequestCharge::new);
                 }
-                header_names::SESSION_TOKEN => {
+                response_header_names::SESSION_TOKEN => {
                     result.session_token = Some(SessionToken::new(value.as_str().to_owned()));
                 }
-                header_names::ETAG => {
+                response_header_names::ETAG => {
                     result.etag = Some(ETag::new(value.as_str().to_owned()));
                 }
-                header_names::CONTINUATION => {
+                response_header_names::CONTINUATION => {
                     result.continuation = Some(value.as_str().to_owned());
                 }
-                header_names::ITEM_COUNT => {
+                response_header_names::ITEM_COUNT => {
                     result.item_count = value.as_str().parse().ok();
                 }
-                header_names::SUBSTATUS => {
+                response_header_names::SUBSTATUS => {
                     result.substatus = SubStatusCode::from_header_value(value.as_str());
                 }
-                header_names::INDEX_METRICS => {
+                response_header_names::INDEX_METRICS => {
                     result.index_metrics = match STANDARD.decode(value.as_str()) {
                         Ok(bytes) => match String::from_utf8(bytes) {
                             Ok(s) => Some(s),
                             Err(e) => {
                                 tracing::warn!(
-                                    header = header_names::INDEX_METRICS,
+                                    header = response_header_names::INDEX_METRICS,
                                     error = %e,
                                     "Failed to UTF-8 decode index metrics after base64 decode"
                                 );
@@ -214,7 +220,7 @@ impl CosmosResponseHeaders {
                         },
                         Err(e) => {
                             tracing::warn!(
-                                header = header_names::INDEX_METRICS,
+                                header = response_header_names::INDEX_METRICS,
                                 error = %e,
                                 "Failed to base64-decode index metrics header"
                             );
@@ -222,26 +228,26 @@ impl CosmosResponseHeaders {
                         }
                     };
                 }
-                header_names::QUERY_METRICS => {
+                response_header_names::QUERY_METRICS => {
                     result.query_metrics = Some(value.as_str().to_owned());
                 }
-                header_names::SERVER_DURATION_MS => {
+                response_header_names::SERVER_DURATION_MS => {
                     result.server_duration_ms = value
                         .as_str()
                         .parse::<f64>()
                         .ok()
                         .filter(|v| v.is_finite() && *v >= 0.0);
                 }
-                header_names::LSN => {
+                response_header_names::LSN => {
                     result.lsn = value.as_str().parse().ok();
                 }
-                header_names::OWNER_FULL_NAME => {
+                response_header_names::OWNER_FULL_NAME => {
                     result.owner_full_name = Some(value.as_str().to_owned());
                 }
-                header_names::OWNER_ID => {
+                response_header_names::OWNER_ID => {
                     result.owner_id = Some(value.as_str().to_owned());
                 }
-                header_names::OFFER_REPLACE_PENDING => {
+                response_header_names::OFFER_REPLACE_PENDING => {
                     result.offer_replace_pending = value.as_str().parse::<bool>().ok();
                 }
                 _ => {}
