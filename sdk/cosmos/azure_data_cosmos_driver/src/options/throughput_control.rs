@@ -35,14 +35,14 @@ pub enum ThroughputTarget {
 ///
 /// These values can be modified at runtime via the registry.
 #[derive(Clone, Debug)]
-pub(crate) struct ClientSideMutableValues {
+pub(crate) struct ClientSideSettings {
     /// Target throughput limit.
     target_throughput: ThroughputTarget,
     /// Optional priority level for throttling decisions.
     priority_level: Option<PriorityLevel>,
 }
 
-impl ClientSideMutableValues {
+impl ClientSideSettings {
     /// Creates new mutable values.
     pub(crate) fn new(
         target_throughput: ThroughputTarget,
@@ -67,31 +67,31 @@ impl ClientSideMutableValues {
 
 /// Mutable runtime values for a server-side throughput bucket control group.
 #[derive(Clone, Debug)]
-pub(crate) struct ServerSideThroughputBucketMutableValues {
+pub(crate) struct ServerSideThroughputBucketSettings {
     /// Throughput bucket assignment.
-    throughput_bucket: u32,
+    throughput_bucket: usize,
 }
 
-impl ServerSideThroughputBucketMutableValues {
+impl ServerSideThroughputBucketSettings {
     /// Creates new mutable values.
-    pub(crate) fn new(throughput_bucket: u32) -> Self {
+    pub(crate) fn new(throughput_bucket: usize) -> Self {
         Self { throughput_bucket }
     }
 
     /// Returns the throughput bucket.
-    pub(crate) fn throughput_bucket(&self) -> u32 {
+    pub(crate) fn throughput_bucket(&self) -> usize {
         self.throughput_bucket
     }
 }
 
 /// Mutable runtime values for a server-side priority-based throttling control group.
 #[derive(Clone, Debug)]
-pub(crate) struct ServerSidePriorityMutableValues {
+pub(crate) struct ServerSidePrioritySettings {
     /// Priority level for throttling.
     priority_level: PriorityLevel,
 }
 
-impl ServerSidePriorityMutableValues {
+impl ServerSidePrioritySettings {
     /// Creates new mutable values.
     pub(crate) fn new(priority_level: PriorityLevel) -> Self {
         Self { priority_level }
@@ -129,7 +129,7 @@ pub enum ThroughputControlGroupOptions {
         /// Whether this group is used by default for requests without explicit assignment.
         is_default: bool,
         /// Mutable runtime values (wrapped in RwLock for thread-safe updates).
-        mutable: Arc<RwLock<ClientSideMutableValues>>,
+        mutable: Arc<RwLock<ClientSideSettings>>,
     },
 
     /// Server-side enforced throughput control using throughput buckets.
@@ -144,7 +144,7 @@ pub enum ThroughputControlGroupOptions {
         /// Whether this group is used by default for requests without explicit assignment.
         is_default: bool,
         /// Mutable runtime values (wrapped in RwLock for thread-safe updates).
-        mutable: Arc<RwLock<ServerSideThroughputBucketMutableValues>>,
+        mutable: Arc<RwLock<ServerSideThroughputBucketSettings>>,
     },
 
     /// Server-side enforced throughput control using priority-based throttling.
@@ -159,7 +159,7 @@ pub enum ThroughputControlGroupOptions {
         /// Whether this group is used by default for requests without explicit assignment.
         is_default: bool,
         /// Mutable runtime values (wrapped in RwLock for thread-safe updates).
-        mutable: Arc<RwLock<ServerSidePriorityMutableValues>>,
+        mutable: Arc<RwLock<ServerSidePrioritySettings>>,
     },
 }
 
@@ -176,7 +176,7 @@ impl ThroughputControlGroupOptions {
             name: name.into(),
             container,
             is_default,
-            mutable: Arc::new(RwLock::new(ClientSideMutableValues::new(
+            mutable: Arc::new(RwLock::new(ClientSideSettings::new(
                 target_throughput,
                 priority_level,
             ))),
@@ -187,14 +187,14 @@ impl ThroughputControlGroupOptions {
     pub fn server_side_throughput_bucket(
         name: impl Into<ThroughputControlGroupName>,
         container: ContainerReference,
-        throughput_bucket: u32,
+        throughput_bucket: usize,
         is_default: bool,
     ) -> Self {
         Self::ServerSideThroughputBucket {
             name: name.into(),
             container,
             is_default,
-            mutable: Arc::new(RwLock::new(ServerSideThroughputBucketMutableValues::new(
+            mutable: Arc::new(RwLock::new(ServerSideThroughputBucketSettings::new(
                 throughput_bucket,
             ))),
         }
@@ -211,9 +211,7 @@ impl ThroughputControlGroupOptions {
             name: name.into(),
             container,
             is_default,
-            mutable: Arc::new(RwLock::new(ServerSidePriorityMutableValues::new(
-                priority_level,
-            ))),
+            mutable: Arc::new(RwLock::new(ServerSidePrioritySettings::new(priority_level))),
         }
     }
 
@@ -278,7 +276,7 @@ impl ThroughputControlGroupOptions {
     /// Returns the current throughput bucket (server-side bucket groups only).
     ///
     /// Returns `None` for other group types.
-    pub fn throughput_bucket(&self) -> Option<u32> {
+    pub fn throughput_bucket(&self) -> Option<usize> {
         match self {
             Self::ServerSideThroughputBucket { mutable, .. } => {
                 Some(mutable.read().unwrap().throughput_bucket())
@@ -290,7 +288,7 @@ impl ThroughputControlGroupOptions {
     /// Sets the throughput bucket (server-side bucket groups only).
     ///
     /// Does nothing for other group types.
-    pub fn set_throughput_bucket(&self, bucket: u32) {
+    pub fn set_throughput_bucket(&self, bucket: usize) {
         if let Self::ServerSideThroughputBucket { mutable, .. } = self {
             mutable.write().unwrap().throughput_bucket = bucket;
         }
@@ -366,7 +364,7 @@ pub struct ThroughputControlGroupSnapshot {
     /// The current target throughput (client-side only).
     pub target_throughput: Option<ThroughputTarget>,
     /// The current throughput bucket (server-side bucket only).
-    pub throughput_bucket: Option<u32>,
+    pub throughput_bucket: Option<usize>,
     /// The current priority level.
     pub priority_level: Option<PriorityLevel>,
     /// Whether this is client-side or server-side control.
@@ -402,7 +400,7 @@ impl ThroughputControlGroupSnapshot {
     }
 
     /// Sets the throughput bucket (server-side only).
-    pub fn with_throughput_bucket(mut self, bucket: u32) -> Self {
+    pub fn with_throughput_bucket(mut self, bucket: usize) -> Self {
         self.throughput_bucket = Some(bucket);
         self
     }
