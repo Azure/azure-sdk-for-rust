@@ -1268,12 +1268,16 @@ mod tests {
 
         let priority = request
             .headers
-            .get_optional_str(&HeaderName::from_static(request_header_names::PRIORITY_LEVEL))
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PRIORITY_LEVEL,
+            ))
             .expect("priority level header should be set");
         assert_eq!(priority, "Low");
         assert!(request
             .headers
-            .get_optional_str(&HeaderName::from_static(request_header_names::THROUGHPUT_BUCKET))
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::THROUGHPUT_BUCKET
+            ))
             .is_none());
     }
 
@@ -1307,12 +1311,16 @@ mod tests {
 
         let bucket = request
             .headers
-            .get_optional_str(&HeaderName::from_static(request_header_names::THROUGHPUT_BUCKET))
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::THROUGHPUT_BUCKET,
+            ))
             .expect("throughput bucket header should be set");
         assert_eq!(bucket, "42");
         assert!(request
             .headers
-            .get_optional_str(&HeaderName::from_static(request_header_names::PRIORITY_LEVEL))
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PRIORITY_LEVEL
+            ))
             .is_none());
     }
 
@@ -1346,15 +1354,15 @@ mod tests {
         let request = build_transport_request(&operation, None, &ctx).unwrap();
 
         assert_eq!(
-            request
-                .headers
-                .get_optional_str(&HeaderName::from_static(request_header_names::PRIORITY_LEVEL)),
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::PRIORITY_LEVEL
+            )),
             Some("High")
         );
         assert_eq!(
-            request
-                .headers
-                .get_optional_str(&HeaderName::from_static(request_header_names::THROUGHPUT_BUCKET)),
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::THROUGHPUT_BUCKET
+            )),
             Some("100")
         );
     }

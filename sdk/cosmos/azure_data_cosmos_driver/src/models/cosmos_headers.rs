@@ -9,9 +9,10 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 /// Standard Cosmos DB request header names.
 ///
-/// All names are lowercase as required by HTTP/1.1. The azure_core [`Headers`]
-/// type normalizes header names to lowercase on insertion, so lookups are
-/// case-sensitive but will always match since both sides are lowercase.
+/// All names are lowercase as required by the azure_core [`HeaderName`] type.
+/// HTTP header names are technically case-insensitive, but `azure_core` normalizes
+/// them to lowercase on insertion, so lookups are case-sensitive and will always
+/// match since both sides are lowercase.
 pub(crate) mod request_header_names {
     pub const ACTIVITY_ID: &str = "x-ms-activity-id";
     pub const SESSION_TOKEN: &str = "x-ms-session-token";

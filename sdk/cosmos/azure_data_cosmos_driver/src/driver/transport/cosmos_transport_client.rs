@@ -9,8 +9,10 @@
 //! single client-level timeout, but Cosmos DB operations need distinct timeouts
 //! for metadata vs. data-plane calls and for individual retry attempts.
 //!
-//! All types in this module are `pub(crate)` — they are implementation details
-//! of the driver and are not exposed in the public API.
+//! Most types in this module are `pub(crate)` — they are implementation details
+//! of the driver. The four core transport types ([`HttpRequest`], [`HttpResponse`],
+//! [`TransportError`], [`TransportClient`]) are `pub` so they can be re-exported
+//! via the `testing` module under the `__internal_mocking` feature flag.
 
 use std::fmt;
 use std::time::Duration;
@@ -50,7 +52,7 @@ pub struct HttpRequest {
     /// them after the request completes — without a global store or
     /// header-based correlation.
     #[cfg(feature = "fault_injection")]
-    pub evaluation_collector: Option<EvaluationCollector>,
+    pub(crate) evaluation_collector: Option<EvaluationCollector>,
 }
 
 // ----------------------------------------------------------------------------

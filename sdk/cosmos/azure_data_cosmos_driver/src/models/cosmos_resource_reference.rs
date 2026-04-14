@@ -684,6 +684,24 @@ mod tests {
             r.request_path(),
             "compute_paths request_path mismatch"
         );
+
+        // Verify signing_link is a zero-copy sub-slice of the request_path buffer
+        // when it's derived from the same allocation (no signing_override, non-empty).
+        if paths.signing_override.is_none() && !paths.request_path().is_empty() {
+            let req_ptr = paths.request_path().as_ptr() as usize;
+            let req_end = req_ptr + paths.request_path().len();
+            let sign_ptr = paths.signing_link().as_ptr() as usize;
+            let sign_end = sign_ptr + paths.signing_link().len();
+            assert!(
+                sign_ptr >= req_ptr && sign_end <= req_end,
+                "signing_link is not a sub-slice of request_path buffer \
+                (signing_link ptr={:#x} len={}, request_path ptr={:#x} len={})",
+                sign_ptr,
+                paths.signing_link().len(),
+                req_ptr,
+                paths.request_path().len()
+            );
+        }
     }
 
     #[test]
