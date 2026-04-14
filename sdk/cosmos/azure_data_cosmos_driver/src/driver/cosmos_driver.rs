@@ -1001,7 +1001,7 @@ impl CosmosDriver {
         // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
         // Skips the CAS loop when the etag matches (same server version).
         self.location_state_store.sync_account_properties(
-            account_properties.as_ref(),
+            Arc::clone(&account_properties),
             self.location_state_store.default_endpoint(),
         );
 
