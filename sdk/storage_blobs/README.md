@@ -4,6 +4,7 @@
 >
 > The `azure_storage_blob` crate is the official, actively maintained Azure Blob Storage client library for Rust.
 > Please migrate to [`azure_storage_blob`](https://crates.io/crates/azure_storage_blob) for continued support and new features.
+> See the [azure_storage_blob documentation](https://docs.rs/azure_storage_blob) to get started.
 >
 > Source for this crate can now be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
 > This crate will not receive new features or bug fixes.
