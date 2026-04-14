@@ -340,7 +340,7 @@ dependencies = [
  "dotenvy",
  "flate2",
  "futures",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "reqwest",
  "serde",
@@ -404,7 +404,7 @@ dependencies = [
  "futures",
  "h2",
  "quick-xml",
- "rand 0.10.0",
+ "rand 0.10.1",
  "reqwest",
  "serde",
  "serde_json",
@@ -439,7 +439,7 @@ dependencies = [
  "futures",
  "hdrhistogram",
  "hostname",
- "rand 0.10.0",
+ "rand 0.10.1",
  "serde",
  "serde_json",
  "sysinfo",
@@ -489,7 +489,7 @@ dependencies = [
  "criterion",
  "fe2o3-amqp",
  "futures",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
  "tokio",
@@ -534,7 +534,7 @@ dependencies = [
  "azure_identity",
  "azure_messaging_servicebus",
  "futures",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "serde",
  "serde_json",
@@ -558,7 +558,7 @@ dependencies = [
  "futures",
  "include-file",
  "openssl",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rustc_version",
  "serde",
  "serde_json",
@@ -579,7 +579,7 @@ dependencies = [
  "criterion",
  "futures",
  "include-file",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
  "serde",
@@ -601,7 +601,7 @@ dependencies = [
  "azure_security_keyvault_test",
  "futures",
  "include-file",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rustc_version",
  "serde",
  "serde_json",
@@ -636,7 +636,7 @@ dependencies = [
  "opentelemetry_sdk",
  "percent-encoding",
  "pin-project",
- "rand 0.10.0",
+ "rand 0.10.1",
  "serde",
  "serde_json",
  "time",
@@ -675,7 +675,7 @@ dependencies = [
  "futures",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
- "rand 0.10.0",
+ "rand 0.10.1",
  "serde",
  "time",
  "tokio",
@@ -2617,9 +2617,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc266eb313df6c5c09c1c7b1fbe2510961e5bcd3add930c1e31f7ed9da0feff8"
+checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
 dependencies = [
  "chacha20",
  "getrandom 0.4.2",
@@ -3298,7 +3298,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.2",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -3748,7 +3748,7 @@ dependencies = [
  "futures",
  "gloo-timers",
  "pin-project",
- "rand 0.10.0",
+ "rand 0.10.1",
  "reqwest",
  "rust_decimal",
  "serde",
@@ -3870,7 +3870,7 @@ checksum = "a68d3c8f01c0cfa54a75291d83601161799e4a89a39e0929f4b0354d88757a37"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
- "rand 0.10.0",
+ "rand 0.10.1",
  "uuid-rng-internal",
  "wasm-bindgen",
 ]

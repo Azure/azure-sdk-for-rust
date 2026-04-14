@@ -112,6 +112,17 @@ enum CosmosTestMode {
 
 const DEFAULT_EMULATOR_DATABASE_NAME: &str = "emulator-test-db";
 
+/// Resolves the connection string from the environment, handling the `"emulator"` shorthand.
+pub fn resolve_connection_string() -> Option<ConnectionString> {
+    let env_var = std::env::var(CONNECTION_STRING_ENV_VAR).ok()?;
+    let raw = if env_var == "emulator" {
+        EMULATOR_CONNECTION_STRING
+    } else {
+        &env_var
+    };
+    raw.parse().ok()
+}
+
 fn get_shared_database_id() -> &'static str {
     static SHARED_DATABASE_ID: OnceLock<String> = OnceLock::new();
 
