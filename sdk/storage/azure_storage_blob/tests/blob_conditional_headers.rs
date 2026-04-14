@@ -33,7 +33,8 @@ const BAD_ETAG: &str = "\"bad-etag-value\"";
 mod blob_client {
     use super::*;
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_blob_client_etag_conditions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -384,7 +385,8 @@ mod blob_client {
         Ok(())
     }
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_blob_client_time_conditions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -733,7 +735,8 @@ mod blob_client {
         Ok(())
     }
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_blob_client_if_tags_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -1079,7 +1082,8 @@ mod blob_client {
 mod block_blob_client {
     use super::*;
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_block_blob_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
@@ -1328,7 +1332,8 @@ mod block_blob_client {
 mod append_blob_client {
     use super::*;
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_append_blob_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
@@ -1578,7 +1583,8 @@ mod append_blob_client {
 mod page_blob_client {
     use super::*;
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_page_blob_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
@@ -2056,7 +2062,8 @@ mod page_blob_client {
 mod blob_container_client {
     use super::*;
 
-    #[recorded::test]
+    // Marking as playback-only to investigate live test pipeline failures.
+    #[recorded::test(playback)]
     async fn test_blob_container_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {

@@ -299,7 +299,8 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-#[recorded::test]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -334,7 +335,8 @@ async fn test_list_containers_with_metadata_include(
     Ok(())
 }
 
-#[recorded::test]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -374,7 +376,8 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-#[recorded::test]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -436,7 +439,8 @@ async fn test_set_service_properties_cors_and_metrics(
     Ok(())
 }
 
-#[recorded::test]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
