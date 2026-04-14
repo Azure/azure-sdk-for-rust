@@ -7,11 +7,12 @@
 //! - Success → Complete
 //! - Transport error (NotSent) → TransportRetry if budget allows
 //! - Transport error (Sent/Unknown, idempotent) → TransportRetry if budget allows
-//! - Transport error (Sent/Unknown, non-idempotent) → Abort
+//! - Transport error (Sent/Unknown, non-idempotent, no PPAF) → Abort
 //! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
 //! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
 //! - 408 RequestTimeout → FailoverRetry + mark partition/endpoint unavailable
 //! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
+//! - 503, 429/3092, 410, 408 (non-idempotent, PPAF) → FailoverRetry (write region discovery)
 //! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
 
@@ -23,6 +24,16 @@ use crate::{
 };
 
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
+
+/// Whether the current request is handled by the PPCB threshold mechanism.
+///
+/// When `true`, `MarkEndpointUnavailable` should be suppressed — failover
+/// is driven by the partition-level failure counter instead.
+fn is_ppcb_managed(operation: &CosmosOperation, retry_state: &OperationRetryState) -> bool {
+    retry_state.ppcb_active
+        && operation.resource_type().is_partitioned()
+        && (operation.is_read_only() || retry_state.can_use_multiple_write_locations)
+}
 
 /// Evaluates the result of a transport attempt and decides what to do next.
 ///
@@ -120,42 +131,69 @@ pub(crate) fn evaluate_transport_result(
                     );
                 }
 
-                if !(operation.is_read_only() || operation.is_idempotent()) {
-                    return (
-                        OperationAction::Abort {
-                            error: build_http_error(&status, &headers, &body),
-                            status: Some(status),
-                        },
-                        Vec::new(),
-                    );
-                }
-
                 let unavailable_reason = if is_request_timeout {
                     UnavailableReason::RequestTimeout
                 } else {
                     UnavailableReason::ServiceUnavailable
                 };
 
-                return (
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.clone().advance_failover(),
-                        delay: None,
-                    },
-                    vec![
-                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                if !(operation.is_read_only()
+                    || operation.is_idempotent()
+                    || retry_state.ppaf_write_retry_allowed)
+                {
+                    // Non-idempotent write that was already sent and PPAF is
+                    // not available — unsafe to retry. We still mark partition
+                    // and endpoint unavailable so future requests benefit from
+                    // the updated routing state.
+                    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+                        UnavailablePartition {
                             partition_key_range_id: retry_state
                                 .partition_key_range_id
                                 .clone()
                                 .unwrap_or_default(),
                             region: endpoint.region().cloned(),
-                            is_read: operation.is_read_only(),
+                            is_read: false,
                             is_partitioned_resource: operation.resource_type().is_partitioned(),
-                        }),
-                        LocationEffect::MarkEndpointUnavailable {
+                        },
+                    )];
+                    if !is_ppcb_managed(operation, retry_state) {
+                        effects.push(LocationEffect::MarkEndpointUnavailable {
                             endpoint: endpoint.clone(),
                             reason: unavailable_reason,
+                        });
+                    }
+                    return (
+                        OperationAction::Abort {
+                            error: build_http_error(&status, &headers, &body),
+                            status: Some(status),
                         },
-                    ],
+                        effects,
+                    );
+                }
+
+                let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+                    UnavailablePartition {
+                        partition_key_range_id: retry_state
+                            .partition_key_range_id
+                            .clone()
+                            .unwrap_or_default(),
+                        region: endpoint.region().cloned(),
+                        is_read: operation.is_read_only(),
+                        is_partitioned_resource: operation.resource_type().is_partitioned(),
+                    },
+                )];
+                if !is_ppcb_managed(operation, retry_state) {
+                    effects.push(LocationEffect::MarkEndpointUnavailable {
+                        endpoint: endpoint.clone(),
+                        reason: unavailable_reason,
+                    });
+                }
+                return (
+                    OperationAction::FailoverRetry {
+                        new_state: retry_state.clone().advance_failover(),
+                        delay: None,
+                    },
+                    effects,
                 );
             }
 
@@ -163,26 +201,29 @@ pub(crate) fn evaluate_transport_result(
                 && operation.is_read_only()
                 && retry_state.can_retry_failover()
             {
+                let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+                    UnavailablePartition {
+                        partition_key_range_id: retry_state
+                            .partition_key_range_id
+                            .clone()
+                            .unwrap_or_default(),
+                        region: endpoint.region().cloned(),
+                        is_read: true,
+                        is_partitioned_resource: operation.resource_type().is_partitioned(),
+                    },
+                )];
+                if !is_ppcb_managed(operation, retry_state) {
+                    effects.push(LocationEffect::MarkEndpointUnavailable {
+                        endpoint: endpoint.clone(),
+                        reason: UnavailableReason::InternalServerError,
+                    });
+                }
                 return (
                     OperationAction::FailoverRetry {
                         new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
-                    vec![
-                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
-                            partition_key_range_id: retry_state
-                                .partition_key_range_id
-                                .clone()
-                                .unwrap_or_default(),
-                            region: endpoint.region().cloned(),
-                            is_read: true,
-                            is_partitioned_resource: operation.resource_type().is_partitioned(),
-                        }),
-                        LocationEffect::MarkEndpointUnavailable {
-                            endpoint: endpoint.clone(),
-                            reason: UnavailableReason::InternalServerError,
-                        },
-                    ],
+                    effects,
                 );
             }
 
@@ -210,7 +251,27 @@ pub(crate) fn evaluate_transport_result(
                 );
             }
 
-            if (operation.is_read_only() || operation.is_idempotent())
+            let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+                UnavailablePartition {
+                    partition_key_range_id: retry_state
+                        .partition_key_range_id
+                        .clone()
+                        .unwrap_or_default(),
+                    region: endpoint.region().cloned(),
+                    is_read: operation.is_read_only(),
+                    is_partitioned_resource: operation.resource_type().is_partitioned(),
+                },
+            )];
+            if !is_ppcb_managed(operation, retry_state) {
+                effects.push(LocationEffect::MarkEndpointUnavailable {
+                    endpoint: endpoint.clone(),
+                    reason: UnavailableReason::TransportError,
+                });
+            }
+
+            if (operation.is_read_only()
+                || operation.is_idempotent()
+                || retry_state.ppaf_write_retry_allowed)
                 && retry_state.can_retry_failover()
             {
                 return (
@@ -218,19 +279,20 @@ pub(crate) fn evaluate_transport_result(
                         new_state: retry_state.clone().advance_failover(),
                         delay: None,
                     },
-                    vec![LocationEffect::MarkEndpointUnavailable {
-                        endpoint: endpoint.clone(),
-                        reason: UnavailableReason::TransportError,
-                    }],
+                    effects,
                 );
             }
 
+            // Non-idempotent write that was already sent and PPAF is not
+            // available — unsafe to retry. We still mark partition and
+            // endpoint unavailable so future requests benefit from the
+            // updated routing state.
             (
                 OperationAction::Abort {
                     error: build_transport_error(&status, error),
                     status: Some(status),
                 },
-                Vec::new(),
+                effects,
             )
         }
 
@@ -409,8 +471,14 @@ mod tests {
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
-        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
     #[test]
@@ -422,13 +490,19 @@ mod tests {
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
-        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
             OperationAction::Abort { status, .. } => {
                 assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
             }
             other => panic!("expected abort, got {other:?}"),
         }
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
     #[test]
@@ -482,6 +556,8 @@ mod tests {
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
         };
 
         let endpoint = CosmosEndpoint::global(
@@ -580,7 +656,52 @@ mod tests {
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::Abort { .. }));
-        assert!(effects.is_empty());
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn service_unavailable_non_idempotent_retries_when_ppaf_enabled() {
+        let op = make_create_operation();
+        let result = make_http_error(StatusCode::ServiceUnavailable);
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.ppaf_write_retry_allowed = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn transport_error_non_idempotent_retries_when_ppaf_enabled() {
+        let op = make_create_operation();
+        let result = make_transport_error(RequestSentStatus::Sent);
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.ppaf_write_retry_allowed = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
     #[test]
@@ -641,6 +762,20 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[test]
+    fn transport_error_not_sent_does_not_mark_partition_or_endpoint() {
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::NotSent);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects.is_empty());
     }
 
     #[test]

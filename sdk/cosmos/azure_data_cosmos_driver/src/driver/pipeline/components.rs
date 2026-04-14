@@ -86,6 +86,20 @@ pub(crate) struct OperationRetryState {
     /// Partition key range ID resolved from the first response headers.
     /// `None` until the first transport attempt returns headers.
     pub partition_key_range_id: Option<String>,
+    /// Whether PPAF allows non-idempotent write retries on failover.
+    ///
+    /// When `true`, a non-idempotent write that receives a 503/429/410/408
+    /// (or transport error) can be retried to a different region for write
+    /// region discovery. Precomputed from partition-level automatic failover
+    /// being enabled on a single-master account.
+    pub ppaf_write_retry_allowed: bool,
+    /// Whether the per-partition circuit breaker is active for this account.
+    ///
+    /// When `true`, endpoint-level `MarkEndpointUnavailable` effects are
+    /// suppressed for PPCB-eligible requests (reads, or writes on
+    /// multi-master). Failover is driven by the partition-level failure
+    /// threshold instead of marking the entire endpoint unavailable.
+    pub ppcb_active: bool,
 }
 
 /// How a session retry should resolve endpoints for a read operation.
@@ -116,6 +130,8 @@ impl OperationRetryState {
             excluded_regions,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
         }
     }
 

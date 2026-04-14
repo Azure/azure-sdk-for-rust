@@ -117,7 +117,7 @@ pub(crate) struct PartitionFailoverConfig {
 impl Default for PartitionFailoverConfig {
     fn default() -> Self {
         Self {
-            read_failure_threshold: 2,
+            read_failure_threshold: 5,
             write_failure_threshold: 5,
             counter_reset_window: Duration::from_secs(5 * 60),
             partition_unavailability_duration: Duration::from_secs(5),

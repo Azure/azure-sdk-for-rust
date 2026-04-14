@@ -115,6 +115,22 @@ pub(crate) async fn execute_operation_pipeline(
     // instead of only after the first retry captures it from response headers.
     retry_state.partition_key_range_id = pre_resolved_pk_range_id;
 
+    // PPAF write-retry: on single-master accounts with per-partition automatic
+    // failover enabled, non-idempotent writes may be retried to a different
+    // region for write region discovery (the service has already failed the
+    // partition over, so the original region will reject the write).
+    retry_state.ppaf_write_retry_allowed = location_snapshot
+        .partitions
+        .per_partition_automatic_failover_enabled
+        && !location_snapshot.account.multiple_write_locations_enabled;
+
+    // PPCB: when circuit breaker is enabled, partition-level thresholds
+    // drive failover instead of marking the whole endpoint unavailable.
+    retry_state.ppcb_active = location_snapshot
+        .partitions
+        .per_partition_circuit_breaker_enabled
+        && location_snapshot.account.preferred_read_endpoints.len() > 1;
+
     let deadline = options
         .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
@@ -454,6 +470,7 @@ fn resolve_endpoint(
 
     let now = Instant::now();
     let mut selected = None;
+    let mut first_unavailable = None;
     let len = endpoints.len();
     for i in 0..len {
         let candidate = &endpoints[(base_index + i) % len];
@@ -474,9 +491,18 @@ fn resolve_endpoint(
             selected = Some(candidate.clone());
             break;
         }
+
+        // Track the first unavailable-but-not-excluded endpoint so we can
+        // de-prioritize it rather than skip it entirely.  This matches the
+        // SDK behaviour: [available] → [unavailable regional] → global.
+        if first_unavailable.is_none() {
+            first_unavailable = Some(candidate.clone());
+        }
     }
 
-    let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
+    let selected = selected
+        .or(first_unavailable)
+        .unwrap_or_else(|| account.default_endpoint.clone());
     let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
     let transport_mode = if use_gateway20 {
         TransportMode::Gateway20
@@ -964,6 +990,8 @@ mod tests {
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
             partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -977,7 +1005,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_falls_back_to_default_when_all_unavailable() {
+    fn resolve_endpoint_deprioritizes_unavailable_over_global_fallback() {
         let operation = CosmosOperation::read_all_databases(test_account());
         let default_endpoint =
             CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
@@ -997,7 +1025,7 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint],
+            preferred_read_endpoints: vec![read_endpoint.clone()],
             preferred_write_endpoints: vec![default_endpoint.clone()],
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
@@ -1015,6 +1043,8 @@ mod tests {
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -1024,7 +1054,9 @@ mod tests {
             false,
             Duration::from_secs(60),
         );
-        assert_eq!(routing.endpoint, default_endpoint);
+        // Unavailable regional endpoint is de-prioritized but still preferred
+        // over the global fallback.
+        assert_eq!(routing.endpoint, read_endpoint);
     }
 
     #[test]
@@ -1064,6 +1096,8 @@ mod tests {
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -1120,6 +1154,8 @@ mod tests {
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
         };
 
         let first_routing = super::resolve_endpoint(
@@ -1343,5 +1379,104 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, fallback_endpoint);
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_global_when_all_excluded() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()],
+            preferred_write_endpoints: vec![default_endpoint.clone()],
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            excluded_regions: vec!["westus2".into()],
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+        };
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // When all endpoints are excluded, the global endpoint is the only option.
+        assert_eq!(routing.endpoint, default_endpoint);
+    }
+
+    #[test]
+    fn resolve_endpoint_picks_first_available_over_unavailable() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let unavailable_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let available_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            unavailable_endpoint.clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![
+                unavailable_endpoint.clone(),
+                available_endpoint.clone(),
+            ],
+            preferred_write_endpoints: vec![default_endpoint.clone()],
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // Available endpoint is preferred over the unavailable one.
+        assert_eq!(routing.endpoint, available_endpoint);
     }
 }
