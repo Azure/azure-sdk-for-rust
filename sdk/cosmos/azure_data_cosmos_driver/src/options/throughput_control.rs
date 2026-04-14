@@ -21,7 +21,7 @@ use std::{
 
 /// Mutable runtime values for a throughput control group.
 #[derive(Clone, Debug, Default)]
-struct Settings {
+struct ThroughputControlSettings {
     throughput_bucket: Option<usize>,
     priority_level: Option<PriorityLevel>,
 }
@@ -43,7 +43,7 @@ pub struct ThroughputControlGroupOptions {
     name: ThroughputControlGroupName,
     container: ContainerReference,
     is_default: bool,
-    mutable: Arc<RwLock<Settings>>,
+    mutable: Arc<RwLock<ThroughputControlSettings>>,
 }
 
 impl ThroughputControlGroupOptions {
@@ -57,7 +57,7 @@ impl ThroughputControlGroupOptions {
             name: name.into(),
             container,
             is_default,
-            mutable: Arc::new(RwLock::new(Settings::default())),
+            mutable: Arc::new(RwLock::new(ThroughputControlSettings::default())),
         }
     }
 
