@@ -22,7 +22,7 @@ use crate::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
-    options::{OperationOptionsView, ReadConsistencyStrategy},
+    options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
 
 use super::{
@@ -58,6 +58,7 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
+    throughput_control: Option<&ThroughputControlGroupSnapshot>,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -131,14 +132,12 @@ pub(crate) async fn execute_operation_pipeline(
         };
         tracing::debug!(routing_decision = %routing, "routing decision made");
 
-        let mut transport_request = build_transport_request(
-            operation,
-            custom_headers,
-            &routing,
+        let ctx = TransportRequestContext {
+            routing: &routing,
             activity_id,
             execution_context,
             deadline,
-            session_consistency_active
+            resolved_session_token: session_consistency_active
                 .then(|| {
                     session_manager.resolve_session_token(
                         operation,
@@ -146,7 +145,9 @@ pub(crate) async fn execute_operation_pipeline(
                     )
                 })
                 .flatten(),
-        )?;
+            throughput_control,
+        };
+        let mut transport_request = build_transport_request(operation, custom_headers, &ctx)?;
 
         // Apply content-response-on-write preference.
         // By default, (None or Disabled), suppress the response body for write
@@ -422,22 +423,31 @@ fn endpoint_is_available(
         })
 }
 
+/// Parameters resolved per-attempt for building a transport request.
+///
+/// Groups per-attempt state that varies across retries and failovers,
+/// reducing the number of arguments passed to `build_transport_request`.
+struct TransportRequestContext<'a> {
+    routing: &'a RoutingDecision,
+    activity_id: &'a ActivityId,
+    execution_context: ExecutionContext,
+    deadline: Option<Instant>,
+    resolved_session_token: Option<SessionToken>,
+    throughput_control: Option<&'a ThroughputControlGroupSnapshot>,
+}
+
 /// Builds a `TransportRequest` from the operation and routing decision.
 ///
 /// If `resolved_session_token` is provided, it is added to the request headers.
 fn build_transport_request(
     operation: &CosmosOperation,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
-    routing: &RoutingDecision,
-    activity_id: &ActivityId,
-    execution_context: ExecutionContext,
-    deadline: Option<Instant>,
-    resolved_session_token: Option<SessionToken>,
+    ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
     let request_path = resource_ref.request_path();
     let url = {
-        let mut base = routing.selected_url.clone();
+        let mut base = ctx.routing.selected_url.clone();
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -472,7 +482,7 @@ fn build_transport_request(
     if operation.request_headers().activity_id.is_none() {
         headers.insert(
             HeaderName::from_static("x-ms-activity-id"),
-            HeaderValue::from(activity_id.as_str().to_owned()),
+            HeaderValue::from(ctx.activity_id.as_str().to_owned()),
         );
     }
 
@@ -499,22 +509,38 @@ fn build_transport_request(
     }
 
     // Add resolved session token
-    if let Some(token) = resolved_session_token {
+    if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
             request_header_names::SESSION_TOKEN.clone(),
             HeaderValue::from(token.as_str().to_owned()),
         );
     }
 
+    // Add throughput control headers from the resolved group
+    if let Some(group) = ctx.throughput_control {
+        if let Some(priority) = group.priority_level() {
+            headers.insert(
+                request_header_names::PRIORITY_LEVEL.clone(),
+                HeaderValue::from(priority.as_str().to_owned()),
+            );
+        }
+        if let Some(bucket) = group.throughput_bucket() {
+            headers.insert(
+                request_header_names::THROUGHPUT_BUCKET.clone(),
+                HeaderValue::from(bucket.to_string()),
+            );
+        }
+    }
+
     Ok(TransportRequest {
         method,
-        endpoint: routing.endpoint.clone(),
+        endpoint: ctx.routing.endpoint.clone(),
         url,
         headers,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
-        execution_context,
-        deadline,
+        execution_context: ctx.execution_context,
+        deadline: ctx.deadline,
     })
 }
 
@@ -591,6 +617,7 @@ mod tests {
     use url::Url;
 
     use super::build_transport_request;
+    use super::TransportRequestContext;
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
@@ -598,10 +625,11 @@ mod tests {
             routing::{AccountEndpointState, CosmosEndpoint, LocationIndex, LocationSnapshot},
         },
         models::{
-            AccountReference, ActivityId, ContainerProperties, ContainerReference, CosmosOperation,
-            DatabaseReference, ItemReference, PartitionKey, PartitionKeyDefinition,
-            SystemProperties,
+            request_header_names, AccountReference, ActivityId, ContainerProperties,
+            ContainerReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
+            PartitionKeyDefinition, SystemProperties, ThroughputControlGroupName,
         },
+        options::{PriorityLevel, ThroughputControlGroupSnapshot},
     };
 
     fn test_account() -> AccountReference {
@@ -648,16 +676,18 @@ mod tests {
     fn build_transport_request_feed_path_is_resolved() {
         let operation = CosmosOperation::read_all_databases(test_account());
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &test_routing(),
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs");
     }
@@ -667,16 +697,18 @@ mod tests {
         let db = DatabaseReference::from_name(test_account(), "mydb");
         let operation = CosmosOperation::read_database(db);
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &test_routing(),
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
@@ -686,16 +718,18 @@ mod tests {
         let operation = CosmosOperation::read_all_databases(test_account())
             .with_activity_id(ActivityId::from_string("operation-activity".to_string()));
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &test_routing(),
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         let activity_header = request
             .headers
@@ -710,16 +744,18 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::read_item(item_ref);
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &test_routing(),
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Retry,
-            Some(std::time::Instant::now() + Duration::from_secs(5)),
-            None,
-        )
-        .expect("request should build");
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Retry,
+            deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         let partition_key_header = request
             .headers
@@ -742,16 +778,17 @@ mod tests {
             transport_mode: TransportMode::Gateway20,
         };
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &routing,
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -771,16 +808,17 @@ mod tests {
             transport_mode: TransportMode::Gateway,
         };
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &routing,
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -1195,5 +1233,126 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, fallback_endpoint);
+    }
+
+    #[test]
+    fn build_transport_request_sets_priority_level_header() {
+        let container = test_container();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+
+        let snapshot = ThroughputControlGroupSnapshot::new(
+            ThroughputControlGroupName::new("test-priority"),
+            container,
+            false,
+        )
+        .with_priority_level(PriorityLevel::Low);
+
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: Some(&snapshot),
+        };
+        let request = build_transport_request(&operation, None, &ctx).unwrap();
+
+        let priority = request
+            .headers
+            .get_optional_str(&request_header_names::PRIORITY_LEVEL)
+            .expect("priority level header should be set");
+        assert_eq!(priority, "Low");
+        assert!(request
+            .headers
+            .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
+            .is_none());
+    }
+
+    #[test]
+    fn build_transport_request_sets_throughput_bucket_header() {
+        let container = test_container();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+
+        let snapshot = ThroughputControlGroupSnapshot::new(
+            ThroughputControlGroupName::new("test-bucket"),
+            container,
+            false,
+        )
+        .with_throughput_bucket(42);
+
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: Some(&snapshot),
+        };
+        let request = build_transport_request(&operation, None, &ctx).unwrap();
+
+        let bucket = request
+            .headers
+            .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
+            .expect("throughput bucket header should be set");
+        assert_eq!(bucket, "42");
+        assert!(request
+            .headers
+            .get_optional_str(&request_header_names::PRIORITY_LEVEL)
+            .is_none());
+    }
+
+    #[test]
+    fn build_transport_request_sets_both_throughput_headers() {
+        let container = test_container();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+
+        let snapshot = ThroughputControlGroupSnapshot::new(
+            ThroughputControlGroupName::new("test-both"),
+            container,
+            false,
+        )
+        .with_priority_level(PriorityLevel::High)
+        .with_throughput_bucket(100);
+
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: Some(&snapshot),
+        };
+        let request = build_transport_request(&operation, None, &ctx).unwrap();
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&request_header_names::PRIORITY_LEVEL),
+            Some("High")
+        );
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&request_header_names::THROUGHPUT_BUCKET),
+            Some("100")
+        );
     }
 }

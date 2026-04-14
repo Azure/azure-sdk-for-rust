@@ -94,7 +94,7 @@
     "pushback",
     "qname",
     "readfeed",
-    "Replicaset",
+    "replicaset",
     "reqs",
     "Retriable",
     "retryable",
