@@ -369,7 +369,9 @@ impl QueryOptions {
 
 impl QueryOptions {
     // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when query operations use the internal pipeline directly.
+    // Retained for test coverage; no longer called from production code since
+    // query operations now route through the driver pipeline.
+    #[cfg(test)]
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
         if let Some(custom_headers) = self.operation.custom_headers() {
             for (name, value) in custom_headers {

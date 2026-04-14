@@ -10,6 +10,7 @@ use crate::{
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::{Context, Url};
+use azure_data_cosmos_driver::models::CosmosOperation;
 use serde::Serialize;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
@@ -131,12 +132,15 @@ impl CosmosClient {
         query: impl Into<Query>,
         _options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
+        let account = self.context.driver.account().clone();
+        let factory = move || CosmosOperation::query_databases(account.clone());
+
         crate::query::executor::QueryExecutor::new(
-            self.context.pipeline.clone(),
-            self.databases_link.clone(),
-            Context::default(),
+            self.context.driver.clone(),
+            factory,
             query.into(),
-            azure_core::http::headers::Headers::new(),
+            std::collections::HashMap::new(),
+            None,
         )
         .into_stream()
     }

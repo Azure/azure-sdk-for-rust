@@ -12,6 +12,7 @@ use crate::{
     ThroughputOptions,
 };
 use azure_core::http::Context;
+use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 
 use super::ThroughputPoller;
 
@@ -120,12 +121,18 @@ impl DatabaseClient {
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
+        let db_ref = DatabaseReference::from_name(
+            self.context.driver.account().clone(),
+            self.database_id.clone(),
+        );
+        let factory = move || CosmosOperation::query_containers(db_ref.clone());
+
         crate::query::executor::QueryExecutor::new(
-            self.context.pipeline.clone(),
-            self.containers_link.clone(),
-            Context::default(),
+            self.context.driver.clone(),
+            factory,
             query.into(),
-            azure_core::http::headers::Headers::new(),
+            std::collections::HashMap::new(),
+            None,
         )
         .into_stream()
     }
