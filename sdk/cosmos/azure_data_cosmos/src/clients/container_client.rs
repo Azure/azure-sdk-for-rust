@@ -38,7 +38,6 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     container_connection: Arc<ContainerConnection>,
-    driver: Arc<CosmosDriver>,
     container_ref: ContainerReference,
     context: ClientContext,
 }
@@ -82,7 +81,6 @@ impl ContainerClient {
             link,
             items_link,
             container_connection,
-            driver: context.driver.clone(),
             container_ref,
             context,
         })
