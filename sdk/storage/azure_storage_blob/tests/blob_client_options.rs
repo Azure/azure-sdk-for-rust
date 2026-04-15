@@ -211,7 +211,7 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║ TOP SUSPECT #3: Retry logic - May cause live pipeline hangs                 ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let call_count = Arc::new(AtomicUsize::new(0));
     // Fail one time, then succeed - requires at least 1 retry
