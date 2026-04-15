@@ -25,7 +25,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         headers::{AsHeaders, Header, HeaderName, HeaderValue},
-        ClientOptions,
+        ClientOptions, Transport,
     },
     test::TestMode,
 };
@@ -40,6 +40,7 @@ use std::{
     collections::HashMap,
     env,
     sync::{Arc, Mutex, OnceLock, RwLock},
+    time::Duration,
 };
 use tracing::span::EnteredSpan;
 
@@ -127,6 +128,14 @@ impl Recording {
         let Some(client) = self.proxy.client() else {
             return;
         };
+
+        // Use an HTTP client with connection timeouts to prevent tests from hanging indefinitely
+        // when a TCP connection cannot be established (e.g., due to a bad socket state on Windows
+        // CI agents). Without this, a stalled connect blocks the request forever since the default
+        // reqwest client has no connect timeout.
+        if options.transport.is_none() {
+            options.transport = Some(Transport::new(new_test_http_client()));
+        }
 
         if self.test_mode == TestMode::Playback || self.test_mode == TestMode::Record {
             let test_mode_policy = self
@@ -608,6 +617,24 @@ fn read_lock_error(_: impl std::error::Error) -> azure_core::Error {
 
 fn write_lock_error(_: impl std::error::Error) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::Other, "failed to lock variables for write")
+}
+
+/// Creates an HTTP client for tests with connection timeouts configured.
+///
+/// Without these, a stalled TCP connect (e.g., due to a bad socket state on Windows CI agents)
+/// blocks the request forever since the default reqwest client has no connect timeout. The retry
+/// policy only triggers on errors, but a hung connect never errors - it just blocks.
+///
+/// A short connect timeout (10s) ensures a bad connection errors quickly so the retry policy
+/// can establish a fresh connection. Most connects to localhost or Azure complete in under 1s.
+fn new_test_http_client() -> Arc<dyn azure_core::http::HttpClient> {
+    let client = reqwest::ClientBuilder::new()
+        .redirect(reqwest::redirect::Policy::none())
+        .connect_timeout(Duration::from_secs(10))
+        .pool_idle_timeout(Duration::from_secs(90))
+        .build()
+        .expect("failed to build test `reqwest` client");
+    Arc::new(client)
 }
 
 /// What to skip when recording to a file.

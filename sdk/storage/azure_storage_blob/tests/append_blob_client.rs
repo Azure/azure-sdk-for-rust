@@ -174,7 +174,6 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_append_block_position_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
