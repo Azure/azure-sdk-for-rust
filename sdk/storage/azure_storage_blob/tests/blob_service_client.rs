@@ -385,7 +385,7 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║ TOP SUSPECT #2: Service properties - May cause live pipeline hangs          ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
