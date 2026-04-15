@@ -165,7 +165,7 @@ impl CosmosResourceReference {
     /// resource operations it is the full resource link.
     ///
     /// The returned string includes the leading `/` for all non-empty, non-offer
-    /// paths. Use [`compute_paths`](Self::compute_paths) on the hot path to avoid
+    /// paths. Use `compute_paths` on the hot path to avoid
     /// an extra allocation.
     pub fn link_for_signing(&self) -> String {
         let paths = self.compute_paths();
