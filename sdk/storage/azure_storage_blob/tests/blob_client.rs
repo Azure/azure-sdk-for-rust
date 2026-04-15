@@ -1211,7 +1211,6 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_blob_overwrite_content_headers(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -1258,7 +1257,6 @@ async fn test_upload_blob_overwrite_content_headers(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1288,7 +1286,6 @@ async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1328,7 +1325,6 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1337,10 +1333,12 @@ async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dy
     let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
-    // Move blob to Archive tier
-    blob_client.set_tier(AccessTier::Archive, None).await?;
+    // Move to Cool tier first to avoid the slow Archive→Hot rehydration path.
+    blob_client.set_tier(AccessTier::Cool, None).await?;
 
-    // Rehydrate to Hot with High Priority Scenario
+    // Move to Archive, then immediately request rehydration to Hot with High priority.
+    // The rehydrate_priority option is only meaningful on Archive→Hot/Cool transitions.
+    blob_client.set_tier(AccessTier::Archive, None).await?;
     blob_client
         .set_tier(
             AccessTier::Hot,
@@ -1351,7 +1349,7 @@ async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dy
         )
         .await?;
 
-    // Assert
+    // Assert that the rehydrate priority was accepted
     let response = blob_client.get_properties(None).await?;
     assert_eq!(
         Some(RehydratePriority::High),

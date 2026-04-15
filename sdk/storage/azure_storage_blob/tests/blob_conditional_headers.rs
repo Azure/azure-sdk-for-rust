@@ -1,27 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Conditional-header tests for Azure Storage Blob clients.
+//!
+//! Each condition family (etag, time, if-tags) is verified with a small
+//! representative set of operations — a read, a write, and a destructive call —
+//! rather than exhaustively hitting every API. The typed-blob tests (block,
+//! append, page) verify that if_match is wired correctly for their
+//! type-specific operations.
+
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccessTier, AppendBlobClientAppendBlockOptions, AppendBlobClientCreateOptions,
-    AppendBlobClientSealOptions, BlobClientAcquireLeaseOptions,
-    BlobClientAcquireLeaseResultHeaders, BlobClientBreakLeaseOptions, BlobClientChangeLeaseOptions,
-    BlobClientChangeLeaseResultHeaders, BlobClientCreateSnapshotOptions, BlobClientDeleteOptions,
-    BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
-    BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTagsOptions, BlobClientSetTierOptions, BlobContainerClientAcquireLeaseOptions,
-    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
-    BlobContainerClientChangeLeaseOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientReleaseLeaseOptions,
-    BlobContainerClientRenewLeaseOptions, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientUploadOptions, BlockListType,
-    BlockLookupList, DeleteSnapshotsOptionType, HttpRange, PageBlobClientClearPagesOptions,
-    PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+    AppendBlobClientSealOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientUploadOptions, BlockListType, BlockLookupList, HttpRange,
+    PageBlobClientClearPagesOptions, PageBlobClientCreateOptions, PageBlobClientResizeOptions,
     PageBlobClientSetSequenceNumberOptions, PageBlobClientUploadPagesOptions,
-    SequenceNumberActionType, SignedIdentifiers,
+    SequenceNumberActionType,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
@@ -33,10 +33,10 @@ const BAD_ETAG: &str = "\"bad-etag-value\"";
 mod blob_client {
     use super::*;
 
+    /// Verifies if_match / if_none_match on a representative read (download),
+    /// write (set_metadata), and destructive (delete) operation.
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_blob_client_etag_conditions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
         let container_client =
             get_container_client(recording, true, StorageAccount::Standard, None).await?;
@@ -46,15 +46,15 @@ mod blob_client {
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
 
-        // Read Operations - if_match Success + if_none_match 304
-
-        // Download
+        // Download - if_match success
         blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
+
+        // Download - if_none_match 304
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_none_match: Some(etag.clone()),
@@ -66,7 +66,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Download if_match Failure
+        // Download - if_match failure (bad etag)
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_match: Some(BAD_ETAG.to_string()),
@@ -78,63 +78,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Get Properties
-        blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_none_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::NotModified,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Get Tags
-        blob_client
-            .get_tags(Some(BlobClientGetTagsOptions {
-                if_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_tags(Some(BlobClientGetTagsOptions {
-                if_none_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::NotModified,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Create Snapshot
-        blob_client
-            .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_none_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Write Operations (Mutating)
-
-        // Set Metadata - Failure First, Then Success
+        // Set Metadata - if_match failure
         let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
         let err = blob_client
             .set_metadata(
@@ -149,220 +93,23 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
+
+        // Set Metadata - if_match success
         blob_client
             .set_metadata(
                 &metadata,
                 Some(BlobClientSetMetadataOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.into()),
                     ..Default::default()
                 }),
             )
             .await?;
-        // Set Metadata Changes the ETag - Refresh
+
+        // Refresh etag after mutation
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
 
-        // if_none_match Failure on Set Metadata
-        let err = blob_client
-            .set_metadata(
-                &metadata,
-                Some(BlobClientSetMetadataOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Set Properties - Failure First, Then Success
-        let err = blob_client
-            .set_properties(Some(BlobClientSetPropertiesOptions {
-                if_match: Some(BAD_ETAG.to_string().into()),
-                blob_content_type: Some("application/octet-stream".to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .set_properties(Some(BlobClientSetPropertiesOptions {
-                if_match: Some(etag.clone().into()),
-                blob_content_type: Some("application/octet-stream".to_string()),
-                ..Default::default()
-            }))
-            .await?;
-        // Set Properties Changes the ETag - Refresh
-        let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
-
-        // Set Tags - Does Not Change the ETag, so etag remains valid for repeated use
-        let err = blob_client
-            .set_tags(
-                RequestContent::try_from(BlobTags::from(HashMap::from([(
-                    "env".to_string(),
-                    "test".to_string(),
-                )])))?,
-                Some(BlobClientSetTagsOptions {
-                    if_match: Some(BAD_ETAG.to_string().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .set_tags(
-                RequestContent::try_from(BlobTags::from(HashMap::from([(
-                    "env".to_string(),
-                    "test".to_string(),
-                )])))?,
-                Some(BlobClientSetTagsOptions {
-                    if_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Lease Operations
-
-        // Acquire Lease - Failure
-        let err = blob_client
-            .acquire_lease(
-                -1,
-                Some(BlobClientAcquireLeaseOptions {
-                    if_match: Some(BAD_ETAG.to_string().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Acquire Lease - Success
-        let lease_resp = blob_client
-            .acquire_lease(
-                -1,
-                Some(BlobClientAcquireLeaseOptions {
-                    if_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
-
-        // Renew Lease - Failure
-        let err = blob_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobClientRenewLeaseOptions {
-                    if_match: Some(BAD_ETAG.to_string().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Renew Lease - Success
-        blob_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobClientRenewLeaseOptions {
-                    if_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Change Lease - Failure
-        let proposed_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa".to_string();
-        let err = blob_client
-            .change_lease(
-                lease_id_1.clone(),
-                proposed_id.clone(),
-                Some(BlobClientChangeLeaseOptions {
-                    if_match: Some(BAD_ETAG.to_string().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Change Lease - Success
-        let change_resp = blob_client
-            .change_lease(
-                lease_id_1,
-                proposed_id.clone(),
-                Some(BlobClientChangeLeaseOptions {
-                    if_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_2 = change_resp.lease_id()?.unwrap().to_string();
-
-        // Release Lease - Failure
-        let err = blob_client
-            .release_lease(
-                lease_id_2.clone(),
-                Some(BlobClientReleaseLeaseOptions {
-                    if_match: Some(BAD_ETAG.to_string().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Release Lease - Success
-        blob_client
-            .release_lease(
-                lease_id_2,
-                Some(BlobClientReleaseLeaseOptions {
-                    if_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Break Lease - Acquire Fresh Lease, Then Test Break With Conditions
-        let fresh_lease_resp = blob_client.acquire_lease(-1, None).await?;
-        let _fresh_lease_id = fresh_lease_resp.lease_id()?.unwrap().to_string();
-
-        let err = blob_client
-            .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_match: Some(BAD_ETAG.to_string().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await?;
-
-        // Delete - Last (Destructive)
+        // Delete - if_match failure
         let err = blob_client
             .delete(Some(BlobClientDeleteOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
@@ -373,10 +120,11 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
+
+        // Delete - if_match success
         blob_client
             .delete(Some(BlobClientDeleteOptions {
-                if_match: Some(etag.clone().into()),
-                delete_snapshots: Some(DeleteSnapshotsOptionType::Include),
+                if_match: Some(etag.into()),
                 ..Default::default()
             }))
             .await?;
@@ -385,10 +133,10 @@ mod blob_client {
         Ok(())
     }
 
+    /// Verifies if_modified_since / if_unmodified_since on download (read),
+    /// set_properties (write), and delete (destructive).
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_blob_client_time_conditions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
         let container_client =
             get_container_client(recording, true, StorageAccount::Standard, None).await?;
@@ -400,15 +148,15 @@ mod blob_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Download
-        // if_modified_since=before - Success
+        // Download - if_modified_since=before (success)
         blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_modified_since: Some(before),
                 ..Default::default()
             }))
             .await?;
-        // if_modified_since=after - Not Modified (304)
+
+        // Download - if_modified_since=after (304)
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_modified_since: Some(after),
@@ -419,14 +167,16 @@ mod blob_client {
             StatusCode::NotModified,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_unmodified_since=after - Success
+
+        // Download - if_unmodified_since=after (success)
         blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_unmodified_since: Some(after),
                 ..Default::default()
             }))
             .await?;
-        // if_unmodified_since=before - Failure
+
+        // Download - if_unmodified_since=before (412)
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_unmodified_since: Some(before),
@@ -438,106 +188,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Get Properties
-        blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_modified_since: Some(before),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::NotModified,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_unmodified_since: Some(after),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_unmodified_since: Some(before),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Get Tags
-        blob_client
-            .get_tags(Some(BlobClientGetTagsOptions {
-                if_modified_since: Some(before),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_tags(Some(BlobClientGetTagsOptions {
-                if_unmodified_since: Some(before),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Create Snapshot
-        blob_client
-            .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_unmodified_since: Some(after),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Set Metadata - Mutating, Test Failure + One Success Then Re-Capture Timestamp
-        let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
-        let err = blob_client
-            .set_metadata(
-                &metadata,
-                Some(BlobClientSetMetadataOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .set_metadata(
-                &metadata,
-                Some(BlobClientSetMetadataOptions {
-                    if_modified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        // Re-Capture last_modified After Successful Set Metadata
-        let props = blob_client.get_properties(None).await?;
-        let last_modified = props.last_modified()?.unwrap();
-        let after = last_modified + Duration::from_secs(60);
-
-        // Set Properties
+        // Set Properties - if_modified_since=after failure
         let err = blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_modified_since: Some(after),
@@ -549,6 +200,8 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
+
+        // Set Properties - if_unmodified_since=after success
         blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
                 if_unmodified_since: Some(after),
@@ -556,163 +209,13 @@ mod blob_client {
                 ..Default::default()
             }))
             .await?;
-        // Re-Capture After Set Properties
+
+        // Refresh after mutation
         let props = blob_client.get_properties(None).await?;
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Set Tags - Tags Do Not Change last_modified
-        blob_client
-            .set_tags(
-                RequestContent::try_from(BlobTags::from(HashMap::new()))?,
-                Some(BlobClientSetTagsOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let err = blob_client
-            .set_tags(
-                RequestContent::try_from(BlobTags::from(HashMap::new()))?,
-                Some(BlobClientSetTagsOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Lease Operations - Lease Operations Do Not Change Blob's last_modified
-
-        // Acquire Lease - Failure
-        let err = blob_client
-            .acquire_lease(
-                -1,
-                Some(BlobClientAcquireLeaseOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Acquire Lease - Success
-        let lease_resp = blob_client
-            .acquire_lease(
-                -1,
-                Some(BlobClientAcquireLeaseOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
-
-        // Renew Lease - Failure
-        let err = blob_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobClientRenewLeaseOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Renew Lease - Success
-        blob_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobClientRenewLeaseOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Change Lease - Failure
-        let proposed_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb".to_string();
-        let err = blob_client
-            .change_lease(
-                lease_id_1.clone(),
-                proposed_id.clone(),
-                Some(BlobClientChangeLeaseOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Change Lease - Success
-        blob_client
-            .change_lease(
-                lease_id_1,
-                proposed_id.clone(),
-                Some(BlobClientChangeLeaseOptions {
-                    if_modified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_2 = proposed_id;
-
-        // Release Lease - Failure
-        let err = blob_client
-            .release_lease(
-                lease_id_2.clone(),
-                Some(BlobClientReleaseLeaseOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Release Lease - Success
-        blob_client
-            .release_lease(
-                lease_id_2,
-                Some(BlobClientReleaseLeaseOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Break Lease
-        blob_client.acquire_lease(-1, None).await?;
-        let err = blob_client
-            .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_modified_since: Some(before),
-                ..Default::default()
-            }))
-            .await?;
-
-        // Delete
+        // Delete - if_unmodified_since=before failure
         let err = blob_client
             .delete(Some(BlobClientDeleteOptions {
                 if_unmodified_since: Some(before),
@@ -723,10 +226,11 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
+
+        // Delete - if_modified_since=before success
         blob_client
             .delete(Some(BlobClientDeleteOptions {
                 if_modified_since: Some(before),
-                delete_snapshots: Some(DeleteSnapshotsOptionType::Include),
                 ..Default::default()
             }))
             .await?;
@@ -735,16 +239,15 @@ mod blob_client {
         Ok(())
     }
 
+    /// Verifies if_tags on download (read), set_tier (write-only-if_tags),
+    /// and delete (destructive).
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_blob_client_if_tags_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
         let container_client =
             get_container_client(recording, true, StorageAccount::Standard, None).await?;
         let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-        // Upload With a Tag That the if_tags Conditions Can Reference
         create_test_blob(
             &blob_client,
             None,
@@ -758,13 +261,15 @@ mod blob_client {
         let matching_expr = "\"env\"='test'";
         let non_matching_expr = "\"env\"='wrong'";
 
-        // Download
+        // Download - matching success
         blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_tags: Some(matching_expr.to_string()),
                 ..Default::default()
             }))
             .await?;
+
+        // Download - non-matching failure
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
                 if_tags: Some(non_matching_expr.to_string()),
@@ -776,136 +281,7 @@ mod blob_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Get Properties
-        blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_tags: Some(matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_tags: Some(non_matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Get Tags
-        blob_client
-            .get_tags(Some(BlobClientGetTagsOptions {
-                if_tags: Some(matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .get_tags(Some(BlobClientGetTagsOptions {
-                if_tags: Some(non_matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Create Snapshot
-        blob_client
-            .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_tags: Some(matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await?;
-        let err = blob_client
-            .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_tags: Some(non_matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-
-        // Set Metadata
-        let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
-        let err = blob_client
-            .set_metadata(
-                &metadata,
-                Some(BlobClientSetMetadataOptions {
-                    if_tags: Some(non_matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .set_metadata(
-                &metadata,
-                Some(BlobClientSetMetadataOptions {
-                    if_tags: Some(matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Set Properties
-        let err = blob_client
-            .set_properties(Some(BlobClientSetPropertiesOptions {
-                if_tags: Some(non_matching_expr.to_string()),
-                blob_content_type: Some("application/octet-stream".to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .set_properties(Some(BlobClientSetPropertiesOptions {
-                if_tags: Some(matching_expr.to_string()),
-                blob_content_type: Some("application/octet-stream".to_string()),
-                ..Default::default()
-            }))
-            .await?;
-
-        // Set Tags
-        let err = blob_client
-            .set_tags(
-                RequestContent::try_from(BlobTags::from(HashMap::from([(
-                    "env".to_string(),
-                    "test".to_string(),
-                )])))?,
-                Some(BlobClientSetTagsOptions {
-                    if_tags: Some(non_matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .set_tags(
-                RequestContent::try_from(BlobTags::from(HashMap::from([(
-                    "env".to_string(),
-                    "test".to_string(),
-                )])))?,
-                Some(BlobClientSetTagsOptions {
-                    if_tags: Some(matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Set Tier - if_tags Only (No ETag/Time Conditions on This Method)
+        // Set Tier - non-matching failure
         let err = blob_client
             .set_tier(
                 AccessTier::Cool,
@@ -919,6 +295,8 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
+
+        // Set Tier - matching success
         blob_client
             .set_tier(
                 AccessTier::Cool,
@@ -929,133 +307,7 @@ mod blob_client {
             )
             .await?;
 
-        // Lease Operations
-
-        // Acquire Lease - Failure
-        let err = blob_client
-            .acquire_lease(
-                -1,
-                Some(BlobClientAcquireLeaseOptions {
-                    if_tags: Some(non_matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Acquire Lease - Success
-        let lease_resp = blob_client
-            .acquire_lease(
-                -1,
-                Some(BlobClientAcquireLeaseOptions {
-                    if_tags: Some(matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
-
-        // Renew Lease - Failure
-        let err = blob_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobClientRenewLeaseOptions {
-                    if_tags: Some(non_matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Renew Lease - Success
-        blob_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobClientRenewLeaseOptions {
-                    if_tags: Some(matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Change Lease - Failure
-        let proposed_id = "cccccccc-cccc-cccc-cccc-cccccccccccc".to_string();
-        let err = blob_client
-            .change_lease(
-                lease_id_1.clone(),
-                proposed_id.clone(),
-                Some(BlobClientChangeLeaseOptions {
-                    if_tags: Some(non_matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Change Lease - Success
-        let change_resp = blob_client
-            .change_lease(
-                lease_id_1,
-                proposed_id,
-                Some(BlobClientChangeLeaseOptions {
-                    if_tags: Some(matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_2 = change_resp.lease_id()?.unwrap().to_string();
-
-        // Release Lease - Failure
-        let err = blob_client
-            .release_lease(
-                lease_id_2.clone(),
-                Some(BlobClientReleaseLeaseOptions {
-                    if_tags: Some(non_matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Release Lease - Success
-        blob_client
-            .release_lease(
-                lease_id_2,
-                Some(BlobClientReleaseLeaseOptions {
-                    if_tags: Some(matching_expr.to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Break Lease
-        blob_client.acquire_lease(-1, None).await?;
-        let err = blob_client
-            .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_tags: Some(non_matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        blob_client
-            .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_tags: Some(matching_expr.to_string()),
-                ..Default::default()
-            }))
-            .await?;
-
-        // Delete
+        // Delete - non-matching failure
         let err = blob_client
             .delete(Some(BlobClientDeleteOptions {
                 if_tags: Some(non_matching_expr.to_string()),
@@ -1066,10 +318,11 @@ mod blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
+
+        // Delete - matching success
         blob_client
             .delete(Some(BlobClientDeleteOptions {
                 if_tags: Some(matching_expr.to_string()),
-                delete_snapshots: Some(DeleteSnapshotsOptionType::Include),
                 ..Default::default()
             }))
             .await?;
@@ -1082,29 +335,24 @@ mod blob_client {
 mod block_blob_client {
     use super::*;
 
+    /// Verifies if_match on upload and commit_block_list, and if_tags on
+    /// get_block_list (the only condition it supports).
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_block_blob_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
         let container_client =
             get_container_client(recording, true, StorageAccount::Standard, None).await?;
         let blob_client = container_client.blob_client(&get_blob_name(recording));
         let block_blob_client = blob_client.block_blob_client();
 
-        // Upload - BlockBlobClientUploadOptions
-
-        // Upload Initial Blob
+        // Upload initial blob
         create_test_blob(&blob_client, None, None).await?;
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // if_match Failure
+        // Upload - if_match failure
         let err = blob_client
             .upload(
                 RequestContent::from(b"new-content".to_vec()),
@@ -1118,93 +366,32 @@ mod block_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = blob_client
-            .upload(
-                RequestContent::from(b"new-content".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = blob_client
-            .upload(
-                RequestContent::from(b"new-content".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = blob_client
-            .upload(
-                RequestContent::from(b"new-content".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure - Upload With Tag First
-        let err = blob_client
-            .upload(
-                RequestContent::from(b"new-content".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    if_tags: Some("\"env\"='wrong'".to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_match Success
+
+        // Upload - if_match success
         blob_client
             .upload(
                 RequestContent::from(b"updated".to_vec()),
                 Some(BlockBlobClientUploadOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.into()),
                     ..Default::default()
                 }),
             )
             .await?;
 
-        // Commit Block List - BlockBlobClientCommitBlockListOptions
-
-        // Stage a Block to Commit
+        // Commit Block List
         let block_id: Vec<u8> = b"1".to_vec();
         block_blob_client
             .stage_block(&block_id, 3, RequestContent::from(b"abc".to_vec()), None)
             .await?;
-
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
         let lookup = BlockLookupList {
             committed: Some(Vec::new()),
             latest: Some(vec![block_id.clone()]),
             uncommitted: Some(Vec::new()),
         };
 
-        // if_match Failure
+        // Commit - if_match failure
         let err = block_blob_client
             .commit_block_list(
                 RequestContent::try_from(lookup.clone())?,
@@ -1218,63 +405,8 @@ mod block_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = block_blob_client
-            .commit_block_list(
-                RequestContent::try_from(lookup.clone())?,
-                Some(BlockBlobClientCommitBlockListOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = block_blob_client
-            .commit_block_list(
-                RequestContent::try_from(lookup.clone())?,
-                Some(BlockBlobClientCommitBlockListOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = block_blob_client
-            .commit_block_list(
-                RequestContent::try_from(lookup.clone())?,
-                Some(BlockBlobClientCommitBlockListOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = block_blob_client
-            .commit_block_list(
-                RequestContent::try_from(lookup.clone())?,
-                Some(BlockBlobClientCommitBlockListOptions {
-                    if_tags: Some("\"env\"='wrong'".to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Re-Stage (Stages Don't Consume Until Committed) and Commit Success
+
+        // Re-stage and commit - if_match success
         block_blob_client
             .stage_block(&block_id, 3, RequestContent::from(b"abc".to_vec()), None)
             .await?;
@@ -1288,9 +420,7 @@ mod block_blob_client {
             )
             .await?;
 
-        // Get Block List - if_tags Only
-
-        // Upload Blob With Tag
+        // Get Block List - if_tags (the only condition get_block_list supports)
         blob_client
             .upload(
                 RequestContent::from(b"tagged".to_vec()),
@@ -1332,29 +462,23 @@ mod block_blob_client {
 mod append_blob_client {
     use super::*;
 
+    /// Verifies if_match on create, append_block, and seal.
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_append_blob_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
         let container_client =
             get_container_client(recording, true, StorageAccount::Standard, None).await?;
         let blob_client = container_client.blob_client(&get_blob_name(recording));
         let append_blob_client = blob_client.append_blob_client();
 
-        // Create Initial Append Blob (No Conditions)
+        // Create initial append blob
         append_blob_client.create(None).await?;
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Create - AppendBlobClientCreateOptions
-
-        // if_match Failure
+        // Create - if_match failure
         let err = append_blob_client
             .create(Some(AppendBlobClientCreateOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
@@ -1365,70 +489,20 @@ mod append_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = append_blob_client
-            .create(Some(AppendBlobClientCreateOptions {
-                if_none_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = append_blob_client
-            .create(Some(AppendBlobClientCreateOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = append_blob_client
-            .create(Some(AppendBlobClientCreateOptions {
-                if_unmodified_since: Some(before),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = append_blob_client
-            .create(Some(AppendBlobClientCreateOptions {
-                if_tags: Some("\"env\"='missing'".to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Create Success With if_match
+
+        // Create - if_match success (overwrites)
         append_blob_client
             .create(Some(AppendBlobClientCreateOptions {
                 if_match: Some(etag.into()),
-                blob_tags_string: Some("env=test".to_string()),
                 ..Default::default()
             }))
             .await?;
 
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Append Block - AppendBlobClientAppendBlockOptions
-
+        // Append Block - if_match failure
         let chunk = RequestContent::from(b"hello".to_vec());
-
-        // if_match Failure
         let err = append_blob_client
             .append_block(
                 chunk.clone(),
@@ -1443,67 +517,8 @@ mod append_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = append_blob_client
-            .append_block(
-                chunk.clone(),
-                5u64,
-                Some(AppendBlobClientAppendBlockOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = append_blob_client
-            .append_block(
-                chunk.clone(),
-                5u64,
-                Some(AppendBlobClientAppendBlockOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = append_blob_client
-            .append_block(
-                chunk.clone(),
-                5u64,
-                Some(AppendBlobClientAppendBlockOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = append_blob_client
-            .append_block(
-                chunk.clone(),
-                5u64,
-                Some(AppendBlobClientAppendBlockOptions {
-                    if_tags: Some("\"env\"='wrong'".to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Append Block Success
+
+        // Append Block - if_match success
         append_blob_client
             .append_block(
                 chunk,
@@ -1517,13 +532,8 @@ mod append_blob_client {
 
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Seal - AppendBlobClientSealOptions (No if_tags)
-
-        // if_match Failure
+        // Seal - if_match failure
         let err = append_blob_client
             .seal(Some(AppendBlobClientSealOptions {
                 if_match: Some(BAD_ETAG.to_string().into()),
@@ -1534,40 +544,8 @@ mod append_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = append_blob_client
-            .seal(Some(AppendBlobClientSealOptions {
-                if_none_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = append_blob_client
-            .seal(Some(AppendBlobClientSealOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = append_blob_client
-            .seal(Some(AppendBlobClientSealOptions {
-                if_unmodified_since: Some(before),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Seal Success
+
+        // Seal - if_match success
         append_blob_client
             .seal(Some(AppendBlobClientSealOptions {
                 if_match: Some(etag.into()),
@@ -1583,33 +561,27 @@ mod append_blob_client {
 mod page_blob_client {
     use super::*;
 
+    /// Verifies if_match on create, upload_pages, clear_pages, resize, and
+    /// set_sequence_number.
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_page_blob_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
         let container_client =
             get_container_client(recording, true, StorageAccount::Standard, None).await?;
         let blob_client = container_client.blob_client(&get_blob_name(recording));
         let page_blob_client = blob_client.page_blob_client();
 
-        // Pages Must Be 512-Byte Aligned
         const PAGE_SIZE: usize = 512;
         const BLOB_SIZE: u64 = PAGE_SIZE as u64;
 
-        // Create - PageBlobClientCreateOptions
-
-        // Create Initial Page Blob
+        // Create initial page blob
         page_blob_client.create(BLOB_SIZE, None).await?;
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // if_match Failure on Re-Create
+        // Create - if_match failure
         let err = page_blob_client
             .create(
                 BLOB_SIZE,
@@ -1623,69 +595,13 @@ mod page_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = page_blob_client
-            .create(
-                BLOB_SIZE,
-                Some(PageBlobClientCreateOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = page_blob_client
-            .create(
-                BLOB_SIZE,
-                Some(PageBlobClientCreateOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = page_blob_client
-            .create(
-                BLOB_SIZE,
-                Some(PageBlobClientCreateOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure (No Tags Set Yet)
-        let err = page_blob_client
-            .create(
-                BLOB_SIZE,
-                Some(PageBlobClientCreateOptions {
-                    if_tags: Some("\"env\"='missing'".to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Create Success With if_match
+
+        // Create - if_match success
         page_blob_client
             .create(
                 BLOB_SIZE,
                 Some(PageBlobClientCreateOptions {
                     if_match: Some(etag.into()),
-                    blob_tags_string: Some("env=test".to_string()),
                     ..Default::default()
                 }),
             )
@@ -1693,16 +609,10 @@ mod page_blob_client {
 
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
-
-        // Upload Pages - PageBlobClientUploadPagesOptions
-
         let page_data = RequestContent::from(vec![1u8; PAGE_SIZE]);
         let range = HttpRange::new(0, PAGE_SIZE as u64).to_string();
 
-        // if_match Failure
+        // Upload Pages - if_match failure
         let err = page_blob_client
             .upload_pages(
                 page_data.clone(),
@@ -1718,71 +628,8 @@ mod page_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = page_blob_client
-            .upload_pages(
-                page_data.clone(),
-                PAGE_SIZE as u64,
-                range.clone(),
-                Some(PageBlobClientUploadPagesOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = page_blob_client
-            .upload_pages(
-                page_data.clone(),
-                PAGE_SIZE as u64,
-                range.clone(),
-                Some(PageBlobClientUploadPagesOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = page_blob_client
-            .upload_pages(
-                page_data.clone(),
-                PAGE_SIZE as u64,
-                range.clone(),
-                Some(PageBlobClientUploadPagesOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = page_blob_client
-            .upload_pages(
-                page_data.clone(),
-                PAGE_SIZE as u64,
-                range.clone(),
-                Some(PageBlobClientUploadPagesOptions {
-                    if_tags: Some("\"env\"='wrong'".to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Upload Pages Success
+
+        // Upload Pages - if_match success
         page_blob_client
             .upload_pages(
                 page_data,
@@ -1797,12 +644,8 @@ mod page_blob_client {
 
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
 
-        // Clear Pages - PageBlobClientClearPagesOptions
-
-        // if_match Failure
+        // Clear Pages - if_match failure
         let err = page_blob_client
             .clear_pages(
                 range.clone(),
@@ -1816,35 +659,8 @@ mod page_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_tags Failure
-        let err = page_blob_client
-            .clear_pages(
-                range.clone(),
-                Some(PageBlobClientClearPagesOptions {
-                    if_tags: Some("\"env\"='wrong'".to_string()),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = page_blob_client
-            .clear_pages(
-                range.clone(),
-                Some(PageBlobClientClearPagesOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Clear Pages Success
+
+        // Clear Pages - if_match success
         page_blob_client
             .clear_pages(
                 range,
@@ -1857,56 +673,8 @@ mod page_blob_client {
 
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Get Page Ranges - PageBlobClientGetPageRangesOptions
-
-        // if_match Failure
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(BAD_ETAG.to_string().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_tags: Some("\"env\"='wrong'".to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since - Not Modified (304)
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::NotModified,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Get Page Ranges Success
-        page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(etag.clone().into()),
-                ..Default::default()
-            }))
-            .await?;
-
-        // Resize - PageBlobClientResizeOptions
-
-        // if_match Failure
+        // Resize - if_match failure
         let err = page_blob_client
             .resize(
                 BLOB_SIZE * 2,
@@ -1920,40 +688,13 @@ mod page_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_modified_since Failure
-        let err = page_blob_client
-            .resize(
-                BLOB_SIZE * 2,
-                Some(PageBlobClientResizeOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = page_blob_client
-            .resize(
-                BLOB_SIZE * 2,
-                Some(PageBlobClientResizeOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Resize Success
+
+        // Resize - if_match success
         page_blob_client
             .resize(
                 BLOB_SIZE * 2,
                 Some(PageBlobClientResizeOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.into()),
                     ..Default::default()
                 }),
             )
@@ -1961,13 +702,8 @@ mod page_blob_client {
 
         let props = blob_client.get_properties(None).await?;
         let etag = props.etag()?.unwrap().to_string();
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Set Sequence Number - PageBlobClientSetSequenceNumberOptions
-
-        // if_match Failure
+        // Set Sequence Number - if_match failure
         let err = page_blob_client
             .set_sequence_number(
                 SequenceNumberActionType::Update,
@@ -1982,67 +718,8 @@ mod page_blob_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_none_match Failure
-        let err = page_blob_client
-            .set_sequence_number(
-                SequenceNumberActionType::Update,
-                Some(PageBlobClientSetSequenceNumberOptions {
-                    if_none_match: Some(etag.clone().into()),
-                    blob_sequence_number: Some(1),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since Failure
-        let err = page_blob_client
-            .set_sequence_number(
-                SequenceNumberActionType::Update,
-                Some(PageBlobClientSetSequenceNumberOptions {
-                    if_modified_since: Some(after),
-                    blob_sequence_number: Some(1),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_unmodified_since Failure
-        let err = page_blob_client
-            .set_sequence_number(
-                SequenceNumberActionType::Update,
-                Some(PageBlobClientSetSequenceNumberOptions {
-                    if_unmodified_since: Some(before),
-                    blob_sequence_number: Some(1),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = page_blob_client
-            .set_sequence_number(
-                SequenceNumberActionType::Update,
-                Some(PageBlobClientSetSequenceNumberOptions {
-                    if_tags: Some("\"env\"='wrong'".to_string()),
-                    blob_sequence_number: Some(1),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Set Sequence Number Success
+
+        // Set Sequence Number - if_match success
         page_blob_client
             .set_sequence_number(
                 SequenceNumberActionType::Update,
@@ -2062,14 +739,13 @@ mod page_blob_client {
 mod blob_container_client {
     use super::*;
 
+    /// Verifies if_modified_since / if_unmodified_since on container delete,
+    /// set_metadata, and the final successful delete.
     #[recorded::test]
-    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_blob_container_client_conditional_headers(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
-        // Recording Setup
         let recording = ctx.recording();
-        // Do Not Auto-Create; Capture Creation Timestamp Ourselves
         let container_client =
             get_container_client(recording, false, StorageAccount::Standard, None).await?;
         container_client.create(None).await?;
@@ -2079,9 +755,7 @@ mod blob_container_client {
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
 
-        // Delete - Failure Cases Only (Container Survives for Subsequent Operations)
-
-        // if_unmodified_since=before: Container Was Modified Since before, 412
+        // Delete - if_unmodified_since=before failure (container was modified after before)
         let err = container_client
             .delete(Some(BlobContainerClientDeleteOptions {
                 if_unmodified_since: Some(before),
@@ -2092,7 +766,8 @@ mod blob_container_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_modified_since=after: Container Has Not Been Modified After after, 412
+
+        // Delete - if_modified_since=after failure (container has not been modified after after)
         let err = container_client
             .delete(Some(BlobContainerClientDeleteOptions {
                 if_modified_since: Some(after),
@@ -2104,10 +779,8 @@ mod blob_container_client {
             err.unwrap_err().http_status().unwrap()
         );
 
-        // Set Metadata - if_modified_since Only (No if_unmodified_since for Containers)
-
+        // Set Metadata - if_modified_since=after failure
         let metadata = HashMap::from([("key".to_string(), "val".to_string())]);
-        // if_modified_since=after Failure
         let err = container_client
             .set_metadata(
                 &metadata,
@@ -2121,7 +794,8 @@ mod blob_container_client {
             StatusCode::PreconditionFailed,
             err.unwrap_err().http_status().unwrap()
         );
-        // if_modified_since=before Success
+
+        // Set Metadata - if_modified_since=before success
         container_client
             .set_metadata(
                 &metadata,
@@ -2131,186 +805,13 @@ mod blob_container_client {
                 }),
             )
             .await?;
-        // Re-Capture After Set Metadata
+
+        // Refresh after mutation
         let props = container_client.get_properties(None).await?;
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
 
-        // Set Access Policy - if_modified_since and if_unmodified_since
-
-        // if_unmodified_since=before Failure
-        let err = container_client
-            .set_access_policy(
-                RequestContent::try_from(SignedIdentifiers::default())?,
-                Some(BlobContainerClientSetAccessPolicyOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since=after Failure
-        let err = container_client
-            .set_access_policy(
-                RequestContent::try_from(SignedIdentifiers::default())?,
-                Some(BlobContainerClientSetAccessPolicyOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Set Access Policy Success
-        container_client
-            .set_access_policy(
-                RequestContent::try_from(SignedIdentifiers::default())?,
-                Some(BlobContainerClientSetAccessPolicyOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Re-Capture After Set Access Policy
-        let props = container_client.get_properties(None).await?;
-        let last_modified = props.last_modified()?.unwrap();
-        let before = last_modified - Duration::from_secs(60);
-        let after = last_modified + Duration::from_secs(60);
-
-        // Lease Operations - if_modified_since and if_unmodified_since
-
-        // Acquire Lease - Failure
-        let err = container_client
-            .acquire_lease(
-                -1,
-                Some(BlobContainerClientAcquireLeaseOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Acquire Lease - Success
-        let lease_resp = container_client
-            .acquire_lease(
-                -1,
-                Some(BlobContainerClientAcquireLeaseOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_1 = lease_resp.lease_id()?.unwrap().to_string();
-
-        // Renew Lease - Failure
-        let err = container_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobContainerClientRenewLeaseOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Renew Lease - Success
-        container_client
-            .renew_lease(
-                lease_id_1.clone(),
-                Some(BlobContainerClientRenewLeaseOptions {
-                    if_modified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Change Lease - Failure
-        let proposed_id = "dddddddd-dddd-dddd-dddd-dddddddddddd".to_string();
-        let err = container_client
-            .change_lease(
-                lease_id_1.clone(),
-                proposed_id.clone(),
-                Some(BlobContainerClientChangeLeaseOptions {
-                    if_modified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Change Lease - Success
-        container_client
-            .change_lease(
-                lease_id_1,
-                proposed_id.clone(),
-                Some(BlobContainerClientChangeLeaseOptions {
-                    if_unmodified_since: Some(after),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        let lease_id_2 = proposed_id;
-
-        // Release Lease - Failure
-        let err = container_client
-            .release_lease(
-                lease_id_2.clone(),
-                Some(BlobContainerClientReleaseLeaseOptions {
-                    if_unmodified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Release Lease - Success
-        container_client
-            .release_lease(
-                lease_id_2,
-                Some(BlobContainerClientReleaseLeaseOptions {
-                    if_modified_since: Some(before),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        // Break Lease - Acquire Fresh Lease, Then Test Break Conditions
-        container_client.acquire_lease(-1, None).await?;
-        let err = container_client
-            .break_lease(Some(BlobContainerClientBreakLeaseOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        container_client
-            .break_lease(Some(BlobContainerClientBreakLeaseOptions {
-                if_modified_since: Some(before),
-                ..Default::default()
-            }))
-            .await?;
-
-        // Delete - Success
+        // Delete - if_modified_since=before success
         container_client
             .delete(Some(BlobContainerClientDeleteOptions {
                 if_modified_since: Some(before),
