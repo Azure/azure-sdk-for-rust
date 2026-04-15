@@ -31,7 +31,11 @@ use super::*;
 
 #[async_trait]
 pub(crate) trait PartitionedDownloadBehavior {
-    async fn transfer_range(&self, range: Option<Range<usize>>) -> AzureResult<AsyncRawResponse>;
+    async fn transfer_range(
+        &self,
+        range: Option<Range<usize>>,
+        etag_lock: Option<String>,
+    ) -> AzureResult<AsyncRawResponse>;
 }
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
@@ -62,6 +66,7 @@ where
 
     let status = initial_response.status();
     let headers = initial_response.headers().clone();
+    let etag_lock = headers.get_optional_str(&"etag".into()).map(str::to_string);
 
     let mut remaining_ranges = stats
         .map(|s| s.remaining_download_ranges)
@@ -108,7 +113,7 @@ where
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
 
                         let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
-                        task_bucket.push(start_download_task(client.clone(), range, t, active_tasks_counter.clone(), i));
+                        task_bucket.push(start_download_task(client.clone(), range, etag_lock.clone(), t, active_tasks_counter.clone(), i));
                     }
                     None => {
                         // if ranges are finished, we'll never need to clone the transmitter again.
@@ -241,6 +246,7 @@ fn start_initial_download_task(
 fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'static>(
     client: Arc<Behavior>,
     range: Range<usize>,
+    etag_lock: Option<String>,
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
     active_tasks_counter: Arc<AtomicUsize>,
     chunk_idx: usize,
@@ -249,7 +255,7 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
         let mut dst = vec![0u8; range.len()];
         let res = async {
             client
-                .transfer_range(Some(range))
+                .transfer_range(Some(range), etag_lock)
                 .await?
                 .into_body()
                 .collect_into(&mut dst)
@@ -278,11 +284,11 @@ where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
     let range_start = range.start;
-    match client.transfer_range(Some(range)).await {
+    match client.transfer_range(Some(range), None).await {
         Ok(response) => Ok(response),
         Err(err) => match (err.http_status(), range_start) {
             (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
-                client.transfer_range(None).await
+                client.transfer_range(None, None).await
             }
             _ => Err(err),
         },
@@ -362,23 +368,34 @@ mod tests {
     pub const MB: usize = KB * 1024;
     pub const GB: usize = MB * 1024;
 
-    #[derive(Debug)]
+    #[derive(Clone, Debug)]
     enum MockPartitionedDownloadBehaviorInvocation {
-        TransferRange(Option<Range<usize>>),
+        TransferRange(Option<Range<usize>>, Option<String>),
     }
 
     struct MockPartitionedDownloadBehavior {
         pub invocations: Mutex<Vec<MockPartitionedDownloadBehaviorInvocation>>,
         pub data: Bytes,
         pub delay_millis: Option<Range<u64>>,
+        pub etag: Mutex<Option<String>>,
+    }
+
+    #[derive(Clone, Default)]
+    struct MockOptions {
+        /// When provided, will select a random sleep time in milliseconds within the given range.
+        delay_millis_range: Option<Range<u64>>,
+
+        /// Sets the initial ETag to match against and return in responses.
+        etag: Option<String>,
     }
 
     impl MockPartitionedDownloadBehavior {
-        pub fn new(data: impl Into<Bytes>, delay_millis: Option<Range<u64>>) -> Self {
+        pub fn new(data: impl Into<Bytes>, options: Option<MockOptions>) -> Self {
             Self {
                 invocations: Mutex::new(vec![]),
                 data: data.into(),
-                delay_millis,
+                delay_millis: options.clone().and_then(|o| o.delay_millis_range),
+                etag: Mutex::new(options.clone().and_then(|o| o.etag)),
             }
         }
     }
@@ -388,13 +405,24 @@ mod tests {
         async fn transfer_range(
             &self,
             requested_range: Option<Range<usize>>,
+            etag_lock: Option<String>,
         ) -> AzureResult<AsyncRawResponse> {
             {
                 self.invocations.lock().await.push(
                     MockPartitionedDownloadBehaviorInvocation::TransferRange(
                         requested_range.clone(),
+                        etag_lock.clone(),
                     ),
                 );
+            }
+
+            // if etag lock AND if the mock is configured to use it, error if mismatch
+            if let Some(etag) = etag_lock {
+                if let Some(mock_etag) = self.etag.lock().await.as_ref() {
+                    if etag != *mock_etag {
+                        return Err(Error::with_message(ErrorKind::Other, "Mismatched etag"));
+                    }
+                }
             }
 
             if let Some(delay_millis_range) = self.delay_millis.clone() {
@@ -412,6 +440,9 @@ mod tests {
                 }
             }
             let mut headers = Headers::new();
+            if let Some(etag) = self.etag.lock().await.as_ref() {
+                headers.insert("etag", etag.clone());
+            }
             match (requested_range, self.data.len()) {
                 (Some(range), data_len) => {
                     if range.start >= data_len {
@@ -658,7 +689,10 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(
             data.clone(),
-            Some(1..5),
+            Some(MockOptions {
+                delay_millis_range: Some(1..5),
+                ..Default::default()
+            }),
         ));
 
         let mut body = download(None, parallel, partition_size, mock.clone())
@@ -685,6 +719,91 @@ mod tests {
         let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data.len(), 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_etag_lock() -> AzureResult<()> {
+        let configured_etag = Some("some_etag".to_string());
+        let data_len: usize = 1024;
+        let partition_len = NonZero::new(data_len / 4).unwrap();
+        let parallel = NonZero::new(2).unwrap();
+
+        let data = get_random_data(data_len);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
+            data.clone(),
+            Some(MockOptions {
+                etag: configured_etag.clone(),
+                ..Default::default()
+            }),
+        ));
+
+        download(None, parallel, partition_len, mock.clone())
+            .await?
+            .into_body()
+            .collect()
+            .await?;
+
+        let mut invocations: VecDeque<_> = mock.invocations.lock().await.iter().cloned().collect();
+
+        // Assert first request doesn't supply a lock, as it hasn't received a tag to lock on yet.
+        match invocations.pop_front().unwrap() {
+            MockPartitionedDownloadBehaviorInvocation::TransferRange(_, received_etag) => {
+                assert_eq!(received_etag, None)
+            }
+        };
+
+        // Assert subsequent requests supply the correct lock.
+        assert!(!invocations.is_empty());
+        match invocations.pop_front().unwrap() {
+            MockPartitionedDownloadBehaviorInvocation::TransferRange(_, received_etag) => {
+                assert_eq!(received_etag, configured_etag)
+            }
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_fails_on_etag_update() -> AzureResult<()> {
+        let configured_etag_1 = Some("some_etag".to_string());
+        let configured_etag_2 = Some("another_etag".to_string());
+        let data_len: usize = 2048;
+        let total_partitions = 8;
+        let partition_len = NonZero::new(data_len / total_partitions).unwrap();
+        let parallel = NonZero::new(1).unwrap();
+
+        let individual_request_delay_ms = 5;
+        let etag_edit_delay_ms = individual_request_delay_ms * total_partitions as u64 / 2;
+
+        let data = get_random_data(data_len);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
+            data.clone(),
+            Some(MockOptions {
+                etag: configured_etag_1.clone(),
+                delay_millis_range: Some(
+                    individual_request_delay_ms..individual_request_delay_ms + 1,
+                ),
+            }),
+        ));
+
+        let (download_result, _) = futures::future::join(
+            async {
+                download(None, parallel, partition_len, mock.clone())
+                    .await?
+                    .into_body()
+                    .collect()
+                    .await
+            },
+            async {
+                sleep(Duration::from_millis(etag_edit_delay_ms)).await;
+                *mock.clone().etag.lock().await = configured_etag_2;
+            },
+        )
+        .await;
+
+        assert!(download_result.is_err());
 
         Ok(())
     }

@@ -306,9 +306,20 @@ impl<'a> BlobClientDownloadBehavior<'a> {
 
 #[async_trait]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
-    async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
+    async fn transfer_range(
+        &self,
+        range: Option<Range<usize>>,
+        etag_lock: Option<String>,
+    ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
         opt.range = range.map(|r| r.as_range_header());
+        if let Some(etag) = etag_lock {
+            opt.if_match = Some(etag);
+            opt.if_none_match = None;
+            opt.if_modified_since = None;
+            opt.if_unmodified_since = None;
+            opt.if_tags = None;
+        }
         self.client
             .download_internal(Some(opt))
             .await
