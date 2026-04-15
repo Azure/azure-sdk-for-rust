@@ -26,7 +26,6 @@ argument-hints:
   scope:
     - azure_data_cosmos
     - azure_data_cosmos_driver
-    - azure_data_cosmos_native
 
   changed-only:
     - true

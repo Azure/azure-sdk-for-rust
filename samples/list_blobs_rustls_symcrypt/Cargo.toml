@@ -1,0 +1,32 @@
+[package]
+name = "list_blobs_rustls_symcrypt"
+version = "0.1.0"
+authors = ["Microsoft"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+publish = false
+
+[dependencies]
+azure_core = { version = "0.33.0", default-features = false, features = [
+  "reqwest",
+  "reqwest_deflate",
+  "reqwest_gzip",
+  "tokio",
+] }
+azure_identity = { version = "0.33.0", default-features = false, features = [
+  "tokio",
+] }
+azure_storage_blob = { version = "0.10.1", default-features = false }
+clap = { version = "4.6.0", features = ["derive", "env"] }
+futures = "0.3.32"
+reqwest = { version = "0.13.2", features = [
+  "charset",
+  "http2",
+  "rustls-no-provider",
+  "system-proxy",
+], default-features = false }
+rustls = { version = "0.23.37", default-features = false, features = ["tls12", "std"] }
+rustls-symcrypt = "0.2.2"
+webpki-roots = "0.26.11"
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread"] }

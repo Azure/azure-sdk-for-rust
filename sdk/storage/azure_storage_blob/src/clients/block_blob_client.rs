@@ -225,7 +225,7 @@ impl BlockBlobClient {
 
 // unwrap evaluated at compile time
 const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
-const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+const DEFAULT_PARTITION_SIZE: NonZero<u64> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlockInfo {
     offset: u64,
@@ -289,17 +289,17 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
+    async fn transfer_partition(&self, offset: u64, content: Body) -> Result<()> {
         let block_id = Uuid::new_v4();
         // TODO (jaschrep-msft) support oneshot given optional length
         let content_len = content.len().ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
         })?;
         {
-            self.blocks.lock().await.push(BlockInfo {
-                offset: offset as u64,
-                block_id,
-            });
+            self.blocks
+                .lock()
+                .await
+                .push(BlockInfo { offset, block_id });
         }
         self.client
             .stage_block(
@@ -312,7 +312,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn initialize(&self, _content_len: u64) -> Result<()> {
+    async fn initialize(&self, _content_len: std::option::Option<u64>) -> Result<()> {
         Ok(())
     }
 

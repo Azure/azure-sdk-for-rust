@@ -11,7 +11,7 @@ allow = [
   "Apache-2.0",
   "BSD-3-Clause",
   "MIT",
-  "MPL-2.0",
+  # "MPL-2.0",
   # "OpenSSL",
   "Unicode-3.0",
   "Zlib",
