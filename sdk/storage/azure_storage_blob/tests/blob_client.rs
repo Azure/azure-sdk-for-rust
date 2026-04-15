@@ -925,8 +925,7 @@ fn test_managed_download_args() -> impl IntoIterator<Item = TestManagedDownloadA
     })
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));

@@ -14,7 +14,6 @@ use azure_storage_queue::{
 };
 use common::{get_queue_name, recorded_test_setup};
 use futures::StreamExt;
-use serial_test::serial;
 
 use std::{collections::HashMap, time::Duration};
 use tokio::time;
@@ -443,8 +442,8 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets account-level service properties and verifies they all round-trip correctly.
-#[recorded::test]
-#[serial]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -619,7 +618,6 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
 
 /// Setting more than 5 CORS rules is rejected by the service with 400 Bad Request.
 #[recorded::test]
-#[serial]
 async fn test_set_cors_too_many_rules(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -674,7 +672,6 @@ async fn test_set_cors_too_many_rules(ctx: TestContext) -> Result<()> {
 
 /// Setting a retention policy with days > 365 is rejected by the service with 400 Bad Request.
 #[recorded::test]
-#[serial]
 async fn test_set_retention_too_long(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();

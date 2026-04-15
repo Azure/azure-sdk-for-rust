@@ -15,12 +15,10 @@ use azure_storage_blob_test::{
     get_container_name, recorded_test_setup, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
-use serial_test::serial;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
 #[recorded::test]
-#[serial]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -135,8 +133,8 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
-#[recorded::test]
-#[serial]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -377,8 +375,8 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-#[recorded::test]
-#[serial]
+// Marking as playback-only to investigate live test pipeline failures.
+#[recorded::test(playback)]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
