@@ -31,8 +31,7 @@ use std::sync::{
 };
 
 /// Creates a new queue under the given account.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -55,8 +54,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 }
 
 /// Creates a queue with metadata.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_create_queue_with_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -101,8 +99,7 @@ async fn test_create_queue_with_metadata(ctx: TestContext) -> Result<()> {
 }
 
 /// Re-creating a queue with identical metadata returns 204 No Content (success).
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_create_queue_fail_on_exist(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -134,8 +131,7 @@ async fn test_create_queue_fail_on_exist(ctx: TestContext) -> Result<()> {
 }
 
 /// Creating an already-existing queue with different metadata returns 409 Conflict.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_create_queue_fail_on_exist_different_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -171,8 +167,7 @@ async fn test_create_queue_fail_on_exist_different_metadata(ctx: TestContext) ->
 }
 
 /// Deletes a queue.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -205,8 +200,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 }
 
 /// Checks whether a queue exists.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_queue_exists(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -240,8 +234,7 @@ async fn test_queue_exists(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets queue metadata.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -306,8 +299,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 }
 
 /// Gets queue properties.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -367,8 +359,7 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
 }
 
 /// Sends a message to the queue.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_send_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -471,8 +462,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
 }
 
 /// Sends a message with `visibility_timeout` and confirms it is initially hidden.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_send_message_with_visibility_timeout(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -526,8 +516,7 @@ async fn test_send_message_with_visibility_timeout(ctx: TestContext) -> Result<(
 }
 
 /// Sends a message with `message_time_to_live` and checks the returned expiration metadata.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -651,8 +640,7 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
 }
 
 /// Sends and receives a Unicode message to confirm the content round-trips correctly.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -698,8 +686,7 @@ async fn test_unicode_message_content(ctx: TestContext) -> Result<()> {
 }
 
 /// Sends and peeks a message body near the 64 KiB limit.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_send_near_64kb_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -763,8 +750,7 @@ async fn test_send_near_64kb_message(ctx: TestContext) -> Result<()> {
 }
 
 /// Receives messages using `visibility_timeout` and `number_of_messages` options.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_receive_messages_with_options(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -817,8 +803,7 @@ async fn test_receive_messages_with_options(ctx: TestContext) -> Result<()> {
 }
 
 /// Receives messages with the service maximum `number_of_messages` value.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_receive_messages_max_count(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -872,8 +857,7 @@ async fn test_receive_messages_max_count(ctx: TestContext) -> Result<()> {
 }
 
 /// Peeks messages across missing, empty, and populated queue states.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_peek_messages(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -953,8 +937,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 }
 
 /// Receives messages across missing, empty, and populated queue states.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1046,8 +1029,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
 }
 
 /// Updates a message and then receives the updated content.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_update_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1191,8 +1173,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 }
 
 /// Deletes a previously enqueued message.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_delete_message(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1291,8 +1272,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 }
 
 /// Clears all messages from the queue.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1340,8 +1320,7 @@ async fn test_clear_messages(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets an access policy on a queue.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1434,8 +1413,7 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets an access policy with explicit `start` and `expiry` dates.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1522,8 +1500,7 @@ async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets a named access policy identifier without a policy body and verifies the ID is persisted.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_access_policy_empty_named_identifier(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1582,8 +1559,7 @@ async fn test_set_access_policy_empty_named_identifier(ctx: TestContext) -> Resu
 }
 
 /// Setting more than 5 signed identifiers is rejected by the service with 400 Bad Request.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_access_policy_too_many_identifiers(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1632,8 +1608,7 @@ async fn test_set_access_policy_too_many_identifiers(ctx: TestContext) -> Result
 }
 
 /// Creating a queue with an invalid name (non-ASCII characters) is rejected with 400 Bad Request.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1663,8 +1638,7 @@ async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
 }
 
 /// Retries an initial IO error before surfacing the service error.
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();

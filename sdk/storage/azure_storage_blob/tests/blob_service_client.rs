@@ -15,11 +15,12 @@ use azure_storage_blob_test::{
     get_container_name, recorded_test_setup, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
+use serial_test::serial;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
+#[serial]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -36,8 +37,7 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -81,8 +81,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -136,8 +135,8 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
+#[serial]
 async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -161,8 +160,7 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -181,8 +179,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -305,8 +302,7 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -341,8 +337,7 @@ async fn test_list_containers_with_metadata_include(
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -382,10 +377,8 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║ TOP SUSPECT #2: Service properties - May cause live pipeline hangs          ║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
 #[recorded::test]
+#[serial]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -447,8 +440,7 @@ async fn test_set_service_properties_cors_and_metrics(
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

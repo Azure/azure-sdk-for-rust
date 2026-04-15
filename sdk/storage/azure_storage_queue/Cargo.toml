@@ -34,5 +34,6 @@ futures.workspace = true
 opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 rand.workspace = true
+serial_test.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }

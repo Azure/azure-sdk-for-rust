@@ -19,8 +19,7 @@ use azure_storage_blob_test::{
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -84,8 +83,7 @@ async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<d
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -161,8 +159,7 @@ async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), B
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -224,8 +221,7 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -294,8 +290,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -426,8 +421,7 @@ async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

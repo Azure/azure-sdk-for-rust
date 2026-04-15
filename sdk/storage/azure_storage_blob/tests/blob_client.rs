@@ -40,8 +40,7 @@ use std::{
 };
 use tokio::time;
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -80,8 +79,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -112,8 +110,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -164,8 +161,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -189,8 +185,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -218,8 +213,7 @@ async fn test_undelete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -242,8 +236,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
 
@@ -289,8 +282,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -315,8 +307,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -373,8 +364,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -457,8 +447,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -502,8 +491,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
 
@@ -525,8 +513,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -776,8 +763,7 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -812,8 +798,7 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_storage_error_model_bodiless(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -847,8 +832,7 @@ async fn test_storage_error_model_bodiless(ctx: TestContext) -> Result<(), Box<d
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_storage_error_model_additional_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -941,8 +925,7 @@ fn test_managed_download_args() -> impl IntoIterator<Item = TestManagedDownloadA
     })
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -1000,8 +983,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -1067,8 +1049,7 @@ async fn test_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 // TODO edge case where a range was requested on a 0-length blob
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -1104,8 +1085,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_upload_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1165,8 +1145,7 @@ async fn test_upload_blob_content_headers(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1231,8 +1210,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_upload_blob_overwrite_content_headers(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -1278,8 +1256,7 @@ async fn test_upload_blob_overwrite_content_headers(
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1308,8 +1285,7 @@ async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1348,8 +1324,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

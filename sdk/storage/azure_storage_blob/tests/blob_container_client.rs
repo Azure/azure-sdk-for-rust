@@ -25,8 +25,7 @@ use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -39,8 +38,7 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -71,8 +69,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -102,8 +99,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -144,8 +140,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -263,8 +258,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -313,8 +307,7 @@ async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -383,8 +376,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -404,8 +396,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     ctx.recording()
@@ -502,8 +493,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-// Temporarily disabled for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -614,8 +604,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_create_container_with_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -640,8 +629,7 @@ async fn test_create_container_with_metadata(ctx: TestContext) -> Result<(), Box
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -714,8 +702,7 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -754,8 +741,7 @@ async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Err
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_uncommitted_blobs_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -814,8 +800,7 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // TODO: requires an account with blob soft-delete enabled (set via Set Blob Service Properties,
     // deleteRetentionPolicy.enabled = true). Record this test against such an account.
@@ -876,8 +861,7 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -928,8 +912,7 @@ async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<d
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_break_lease_with_break_period(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -955,8 +938,7 @@ async fn test_break_lease_with_break_period(ctx: TestContext) -> Result<(), Box<
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_container_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -989,8 +971,7 @@ async fn test_container_error_codes(ctx: TestContext) -> Result<(), Box<dyn Erro
     Ok(())
 }
 
-// Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_lease_already_present_error_code(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

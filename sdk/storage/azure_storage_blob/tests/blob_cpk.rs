@@ -24,8 +24,7 @@ use std::{collections::HashMap, error::Error};
 mod blob_client {
     use super::*;
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_blob_client_cpk_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -182,8 +181,7 @@ mod blob_client {
         Ok(())
     }
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_blob_client_encryption_scope(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -234,8 +232,7 @@ mod blob_client {
 mod block_blob_client {
     use super::*;
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_block_blob_stage_and_commit_cpk(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -308,8 +305,7 @@ mod block_blob_client {
         Ok(())
     }
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_upload_blob_from_url_cpk(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -426,8 +422,7 @@ mod block_blob_client {
         Ok(())
     }
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_stage_block_from_url_cpk(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -572,8 +567,7 @@ mod block_blob_client {
 mod append_blob_client {
     use super::*;
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_append_blob_cpk_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -769,8 +763,7 @@ mod append_blob_client {
 mod page_blob_client {
     use super::*;
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_page_blob_partial_cpk_options_fail(
         ctx: TestContext,
     ) -> Result<(), Box<dyn Error>> {
@@ -821,8 +814,7 @@ mod page_blob_client {
         Ok(())
     }
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_page_blob_cpk_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -974,8 +966,7 @@ mod page_blob_client {
         Ok(())
     }
 
-    // Temporarily disabled for live test pipeline investigation.
-    #[recorded::test(playback)]
+    #[recorded::test]
     async fn test_upload_pages_from_url_cpk(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();
@@ -1151,7 +1142,6 @@ mod page_blob_client {
 mod partial_cpk_validation {
     use super::*;
 
-    // Investigation: Re-enabling for live test pipeline investigation.
     #[recorded::test]
     async fn test_partial_cpk_options_fail(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
