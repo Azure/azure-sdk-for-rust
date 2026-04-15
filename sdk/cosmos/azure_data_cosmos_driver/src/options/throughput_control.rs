@@ -22,7 +22,7 @@ use std::{
 /// Mutable runtime values for a throughput control group.
 #[derive(Clone, Debug, Default)]
 struct ThroughputControlSettings {
-    throughput_bucket: Option<usize>,
+    throughput_bucket: Option<u32>,
     priority_level: Option<PriorityLevel>,
 }
 
@@ -62,7 +62,7 @@ impl ThroughputControlGroupOptions {
     }
 
     /// Sets the initial throughput bucket value.
-    pub fn with_throughput_bucket(self, bucket: usize) -> Self {
+    pub fn with_throughput_bucket(self, bucket: u32) -> Self {
         self.mutable.write().unwrap().throughput_bucket = Some(bucket);
         self
     }
@@ -97,12 +97,12 @@ impl ThroughputControlGroupOptions {
     }
 
     /// Returns the current throughput bucket, if set.
-    pub fn throughput_bucket(&self) -> Option<usize> {
+    pub fn throughput_bucket(&self) -> Option<u32> {
         self.mutable.read().unwrap().throughput_bucket
     }
 
     /// Sets the throughput bucket.
-    pub fn set_throughput_bucket(&self, bucket: usize) {
+    pub fn set_throughput_bucket(&self, bucket: u32) {
         self.mutable.write().unwrap().throughput_bucket = Some(bucket);
     }
 
@@ -158,7 +158,7 @@ pub(crate) struct ThroughputControlGroupSnapshot {
     /// Whether this is the default group for the container.
     pub(crate) is_default: bool,
     /// The current throughput bucket (server-side bucket only).
-    pub(crate) throughput_bucket: Option<usize>,
+    pub(crate) throughput_bucket: Option<u32>,
     /// The current priority level.
     pub(crate) priority_level: Option<PriorityLevel>,
 }
@@ -184,7 +184,7 @@ impl ThroughputControlGroupSnapshot {
     }
 
     /// Sets the throughput bucket.
-    pub(crate) fn with_throughput_bucket(mut self, bucket: usize) -> Self {
+    pub(crate) fn with_throughput_bucket(mut self, bucket: u32) -> Self {
         self.throughput_bucket = Some(bucket);
         self
     }
@@ -211,7 +211,7 @@ impl ThroughputControlGroupSnapshot {
     }
 
     /// Returns the throughput bucket, if set.
-    pub(crate) fn throughput_bucket(&self) -> Option<usize> {
+    pub(crate) fn throughput_bucket(&self) -> Option<u32> {
         self.throughput_bucket
     }
 
