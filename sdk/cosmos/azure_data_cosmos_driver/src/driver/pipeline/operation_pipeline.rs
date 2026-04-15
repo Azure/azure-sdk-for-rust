@@ -547,7 +547,7 @@ fn build_transport_request(
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
 fn build_cosmos_response(
-    result: TransportResult,
+    result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
 ) -> azure_core::Result<CosmosResponse> {
     match result.outcome {

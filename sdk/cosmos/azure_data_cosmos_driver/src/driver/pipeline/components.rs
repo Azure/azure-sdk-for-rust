@@ -431,7 +431,7 @@ impl std::fmt::Debug for TransportOutcome {
 #[derive(Debug)]
 pub(crate) enum OperationAction {
     /// Return the successful response.
-    Complete(TransportResult),
+    Complete(Box<TransportResult>),
     /// Retry in another endpoint/region.
     FailoverRetry {
         new_state: OperationRetryState,

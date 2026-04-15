@@ -37,7 +37,7 @@ pub(crate) fn evaluate_transport_result(
     // losing the error source chain.
     match result.outcome {
         outcome @ TransportOutcome::Success { .. } => (
-            OperationAction::Complete(TransportResult { outcome }),
+            OperationAction::Complete(Box::new(TransportResult { outcome })),
             Vec::new(),
         ),
 
