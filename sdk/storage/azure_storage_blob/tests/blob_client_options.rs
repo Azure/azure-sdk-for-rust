@@ -116,7 +116,7 @@ async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║ TOP SUSPECT #5: Per-try policy - May cause live pipeline hangs              ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -155,7 +155,7 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 // ╔══════════════════════════════════════════════════════════════════════════════╗
 // ║ TOP SUSPECT #4: Retry options - May cause live pipeline hangs               ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
-#[recorded::test(playback)]
+#[recorded::test]
 async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let per_try_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(per_try_count.clone(), None));
