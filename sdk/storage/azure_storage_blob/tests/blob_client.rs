@@ -1232,7 +1232,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_upload_blob_overwrite_content_headers(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -1279,7 +1279,7 @@ async fn test_upload_blob_overwrite_content_headers(
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1309,7 +1309,7 @@ async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1349,7 +1349,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

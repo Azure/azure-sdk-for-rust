@@ -179,7 +179,7 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_append_block_position_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -226,7 +226,7 @@ async fn test_append_block_position_condition(ctx: TestContext) -> Result<(), Bo
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_append_block_max_size_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -273,7 +273,7 @@ async fn test_append_block_max_size_condition(ctx: TestContext) -> Result<(), Bo
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -353,7 +353,7 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_create_append_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -379,7 +379,7 @@ async fn test_create_append_blob_with_tags(ctx: TestContext) -> Result<(), Box<d
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -413,7 +413,7 @@ async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), B
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_append_block_from_url_source_if_match(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {

@@ -78,7 +78,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -150,7 +150,6 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     container_client.delete(None).await?;
     Ok(())
-}
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════╗

@@ -306,7 +306,7 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -342,7 +342,7 @@ async fn test_list_containers_with_metadata_include(
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -448,7 +448,7 @@ async fn test_set_service_properties_cors_and_metrics(
 }
 
 // Investigation: Re-enabling for live test pipeline investigation.
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
