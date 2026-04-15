@@ -40,6 +40,7 @@ pub(crate) mod response_header_names {
     pub static QUERY_METRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-query-metrics");
     pub static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
     pub static LSN: HeaderName = HeaderName::from_static("lsn");
+    pub static ITEM_LSN: HeaderName = HeaderName::from_static("x-ms-item-lsn");
     pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
     pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
     pub static OFFER_REPLACE_PENDING: HeaderName =
@@ -156,6 +157,11 @@ pub struct CosmosResponseHeaders {
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
 
+    /// Item Logical Sequence Number (`x-ms-item-lsn`).
+    ///
+    /// Only returned on item/document operations (create, read, replace, upsert, delete).
+    pub item_lsn: Option<u64>,
+
     /// Owner full name / alternate content path (`x-ms-alt-content-path`).
     ///
     /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
@@ -245,6 +251,9 @@ impl CosmosResponseHeaders {
             lsn: headers
                 .get_optional_str(&response_header_names::LSN)
                 .and_then(|s| s.parse().ok()),
+            item_lsn: headers
+                .get_optional_str(&response_header_names::ITEM_LSN)
+                .and_then(|s| s.parse().ok()),
             owner_full_name: headers
                 .get_optional_str(&response_header_names::OWNER_FULL_NAME)
                 .map(|s| s.to_owned()),
@@ -285,6 +294,7 @@ mod tests {
         );
         headers.insert("x-ms-request-duration-ms", "4.56");
         headers.insert("lsn", "42");
+        headers.insert("x-ms-item-lsn", "37");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -320,6 +330,7 @@ mod tests {
         );
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
+        assert_eq!(cosmos_headers.item_lsn, Some(37));
     }
 
     #[test]
@@ -357,6 +368,7 @@ mod tests {
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
             server_duration_ms: Some(4.56),
             lsn: Some(100),
+            item_lsn: Some(99),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
@@ -392,6 +404,7 @@ mod tests {
         assert!(headers.query_metrics.is_none());
         assert!(headers.server_duration_ms.is_none());
         assert!(headers.lsn.is_none());
+        assert!(headers.item_lsn.is_none());
     }
 
     #[test]

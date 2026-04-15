@@ -70,6 +70,18 @@ impl<T> ItemResponse<T> {
     pub fn diagnostics(&self) -> &CosmosDiagnostics {
         self.response.diagnostics()
     }
+
+    /// Returns the Logical Sequence Number (LSN) of the resource, if available.
+    pub fn lsn(&self) -> Option<u64> {
+        self.response.cosmos_headers().lsn
+    }
+
+    /// Returns the Item Logical Sequence Number (`x-ms-item-lsn`), if available.
+    ///
+    /// Only returned on item/document operations (create, read, replace, upsert, delete).
+    pub fn item_lsn(&self) -> Option<u64> {
+        self.response.cosmos_headers().item_lsn
+    }
 }
 
 impl<T: DeserializeOwned> ItemResponse<T> {
