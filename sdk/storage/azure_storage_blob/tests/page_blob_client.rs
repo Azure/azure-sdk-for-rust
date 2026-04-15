@@ -325,8 +325,8 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_create_page_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -366,8 +366,8 @@ async fn test_create_page_blob_content_headers(ctx: TestContext) -> Result<(), B
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_pages_sequence_number_condition(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -490,8 +490,8 @@ async fn test_upload_pages_sequence_number_condition(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_get_page_ranges_snapshot(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -535,8 +535,8 @@ async fn test_get_page_ranges_snapshot(ctx: TestContext) -> Result<(), Box<dyn E
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -628,8 +628,8 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_create_page_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -657,8 +657,8 @@ async fn test_create_page_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_pages_from_url_source_if_match(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {

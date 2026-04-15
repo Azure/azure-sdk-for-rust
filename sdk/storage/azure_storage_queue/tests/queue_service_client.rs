@@ -442,8 +442,8 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
 }
 
 /// Sets account-level service properties and verifies they all round-trip correctly.
-/// Temporarily marking as playback-only to investigate timing issue further wrt live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();

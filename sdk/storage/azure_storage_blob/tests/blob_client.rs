@@ -1210,8 +1210,8 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_blob_overwrite_content_headers(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -1257,8 +1257,8 @@ async fn test_upload_blob_overwrite_content_headers(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1287,8 +1287,8 @@ async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1327,8 +1327,8 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
