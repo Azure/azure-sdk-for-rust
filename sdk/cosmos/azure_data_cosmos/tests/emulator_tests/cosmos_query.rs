@@ -288,7 +288,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
-            let items = test_data::generate_mock_items(5, 1);
+            let items = test_data::generate_mock_items(1, 5);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
