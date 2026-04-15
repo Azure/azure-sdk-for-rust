@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Responses are no longer automatically decompressed.
+- Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
 
 ### Bugs Fixed
 
