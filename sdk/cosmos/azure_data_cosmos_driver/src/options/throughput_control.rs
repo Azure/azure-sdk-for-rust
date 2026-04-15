@@ -19,7 +19,9 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-/// Mutable runtime values for a throughput control group.
+/// Runtime settings for a throughput control group.
+///
+/// These settings can be modified at runtime via the group's `set_*` methods.
 #[derive(Clone, Debug, Default)]
 struct ThroughputControlSettings {
     throughput_bucket: Option<u32>,
