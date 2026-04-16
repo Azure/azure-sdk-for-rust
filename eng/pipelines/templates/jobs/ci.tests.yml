@@ -26,6 +26,10 @@ jobs:
   timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
   dependsOn: ${{ parameters.DependsOn }}
 
+  variables:
+    DOCKER_TMPDIR: $(Agent.TempDirectory)
+    CARGO_HOME: $(Agent.TempDirectory)/cargo
+
   strategy:
     matrix: $[ ${{ parameters.Matrix }} ]
 
