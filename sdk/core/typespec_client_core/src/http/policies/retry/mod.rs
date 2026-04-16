@@ -20,7 +20,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use std::{ops::Deref, sync::Arc};
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 use typespec::error::{ErrorKind, ResultExt};
 
 /// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 7231 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
@@ -217,7 +217,7 @@ where
                 }
                 Err(error) => {
                     if matches!(error.kind(), &ErrorKind::Io | &ErrorKind::Connection) {
-                        eprintln!(
+                        warn!(
                             "[retry] transport error on attempt {} for {} {}: {}",
                             retry_count + 1,
                             request.method(),
@@ -244,7 +244,7 @@ where
                 return match last_result {
                     Ok(result) => Ok(result),
                     Err(last_error) => {
-                        eprintln!(
+                        warn!(
                             "[retry] giving up on {} {} after {} attempts ({:.1}s elapsed): {}",
                             request.method(),
                             request.url(),
@@ -259,7 +259,7 @@ where
                 };
             }
             retry_count += 1;
-            eprintln!(
+            warn!(
                 "[retry] will retry {} {} (attempt {})",
                 request.method(),
                 request.url(),
