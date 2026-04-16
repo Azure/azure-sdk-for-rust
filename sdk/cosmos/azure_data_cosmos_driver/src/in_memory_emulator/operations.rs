@@ -37,12 +37,18 @@ pub(crate) async fn handle_operation(
         OperationType::CreateDatabase => {
             handle_create_database(store, region_name, request_body, start)
         }
-        OperationType::ReadDatabase => {
-            handle_read_database(store, region_name, parsed.db_id.as_deref().unwrap_or(""), start)
-        }
-        OperationType::DeleteDatabase => {
-            handle_delete_database(store, region_name, parsed.db_id.as_deref().unwrap_or(""), start)
-        }
+        OperationType::ReadDatabase => handle_read_database(
+            store,
+            region_name,
+            parsed.db_id.as_deref().unwrap_or(""),
+            start,
+        ),
+        OperationType::DeleteDatabase => handle_delete_database(
+            store,
+            region_name,
+            parsed.db_id.as_deref().unwrap_or(""),
+            start,
+        ),
         OperationType::CreateContainer => handle_create_container(
             store,
             region_name,
@@ -1027,9 +1033,12 @@ async fn handle_replace(
             .compute_replace_ru(request_body.len(), num_props);
 
         // Check throttle
-        if let Some(response) =
-            check_throttle(partition, charge, store.config().throttling_enabled(), start)
-        {
+        if let Some(response) = check_throttle(
+            partition,
+            charge,
+            store.config().throttling_enabled(),
+            start,
+        ) {
             return Err(response);
         }
 
@@ -1186,9 +1195,12 @@ async fn handle_upsert(
         };
 
         // Check throttle
-        if let Some(response) =
-            check_throttle(partition, charge, store.config().throttling_enabled(), start)
-        {
+        if let Some(response) = check_throttle(
+            partition,
+            charge,
+            store.config().throttling_enabled(),
+            start,
+        ) {
             return Err(response);
         }
 
@@ -1341,9 +1353,12 @@ async fn handle_delete(
             .compute_replace_ru(body_size, num_props);
 
         // Check throttle
-        if let Some(response) =
-            check_throttle(partition, charge, store.config().throttling_enabled(), start)
-        {
+        if let Some(response) = check_throttle(
+            partition,
+            charge,
+            store.config().throttling_enabled(),
+            start,
+        ) {
             return Err(response);
         }
 
