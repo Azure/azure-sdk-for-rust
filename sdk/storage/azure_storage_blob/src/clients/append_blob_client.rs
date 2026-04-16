@@ -60,6 +60,7 @@ impl AppendBlobClient {
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
+        super::apply_client_defaults(&mut options.client_options);
         apply_storage_logging_defaults(&mut options.client_options);
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);

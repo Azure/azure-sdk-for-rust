@@ -1,0 +1,9 @@
+{
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "awslc",
+    "nasm"
+  ]
+}

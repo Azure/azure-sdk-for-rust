@@ -1,5 +1,17 @@
 # Release History
 
+## 0.35.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression - still enabled by default if `reqwest_gzip` or `reqwest_deflate` features are enabled.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.34.0 (2026-04-07)
 
 ### Features Added
