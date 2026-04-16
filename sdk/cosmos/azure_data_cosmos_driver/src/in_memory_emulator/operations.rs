@@ -730,7 +730,6 @@ async fn handle_create(
             if parsed.content_response_on_write {
                 success_response(StatusCode::Created, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
-                    .with_item_count(1)
                     .with_lsn(doc.lsn)
                     .build()
             } else {
@@ -874,7 +873,6 @@ fn handle_read(
         Some(Ok((body, etag, token, charge, lsn))) => {
             success_response(StatusCode::Ok, &body, charge, &token, start)
                 .with_etag(&etag)
-                .with_item_count(1)
                 .with_lsn(lsn)
                 .build()
         }
@@ -1045,7 +1043,6 @@ async fn handle_replace(
             if parsed.content_response_on_write {
                 success_response(StatusCode::Ok, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
-                    .with_item_count(1)
                     .with_lsn(doc.lsn)
                     .build()
             } else {
@@ -1207,7 +1204,6 @@ async fn handle_upsert(
             if parsed.content_response_on_write {
                 success_response(status, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
-                    .with_item_count(1)
                     .with_lsn(doc.lsn)
                     .build()
             } else {

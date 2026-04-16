@@ -32,6 +32,10 @@ pub enum HeaderMatch {
     /// Both must be present and parse as non-negative f64.
     NonNegative,
 
+    /// Presence must match: if present in real, must be present in emulator;
+    /// if absent in real, must be absent in emulator. Values may differ.
+    Symmetric,
+
     /// Skip validation for this field entirely.
     Ignore,
 }
@@ -74,10 +78,10 @@ impl HeaderValidationSpec {
             .with_rule("request_charge", HeaderMatch::NonNegative)
             .with_rule("session_token", HeaderMatch::Exists)
             .with_rule("etag", HeaderMatch::Exists)
-            .with_rule("continuation", HeaderMatch::Ignore)
-            .with_rule("item_count", HeaderMatch::Ignore)
-            .with_rule("index_metrics", HeaderMatch::Ignore)
-            .with_rule("query_metrics", HeaderMatch::Ignore)
+            .with_rule("continuation", HeaderMatch::Symmetric)
+            .with_rule("item_count", HeaderMatch::Symmetric)
+            .with_rule("index_metrics", HeaderMatch::Symmetric)
+            .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Exists)
     }
@@ -89,10 +93,10 @@ impl HeaderValidationSpec {
             .with_rule("request_charge", HeaderMatch::NonNegative)
             .with_rule("session_token", HeaderMatch::Exists)
             .with_rule("etag", HeaderMatch::Exists)
-            .with_rule("continuation", HeaderMatch::Ignore)
-            .with_rule("item_count", HeaderMatch::Ignore)
-            .with_rule("index_metrics", HeaderMatch::Ignore)
-            .with_rule("query_metrics", HeaderMatch::Ignore)
+            .with_rule("continuation", HeaderMatch::Symmetric)
+            .with_rule("item_count", HeaderMatch::Symmetric)
+            .with_rule("index_metrics", HeaderMatch::Symmetric)
+            .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Exists)
     }
@@ -102,12 +106,12 @@ impl HeaderValidationSpec {
         Self::new()
             .with_rule("activity_id", HeaderMatch::Exists)
             .with_rule("request_charge", HeaderMatch::NonNegative)
-            .with_rule("session_token", HeaderMatch::Ignore)
+            .with_rule("session_token", HeaderMatch::Symmetric)
             .with_rule("etag", HeaderMatch::Exists)
-            .with_rule("continuation", HeaderMatch::Ignore)
-            .with_rule("item_count", HeaderMatch::Ignore)
-            .with_rule("index_metrics", HeaderMatch::Ignore)
-            .with_rule("query_metrics", HeaderMatch::Ignore)
+            .with_rule("continuation", HeaderMatch::Symmetric)
+            .with_rule("item_count", HeaderMatch::Symmetric)
+            .with_rule("index_metrics", HeaderMatch::Symmetric)
+            .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Ignore)
     }
@@ -336,6 +340,23 @@ fn validate_header_field(
                         parsed,
                     );
                 }
+            }
+        }
+        HeaderMatch::Symmetric => {
+            match (real, emulator) {
+                (Some(_), None) => {
+                    panic!(
+                        "Header '{}': present in real ({:?}) but missing from emulator",
+                        name, real,
+                    );
+                }
+                (None, Some(_)) => {
+                    panic!(
+                        "Header '{}': absent in real but present in emulator ({:?})",
+                        name, emulator,
+                    );
+                }
+                _ => {} // both present or both absent — OK
             }
         }
         HeaderMatch::Ignore => {}

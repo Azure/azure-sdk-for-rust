@@ -16,7 +16,7 @@
 use azure_data_cosmos_driver::models::{
     CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
 };
-use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
 
 use super::dual_backend::DualBackend;
 use super::validation::{
@@ -439,6 +439,87 @@ async fn replace_item_through_driver() {
 
     if let Some(ref real) = real_replace {
         assert_eq!(u16::from(real.status().status_code()), 200);
+    }
+
+    // Cleanup
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+async fn read_with_stale_session_token_returns_404_1002() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    // Read a non-existent item with a session token whose LSN is far ahead
+    // of the partition's actual LSN. This forces a 404/1002
+    // ReadSessionNotAvailable on both backends.
+    //
+    // Disable session retries so the error propagates immediately.
+    let stale_token = "0:-1#999999";
+    let opts = OperationOptionsBuilder::new()
+        .with_max_session_retry_count(0)
+        .build();
+
+    // ── Emulator ─────────────────────────────────────────────────
+    let emu_err = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "no-such-item",
+            ))
+            .with_session_token(stale_token),
+            opts.clone(),
+        )
+        .await;
+
+    let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
+    assert_eq!(
+        emu_err.http_status(),
+        Some(azure_core::http::StatusCode::NotFound),
+        "Emulator error should be HTTP 404",
+    );
+    match emu_err.kind() {
+        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
+            assert_eq!(
+                error_code.as_deref(),
+                Some("1002"),
+                "Emulator error should have substatus 1002",
+            );
+        }
+        other => panic!("Expected HttpResponse error, got: {other}"),
+    }
+
+    // ── Real account (if available) ──────────────────────────────
+    if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
+        let real_err = driver
+            .execute_operation(
+                CosmosOperation::read_item(ItemReference::from_name(
+                    real_ctr,
+                    PartitionKey::from("pk1"),
+                    "no-such-item",
+                ))
+                .with_session_token(stale_token),
+                opts.clone(),
+            )
+            .await;
+
+        let real_err = real_err.expect_err("Real should return an error for stale session read");
+        assert_eq!(
+            real_err.http_status(),
+            Some(azure_core::http::StatusCode::NotFound),
+            "Real error should be HTTP 404",
+        );
+        match real_err.kind() {
+            azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
+                assert_eq!(
+                    error_code.as_deref(),
+                    Some("1002"),
+                    "Real error should have substatus 1002",
+                );
+            }
+            other => panic!("Expected HttpResponse error, got: {other}"),
+        }
     }
 
     // Cleanup
