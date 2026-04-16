@@ -12,7 +12,6 @@ use crate::{
         BlobClientUploadOptions, BlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
-    pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
 use async_trait::async_trait;
@@ -76,12 +75,6 @@ impl BlobClient {
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
         apply_storage_logging_defaults(&mut options.client_options);
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
 
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
