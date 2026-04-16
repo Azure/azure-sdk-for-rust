@@ -137,15 +137,13 @@ decompression, partitioned downloads via [`BlobClient::download`](https://docs.r
 If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior:
 
 ```rust no_run
-use std::sync::Arc;
-use azure_core::http::{ClientOptions, Transport};
+use azure_core::http::{new_http_client, ClientOptions, HttpClientOptions, Transport};
 use azure_storage_blob::BlobClientOptions;
 
-let client = Arc::new(
-    ::reqwest::ClientBuilder::new()
-        .gzip(false)
-        .build()?,
-);
+let client = new_http_client(Some(HttpClientOptions {
+    automatic_decompression: false,
+    ..Default::default()
+}));
 
 let options = BlobClientOptions {
     client_options: ClientOptions {

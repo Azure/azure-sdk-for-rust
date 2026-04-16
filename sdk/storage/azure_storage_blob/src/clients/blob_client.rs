@@ -118,10 +118,10 @@ impl BlobClient {
     ///
     /// # Notes
     ///
-    /// Clients will use the HTTP transport returned from [`azure_core::http::new_http_client()`]
-    /// but without automatic decompression by default. If you set a custom transport in
-    /// [`BlobClientOptions`] without disabling automatic decompression, partitioned downloads
-    /// may not succeed.
+    /// By default, storage clients create their HTTP transport via
+    /// [`azure_core::http::new_http_client()`] with automatic decompression disabled.
+    /// If you set a custom transport in [`BlobClientOptions`] without also disabling
+    /// automatic decompression, partitioned downloads may not succeed.
     pub async fn download_into(
         &self,
         buffer: &mut [u8],
@@ -264,10 +264,10 @@ impl BlobClient {
     ///
     /// # Notes
     ///
-    /// Clients will use the HTTP transport returned from [`azure_core::http::new_http_client()`]
-    /// but without automatic decompression by default. If you set a custom transport in
-    /// [`BlobClientOptions`] without disabling automatic decompression, partitioned downloads
-    /// may not succeed.
+    /// By default, storage clients create their HTTP transport via
+    /// [`azure_core::http::new_http_client()`] with automatic decompression disabled.
+    /// If you set a custom transport in [`BlobClientOptions`] without also disabling
+    /// automatic decompression, partitioned downloads may not succeed.
     #[tracing::function("Storage.Blob.Blob.download")]
     pub async fn download(
         &self,
