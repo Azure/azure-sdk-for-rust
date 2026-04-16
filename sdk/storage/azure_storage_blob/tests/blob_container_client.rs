@@ -440,27 +440,11 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .await?;
     }
 
-    // Poll in live/record mode until tag indexing is consistent (eventually consistent)
+    // Sleep in live mode to allow tags to be indexed on the service
     if ctx.recording().test_mode() == TestMode::Live
         || ctx.recording().test_mode() == TestMode::Record
     {
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
-        loop {
-            let response = container_client
-                .find_blobs_by_tags("\"foo\"='bar'", None)
-                .await?;
-            let segment = response.into_model()?;
-            if segment.blobs.as_ref().is_some_and(|b| {
-                b.iter()
-                    .any(|blob| blob.name.as_ref().unwrap() == &blob1_name)
-            }) {
-                break;
-            }
-            if tokio::time::Instant::now() >= deadline {
-                panic!("tag indexing did not converge within 30s");
-            }
-            time::sleep(Duration::from_secs(3)).await;
-        }
+        time::sleep(Duration::from_secs(15)).await;
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}

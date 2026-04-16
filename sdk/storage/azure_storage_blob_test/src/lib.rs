@@ -7,7 +7,6 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
-    time::Duration,
 };
 
 use async_trait::async_trait;
@@ -17,7 +16,6 @@ use azure_core::{
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
-        Transport,
     },
     Bytes, Result,
 };
@@ -101,30 +99,6 @@ pub enum StorageAccount {
     Versioned,
 }
 
-/// Creates an HTTP client for tests with a connect timeout and no connection pooling.
-///
-/// CI pipelines intermittently hang on both Windows and Ubuntu. The default reqwest client has no
-/// timeouts and reuses pooled connections, which can cause indefinite hangs when:
-/// - A pooled connection becomes stale or its socket enters a bad state
-/// - The test proxy becomes unresponsive during a request
-///
-/// This client mitigates those by:
-/// - Setting a connect timeout (5s) so stalled connections fail fast
-/// - Disabling idle connection pooling so every request gets a fresh connection
-///
-/// Note: we intentionally do NOT set a per-request `timeout()` because large
-/// transfers (e.g. `upload_large` at 40MB) legitimately exceed any short timeout,
-/// causing self-inflicted retries.
-fn new_test_http_client() -> Arc<dyn azure_core::http::HttpClient> {
-    let client = reqwest::ClientBuilder::new()
-        .redirect(reqwest::redirect::Policy::none())
-        .connect_timeout(Duration::from_secs(5))
-        .pool_max_idle_per_host(0)
-        .build()
-        .expect("failed to build test `reqwest` client");
-    Arc::new(client)
-}
-
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
 ///
 /// # Arguments
@@ -136,12 +110,6 @@ pub fn recorded_test_setup(
     account_type: StorageAccount,
     client_options: &mut ClientOptions,
 ) -> String {
-    // Inject a custom HTTP client with a connect timeout and no connection pooling before
-    // calling instrument(). instrument() only sets the transport when it is None, so setting
-    // it here takes priority.
-    if client_options.transport.is_none() {
-        client_options.transport = Some(Transport::new(new_test_http_client()));
-    }
     recording.instrument(client_options);
 
     let account_name_var = match account_type {
