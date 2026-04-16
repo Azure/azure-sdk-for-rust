@@ -11,7 +11,7 @@
         "Pool": "env:WINDOWSPOOL"
       },
       "macos": {
-        "OSVmImage": "env:MACVMIMAGEM1",
+        "OSVmImage": "env:MACVMIMAGE",
         "Pool": "env:MACPOOL"
       }
     },

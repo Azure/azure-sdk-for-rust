@@ -1,5 +1,5 @@
 {
-  "mcpServers": {
+  "servers": {
     "azure-sdk-mcp": {
       "type": "stdio",
       "command": "pwsh",

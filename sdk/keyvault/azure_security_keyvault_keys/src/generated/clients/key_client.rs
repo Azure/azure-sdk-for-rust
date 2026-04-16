@@ -166,9 +166,6 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when encrypting so you can reliably decrypt using the same version. You
-    /// can pass an empty string to select the latest key version but if you don't record the specific version used for encryption,
-    /// key rotation can make the data inaccessible.
     /// * `parameters` - The parameters for the decryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.decrypt")]
@@ -183,6 +180,12 @@ impl KeyClient {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
             ));
         }
         let options = options.unwrap_or_default();
@@ -277,9 +280,6 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when encrypting so you can reliably decrypt using the same version. You
-    /// can pass an empty string to select the latest key version but if you don't record the specific version used for encryption,
-    /// key rotation can make the data inaccessible.
     /// * `parameters` - The parameters for the encryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.encrypt")]
@@ -294,6 +294,12 @@ impl KeyClient {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
             ));
         }
         let options = options.unwrap_or_default();
@@ -1107,9 +1113,6 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when signing so you can reliably verify using the same version. You can
-    /// pass an empty string to select the latest key version but if you don't record the specific version used for signing, key
-    /// rotation can make the data unverifiable.
     /// * `parameters` - The parameters for the signing operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.sign")]
@@ -1124,6 +1127,12 @@ impl KeyClient {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
             ));
         }
         let options = options.unwrap_or_default();
@@ -1166,9 +1175,6 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when wrapping a data encryption key so you can reliably unwrap using the
-    /// same version. You can pass an empty string to select the latest key version but if you don't record the specific version
-    /// used for wrapping a key, key encryption key rotation can make the data inaccessible.
     /// * `parameters` - The parameters for the key operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.unwrapKey")]
@@ -1183,6 +1189,12 @@ impl KeyClient {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
             ));
         }
         let options = options.unwrap_or_default();
@@ -1334,9 +1346,6 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when signing so you can reliably verify using the same version. You can
-    /// pass an empty string to select the latest key version but if you don't record the specific version used for signing, key
-    /// rotation can make the data unverifiable.
     /// * `parameters` - The parameters for verify operations.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.verify")]
@@ -1351,6 +1360,12 @@ impl KeyClient {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
             ));
         }
         let options = options.unwrap_or_default();
@@ -1395,9 +1410,6 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when wrapping a data encryption key so you can reliably unwrap using the
-    /// same version. You can pass an empty string to select the latest key version but if you don't record the specific version
-    /// used for wrapping a key, key encryption key rotation can make the data inaccessible.
     /// * `parameters` - The parameters for wrap operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.wrapKey")]
@@ -1412,6 +1424,12 @@ impl KeyClient {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
             ));
         }
         let options = options.unwrap_or_default();
