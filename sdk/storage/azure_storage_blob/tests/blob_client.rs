@@ -36,7 +36,7 @@ use std::{
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        mpsc, Arc,
     },
     time::Duration,
 };
@@ -1029,6 +1029,66 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(downloaded_data.len(), 0);
     // 1 op with a range, 1 op without after the first one fails
     assert_eq!(request_count.load(Ordering::Relaxed), 2);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_managed_download_etag_lock(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let data_len = 2048usize;
+    let parts = 9;
+    let partition_len = data_len.div_ceil(parts);
+
+    let (request_tx, request_rx) = mpsc::channel();
+    let capture_policy = Arc::new(TestPolicy::capture(Some(request_tx)));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(capture_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    blob_client
+        .upload(
+            RequestContent::from((0..data_len).map(|_| recording.random()).collect()),
+            None,
+        )
+        .await?;
+
+    {
+        let _capture_scope = capture_policy.check_request_scope();
+        let _ = blob_client
+            .download(Some(BlobClientDownloadOptions {
+                partition_size: Some(NonZero::new(partition_len).unwrap()),
+                ..Default::default()
+            }))
+            .await?
+            .body
+            .collect()
+            .await?;
+    }
+
+    assert!(request_rx
+        .recv()?
+        .headers()
+        .get_str(&"etag".into())
+        .is_err());
+
+    let subsequent_requests: Vec<_> = request_rx.try_iter().collect();
+    assert_eq!(subsequent_requests.len(), parts - 1);
+
+    let mut locked_etag = None;
+    for req in subsequent_requests.into_iter() {
+        let req_etag_lock = req.headers().get_str(&"if-match".into())?; // ? tests the value was present
+        match &locked_etag {
+            Some(etag) => assert_eq!(etag, req_etag_lock),
+            None => locked_etag = Some(req_etag_lock.to_string()),
+        }
+    }
 
     Ok(())
 }
