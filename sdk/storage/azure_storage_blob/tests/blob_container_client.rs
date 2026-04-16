@@ -450,11 +450,10 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
                 .find_blobs_by_tags("\"foo\"='bar'", None)
                 .await?;
             let segment = response.into_model()?;
-            if segment
-                .blobs
-                .as_ref()
-                .is_some_and(|b| b.iter().any(|blob| blob.name.as_ref().unwrap() == &blob1_name))
-            {
+            if segment.blobs.as_ref().is_some_and(|b| {
+                b.iter()
+                    .any(|blob| blob.name.as_ref().unwrap() == &blob1_name)
+            }) {
                 break;
             }
             if tokio::time::Instant::now() >= deadline {
