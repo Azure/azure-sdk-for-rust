@@ -4,7 +4,8 @@
     "Agent": {
       "ubuntu": {
         "OSVmImage": "env:LINUXVMIMAGE",
-        "Pool": "env:LINUXPOOL"
+        "Pool": "env:LINUXPOOL",
+        "DOCKER_TMPDIR": "env:AGENT_TEMPDIRECTORY"
       },
       "windows": {
         "OSVmImage": "env:WINDOWSVMIMAGE",
@@ -15,11 +16,7 @@
         "Pool": "env:MACPOOL"
       }
     },
-    "RustToolchainName": [
-      "stable",
-      "msrv",
-      "nightly"
-    ]
+    "RustToolchainName": ["stable", "msrv", "nightly"]
   },
   "exclude": [
     {
