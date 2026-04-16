@@ -218,7 +218,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     // Poll in live/record mode until tag indexing is consistent (eventually consistent)
     if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
         loop {
             let response = service_client
                 .find_blobs_by_tags("\"foo\"='bar'", None)
@@ -231,9 +231,9 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
                 break;
             }
             if tokio::time::Instant::now() >= deadline {
-                panic!("tag indexing did not converge within 30s");
+                panic!("tag indexing did not converge within 60s");
             }
-            time::sleep(Duration::from_secs(3)).await;
+            time::sleep(Duration::from_secs(10)).await;
         }
     }
 
