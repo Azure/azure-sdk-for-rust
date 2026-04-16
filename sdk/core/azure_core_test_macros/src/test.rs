@@ -62,7 +62,7 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     let mut inputs = original_sig.inputs.iter();
     let setup = match inputs.next() {
         None if recorded_attrs.live => quote! {
-            ::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
+            ::azure_core_test::__macro_support::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
             let __test_future = async {
                 #fn_name().await
             };
@@ -72,7 +72,7 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
             ).await {
                 Ok(result) => result,
                 Err(_) => {
-                    ::tracing::error!("!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit", #fn_name_str, file!());
+                    ::azure_core_test::__macro_support::tracing::error!("!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit", #fn_name_str, file!());
                     Err(::azure_core::Error::with_message(
                         ::azure_core::error::ErrorKind::Other,
                         format!("test '{}' in {} timed out after 300s", #fn_name_str, file!()),
@@ -83,7 +83,7 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
         Some(FnArg::Typed(PatType { ty, .. })) if is_test_context(ty.as_ref()) => {
             let test_mode = test_mode_to_tokens(test_mode);
             quote! {
-                ::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
+                ::azure_core_test::__macro_support::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
                 let __test_future = async {
                     #[allow(dead_code)]
                     let mut ctx = ::azure_core_test::recorded::start(
@@ -101,7 +101,7 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
                 ).await {
                     Ok(result) => result,
                     Err(_) => {
-                        ::tracing::error!("!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit", #fn_name_str, file!());
+                        ::azure_core_test::__macro_support::tracing::error!("!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit", #fn_name_str, file!());
                         Err(::azure_core::Error::with_message(
                             ::azure_core::error::ErrorKind::Other,
                             format!("test '{}' in {} timed out after 300s", #fn_name_str, file!()),

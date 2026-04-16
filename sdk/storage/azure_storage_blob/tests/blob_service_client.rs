@@ -216,9 +216,28 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     )
     .await?;
 
-    // Sleep in live mode to allow tags to be indexed on the service
-    if recording.test_mode() == TestMode::Live {
-        time::sleep(Duration::from_secs(5)).await;
+    // Poll until tags are indexed (eventually consistent). In playback mode the
+    // response is immediate so no retry is needed.
+    if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        loop {
+            time::sleep(Duration::from_secs(10)).await;
+            let response = service_client
+                .find_blobs_by_tags("\"foo\"='bar'", None)
+                .await?;
+            let segment = response.into_model()?;
+            if segment
+                .blobs
+                .as_ref()
+                .is_some_and(|b| b.iter().any(|blob| blob.name.as_ref() == Some(&blob1_name)))
+            {
+                break;
+            }
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "Timed out waiting for tag index to include \"{blob1_name}\""
+            );
+        }
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
@@ -226,11 +245,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"foo\"='bar'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
+            .any(|blob| blob.name.as_ref() == Some(&blob1_name)),
         "Failed to find \"{blob1_name}\" in filtered blob results."
     );
 
@@ -239,11 +258,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"fizz\"='buzz'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob2_name),
+            .any(|blob| blob.name.as_ref() == Some(&blob2_name)),
         "Failed to find \"{blob2_name}\" in filtered blob results."
     );
 
@@ -252,11 +271,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob3_name),
+            .any(|blob| blob.name.as_ref() == Some(&blob3_name)),
         "Failed to find \"{blob3_name}\" in filtered blob results."
     );
 
