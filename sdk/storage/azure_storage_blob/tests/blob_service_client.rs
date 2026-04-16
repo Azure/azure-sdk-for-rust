@@ -217,23 +217,24 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     .await?;
 
     // Poll in live/record mode until tag indexing is consistent (eventually consistent)
+    // Poll the last-uploaded blob's tag; if it's indexed, earlier blobs should be too.
     if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
         let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
         loop {
             let response = service_client
-                .find_blobs_by_tags("\"foo\"='bar'", None)
+                .find_blobs_by_tags("\"tagged\"='true'", None)
                 .await?;
             let segment = response.into_model()?;
             if segment.blobs.as_ref().is_some_and(|b| {
                 b.iter()
-                    .any(|blob| blob.name.as_ref().unwrap() == &blob1_name)
+                    .any(|blob| blob.name.as_ref().unwrap() == &blob3_name)
             }) {
                 break;
             }
             if tokio::time::Instant::now() >= deadline {
                 panic!("tag indexing did not converge within 60s");
             }
-            time::sleep(Duration::from_secs(10)).await;
+            time::sleep(Duration::from_secs(5)).await;
         }
     }
 
