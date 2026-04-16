@@ -318,7 +318,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
 
     async fn finalize(&self) -> Result<()> {
         let mut blocks = self.blocks.lock().await;
-        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        blocks.sort_by_key(|block| block.offset);
         let blocklist = BlockLookupList {
             latest: Some(
                 blocks
