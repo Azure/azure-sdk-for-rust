@@ -619,7 +619,7 @@ fn write_lock_error(_: impl std::error::Error) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::Other, "failed to lock variables for write")
 }
 
-/// Creates an HTTP client for tests with timeouts and no connection pooling.
+/// Creates an HTTP client for tests with a connect timeout and no connection pooling.
 ///
 /// CI pipelines intermittently hang on both Windows and Ubuntu. The default reqwest client has no
 /// timeouts and reuses pooled connections, which can cause indefinite hangs when:
@@ -628,14 +628,15 @@ fn write_lock_error(_: impl std::error::Error) -> azure_core::Error {
 /// - Any other transient issue stalls the request/response cycle
 ///
 /// This client mitigates all of these by:
-/// - Setting a hard per-request timeout (15s) so a hung request errors fast, leaving room for
-///   retries within the default 60s retry budget (`max_total_elapsed`)
-/// - Setting a short connect timeout (5s) so stalled connects fail even faster
+/// - Setting a connect timeout (5s) so stalled connections fail fast
 /// - Disabling idle connection pooling so every request gets a fresh connection
+///
+/// Note: we intentionally do NOT set a per-request `timeout()` because large
+/// transfers (e.g. `upload_large` at 40MB) legitimately exceed any short timeout,
+/// causing self-inflicted retries. The 300s per-test macro timeout is the backstop.
 fn new_test_http_client() -> Arc<dyn azure_core::http::HttpClient> {
     let client = reqwest::ClientBuilder::new()
         .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(15))
         .connect_timeout(Duration::from_secs(5))
         .pool_max_idle_per_host(0)
         .build()
