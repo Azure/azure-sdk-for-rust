@@ -49,6 +49,9 @@ jobs:
       Write-Host "DOCKER_TMPDIR: $($env:DOCKER_TMPDIR)"
       Write-Host "CARGO_HOME: $($env:CARGO_HOME)"
       Write-Host "TMPDIR: $($env:TMPDIR)"
+
+      # Ensure CARGO_HOME/bin is in the PATH so cargo-install works correctly
+      Write-Host "##vso[task.prependpath]$env:CARGO_HOME/bin"
     displayName: 'Show environment variables for tmp'
 
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
