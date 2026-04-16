@@ -362,7 +362,7 @@ mod tests {
             })
             .collect();
         sorted_transfer_partition_invocations
-            .sort_by(|(left_offset, _, _), (right_offset, _, _)| left_offset.cmp(right_offset));
+            .sort_by_key(|(left_offset, _, _)| *left_offset);
 
         assert_eq!(
             sorted_transfer_partition_invocations.len(),
