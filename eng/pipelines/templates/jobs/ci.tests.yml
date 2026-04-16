@@ -45,6 +45,12 @@ jobs:
     os: ${{ parameters.OSName }}
 
   steps:
+  - pwsh: |
+      Write-Host $env:DOCKER_TMPDIR
+      Write-Host $env:CARGO_HOME
+      Write-Host $env:TMPDIR
+    displayName: 'Show environment variables for tmp'
+
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
       paths:
