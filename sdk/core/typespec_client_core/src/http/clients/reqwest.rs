@@ -23,7 +23,7 @@ use typespec::error::{Error, ErrorKind, Result, ResultExt};
 ///   when calling this function.
 #[cfg_attr(
     not(any(feature = "reqwest_gzip", feature = "reqwest_deflate")),
-    allow(unused_variable)
+    allow(unused_variables)
 )]
 pub fn new_reqwest_client(options: Option<super::HttpClientOptions>) -> Arc<dyn HttpClient> {
     debug!("creating an http client using `reqwest`");
@@ -35,6 +35,10 @@ pub fn new_reqwest_client(options: Option<super::HttpClientOptions>) -> Arc<dyn 
     //
     // Due to the significant performance impact when disabling connection pooling,
     // it is enabled here by default. See the `azure_core` troubleshooting guide to disable pooling.
+    #[cfg_attr(
+        not(any(feature = "reqwest_gzip", feature = "reqwest_deflate")),
+        allow(unused_mut)
+    )]
     let mut builder = ::reqwest::ClientBuilder::new()
         // By default, reqwest will chase 3xx redirects up to 10 links. REST API guidelines
         // discourage services from using 3xx redirects, so disabling the reqwest redirect logic
