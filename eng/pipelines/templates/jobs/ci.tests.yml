@@ -29,6 +29,7 @@ jobs:
   variables:
     DOCKER_TMPDIR: $(Agent.TempDirectory)
     CARGO_HOME: $(Agent.TempDirectory)/cargo
+    TMPDIR: $(Agent.TempDirectory)
 
   strategy:
     matrix: $[ ${{ parameters.Matrix }} ]
