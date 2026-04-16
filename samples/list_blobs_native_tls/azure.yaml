@@ -1,6 +1,6 @@
-name: list-blobs-rustls-aws-lc
+name: list-blobs-native-tls
 metadata:
-  template: list-blobs-rustls-aws-lc@0.1.0
+  template: list-blobs-native-tls@0.1.0
 infra:
   provider: bicep
   path: infra

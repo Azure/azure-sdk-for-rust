@@ -61,7 +61,7 @@ default = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "reqwest_native_tls",
+  "reqwest_rustls",
   "tokio",
 ]
 debug = ["typespec_client_core/debug"]
@@ -71,7 +71,7 @@ hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
 reqwest_deflate = ["reqwest", "typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["reqwest", "typespec_client_core/reqwest_gzip"]
-reqwest_native_tls = ["reqwest", "typespec_client_core/reqwest_native_tls"]
+reqwest_rustls = ["reqwest", "typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
@@ -88,7 +88,7 @@ features = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "reqwest_native_tls",
+  "reqwest_rustls",
   "tokio",
   "xml",
 ]
