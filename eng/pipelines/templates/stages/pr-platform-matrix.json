@@ -5,7 +5,8 @@
       "ubuntu": {
         "OSVmImage": "env:LINUXVMIMAGE",
         "Pool": "env:LINUXPOOL",
-        "DOCKER_TMPDIR": "env:AGENT_TEMPDIRECTORY"
+        "DOCKER_TMPDIR": "env:AGENT_TEMPDIRECTORY",
+        "CARGO_HOME": "env:AGENT_TEMPDIRECTORY/cargo"
       },
       "windows": {
         "OSVmImage": "env:WINDOWSVMIMAGE",
