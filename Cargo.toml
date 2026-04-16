@@ -177,7 +177,7 @@ windows = { version = "0.62", default-features = false }
 zip = { version = "8.2", default-features = false, features = ["deflate"] }
 
 # Profile for running benchmarks
-# Inherits release optimisations but keeps debug symbols so that tools
+# Inherits release optimizations but keeps debug symbols so that tools
 # can produce annotated output.
 [profile.bench]
 inherits = "release"
