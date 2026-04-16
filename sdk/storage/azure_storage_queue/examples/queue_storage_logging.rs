@@ -53,14 +53,22 @@ use azure_core::{
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::AzureCliCredential;
 use azure_storage_queue::{models::QueueMessage, QueueServiceClient, QueueServiceClientOptions};
+use clap::Parser;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::{env, sync::Arc};
 use tracing_subscriber::EnvFilter;
 
+#[derive(Parser)]
+struct Args {
+    /// Enable OpenTelemetry distributed tracing (outputs spans to stdout).
+    #[arg(long)]
+    otel: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Check for --otel flag to enable OpenTelemetry distributed tracing.
-    let otel_enabled = env::args().any(|arg| arg == "--otel" || arg == "-otel");
+    let args = Args::parse();
+    let otel_enabled = args.otel;
 
     // Initialize tracing subscriber to see HTTP requests and responses.
     // When --otel is enabled, default to "warn" to reduce noise and let spans be visible.

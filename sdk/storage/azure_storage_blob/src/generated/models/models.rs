@@ -737,6 +737,7 @@ pub struct ContainerProperties {
 /// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
 /// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "CorsRule")]
 pub struct CorsRule {
     /// The allowed headers.
     #[serde(rename = "AllowedHeaders", skip_serializing_if = "Option::is_none")]

@@ -1,0 +1,71 @@
+name: Build Samples
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - samples/**
+  pull_request:
+    paths:
+      - samples/**
+  schedule:
+    - cron: '0 11 * * 6' # Saturday at 3:00 AM PST (11:00 AM UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-samples:
+    name: Build Samples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Register PMC repository
+        run: |
+          curl -sSL -O "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+          sudo dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+          sudo apt-get update
+
+      - name: Install Rust toolchain
+        run: rustup install
+
+      - name: Install dependencies
+        run: sudo apt-get install -y symcrypt
+
+      - name: Build all samples
+        run: |
+          failed=()
+          for dir in samples/*/; do
+            name=$(basename "$dir")
+            echo "::group::Building $name"
+            if cargo build --manifest-path "${dir}Cargo.toml" 2>&1; then
+              echo "✅ $name built successfully"
+            else
+              echo "::error::❌ $name failed to build"
+              failed+=("$name")
+            fi
+            echo "::endgroup::"
+          done
+
+          if [ ${#failed[@]} -ne 0 ]; then
+            echo ""
+            echo "::error::Build failures: ${failed[*]}"
+            echo "## Build Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The following samples failed to build:" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            for name in "${failed[@]}"; do
+              echo "- \`$name\`" >> "$GITHUB_STEP_SUMMARY"
+            done
+            exit 1
+          fi
+
+          echo "## Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "All samples built successfully." >> "$GITHUB_STEP_SUMMARY"

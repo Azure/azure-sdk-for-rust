@@ -40,8 +40,8 @@ pub trait QueueClientGetPropertiesResultHeaders: private::Sealed {
 }
 
 impl QueueClientGetPropertiesResultHeaders for Response<QueueClientGetPropertiesResult, NoFormat> {
-    /// The approximate number of messages in the queue. This number is not lower than the actual number of messages in the queue,
-    /// but could be higher.
+    /// The approximate number of messages in the queue. This number is not lower than the actual number of
+    /// messages in the queue, but could be higher.
     fn approximate_messages_count(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &APPROXIMATE_MESSAGES_COUNT)
     }

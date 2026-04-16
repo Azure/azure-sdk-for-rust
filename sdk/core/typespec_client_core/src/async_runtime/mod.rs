@@ -42,20 +42,40 @@ mod tests;
 /// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
 pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
-/// A `SpawnedTask` is a future that represents a running task.
-/// It can be awaited to block until the task has completed.
-pub type SpawnedTask = Pin<
-    Box<
-        dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>>
-            + Send
-            + 'static,
-    >,
->;
+/// A pinned, boxed [`AbortableTask`].
+///
+/// Returned by [`AsyncRuntime::spawn`]. Await it to wait for the task to
+/// complete, or call [`AbortableTask::abort`] to request cancellation.
+pub type SpawnedTask = Pin<Box<dyn AbortableTask>>;
 
-/// An Asynchronous Runtime.
+/// A future that represents a running task which can be cancelled.
 ///
-/// This trait defines the various
+/// Awaiting an `AbortableTask` blocks until the task completes and yields
+/// `Ok(())` on success or an error if the task panicked or otherwise failed.
 ///
+/// Call [`abort`](AbortableTask::abort) to request cancellation. The exact
+/// semantics are runtime-dependent:
+///
+/// * **Tokio** — calls [`JoinHandle::abort`](tokio::task::JoinHandle::abort),
+///   which cancels the task at the next `.await` point.
+/// * **std thread** — drops the join handle and marks the task as finished so
+///   that awaiting the future resolves immediately. The underlying thread may
+///   continue running, but the caller is no longer blocked on it.
+pub trait AbortableTask:
+    Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>> + Send
+{
+    /// Requests cancellation of the task.
+    ///
+    /// After calling `abort`, awaiting this future will resolve without waiting
+    /// for the spawned work to finish. Calling `abort` on an already-completed
+    /// task is a no-op.
+    fn abort(&self);
+}
+
+/// An asynchronous runtime.
+///
+/// This trait abstracts task spawning, sleeping, and yielding so that library
+/// code can remain runtime-agnostic.
 pub trait AsyncRuntime: Send + Sync {
     /// Spawn a task that executes a given future and returns the output.
     ///
@@ -151,17 +171,16 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 ///
 /// ```
 /// use typespec_client_core::async_runtime::{
-///     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
+///     set_async_runtime, AbortableTask, AsyncRuntime, TaskFuture, SpawnedTask};
 /// use std::sync::Arc;
-/// use futures::FutureExt;
 ///
 /// struct CustomRuntime;
 ///
 /// impl AsyncRuntime for CustomRuntime {
-///    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+///    fn spawn(&self, _f: TaskFuture) -> SpawnedTask {
 ///      unimplemented!("Custom spawn not implemented");
 ///    }
-///    fn sleep(&self, duration: typespec_client_core::time::Duration) -> TaskFuture {
+///    fn sleep(&self, _duration: typespec_client_core::time::Duration) -> TaskFuture {
 ///      unimplemented!("Custom sleep not implemented");
 ///    }
 ///    fn yield_now(&self) -> TaskFuture {
