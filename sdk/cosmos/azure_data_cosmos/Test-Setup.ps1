@@ -29,6 +29,8 @@ if($IsAzDo) {
         $env:AZURE_COSMOS_TEST_MODE = "required"
     } else {
         $env:AZURE_COSMOS_TEST_MODE = "skipped"
+        Write-Host "Skipping Cosmos DB Emulator setup on non-Windows Azure DevOps agents."
+        return
     }
 }
 
