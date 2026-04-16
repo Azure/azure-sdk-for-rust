@@ -73,9 +73,9 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
                 Ok(result) => result,
                 Err(_) => {
                     eprintln!("\n!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit\n", #fn_name_str, file!());
-                    Err(format!(
-                        "test '{}' in {} timed out after 300s",
-                        #fn_name_str, file!(),
+                    Err(::azure_core::Error::with_message(
+                        ::azure_core::error::ErrorKind::Other,
+                        format!("test '{}' in {} timed out after 300s", #fn_name_str, file!()),
                     ).into())
                 }
             }
@@ -102,9 +102,9 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
                     Ok(result) => result,
                     Err(_) => {
                         eprintln!("\n!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit\n", #fn_name_str, file!());
-                        Err(format!(
-                            "test '{}' in {} timed out after 300s",
-                            #fn_name_str, file!(),
+                        Err(::azure_core::Error::with_message(
+                            ::azure_core::error::ErrorKind::Other,
+                            format!("test '{}' in {} timed out after 300s", #fn_name_str, file!()),
                         ).into())
                     }
                 }

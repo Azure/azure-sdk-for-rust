@@ -217,6 +217,13 @@ where
                 }
                 Err(error) => {
                     if matches!(error.kind(), &ErrorKind::Io | &ErrorKind::Connection) {
+                        eprintln!(
+                            "[retry] transport error on attempt {} for {} {}: {}",
+                            retry_count + 1,
+                            request.method(),
+                            request.url(),
+                            error,
+                        );
                         debug!(
                             "transport error occurred when making request which will be retried: {}",
                             error
@@ -236,12 +243,28 @@ where
             if self.is_expired(time_since_start, retry_count) {
                 return match last_result {
                     Ok(result) => Ok(result),
-                    Err(last_error) => Err(last_error.with_context(
-                        "retry policy expired and the request will no longer be retried",
-                    )),
+                    Err(last_error) => {
+                        eprintln!(
+                            "[retry] giving up on {} {} after {} attempts ({:.1}s elapsed): {}",
+                            request.method(),
+                            request.url(),
+                            retry_count + 1,
+                            time_since_start.as_seconds_f64(),
+                            last_error,
+                        );
+                        Err(last_error.with_context(
+                            "retry policy expired and the request will no longer be retried",
+                        ))
+                    }
                 };
             }
             retry_count += 1;
+            eprintln!(
+                "[retry] will retry {} {} (attempt {})",
+                request.method(),
+                request.url(),
+                retry_count + 1,
+            );
 
             self.wait(retry_count, retry_after).await;
         }
