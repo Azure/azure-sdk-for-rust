@@ -361,8 +361,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        sorted_transfer_partition_invocations
-            .sort_by_key(|(left_offset, _, _)| *left_offset);
+        sorted_transfer_partition_invocations.sort_by_key(|(left_offset, _, _)| *left_offset);
 
         assert_eq!(
             sorted_transfer_partition_invocations.len(),
