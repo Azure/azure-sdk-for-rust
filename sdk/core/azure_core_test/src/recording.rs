@@ -619,19 +619,25 @@ fn write_lock_error(_: impl std::error::Error) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::Other, "failed to lock variables for write")
 }
 
-/// Creates an HTTP client for tests with connection timeouts configured.
+/// Creates an HTTP client for tests with timeouts and no connection pooling.
 ///
-/// Without these, a stalled TCP connect (e.g., due to a bad socket state on Windows CI agents)
-/// blocks the request forever since the default reqwest client has no connect timeout. The retry
-/// policy only triggers on errors, but a hung connect never errors - it just blocks.
+/// CI pipelines intermittently hang on both Windows and Ubuntu. The default reqwest client has no
+/// timeouts and reuses pooled connections, which can cause indefinite hangs when:
+/// - A pooled connection becomes stale or its socket enters a bad state
+/// - The test proxy becomes unresponsive during a request
+/// - Any other transient issue stalls the request/response cycle
 ///
-/// A short connect timeout (10s) ensures a bad connection errors quickly so the retry policy
-/// can establish a fresh connection. Most connects to localhost or Azure complete in under 1s.
+/// This client mitigates all of these by:
+/// - Setting a hard per-request timeout (15s) so a hung request errors fast, leaving room for
+///   retries within the default 60s retry budget (`max_total_elapsed`)
+/// - Setting a short connect timeout (5s) so stalled connects fail even faster
+/// - Disabling idle connection pooling so every request gets a fresh connection
 fn new_test_http_client() -> Arc<dyn azure_core::http::HttpClient> {
     let client = reqwest::ClientBuilder::new()
         .redirect(reqwest::redirect::Policy::none())
-        .connect_timeout(Duration::from_secs(10))
-        .pool_idle_timeout(Duration::from_secs(90))
+        .timeout(Duration::from_secs(15))
+        .connect_timeout(Duration::from_secs(5))
+        .pool_max_idle_per_host(0)
         .build()
         .expect("failed to build test `reqwest` client");
     Arc::new(client)
