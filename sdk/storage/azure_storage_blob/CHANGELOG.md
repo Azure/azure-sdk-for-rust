@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Responses are no longer automatically decompressed.
+
 ### Bugs Fixed
 
 ### Other Changes
@@ -20,7 +22,6 @@
 ### Breaking Changes
 
 - Removed `format_page_range()`. Use `HttpRange::new(offset, length)` or `HttpRange::from_offset(offset)` instead.
-- Responses are no longer automatically decompressed.
 - Revised `download()` on `BlobClient` with the following breaking changes:
   - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
   - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.

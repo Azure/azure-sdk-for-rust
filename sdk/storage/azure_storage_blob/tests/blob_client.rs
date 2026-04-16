@@ -653,9 +653,9 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-#[recorded::test]
-#[ignore = "needs to be re-recorded by service team"]
+#[recorded::test(playback)]
 async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires legal hold feature enabled.
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -689,9 +689,9 @@ async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
-#[ignore = "needs to be re-recorded by service team"]
+#[recorded::test(playback)]
 async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires ImmutableStorageWithVersioning feature enabled.
     // Recording Setup
     let recording = ctx.recording();
     let container_client =

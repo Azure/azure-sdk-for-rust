@@ -124,9 +124,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Next steps
+## Remarks
 
-### Provide feedback
+### Automatic decompression with custom HTTP transports
+
+By default, all storage clients create an HTTP transport with automatic decompression disabled,
+which is required for partitioned (multi-part) downloads to work correctly. If you set a custom transport
+in client options (e.g., a `reqwest::Client` with gzip enabled) without disabling automatic
+decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download).
+If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior.
+
+## Next Steps
+
+### Provide Feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
 

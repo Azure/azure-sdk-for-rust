@@ -4,8 +4,11 @@
 
 ### Features Added
 
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
 ### Breaking Changes
 
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
 - `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression - still enabled by default if `reqwest_gzip` or `reqwest_deflate` features are enabled.
 
 ### Bugs Fixed
