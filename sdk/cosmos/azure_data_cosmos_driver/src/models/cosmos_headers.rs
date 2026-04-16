@@ -140,13 +140,47 @@ impl CosmosRequestHeaders {
 pub struct OfferAutoscaleSettings {
     /// Maximum throughput in RU/s for autoscale.
     pub max_throughput: usize,
+
+    /// Auto-upgrade policy for scaling behavior.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
 }
 
 impl OfferAutoscaleSettings {
     /// Creates autoscale settings with the given maximum throughput.
     pub fn new(max_throughput: usize) -> Self {
-        Self { max_throughput }
+        Self {
+            max_throughput,
+            auto_upgrade_policy: None,
+        }
     }
+
+    /// Sets the auto-upgrade policy with the given increment percent.
+    pub fn with_increment_percent(mut self, increment_percent: usize) -> Self {
+        self.auto_upgrade_policy = Some(AutoscaleAutoUpgradePolicy {
+            throughput_policy: Some(AutoscaleThroughputPolicy { increment_percent }),
+        });
+        self
+    }
+}
+
+/// Auto-upgrade policy for autoscale throughput.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct AutoscaleAutoUpgradePolicy {
+    /// Throughput scaling policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub throughput_policy: Option<AutoscaleThroughputPolicy>,
+}
+
+/// Throughput scaling policy for autoscale.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct AutoscaleThroughputPolicy {
+    /// Percentage to increment throughput during auto-upgrade.
+    pub increment_percent: usize,
 }
 
 /// Cosmos-specific headers extracted from HTTP response.

@@ -156,11 +156,15 @@ impl ThroughputProperties {
                 headers.offer_throughput = Some(t);
             }
             (_, Some(ap)) => {
-                headers.offer_autopilot_settings = Some(
-                    azure_data_cosmos_driver::models::OfferAutoscaleSettings::new(
-                        ap.max_throughput,
-                    ),
+                let mut settings = azure_data_cosmos_driver::models::OfferAutoscaleSettings::new(
+                    ap.max_throughput,
                 );
+                if let Some(policy) = ap.auto_upgrade_policy.as_ref() {
+                    if let Some(tp) = policy.throughput_policy.as_ref() {
+                        settings = settings.with_increment_percent(tp.increment_percent);
+                    }
+                }
+                headers.offer_autopilot_settings = Some(settings);
             }
             _ => {}
         }
