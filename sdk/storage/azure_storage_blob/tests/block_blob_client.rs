@@ -431,7 +431,7 @@ async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 #[ignore = "Temporarily ignoring until we can figure out how to get this to not take down the whole test pipeline."]
 async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
