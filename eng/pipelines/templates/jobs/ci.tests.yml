@@ -46,9 +46,9 @@ jobs:
 
   steps:
   - pwsh: |
-      Write-Host $env:DOCKER_TMPDIR
-      Write-Host $env:CARGO_HOME
-      Write-Host $env:TMPDIR
+      Write-Host "DOCKER_TMPDIR: $($env:DOCKER_TMPDIR)"
+      Write-Host "CARGO_HOME: $($env:CARGO_HOME)"
+      Write-Host "TMPDIR: $($env:TMPDIR)"
     displayName: 'Show environment variables for tmp'
 
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
