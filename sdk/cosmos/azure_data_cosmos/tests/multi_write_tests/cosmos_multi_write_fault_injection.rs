@@ -360,7 +360,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
         .build();
 
     let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::CreateItem)
+        .with_operation_type(FaultOperationType::UpsertItem)
         .with_region(HUB_REGION)
         .build();
 
@@ -401,7 +401,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             let pk = format!("Partition-{}", unique_id);
 
             // Try to create using fault client - should  succeed via retry
-            let result = fault_container_client.create_item(&pk, &item, None).await;
+            let result = fault_container_client.upsert_item(&pk, &item, None).await;
 
             assert!(
                 result.is_ok(),

@@ -1050,10 +1050,12 @@ pub async fn fault_injection_pkrange_readfeed_succeeds() -> Result<(), Box<dyn E
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            // Create an item — this triggers partition key range resolution
-            // through the fault client's pipeline where the spy rule can observe.
+            // Upsert an item — this triggers partition key range resolution
+            // through the fault client's SDK pipeline where the spy rule can observe.
+            // NOTE: create_item is cut over to the driver which handles routing
+            // via the gateway and does not resolve pkranges through the SDK pipeline.
             fault_container_client
-                .create_item(&pk, &item, None)
+                .upsert_item(&pk, item, None)
                 .await?;
 
             // The spy rule should have been hit during the pkrange fetch.

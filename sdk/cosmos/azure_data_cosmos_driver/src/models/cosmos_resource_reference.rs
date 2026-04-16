@@ -110,6 +110,12 @@ impl CosmosResourceReference {
     pub fn link_for_signing(&self) -> String {
         if self.is_feed {
             self.parent_signing_link()
+        } else if self.resource_type == ResourceType::Offer {
+            // Offers use lowercase RID as the signing link (no path prefix).
+            self.id
+                .as_ref()
+                .map(|id| Self::identifier_str(id).to_lowercase())
+                .unwrap_or_default()
         } else {
             self.resolved_resource_link()
         }

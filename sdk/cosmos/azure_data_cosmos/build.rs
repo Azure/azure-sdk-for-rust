@@ -6,5 +6,5 @@
 // unknown cfg names are warned/denied unless explicitly declared via check-cfg.
 fn main() {
     // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
-    println!("cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"multi_write\"))");
+    println!("cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"multi_write\", \"split\"))");
 }

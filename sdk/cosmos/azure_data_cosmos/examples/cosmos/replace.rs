@@ -114,7 +114,8 @@ impl ReplaceCommand {
                 let throughput_properties = throughput_options.try_into()?;
                 let db_client = client.database_client(&database);
                 let new_throughput = db_client
-                    .replace_throughput(throughput_properties, None)
+                    .begin_replace_throughput(throughput_properties, None)
+                    .await?
                     .await?
                     .into_model()?;
                 println!("New Throughput:");
@@ -130,7 +131,8 @@ impl ReplaceCommand {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container).await?;
                 let new_throughput = container_client
-                    .replace_throughput(throughput_properties, None)
+                    .begin_replace_throughput(throughput_properties, None)
+                    .await?
                     .await?
                     .into_model()?;
                 println!("New Throughput:");
