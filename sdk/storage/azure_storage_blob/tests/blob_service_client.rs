@@ -265,9 +265,9 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     Ok(())
 }
 
-#[recorded::test]
-#[ignore = "needs to be re-recorded by service team"]
+#[recorded::test(playback)]
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires a Storage account with secondary endpoint enabled.
     // Recording Setup
     let recording = ctx.recording();
     let mut options = ClientOptions::default();

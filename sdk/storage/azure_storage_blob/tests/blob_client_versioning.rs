@@ -349,9 +349,9 @@ async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
-#[recorded::test]
-#[ignore = "needs to be re-recorded by service team"]
+#[recorded::test(playback)]
 async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires ImmutableStorageWithVersioning feature enabled.
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
