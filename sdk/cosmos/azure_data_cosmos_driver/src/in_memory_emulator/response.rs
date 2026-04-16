@@ -6,6 +6,8 @@
 use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
 
+use std::time::Instant;
+
 static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
@@ -16,6 +18,8 @@ static VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
 static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
 static RETRY_AFTER: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
+static LSN: HeaderName = HeaderName::from_static("lsn");
+static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
 #[allow(dead_code)]
 static CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-content-path");
 #[allow(dead_code)]
@@ -28,10 +32,11 @@ pub(crate) struct ResponseBuilder {
     status: StatusCode,
     headers: Headers,
     body: Vec<u8>,
+    start: Instant,
 }
 
 impl ResponseBuilder {
-    pub fn new(status: StatusCode) -> Self {
+    pub fn new(status: StatusCode, start: Instant) -> Self {
         let mut headers = Headers::new();
         headers.insert(
             CONTENT_TYPE.clone(),
@@ -48,6 +53,7 @@ impl ResponseBuilder {
             status,
             headers,
             body: Vec::new(),
+            start,
         }
     }
 
@@ -80,6 +86,12 @@ impl ResponseBuilder {
     pub fn with_item_count(mut self, count: u32) -> Self {
         self.headers
             .insert(ITEM_COUNT.clone(), HeaderValue::from(count.to_string()));
+        self
+    }
+
+    pub fn with_lsn(mut self, lsn: u64) -> Self {
+        self.headers
+            .insert(LSN.clone(), HeaderValue::from(lsn.to_string()));
         self
     }
 
@@ -118,7 +130,13 @@ impl ResponseBuilder {
     }
 
     pub fn build(self) -> AsyncRawResponse {
-        AsyncRawResponse::from_bytes(self.status, self.headers, self.body)
+        let mut headers = self.headers;
+        let elapsed_ms = self.start.elapsed().as_secs_f64() * 1000.0;
+        headers.insert(
+            SERVER_DURATION_MS.clone(),
+            HeaderValue::from(format!("{:.2}", elapsed_ms)),
+        );
+        AsyncRawResponse::from_bytes(self.status, headers, self.body)
     }
 }
 
@@ -128,8 +146,9 @@ pub(crate) fn success_response(
     body: &serde_json::Value,
     charge: f64,
     session_token: &str,
+    start: Instant,
 ) -> ResponseBuilder {
-    ResponseBuilder::new(status)
+    ResponseBuilder::new(status, start)
         .with_request_charge(charge)
         .with_session_token(session_token)
         .with_json_body(body)
@@ -143,13 +162,14 @@ pub(crate) fn error_response(
     message: &str,
     charge: f64,
     session_token: &str,
+    start: Instant,
 ) -> ResponseBuilder {
     let body = serde_json::json!({
         "code": code,
         "message": message
     });
 
-    let mut builder = ResponseBuilder::new(status)
+    let mut builder = ResponseBuilder::new(status, start)
         .with_request_charge(charge)
         .with_session_token(session_token)
         .with_json_body(&body);

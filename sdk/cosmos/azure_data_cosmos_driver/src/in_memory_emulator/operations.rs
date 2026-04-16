@@ -4,6 +4,7 @@
 //! Point operation and control-plane operation handlers.
 
 use std::sync::Arc;
+use std::time::Instant;
 
 use azure_core::http::{AsyncRawResponse, StatusCode};
 
@@ -30,74 +31,81 @@ pub(crate) async fn handle_operation(
     parsed: &ParsedRequest,
     request_body: &[u8],
 ) -> AsyncRawResponse {
+    let start = Instant::now();
     match &parsed.operation {
-        OperationType::ReadAccount => handle_read_account(store),
-        OperationType::CreateDatabase => handle_create_database(store, region_name, request_body),
+        OperationType::ReadAccount => handle_read_account(store, start),
+        OperationType::CreateDatabase => {
+            handle_create_database(store, region_name, request_body, start)
+        }
         OperationType::ReadDatabase => {
-            handle_read_database(store, region_name, parsed.db_id.as_deref().unwrap_or(""))
+            handle_read_database(store, region_name, parsed.db_id.as_deref().unwrap_or(""), start)
         }
         OperationType::DeleteDatabase => {
-            handle_delete_database(store, region_name, parsed.db_id.as_deref().unwrap_or(""))
+            handle_delete_database(store, region_name, parsed.db_id.as_deref().unwrap_or(""), start)
         }
         OperationType::CreateContainer => handle_create_container(
             store,
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
             request_body,
+            start,
         ),
         OperationType::ReadContainer => handle_read_container(
             store,
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
             parsed.coll_id.as_deref().unwrap_or(""),
+            start,
         ),
         OperationType::DeleteContainer => handle_delete_container(
             store,
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
             parsed.coll_id.as_deref().unwrap_or(""),
+            start,
         ),
         OperationType::ReadPKRanges => handle_read_pkranges(
             store,
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
             parsed.coll_id.as_deref().unwrap_or(""),
+            start,
         ),
         OperationType::Create => {
             if !store.config().is_write_region(region_name) {
-                return write_forbidden_response();
+                return write_forbidden_response(start);
             }
-            handle_create(store, region_name, parsed, request_body).await
+            handle_create(store, region_name, parsed, request_body, start).await
         }
-        OperationType::Read => handle_read(store, region_name, parsed),
+        OperationType::Read => handle_read(store, region_name, parsed, start),
         OperationType::Replace => {
             if !store.config().is_write_region(region_name) {
-                return write_forbidden_response();
+                return write_forbidden_response(start);
             }
-            handle_replace(store, region_name, parsed, request_body).await
+            handle_replace(store, region_name, parsed, request_body, start).await
         }
         OperationType::Upsert => {
             if !store.config().is_write_region(region_name) {
-                return write_forbidden_response();
+                return write_forbidden_response(start);
             }
-            handle_upsert(store, region_name, parsed, request_body).await
+            handle_upsert(store, region_name, parsed, request_body, start).await
         }
         OperationType::Delete => {
             if !store.config().is_write_region(region_name) {
-                return write_forbidden_response();
+                return write_forbidden_response(start);
             }
-            handle_delete(store, region_name, parsed).await
+            handle_delete(store, region_name, parsed, start).await
         }
-        OperationType::Query => unsupported_response("Query"),
-        OperationType::Unsupported(desc) => unsupported_response(desc),
+        OperationType::Query => unsupported_response("Query", start),
+        OperationType::Unsupported(desc) => unsupported_response(desc, start),
     }
 }
 
 // --- Control-Plane Operations ---
 
-fn handle_read_account(store: &Arc<EmulatorStore>) -> AsyncRawResponse {
+fn handle_read_account(store: &Arc<EmulatorStore>, start: Instant) -> AsyncRawResponse {
     let body = account_properties_to_json(store.config());
-    success_response(StatusCode::Ok, &body, 0.0, "")
+    success_response(StatusCode::Ok, &body, 0.0, "", start)
         .with_item_count(1)
         .build()
 }
@@ -106,6 +114,7 @@ fn handle_create_database(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     request_body: &[u8],
+    start: Instant,
 ) -> AsyncRawResponse {
     let body: serde_json::Value = match serde_json::from_slice(request_body) {
         Ok(v) => v,
@@ -117,6 +126,7 @@ fn handle_create_database(
                 "Invalid JSON body",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -132,6 +142,7 @@ fn handle_create_database(
                 "Missing 'id' field in database creation request",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -150,6 +161,7 @@ fn handle_create_database(
                 ),
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -157,7 +169,7 @@ fn handle_create_database(
 
     let meta = store.create_database_internal(&db_id);
     let response_body = database_to_json(&meta);
-    success_response(StatusCode::Created, &response_body, 1.0, "")
+    success_response(StatusCode::Created, &response_body, 1.0, "", start)
         .with_etag(&meta.etag)
         .build()
 }
@@ -166,16 +178,17 @@ fn handle_read_database(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     db_id: &str,
+    start: Instant,
 ) -> AsyncRawResponse {
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     match region_ref.get_database(db_id) {
         Some(meta) => {
             let body = database_to_json(&meta);
-            success_response(StatusCode::Ok, &body, 1.0, "")
+            success_response(StatusCode::Ok, &body, 1.0, "", start)
                 .with_etag(&meta.etag)
                 .build()
         }
@@ -189,6 +202,7 @@ fn handle_read_database(
             ),
             1.0,
             "",
+            start,
         )
         .build(),
     }
@@ -198,6 +212,7 @@ fn handle_delete_database(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     db_id: &str,
+    start: Instant,
 ) -> AsyncRawResponse {
     // Delete from all regions (cascade)
     let exists = store
@@ -216,6 +231,7 @@ fn handle_delete_database(
             ),
             1.0,
             "",
+            start,
         )
         .build();
     }
@@ -227,7 +243,7 @@ fn handle_delete_database(
         }
     }
 
-    ResponseBuilder::new(StatusCode::NoContent)
+    ResponseBuilder::new(StatusCode::NoContent, start)
         .with_request_charge(1.0)
         .with_session_token("")
         .build()
@@ -238,11 +254,12 @@ fn handle_create_container(
     region_name: &str,
     db_id: &str,
     request_body: &[u8],
+    start: Instant,
 ) -> AsyncRawResponse {
     // Verify database exists
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     if !region_ref.database_exists(db_id) {
@@ -253,6 +270,7 @@ fn handle_create_container(
             &format!("Database '{}' does not exist", db_id),
             1.0,
             "",
+            start,
         )
         .build();
     }
@@ -267,6 +285,7 @@ fn handle_create_container(
                 "Invalid JSON body",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -282,6 +301,7 @@ fn handle_create_container(
                 "Missing 'id' field",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -299,6 +319,7 @@ fn handle_create_container(
                     "Invalid partitionKey definition",
                     1.0,
                     "",
+                    start,
                 )
                 .build();
             }
@@ -311,6 +332,7 @@ fn handle_create_container(
                 "Missing partitionKey definition in container creation request",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -325,6 +347,7 @@ fn handle_create_container(
             &format!("Container '{}' already exists", coll_id),
             1.0,
             "",
+            start,
         )
         .build();
     }
@@ -336,7 +359,7 @@ fn handle_create_container(
         ContainerConfig::default(),
     );
     let response_body = container_to_json(&meta);
-    success_response(StatusCode::Created, &response_body, 1.0, "")
+    success_response(StatusCode::Created, &response_body, 1.0, "", start)
         .with_etag(&meta.etag)
         .build()
 }
@@ -346,10 +369,11 @@ fn handle_read_container(
     region_name: &str,
     db_id: &str,
     coll_id: &str,
+    start: Instant,
 ) -> AsyncRawResponse {
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     if !region_ref.database_exists(db_id) {
@@ -360,6 +384,7 @@ fn handle_read_container(
             &format!("Database '{}' does not exist", db_id),
             1.0,
             "",
+            start,
         )
         .build();
     }
@@ -367,7 +392,7 @@ fn handle_read_container(
     match region_ref.get_container(db_id, coll_id) {
         Some(snapshot) => {
             let body = container_to_json(&snapshot.metadata);
-            success_response(StatusCode::Ok, &body, 1.0, "")
+            success_response(StatusCode::Ok, &body, 1.0, "", start)
                 .with_etag(&snapshot.metadata.etag)
                 .build()
         }
@@ -378,6 +403,7 @@ fn handle_read_container(
             &format!("Container '{}' does not exist", coll_id),
             1.0,
             "",
+            start,
         )
         .build(),
     }
@@ -388,6 +414,7 @@ fn handle_delete_container(
     region_name: &str,
     db_id: &str,
     coll_id: &str,
+    start: Instant,
 ) -> AsyncRawResponse {
     let exists = store
         .region(region_name)
@@ -402,6 +429,7 @@ fn handle_delete_container(
             &format!("Container '{}' does not exist", coll_id),
             1.0,
             "",
+            start,
         )
         .build();
     }
@@ -413,7 +441,7 @@ fn handle_delete_container(
         }
     }
 
-    ResponseBuilder::new(StatusCode::NoContent)
+    ResponseBuilder::new(StatusCode::NoContent, start)
         .with_request_charge(1.0)
         .with_session_token("")
         .build()
@@ -424,10 +452,11 @@ fn handle_read_pkranges(
     region_name: &str,
     db_id: &str,
     coll_id: &str,
+    start: Instant,
 ) -> AsyncRawResponse {
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     if !region_ref.database_exists(db_id) {
@@ -438,6 +467,7 @@ fn handle_read_pkranges(
             &format!("Database '{}' does not exist", db_id),
             1.0,
             "",
+            start,
         )
         .build();
     }
@@ -445,7 +475,7 @@ fn handle_read_pkranges(
     region_ref
         .with_container(db_id, coll_id, |state| {
             let body = pkranges_to_json(state);
-            success_response(StatusCode::Ok, &body, 1.0, "")
+            success_response(StatusCode::Ok, &body, 1.0, "", start)
                 .with_item_count(state.physical_partitions.len() as u32)
                 .build()
         })
@@ -457,6 +487,7 @@ fn handle_read_pkranges(
                 &format!("Container '{}' does not exist", coll_id),
                 1.0,
                 "",
+                start,
             )
             .build()
         })
@@ -496,7 +527,7 @@ fn session_token_for(partition: &PhysicalPartition, region_id: u64) -> String {
 }
 
 /// Returns a 410/1007 response if the partition is locked (split/merge in progress).
-fn check_partition_lock(partition: &PhysicalPartition) -> Option<AsyncRawResponse> {
+fn check_partition_lock(partition: &PhysicalPartition, start: Instant) -> Option<AsyncRawResponse> {
     if partition.is_locked() {
         Some(
             error_response(
@@ -506,6 +537,7 @@ fn check_partition_lock(partition: &PhysicalPartition) -> Option<AsyncRawRespons
                 "Partition is being split or merged.",
                 0.0,
                 "",
+                start,
             )
             .build(),
         )
@@ -519,6 +551,7 @@ fn check_throttle(
     partition: &PhysicalPartition,
     charge: f64,
     throttling_enabled: bool,
+    start: Instant,
 ) -> Option<AsyncRawResponse> {
     if !throttling_enabled {
         return None;
@@ -533,6 +566,7 @@ fn check_throttle(
                     "Request rate is large. Please retry after sometime.",
                     0.0,
                     "",
+                    start,
                 )
                 .with_retry_after_ms(retry_after_ms)
                 .build(),
@@ -547,6 +581,7 @@ async fn handle_create(
     region_name: &str,
     parsed: &ParsedRequest,
     request_body: &[u8],
+    start: Instant,
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
@@ -561,6 +596,7 @@ async fn handle_create(
                 "Invalid JSON body",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -576,6 +612,7 @@ async fn handle_create(
                 "Missing 'id' field in document",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -583,7 +620,7 @@ async fn handle_create(
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
@@ -599,13 +636,14 @@ async fn handle_create(
                     "No partition found for EPK",
                     1.0,
                     "",
+                    start,
                 )
                 .build());
             }
         };
 
         // Check partition lock (split/merge in progress)
-        if let Some(response) = check_partition_lock(partition) {
+        if let Some(response) = check_partition_lock(partition, start) {
             return Err(response);
         }
 
@@ -626,6 +664,7 @@ async fn handle_create(
                         ),
                         1.0,
                         &token,
+                        start,
                     )
                     .build());
                 }
@@ -676,7 +715,7 @@ async fn handle_create(
             .compute_create_ru(request_body.len(), num_props);
 
         // Check throttle
-        if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled()) {
+        if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled(), start) {
             return Err(response);
         }
 
@@ -689,20 +728,22 @@ async fn handle_create(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             if parsed.content_response_on_write {
-                success_response(StatusCode::Created, &response_body, charge, &token)
+                success_response(StatusCode::Created, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
                     .with_item_count(1)
+                    .with_lsn(doc.lsn)
                     .build()
             } else {
-                ResponseBuilder::new(StatusCode::Created)
+                ResponseBuilder::new(StatusCode::Created, start)
                     .with_request_charge(charge)
                     .with_session_token(&token)
                     .with_etag(&doc.etag)
+                    .with_lsn(doc.lsn)
                     .build()
             }
         }
         Some(Err(response)) => response,
-        None => container_not_found(db_id, coll_id),
+        None => container_not_found(db_id, coll_id, start),
     }
 }
 
@@ -710,6 +751,7 @@ fn handle_read(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
+    start: Instant,
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
@@ -717,7 +759,7 @@ fn handle_read(
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
@@ -734,6 +776,7 @@ fn handle_read(
                     "No partition found for EPK",
                     1.0,
                     "",
+                    start,
                 )
                 .build());
             }
@@ -743,7 +786,7 @@ fn handle_read(
         let token = session_token_for(partition, region_id);
 
         // Check partition lock
-        if let Some(response) = check_partition_lock(partition) {
+        if let Some(response) = check_partition_lock(partition, start) {
             return Err(response);
         }
 
@@ -756,6 +799,7 @@ fn handle_read(
                 "The read session is not available for the input session token.",
                 1.0,
                 &token,
+                start,
             )
             .build());
         }
@@ -775,6 +819,7 @@ fn handle_read(
                                 "The read session is not available for the input session token.",
                                 1.0,
                                 &token,
+                                start,
                             )
                             .build());
                         }
@@ -788,6 +833,7 @@ fn handle_read(
                                 "The read session is not available for the input session token.",
                                 1.0,
                                 &token,
+                                start,
                             )
                             .build());
                         }
@@ -804,7 +850,8 @@ fn handle_read(
                     .config()
                     .ru_model()
                     .compute_read_ru(serde_json::to_vec(&doc.body).unwrap_or_default().len());
-                return Ok((doc.body.clone(), doc.etag.clone(), token, charge));
+                let lsn = partition.current_lsn();
+                return Ok((doc.body.clone(), doc.etag.clone(), token, charge, lsn));
             }
         }
 
@@ -818,19 +865,21 @@ fn handle_read(
             ),
             1.0,
             &token,
+            start,
         )
         .build())
     });
 
     match result {
-        Some(Ok((body, etag, token, charge))) => {
-            success_response(StatusCode::Ok, &body, charge, &token)
+        Some(Ok((body, etag, token, charge, lsn))) => {
+            success_response(StatusCode::Ok, &body, charge, &token, start)
                 .with_etag(&etag)
                 .with_item_count(1)
+                .with_lsn(lsn)
                 .build()
         }
         Some(Err(response)) => response,
-        None => container_not_found(db_id, coll_id),
+        None => container_not_found(db_id, coll_id, start),
     }
 }
 
@@ -839,6 +888,7 @@ async fn handle_replace(
     region_name: &str,
     parsed: &ParsedRequest,
     request_body: &[u8],
+    start: Instant,
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
@@ -854,6 +904,7 @@ async fn handle_replace(
                 "Invalid JSON body",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -861,7 +912,7 @@ async fn handle_replace(
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
@@ -877,13 +928,14 @@ async fn handle_replace(
                     "No partition found for EPK",
                     1.0,
                     "",
+                    start,
                 )
                 .build());
             }
         };
 
         // Check partition lock (split/merge in progress)
-        if let Some(response) = check_partition_lock(partition) {
+        if let Some(response) = check_partition_lock(partition, start) {
             return Err(response);
         }
 
@@ -905,6 +957,7 @@ async fn handle_replace(
                     ),
                     1.0,
                     &token,
+                    start,
                 )
                 .build());
             }
@@ -923,6 +976,7 @@ async fn handle_replace(
                     ),
                     1.0,
                     &token,
+                    start,
                 )
                 .build());
             }
@@ -938,6 +992,7 @@ async fn handle_replace(
                     "One of the specified pre-condition is not met.",
                     1.0,
                     &token,
+                    start,
                 )
                 .build());
             }
@@ -975,7 +1030,7 @@ async fn handle_replace(
 
         // Check throttle
         if let Some(response) =
-            check_throttle(partition, charge, store.config().throttling_enabled())
+            check_throttle(partition, charge, store.config().throttling_enabled(), start)
         {
             return Err(response);
         }
@@ -988,20 +1043,22 @@ async fn handle_replace(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             if parsed.content_response_on_write {
-                success_response(StatusCode::Ok, &response_body, charge, &token)
+                success_response(StatusCode::Ok, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
                     .with_item_count(1)
+                    .with_lsn(doc.lsn)
                     .build()
             } else {
-                ResponseBuilder::new(StatusCode::Ok)
+                ResponseBuilder::new(StatusCode::Ok, start)
                     .with_request_charge(charge)
                     .with_session_token(&token)
                     .with_etag(&doc.etag)
+                    .with_lsn(doc.lsn)
                     .build()
             }
         }
         Some(Err(response)) => response,
-        None => container_not_found(db_id, coll_id),
+        None => container_not_found(db_id, coll_id, start),
     }
 }
 
@@ -1010,6 +1067,7 @@ async fn handle_upsert(
     region_name: &str,
     parsed: &ParsedRequest,
     request_body: &[u8],
+    start: Instant,
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
@@ -1024,6 +1082,7 @@ async fn handle_upsert(
                 "Invalid JSON body",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -1039,6 +1098,7 @@ async fn handle_upsert(
                 "Missing 'id' field in document",
                 1.0,
                 "",
+                start,
             )
             .build();
         }
@@ -1046,7 +1106,7 @@ async fn handle_upsert(
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
@@ -1062,13 +1122,14 @@ async fn handle_upsert(
                     "No partition found for EPK",
                     1.0,
                     "",
+                    start,
                 )
                 .build());
             }
         };
 
         // Check partition lock
-        if let Some(response) = check_partition_lock(partition) {
+        if let Some(response) = check_partition_lock(partition, start) {
             return Err(response);
         }
 
@@ -1129,7 +1190,7 @@ async fn handle_upsert(
 
         // Check throttle
         if let Some(response) =
-            check_throttle(partition, charge, store.config().throttling_enabled())
+            check_throttle(partition, charge, store.config().throttling_enabled(), start)
         {
             return Err(response);
         }
@@ -1144,20 +1205,22 @@ async fn handle_upsert(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             if parsed.content_response_on_write {
-                success_response(status, &response_body, charge, &token)
+                success_response(status, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
                     .with_item_count(1)
+                    .with_lsn(doc.lsn)
                     .build()
             } else {
-                ResponseBuilder::new(status)
+                ResponseBuilder::new(status, start)
                     .with_request_charge(charge)
                     .with_session_token(&token)
                     .with_etag(&doc.etag)
+                    .with_lsn(doc.lsn)
                     .build()
             }
         }
         Some(Err(response)) => response,
-        None => container_not_found(db_id, coll_id),
+        None => container_not_found(db_id, coll_id, start),
     }
 }
 
@@ -1165,6 +1228,7 @@ async fn handle_delete(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
+    start: Instant,
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
@@ -1172,7 +1236,7 @@ async fn handle_delete(
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
-        None => return not_found_region(),
+        None => return not_found_region(start),
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
@@ -1189,13 +1253,14 @@ async fn handle_delete(
                     "No partition found for EPK",
                     1.0,
                     "",
+                    start,
                 )
                 .build());
             }
         };
 
         // Check partition lock (split/merge in progress)
-        if let Some(response) = check_partition_lock(partition) {
+        if let Some(response) = check_partition_lock(partition, start) {
             return Err(response);
         }
 
@@ -1216,6 +1281,7 @@ async fn handle_delete(
                     ),
                     1.0,
                     &token,
+                    start,
                 )
                 .build());
             }
@@ -1234,6 +1300,7 @@ async fn handle_delete(
                     ),
                     1.0,
                     &token,
+                    start,
                 )
                 .build());
             }
@@ -1249,6 +1316,7 @@ async fn handle_delete(
                     "One of the specified pre-condition is not met.",
                     1.0,
                     &token,
+                    start,
                 )
                 .build());
             }
@@ -1278,7 +1346,7 @@ async fn handle_delete(
 
         // Check throttle
         if let Some(response) =
-            check_throttle(partition, charge, store.config().throttling_enabled())
+            check_throttle(partition, charge, store.config().throttling_enabled(), start)
         {
             return Err(response);
         }
@@ -1290,19 +1358,20 @@ async fn handle_delete(
         Some(Ok((tombstone, token, charge))) => {
             store.replicate(region_name, db_id, coll_id, &tombstone, true);
 
-            ResponseBuilder::new(StatusCode::NoContent)
+            ResponseBuilder::new(StatusCode::NoContent, start)
                 .with_request_charge(charge)
                 .with_session_token(&token)
+                .with_lsn(tombstone.lsn)
                 .build()
         }
         Some(Err(response)) => response,
-        None => container_not_found(db_id, coll_id),
+        None => container_not_found(db_id, coll_id, start),
     }
 }
 
 // --- Helper Responses ---
 
-fn write_forbidden_response() -> AsyncRawResponse {
+fn write_forbidden_response(start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::Forbidden,
         Some(3),
@@ -1310,11 +1379,12 @@ fn write_forbidden_response() -> AsyncRawResponse {
         "Write operations are not allowed on this region.",
         0.0,
         "",
+        start,
     )
     .build()
 }
 
-fn unsupported_response(operation: &str) -> AsyncRawResponse {
+fn unsupported_response(operation: &str, start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::NotImplemented,
         None,
@@ -1325,11 +1395,12 @@ fn unsupported_response(operation: &str) -> AsyncRawResponse {
         ),
         0.0,
         "",
+        start,
     )
     .build()
 }
 
-fn not_found_region() -> AsyncRawResponse {
+fn not_found_region(start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::NotFound,
         None,
@@ -1337,11 +1408,12 @@ fn not_found_region() -> AsyncRawResponse {
         "Region not found",
         0.0,
         "",
+        start,
     )
     .build()
 }
 
-fn container_not_found(db_id: &str, coll_id: &str) -> AsyncRawResponse {
+fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::NotFound,
         None,
@@ -1349,6 +1421,7 @@ fn container_not_found(db_id: &str, coll_id: &str) -> AsyncRawResponse {
         &format!("Container '{}/{}' does not exist", db_id, coll_id),
         1.0,
         "",
+        start,
     )
     .build()
 }

@@ -13,6 +13,10 @@ use super::config::VirtualAccountConfig;
 use super::dispatch::{parse_request, resolve_region};
 use super::operations::handle_operation;
 use super::store::EmulatorStore;
+use crate::driver::transport::cosmos_transport_client::{
+    HttpRequest as DriverHttpRequest, HttpResponse as DriverHttpResponse, TransportClient,
+    TransportError,
+};
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 use crate::options::ConnectionPoolOptions;
 
@@ -120,7 +124,63 @@ impl HttpClientFactory for EmulatorHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn HttpClient>> {
-        Ok(self.client.clone())
+    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+        Ok(Arc::new(EmulatorTransportClient {
+            emulator: Arc::clone(&self.client),
+        }))
+    }
+}
+
+/// Adapter that implements the driver's [`TransportClient`] trait by
+/// delegating to the in-memory emulator's request handling.
+#[derive(Debug)]
+struct EmulatorTransportClient {
+    emulator: Arc<InMemoryEmulatorHttpClient>,
+}
+
+#[async_trait]
+impl TransportClient for EmulatorTransportClient {
+    async fn send(
+        &self,
+        request: &DriverHttpRequest,
+    ) -> Result<DriverHttpResponse, TransportError> {
+        use azure_core::http::Request;
+
+        // Convert the driver's HttpRequest to an azure_core Request
+        let method = request.method;
+        let mut core_request = Request::new(request.url.clone(), method);
+        for (name, value) in request.headers.iter() {
+            core_request
+                .headers_mut()
+                .insert(name.clone(), value.clone());
+        }
+        if let Some(body) = &request.body {
+            core_request.set_body(body.to_vec());
+        }
+
+        // Execute through the emulator
+        let async_response = self
+            .emulator
+            .execute_request(&core_request)
+            .await
+            .map_err(|e| TransportError::new(e, crate::diagnostics::RequestSentStatus::Unknown))?;
+
+        // Collect the buffered response
+        let raw = async_response.try_into_raw_response().await.map_err(|e| {
+            TransportError::new(
+                azure_core::Error::new(azure_core::error::ErrorKind::Io, e),
+                crate::diagnostics::RequestSentStatus::Sent,
+            )
+        })?;
+
+        let status = u16::from(raw.status());
+        let headers = raw.headers().clone();
+        let body: &[u8] = raw.body().as_ref();
+
+        Ok(DriverHttpResponse {
+            status,
+            headers,
+            body: body.to_vec(),
+        })
     }
 }

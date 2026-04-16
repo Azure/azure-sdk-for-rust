@@ -5,11 +5,13 @@
 
 pub mod control_plane;
 pub mod driver_end_to_end;
+pub mod dual_backend;
 pub mod error_cases;
 pub mod multi_region;
 pub mod point_operations;
 pub mod split_merge;
 pub mod throttling;
+pub mod validation;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
@@ -141,6 +143,9 @@ pub fn create_item_request(
     if content_response {
         req.headers_mut()
             .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("True"));
+    } else {
+        req.headers_mut()
+            .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("False"));
     }
     req
 }
@@ -184,6 +189,9 @@ pub fn replace_item_request(
     if content_response {
         req.headers_mut()
             .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("True"));
+    } else {
+        req.headers_mut()
+            .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("False"));
     }
     req
 }

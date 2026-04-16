@@ -61,6 +61,20 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
             "kind": format!("{:?}", meta.partition_key.kind()),
             "version": meta.partition_key.version().value()
         },
+        "indexingPolicy": {
+            "indexingMode": "consistent",
+            "automatic": true,
+            "includedPaths": [{"path": "/*"}],
+            "excludedPaths": [{"path": "/\"_etag\"/?"}]
+        },
+        "conflictResolutionPolicy": {
+            "mode": "LastWriterWins",
+            "conflictResolutionPath": "/_ts",
+            "conflictResolutionProcedure": ""
+        },
+        "geospatialConfig": {
+            "type": "Geography"
+        },
         "_docs": "docs/",
         "_sprocs": "sprocs/",
         "_triggers": "triggers/",

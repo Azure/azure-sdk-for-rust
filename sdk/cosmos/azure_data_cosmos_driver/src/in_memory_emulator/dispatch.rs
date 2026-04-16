@@ -66,7 +66,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let content_response_on_write = headers
         .get_optional_str(&CONTENT_RESPONSE)
         .map(|s| s.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
+        .unwrap_or(true);
     let is_upsert = headers
         .get_optional_str(&IS_UPSERT)
         .map(|s| s.eq_ignore_ascii_case("true"))
