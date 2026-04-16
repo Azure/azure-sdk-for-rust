@@ -5,7 +5,7 @@ use std::{borrow::Cow, error::Error};
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    ContentResponseOnWrite, CosmosClient, CreateContainerOptions, CreateDatabaseOptions,
+    ContentResponseOnWrite, CosmosClient, CreateContainerOptions,
     ItemWriteOptions, OperationOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
@@ -111,14 +111,9 @@ impl CreateCommand {
 
             Subcommands::Database {
                 id,
-                throughput_options,
+                throughput_options: _,
             } => {
-                let throughput_properties: Option<ThroughputProperties> =
-                    throughput_options.try_into()?;
-                let options = throughput_properties
-                    .map(|p| CreateDatabaseOptions::default().with_throughput(p));
-
-                let db = client.create_database(&id, options).await?.into_model()?;
+                let db = client.create_database(&id, None).await?.into_model()?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())

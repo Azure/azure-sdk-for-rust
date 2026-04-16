@@ -112,17 +112,7 @@ pub struct ReplaceContainerOptions;
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct CreateDatabaseOptions {
-    pub(crate) throughput: Option<ThroughputProperties>,
-}
-
-impl CreateDatabaseOptions {
-    /// Sets the throughput properties for the new database.
-    pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
-        self.throughput = Some(throughput);
-        self
-    }
-}
+pub struct CreateDatabaseOptions;
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
