@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression - still enabled by default if `reqwest_gzip` or `reqwest_deflate` features are enabled.
+
 ### Bugs Fixed
 
 ### Other Changes

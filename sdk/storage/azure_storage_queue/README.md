@@ -64,7 +64,7 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 You can find executable examples for all major SDK functions in:
 
-* [hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/hello_world.rs) - Getting started: create a queue, send and receive messages
+* [queue_hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_hello_world.rs) - Getting started: create a queue, send and receive messages
 * [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs) - Queue-level operations: metadata, send/peek/receive/delete, TTL/visibility options
 * [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs) - Service-level operations: list queues, service properties, statistics
 * [access_policy.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/access_policy.rs) - Set and get queue access policies (stored access policies for SAS)

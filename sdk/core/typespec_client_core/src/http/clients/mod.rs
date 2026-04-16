@@ -18,11 +18,40 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use typespec::error::Result;
 
+/// Options to construct an [`HttpClient`] from [`new_http_client()`].
+#[derive(Clone, Debug)]
+pub struct HttpClientOptions {
+    /// Automatically decompress responses if the `content-encoding` header indicates a supported compression encoding.
+    /// Defaults to `true`.
+    ///
+    /// # Notes
+    ///
+    /// Only affects the built-in `reqwest::Client` if the `reqwest` feature is enabled,
+    /// and only if either the `reqwest_deflate` or `reqwest_gzip` feature are enabled.
+    pub automatic_decompression: bool,
+}
+
+impl Default for HttpClientOptions {
+    fn default() -> Self {
+        Self {
+            automatic_decompression: true,
+        }
+    }
+}
+
 /// Create a new [`HttpClient`].
-pub fn new_http_client() -> Arc<dyn HttpClient> {
+///
+/// # Arguments
+///
+/// * `options` - Optional configuration for the [`Client`](::reqwest::Client).
+///   Automatic decompression is enabled if `reqwest_gzip` or `reqwest_deflate` are enabled.
+///   Client libraries can disable this without impacting other client libraries by disabling it
+///   when calling this function.
+#[cfg_attr(not(feature = "reqwest"), allow(unused_variables))]
+pub fn new_http_client(options: Option<HttpClientOptions>) -> Arc<dyn HttpClient> {
     #[cfg(feature = "reqwest")]
     {
-        new_reqwest_client()
+        new_reqwest_client(options)
     }
     #[cfg(not(feature = "reqwest"))]
     {
