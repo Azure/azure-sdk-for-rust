@@ -122,6 +122,13 @@ impl BlobClient {
     ///
     /// * `buffer` - The buffer to write the blob content into. Must be large enough to hold the requested range or the entire blob.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Notes
+    ///
+    /// Clients will use the HTTP transport returned from [`azure_core::http::new_http_client()`]
+    /// but without automatic decompression by default. If you set a custom transport in
+    /// [`BlobClientOptions`] without disabling automatic decompression, partitioned downloads
+    /// may not succeed.
     pub async fn download_into(
         &self,
         buffer: &mut [u8],
@@ -261,6 +268,13 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
+    ///
+    /// # Notes
+    ///
+    /// Clients will use the HTTP transport returned from [`azure_core::http::new_http_client()`]
+    /// but without automatic decompression by default. If you set a custom transport in
+    /// [`BlobClientOptions`] without disabling automatic decompression, partitioned downloads
+    /// may not succeed.
     #[tracing::function("Storage.Blob.Blob.download")]
     pub async fn download(
         &self,

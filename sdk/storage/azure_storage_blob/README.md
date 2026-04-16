@@ -124,6 +124,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Known issues
+
+### Automatic decompression with custom HTTP transports
+
+By default, `BlobClient` creates an HTTP transport with automatic decompression disabled,
+which is required for partitioned (multi-part) downloads to work correctly. If you set a custom transport
+in `BlobClientOptions` (e.g., a `reqwest::Client` with gzip enabled) without disabling automatic
+decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download) and
+[`BlobClient::download_into`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download_into) may not succeed.
+
+If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior:
+
+```rust no_run
+use std::sync::Arc;
+use azure_core::http::{ClientOptions, Transport};
+use azure_storage_blob::BlobClientOptions;
+
+let client = Arc::new(
+    ::reqwest::ClientBuilder::new()
+        .gzip(false)
+        .build()?,
+);
+
+let options = BlobClientOptions {
+    client_options: ClientOptions {
+        transport: Some(Transport::new(client)),
+        ..Default::default()
+    },
+    ..Default::default()
+};
+```
+
 ## Next steps
 
 ### Provide feedback
