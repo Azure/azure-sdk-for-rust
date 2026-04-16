@@ -1075,7 +1075,7 @@ async fn test_managed_download_etag_lock(ctx: TestContext) -> Result<(), Box<dyn
     assert!(request_rx
         .recv()?
         .headers()
-        .get_str(&"etag".into())
+        .get_str(&"if-match".into())
         .is_err());
 
     let subsequent_requests: Vec<_> = request_rx.try_iter().collect();
