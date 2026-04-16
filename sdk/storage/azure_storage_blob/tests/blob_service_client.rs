@@ -265,7 +265,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     Ok(())
 }
 
-#[recorded::test(playback)]
+#[recorded::test]
 #[ignore = "needs to be re-recorded by service team"]
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
