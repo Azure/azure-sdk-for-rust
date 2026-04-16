@@ -3,7 +3,6 @@
 
 pub use crate::generated::clients::{AppendBlobClient, AppendBlobClientOptions};
 
-use crate::logging::apply_storage_logging_defaults;
 use azure_core::{
     credentials::TokenCredential,
     http::{
@@ -61,7 +60,6 @@ impl AppendBlobClient {
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
-        apply_storage_logging_defaults(&mut options.client_options);
 
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {

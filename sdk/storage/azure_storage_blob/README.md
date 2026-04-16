@@ -124,39 +124,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Known issues
+## Remarks
 
 ### Automatic decompression with custom HTTP transports
 
-By default, `BlobClient` creates an HTTP transport with automatic decompression disabled,
+By default, all storage clients create an HTTP transport with automatic decompression disabled,
 which is required for partitioned (multi-part) downloads to work correctly. If you set a custom transport
-in `BlobClientOptions` (e.g., a `reqwest::Client` with gzip enabled) without disabling automatic
-decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download) and
-[`BlobClient::download_into`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download_into) may not succeed.
+in client options (e.g., a `reqwest::Client` with gzip enabled) without disabling automatic
+decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download).
+If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior.
 
-If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior:
+## Next Steps
 
-```rust no_run
-use azure_core::http::{new_http_client, ClientOptions, HttpClientOptions, Transport};
-use azure_storage_blob::BlobClientOptions;
-
-let client = new_http_client(Some(HttpClientOptions {
-    automatic_decompression: false,
-    ..Default::default()
-}));
-
-let options = BlobClientOptions {
-    client_options: ClientOptions {
-        transport: Some(Transport::new(client)),
-        ..Default::default()
-    },
-    ..Default::default()
-};
-```
-
-## Next steps
-
-### Provide feedback
+### Provide Feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
 
