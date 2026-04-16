@@ -58,23 +58,56 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     }
 
     let fn_name = &original_sig.ident;
+    let fn_name_str = fn_name.to_string();
     let mut inputs = original_sig.inputs.iter();
     let setup = match inputs.next() {
         None if recorded_attrs.live => quote! {
-            #fn_name().await
+            eprintln!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
+            let __test_future = async {
+                #fn_name().await
+            };
+            match ::tokio::time::timeout(
+                ::std::time::Duration::from_secs(300),
+                __test_future,
+            ).await {
+                Ok(result) => result,
+                Err(_) => {
+                    eprintln!("\n!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit\n", #fn_name_str, file!());
+                    Err(format!(
+                        "test '{}' in {} timed out after 300s",
+                        #fn_name_str, file!(),
+                    ).into())
+                }
+            }
         },
         Some(FnArg::Typed(PatType { ty, .. })) if is_test_context(ty.as_ref()) => {
             let test_mode = test_mode_to_tokens(test_mode);
             quote! {
-                #[allow(dead_code)]
-                let mut ctx = ::azure_core_test::recorded::start(
-                    #test_mode,
-                    env!("CARGO_MANIFEST_DIR"),
-                    file!(),
-                    stringify!(#fn_name),
-                    ::std::option::Option::None,
-                ).await?;
-                #fn_name(ctx).await
+                eprintln!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
+                let __test_future = async {
+                    #[allow(dead_code)]
+                    let mut ctx = ::azure_core_test::recorded::start(
+                        #test_mode,
+                        env!("CARGO_MANIFEST_DIR"),
+                        file!(),
+                        stringify!(#fn_name),
+                        ::std::option::Option::None,
+                    ).await?;
+                    #fn_name(ctx).await
+                };
+                match ::tokio::time::timeout(
+                    ::std::time::Duration::from_secs(300),
+                    __test_future,
+                ).await {
+                    Ok(result) => result,
+                    Err(_) => {
+                        eprintln!("\n!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit\n", #fn_name_str, file!());
+                        Err(format!(
+                            "test '{}' in {} timed out after 300s",
+                            #fn_name_str, file!(),
+                        ).into())
+                    }
+                }
             }
         }
         _ => {

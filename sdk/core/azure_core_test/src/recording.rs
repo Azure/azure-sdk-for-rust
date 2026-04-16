@@ -125,10 +125,6 @@ impl Recording {
     /// }
     /// ```
     pub fn instrument(&self, options: &mut ClientOptions) {
-        let Some(client) = self.proxy.client() else {
-            return;
-        };
-
         // Use an HTTP client with connection timeouts to prevent tests from hanging indefinitely
         // when a TCP connection cannot be established (e.g., due to a bad socket state on Windows
         // CI agents). Without this, a stalled connect blocks the request forever since the default
@@ -136,6 +132,10 @@ impl Recording {
         if options.transport.is_none() {
             options.transport = Some(Transport::new(new_test_http_client()));
         }
+
+        let Some(client) = self.proxy.client() else {
+            return;
+        };
 
         if self.test_mode == TestMode::Playback || self.test_mode == TestMode::Record {
             let test_mode_policy = self
