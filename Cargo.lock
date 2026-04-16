@@ -556,6 +556,7 @@ dependencies = [
  "azure_storage_blob",
  "bytes",
  "futures",
+ "reqwest",
  "tokio",
 ]
 

@@ -443,7 +443,6 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
 
 /// Sets account-level service properties and verifies they all round-trip correctly.
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
@@ -507,16 +506,36 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
             .set_properties(props.try_into()?, None)
             .await?;
 
-        // Allow settings to propagate in live/record mode
-        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
-            time::sleep(Duration::from_secs(15)).await;
-        }
-
-        // Act - read back
-        let updated = queue_service_client
-            .get_properties(None)
-            .await?
-            .into_model()?;
+        // Poll in live/record mode until properties have propagated (eventually consistent)
+        let updated = if recording.test_mode() == TestMode::Live
+            || recording.test_mode() == TestMode::Record
+        {
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+            loop {
+                let current = queue_service_client
+                    .get_properties(None)
+                    .await?
+                    .into_model()?;
+                // Use CORS rules as the convergence signal - we set exactly 2 with known origins
+                if current.cors.as_ref().is_some_and(|rules| rules.len() == 2)
+                    && current
+                        .logging
+                        .as_ref()
+                        .is_some_and(|l| l.delete == Some(true))
+                {
+                    break current;
+                }
+                if tokio::time::Instant::now() >= deadline {
+                    panic!("service properties did not converge within 30s");
+                }
+                time::sleep(Duration::from_secs(3)).await;
+            }
+        } else {
+            queue_service_client
+                .get_properties(None)
+                .await?
+                .into_model()?
+        };
 
         // Assert - logging
         let logging = updated.logging.as_ref().expect("Expected logging settings");

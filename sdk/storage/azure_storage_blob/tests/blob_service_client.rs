@@ -216,9 +216,25 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     )
     .await?;
 
-    // Sleep in live mode to allow tags to be indexed on the service
-    if recording.test_mode() == TestMode::Live {
-        time::sleep(Duration::from_secs(5)).await;
+    // Poll in live/record mode until tag indexing is consistent (eventually consistent)
+    if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        loop {
+            let response = service_client
+                .find_blobs_by_tags("\"foo\"='bar'", None)
+                .await?;
+            let segment = response.into_model()?;
+            if segment.blobs.as_ref().is_some_and(|b| {
+                b.iter()
+                    .any(|blob| blob.name.as_ref().unwrap() == &blob1_name)
+            }) {
+                break;
+            }
+            if tokio::time::Instant::now() >= deadline {
+                panic!("tag indexing did not converge within 30s");
+            }
+            time::sleep(Duration::from_secs(3)).await;
+        }
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
@@ -226,7 +242,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"foo\"='bar'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -239,7 +255,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"fizz\"='buzz'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -252,7 +268,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -300,7 +316,6 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -336,7 +351,6 @@ async fn test_list_containers_with_metadata_include(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -377,7 +391,6 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -440,7 +453,6 @@ async fn test_set_service_properties_cors_and_metrics(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
