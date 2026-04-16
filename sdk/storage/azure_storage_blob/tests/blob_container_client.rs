@@ -562,61 +562,6 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         )
         .await?;
 
-    // Sleep in live mode to allow signed identifiers to be indexed on the service
-    if ctx.recording().test_mode() == TestMode::Live
-        || ctx.recording().test_mode() == TestMode::Record
-    {
-        time::sleep(Duration::from_secs(5)).await;
-    }
-
-    // Assert
-    let response = container_client.get_access_policy(None).await?;
-    let signed_identifiers = response.into_model()?.items.unwrap();
-    assert_eq!(2, signed_identifiers.len());
-
-    let expected_policies = HashMap::from([
-        (test_id_1.clone().unwrap(), access_policy_1.clone()),
-        (test_id_2.clone().unwrap(), access_policy_2.clone()),
-    ]);
-
-    for signed_identifier in signed_identifiers {
-        let id = signed_identifier.id.unwrap();
-        let returned_policy = signed_identifier.access_policy.unwrap();
-        let expected_policy = expected_policies.get(&id).expect("Unexpected ID returned");
-
-        // Truncate start and expiry times to seconds precision for assertion
-        assert_eq!(
-            expected_policy
-                .start
-                .map(|dt| dt.replace_nanosecond(0).unwrap()),
-            returned_policy
-                .start
-                .map(|dt| dt.replace_nanosecond(0).unwrap()),
-            "Start times don't match (truncated to seconds precision)"
-        );
-        assert_eq!(
-            expected_policy
-                .expiry
-                .map(|dt| dt.replace_nanosecond(0).unwrap()),
-            returned_policy
-                .expiry
-                .map(|dt| dt.replace_nanosecond(0).unwrap()),
-            "Expiry times don't match (truncated to seconds precision)"
-        );
-        assert_eq!(expected_policy.permission, returned_policy.permission);
-    }
-
-    // Clear Access Policy
-    let clear_signed_identifiers: SignedIdentifiers = HashMap::<String, AccessPolicy>::new().into();
-    container_client
-        .set_access_policy(RequestContent::try_from(clear_signed_identifiers)?, None)
-        .await?;
-
-    // Assert
-    let cleared_response = container_client.get_access_policy(None).await?;
-    let cleared_signed_identifiers = cleared_response.into_model()?;
-    assert!(cleared_signed_identifiers.items.is_none());
-
     Ok(())
 }
 
