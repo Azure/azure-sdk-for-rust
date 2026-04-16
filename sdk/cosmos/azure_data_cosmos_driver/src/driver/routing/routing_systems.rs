@@ -723,7 +723,7 @@ mod tests {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
-            read_failure_count: 1, // below threshold of 2
+            read_failure_count: 1, // below threshold of 5
             write_failure_count: 0,
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
@@ -799,7 +799,7 @@ mod tests {
         assert_eq!(result.circuit_breaker_overrides.len(), 1);
         assert!(result.failover_overrides.is_empty());
         let entry = &result.circuit_breaker_overrides["pk-1"];
-        // Below threshold (1 failure, threshold is 2) so endpoint should NOT have moved
+        // Below threshold (1 failure, threshold is 5) so endpoint should NOT have moved
         assert_eq!(entry.read_failure_count, 1);
         assert_eq!(entry.current_endpoint, regional_endpoint("eastus"));
     }

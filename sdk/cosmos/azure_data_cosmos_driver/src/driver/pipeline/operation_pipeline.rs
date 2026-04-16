@@ -309,17 +309,21 @@ pub(crate) async fn execute_operation_pipeline(
                 // Only circuit breaker overrides use probe-based failback; PPAF
                 // overrides persist until the backend signals a change organically.
                 if let Some(pk_range_id) = &retry_state.partition_key_range_id {
-                    let snapshot = location_state_store.snapshot();
-                    let partitions = snapshot.partitions.as_ref();
-                    let has_probe = partitions
-                        .circuit_breaker_overrides
-                        .get(pk_range_id.as_str())
-                        .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
-                    if has_probe {
-                        location_state_store.apply_partition(|current| {
+                    location_state_store.apply_partition(|current| {
+                        // Check ProbeCandidate status inside the CAS closure to avoid
+                        // a TOCTOU race: if another thread transitions the entry to
+                        // Unhealthy between a snapshot check and the CAS, we would
+                        // incorrectly remove the Unhealthy entry.
+                        let is_probe = current
+                            .circuit_breaker_overrides
+                            .get(pk_range_id.as_str())
+                            .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
+                        if is_probe {
                             remove_probe_succeeded_entry(current, pk_range_id)
-                        });
-                    }
+                        } else {
+                            current.clone()
+                        }
+                    });
                 }
                 return build_cosmos_response(result, diagnostics);
             }

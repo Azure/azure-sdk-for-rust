@@ -95,7 +95,7 @@ pub(crate) struct PartitionFailoverEntry {
 /// Configuration for partition-level failover, read once at construction.
 #[derive(Clone, Debug)]
 pub(crate) struct PartitionFailoverConfig {
-    /// Read failures before circuit trips (default: 2).
+    /// Read failures before circuit trips (default: 5).
     pub read_failure_threshold: i32,
 
     /// Write failures before circuit trips (default: 5).
@@ -187,7 +187,7 @@ mod tests {
     #[test]
     fn default_config_values() {
         let config = PartitionFailoverConfig::default();
-        assert_eq!(config.read_failure_threshold, 2);
+        assert_eq!(config.read_failure_threshold, 5);
         assert_eq!(config.write_failure_threshold, 5);
         assert_eq!(config.counter_reset_window, Duration::from_secs(300));
         assert_eq!(
