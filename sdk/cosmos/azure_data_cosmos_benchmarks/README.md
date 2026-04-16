@@ -32,19 +32,4 @@ For readable symbol names, build with debug symbols:
 RUSTFLAGS="-C debuginfo=1" cargo bench -p azure_data_cosmos_benchmarks --bench point_read -- --profile-time 30
 ```
 
-### Heap allocation trace (dhat)
 
-```sh
-cargo bench -p azure_data_cosmos_benchmarks --bench heap_profile
-```
-
-This traces every allocation made during a single warm `execute_operation`
-call and writes `dhat-heap.json` to the current working directory. Load it at
-<https://nnethercote.github.io/dh_view/dh_view.html> to explore the
-allocation call graph.
-
-For useful backtraces in the dhat output, build with debug symbols:
-
-```sh
-RUSTFLAGS="-C debuginfo=1" cargo bench -p azure_data_cosmos_benchmarks --bench heap_profile
-```
