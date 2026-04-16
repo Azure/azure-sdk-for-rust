@@ -377,9 +377,9 @@ impl TestPolicy {
         TestPolicy {
             on_request: match request_sender {
                 Some(sender) => Arc::new(move |req| {
-                    sender
-                        .send(req.clone())
-                        .map_err(|e| azure_core::Error::with_error(ErrorKind::Other, e, ""))
+                    sender.send(req.clone()).map_err(|e| {
+                        azure_core::Error::with_error(ErrorKind::Other, e, "Capture failure.")
+                    })
                 }),
                 None => Arc::new(|_| Ok(())),
             },
