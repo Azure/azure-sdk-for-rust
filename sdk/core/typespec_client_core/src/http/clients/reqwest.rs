@@ -82,16 +82,20 @@ impl HttpClient for ::reqwest::Client {
         let rsp = match self.execute(reqwest_request).await {
             Ok(rsp) => rsp,
             Err(err) => {
-                let kind = if err.is_connect() {
-                    ErrorKind::Connection
+                let (kind, context) = if err.is_connect() && err.is_timeout() {
+                    warn!(
+                        "!!!! CONNECT TIMEOUT for {method} '{}': TCP connect did not complete \
+                         within the configured timeout. Without connect_timeout, this request \
+                         would have hung indefinitely.",
+                        url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS),
+                    );
+                    (ErrorKind::Connection, "connect timeout elapsed")
+                } else if err.is_connect() {
+                    (ErrorKind::Connection, "failed to execute `reqwest` request")
                 } else {
-                    ErrorKind::Io
+                    (ErrorKind::Io, "failed to execute `reqwest` request")
                 };
-                return Err(Error::with_error(
-                    kind,
-                    err,
-                    "failed to execute `reqwest` request",
-                ));
+                return Err(Error::with_error(kind, err, context));
             }
         };
 
