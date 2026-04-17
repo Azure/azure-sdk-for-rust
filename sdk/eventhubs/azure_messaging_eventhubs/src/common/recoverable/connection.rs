@@ -577,7 +577,8 @@ impl RecoverableConnection {
                 }
             }
             AmqpErrorKind::ConnectionClosedByRemote(_)
-            | AmqpErrorKind::ConnectionDetachedByRemote(_) => {
+            | AmqpErrorKind::ConnectionDetachedByRemote(_)
+            | AmqpErrorKind::ConnectionDropped(_) => {
                 debug!("Connection dropped error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectConnection
             }
@@ -597,14 +598,25 @@ impl RecoverableConnection {
                 if matches!(
                     described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
-                        | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
                         | AmqpErrorCondition::EntityUpdated
                         | AmqpErrorCondition::EntityDisabledError
+                        | AmqpErrorCondition::TimeoutError
                 ) {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction
+                } else if matches!(
+                    described_error.condition,
+                    AmqpErrorCondition::UnauthorizedAccess
+                        | AmqpErrorCondition::ConnectionForced
+                        | AmqpErrorCondition::ConnectionFramingError
+                ) {
+                    debug!(
+                        "AMQP described error requires reconnect: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReconnectConnection
                 } else if matches!(
                     described_error.condition,
                     AmqpErrorCondition::EntityDisabledError
@@ -716,5 +728,52 @@ mod tests {
         );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
+    }
+
+    #[test]
+    fn test_should_retry_amqp_error() {
+        use azure_core_amqp::AmqpDescribedError;
+
+        // Test ConnectionDropped -> ReconnectConnection
+        let err = AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(
+            std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "dropped"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test TimeoutError -> RetryAction
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::TimeoutError,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+
+        // Test ConnectionForced -> ReconnectConnection
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::ConnectionForced,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test UnauthorizedAccess -> ReconnectConnection
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::UnauthorizedAccess,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
     }
 }
