@@ -92,7 +92,12 @@ if (!$SkipPackageAnalysis) {
         return [System.IO.Path]::Combine($this.DirectoryPath, 'Cargo.toml')
       }
 
-      return [Package]::Workspace.packages.Where({ $_.name -eq $this.Name }).manifest_path
+      $manifestPath = [Package]::Workspace.packages.Where({ $_.name -eq $this.Name })
+      if (!$manifestPath -or $manifestPath.Count -gt 1) {
+        throw "Package $($this.Name) not found in workspace"
+      }
+
+      return $manifestPath
     }
 
     [string] ToString() {
@@ -114,8 +119,7 @@ if (!$SkipPackageAnalysis) {
     | Get-Content -Raw
     | ConvertFrom-Json
     | ForEach-Object {
-      $package = [Package]::new()
-      $package.Name = $_.Name
+      $package = [Package]::new($_.Name)
       $package.DirectoryPath = $_.DirectoryPath
       $package
     }
