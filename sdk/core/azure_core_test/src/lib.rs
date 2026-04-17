@@ -19,13 +19,6 @@ use azure_core::Error;
 pub use azure_core::{error::ErrorKind, test::TestMode};
 pub use proxy::{matchers::*, sanitizers::*};
 pub use recording::*;
-
-/// Hidden re-exports used by the `#[recorded::test]` proc macro.
-/// Not part of the public API.
-#[doc(hidden)]
-pub mod __macro_support {
-    pub use ::tracing;
-}
 use std::path::{Path, PathBuf};
 
 const ASSETS_FILE: &str = "assets.json";
