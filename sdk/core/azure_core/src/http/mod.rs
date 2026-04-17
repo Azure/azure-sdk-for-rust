@@ -22,9 +22,9 @@ pub use response::{AsyncRawResponse, AsyncResponse, AsyncResponseBody, RawRespon
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
-    new_http_client, AppendToUrlQuery, Context, DeserializeWith, Format, HttpClient, JsonFormat,
-    Method, NoFormat, QueryBuilder, Sanitizer, StatusCode, Url, UrlExt,
-    DEFAULT_ALLOWED_HEADER_NAMES, DEFAULT_ALLOWED_QUERY_PARAMETERS, REDACTED_PATTERN,
+    new_http_client, AppendToUrlQuery, Context, DeserializeWith, Format, HttpClient,
+    HttpClientOptions, JsonFormat, Method, NoFormat, QueryBuilder, Sanitizer, StatusCode, Url,
+    UrlExt, DEFAULT_ALLOWED_HEADER_NAMES, DEFAULT_ALLOWED_QUERY_PARAMETERS, REDACTED_PATTERN,
 };
 
 pub use crate::error::check_success;

@@ -8,13 +8,11 @@ use crate::{
         BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
         BlockBlobClientUploadInternalResultHeaders,
     },
-    logging::apply_storage_logging_defaults,
     models::{
         method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
-    pipeline::StorageHeadersPolicy,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -74,13 +72,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
-        apply_storage_logging_defaults(&mut options.client_options);
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
+        super::apply_client_defaults(&mut options.client_options);
 
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
@@ -225,7 +217,7 @@ impl BlockBlobClient {
 
 // unwrap evaluated at compile time
 const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
-const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+const DEFAULT_PARTITION_SIZE: NonZero<u64> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlockInfo {
     offset: u64,
@@ -289,17 +281,17 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
+    async fn transfer_partition(&self, offset: u64, content: Body) -> Result<()> {
         let block_id = Uuid::new_v4();
         // TODO (jaschrep-msft) support oneshot given optional length
         let content_len = content.len().ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
         })?;
         {
-            self.blocks.lock().await.push(BlockInfo {
-                offset: offset as u64,
-                block_id,
-            });
+            self.blocks
+                .lock()
+                .await
+                .push(BlockInfo { offset, block_id });
         }
         self.client
             .stage_block(
@@ -312,13 +304,13 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn initialize(&self, _content_len: u64) -> Result<()> {
+    async fn initialize(&self, _content_len: std::option::Option<u64>) -> Result<()> {
         Ok(())
     }
 
     async fn finalize(&self) -> Result<()> {
         let mut blocks = self.blocks.lock().await;
-        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        blocks.sort_by_key(|left| left.offset);
         let blocklist = BlockLookupList {
             latest: Some(
                 blocks

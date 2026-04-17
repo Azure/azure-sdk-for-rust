@@ -356,7 +356,7 @@ mod tests {
         let url =
             format!("http://{ip}:8080/api?test=workload-identity&storage-name={storage_name}");
         let u = Url::parse(&url).expect("valid URL");
-        let client = azure_core::http::new_http_client();
+        let client = azure_core::http::new_http_client(None);
         let req = Request::new(u, Method::Get);
 
         let res = client.execute_request(&req).await.expect("response");

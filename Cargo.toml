@@ -44,32 +44,32 @@ rust-version = "1.88"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/core/typespec"
-version = "0.14.0"
+version = "0.15.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/core/typespec_client_core"
-version = "0.13.0"
+version = "0.14.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.13.0"
+version = "0.14.0"
 path = "sdk/core/typespec_macros"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "0.34.0"
+version = "0.35.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_macros]
-version = "0.8.0"
+version = "0.9.0"
 path = "sdk/core/azure_core_macros"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.13.0"
+version = "0.14.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_messaging_eventhubs]
-version = "0.13.0"
+version = "0.14.0"
 path = "sdk/eventhubs/azure_messaging_eventhubs"
 
 [workspace.dependencies.azure_core_opentelemetry]
@@ -90,7 +90,12 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
-version = "0.11.0"
+version = "0.12.0"
+
+[workspace.dependencies.azure_data_cosmos]
+default-features = false
+version = "0.33.0"
+path = "sdk/cosmos/azure_data_cosmos"
 
 [workspace.dependencies.azure_data_cosmos_driver]
 default-features = false
@@ -107,6 +112,7 @@ azure_data_cosmos_macros = { version = "0.2.0", path = "sdk/cosmos/azure_data_co
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
+console-subscriber = "0.4"
 criterion = { version = "0.8", features = ["async_tokio"] }
 crossbeam = { version = "0.8", default-features = false }
 crossbeam-epoch = { version = "0.9", default-features = false }
@@ -122,6 +128,7 @@ getrandom = { version = "0.4" }
 gloo-timers = { version = "0.3" }
 h2 = "0.4.13"
 hdrhistogram = "7.5"
+hostname = "0.4"
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }
 openssl = { version = "0.10.75" }
@@ -134,7 +141,7 @@ pin-project = "1.1"
 proc-macro2 = "1.0.106"
 quick-xml = { version = "0.39.0", features = ["serialize", "serde-types"] }
 quote = "1.0.44"
-rand = { version = "0.10.0", features = ["sys_rng"] }
+rand = { version = "0.10.1", features = ["sys_rng"] }
 rand_chacha = "0.10"
 reqwest = { version = "0.13.2", features = [
   "stream",
@@ -160,6 +167,7 @@ tokio = { version = "1.49", default-features = false, features = [
   "macros",
   "time",
 ] }
+tokio-metrics = "0.4"
 tracing = "0.1.44"
 tracing-subscriber = "0.3"
 url = "2.5"

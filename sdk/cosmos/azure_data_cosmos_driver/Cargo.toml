@@ -61,7 +61,7 @@ workspace = true
 
 
 [features]
-default = ["tokio", "reqwest_native_tls"]
+default = ["tokio", "reqwest_rustls"]
 tokio = ["dep:tokio"]
 reqwest = [
   "dep:h2",
@@ -70,9 +70,9 @@ reqwest = [
   "azure_core/reqwest",
   "azure_core/tokio",
 ]
-reqwest_native_tls = [
+reqwest_rustls = [
   "reqwest",
-  "reqwest/native-tls",
-  "azure_core/reqwest_native_tls",
+  "reqwest/rustls",
+  "azure_core/reqwest_rustls",
 ]
 fault_injection = ["dep:rand"]
