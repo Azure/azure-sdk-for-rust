@@ -20,7 +20,6 @@ azure_core_test.workspace = true
 azure_storage_blob.path = "../azure_storage_blob"
 bytes.workspace = true
 futures.workspace = true
-reqwest.workspace = true
 tokio = { workspace = true, features = ["rt"] }
 
 [lints]

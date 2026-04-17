@@ -2,30 +2,26 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{Body, NoFormat, RequestContent, Transport},
+    http::{Body, NoFormat, RequestContent},
     stream::BytesStream,
     Bytes,
 };
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
 use azure_storage_blob::{
     models::{BlockLookupList, HttpRange},
-    BlobClient, BlobContainerClientOptions,
+    BlobClient,
 };
-use azure_storage_blob_test::{
-    get_blob_name, get_container_client, new_test_http_client, StorageAccount,
-};
+use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
 
-#[recorded::test(live)]
+#[recorded::test]
+#[ignore = "Temporarily ignoring until we can figure out how to get this to not take down the whole test pipeline."]
 async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Setup = use a hardened HTTP client with read_timeout to prevent stalled
-    // downloads from burning the full 300s test timeout on CI.
+    // Setup
     let recording = ctx.recording();
-    let mut options = BlobContainerClientOptions::default();
-    options.client_options.transport = Some(Transport::new(new_test_http_client()));
     let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, Some(options)).await?;
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Upload from a stream.

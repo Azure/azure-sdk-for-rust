@@ -7,7 +7,6 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
-    time::Duration,
 };
 
 use async_trait::async_trait;
@@ -33,27 +32,6 @@ use bytes::BytesMut;
 use futures::{AsyncRead, AsyncReadExt};
 
 pub const KB: usize = 1024;
-
-/// Creates an HTTP client for tests with timeouts and no connection pooling.
-///
-/// CI pipelines intermittently hang when the default reqwest client reuses pooled
-/// connections or the remote side stalls. This client sets:
-/// - `connect_timeout(5s)` so stalled connections fail fast
-/// - `read_timeout(60s)` so stalled reads error out and get retried
-/// - `pool_max_idle_per_host(0)` so every request gets a fresh connection
-///
-/// Use this in specific tests that are known to hang on CI by setting it as the
-/// transport on `ClientOptions` before calling `instrument()`.
-pub fn new_test_http_client() -> Arc<dyn azure_core::http::HttpClient> {
-    let client = reqwest::ClientBuilder::new()
-        .redirect(reqwest::redirect::Policy::none())
-        .connect_timeout(Duration::from_secs(5))
-        .read_timeout(Duration::from_secs(60))
-        .pool_max_idle_per_host(0)
-        .build()
-        .expect("failed to build test `reqwest` client");
-    Arc::new(client)
-}
 pub const MB: usize = KB * 1024;
 pub const GB: usize = MB * 1024;
 
