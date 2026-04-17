@@ -198,14 +198,14 @@ same lock-free pattern.
 
 | Flag | Source | Default | Description |
 |---|---|---|---|
-| `per_partition_circuit_breaker_enabled` | `DriverOptions` → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. Read from `DriverOptions` at construction (currently backed by the env var). The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
+| `per_partition_circuit_breaker_enabled` | Layered `OperationOptionsView` (env → runtime → account) → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. Resolved via the layered `OperationOptionsView` at construction time. The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
 | `per_partition_automatic_failover_enabled` | Server-side `AccountProperties.enable_per_partition_failover_behavior` | `false` | PPAF is enabled when the Cosmos DB account has this flag set. Updated dynamically on each account properties refresh. |
 
-> **Configuration resolution**: The PPCB option is read from `DriverOptions` at
-> construction time and stored in `PartitionFailoverConfig`. When the
-> [Hierarchical Configuration Model](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos/docs/HierarchicalConfigModel.md) lands, this will
-> be read from the layered options system (Environment → Runtime → Account →
-> Request). Until then, the `DriverOptions` value is backed by `env::var`.
+> **Configuration resolution**: The PPCB option is resolved at construction time
+> via the layered `OperationOptionsView` (Environment → Runtime → Account) and
+> stored in `PartitionFailoverConfig`. The environment layer reads the env var
+> `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED`; higher layers can
+> override the value programmatically.
 
 ### Dynamic Reconfiguration
 
@@ -229,11 +229,15 @@ via the CAS loop when account properties are refreshed:
 ```rust
 // In CosmosDriver construction:
 
-// 1. Build PartitionFailoverConfig from DriverOptions.
-//    The circuit_breaker_option_enabled value comes from DriverOptions
-//    (currently backed by env var AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED,
-//     will use Hierarchical Configuration Model once landed).
-let config = PartitionFailoverConfig::from_options(&driver_options);
+// 1. Build a layered OperationOptionsView (env → runtime → account) to resolve
+//    init-time config. No per-operation overrides exist at construction time.
+let init_view = OperationOptionsView::new(
+    Some(Arc::clone(runtime.env_operation_options())),
+    Some(runtime.operation_options()),
+    Some(options.operation_options().clone()),
+    None,
+);
+let config = PartitionFailoverConfig::from_options(&init_view);
 
 // 2. Initial PartitionEndpointState (PPAF starts disabled — updated on
 //    first account properties refresh)
@@ -267,8 +271,10 @@ let initial_partition_state = PartitionEndpointState {
 A request is eligible when **all** conditions are true:
 
 1. `partition_state.per_partition_automatic_failover_enabled == true`
-2. The operation is a **write** (`!operation.is_read_only()`)
-3. The account is **single-master** (`!account_state.multiple_write_locations_enabled`)
+2. The operation targets a partitioned resource (`is_partitioned_resource`)
+3. The operation is a **write** (`!is_read_only`)
+4. The account is **single-master** (`!account_state.multiple_write_locations_enabled`)
+5. More than one preferred read endpoint is available
 
 ```rust
 // Pure eligibility check — evaluated in resolve_endpoint() and in
@@ -276,11 +282,14 @@ A request is eligible when **all** conditions are true:
 fn is_eligible_for_ppaf(
     partition_state: &PartitionEndpointState,
     account_state: &AccountEndpointState,
-    operation: &CosmosOperation,
+    is_read_only: bool,
+    is_partitioned_resource: bool,
 ) -> bool {
     partition_state.per_partition_automatic_failover_enabled
-        && !operation.is_read_only()
+        && is_partitioned_resource
+        && !is_read_only
         && !account_state.multiple_write_locations_enabled
+        && account_state.preferred_read_endpoints.len() > 1
 }
 ```
 
@@ -296,22 +305,25 @@ that partition to the next available read region.
 A request is eligible when **all** conditions are true:
 
 1. `partition_state.per_partition_circuit_breaker_enabled == true`
-2. The operation targets `ResourceType::Document` or
-   `ResourceType::StoredProcedure` with `OperationType::Execute`
+2. The operation targets a partitioned resource (`is_partitioned_resource`) —
+   i.e., `ResourceType::Document` or `ResourceType::StoredProcedure` with
+   `OperationType::Execute`
 3. The operation is **either**:
-   - A **read** (`operation.is_read_only()`), **or**
+   - A **read** (`is_read_only`), **or**
    - A **write** on a **multi-master** account
+4. More than one preferred read endpoint is available
 
 ```rust
 fn is_eligible_for_ppcb(
     partition_state: &PartitionEndpointState,
     account_state: &AccountEndpointState,
-    operation: &CosmosOperation,
+    is_read_only: bool,
+    is_partitioned_resource: bool,
 ) -> bool {
     partition_state.per_partition_circuit_breaker_enabled
-        && operation.resource_type().is_partitioned()
-        && (operation.is_read_only()
-            || account_state.multiple_write_locations_enabled)
+        && is_partitioned_resource
+        && (is_read_only || account_state.multiple_write_locations_enabled)
+        && account_state.preferred_read_endpoints.len() > 1
 }
 ```
 
@@ -322,12 +334,13 @@ the threshold.
 
 ### 4.3 Shared Pre-Conditions
 
-Both mechanisms share additional validation:
+The conditions below are checked **inside** each eligibility function (§4.1, §4.2)
+rather than as external pre-gates. They are listed here for reference:
 
 1. At least one of PPAF or PPCB must be enabled on `PartitionEndpointState`.
-2. The operation must target a resource type that supports partition-level failover
-   (Documents, or StoredProcedures+Execute) — checked via
-   `operation.resource_type().is_partitioned()`.
+2. The operation must target a partitioned resource — checked via the
+   `is_partitioned_resource` parameter (resolved by the caller from
+   `resource_type().is_partitioned()`).
 3. There must be **more than one preferred read endpoint** in `AccountEndpointState`
    (otherwise there is nowhere to fail over to).
 4. A resolved `partition_key_range_id` must be available on `OperationRetryState`
@@ -427,19 +440,13 @@ incremented/updated fields.
 
 ### 5.3 `PartitionFailoverConfig`
 
-Configuration values read from `DriverOptions` at driver construction time.
+Configuration values resolved from the layered `OperationOptionsView` at driver
+construction time.
 
 ```rust
 /// Configuration for partition-level failover, read once at construction.
 #[derive(Clone, Debug)]
 pub(crate) struct PartitionFailoverConfig {
-    /// PPCB option value from DriverOptions (default: true).
-    /// Retained for recomputation on account refresh:
-    ///   effective_ppcb = server_flag || circuit_breaker_option_enabled
-    /// Source: DriverOptions (currently backed by env var
-    ///   AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED).
-    pub circuit_breaker_option_enabled: bool,
-
     /// Read failures before circuit trips (default: 5).
     /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS
     pub read_failure_threshold: i32,
@@ -459,6 +466,12 @@ pub(crate) struct PartitionFailoverConfig {
     /// Interval for the background failback sweep (default: 300s).
     /// Env: AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS
     pub failback_sweep_interval: Duration,
+
+    /// PPCB option value from layered options (default: true).
+    /// Retained for recomputation on account refresh:
+    ///   effective_ppcb = server_flag || circuit_breaker_option_enabled
+    /// Resolved via OperationOptionsView (env → runtime → account → operation).
+    pub circuit_breaker_option_enabled: bool,
 }
 ```
 
@@ -1153,7 +1166,7 @@ routing for all requests to that region.
 | `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `bool` | `true` | Master switch for per-partition circuit breaker |
 | `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` | `i64` | `5` | Minimum time a partition must be unavailable before failback sweep considers it |
 | `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` | `i64` | `300` | Interval between background failback sweep iterations |
-| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `2` | Read failure threshold before circuit trips |
+| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `5` | Read failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` | `i32` | `5` | Write failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` | `i64` | `5` | Window (in minutes) after which failure counters reset |
 

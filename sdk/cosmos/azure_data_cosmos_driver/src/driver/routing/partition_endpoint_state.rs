@@ -5,9 +5,10 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    env,
     time::{Duration, Instant},
 };
+
+use crate::options::OperationOptionsView;
 
 use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 
@@ -35,16 +36,22 @@ pub(crate) struct PartitionEndpointState {
     pub config: PartitionFailoverConfig,
 }
 
-impl Default for PartitionEndpointState {
-    fn default() -> Self {
-        let config = PartitionFailoverConfig::from_env();
+impl PartitionEndpointState {
+    /// Creates a new `PartitionEndpointState` from the given partition failover config.
+    pub fn new(config: PartitionFailoverConfig) -> Self {
         Self {
+            per_partition_circuit_breaker_enabled: config.circuit_breaker_option_enabled,
             failover_overrides: HashMap::new(),
             circuit_breaker_overrides: HashMap::new(),
             per_partition_automatic_failover_enabled: false,
-            per_partition_circuit_breaker_enabled: config.circuit_breaker_option_enabled,
             config,
         }
+    }
+}
+
+impl Default for PartitionEndpointState {
+    fn default() -> Self {
+        Self::new(PartitionFailoverConfig::default())
     }
 }
 
@@ -123,50 +130,42 @@ impl Default for PartitionFailoverConfig {
 }
 
 impl PartitionFailoverConfig {
-    /// Reads configuration from environment variables, falling back to defaults.
+    /// Creates a `PartitionFailoverConfig` by resolving values from the
+    /// layered [`OperationOptionsView`], falling back to compile-time defaults.
     ///
-    /// Called at construction time (via `PartitionEndpointState::default()`).
-    /// Each value is read from the corresponding env var if set, otherwise
-    /// the compile-time default from [`Default`] is used.
-    pub fn from_env() -> Self {
+    /// Called once at driver construction time.
+    pub fn from_options(view: &OperationOptionsView<'_>) -> Self {
         let defaults = Self::default();
 
-        let read_failure_threshold =
-            env::var("AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(defaults.read_failure_threshold);
+        let read_failure_threshold = view
+            .circuit_breaker_failure_count_for_reads()
+            .map(|v| *v as i32)
+            .unwrap_or(defaults.read_failure_threshold);
 
-        let write_failure_threshold =
-            env::var("AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(defaults.write_failure_threshold);
+        let write_failure_threshold = view
+            .circuit_breaker_failure_count_for_writes()
+            .map(|v| *v as i32)
+            .unwrap_or(defaults.write_failure_threshold);
 
-        let counter_reset_window_minutes =
-            env::var("AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")
-                .ok()
-                .and_then(|v| v.parse::<u64>().ok())
-                .unwrap_or(5);
+        let counter_reset_window_minutes = view
+            .circuit_breaker_timeout_counter_reset_window_in_minutes()
+            .map(|v| u64::from(*v))
+            .unwrap_or(5);
 
-        let partition_unavailability_secs =
-            env::var("AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")
-                .ok()
-                .and_then(|v| v.parse::<u64>().ok())
-                .unwrap_or(5);
+        let partition_unavailability_secs = view
+            .allowed_partition_unavailability_duration_in_seconds()
+            .map(|v| u64::from(*v))
+            .unwrap_or(5);
 
-        let failback_sweep_secs = env::var(
-            "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS",
-        )
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(300);
+        let failback_sweep_secs = view
+            .ppcb_stale_partition_unavailability_refresh_interval_in_seconds()
+            .map(|v| u64::from(*v))
+            .unwrap_or(300);
 
-        let circuit_breaker_option_enabled =
-            env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(true);
+        let circuit_breaker_option_enabled = view
+            .per_partition_circuit_breaker_enabled()
+            .copied()
+            .unwrap_or(true);
 
         Self {
             read_failure_threshold,

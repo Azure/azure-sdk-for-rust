@@ -124,9 +124,10 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
+        partition_failover_config: PartitionFailoverConfig,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::default();
+        let partition_state = PartitionEndpointState::new(partition_failover_config);
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
@@ -520,6 +521,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
         );
 
         store
@@ -556,6 +558,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
         );
 
         store
@@ -586,6 +589,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
         );
 
         let properties = test_refresh_payload();

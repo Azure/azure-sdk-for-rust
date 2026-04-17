@@ -8,6 +8,7 @@ use crate::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
     driver::routing::{
+        partition_endpoint_state::PartitionFailoverConfig,
         partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
         CosmosEndpoint, LocationStateStore,
     },
@@ -757,6 +758,17 @@ impl CosmosDriver {
                     .unwrap_or(Duration::from_secs(60))
             });
 
+        // Build a layered view (env → runtime → account) to resolve init-time config.
+        // No per-operation overrides exist at construction time.
+        let init_view = OperationOptionsView::new(
+            Some(Arc::clone(runtime.env_operation_options())),
+            Some(runtime.operation_options()),
+            Some(options.operation_options().clone()),
+            None,
+        );
+
+        let partition_failover_config = PartitionFailoverConfig::from_options(&init_view);
+
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
@@ -764,6 +776,7 @@ impl CosmosDriver {
             refresh_callback,
             runtime.connection_pool().is_gateway20_allowed(),
             endpoint_unavailability_ttl,
+            partition_failover_config,
         ));
 
         // Spawn the background failback loop for partition-level overrides.
@@ -1225,8 +1238,8 @@ impl CosmosDriver {
                 .user_consistency_policy
                 .default_consistency_level,
             effective_control_group.as_ref(),
-             pre_resolved_pk_range_id,
-       )
+            pre_resolved_pk_range_id,
+        )
         .await
     }
 

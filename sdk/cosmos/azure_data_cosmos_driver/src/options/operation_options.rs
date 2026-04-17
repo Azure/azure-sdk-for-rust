@@ -90,6 +90,30 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
 
+    /// Read failure count threshold before the circuit breaker trips.
+    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS")]
+    pub circuit_breaker_failure_count_for_reads: Option<u32>,
+
+    /// Write failure count threshold before the circuit breaker trips.
+    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES")]
+    pub circuit_breaker_failure_count_for_writes: Option<u32>,
+
+    /// Window (in minutes) after which failure counters reset.
+    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")]
+    pub circuit_breaker_timeout_counter_reset_window_in_minutes: Option<u32>,
+
+    /// Duration (in seconds) a partition must remain unavailable before failback.
+    #[option(env = "AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")]
+    pub allowed_partition_unavailability_duration_in_seconds: Option<u32>,
+
+    /// Interval (in seconds) between background failback sweep iterations.
+    #[option(env = "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS")]
+    pub ppcb_stale_partition_unavailability_refresh_interval_in_seconds: Option<u32>,
+
+    /// Whether the per-partition circuit breaker is enabled.
+    #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
+    pub per_partition_circuit_breaker_enabled: Option<bool>,
+
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
     custom_headers: Option<HashMap<HeaderName, HeaderValue>>,

@@ -1031,7 +1031,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
-            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
@@ -1084,7 +1084,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
-            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
@@ -1137,7 +1137,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
-            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
@@ -1195,7 +1195,7 @@ mod tests {
             can_use_multiple_write_locations: true,
             excluded_regions: Vec::new(),
             session_retry_routing:
-            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
@@ -1452,7 +1452,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             excluded_regions: vec!["westus2".into()],
             session_retry_routing:
-            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
@@ -1536,7 +1536,7 @@ mod tests {
                 container,
                 false,
             )
-                .with_priority_level(PriorityLevel::Low);
+            .with_priority_level(PriorityLevel::Low);
 
             let ctx = TransportRequestContext {
                 routing: &routing,
@@ -1575,7 +1575,7 @@ mod tests {
                 container,
                 false,
             )
-                .with_throughput_bucket(42);
+            .with_throughput_bucket(42);
 
             let ctx = TransportRequestContext {
                 routing: &routing,
@@ -1614,8 +1614,8 @@ mod tests {
                 container,
                 false,
             )
-                .with_priority_level(PriorityLevel::High)
-                .with_throughput_bucket(100);
+            .with_priority_level(PriorityLevel::High)
+            .with_throughput_bucket(100);
 
             let ctx = TransportRequestContext {
                 routing: &routing,
