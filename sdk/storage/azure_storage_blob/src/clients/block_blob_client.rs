@@ -254,8 +254,9 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
-        // cspell:ignore jaschrep
-        // TODO (jaschrep-msft) support oneshot given optional length
+        // This should only ever be called by a managed uploader when the length is known.
+        // Otherwise, we can only buffer or error.
+        // Buffering strategy must be left to the caller, so we must error.
         let content_len = content.len().ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
         })?;
