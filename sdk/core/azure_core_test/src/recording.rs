@@ -25,7 +25,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         headers::{AsHeaders, Header, HeaderName, HeaderValue},
-        ClientOptions,
+        ClientOptions, Transport,
     },
     test::TestMode,
 };
@@ -40,6 +40,7 @@ use std::{
     collections::HashMap,
     env,
     sync::{Arc, Mutex, OnceLock, RwLock},
+    time::Duration,
 };
 use tracing::span::EnteredSpan;
 
@@ -124,6 +125,14 @@ impl Recording {
     /// }
     /// ```
     pub fn instrument(&self, options: &mut ClientOptions) {
+        // Use an HTTP client with connection timeouts to prevent tests from hanging indefinitely
+        // when a TCP connection cannot be established (e.g., due to a bad socket state on Windows
+        // CI agents). Without this, a stalled connect blocks the request forever since the default
+        // reqwest client has no connect timeout.
+        if options.transport.is_none() {
+            options.transport = Some(Transport::new(new_test_http_client()));
+        }
+
         let Some(client) = self.proxy.client() else {
             return;
         };
@@ -608,6 +617,31 @@ fn read_lock_error(_: impl std::error::Error) -> azure_core::Error {
 
 fn write_lock_error(_: impl std::error::Error) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::Other, "failed to lock variables for write")
+}
+
+/// Creates an HTTP client for tests with a connect timeout and no connection pooling.
+///
+/// CI pipelines intermittently hang on both Windows and Ubuntu. The default reqwest client has no
+/// timeouts and reuses pooled connections, which can cause indefinite hangs when:
+/// - A pooled connection becomes stale or its socket enters a bad state
+/// - The test proxy becomes unresponsive during a request
+/// - Any other transient issue stalls the request/response cycle
+///
+/// This client mitigates all of these by:
+/// - Setting a connect timeout (5s) so stalled connections fail fast
+/// - Disabling idle connection pooling so every request gets a fresh connection
+///
+/// Note: we intentionally do NOT set a per-request `timeout()` because large
+/// transfers (e.g. `upload_large` at 40MB) legitimately exceed any short timeout,
+/// causing self-inflicted retries. The 300s per-test macro timeout is the backstop.
+fn new_test_http_client() -> Arc<dyn azure_core::http::HttpClient> {
+    let client = reqwest::ClientBuilder::new()
+        .redirect(reqwest::redirect::Policy::none())
+        .connect_timeout(Duration::from_secs(5))
+        .pool_max_idle_per_host(0)
+        .build()
+        .expect("failed to build test `reqwest` client");
+    Arc::new(client)
 }
 
 /// What to skip when recording to a file.
