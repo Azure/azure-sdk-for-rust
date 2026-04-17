@@ -8,13 +8,11 @@ use crate::{
         BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
         BlockBlobClientUploadInternalResultHeaders,
     },
-    logging::apply_storage_logging_defaults,
     models::{
         method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
-    pipeline::StorageHeadersPolicy,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -74,13 +72,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
-        apply_storage_logging_defaults(&mut options.client_options);
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
+        super::apply_client_defaults(&mut options.client_options);
 
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
@@ -318,7 +310,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
 
     async fn finalize(&self) -> Result<()> {
         let mut blocks = self.blocks.lock().await;
-        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        blocks.sort_by_key(|left| left.offset);
         let blocklist = BlockLookupList {
             latest: Some(
                 blocks

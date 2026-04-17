@@ -56,7 +56,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
+- `reqwest_rustls` (default): enables `reqwest`'s `rustls` feature, which uses `aws-lc-rs`.
 - `tokio` (default): enables and sets `tokio` as the default async runtime.
 - `xml`: enables XML support.
 
@@ -395,7 +395,7 @@ We define a `reqwest` feature that provides a blanket implementation of our `Htt
 If you just want to configure a `reqwest::Client` to use different options including a different TLS provider, optionally add a dependency on `reqwest` and enable whichever feature you want:
 
 ```sh
-cargo add reqwest -F rustls-tls-native-roots
+cargo add reqwest --no-default-features -F gzip,native-tls
 ```
 
 You can then disable default features of any of the Azure SDK crates and add a dependency on `azure_core` with the `reqwest` feature for the blanket `HttpClient` implementation:
@@ -412,9 +412,8 @@ azure_core = { version = "1", default-features = false, features = ["reqwest"] }
 azure_identity = { version = "1", default-features = false }
 azure_security_keyvault_secrets = { version = "1", default-features = false }
 reqwest = { version = "0.12.23", default-features = false, features = [
-    "deflate",
     "gzip",
-    "rustls-tls-native-roots",
+    "native-tls",
 ] }
 ```
 
@@ -570,6 +569,12 @@ Though not recommended for production, you can enable normal `core::fmt::Debug` 
 cargo add azure_core -F debug
 ```
 
+### Build issues
+
+Building [`aws-lc-rs`] should work on Windows, macOS, and most linux distributions with a default installation of Rust.
+If you see compile or link errors when building `aws-lc-rs`, [download `rustup-init`][rustup-init] for your platform and try running it again to install necessary dependencies.
+Read [`aws-lc-rs` requirements] for more information.
+
 ### Known issues
 
 #### Hang when invoking multiple HTTP operations using the default HTTP transport
@@ -618,6 +623,9 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html
 [Package (crates.io)]: https://crates.io/crates/azure_core
+[`aws-lc-rs`]: https://crates.io/crates/aws-lc-rs
+[`aws-lc-rs` requirements]: https://aws.github.io/aws-lc-rs/requirements
 [`reqwest`]: https://docs.rs/reqwest
 [`tokio`]: https://docs.rs/tokio
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core/src
+[rustup-init]: https://rust-lang.org/tools/install

@@ -20,7 +20,7 @@
 //! ```bash
 //! az login
 //! export AZURE_QUEUE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
-//! cargo run --package azure_storage_queue --example hello_world
+//! cargo run --package azure_storage_queue --example queue_hello_world
 //! ```
 
 use azure_identity::DeveloperToolsCredential;

@@ -20,7 +20,7 @@
 //! ```bash
 //! az login
 //! export AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>"
-//! cargo run --package azure_storage_blob --example hello_world
+//! cargo run --package azure_storage_blob --example blob_hello_world
 //! ```
 
 use azure_core::http::RequestContent;
