@@ -1451,7 +1451,7 @@ async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Sets a named access policy identifier without a policy body and verifies the ID is persisted.
+/// Sets a named access policy identifier without a policy body.
 #[recorded::test]
 async fn test_set_access_policy_empty_named_identifier(ctx: TestContext) -> Result<()> {
     // Recording Setup

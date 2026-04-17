@@ -440,7 +440,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Sets account-level service properties and verifies they all round-trip correctly.
+/// Sets account-level service properties.
 #[recorded::test]
 async fn test_set_service_properties(ctx: TestContext) -> Result<()> {
     // Recording Setup
