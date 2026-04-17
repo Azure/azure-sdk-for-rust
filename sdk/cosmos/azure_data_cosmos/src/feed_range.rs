@@ -136,6 +136,22 @@ impl FeedRange {
         self.min_inclusive < other.max_exclusive && other.min_inclusive < self.max_exclusive
     }
 
+    /// Returns `true` if this feed range can be combined with `other`.
+    ///
+    /// Two ranges can be combined when they overlap or are adjacent
+    /// (one's max equals the other's min).
+    pub(crate) fn can_merge(&self, other: &FeedRange) -> bool {
+        self.max_exclusive >= other.min_inclusive && other.max_exclusive >= self.min_inclusive
+    }
+
+    /// Combines this feed range with `other` into a bounding range.
+    pub(crate) fn merge_with(&self, other: &FeedRange) -> FeedRange {
+        FeedRange {
+            min_inclusive: std::cmp::min(self.min_inclusive.clone(), other.min_inclusive.clone()),
+            max_exclusive: std::cmp::max(self.max_exclusive.clone(), other.max_exclusive.clone()),
+        }
+    }
+
     /// Creates a `FeedRange` from an internal `Range<String>`.
     ///
     /// The source range must have `[min, max)` semantics (min inclusive, max exclusive),

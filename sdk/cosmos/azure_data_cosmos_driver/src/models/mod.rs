@@ -25,6 +25,7 @@ mod partition_key;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;
+mod session_token_segment;
 mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
@@ -55,6 +56,7 @@ pub use resource_reference::{DatabaseReference, ItemReference};
 pub use resource_reference::{
     PartitionKeyRangeReference, StoredProcedureReference, TriggerReference, UdfReference,
 };
+pub use session_token_segment::SessionTokenSegment;
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
