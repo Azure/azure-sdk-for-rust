@@ -7,8 +7,8 @@ This document is a **proposal** for the target retry behavior of the Cosmos DB R
 |:------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400         | For all operations: </br><ul><li> This exception is encountered when the request is invalid, which could be for any of the following reasons: </br><ul><li>Syntax error in query text</li><li>Malformed JSON document for a write request</li><li>Incorrectly formatted REST API request body etc.</li></ul></li><li>The driver does NOT retry the request when a Bad Request (400) exception is thrown by the server.</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 401         | For all operations: </br><ul><li> This is an unauthorized exception due to invalid auth tokens being used for the request. The driver does NOT retry requests when this exception is encountered.</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 403         | <ul><li>For Substatus 3 (Write Forbidden) and Substatus 1008 (Database Account Not Found): </br><ul><li>This exception occurs when a geo-replicated database account runs into writable/readable location changes (say, after a failover).</li><li>This exception can occur regardless of the Consistency level set for the account.</li><li>The driver refreshes account properties so that the endpoint list is refreshed with the latest writable and readable locations.</li><li>The current endpoint is marked as unavailable for its operation type (read or write).</li><li>The driver retries the request using account locations (not preferred locations) as the source of truth, since 403/3 is expected only for write region failover in single-writer accounts. The maximum retry attempt count is 120.</li><li>If Per Partition Automatic Failover (PPAF) is applicable, the retry instead marks the current partition-level endpoint as unavailable and resolves the next endpoint for that specific partition range.</li></ul></li><li>For all other cases: </br><ul><li> The driver does NOT retry requests when this exception is encountered. </li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 404/1002    | <ul><li>For multi-write accounts (both read and write operations): </br><ul><li>The driver fetches the ordered read or write endpoints (depending on operation type) and retries once per each location. </li><li>On the last attempt, the driver clears the session token to avoid stale token propagation.</li><li>If endpoint discovery is enabled (default), the driver refreshes its location endpoints.</li></ul></li><li>For single-write accounts (both read and write operations): </br><ul><li>The driver retries only once, routing to the account primary region using account locations (not preferred locations) as the source of truth. </li><li>The session token is cleared on this retry attempt.</li><li>If Per Partition Automatic Failover (PPAF) is enabled and the current endpoint is marked as unavailable for the affected partition, the retry is routed to that partition's current primary endpoint instead of the standard account primary.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 403         | <ul><li>For Substatus 3 (Write Forbidden) and Substatus 1008 (Database Account Not Found): </br><ul><li>This exception occurs when a geo-replicated database account runs into writable/readable location changes (say, after a failover).</li><li>This exception can occur regardless of the Consistency level set for the account.</li><li>The driver refreshes account properties so that the endpoint list is refreshed with the latest writable and readable locations.</li><li>The current endpoint is marked as unavailable for its operation type (read or write).</li><li>The driver retries the request using account locations (not preferred locations) as the source of truth, since 403/3 is expected only for write region failover in single-writer accounts. The maximum retry attempt count is 120.</li></ul></li></li><ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 404/1002    | <ul><li>For multi-write accounts (both read and write operations): </br><ul><li>The driver fetches the ordered read or write endpoints (depending on operation type) and retries once per each location. </li><li>On the last attempt, the driver clears the session token to avoid stale token propagation.</li><li>If endpoint discovery is enabled (default), the driver refreshes its location endpoints.</li></ul></li><li>For single-write accounts (both read and write operations): </br><ul><li>The driver retries only once, routing to the account primary region using account locations (not preferred locations) as the source of truth. </li><li>The session token is cleared on this retry attempt.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 408         | <ul><li>For Write Operations: <br><ul><li>Timeout exceptions can be encountered by both the client as well as the server. Server-side timeout exceptions are not retried for write operations as it is not possible to determine if the write was in fact successfully committed on the server.</li><li>The driver does NOT retry write operations for 408. This behavior is the same for both single-write and multi-write accounts.</li></ul><li>For Query and Point Read Operations:</br><ul><li>The driver will retry on the next preferred region, if any is available. The total number of attempts is equal to the number of available read regions plus one.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 409         | <ul><li>For Write Operations: </br><ul><li>This exception occurs when an attempt is made by the application to Create/Insert an Item that already exists.</li><li>This exception can occur regardless of the Consistency level set for the account. </li><li>This exception can occur for write operations when an attempt is made to create an existing item or when a unique key constraint violation occurs. </li><li>The driver does NOT retry on Conflict exceptions. </li></ul></li><li>For Query and Point Read Operations: </br><ul><li>N/A as this exception is only encountered for Create/Insert operations. </li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                         |
 | 410/1002    | <ul><li>For all operations: </br><ul><li>This exception occurs when a partition is split (or merged) and no longer exists, and can occur regardless of the Consistency level set for the account.</li><li>The driver refreshes its partition key range cache and re-raises the exception. In query execution contexts, the driver handles 410/1002 in an inner retry loop: it refreshes the routing map and resets the query iterator state to continue with the new partition key ranges.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                            |
@@ -17,7 +17,7 @@ This document is a **proposal** for the target retry behavior of the Cosmos DB R
 | 429         | For all Operations: </br><ul><li>By default, the driver retries the request for a maximum of 9 times (or for a maximum of 30 seconds, whichever limit is reached first). </li><li>Retry delay uses the server-provided `x-ms-retry-after-ms` header when available, otherwise falls back to exponential backoff (5ms base, 2x factor, +/-25% jitter, capped at 5s per retry). </li><li>After all the retries are exhausted, one additional "forced final retry" may be attempted if deadline budget remains. </li><li>After all the retries are exhausted, the driver bubbles up the exception to the application. </li><li>**For a multi-region account**, the driver does NOT retry the request against a remote region for the account. </li><li>When the application receives a Request Rate too large exception (429), the application would need to instrument its own retry logic and dead letter queues. </li></ul>                                                                                                                                |
 | 449         | <ul><li>For Write Operations: </br><ul><li>This exception is encountered when a resource is concurrently updated on the server, which can happen due to concurrent writes, user triggered while conflicts are concurrently being resolved etc. </li><li>Only one update can be executed at a time per item. The other concurrent requests will fail with a Concurrent Execution Exception (449). </li><li>The driver does NOT retry requests that failed with a 449. </li></ul></li><li>For Query and point read Operations: </br><ul><li>N/A as this exception is only encountered for Create/Insert/Replace/Upsert operations. </li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                          |
 | 500+        | <ul><li>For Write Operations: </br><ul><li>The driver does NOT retry write requests.</li></ul></li><li>For Read Operations: </br><ul><li>The request will be retried by the driver on the next preferred regions. The total number of attempts is equal to the number of available read regions plus one.</li></ul></li><li>Note: 503 is handled by a dedicated policy (see below) and is NOT handled by this policy.</li></ul>                                                                                                                                                                                                                                                                                                    |
-| 503         | When a Service Unavailable exception is encountered, for all operations: </br><ul><li>The request will be retried by the driver on the next preferred region, regardless of whether the operation is a read or write. Writes are always retried for 503.</li><li>The total number of attempts is equal to the number of available read regions plus one for read operations, or the number of available write regions plus one for write operations. For single-write accounts with one write region, this means one retry attempt for writes. For multi-write accounts, writes can cycle through all write regions.</li><li>The retry delay is 500ms between attempts.</li><li>The policy does NOT differentiate between multi-write and single-write accounts — the only difference is the size of the write region list used to compute the retry budget.</li><li>If Per Partition Automatic Failover (PPAF) is applicable (single-write accounts only), the retry instead marks the current partition-level endpoint as unavailable and resolves the next endpoint for that specific partition range.</li><li>The failure is also recorded for Per Partition Circuit Breaker (PPCB) tracking.</li></ul>                                                                                                                                                                                                                                                                                                         |
+| 503         | When a Service Unavailable exception is encountered, for all operations: </br><ul><li>The request will be retried by the driver on the next preferred region, regardless of whether the operation is a read or write. Writes are always retried for 503.</li><li>The total number of attempts is equal to the number of available read regions plus one for read operations, or the number of available write regions plus one for write operations. For single-write accounts with one write region, this means one retry attempt for writes. For multi-write accounts, writes can cycle through all write regions.</li><li>The retry delay is 500ms between attempts.</li><li>The policy does NOT differentiate between multi-write and single-write accounts — the only difference is the size of the write region list used to compute the retry budget.</li></ul>                                                                                                                                                                                                                                                                                                         |
 | Container Recreate | <ul><li>For all operations: </br><ul><li>This is triggered when the driver detects either: (a) a 400 with substatus 1024 (Collection RID Mismatch), indicating the container was deleted and recreated with a different Resource ID, or (b) a 404 with substatus 10004 (Throughput Offer Not Found), indicating the throughput properties link is stale.</li><li>The driver refreshes the container properties cache and retries the request once.</li><li>On retry, if the partition key was previously extracted from the document definition, the driver re-extracts the partition key using the updated partition key definition from the refreshed cache.</li><li>If the request was for throughput properties, the driver updates the container link in the request body with the refreshed cache.</li><li>The retry is a one-shot gate: the driver retries at most once for container recreate scenarios.</li></ul></li></ul> |
 
 ### Connection Issues Retry Flow And Marking Unavailable
@@ -26,63 +26,26 @@ Connection errors are handled at two levels: the transport-level pipeline (same 
 
 #### Transport-Level Retry
 
-The transport pipeline handles low-level connection failures before the operation retry loop sees them:
+The transport pipeline handles low-level connection failures before the operation retry loop sees them. On a connectivity error (connection refused, reset, timeout, etc.), the driver can retry using a different connection to the same regional endpoint:
 
-- **Request not sent (`RequestSentStatus::NotSent`)**: Retried locally on a different shard within the same endpoint (one local connectivity retry for connection/IO errors).
-- **Request sent or unknown (`RequestSentStatus::Sent` / `Unknown`), read-only operations**: Retried locally on a different shard within the same endpoint (one local connectivity retry).
-- **Request sent or unknown, write operations**: NOT retried at the transport level — raised immediately for the operation-level retry to handle.
+- **Request not sent (`RequestSentStatus::NotSent`)**: Retried locally on a different connection to the same endpoint (one local connectivity retry).
+- **Request sent or unknown (`RequestSentStatus::Sent` / `Unknown`), read-only or idempotent write operations**: Retried locally on a different connection to the same endpoint (one local connectivity retry).
+- **Request sent or unknown, non-idempotent write operations (Create, Upsert, Batch, Execute)**: NOT retried at the transport level — propagated immediately to the operation-level retry.
 
 #### Operation-Level Cross-Region Retry
 
 After transport retries are exhausted, connection errors bubble up to the operation retry loop. The `RequestSentStatus` determines what can be retried:
 
 - **`RequestSentStatus::NotSent`**: Since the request never reached the service, the driver marks the current endpoint as unavailable and retries on the next preferred region, regardless of operation type. This is equivalent to Python's `ServiceRequestRetryPolicy`.
-- **`RequestSentStatus::Sent` or `Unknown`, read-only operations**: The driver retries on the next preferred endpoint and marks the current endpoint as unavailable. The total number of attempts equals the number of applicable read regional routing contexts.
-- **`RequestSentStatus::Sent` or `Unknown`, write operations**: The driver does NOT retry. The error is returned to the caller. This is equivalent to Python's `ServiceResponseRetryPolicy` behavior for writes without `retry_write`.
-
-```mermaid
-flowchart TD
-    A[Request] --> B(Fails due to transport error)
-    B --> C{RequestSentStatus?}
-    C -->|NotSent| D{Transport retry budget remaining?}
-    D -->|Yes| E(Retry on same endpoint, different shard)
-    E --> A
-    D -->|No| F(Mark endpoint unavailable)
-    F --> G{More regions available?}
-    G -->|No| H(Bubble up failure to caller)
-    G -->|Yes| I(Retry on next preferred region)
-    I --> A
-    C -->|Sent or Unknown| J{Read-only operation?}
-    J -->|Yes| K{Transport retry budget remaining?}
-    K -->|Yes| L(Retry on same endpoint, different shard)
-    L --> A
-    K -->|No| M(Mark endpoint unavailable)
-    M --> N{More regions available?}
-    N -->|No| H
-    N -->|Yes| I
-    J -->|No| H
-```
+- **`RequestSentStatus::Sent` or `Unknown`, read-only or idempotent write operations**: The driver retries on the next preferred endpoint and marks the current endpoint as unavailable. The total number of attempts equals the number of applicable read or write regional routing contexts.
+- **`RequestSentStatus::Sent` or `Unknown`, non-idempotent write operations (Create, Upsert, Batch, Execute)**: The driver does NOT retry. The error is returned to the caller. This is equivalent to Python's `ServiceResponseRetryPolicy` behavior for writes without `retry_write`.
 
 ### Transient Issues Retry Flow And Marking Unavailable
 
 Transient issues include 408 (Request Timeout) and 5xx errors excluding 503. These are handled by the operation-level retry evaluation.
 
-- The PPAF failure threshold is always tracked for each failure, regardless of whether the operation will be retried.
-- The failure is also recorded for PPCB tracking.
 - Read operations are retried on the next preferred region. The total number of attempts is equal to the number of available read regions plus one.
 - Write operations are NOT retried for 408/5xx.
-
-```mermaid
-flowchart TD
-    A[Request] --> B(Fails due to 408 or 5xx excluding 503)
-    B --> C(Record failure for PPAF/PPCB tracking)
-    C --> D{Read operation?}
-    D -->|Yes| E{Retry budget remaining?}
-    E -->|Yes| F(Retry on next preferred region)
-    F --> A
-    E -->|No| G(Bubble up failure to caller)
-    D -->|No| G
-```
 
 ### Driver Health Checks
 
@@ -97,102 +60,18 @@ The driver performs health checks on the account regions to make decisions on wh
 
 ### Default Retry Limits
 
-| Policy                             | Max Total Attempts                                 | Default Delay             |
-|:-----------------------------------|:---------------------------------------------------|:--------------------------|
-| Endpoint Discovery (403/3, 403/1008) | 120                                              | 1000ms                    |
-| Resource Throttle (429)            | 9 (or 30 seconds cumulative, whichever first)      | Server `x-ms-retry-after-ms` header, or exponential backoff (5ms base) |
-| Session (404/1002)                 | 1 additional retry (single-write) / all locations (multi-write) | 0ms                |
-| Partition Key Range Gone (410/1002) | 1 (cache refresh then re-raise to higher-level retry) | 1000ms                 |
-| Service Unavailable (503)          | read_regions + 1 (reads) / write_regions + 1 (writes) | 500ms                  |
-| Timeout Failover (408/5xx)         | read_regions + 1 (reads) / no write retry          | 500ms                     |
-| Transport NotSent (cross-region)   | Number of applicable regional routing contexts      | 0ms                       |
-| Transport Sent/Unknown (cross-region) | Number of read routing contexts (reads only)     | 0ms                       |
-| Health Check                       | 3 (configurable)                                   | 500ms + additive backoff  |
-| Container Recreate                 | 1 additional retry                                 | 0ms                       |
-
----
-
-## Per Partition Automatic Failover (PPAF)
-
-Per Partition Automatic Failover enables partition-level failover decisions, allowing the driver to route specific partition ranges to different regions independently rather than failing over the entire account.
-
-### Applicability
-
-PPAF applies only when ALL of the following conditions are met:
-
-- The `EnablePerPartitionFailoverBehavior` flag is enabled on the account.
-- The request exists and is a **write operation** (not read-only).
-- The account is NOT configured for multiple write locations (single-write accounts only).
-- The account has more than one available read region.
-- The request targets `Document` resources or is an `ExecuteJavaScript` (stored procedure) operation.
-
-PPAF does NOT apply to read operations, multi-write accounts, or non-document resource types.
-
-### How PPAF Works
-
-- **Failure tracking**: The driver tracks consecutive failures per partition key range. Each failure for a partition (from 408, 5xx, or connection errors) increments the failure count.
-- **Failover threshold**: When the consecutive failure count for a partition reaches the threshold (default: 10, configurable), the driver triggers a partition-level failover.
-- **Partition-level endpoint resolution**: Each partition key range has failover info that tracks:
-  - `current_region`: The region currently serving this partition.
-  - `unavailable_regional_endpoints`: A map of regions that have been marked unavailable for this partition.
-- **Routing**: When resolving the service endpoint for a partition, the driver checks the partition's failover info. If the current region is unavailable, it routes to the next available region. If all regions are exhausted, the per-partition state is reset and the driver falls back to the standard routing path.
-- **Recovery**: On a successful request, `record_success()` resets the consecutive failure count for the partition, allowing the threshold to start fresh. However, the unavailable regional endpoints map is NOT cleared by success — the partition continues routing to its failover region until the per-partition state is explicitly reset (e.g., when all regions are exhausted).
-
-### PPAF Integration with Retry Evaluation
-
-PPAF modifies the behavior of several retry paths:
-
-- **Service Unavailable (503)**: If PPAF is applicable, the retry marks the current partition-level endpoint as unavailable and resolves the next endpoint for that partition range, instead of using the standard region-cycling approach.
-- **Endpoint Discovery (403/3, 403/1008)**: Same PPAF override — partition-level unavailability marking and resolution.
-- **Timeout Failover (408/5xx)**: Records the failure for PPAF threshold tracking.
-- **Transport errors (`Sent`/`Unknown`)**: Records the failure for PPAF threshold tracking.
-- **Session Retry (404/1002)**: For single-write accounts, if PPAF is enabled and the current endpoint is marked as unavailable for the affected partition, the retry routes to that partition's current primary endpoint.
-
----
-
-## Per Partition Circuit Breaker (PPCB)
-
-The Per Partition Circuit Breaker provides more granular failure tracking and endpoint exclusion at the partition level. It complements PPAF by tracking failure rates and consecutive failures per partition per region, and can exclude unhealthy regions from routing for specific partitions.
-
-### Applicability
-
-PPCB applies only when ALL of the following conditions are met:
-
-- The circuit breaker is enabled (via configuration or the account has `EnablePerPartitionFailoverBehavior` enabled).
-- For **write operations**: the account must support multiple write locations. **Writes on single-write accounts are excluded from PPCB.**
-- For **read operations**: no multi-write requirement — reads are eligible on both single-write and multi-write accounts.
-- The request targets `Document` or `PartitionKey` resources (not `QueryPlan`).
-- The request has partition routing information (partition key range ID or partition key).
-
-### How PPCB Works
-
-- **Per-partition per-region health tracking**: The driver maintains health information for each combination of partition key range and region. It tracks:
-  - Failure rate (percentage of failed requests), calculated over a rolling 1-minute window with statistics reset periodically.
-  - Consecutive failure count.
-  - Failure-rate-based transitions only kick in after a minimum of 100 requests in the current window.
-- **Thresholds** (configurable):
-  - **Failure percentage tolerated**: Default 90%. Only evaluated after 100+ requests.
-  - **Consecutive failure threshold**: Default 10 for reads, 5 for writes.
-- **Circuit states**:
-  - **Healthy**: Normal operation.
-  - **Unhealthy Tentative**: Initial failure detection. The partition-region pair is monitored.
-  - **Unhealthy**: Confirmed unhealthy. The region is excluded from routing for this partition. The unavailability timeout grows exponentially up to a maximum of 20 minutes.
-- **Recovery (half-open probing)**: After the unavailability timeout expires, the driver checks for stale partition info. When an expired unhealthy entry is found, the driver marks the next request to that partition as a half-open probe. Transport-level retries are NOT performed for probe requests — the result (success or failure) must be observed to update the circuit breaker state. On success, the unavailability info is cleared. On failure, the partition-region reverts to unhealthy with an extended timeout.
-- **Endpoint exclusion**: Unhealthy regions for a partition are excluded from the endpoint resolution, which causes the location cache to skip those regions.
-
-### Failure Recording
-
-- **503 errors**: Tracked specifically for circuit breaker only (NOT for PPAF tracking).
-- **408, 5xx errors, and transport errors**: When PPAF is applicable, recorded for PPAF threshold tracking. When PPAF is NOT applicable but PPCB is, recorded for PPCB.
-- **Success**: Resets PPAF failure counts and may update PPCB circuit breaker state.
-
-### PPCB Integration with Retry Evaluation
-
-PPCB primarily influences routing rather than retry decisions:
-
-- **Location Cache**: During endpoint resolution, unhealthy regions for the affected partition are excluded from the candidate list.
-- **Transport Pipeline**: Requests targeting a half-open probe location are NOT retried at the transport level — the failure/success result must be observed to update the circuit breaker state.
-- **Stale partition info**: Expired unhealthy entries are promoted to half-open state, enabling recovery probes.
+| Policy                                    | Max Total Attempts                                                        |
+|:------------------------------------------|:--------------------------------------------------------------------------|
+| Endpoint Discovery (403/3, 403/1008)      | 120                                                                       |
+| Resource Throttle (429)                   | 9 (or 30 seconds cumulative, whichever first)                             |
+| Session (404/1002)                        | 1 additional retry (single-write) / all locations (multi-write)           |
+| Partition Key Range Gone (410/1002)       | 1 (cache refresh then re-raise to higher-level retry)                     |
+| Service Unavailable (503)                 | read_regions + 1 (reads) / write_regions + 1 (writes)                    |
+| Timeout Failover (408/5xx)                | read_regions + 1 (reads) / no write retry                                |
+| Transport NotSent (cross-region)          | Number of applicable regional routing contexts                            |
+| Transport Sent/Unknown (cross-region)     | Number of applicable routing contexts (reads + idempotent writes only)    |
+| Health Check                              | 3 (configurable)                                                          |
+| Container Recreate                        | 1 additional retry                                                        |
 
 ---
 
@@ -216,7 +95,6 @@ The following is a comprehensive summary of every behavioral difference between 
 | **Max retries** | 1 additional retry. | Retries through ALL ordered read/write locations (depending on op type). |
 | **Routing on retry** | Routes with `usePreferredLocations=false` (uses account locations as source of truth). | Routes with `usePreferredLocations` flag set based on whether retry count exceeds the max retry attempt count. |
 | **Session token clearing** | Cleared immediately on the first retry. | Cleared only on the last attempt (after all locations are tried). |
-| **PPAF override** | If PPAF is enabled and the current endpoint is unavailable for the partition, routes to that partition's current primary endpoint. | PPAF is not applicable (disabled for multi-write). |
 
 ### Timeout Failover (408/5xx)
 
@@ -231,34 +109,18 @@ The following is a comprehensive summary of every behavioral difference between 
 |:-------|:-------------|:------------|
 | **Write retry** | Writes are retried. No additional gate. | Writes are retried. No additional gate. |
 | **Write retry budget** | `write_regions + 1` — typically 2 for a single-write account with 1 write region (1 retry). | `write_regions + 1` — can cycle through all write regions. |
-| **PPAF integration** | If PPAF is applicable, marks partition-level endpoint as unavailable and resolves per-partition. | PPAF is not applicable (disabled for multi-write). Standard region-cycling is used. |
 
 ### Connection Errors (Transport Errors)
 
 | Aspect | Single-Write | Multi-Write |
 |:-------|:-------------|:------------|
 | **`NotSent` write retries** | Writes are retried across regions. Write routing falls back to first two write locations only. | Writes are retried across regions using preferred write location ordering. |
-| **`Sent`/`Unknown` write retries** | NOT retried. | NOT retried. |
+| **`Sent`/`Unknown` idempotent write retries (Replace, Delete)** | Retried on next preferred region. | Retried on next preferred region. |
+| **`Sent`/`Unknown` non-idempotent write retries (Create, Upsert, Batch, Execute)** | NOT retried. | NOT retried. |
 | **Write retry budget (`NotSent`)** | Number of applicable write regional routing contexts (typically 1 for single-write). | Number of applicable write regional routing contexts (can be multiple). |
-
-### PPAF and PPCB
-
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **PPAF applicability** | Applicable for write Document/ExecuteJavaScript ops with >1 readable region. | NOT applicable — explicitly disabled. |
-| **PPCB applicability for writes** | NOT applicable — writes on single-write accounts are excluded. | Applicable for write Document/PartitionKey ops. |
-| **PPCB applicability for reads** | Applicable. | Applicable. |
-
-### Request Headers and Session Consistency
-
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **`AllowTentativeWrites` header** | NOT added to requests. | Added to all requests (value `"true"`). This header tells the server to accept writes on non-primary replicas. |
-| **Session token on write requests** | Session tokens are NOT attached to write requests (except Batch operations). | Session tokens ARE attached to write requests. |
 
 ### Endpoint Discovery (403/3)
 
 | Aspect | Single-Write | Multi-Write |
 |:-------|:-------------|:------------|
 | **Routing on retry** | Routes with `usePreferredLocations=false` — uses account locations as source of truth, since 403/3 signals a write region failover. | Same — also routes with `usePreferredLocations=false`. The policy does not branch on multi-write. |
-| **PPAF integration** | If PPAF is applicable, marks partition-level endpoint as unavailable and resolves per-partition instead of standard retry. | PPAF is not applicable (disabled for multi-write). Standard retry path is used. |
