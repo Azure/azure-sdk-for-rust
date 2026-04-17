@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Criterion microbenchmark for `CosmosDriver::execute_operation` — point read.
+//! Criterion benchmark for `CosmosDriver::execute_operation` — point read.
 //!
 //! By default the reqwest transport is replaced with an in-memory mock so that
 //! the benchmark measures driver overhead (routing, signing, retry state,
