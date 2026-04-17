@@ -5,9 +5,11 @@
 param(
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [Parameter(ParameterSetName = 'PackageName')]
+
+  [Parameter(Position = 0, ParameterSetName = 'PackageName')]
   [ValidateNotNullOrEmpty()]
   [string[]]$PackageName,
+
   [string]$Toolchain = 'stable',
   [switch]$Deny,
   [switch]$SkipPackageAnalysis
@@ -45,7 +47,7 @@ Invoke-LoggedCommand "cargo fmt $packageArgs -- --check" -GroupOutput
 Invoke-LoggedCommand "cargo clippy $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
 
 if ($Deny) {
-  Invoke-LoggedCommand "cargo deny check --all-features" -GroupOutput
+  Invoke-LoggedCommand "cargo deny --all-features check" -GroupOutput
 }
 
 Invoke-LoggedCommand "cargo doc --no-deps --all-features" -GroupOutput
