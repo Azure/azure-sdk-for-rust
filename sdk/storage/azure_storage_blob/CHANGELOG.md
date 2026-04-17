@@ -1,21 +1,33 @@
 # Release History
 
-## 0.11.0 (Unreleased)
+## 0.12.0 (Unreleased)
 
 ### Features Added
 
-- Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
-
 ### Breaking Changes
 
-- Revised `download()` on `BlobClient` with the following breaking changes:
-  - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
-  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
-  - The previous `BlobClientDownloadResultHeaders` trait was removed.
+- Responses are no longer automatically decompressed.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.11.0 (2026-04-14)
+
+### Features Added
+
+- Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
+- Added `models::HttpRange` for specifying byte ranges in blob operations, replacing the removed `format_page_range()` helper.
+
+### Breaking Changes
+
+- Removed `format_page_range()`. Use `HttpRange::new(offset, length)` or `HttpRange::from_offset(offset)` instead.
+- Revised `download()` on `BlobClient` with the following breaking changes:
+  - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
+  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
+  - The previous `BlobClientDownloadResultHeaders` trait was removed.
+- Revised `upload()` on `BlobClient` `BlockBlobClient` with the following breaking changes:
+  - `partition_size` option changed from `Option<NonZero<usize>>` to `Option<NonZero<u64>>`
 
 ## 0.10.1 (2026-03-18)
 

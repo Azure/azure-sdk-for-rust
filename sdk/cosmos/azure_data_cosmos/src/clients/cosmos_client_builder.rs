@@ -178,13 +178,26 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets backup endpoints that the client will try when the primary global
-    /// endpoint is unavailable during initialization.
+    /// Sets backup endpoints for resilience when the primary global endpoint
+    /// is unavailable during initialization.
     ///
-    /// If the primary endpoint fails during driver bootstrap, the SDK will try
-    /// each backup endpoint in order until one succeeds. A successful connection
-    /// allows normal service discovery to proceed. Once initialized, regional
-    /// endpoints discovered during bootstrap handle subsequent refreshes.
+    /// # When to use
+    ///
+    /// Configure backup endpoints when you want the client to survive a
+    /// global endpoint outage during startup. Provide at least two regional
+    /// endpoints (e.g., `https://myaccount-eastus.documents.azure.com/`).
+    ///
+    /// This is especially important in **non-public clouds** (sovereign,
+    /// government) where the SDK cannot infer regional endpoints from the
+    /// account name — without backup endpoints, a global endpoint failure
+    /// during bootstrap is unrecoverable.
+    ///
+    /// # Behavior
+    ///
+    /// If the primary endpoint fails during driver bootstrap, the SDK tries
+    /// each backup endpoint in order until one succeeds. Once initialized,
+    /// regional endpoints discovered during bootstrap handle subsequent
+    /// refreshes automatically.
     ///
     /// # Arguments
     ///

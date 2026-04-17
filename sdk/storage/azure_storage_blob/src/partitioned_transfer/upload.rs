@@ -5,41 +5,38 @@ use azure_core::http::Body;
 use bytes::Bytes;
 
 use async_trait::async_trait;
-use azure_core::{error::ErrorKind, stream::SeekableStream};
+use azure_core::stream::SeekableStream;
 use futures::StreamExt;
 
-use crate::streams::partitioned_stream::PartitionedStream;
+use crate::streams::{
+    multi_bytes_stream::MultiBytesStream,
+    partitioned_stream::{self, stream_multi_buffer_partitions, stream_single_buffer_partitions},
+};
 
 use super::*;
 
 #[async_trait]
 pub(crate) trait PartitionedUploadBehavior {
     async fn transfer_oneshot(&self, content: Body) -> AzureResult<()>;
-    async fn transfer_partition(&self, offset: usize, content: Body) -> AzureResult<()>;
-    async fn initialize(&self, content_len: u64) -> AzureResult<()>;
+    async fn transfer_partition(&self, offset: u64, content: Body) -> AzureResult<()>;
+    async fn initialize(&self, content_len: Option<u64>) -> AzureResult<()>;
     async fn finalize(&self) -> AzureResult<()>;
 }
 
 pub(crate) async fn upload(
     content: Body,
     parallel: NonZero<usize>,
-    partition_size: NonZero<usize>,
+    partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    // cspell:ignore jaschrep
-    // TODO (jaschrep-msft) support oneshot given optional length
-    let Some(content_len) = content.len() else {
-        return Err(azure_core::Error::with_message(
-            ErrorKind::Io,
-            "length unknown",
-        ));
+    if let Some(content_len) = content.len() {
+        if content_len <= partition_size.get() {
+            client.transfer_oneshot(content).await?;
+            return Ok(());
+        }
     };
-    if content_len <= partition_size.get() as u64 {
-        client.transfer_oneshot(content).await?;
-        return Ok(());
-    }
 
-    client.initialize(content_len).await?;
+    client.initialize(content.len()).await?;
 
     match content {
         Body::Bytes(bytes) => {
@@ -58,18 +55,17 @@ pub(crate) async fn upload(
 async fn upload_bytes_partitions(
     content: Bytes,
     parallel: NonZero<usize>,
-    partition_size: NonZero<usize>,
+    partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    let part_size_actual = partition_size.get();
-    let num_partitions = content.len().div_ceil(part_size_actual);
-    let partitions = (0..num_partitions).map(|part| {
-        let offset = part * part_size_actual;
-        let range = offset..std::cmp::min(offset + part_size_actual, content.len());
+    let partition_size: usize = partition_size.get().try_into().unwrap_or(usize::MAX);
+    let partitions = (0..content.len()).step_by(partition_size).map(|offset| {
+        let range = offset..std::cmp::min(offset.saturating_add(partition_size), content.len());
         (offset, content.slice(range))
     });
-    let ops = partitions
-        .map(|(offset, bytes)| Ok(move || client.transfer_partition(offset, Body::Bytes(bytes))));
+    let ops = partitions.map(|(offset, bytes)| {
+        Ok(move || client.transfer_partition(offset as u64, Body::Bytes(bytes)))
+    });
     run_all_with_concurrency_limit(futures::stream::iter(ops), parallel).await?;
     Ok(())
 }
@@ -77,22 +73,61 @@ async fn upload_bytes_partitions(
 async fn upload_stream_partitions(
     content: Box<dyn SeekableStream>,
     parallel: NonZero<usize>,
-    partition_size: NonZero<usize>,
+    partition_size: NonZero<u64>,
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
-    let partitions =
-        PartitionedStream::new(content, partition_size).scan(0, |enumerated_bytes, result| {
-            match result {
+    type PartsStream = Pin<Box<dyn Stream<Item = AzureResult<(u64, Body)>> + Send>>;
+    let partitions = match TryInto::<usize>::try_into(partition_size.get())
+        .map_err(|_| ())
+        .and_then(|part_usize| {
+            if part_usize < partitioned_stream::MAX_CONTIGUOUS_ELEMENTS {
+                Ok(part_usize)
+            } else {
+                Err(())
+            }
+        }) {
+        Ok(partition_size_usize) => {
+            let stream = stream_single_buffer_partitions(
+                content,
+                // SAFETY: this value comes out of an existing NonZero. We've only safely converted the bit size.
+                unsafe { NonZero::new_unchecked(partition_size_usize) },
+            )
+            .scan(0u64, |enumerated_bytes, result| match result {
                 Ok(bytes) => {
                     let offset = *enumerated_bytes;
-                    *enumerated_bytes += bytes.len();
-                    future::ready(Some(Ok((offset, bytes))))
+                    *enumerated_bytes += bytes.len() as u64;
+                    future::ready(Some(Ok((offset, Body::Bytes(bytes)))))
                 }
                 Err(e) => future::ready(Some(Err(e))),
-            }
-        });
-    let ops = partitions
-        .map_ok(|(offset, bytes)| move || client.transfer_partition(offset, Body::Bytes(bytes)));
+            });
+            Box::pin(stream) as PartsStream
+        }
+        Err(_) => {
+            let stream = stream_multi_buffer_partitions(content, partition_size).scan(
+                0u64,
+                |enumerated_bytes, result| match result {
+                    Ok(vec_bytes) => {
+                        let offset = *enumerated_bytes;
+                        *enumerated_bytes += vec_bytes
+                            .iter()
+                            .map(|bytes| bytes.len() as u64)
+                            .sum::<u64>();
+                        if vec_bytes.len() == 1 {
+                            future::ready(Some(Ok((offset, Body::Bytes(vec_bytes[0].clone())))))
+                        } else {
+                            future::ready(Some(Ok((
+                                offset,
+                                Body::SeekableStream(Box::new(MultiBytesStream::new(vec_bytes))),
+                            ))))
+                        }
+                    }
+                    Err(e) => future::ready(Some(Err(e))),
+                },
+            );
+            Box::pin(stream) as PartsStream
+        }
+    };
+    let ops = partitions.map_ok(|(offset, body)| move || client.transfer_partition(offset, body));
     run_all_with_concurrency_limit(ops, parallel).await?;
     Ok(())
 }
@@ -119,9 +154,9 @@ mod tests {
     /// Record of a call made to a PartitionedUploadBehavior
     #[derive(Debug)]
     enum MockPartitionedUploadBehaviorInvocation {
-        Initialize(u64),
+        Initialize(Option<u64>),
         TransferOneshot(Bytes, BodyType),
-        TransferPartition(usize, Bytes, BodyType),
+        TransferPartition(u64, Bytes, BodyType),
         Finalize(),
     }
 
@@ -152,7 +187,7 @@ mod tests {
             Ok(())
         }
 
-        async fn transfer_partition(&self, offset: usize, mut content: Body) -> AzureResult<()> {
+        async fn transfer_partition(&self, offset: u64, mut content: Body) -> AzureResult<()> {
             let body_type = match content {
                 Body::Bytes(_) => BodyType::Bytes,
                 Body::SeekableStream(_) => BodyType::SeekableStream,
@@ -166,7 +201,7 @@ mod tests {
             Ok(())
         }
 
-        async fn initialize(&self, content_len: u64) -> AzureResult<()> {
+        async fn initialize(&self, content_len: Option<u64>) -> AzureResult<()> {
             self.invocations.lock().await.push(
                 MockPartitionedUploadBehaviorInvocation::Initialize(content_len),
             );
@@ -185,7 +220,7 @@ mod tests {
     #[tokio::test]
     async fn one_shot_bytes_when_within_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
-        let partition_size: usize = data_size;
+        let partition_size = data_size as u64;
         let concurrency: usize = 2;
 
         let mock = MockPartitionedUploadBehavior::new();
@@ -207,7 +242,7 @@ mod tests {
     #[tokio::test]
     async fn partition_bytes_when_over_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
-        let partition_size: usize = 50;
+        let partition_size: u64 = 50;
         let concurrency: usize = 2;
 
         let mock = MockPartitionedUploadBehavior::new();
@@ -235,7 +270,7 @@ mod tests {
     #[tokio::test]
     async fn one_shot_stream_when_within_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
-        let partition_size: usize = data_size;
+        let partition_size = data_size as u64;
         let concurrency: usize = 2;
 
         let mock = MockPartitionedUploadBehavior::new();
@@ -257,7 +292,7 @@ mod tests {
     #[tokio::test]
     async fn partition_stream_when_over_partition_size() -> AzureResult<()> {
         let data_size: usize = 1024;
-        let partition_size: usize = 50;
+        let partition_size: u64 = 50;
         let concurrency: usize = 2;
 
         let mock = MockPartitionedUploadBehavior::new();
@@ -299,16 +334,16 @@ mod tests {
     async fn assert_upload_partitioned_invocations(
         mock: &MockPartitionedUploadBehavior,
         original_data: &[u8],
-        partition_size: usize,
+        partition_size: u64,
         expected_body_type: BodyType,
     ) {
-        let expected_partitions = original_data.len().div_ceil(partition_size);
+        let expected_partitions = (original_data.len() as u64).div_ceil(partition_size) as usize;
         let invocations = mock.invocations.lock().await;
 
         assert_eq!(invocations.len(), expected_partitions + 2);
         assert!(matches!(
             &invocations[0],
-            MockPartitionedUploadBehaviorInvocation::Initialize(size) if *size == original_data.len() as u64
+            MockPartitionedUploadBehaviorInvocation::Initialize(Some(size)) if *size == original_data.len() as u64
         ));
         assert!(matches!(
             &invocations[invocations.len() - 1],
@@ -326,8 +361,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        sorted_transfer_partition_invocations
-            .sort_by(|(left_offset, _, _), (right_offset, _, _)| left_offset.cmp(right_offset));
+        sorted_transfer_partition_invocations.sort_by_key(|(left_offset, _, _)| *left_offset);
 
         assert_eq!(
             sorted_transfer_partition_invocations.len(),
@@ -337,8 +371,11 @@ mod tests {
         for (i, (offset, body, body_type)) in
             sorted_transfer_partition_invocations.iter().enumerate()
         {
-            assert_eq!(*offset, i * partition_size);
-            assert_eq!(body[..], original_data[*offset..*offset + body.len()]);
+            assert_eq!(*offset, i as u64 * partition_size);
+            assert_eq!(
+                body[..],
+                original_data[*offset as usize..*offset as usize + body.len()]
+            );
             assert_eq!(discriminant(body_type), discriminant(&expected_body_type));
         }
     }

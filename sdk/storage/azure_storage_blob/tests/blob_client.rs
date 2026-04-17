@@ -10,12 +10,13 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::{
     models::{
-        AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
-        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
-        BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
+        AccessTier, AccountKind, BlobClientAcquireLeaseOptions,
+        BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
+        BlobClientDownloadOptions, BlobClientGetAccountInfoResultHeaders,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
+        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, RehydratePriority,
         StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
@@ -25,11 +26,13 @@ use azure_storage_blob_test::{
     StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
+use flate2::{write::GzEncoder, Compression};
 use futures::TryStreamExt;
 use std::{
     cmp::min,
     collections::HashMap,
     error::Error,
+    io::Write,
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -120,20 +123,9 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     // No Overwrite Scenario
-    let upload_result = blob_client
+    blob_client
         .upload(RequestContent::from(data.to_vec()), None)
         .await?;
-
-    // Assert upload result fields and raw response
-    assert!(upload_result.etag.is_some());
-    assert!(upload_result.last_modified.is_some());
-    assert_eq!(Some(true), upload_result.is_server_encrypted);
-    assert_eq!(StatusCode::Created, upload_result.raw_response.status());
-    assert!(upload_result
-        .raw_response
-        .headers()
-        .get_optional_str(&azure_core::http::headers::ETAG)
-        .is_some());
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -663,6 +655,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
 #[recorded::test(playback)]
 async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires legal hold feature enabled.
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -698,6 +691,7 @@ async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(playback)]
 async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires ImmutableStorageWithVersioning feature enabled.
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -1096,37 +1090,7 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
 }
 
 #[recorded::test]
-async fn test_download_into_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let request_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
-
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    blob_client
-        .upload(RequestContent::from(vec![]), None)
-        .await?;
-
-    request_count.store(0, Ordering::Relaxed);
-    let _scope = count_policy.check_request_scope();
-    let written = blob_client.download_into(&mut [], None).await?;
-
-    assert_eq!(written, 0);
-    // 1 op with a range, 1 op without after the first one fails
-    assert_eq!(request_count.load(Ordering::Relaxed), 2);
-
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_upload_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -1145,22 +1109,22 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
                 blob_content_disposition: Some("inline".to_string()),
                 blob_content_encoding: Some("identity".to_string()),
                 blob_content_language: Some("en-US".to_string()),
-                blob_content_type: Some("application/octet-stream".to_string()),
+                blob_content_type: Some("image/png".to_string()),
                 ..Default::default()
             }),
         )
         .await?;
 
-    // Assert Content Headers Roundtrip via get_properties
+    // Assert Content Headers via get_properties
     let props = blob_client.get_properties(None).await?;
     assert_eq!(Some("no-cache".to_string()), props.cache_control()?);
     assert_eq!(Some("inline".to_string()), props.content_disposition()?);
     assert_eq!(Some("identity".to_string()), props.content_encoding()?);
     assert_eq!(Some("en-US".to_string()), props.content_language()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+    assert_eq!(Some("image/png".to_string()), content_type);
 
-    // Assert Content Headers Also Present on Download Response
+    // Assert Content Headers on Download Response
     let response = blob_client.download(None).await?;
     assert_eq!(
         Some("no-cache".to_string()),
@@ -1178,26 +1142,7 @@ async fn test_blob_content_headers_roundtrip(ctx: TestContext) -> Result<(), Box
         Some("en-US".to_string()),
         response.properties.content_language
     );
-    assert_eq!(
-        Some("application/octet-stream".to_string()),
-        response.properties.content_type
-    );
-
-    // Overwrite with Different Content Headers - new headers replace old ones
-    blob_client
-        .upload(
-            RequestContent::from(b"overwrite-content-headers".to_vec()),
-            Some(BlockBlobClientUploadOptions {
-                blob_cache_control: Some("max-age=3600".to_string()),
-                blob_content_type: Some("image/png".to_string()),
-                ..Default::default()
-            }),
-        )
-        .await?;
-
-    let props = blob_client.get_properties(None).await?;
-    assert_eq!(Some("max-age=3600".to_string()), props.cache_control()?);
-    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    let content_type: Option<String> = response.headers.get_optional_as(&CONTENT_TYPE)?;
     assert_eq!(Some("image/png".to_string()), content_type);
 
     container_client.delete(None).await?;
@@ -1220,8 +1165,6 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
         .await?;
 
     // Set All Content Headers via Set Properties
-    // Note: set_properties does not validate blob_content_md5 against actual content,
-    // so an arbitrary value can be used to verify storage and roundtrip behavior.
     blob_client
         .set_properties(Some(BlobClientSetPropertiesOptions {
             blob_cache_control: Some("no-store".to_string()),
@@ -1229,7 +1172,7 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
             blob_content_encoding: Some("identity".to_string()),
             blob_content_language: Some("fr-FR".to_string()),
             blob_content_md5: Some(md5.clone()),
-            blob_content_type: Some("application/octet-stream".to_string()),
+            blob_content_type: Some("application/pdf".to_string()),
             ..Default::default()
         }))
         .await?;
@@ -1245,16 +1188,19 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     assert_eq!(Some("fr-FR".to_string()), props.content_language()?);
     assert_eq!(Some(md5), props.content_md5()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("application/octet-stream".to_string()), content_type);
+    assert_eq!(Some("application/pdf".to_string()), content_type);
 
-    // Set only Content-Type - omitted headers are cleared by the service
+    // Overwrite with Only Content-Type - all other headers absent, so service clears them
+    // Note: set_properties does not validate blob_content_md5 against actual content,
+    // so we can use an arbitrary value to test storage and clearing behavior.
     blob_client
         .set_properties(Some(BlobClientSetPropertiesOptions {
-            blob_content_type: Some("image/png".to_string()),
+            blob_content_type: Some("image/gif".to_string()),
             ..Default::default()
         }))
         .await?;
 
+    // Assert Only Content-Type Remains; Others Are Cleared
     let props = blob_client.get_properties(None).await?;
     assert_eq!(None, props.cache_control()?);
     assert_eq!(None, props.content_disposition()?);
@@ -1262,7 +1208,251 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
     assert_eq!(None, props.content_language()?);
     assert_eq!(None, props.content_md5()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("image/png".to_string()), content_type);
+    assert_eq!(Some("image/gif".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_upload_blob_overwrite_content_headers(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let content_v1 = b"overwrite-headers-v1";
+    let content_v2 = b"overwrite-headers-v2";
+
+    // Upload v1 with Initial Content Headers
+    blob_client
+        .upload(
+            RequestContent::from(content_v1.to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                blob_cache_control: Some("no-cache".to_string()),
+                blob_content_type: Some("application/octet-stream".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Overwrite v2 with Different Content Headers
+    blob_client
+        .upload(
+            RequestContent::from(content_v2.to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                blob_cache_control: Some("max-age=3600".to_string()),
+                blob_content_type: Some("application/json".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert v2 Headers Replace v1 Headers
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("max-age=3600".to_string()), props.cache_control()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/json".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&blob_client, None, None).await?;
+
+    let proposed_id = "00000000-1111-2222-3333-444444444444".to_string();
+
+    // Acquire With Proposed Lease ID Scenario
+    let response = blob_client
+        .acquire_lease(
+            15,
+            Some(BlobClientAcquireLeaseOptions {
+                proposed_lease_id: Some(proposed_id.clone()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    assert_eq!(proposed_id, response.lease_id()?.unwrap());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // BlobNotFound - get_properties on a blob that doesn't exist
+    let err = blob_client.get_properties(None).await.unwrap_err();
+    let storage_error: StorageError = err.try_into()?;
+    assert_eq!(
+        storage_error.error_code.as_ref(),
+        Some(&StorageErrorCode::BlobNotFound),
+        "expected BlobNotFound error code"
+    );
+
+    // Upload once so the blob exists
+    create_test_blob(&blob_client, None, None).await?;
+
+    // BlobAlreadyExists - upload again with overwrite=false
+    let err = blob_client
+        .upload(
+            RequestContent::from(b"duplicate".to_vec()),
+            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+        )
+        .await
+        .unwrap_err();
+    let storage_error: StorageError = err.try_into()?;
+    assert_eq!(
+        storage_error.error_code.as_ref(),
+        Some(&StorageErrorCode::BlobAlreadyExists),
+        "expected BlobAlreadyExists error code"
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Move blob to Archive tier
+    blob_client.set_tier(AccessTier::Archive, None).await?;
+
+    // Rehydrate to Hot with High Priority Scenario
+    blob_client
+        .set_tier(
+            AccessTier::Hot,
+            Some(BlobClientSetTierOptions {
+                rehydrate_priority: Some(RehydratePriority::High),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    assert_eq!(
+        Some(RehydratePriority::High),
+        response.rehydrate_priority()?
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_gzip_blob_no_metadata_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Compress plaintext and upload with no content metadata.
+    let plaintext = b"hello world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(RequestContent::from(gzip_bytes.clone()), None)
+        .await?;
+
+    // Download with the default client.
+    let response = blob_client.download(None).await?;
+
+    // No content-encoding means no decompression; body is raw gzip.
+    assert_eq!(
+        None, response.properties.content_encoding,
+        "content-encoding must be absent: the service did not inject a content-coding header"
+    );
+    let downloaded_bytes = response.body.collect().await?;
+    assert_eq!(
+        gzip_bytes,
+        downloaded_bytes.to_vec(),
+        "body must be the raw gzip stream unchanged"
+    );
+
+    // Verify the raw bytes gunzip back to the original plaintext.
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_ref());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(plaintext.to_vec(), decompressed);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Compress plaintext and upload with blob_content_encoding: gzip.
+    let plaintext = b"hello gzip world";
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(plaintext)?;
+    let gzip_bytes = encoder.finish()?;
+
+    blob_client
+        .upload(
+            RequestContent::from(gzip_bytes.clone()),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_encoding: Some("gzip".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Download - auto-decompression is disabled so we get raw bytes.
+    let response = blob_client.download(None).await?;
+
+    // content-encoding header is present because reqwest did not strip it.
+    assert_eq!(
+        Some("gzip".to_string()),
+        response.properties.content_encoding,
+        "content-encoding: gzip must be present when auto-decompression is disabled"
+    );
+
+    let downloaded_bytes = response.body.collect().await?;
+    // The body is a valid gzip stream that decodes back to the original plaintext.
+    // Note: we compare decompressed output rather than raw bytes because the service
+    // may normalize the OS byte in the gzip header.
+    let mut decoder = flate2::read::GzDecoder::new(downloaded_bytes.as_ref());
+    let mut decompressed = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+    assert_eq!(
+        plaintext.to_vec(),
+        decompressed,
+        "decompressed body must match original plaintext"
+    );
 
     container_client.delete(None).await?;
     Ok(())

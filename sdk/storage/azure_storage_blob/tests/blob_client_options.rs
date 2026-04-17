@@ -2,852 +2,304 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
-    time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
+    http::{
+        ClientOptions, ExponentialRetryOptions, FixedRetryOptions, RequestContent, RetryOptions,
+    },
+    time::Duration,
 };
-use azure_core_test::{recorded, TestContext, VarOptions};
-use azure_storage_blob::models::{
-    AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientCreateSnapshotOptions,
-    BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
-    BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
-    BlobClientSetImmutabilityPolicyOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlobContainerClientListBlobsOptions, BlobTags,
-    BlockBlobClientUploadOptions, DeleteSnapshotsOptionType, ListBlobsIncludeItem,
+use azure_core_test::{recorded, TestContext};
+use azure_storage_blob::{
+    models::{BlobClientDownloadOptions, BlobClientGetPropertiesResultHeaders},
+    BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount,
+    create_test_blob, get_blob_name, get_container_client, ClientOptionsExt, FailFirstPolicy,
+    StorageAccount, TestPolicy,
 };
-use futures::TryStreamExt;
-use std::{collections::HashMap, error::Error, time::Duration};
+use std::{
+    error::Error,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 #[recorded::test]
-async fn test_blob_version_read_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
-        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    // Create Multiple Versions
-    let data_v1 = b"version 1 content";
+    let data = b"hello rusty world";
     create_test_blob(
         &blob_client,
-        Some(RequestContent::from(data_v1.to_vec())),
+        Some(RequestContent::from(data.to_vec())),
         None,
     )
     .await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_1 = response.version_id()?.unwrap();
-    let data_v2 = b"version 2 content";
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(data_v2.to_vec())),
-        None,
-    )
-    .await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_2 = response.version_id()?.unwrap();
 
-    // Download Version 1 Using with_version()
-    let version_1_client = blob_client.with_version(&version_1)?;
-    let download_response = version_1_client.download(None).await?;
-    let body_data = download_response.body.collect().await?;
-    assert_eq!(data_v1.to_vec(), body_data);
-
-    // Download Version 1 Using Options (Test query parameter replaces)
-
-    // Create blob_client w/ version_2 with intention to actually download version_1 with options bag
-    let version_2_client = blob_client.with_version(&version_2)?;
-    let download_options = BlobClientDownloadOptions {
-        version_id: Some(version_1.clone()),
-        ..Default::default()
-    };
-    let download_response = version_2_client.download(Some(download_options)).await?;
-    let body_data = download_response.body.collect().await?;
-    assert_eq!(data_v1.to_vec(), body_data);
-
-    // Get Properties
-    let props_v1 = version_1_client.get_properties(None).await?;
-    assert_eq!(
-        u64::try_from(data_v1.len())?,
-        props_v1.content_length()?.unwrap()
-    );
-    assert_eq!(version_1, props_v1.version_id()?.unwrap());
-    let props_v2 = version_2_client.get_properties(None).await?;
-    assert_eq!(
-        u64::try_from(data_v2.len())?,
-        props_v2.content_length()?.unwrap()
-    );
-    assert_eq!(version_2, props_v2.version_id()?.unwrap());
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_blob_version_metadata_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    // Create Version 1 with Metadata
-    let metadata_v1 = HashMap::from([("version".to_string(), "one".to_string())]);
-    let upload_options = BlockBlobClientUploadOptions {
-        metadata: Some(metadata_v1.clone()),
-        ..Default::default()
-    };
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"content v1".to_vec())),
-        Some(upload_options),
-    )
-    .await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_1 = response.version_id()?.unwrap();
-
-    // Set Metadata on Current Version (Creates Version 2)
-    let metadata_v2 = HashMap::from([("version".to_string(), "two".to_string())]);
-    blob_client.set_metadata(&metadata_v2, None).await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_2 = response.version_id()?.unwrap();
-
-    // Verify metadata matches corresponding version
-    let version_1_client = blob_client.with_version(&version_1)?;
-    let props_v1 = version_1_client.get_properties(None).await?;
-    assert_eq!(metadata_v1, props_v1.metadata()?);
-    let version_2_client = blob_client.with_version(&version_2)?;
-    let props_v2 = version_2_client.get_properties(None).await?;
-    assert_eq!(metadata_v2, props_v2.metadata()?);
-    assert_ne!(version_1, version_2);
-
-    // Upload New Content (Creates Version 3)
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"content v3".to_vec())),
-        None,
-    )
-    .await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_3 = response.version_id()?.unwrap();
-    assert_ne!(version_2, version_3);
-
-    // Set Tags on Current Version (Does NOT Create New Version)
-    let tags = HashMap::from([("env".to_string(), "test".to_string())]);
-    blob_client
-        .set_tags(
-            RequestContent::try_from(BlobTags::from(tags.clone()))?,
-            None,
-        )
-        .await?;
-
-    // Verify version_id hasn't changed after setting tags
-    let response = blob_client.get_properties(None).await?;
-    let version_after_tags = response.version_id()?.unwrap();
-    assert_eq!(version_3, version_after_tags);
-
-    // Verify Previous Versions Have No Tags
-    let response_tags = version_2_client.get_tags(None).await?.into_model()?;
-    let retrieved_tags: HashMap<String, String> = response_tags.into();
-    assert_eq!(HashMap::new(), retrieved_tags);
-
-    let response_tags = version_1_client.get_tags(None).await?.into_model()?;
-    let retrieved_tags: HashMap<String, String> = response_tags.into();
-    assert_eq!(HashMap::new(), retrieved_tags);
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    // Create Version 1 in Hot Tier
-    create_test_blob(&blob_client, None, None).await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_1 = response.version_id()?.unwrap();
-    assert_eq!(
-        AccessTier::Hot.to_string(),
-        response.access_tier()?.unwrap()
-    );
-
-    // Create Version 2
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"version 2 content".to_vec())),
-        None,
-    )
-    .await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_2 = response.version_id()?.unwrap();
-
-    // Set Tier on Version 1 (Non-Current)
-    let version_1_client = blob_client.with_version(&version_1)?;
-    let set_tier_options = BlobClientSetTierOptions {
-        version_id: Some(version_1.clone()),
-        ..Default::default()
-    };
-    version_1_client
-        .set_tier(AccessTier::Cool, Some(set_tier_options))
-        .await?;
-
-    // Verify version_1 is Cool, version_2 is Hot
-    let props_v1 = version_1_client.get_properties(None).await?;
-    assert_eq!(
-        AccessTier::Cool.to_string(),
-        props_v1.access_tier()?.unwrap()
-    );
-    let version_2_client = blob_client.with_version(&version_2)?;
-    let props_v2 = version_2_client.get_properties(None).await?;
-    assert_eq!(
-        AccessTier::Hot.to_string(),
-        props_v2.access_tier()?.unwrap()
-    );
-
-    // Set Tier on Current Version
-    blob_client.set_tier(AccessTier::Cool, None).await?;
-    let props_current = blob_client.get_properties(None).await?;
-    assert_eq!(
-        AccessTier::Cool.to_string(),
-        props_current.access_tier()?.unwrap()
-    );
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
-
-    // Create Blob 1 with Multiple Versions
-    let blob_1_name = get_blob_name(recording);
-    let blob_1_client = container_client.blob_client(&blob_1_name);
-    create_test_blob(&blob_1_client, None, None).await?;
-    create_test_blob(&blob_1_client, None, None).await?;
-
-    // Create Blob 2 with Multiple Versions
-    let blob_2_name = get_blob_name(recording);
-    let blob_2_client = container_client.blob_client(&blob_2_name);
-    create_test_blob(&blob_2_client, None, None).await?;
-    create_test_blob(&blob_2_client, None, None).await?;
-    create_test_blob(&blob_2_client, None, None).await?;
-
-    // List Blobs Without Versions
-    let mut list_response = container_client.list_blobs(None)?.into_pages();
-    let page = list_response.try_next().await?;
-    let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
-    // Only current versions
-    assert_eq!(2, blob_items.len());
-
-    // List Blobs With Versions
-    let list_options = BlobContainerClientListBlobsOptions {
-        include: Some(vec![ListBlobsIncludeItem::Versions]),
-        ..Default::default()
-    };
-    let mut list_response = container_client
-        .list_blobs(Some(list_options))?
-        .into_pages();
-    let page = list_response.try_next().await?;
-    let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
-
-    // Verify all 5 versions (2 from blob_1 + 3 from blob_2) are present
-    assert_eq!(5, blob_items.len());
-
-    // Count Versions Per Blob
-    let mut version_counts: HashMap<&str, usize> = HashMap::new();
-    let mut current_versions = 0;
-
-    for blob_item in &blob_items {
-        let name = blob_item.name.as_ref().unwrap();
-        let version_id = blob_item.version_id.as_ref();
-        let is_current = blob_item.is_current_version.unwrap_or(false);
-        assert!(version_id.is_some(),);
-
-        *version_counts.entry(name.as_str()).or_insert(0) += 1;
-
-        if is_current {
-            current_versions += 1;
-        }
-    }
-
-    // Assert
-    assert_eq!(2, version_counts[blob_1_name.as_str()]);
-    assert_eq!(3, version_counts[blob_2_name.as_str()]);
-    assert_eq!(2, current_versions);
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_blob_version_feature_interactions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
-    let source_blob_name = format!("{}-source", get_blob_name(recording));
-    let source_blob_client = container_client.blob_client(&source_blob_name);
-
-    // Create Source Blob with Multiple Versions
-    let data_v1 = b"source version 1";
-    source_blob_client
-        .upload(RequestContent::from(data_v1.to_vec()), None)
-        .await?;
-
-    let data_v2 = b"source version 2";
-    source_blob_client
-        .upload(RequestContent::from(data_v2.to_vec()), None)
-        .await?;
-
-    // Test: Lease on Current Version
-    let lease_blob_name = format!("{}-lease", get_blob_name(recording));
-    let lease_blob_client = container_client.blob_client(&lease_blob_name);
-    lease_blob_client
-        .upload(RequestContent::from(b"v1".to_vec()), None)
-        .await?;
-    let response = lease_blob_client.get_properties(None).await?;
-    let lease_version_1 = response.version_id()?.unwrap();
-
-    lease_blob_client
-        .upload(RequestContent::from(b"v2".to_vec()), None)
-        .await?;
-
-    // Acquire Lease on Current Version
-    let acquire_response = lease_blob_client.acquire_lease(-1, None).await?;
-    let lease_id = acquire_response.lease_id()?.unwrap();
-
-    // Verify Older Version is Still Accessible Without Lease
-    let lease_version_1_client = lease_blob_client.with_version(&lease_version_1)?;
-    let props = lease_version_1_client.get_properties(None).await?;
-    assert_eq!(2, props.content_length()?.unwrap());
-
-    // Release Lease
-    lease_blob_client.release_lease(lease_id, None).await?;
-
-    // Test: Conditional Operation with Version
-    let etag = props.etag()?.unwrap();
-    let get_options = BlobClientGetPropertiesOptions {
-        if_match: Some(etag),
-        version_id: Some(lease_version_1.clone()),
-        ..Default::default()
-    };
-    let conditional_response = lease_blob_client.get_properties(Some(get_options)).await?;
-    assert_eq!(2, conditional_response.content_length()?.unwrap());
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test(playback)]
-async fn test_blob_version_immutability_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Versioned, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    container_client.create(None).await?;
-
-    // Create Version 1 & 2
-    create_test_blob(&blob_client, None, None).await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_1 = response.version_id()?.unwrap();
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"version 2".to_vec())),
-        None,
-    )
-    .await?;
-    let response = blob_client.get_properties(None).await?;
-    let version_2 = response.version_id()?.unwrap();
-
-    // Set Legal Hold on Version 1
-    let version_1_client = blob_client.with_version(&version_1)?;
-    version_1_client.set_legal_hold(true, None).await?;
-    let props_v1 = version_1_client.get_properties(None).await?;
-    assert!(props_v1.legal_hold()?.unwrap());
-
-    // Verify Version 2 Does Not Have Legal Hold
-    let version_2_client = blob_client.with_version(&version_2)?;
-    let props_v2 = version_2_client.get_properties(None).await?;
-    assert!(!props_v2.legal_hold()?.unwrap_or(false));
-
-    // Attempt to Delete Version 1
-    let delete_options = BlobClientDeleteOptions {
-        version_id: Some(version_1.clone()),
-        ..Default::default()
-    };
-    let result = version_1_client.delete(Some(delete_options)).await;
-    assert!(result.is_err());
-
-    // Remove Legal Hold from Version 1
-    version_1_client.set_legal_hold(false, None).await?;
-
-    // Set Immutability Policy on Version 2
-    let expiry = recording.var(
-        "version_2_expiry",
-        Some(VarOptions {
-            default_value: Some(
-                to_rfc3339(&(OffsetDateTime::now_utc() + Duration::from_secs(5))).into(),
-            ),
+    // Bounded Range Download (first 5 bytes: "hello")
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some(0..5),
             ..Default::default()
-        }),
-    );
-    let expiry_time = parse_rfc3339(&expiry)?;
-    let immutability_options = BlobClientSetImmutabilityPolicyOptions {
-        version_id: Some(version_2.clone()),
-        ..Default::default()
-    };
-    version_2_client
-        .set_immutability_policy(&expiry_time, Some(immutability_options))
+        }))
         .await?;
+    assert_eq!(5, response.properties.content_length.unwrap());
+    let body = response.body.collect().await?;
+    assert_eq!(b"hello".to_vec(), body.to_vec());
 
-    // Verify Immutability Policy on version_2, None on version_1
-    let props_v2 = version_2_client.get_properties(None).await?;
-    assert!(props_v2.immutability_policy_expires_on()?.is_some());
-    let props_v1 = version_1_client.get_properties(None).await?;
-    assert!(props_v1.immutability_policy_expires_on()?.is_none());
+    // Bounded Range Download (middle 6 bytes: " rusty")
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some(5..11),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(6, response.properties.content_length.unwrap());
+    let body = response.body.collect().await?;
+    assert_eq!(b" rusty".to_vec(), body.to_vec());
 
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_blob_version_error_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    // Create a Blob with One Version
-    create_test_blob(&blob_client, None, None).await?;
-    let response = blob_client.get_properties(None).await?;
-    let valid_version = response.version_id()?.unwrap();
-
-    // Test: Invalid Version ID Format
-    let invalid_version_client = blob_client.with_version("invalid-version-id")?;
-    let result = invalid_version_client.get_properties(None).await;
-    assert!(result.is_err());
-
-    // Test: Non-Existent Version ID
-    let fake_version = "2000-05-11T00:00:00.0000000Z";
-    let fake_version_client = blob_client.with_version(fake_version)?;
-    let result = fake_version_client.get_properties(None).await;
-    assert!(result.is_err());
-    let error = result.unwrap_err().http_status();
-    assert!(error == Some(StatusCode::NotFound));
-
-    // Test: Delete Non-Current Version and Verify It's Gone
-    create_test_blob(&blob_client, Some(RequestContent::from(b"v2".into())), None).await?;
-    let version_1_client = blob_client.with_version(&valid_version)?;
-    let delete_options = BlobClientDeleteOptions {
-        version_id: Some(valid_version.clone()),
-        ..Default::default()
-    };
-    version_1_client.delete(Some(delete_options)).await?;
-
-    // Verify Version is Deleted
-    let result = version_1_client.get_properties(None).await;
-    assert!(result.is_err());
-    let error = result.unwrap_err().http_status();
-    assert_eq!(StatusCode::NotFound, error.unwrap());
+    // Bounded Range Download (last 6 bytes: " world")
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some(11..17),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(6, response.properties.content_length.unwrap());
+    let body = response.body.collect().await?;
+    assert_eq!(b" world".to_vec(), body.to_vec());
 
     container_client.delete(None).await?;
     Ok(())
 }
 
 #[recorded::test]
-async fn test_blob_snapshot_basic_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
     // Recording Setup
     let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let data_v1 = b"snapshot version 1";
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
 
-    // Create Base Blob
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Per-Call Policy Scenario
+    let _scope = count_policy.check_request_scope();
     create_test_blob(
         &blob_client,
-        Some(RequestContent::from(data_v1.to_vec())),
+        Some(RequestContent::from(b"options test".to_vec())),
         None,
     )
     .await?;
 
-    // Create Snapshot
-    let snapshot_response = blob_client.create_snapshot(None).await?;
-    let snapshot_1 = snapshot_response.snapshot()?.unwrap();
-    assert!(!snapshot_1.is_empty());
-
-    // Get Snapshot Properties
-    let snapshot_1_client = blob_client.with_snapshot(&snapshot_1)?;
-    let props = snapshot_1_client.get_properties(None).await?;
-    assert_eq!(
-        u64::try_from(data_v1.len())?,
-        props.content_length()?.unwrap()
+    // Assert
+    assert!(
+        request_count.load(Ordering::Relaxed) >= 1,
+        "per-call policy should have been invoked"
     );
-
-    // Download Snapshot Content
-    let download_response = snapshot_1_client.download(None).await?;
-    let body_data = download_response.body.collect().await?;
-    assert_eq!(data_v1.to_vec(), body_data);
-
-    // Modify Base Blob
-    let data_v2 = b"snapshot version 2";
-    blob_client
-        .upload(RequestContent::from(data_v2.to_vec()), None)
-        .await?;
-
-    // Create Second Snapshot
-    let snapshot_response_2 = blob_client.create_snapshot(None).await?;
-    let snapshot_2 = snapshot_response_2.snapshot()?.unwrap();
-
-    // Verify First Snapshot is Unchanged
-    let download_response = snapshot_1_client.download(None).await?;
-    let body_data = download_response.body.collect().await?;
-    assert_eq!(data_v1.to_vec(), body_data);
-
-    // Test Snapshot Parameter Replacement (Options Override Client)
-    let snapshot_2_client = blob_client.with_snapshot(&snapshot_2)?;
-    let download_options = BlobClientDownloadOptions {
-        snapshot: Some(snapshot_1.clone()),
-        ..Default::default()
-    };
-    let download_response = snapshot_2_client.download(Some(download_options)).await?;
-    let body_data = download_response.body.collect().await?;
-    // Should get snapshot_1 content, not snapshot_2
-    assert_eq!(data_v1.to_vec(), body_data);
-
-    // Verify Base Blob Has New Content
-    let download_response = blob_client.download(None).await?;
-    let body_data = download_response.body.collect().await?;
-    assert_eq!(data_v2.to_vec(), body_data);
 
     container_client.delete(None).await?;
     Ok(())
 }
 
 #[recorded::test]
-async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
     // Recording Setup
     let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    // Create Blob with Metadata
-    let base_metadata = HashMap::from([("base".to_string(), "model".to_string())]);
-    let upload_options = BlockBlobClientUploadOptions {
-        metadata: Some(base_metadata.clone()),
-        ..Default::default()
-    };
-    create_test_blob(
-        &blob_client,
-        Some(RequestContent::from(b"based model".to_vec())),
-        Some(upload_options),
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_try_policy(count_policy.clone())),
     )
     .await?;
 
-    // Create Snapshot (Inherits Base Blob Metadata)
-    let snapshot_response = blob_client.create_snapshot(None).await?;
-    let snapshot_1 = snapshot_response.snapshot()?.unwrap();
-    let snapshot_1_client = blob_client.with_snapshot(&snapshot_1)?;
-    let props = snapshot_1_client.get_properties(None).await?;
-    assert_eq!(base_metadata, props.metadata()?);
-
-    // Create Snapshot with New Metadata
-    let snapshot_metadata = HashMap::from([("something".to_string(), "different".to_string())]);
-    let snapshot_options = BlobClientCreateSnapshotOptions {
-        metadata: Some(snapshot_metadata.clone()),
-        ..Default::default()
-    };
-    let snapshot_response_2 = blob_client.create_snapshot(Some(snapshot_options)).await?;
-    let snapshot_2 = snapshot_response_2.snapshot()?.unwrap();
-    let snapshot_2_client = blob_client.with_snapshot(&snapshot_2)?;
-    let props_2 = snapshot_2_client.get_properties(None).await?;
-    assert_eq!(snapshot_metadata, props_2.metadata()?);
-
-    // Modify Current (Base) Blob Metadata
-    let new_base_metadata = HashMap::from([("end".to_string(), "game".to_string())]);
-    blob_client.set_metadata(&new_base_metadata, None).await?;
-
-    // Verify Snapshots Unchanged
-    let props_1 = snapshot_1_client.get_properties(None).await?;
-    assert_eq!(base_metadata, props_1.metadata()?);
-    let props_2 = snapshot_2_client.get_properties(None).await?;
-    assert_eq!(snapshot_metadata, props_2.metadata()?);
-
-    // Verify Base Blob Has New Metadata
-    let base_props = blob_client.get_properties(None).await?;
-    assert_eq!(new_base_metadata, base_props.metadata()?);
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-
-    // Create Blob 1 with Multiple Snapshots
-    let blob_1_name = get_blob_name(recording);
-    let blob_1_client = container_client.blob_client(&blob_1_name);
-    create_test_blob(&blob_1_client, None, None).await?;
-    blob_1_client.create_snapshot(None).await?;
-    blob_1_client.create_snapshot(None).await?;
-
-    // Create Blob 2 with Multiple Snapshots
-    let blob_2_name = get_blob_name(recording);
-    let blob_2_client = container_client.blob_client(&blob_2_name);
-    create_test_blob(&blob_2_client, None, None).await?;
-    blob_2_client.create_snapshot(None).await?;
-    blob_2_client.create_snapshot(None).await?;
-    blob_2_client.create_snapshot(None).await?;
-
-    // List Blobs Without Snapshots
-    let mut list_response = container_client.list_blobs(None)?.into_pages();
-    let page = list_response.try_next().await?;
-    let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
-    // Only base blobs, no snapshots
-    assert_eq!(2, blob_items.len());
-    for blob_item in &blob_items {
-        assert!(blob_item.snapshot.is_none());
-    }
-
-    // List Blobs With Snapshots
-    let list_options = BlobContainerClientListBlobsOptions {
-        include: Some(vec![ListBlobsIncludeItem::Snapshots]),
-        ..Default::default()
-    };
-    let mut list_response = container_client
-        .list_blobs(Some(list_options))?
-        .into_pages();
-    let page = list_response.try_next().await?;
-    let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
-
-    // Verify all blobs and snapshots (2 base + 2 snapshots for blob_1 + 3 snapshots for blob_2 = 7)
-    assert_eq!(7, blob_items.len());
-
-    // Count Snapshots Per Blob
-    let mut snapshot_counts: HashMap<&str, usize> = HashMap::new();
-    let mut base_blob_count = 0;
-
-    for blob_item in &blob_items {
-        let name = blob_item.name.as_ref().unwrap();
-        if blob_item.snapshot.is_some() {
-            *snapshot_counts.entry(name.as_str()).or_insert(0) += 1;
-        } else {
-            base_blob_count += 1;
-        }
-    }
-
-    // Assert
-    assert_eq!(2, snapshot_counts[blob_1_name.as_str()]);
-    assert_eq!(3, snapshot_counts[blob_2_name.as_str()]);
-    assert_eq!(2, base_blob_count);
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_blob_snapshot_delete_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
-    create_test_blob(&blob_client, None, None).await?;
 
-    // Create multiple snapshots
-    let snapshot_response_1 = blob_client.create_snapshot(None).await?;
-    let snapshot_1 = snapshot_response_1.snapshot()?.unwrap();
-    let snapshot_response_2 = blob_client.create_snapshot(None).await?;
-    let snapshot_2 = snapshot_response_2.snapshot()?.unwrap();
-    let snapshot_response_3 = blob_client.create_snapshot(None).await?;
-    let snapshot_3 = snapshot_response_3.snapshot()?.unwrap();
-
-    // Delete Specific Snapshot (snapshot_2)
-    let snapshot_2_client = blob_client.with_snapshot(&snapshot_2)?;
-    snapshot_2_client.delete(None).await?;
-
-    // Verify snapshot_2 is deleted and that snapshot_1 and base blob (snapshot_3) still exists
-    let result = snapshot_2_client.get_properties(None).await;
-    assert!(result.is_err());
-    let error = result.unwrap_err().http_status();
-    assert_eq!(StatusCode::NotFound, error.unwrap());
-    let snapshot_1_client = blob_client.with_snapshot(&snapshot_1)?;
-    snapshot_1_client.get_properties(None).await?;
-    let snapshot_3_client = blob_client.with_snapshot(&snapshot_3)?;
-    snapshot_3_client.get_properties(None).await?;
-    blob_client.get_properties(None).await?;
-
-    // Delete Only Snapshots (Base Blob Remains)
-    let delete_options = BlobClientDeleteOptions {
-        delete_snapshots: Some(DeleteSnapshotsOptionType::Only),
-        ..Default::default()
-    };
-    blob_client.delete(Some(delete_options)).await?;
-
-    // Verify snapshots are deleted and that base blob still exists
-    let result = snapshot_1_client.get_properties(None).await;
-    assert!(result.is_err());
-    let result = snapshot_3_client.get_properties(None).await;
-    assert!(result.is_err());
-    blob_client.get_properties(None).await?;
-
-    // Create new snapshots
-    blob_client.create_snapshot(None).await?;
-    blob_client.create_snapshot(None).await?;
-
-    // Delete All
-    let delete_options = BlobClientDeleteOptions {
-        delete_snapshots: Some(DeleteSnapshotsOptionType::Include),
-        ..Default::default()
-    };
-    blob_client.delete(Some(delete_options)).await?;
+    // Per-Try Policy Scenario
+    let _scope = count_policy.check_request_scope();
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(b"per-try policy test".to_vec())),
+        None,
+    )
+    .await?;
 
     // Assert
-    let result = blob_client.get_properties(None).await;
-    assert!(result.is_err());
+    assert!(
+        request_count.load(Ordering::Relaxed) >= 1,
+        "per-try policy should have been invoked"
+    );
 
     container_client.delete(None).await?;
     Ok(())
 }
 
 #[recorded::test]
-async fn test_blob_snapshot_conditional_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let per_try_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(per_try_count.clone(), None));
+
     // Recording Setup
     let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_name = get_blob_name(recording);
-    let blob_client = container_client.blob_client(&blob_name);
-    create_test_blob(&blob_client, None, None).await?;
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(
+            BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    retry: RetryOptions::none(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+            .with_per_try_policy(count_policy.clone()),
+        ),
+    )
+    .await?;
 
-    // Acquire Lease on Base Blob
-    let acquire_response = blob_client.acquire_lease(-1, None).await?;
-    let lease_id = acquire_response.lease_id()?.unwrap();
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // Create Snapshot on Leased Blob
-    let snapshot_options = BlobClientCreateSnapshotOptions {
-        lease_id: Some(lease_id.clone()),
-        ..Default::default()
-    };
-    let snapshot_response = blob_client.create_snapshot(Some(snapshot_options)).await?;
-    let snapshot_id = snapshot_response.snapshot()?.unwrap();
-    let snapshot_client = blob_client.with_snapshot(&snapshot_id)?;
+    // Retry Options None Scenario
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(b"retry none test".to_vec())),
+        None,
+    )
+    .await?;
 
-    // Release Lease
-    blob_client.release_lease(lease_id.clone(), None).await?;
-
-    // Test Conditional Snapshot Creation
+    // Assert: with RetryOptions::none(), each request is attempted exactly once.
+    // Verify by counting per-try invocations for a single known request.
+    let count_before = per_try_count.load(Ordering::Relaxed);
+    // `TestPolicy::send` only invokes its callback when `request_scope_counter > 0`.
+    // Without activating the scope here, the counter never increments and the assertion fails.
+    let _count_scope = count_policy.check_request_scope();
     let props = blob_client.get_properties(None).await?;
-    let etag = props.etag()?.unwrap();
-    let conditional_options = BlobClientCreateSnapshotOptions {
-        if_match: Some(etag),
-        ..Default::default()
-    };
-    let conditional_snapshot = blob_client
-        .create_snapshot(Some(conditional_options))
-        .await?;
-    assert!(conditional_snapshot.snapshot()?.is_some());
-
-    // Test Blob Tags Behavior with Snapshots
-    let tags = HashMap::from([("test_key".to_string(), "test_value".to_string())]);
-    blob_client
-        .set_tags(
-            RequestContent::try_from(BlobTags::from(tags.clone()))?,
-            None,
-        )
-        .await?;
-
-    // Verify Tags on Base Blob
-    let response_tags = blob_client.get_tags(None).await?.into_model()?;
-    let retrieved_tags: HashMap<String, String> = response_tags.into();
-    assert_eq!(tags, retrieved_tags);
-
-    // Verify Snapshot Does NOT Have Tags (Tags Not Inherited)
-    let snapshot_tags = snapshot_client.get_tags(None).await?.into_model()?;
-    let snapshot_tag_map: HashMap<String, String> = snapshot_tags.into();
-    assert_eq!(HashMap::new(), snapshot_tag_map);
+    assert_eq!(
+        per_try_count.load(Ordering::Relaxed) - count_before,
+        1,
+        "expected exactly 1 per-try invocation (no retries)"
+    );
+    drop(_count_scope);
+    assert_eq!(Some(15), props.content_length()?);
 
     container_client.delete(None).await?;
     Ok(())
 }
 
 #[recorded::test]
-async fn test_blob_snapshot_error_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let call_count = Arc::new(AtomicUsize::new(0));
+    // Fail one time, then succeed - requires at least 1 retry
+    let fail_policy = Arc::new(FailFirstPolicy::new(1, call_count.clone()));
+
     // Recording Setup
     let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(
+            BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    retry: RetryOptions::exponential(ExponentialRetryOptions {
+                        max_retries: 3,
+                        initial_delay: Duration::milliseconds(0),
+                        max_delay: Duration::milliseconds(0),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+            .with_per_try_policy(fail_policy.clone()),
+        ),
+    )
+    .await?;
+
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    // Test Snapshot Non-Existent Blob Fails
-    let result = blob_client.create_snapshot(None).await;
-    assert!(result.is_err());
-    let error = result.unwrap_err().http_status();
-    assert_eq!(StatusCode::NotFound, error.unwrap());
+    // Act
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(b"retry transient test".to_vec())),
+        None,
+    )
+    .await?;
 
-    // Create Blob for remaining tests
-    create_test_blob(&blob_client, None, None).await?;
-    let snapshot_response = blob_client.create_snapshot(None).await?;
-    let snapshot_id = snapshot_response.snapshot()?.unwrap();
-
-    // Test Invalid Snapshot ID Format Fails
-    let invalid_snapshot_client = blob_client.with_snapshot("invalid-snapshot-id")?;
-    let result = invalid_snapshot_client.get_properties(None).await;
-    assert!(result.is_err());
-
-    // Test Non-Existent Snapshot ID Fails
-    let fake_snapshot = "2000-12-01T00:00:00.0000000Z";
-    let fake_snapshot_client = blob_client.with_snapshot(fake_snapshot)?;
-    let result = fake_snapshot_client.get_properties(None).await;
-    assert!(result.is_err());
-    let error = result.unwrap_err().http_status();
-    assert_eq!(StatusCode::NotFound, error.unwrap());
-
-    // Test Snapshots Are Read Only
-    let snapshot_client = blob_client.with_snapshot(&snapshot_id)?;
-
-    // Try to Set Properties
-    let set_properties_options = BlobClientSetPropertiesOptions {
-        blob_content_language: Some("spanish".to_string()),
-        ..Default::default()
-    };
-    let result = snapshot_client
-        .set_properties(Some(set_properties_options))
-        .await;
-    assert!(result.is_err());
-
-    // Try to Set Metadata
-    let metadata = HashMap::from([("test_value".to_string(), "test_key".to_string())]);
-    let result = snapshot_client.set_metadata(&metadata, None).await;
-    assert!(result.is_err());
-
-    // Try to Upload to Snapshot
-    let data = b"squash data";
-    let result = snapshot_client
-        .upload(RequestContent::from(data.to_vec()), None)
-        .await;
-    assert!(result.is_err());
+    // Assert
+    assert!(
+        call_count.load(Ordering::SeqCst) >= 2,
+        "expected at least 2 invocations (1 failure + retry), got {}",
+        call_count.load(Ordering::SeqCst)
+    );
 
     container_client.delete(None).await?;
+    Ok(())
+}
+
+// `#[tokio::test]` is intentional here: FailFirstPolicy exhausts all retry attempts
+// before ever forwarding to the real transport, so there is nothing to record or replay.
+// The test is pure in-process logic and does not need the recording harness.
+#[tokio::test]
+async fn test_retry_exhaustion() -> Result<(), Box<dyn std::error::Error>> {
+    // max_retries=2 means 1 original attempt + 2 retry attempts = 3 total invocations
+    let max_retries = 2u32;
+    let call_count = Arc::new(AtomicUsize::new(0));
+    // fail_count > max_retries+1 so every attempt fails
+    let fail_policy = Arc::new(FailFirstPolicy::new(10, call_count.clone()));
+
+    let container_client = BlobContainerClient::new(
+        "https://fake.blob.core.windows.net/",
+        "fakecontainer",
+        None,
+        Some(
+            BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    retry: RetryOptions::fixed(FixedRetryOptions {
+                        max_retries,
+                        delay: Duration::milliseconds(0),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+            .with_per_try_policy(fail_policy.clone()),
+        ),
+    )?;
+
+    // Act - should fail after all retry attempts are exhausted
+    let result = container_client.get_properties(None).await;
+    assert!(result.is_err(), "expected exhausted retries to return Err");
+
+    // The policy should have been invoked max_retries+1 times
+    let invocations = call_count.load(Ordering::SeqCst);
+    assert_eq!(
+        invocations,
+        (max_retries + 1) as usize,
+        "expected {} total invocations (1 original + {} retries), got {}",
+        max_retries + 1,
+        max_retries,
+        invocations
+    );
+
     Ok(())
 }

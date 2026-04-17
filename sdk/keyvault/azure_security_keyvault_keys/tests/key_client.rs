@@ -263,6 +263,65 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+/// Tests that encrypt and decrypt work when using an empty key version,
+/// which resolves to the latest version of the key.
+///
+/// # Notes
+///
+/// Developers should generally specify the key version to avoid data lock-out.
+/// If a key is rotated and the version is not pinned, decryption of data encrypted
+/// with a prior version may fail.
+#[recorded::test]
+async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+
+    let mut options = KeyClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = KeyClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    // Create an RSA key.
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::Rsa),
+        key_size: Some(2048),
+        ..Default::default()
+    };
+
+    const NAME: &str = "encrypt-decrypt-latest";
+
+    client
+        .create_key(NAME, body.try_into()?, None)
+        .await?
+        .into_model()?;
+
+    // Use an empty key version to encrypt with the latest key.
+    let plaintext = b"plaintext".to_vec();
+    let mut parameters = KeyOperationParameters {
+        algorithm: Some(EncryptionAlgorithm::RsaOaep256),
+        value: Some(plaintext.clone()),
+        ..Default::default()
+    };
+    let encrypted = client
+        .encrypt(NAME, "", parameters.clone().try_into()?, None)
+        .await?
+        .into_model()?;
+    assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
+
+    // Decrypt ciphertext using an empty key version (latest key).
+    parameters.value = encrypted.result;
+    let decrypted = client
+        .decrypt(NAME, "", parameters.try_into()?, None)
+        .await?
+        .into_model()?;
+    assert!(matches!(decrypted.result, Some(result) if result.eq(&plaintext)));
+
+    Ok(())
+}
+
 #[recorded::test]
 async fn sign_verify(ctx: TestContext) -> Result<()> {
     use sha2::{Digest as _, Sha256};

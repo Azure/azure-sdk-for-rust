@@ -9,6 +9,8 @@ pub mod error;
 mod extensions;
 pub(crate) mod http_ranges;
 pub mod method_options;
+
+pub use http_ranges::HttpRange;
 pub(crate) mod response_ext;
 pub(crate) mod slice;
 mod upload_result;

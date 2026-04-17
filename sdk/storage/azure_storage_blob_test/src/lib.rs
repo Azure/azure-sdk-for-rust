@@ -11,6 +11,7 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
+    error::ErrorKind,
     http::StatusCode,
     http::{
         policies::{Policy, PolicyResult},
@@ -421,5 +422,59 @@ impl std::fmt::Debug for TestPolicy {
             .field("check_request_counter", &self.request_scope_counter)
             .field("check_response_counter", &self.response_scope_counter)
             .finish()
+    }
+}
+
+/// A [`Policy`] that fails (returns an `Io` error) for the first `fail_count` invocations
+/// without forwarding the request downstream, then passes through normally.
+///
+/// This is designed to sit inside the retry loop via `per_try_policies` so that the SDK's
+/// retry infrastructure can be exercised without any real network calls.
+pub struct FailFirstPolicy {
+    fail_count: usize,
+    call_count: Arc<AtomicUsize>,
+}
+
+impl FailFirstPolicy {
+    /// Creates a new `FailFirstPolicy`.
+    ///
+    /// * `fail_count` - number of initial invocations that will return an error.
+    /// * `call_count` - shared counter incremented on every invocation (total, including failures).
+    pub fn new(fail_count: usize, call_count: Arc<AtomicUsize>) -> Self {
+        Self {
+            fail_count,
+            call_count,
+        }
+    }
+}
+
+impl std::fmt::Debug for FailFirstPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FailFirstPolicy")
+            .field("fail_count", &self.fail_count)
+            .field("call_count", &self.call_count)
+            .finish()
+    }
+}
+
+#[async_trait]
+impl Policy for FailFirstPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let n = self.call_count.fetch_add(1, Ordering::SeqCst);
+        if n < self.fail_count {
+            return Err(azure_core::Error::new(
+                ErrorKind::Io,
+                std::io::Error::new(
+                    std::io::ErrorKind::ConnectionRefused,
+                    "simulated transient error",
+                ),
+            ));
+        }
+        next[0].send(ctx, request, &next[1..]).await
     }
 }
