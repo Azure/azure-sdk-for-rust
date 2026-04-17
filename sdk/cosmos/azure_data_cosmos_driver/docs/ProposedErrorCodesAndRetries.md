@@ -75,6 +75,51 @@ The driver performs health checks on the account regions to make decisions on wh
 
 ---
 
+## Per Partition Circuit Breaker (PPCB)
+
+The Per Partition Circuit Breaker provides granular failure tracking and endpoint exclusion at the partition level. It tracks failure rates and consecutive failures per partition per region, and can exclude unhealthy regions from routing for specific partitions. PPCB is enabled by default.
+
+### Applicability
+
+PPCB applies when ALL of the following conditions are met:
+
+- For **write operations**: the account must support multiple write locations. **Writes on single-write accounts are excluded from PPCB.**
+- For **read operations**: no multi-write requirement — reads are eligible on both single-write and multi-write accounts.
+- The request targets `Document` or `PartitionKey` resources.
+- The request has partition routing information (partition key range ID or partition key).
+
+### How PPCB Works
+
+- **Per-partition per-region health tracking**: The driver maintains health information for each combination of partition key range and region. It tracks:
+  - Failure rate (percentage of failed requests), calculated over a rolling 1-minute window with statistics reset periodically.
+  - Consecutive failure count.
+  - Failure-rate-based transitions only kick in after a minimum of 100 requests in the current window.
+- **Thresholds** (configurable):
+  - **Failure percentage tolerated**: Default 90%. Only evaluated after 100+ requests.
+  - **Consecutive failure threshold**: Default 10 for reads, 5 for writes.
+- **Circuit states**:
+  - **Healthy**: Normal operation.
+  - **Unhealthy Tentative**: Initial failure detection. The partition-region pair is monitored.
+  - **Unhealthy**: Confirmed unhealthy. The region is excluded from routing for this partition. The unavailability timeout grows exponentially up to a maximum of 20 minutes.
+- **Recovery (half-open probing)**: After the unavailability timeout expires, the driver checks for stale partition info. When an expired unhealthy entry is found, the driver marks the next request to that partition as a half-open probe. Transport-level retries are NOT performed for probe requests — the result (success or failure) must be observed to update the circuit breaker state. On success, the unavailability info is cleared. On failure, the partition-region reverts to unhealthy with an extended timeout.
+- **Endpoint exclusion**: Unhealthy regions for a partition are excluded from the endpoint resolution, which causes the location cache to skip those regions.
+
+### Failure Recording
+
+- **503 errors**: Tracked specifically for circuit breaker.
+- **408, 5xx errors, and transport errors**: Recorded for PPCB tracking.
+- **Success**: May update PPCB circuit breaker state.
+
+### PPCB Integration with Retry Evaluation
+
+PPCB primarily influences routing rather than retry decisions:
+
+- **Location Cache**: During endpoint resolution, unhealthy regions for the affected partition are excluded from the candidate list.
+- **Transport Pipeline**: Requests targeting a half-open probe location are NOT retried at the transport level — the failure/success result must be observed to update the circuit breaker state.
+- **Stale partition info**: Expired unhealthy entries are promoted to half-open state, enabling recovery probes.
+
+---
+
 ## Multi-Write vs Single-Write Account Behavioral Differences
 
 The following is a comprehensive summary of every behavioral difference between multi-write (multi-master) and single-write accounts.
@@ -124,3 +169,10 @@ The following is a comprehensive summary of every behavioral difference between 
 | Aspect | Single-Write | Multi-Write |
 |:-------|:-------------|:------------|
 | **Routing on retry** | Routes with `usePreferredLocations=false` — uses account locations as source of truth, since 403/3 signals a write region failover. | Same — also routes with `usePreferredLocations=false`. The policy does not branch on multi-write. |
+
+### PPCB
+
+| Aspect | Single-Write | Multi-Write |
+|:-------|:-------------|:------------|
+| **PPCB applicability for writes** | NOT applicable — writes on single-write accounts are excluded. | Applicable for write Document/PartitionKey ops. |
+| **PPCB applicability for reads** | Applicable. | Applicable. |
