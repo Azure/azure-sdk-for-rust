@@ -146,6 +146,10 @@ impl FeedRange {
 
     /// Combines this feed range with `other` into a bounding range.
     pub(crate) fn merge_with(&self, other: &FeedRange) -> FeedRange {
+        debug_assert!(
+            self.can_merge(other),
+            "merge_with called on disjoint ranges"
+        );
         FeedRange {
             min_inclusive: std::cmp::min(self.min_inclusive.clone(), other.min_inclusive.clone()),
             max_exclusive: std::cmp::max(self.max_exclusive.clone(), other.max_exclusive.clone()),

@@ -12,7 +12,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
-    Query, ReplaceContainerOptions, ThroughputOptions,
+    Query, ReplaceContainerOptions, SessionToken, ThroughputOptions,
 };
 use std::sync::Arc;
 
@@ -907,6 +907,53 @@ impl ContainerClient {
                 }
             }
         }
+    }
+
+    /// Gets the most up-to-date session token from a list of feed range and session token pairs
+    /// for a specific target feed range.
+    ///
+    /// This method merges session tokens from feed ranges that overlap with the target,
+    /// handling partition split and merge scenarios automatically. It is useful when
+    /// maintaining your own session token cache across multiple clients.
+    ///
+    /// Session tokens and feed ranges are scoped to a single container. Only pass session
+    /// tokens and feed ranges obtained from this container.
+    ///
+    /// # Arguments
+    ///
+    /// * `feed_ranges_to_session_tokens` - Pairs of feed ranges and their associated session tokens.
+    /// * `target_feed_range` - The feed range to get the most up-to-date session token for.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if no input feed ranges overlap with the target feed range,
+    /// or if any session token string is malformed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
+    /// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+    /// let feed_range = FeedRange::full();
+    /// let token_a: SessionToken = "0:1#100#3=50".into();
+    /// let token_b: SessionToken = "0:1#200#3=60".into();
+    ///
+    /// let latest = container.get_latest_session_token(
+    ///     &[(feed_range.clone(), token_a), (feed_range, token_b)],
+    ///     &FeedRange::full(),
+    /// )?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_latest_session_token(
+        &self,
+        feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)],
+        target_feed_range: &FeedRange,
+    ) -> azure_core::Result<SessionToken> {
+        crate::session_helpers::get_latest_session_token(
+            feed_ranges_to_session_tokens,
+            target_feed_range,
+        )
     }
 }
 

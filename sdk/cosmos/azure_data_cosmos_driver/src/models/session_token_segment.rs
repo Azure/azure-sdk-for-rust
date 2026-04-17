@@ -14,6 +14,7 @@ use std::fmt;
 /// merging, and formatting session token segments without exposing the internal
 /// token format details.
 #[derive(Clone, SafeDebug)]
+#[non_exhaustive]
 pub struct SessionTokenSegment {
     pk_range_id: String,
     value: SessionTokenValue,

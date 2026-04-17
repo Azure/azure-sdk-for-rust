@@ -63,6 +63,24 @@ fn merge_same_ranges(overlapping: &mut Vec<(FeedRange, String)>) -> azure_core::
     Ok(())
 }
 
+/// Describes the action to take after analyzing parent/child subset relationships.
+enum MergeAction {
+    /// No parent/child match found; do nothing.
+    None,
+    /// Parent is newer — remove children, keep parent at index 0.
+    KeepParent { children_indices: Vec<usize> },
+    /// Children are newer (split) — remove children and parent, add compound.
+    ReplaceParent {
+        children_indices: Vec<usize>,
+        compound: (FeedRange, String),
+    },
+    /// Mixed — remove children, keep parent, add compound of all tokens.
+    AddCompound {
+        children_indices: Vec<usize>,
+        compound: (FeedRange, String),
+    },
+}
+
 /// Phase 2: detect partition split/merge scenarios by analyzing parent/child feed range
 /// relationships.
 ///
@@ -70,9 +88,20 @@ fn merge_same_ranges(overlapping: &mut Vec<(FeedRange, String)>) -> azure_core::
 ///   parent is replaced by compound of children.
 /// - **Merge**: parent has higher LSN than children → children are removed.
 /// - **Mixed**: some children are newer, some aren't → all tokens are kept as compound.
+///
+/// The input is sorted by range size descending so that parents are always processed
+/// before their children, regardless of the caller's input order.
 fn merge_ranges_with_subsets(
     mut overlapping: Vec<(FeedRange, String)>,
 ) -> azure_core::Result<Vec<(FeedRange, String)>> {
+    // Sort by range size descending: larger ranges (parents) first.
+    // Primary: max_exclusive descending, secondary: min_inclusive ascending.
+    overlapping.sort_by(|(a, _), (b, _)| {
+        b.max_exclusive
+            .cmp(&a.max_exclusive)
+            .then(a.min_inclusive.cmp(&b.min_inclusive))
+    });
+
     let mut processed = Vec::new();
 
     while !overlapping.is_empty() {
@@ -98,13 +127,33 @@ fn merge_ranges_with_subsets(
                     overlapping.remove(subsets[0].0);
                 }
             } else if subsets.len() > 1 {
-                handle_multiple_subsets(
-                    &range_cmp,
-                    &seg_cmp,
-                    &token_cmp,
-                    &subsets,
-                    &mut overlapping,
-                )?;
+                let action = analyze_subsets(&range_cmp, &seg_cmp, &token_cmp, &subsets)?;
+
+                // Apply the action — caller manages all mutations consistently
+                match action {
+                    MergeAction::None => {}
+                    MergeAction::KeepParent { children_indices } => {
+                        remove_indices(&mut overlapping, &children_indices);
+                    }
+                    MergeAction::ReplaceParent {
+                        children_indices,
+                        compound,
+                    } => {
+                        remove_indices(&mut overlapping, &children_indices);
+                        overlapping.remove(0); // remove parent
+                        overlapping.push(compound);
+                        // Restart: the compound is now at the end and will be processed later
+                        continue;
+                    }
+                    MergeAction::AddCompound {
+                        children_indices,
+                        compound,
+                    } => {
+                        remove_indices(&mut overlapping, &children_indices);
+                        overlapping.push(compound);
+                        // Parent stays at index 0, falls through to processed.push below
+                    }
+                }
             }
         }
 
@@ -114,21 +163,37 @@ fn merge_ranges_with_subsets(
     Ok(processed)
 }
 
-/// Tries to combine multiple child subsets to equal the parent range and resolves
-/// the split/merge/mixed case.
-fn handle_multiple_subsets(
+/// Removes elements at the given indices from a vec, handling index shifts correctly.
+fn remove_indices<T>(vec: &mut Vec<T>, indices: &[usize]) {
+    let mut sorted = indices.to_vec();
+    sorted.sort_unstable();
+    sorted.reverse();
+    for idx in sorted {
+        vec.remove(idx);
+    }
+}
+
+/// Analyzes multiple child subsets to determine if they combine to equal the parent range,
+/// and returns the appropriate merge action.
+///
+/// Subsets are sorted by `min_inclusive` ascending before the merge loop to ensure
+/// adjacent children are processed in order, regardless of the caller's input ordering.
+fn analyze_subsets(
     parent_range: &FeedRange,
     parent_seg: &SessionTokenSegment,
     parent_token: &str,
     subsets: &[(usize, FeedRange, String)],
-    overlapping: &mut Vec<(FeedRange, String)>,
-) -> azure_core::Result<()> {
-    for start_idx in 0..subsets.len() {
-        let mut merged_range = subsets[start_idx].1.clone();
-        let mut tokens = vec![subsets[start_idx].2.clone()];
-        let mut indices = vec![subsets[start_idx].0];
+) -> azure_core::Result<MergeAction> {
+    // Sort subsets by min_inclusive so adjacent children are always in order
+    let mut sorted_subsets = subsets.to_vec();
+    sorted_subsets.sort_by(|a, b| a.1.min_inclusive.cmp(&b.1.min_inclusive));
 
-        for (k, (idx, fr, tok)) in subsets.iter().enumerate() {
+    for start_idx in 0..sorted_subsets.len() {
+        let mut merged_range = sorted_subsets[start_idx].1.clone();
+        let mut tokens = vec![sorted_subsets[start_idx].2.clone()];
+        let mut indices = vec![sorted_subsets[start_idx].0];
+
+        for (k, (idx, fr, tok)) in sorted_subsets.iter().enumerate() {
             if k == start_idx {
                 continue;
             }
@@ -138,7 +203,7 @@ fn handle_multiple_subsets(
                 indices.push(*idx);
             }
             if *parent_range == merged_range {
-                // Children combine to equal the parent — resolve split/merge
+                // Children combine to equal the parent — determine action
                 let mut children_more_updated = true;
                 let mut parent_more_updated = true;
                 for t in &tokens {
@@ -150,31 +215,32 @@ fn handle_multiple_subsets(
                     }
                 }
 
-                // Remove children in reverse index order to preserve indices
-                indices.sort_unstable_by(|a, b| b.cmp(a));
-                for idx in &indices {
-                    overlapping.remove(*idx);
-                }
-
                 if children_more_updated {
-                    // Split: children are newer → replace parent with compound
+                    // Split: children are newer
                     let compound = tokens.join(",");
-                    overlapping.push((merged_range, compound));
-                    overlapping.remove(0);
-                } else if !parent_more_updated {
+                    return Ok(MergeAction::ReplaceParent {
+                        children_indices: indices,
+                        compound: (merged_range, compound),
+                    });
+                } else if parent_more_updated {
+                    // Merge: parent is newer
+                    return Ok(MergeAction::KeepParent {
+                        children_indices: indices,
+                    });
+                } else {
                     // Mixed: keep all as compound
                     tokens.push(parent_token.to_owned());
                     let compound = tokens.join(",");
-                    overlapping.push((merged_range, compound));
+                    return Ok(MergeAction::AddCompound {
+                        children_indices: indices,
+                        compound: (merged_range, compound),
+                    });
                 }
-                // else: parent is newer → children already removed, parent stays
-
-                return Ok(());
             }
         }
     }
 
-    Ok(())
+    Ok(MergeAction::None)
 }
 
 /// Phase 3: split compound session tokens into individual segments.
@@ -238,9 +304,9 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<Vec<Stri
 ///
 /// # Examples
 ///
-/// ```rust
-/// # use azure_data_cosmos::{FeedRange, get_latest_session_token, SessionToken};
-/// # fn example() -> azure_core::Result<()> {
+/// ```rust,no_run
+/// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
+/// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
 /// // After read/write operations, capture session tokens from response headers.
 /// // When using multiple clients against the same container, merge their tokens
 /// // to get the most up-to-date session state.
@@ -248,7 +314,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<Vec<Stri
 /// let token_a: SessionToken = "0:1#100#3=50".into();
 /// let token_b: SessionToken = "0:1#200#3=60".into();
 ///
-/// let latest = get_latest_session_token(
+/// let latest = container.get_latest_session_token(
 ///     &[(feed_range.clone(), token_a), (feed_range, token_b)],
 ///     &FeedRange::full(),
 /// )?;
@@ -256,7 +322,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<Vec<Stri
 /// # Ok(())
 /// # }
 /// ```
-pub fn get_latest_session_token(
+pub(crate) fn get_latest_session_token(
     feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)],
     target_feed_range: &FeedRange,
 ) -> azure_core::Result<SessionToken> {
@@ -498,7 +564,99 @@ mod tests {
         .unwrap();
         // Mixed: child 1 newer (55 > 53), child 2 older (51 < 53) → keep all
         let parts: Vec<&str> = result.as_str().split(',').collect();
-        assert!(parts.len() >= 2);
+        assert_eq!(parts.len(), 3);
+        assert!(parts.contains(&"0:1#53#3=52"));
+        assert!(parts.contains(&"1:1#55#3=52"));
+        assert!(parts.contains(&"2:1#51#3=52"));
+    }
+
+    // === Input ordering tests (Findings 2, 3, 4) ===
+
+    #[test]
+    fn three_way_split_sorted() {
+        // Parent with 3 children in sorted order, all children newer
+        let result = get_latest_session_token(
+            &[
+                (fr("AA", "FF"), st("0:1#50#3=50")),
+                (fr("AA", "BB"), st("1:1#55#3=52")),
+                (fr("BB", "DD"), st("2:1#56#3=52")),
+                (fr("DD", "FF"), st("3:1#57#3=52")),
+            ],
+            &fr("AA", "FF"),
+        )
+        .unwrap();
+        // All children newer → split detected, parent replaced
+        let parts: Vec<&str> = result.as_str().split(',').collect();
+        assert_eq!(parts.len(), 3);
+        assert!(parts.contains(&"1:1#55#3=52"));
+        assert!(parts.contains(&"2:1#56#3=52"));
+        assert!(parts.contains(&"3:1#57#3=52"));
+        // Parent token should NOT be present
+        assert!(!parts.contains(&"0:1#50#3=50"));
+    }
+
+    #[test]
+    fn three_way_split_shuffled() {
+        // Same as above but children in non-sorted order (Finding 3)
+        let result = get_latest_session_token(
+            &[
+                (fr("AA", "FF"), st("0:1#50#3=50")),
+                (fr("DD", "FF"), st("3:1#57#3=52")),
+                (fr("AA", "BB"), st("1:1#55#3=52")),
+                (fr("BB", "DD"), st("2:1#56#3=52")),
+            ],
+            &fr("AA", "FF"),
+        )
+        .unwrap();
+        // Should produce same result regardless of child order
+        let parts: Vec<&str> = result.as_str().split(',').collect();
+        assert_eq!(parts.len(), 3);
+        assert!(parts.contains(&"1:1#55#3=52"));
+        assert!(parts.contains(&"2:1#56#3=52"));
+        assert!(parts.contains(&"3:1#57#3=52"));
+        assert!(!parts.contains(&"0:1#50#3=50"));
+    }
+
+    #[test]
+    fn children_before_parent_in_input() {
+        // Children appear before parent in the input array (Finding 4)
+        let result = get_latest_session_token(
+            &[
+                (fr("AA", "BB"), st("1:1#55#3=52")),
+                (fr("BB", "DD"), st("2:1#54#3=52")),
+                (fr("AA", "DD"), st("0:1#51#3=52")),
+            ],
+            &fr("AA", "DD"),
+        )
+        .unwrap();
+        // Should still detect the split — same as split_with_both_children
+        let parts: Vec<&str> = result.as_str().split(',').collect();
+        assert_eq!(parts.len(), 2);
+        assert!(parts.contains(&"1:1#55#3=52"));
+        assert!(parts.contains(&"2:1#54#3=52"));
+    }
+
+    #[test]
+    fn unrelated_between_parent_and_children() {
+        // Unrelated feed range sits between parent and children in input (Finding 2)
+        let result = get_latest_session_token(
+            &[
+                (fr("AA", "DD"), st("0:1#51#3=52")),
+                (fr("EE", "FF"), st("9:1#99#3=99")),
+                (fr("AA", "BB"), st("1:1#55#3=52")),
+                (fr("BB", "DD"), st("2:1#54#3=52")),
+            ],
+            &fr("AA", "FF"),
+        )
+        .unwrap();
+        // Split should still be detected for [AA,DD), and unrelated [EE,FF) preserved
+        let parts: Vec<&str> = result.as_str().split(',').collect();
+        assert_eq!(parts.len(), 3);
+        assert!(parts.contains(&"1:1#55#3=52"));
+        assert!(parts.contains(&"2:1#54#3=52"));
+        assert!(parts.contains(&"9:1#99#3=99"));
+        // Parent should have been replaced by children
+        assert!(!parts.contains(&"0:1#51#3=52"));
     }
 
     // === FeedRange helper tests ===

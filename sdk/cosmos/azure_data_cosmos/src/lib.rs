@@ -45,7 +45,6 @@ pub use transactional_batch::{
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
 pub use feed_range::FeedRange;
-pub use session_helpers::get_latest_session_token;
 mod background_task_manager;
 mod cosmos_request;
 mod driver_bridge;
