@@ -196,7 +196,7 @@ mod tests {
             "http://{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
         );
         let u = Url::parse(&url).expect("invalid URL");
-        let client = azure_core::http::new_http_client();
+        let client = azure_core::http::new_http_client(None);
         let req = Request::new(u, Method::Get);
 
         let res = client.execute_request(&req).await.expect("request failed");

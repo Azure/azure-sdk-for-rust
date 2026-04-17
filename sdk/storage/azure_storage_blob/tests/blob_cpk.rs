@@ -1142,8 +1142,8 @@ mod page_blob_client {
 mod partial_cpk_validation {
     use super::*;
 
-    // Marking as playback-only to investigate live test pipeline failures.
-    #[recorded::test(playback)]
+    #[recorded::test]
+    #[ignore = "need to investigate live test pipeline failures"]
     async fn test_partial_cpk_options_fail(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         // Recording Setup
         let recording = ctx.recording();

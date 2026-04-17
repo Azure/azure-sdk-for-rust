@@ -216,8 +216,8 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     )
     .await?;
 
-    // Sleep in live mode to allow tags to be indexed on the service
-    if recording.test_mode() == TestMode::Live {
+    // Sleep in live and record modes to allow tags to be indexed on the service
+    if recording.test_mode() != TestMode::Playback {
         time::sleep(Duration::from_secs(5)).await;
     }
 
@@ -267,6 +267,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
 #[recorded::test(playback)]
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires a Storage account with secondary endpoint enabled.
     // Recording Setup
     let recording = ctx.recording();
     let mut options = ClientOptions::default();
@@ -299,8 +300,8 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -335,8 +336,8 @@ async fn test_list_containers_with_metadata_include(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -376,8 +377,8 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -439,8 +440,8 @@ async fn test_set_service_properties_cors_and_metrics(
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

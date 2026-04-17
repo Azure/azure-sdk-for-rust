@@ -65,7 +65,7 @@ You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID
 
 You can find executable examples for all major SDK functions in:
 
-* [hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/hello_world.rs) - Getting started: create a container, upload and download a blob
+* [blob_hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_hello_world.rs) - Getting started: create a container, upload and download a blob
 * [blob_container_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_container_client.rs) - Container-level operations: metadata, list blobs with continuation, access policies
 * [blob_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_service_client.rs) - Service-level operations: list containers, service properties, statistics
 * [block_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/block_blob_client.rs) - Block blob operations: staged block upload, copy from URL
@@ -124,9 +124,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Next steps
+## Remarks
 
-### Provide feedback
+### Automatic decompression with custom HTTP transports
+
+By default, all storage clients create an HTTP transport with automatic decompression disabled,
+which is required for partitioned (multi-part) downloads to work correctly. If you set a custom transport
+in client options (e.g., a `reqwest::Client` with gzip enabled) without disabling automatic
+decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download).
+If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior.
+
+## Next Steps
+
+### Provide Feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
 

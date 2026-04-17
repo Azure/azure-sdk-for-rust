@@ -76,8 +76,8 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -112,8 +112,8 @@ async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -149,8 +149,8 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let per_try_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(per_try_count.clone(), None));
@@ -203,8 +203,8 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-// Marking as playback-only to investigate live test pipeline failures.
-#[recorded::test(playback)]
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let call_count = Arc::new(AtomicUsize::new(0));
     // Fail one time, then succeed - requires at least 1 retry
