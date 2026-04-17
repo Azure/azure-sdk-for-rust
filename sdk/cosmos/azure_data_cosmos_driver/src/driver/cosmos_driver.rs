@@ -26,6 +26,7 @@ use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use url::Url;
 
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion, PartitionKeyRangeCache, PkRangeFetchResult},
@@ -172,10 +173,62 @@ impl CosmosDriver {
     /// incompatibility signal, falls back to HTTP/1.1 using the same
     /// emulator-aware metadata transport selection as the steady-state path.
     ///
+    /// If the primary endpoint fails, tries each backup endpoint in order.
+    ///
     /// Callers that need to force HTTP/1.1 can disable HTTP/2 in
     /// [`crate::options::ConnectionPoolOptionsBuilder::with_is_http2_allowed`].
     /// The returned version is used to create the per-account `CosmosTransport`.
-    async fn probe_http_version(
+    async fn fetch_initial_account_properties(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+    ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
+        match Self::fetch_initial_account_properties_for_endpoint(runtime, account).await {
+            Ok(result) => Ok(result),
+            Err(primary_error) if !account.backup_endpoints().is_empty() => {
+                tracing::warn!(
+                    endpoint = %AccountEndpoint::from(account),
+                    error = %primary_error,
+                    "primary endpoint probe failed; trying backup endpoints"
+                );
+
+                for backup_url in account.backup_endpoints() {
+                    let backup_account = Self::with_endpoint(account, backup_url.clone());
+                    match Self::fetch_initial_account_properties_for_endpoint(
+                        runtime,
+                        &backup_account,
+                    )
+                    .await
+                    {
+                        Ok(result) => {
+                            // The HTTP version is negotiated with the backup's gateway,
+                            // which may differ from the primary. Any mismatch is
+                            // self-correcting: handle_refresh_failure will re-probe
+                            // when the primary recovers.
+                            return Ok(result);
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                backup_endpoint = %backup_url,
+                                error = %e,
+                                "backup endpoint probe failed; trying next"
+                            );
+                        }
+                    }
+                }
+
+                tracing::error!(
+                    endpoint = %AccountEndpoint::from(account),
+                    backup_count = account.backup_endpoints().len(),
+                    "all endpoints exhausted during HTTP version probe"
+                );
+                Err(primary_error)
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Probes the HTTP version for a single endpoint.
+    async fn fetch_initial_account_properties_for_endpoint(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
     ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
@@ -222,6 +275,18 @@ impl CosmosDriver {
             }
             Err(error) => Err(error),
         }
+    }
+
+    /// Creates a temporary `AccountReference` targeting a single backup endpoint.
+    ///
+    /// `backup_endpoints` are intentionally omitted: this reference is used for
+    /// a single-endpoint probe inside the fallback loop and must not trigger
+    /// its own recursive fallback.
+    fn with_endpoint(account: &AccountReference, endpoint: Url) -> AccountReference {
+        AccountReference::builder(endpoint)
+            .auth(account.auth().clone())
+            .build()
+            .expect("auth is always present when cloned from existing AccountReference")
     }
 
     /// Fetches account properties using a specific adaptive transport.
@@ -294,12 +359,14 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        Self::refresh_account_properties(&self.runtime, account, &self.transport).await
+        Self::refresh_account_properties(&self.runtime, account, &self.transport, None).await
     }
 
     /// Fetches account properties using the current per-account transport.
     ///
-    /// Uses the existing transport for the refresh.
+    /// Uses the existing transport for the refresh. If the primary endpoint
+    /// fails (including HTTP version fallback), tries regional endpoints from
+    /// previous account metadata as a last resort.
     ///
     /// - **HTTP/1.1 success**: opportunistically re-probes HTTP/2 and upgrades
     ///   the transport on success.
@@ -307,6 +374,8 @@ impl CosmosDriver {
     ///   the transport.
     /// - **Other transport failure with HTTP/2**: re-probes fully (may discover
     ///   the gateway now requires HTTP/1.1).
+    /// - **All primary attempts fail**: tries regional endpoints from
+    ///   `previous_props` (the last successfully fetched account metadata).
     ///
     /// This avoids creating transient transport infrastructure on every refresh
     /// cycle. A fresh probe only occurs when the driver is currently pinned to
@@ -316,6 +385,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        previous_props: Option<Arc<super::cache::AccountProperties>>,
     ) -> azure_core::Result<super::cache::AccountProperties> {
         let current_transport = transport_holder.load_full();
         let current_version = current_transport.negotiated_version();
@@ -342,7 +412,7 @@ impl CosmosDriver {
                 Ok(props)
             }
             Err(error) => {
-                Self::handle_refresh_failure(
+                match Self::handle_refresh_failure(
                     runtime,
                     account,
                     transport_holder,
@@ -351,8 +421,107 @@ impl CosmosDriver {
                     error,
                 )
                 .await
+                {
+                    Ok(props) => Ok(props),
+                    Err(primary_error) => {
+                        // Primary endpoint failed — try regional endpoints from previous metadata.
+                        Self::refresh_via_regional_endpoints(
+                            runtime,
+                            account,
+                            transport_holder,
+                            &endpoint,
+                            primary_error,
+                            previous_props,
+                        )
+                        .await
+                    }
+                }
             }
         }
+    }
+
+    /// Attempts account metadata refresh via regional endpoints.
+    ///
+    /// Called when the primary global endpoint is unreachable. Iterates through
+    /// readable regional endpoints from the previous account metadata and tries
+    /// each one.
+    async fn refresh_via_regional_endpoints(
+        runtime: &CosmosDriverRuntime,
+        account: &AccountReference,
+        transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        primary_endpoint: &AccountEndpoint,
+        primary_error: azure_core::Error,
+        previous_props: Option<Arc<super::cache::AccountProperties>>,
+    ) -> azure_core::Result<super::cache::AccountProperties> {
+        let Some(cached_props) = previous_props else {
+            return Err(primary_error);
+        };
+
+        // Parse regional URLs once, filtering out the primary and any invalid URLs.
+        let regional_endpoints: Vec<Url> = cached_props
+            .readable_locations
+            .iter()
+            .filter_map(|loc| {
+                let url = Url::parse(&loc.database_account_endpoint).ok()?;
+                let ep = AccountEndpoint::from(url.clone());
+                if ep == *primary_endpoint {
+                    None
+                } else {
+                    Some(url)
+                }
+            })
+            .collect();
+
+        if regional_endpoints.is_empty() {
+            return Err(primary_error);
+        }
+
+        tracing::warn!(
+            endpoint = %primary_endpoint,
+            error = %primary_error,
+            "primary endpoint refresh failed; trying regional endpoints"
+        );
+
+        for regional_url in &regional_endpoints {
+            let regional_account = Self::with_endpoint(account, regional_url.clone());
+            let regional_ep = AccountEndpoint::from(&regional_account);
+            let current_transport = transport_holder.load_full();
+            let Ok(regional_transport) = current_transport.get_metadata_transport(&regional_ep)
+            else {
+                continue;
+            };
+
+            let user_agent = Self::user_agent_header(runtime);
+            match Self::fetch_account_properties_with_transport(
+                &regional_transport,
+                &regional_account,
+                &user_agent,
+            )
+            .await
+            {
+                Ok(props) => {
+                    // Regional metadata may differ slightly from the primary
+                    // (e.g., location ordering). This is acceptable as a transient
+                    // fallback; the next successful primary refresh will restore
+                    // canonical metadata.
+                    return Ok(props);
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        regional_endpoint = %regional_url,
+                        error = %e,
+                        "regional endpoint refresh failed; trying next"
+                    );
+                }
+            }
+        }
+
+        tracing::error!(
+            endpoint = %primary_endpoint,
+            regional_count = regional_endpoints.len(),
+            "all endpoints exhausted during account properties refresh"
+        );
+        Err(primary_error)
     }
 
     async fn maybe_restore_http2_after_refresh(
@@ -555,17 +724,24 @@ impl CosmosDriver {
         let runtime_for_callback = Arc::clone(&runtime);
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
-        let refresh_callback = Arc::new(move || {
-            let runtime = Arc::clone(&runtime_for_callback);
-            let account = account_for_callback.clone();
-            let transport_holder = Arc::clone(&transport_for_callback);
-            let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
-                Box::pin(async move {
-                    CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+        let refresh_callback = Arc::new(
+            move |previous_props: Option<Arc<super::cache::AccountProperties>>| {
+                let runtime = Arc::clone(&runtime_for_callback);
+                let account = account_for_callback.clone();
+                let transport_holder = Arc::clone(&transport_for_callback);
+                let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
+                    Box::pin(async move {
+                        CosmosDriver::refresh_account_properties(
+                            &runtime,
+                            &account,
+                            &transport_holder,
+                            previous_props,
+                        )
                         .await
-                });
-            fut
-        });
+                    });
+                fut
+            },
+        );
 
         // Resolve endpoint_unavailability_ttl from driver → runtime layers, then
         // fall back to env var.
@@ -644,7 +820,7 @@ impl CosmosDriver {
 
         // Probe HTTP version and fetch account properties in one step.
         let (negotiated_version, properties) =
-            Self::probe_http_version(&self.runtime, account).await?;
+            Self::fetch_initial_account_properties(&self.runtime, account).await?;
 
         tracing::info!(
             endpoint = %account_endpoint,
@@ -708,30 +884,43 @@ impl CosmosDriver {
 
     /// Computes the effective throughput control group for an operation.
     ///
-    /// Resolution order (first match wins):
-    /// 1. Explicit group name from the resolved options + operation's container
-    /// 2. Default group for the operation's container
+    /// Resolution order:
+    /// 1. Explicit group name from the resolved options — looked up in the registry
+    ///    and snapshotted.
+    /// 2. Default group for the operation's container.
     ///
-    /// Returns `None` if no applicable control group is found.
+    /// Returns `Ok(None)` if no applicable control group is found.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an explicitly named group is not found in the registry.
     pub(crate) fn effective_throughput_control_group(
         &self,
         effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
-    ) -> Option<ThroughputControlGroupSnapshot> {
-        // First, check if an explicit group name is specified in options
-        if let Some(group_name) = effective_options.throughput_control_group_name() {
-            if let Some(group) = self
+    ) -> azure_core::Result<Option<ThroughputControlGroupSnapshot>> {
+        if let Some(name) = effective_options.throughput_control_group() {
+            let group = self
                 .runtime
-                .get_throughput_control_group(container, group_name)
-            {
-                return Some(ThroughputControlGroupSnapshot::from(group.as_ref()));
-            }
+                .get_throughput_control_group(container, name)
+                .ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!(
+                            "throughput control group '{}' not found in registry for container '{}'",
+                            name,
+                            container.name()
+                        ),
+                    )
+                })?;
+            return Ok(Some(ThroughputControlGroupSnapshot::from(group.as_ref())));
         }
 
-        // Fall back to the default group for the container
-        self.runtime
+        // No explicit name — fall back to the default group for the container.
+        Ok(self
+            .runtime
             .get_default_throughput_control_group(container)
-            .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref()))
+            .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref())))
     }
 
     /// Fetches partition key ranges from the service for the given container.
@@ -920,11 +1109,12 @@ impl CosmosDriver {
         let effective_options = self.operation_options_view(&options);
 
         // Step 2: Resolve effective throughput control group (if any).
-        // Step 1 transport pipeline does not consume this yet.
-        // TODO(Step 2): wire resolved throughput control into operation/transport execution.
-        let _effective_control_group = operation.container().and_then(|container| {
-            self.effective_throughput_control_group(&effective_options, container)
-        });
+        let effective_control_group = match operation.container() {
+            Some(container) => {
+                self.effective_throughput_control_group(&effective_options, container)?
+            }
+            None => None,
+        };
 
         // Step 3: Initialize operation activity id
         let activity_id = ActivityId::new_uuid();
@@ -1034,8 +1224,9 @@ impl CosmosDriver {
             account_properties
                 .user_consistency_policy
                 .default_consistency_level,
-            pre_resolved_pk_range_id,
-        )
+            effective_control_group.as_ref(),
+             pre_resolved_pk_range_id,
+       )
         .await
     }
 
@@ -1161,6 +1352,7 @@ mod tests {
     };
 
     use super::*;
+    use crate::driver::cache::AccountProperties as CachedAccountProperties;
     use crate::options::Region;
     use crate::{
         driver::transport::{
@@ -1199,6 +1391,7 @@ mod tests {
     enum ResponsePlan {
         Success,
         Http2Incompatible,
+        ConnectionError,
     }
 
     #[derive(Debug)]
@@ -1220,6 +1413,13 @@ mod tests {
                         ErrorKind::Io,
                         h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
                         "http2 not supported",
+                    ),
+                    crate::diagnostics::RequestSentStatus::NotSent,
+                )),
+                ResponsePlan::ConnectionError => Err(TransportError::new(
+                    azure_core::Error::with_message(
+                        ErrorKind::Connection,
+                        "simulated connection refused",
                     ),
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
@@ -1280,7 +1480,7 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
             .operation_options()
-            .throughput_control_group_name
+            .throughput_control_group
             .is_none());
         assert!(runtime
             .operation_options()
@@ -1730,7 +1930,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn probe_http_version_falls_back_to_http11_for_emulator_accounts() {
+    async fn fetch_initial_account_properties_falls_back_to_http11_for_emulator_accounts() {
         // The bootstrap_metadata_only transport eagerly builds 2 unsharded
         // clients (metadata + dataplane) during runtime construction.
         // The emulator probe then lazily builds a sharded client for the
@@ -1759,9 +1959,10 @@ mod tests {
             .unwrap();
         let account = signed_test_account("https://localhost:8081/");
 
-        let (version, properties) = CosmosDriver::probe_http_version(&runtime, &account)
-            .await
-            .unwrap();
+        let (version, properties) =
+            CosmosDriver::fetch_initial_account_properties(&runtime, &account)
+                .await
+                .unwrap();
 
         assert_eq!(version, TransportHttpVersion::Http11);
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
@@ -1790,7 +1991,7 @@ mod tests {
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
         let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
                 .await
                 .unwrap();
 
@@ -1826,7 +2027,7 @@ mod tests {
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
         let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
                 .await
                 .unwrap();
 
@@ -1863,7 +2064,7 @@ mod tests {
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
         let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder)
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
                 .await
                 .unwrap();
 
@@ -1883,5 +2084,137 @@ mod tests {
         fn assert_send<T: Send>(_: T) {}
         let driver: &CosmosDriver = todo!();
         assert_send(driver.execute_operation(todo!(), todo!()));
+    }
+
+    // Account properties with two readable locations for regional fallback tests.
+    const MULTI_REGION_ACCOUNT_PROPERTIES: &str = r#"{
+        "_self": "",
+        "id": "test",
+        "_rid": "test.documents.azure.com",
+        "media": "//media/",
+        "addresses": "//addresses/",
+        "_dbs": "//dbs/",
+        "writableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }
+        ],
+        "readableLocations": [
+            { "name": "West US 2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" },
+            { "name": "East US", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }
+        ],
+        "enableMultipleWriteLocations": false,
+        "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+        "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+        "queryEngineConfiguration": "{}"
+    }"#;
+
+    fn multi_region_previous_props() -> Arc<CachedAccountProperties> {
+        Arc::new(serde_json::from_str(MULTI_REGION_ACCOUNT_PROPERTIES).unwrap())
+    }
+
+    #[tokio::test]
+    async fn refresh_falls_back_to_regional_endpoints_when_primary_fails() {
+        // Primary metadata request fails (connection error), then the
+        // regional fallback succeeds on the first regional endpoint.
+        let factory = Arc::new(ScriptedFactory::new([
+            ResponsePlan::ConnectionError, // primary metadata
+            ResponsePlan::ConnectionError, // handle_refresh_failure re-probe
+            ResponsePlan::Success,         // regional endpoint succeeds
+        ]));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http2,
+            )
+            .unwrap(),
+        );
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
+
+        let result = CosmosDriver::refresh_account_properties(
+            &runtime,
+            &account,
+            &transport_holder,
+            Some(multi_region_previous_props()),
+        )
+        .await;
+
+        assert!(
+            result.is_ok(),
+            "should succeed via regional fallback: {:?}",
+            result.err()
+        );
+    }
+
+    #[tokio::test]
+    async fn refresh_returns_primary_error_when_all_endpoints_fail() {
+        // Primary and all regional endpoints fail. Use enough ConnectionError
+        // plans to cover bootstrap transport creation + all retry attempts.
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::ConnectionError,
+            20,
+        )));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http2,
+            )
+            .unwrap(),
+        );
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
+
+        let result = CosmosDriver::refresh_account_properties(
+            &runtime,
+            &account,
+            &transport_holder,
+            Some(multi_region_previous_props()),
+        )
+        .await;
+
+        assert!(result.is_err(), "should fail when all endpoints exhausted");
+    }
+
+    #[tokio::test]
+    async fn refresh_skips_regional_fallback_without_previous_props() {
+        // Primary fails and no previous properties — should return error immediately.
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::ConnectionError,
+            20,
+        )));
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(factory)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let current_transport = Arc::new(
+            CosmosTransport::with_factory(
+                runtime.connection_pool().clone(),
+                Arc::clone(runtime.http_client_factory()),
+                TransportHttpVersion::Http2,
+            )
+            .unwrap(),
+        );
+        let transport_holder = Arc::new(ArcSwap::from(current_transport));
+
+        let result =
+            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
+                .await;
+
+        assert!(result.is_err(), "should fail without previous props");
     }
 }

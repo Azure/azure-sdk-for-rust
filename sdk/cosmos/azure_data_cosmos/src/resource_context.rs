@@ -30,6 +30,7 @@ impl LinkSegment {
     }
 
     /// Creates a new `LinkSegment` without encoding (e.g., for RIDs).
+    #[cfg(test)]
     fn identity(value: impl Into<String>) -> Self {
         Self {
             unencoded: value.into(),
@@ -133,6 +134,7 @@ impl ResourceLink {
         }
     }
 
+    #[cfg(test)]
     pub fn item_by_rid(&self, rid: &str) -> Self {
         // RIDs are not URL encoded
         Self {

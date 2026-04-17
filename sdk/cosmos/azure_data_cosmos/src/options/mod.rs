@@ -9,11 +9,14 @@ use std::fmt::Display;
 
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
-pub use azure_data_cosmos_driver::models::{ETag, Precondition, SessionToken};
+pub use azure_data_cosmos_driver::models::{
+    ETag, Precondition, SessionToken, ThroughputControlGroupName,
+};
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    OperationOptionsBuilder, OperationOptionsView, ReadConsistencyStrategy, Region,
+    OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
+    ThroughputControlGroupOptions,
 };
 
 // Temporary: these helpers allow the SDK pipeline to apply OperationOptions values
@@ -397,6 +400,26 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
+/// Options for [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
+/// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
+#[derive(Clone, Default, Debug)]
+#[non_exhaustive]
+pub struct ReadFeedRangesOptions {
+    force_refresh: bool,
+}
+
+impl ReadFeedRangesOptions {
+    /// When `true`, discards any cached routing map and fetches a fresh copy from the service.
+    pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
+        self.force_refresh = force_refresh;
+        self
+    }
+
+    pub(crate) fn force_refresh(&self) -> bool {
+        self.force_refresh
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -655,5 +678,22 @@ mod tests {
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
 
         assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn no_throughput_control_headers_from_apply_headers_alone() {
+        // apply_headers() does not set throughput control headers — those are
+        // applied by the driver pipeline. Verify that priority and bucket
+        // headers are absent after apply_headers() only.
+        let options = ItemWriteOptions::default();
+        let mut headers = Headers::new();
+        options.apply_headers(&mut headers);
+
+        assert!(headers
+            .get_optional_str(&constants::PRIORITY_LEVEL)
+            .is_none());
+        assert!(headers
+            .get_optional_str(&constants::THROUGHPUT_BUCKET)
+            .is_none());
     }
 }

@@ -360,7 +360,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
         .build();
 
     let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::CreateItem)
+        .with_operation_type(FaultOperationType::UpsertItem)
         .with_region(HUB_REGION)
         .build();
 

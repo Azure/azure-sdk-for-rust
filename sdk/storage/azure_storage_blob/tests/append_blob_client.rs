@@ -4,12 +4,13 @@
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
+    AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockOptions,
     AppendBlobClientCreateOptions, BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, StorageAccount,
 };
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
 async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -154,7 +155,7 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
             blob_content_disposition: Some("inline".to_string()),
             blob_content_encoding: Some("identity".to_string()),
             blob_content_language: Some("es-ES".to_string()),
-            blob_content_type: Some("text/csv".to_string()),
+            blob_content_type: Some("image/jpeg".to_string()),
             ..Default::default()
         }))
         .await?;
@@ -166,7 +167,303 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
     assert_eq!(Some("identity".to_string()), props.content_encoding()?);
     assert_eq!(Some("es-ES".to_string()), props.content_language()?);
     let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
-    assert_eq!(Some("text/csv".to_string()), content_type);
+    assert_eq!(Some("image/jpeg".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_append_block_position_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = blob_client.append_blob_client();
+    append_blob_client.create(None).await?;
+
+    let data = b"hello".to_vec();
+
+    // Wrong Append Position Scenario
+    let response = append_blob_client
+        .append_block(
+            RequestContent::from(data.clone()),
+            u64::try_from(data.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                append_position: Some(10),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+    // Assert
+    assert_eq!(
+        StatusCode::PreconditionFailed,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    // Correct Append Position Scenario
+    append_blob_client
+        .append_block(
+            RequestContent::from(data.clone()),
+            u64::try_from(data.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                append_position: Some(0),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_append_block_max_size_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = blob_client.append_blob_client();
+    append_blob_client.create(None).await?;
+
+    let data = b"hello world".to_vec(); // 11 bytes
+
+    // Exceeds Max Size Scenario
+    let response = append_blob_client
+        .append_block(
+            RequestContent::from(data.clone()),
+            u64::try_from(data.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                max_size: Some(5),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+    // Assert
+    assert_eq!(
+        StatusCode::PreconditionFailed,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    // Within Max Size Scenario
+    append_blob_client
+        .append_block(
+            RequestContent::from(data.clone()),
+            u64::try_from(data.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                max_size: Some(20),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = blob_client.append_blob_client();
+    append_blob_client.create(None).await?;
+
+    let content = b"hello".to_vec();
+    // MD5("hello") - well-known test vector
+    let correct_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    // CRC64-ECMA-182 of b"hello", server-confirmed (base64: V0JSBnCFdzM=)
+    let correct_crc64: Vec<u8> = vec![87, 66, 82, 6, 112, 133, 119, 51];
+
+    // MD5 Mismatch Scenario
+    let response = append_blob_client
+        .append_block(
+            RequestContent::from(content.clone()),
+            u64::try_from(content.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                transactional_content_md5: Some(vec![0u8; 16]),
+                ..Default::default()
+            }),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::BadRequest,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    // MD5 Match Scenario
+    append_blob_client
+        .append_block(
+            RequestContent::from(content.clone()),
+            u64::try_from(content.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                transactional_content_md5: Some(correct_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // CRC64 Mismatch Scenario
+    let response = append_blob_client
+        .append_block(
+            RequestContent::from(content.clone()),
+            u64::try_from(content.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                transactional_content_crc64: Some(vec![0u8; 8]),
+                ..Default::default()
+            }),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::BadRequest,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    // CRC64 Match Scenario
+    append_blob_client
+        .append_block(
+            RequestContent::from(content.clone()),
+            u64::try_from(content.len())?,
+            Some(AppendBlobClientAppendBlockOptions {
+                transactional_content_crc64: Some(correct_crc64),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_create_append_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = blob_client.append_blob_client();
+
+    let expected = HashMap::from([("env".to_string(), "test".to_string())]);
+    append_blob_client
+        .create(Some(AppendBlobClientCreateOptions {
+            blob_tags_string: Some("env=test".to_string()),
+            ..Default::default()
+        }))
+        .await?;
+
+    // Assert
+    let map: HashMap<String, String> = blob_client.get_tags(None).await?.into_model()?.into();
+    assert_eq!(expected, map);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = blob_client.append_blob_client();
+
+    // Create Initial Blob
+    append_blob_client.create(None).await?;
+
+    // If Not Exists Scenario (blob already exists)
+    let result = append_blob_client
+        .create(Some(
+            AppendBlobClientCreateOptions::default().with_if_not_exists(),
+        ))
+        .await;
+
+    // Assert
+    assert_eq!(
+        StatusCode::Conflict,
+        result.unwrap_err().http_status().unwrap()
+    );
+
+    // Blob Should Still Exist
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some(0), props.content_length()?);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
+async fn test_append_block_from_url_source_if_match(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let source_data = b"source";
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(source_data.to_vec())),
+        None,
+    )
+    .await?;
+    let etag = source_blob_client
+        .get_properties(None)
+        .await?
+        .etag()?
+        .unwrap()
+        .to_string();
+
+    let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let append_blob_client = dest_blob_client.append_blob_client();
+    append_blob_client.create(None).await?;
+
+    // Source If-Match Scenario
+    append_blob_client
+        .append_block_from_url(
+            source_blob_client.url().as_str().into(),
+            u64::try_from(source_data.len())?,
+            Some(AppendBlobClientAppendBlockFromUrlOptions {
+                source_if_match: Some(etag.clone().into()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Source If-None-Match Scenario (ETag matches, so condition is not satisfied)
+    let response = append_blob_client
+        .append_block_from_url(
+            source_blob_client.url().as_str().into(),
+            u64::try_from(source_data.len())?,
+            Some(AppendBlobClientAppendBlockFromUrlOptions {
+                source_if_none_match: Some(etag.into()),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+    // Assert
+    assert_eq!(
+        StatusCode::NotModified,
+        response.unwrap_err().http_status().unwrap()
+    );
 
     container_client.delete(None).await?;
     Ok(())

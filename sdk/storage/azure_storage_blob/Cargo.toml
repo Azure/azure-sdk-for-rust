@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blob"
-version = "0.11.0"
+version = "0.12.0"
 description = "Microsoft Azure Blob Storage client library for Rust"
 readme = "README.md"
 authors.workspace = true
@@ -45,6 +45,7 @@ azure_core_test = { workspace = true, features = [
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 clap = { workspace = true, features = ["env"] }
+flate2.workspace = true
 futures.workspace = true
 opentelemetry.workspace = true
 opentelemetry-stdout.workspace = true

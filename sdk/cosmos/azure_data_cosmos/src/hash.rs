@@ -6,14 +6,19 @@ use crate::murmur_hash::{murmurhash3_128, murmurhash3_32};
 use std::fmt::Write;
 
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
-const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
-const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
+pub(crate) const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
+pub(crate) const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
 
 /// A strongly-typed wrapper around the hex-encoded effective partition key string.
 ///
 /// Use [`AsRef<str>`] to obtain the underlying string when passing to APIs
 /// that accept `&str`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Ordering is lexicographic on the underlying hex string. This is correct because:
+/// - All actual EPK hash values are uppercase hex strings of consistent length
+/// - The sentinel MAX ("FF") sorts after all real hashes by the Cosmos DB EPK space design
+/// - The sentinel MIN ("") sorts before everything
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EffectivePartitionKey(String);
 
 impl EffectivePartitionKey {
@@ -26,6 +31,18 @@ impl EffectivePartitionKey {
 impl AsRef<str> for EffectivePartitionKey {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl From<String> for EffectivePartitionKey {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<&str> for EffectivePartitionKey {
+    fn from(s: &str) -> Self {
+        Self(s.to_owned())
     }
 }
 

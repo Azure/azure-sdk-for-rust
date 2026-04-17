@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_macros"
-version = "0.1.0"
+version = "0.2.0"
 description = "Procedural macros for the Azure Cosmos DB SDK for Rust."
 readme = "README.md"
 authors.workspace = true

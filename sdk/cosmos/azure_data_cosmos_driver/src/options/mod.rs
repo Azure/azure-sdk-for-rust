@@ -42,8 +42,7 @@ pub use policies::{
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
-pub use throughput_control::{
-    ThroughputControlGroupKey, ThroughputControlGroupOptions,
-    ThroughputControlGroupRegistrationError, ThroughputControlGroupRegistry,
-    ThroughputControlGroupSnapshot, ThroughputTarget,
+pub use throughput_control::ThroughputControlGroupOptions;
+pub(crate) use throughput_control::{
+    ThroughputControlGroupRegistry, ThroughputControlGroupSnapshot,
 };

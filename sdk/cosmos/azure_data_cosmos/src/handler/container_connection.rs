@@ -41,6 +41,40 @@ impl ContainerConnection {
         }
     }
 
+    /// Returns the partition key definition from the eagerly-resolved container reference.
+    pub(crate) fn partition_key_definition(
+        &self,
+    ) -> &azure_data_cosmos_driver::models::PartitionKeyDefinition {
+        self.container_ref.partition_key_definition()
+    }
+
+    /// Resolves the routing map for this container.
+    pub(crate) async fn resolve_routing_map(
+        &self,
+        force_refresh: bool,
+    ) -> Result<
+        Option<crate::routing::collection_routing_map::CollectionRoutingMap>,
+        azure_core::Error,
+    > {
+        let collection_rid = self.container_ref.rid();
+        let collection_name = self.container_ref.name();
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(collection_name, collection_rid, None)
+            .await?;
+
+        if force_refresh {
+            if let Some(previous) = routing_map {
+                return self
+                    .pk_range_cache
+                    .try_lookup(collection_name, collection_rid, Some(previous))
+                    .await;
+            }
+        }
+
+        Ok(routing_map)
+    }
+
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,

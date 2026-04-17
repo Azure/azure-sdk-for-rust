@@ -22,7 +22,7 @@ pub struct BackupKeyResult {
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
         serialize_with = "base64::option::serialize_url_safe",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing
     )]
     pub value: Option<Vec<u8>>,
 }
@@ -77,7 +77,7 @@ pub struct DeletedKey {
     #[serde(
         default,
         rename = "deletedDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
@@ -89,7 +89,7 @@ pub struct DeletedKey {
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// The url of the recovery object, used to identify and recover the deleted key.
@@ -106,7 +106,7 @@ pub struct DeletedKey {
     #[serde(
         default,
         rename = "scheduledPurgeDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
@@ -130,7 +130,7 @@ pub struct DeletedKeyProperties {
     #[serde(
         default,
         rename = "deletedDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
@@ -142,7 +142,7 @@ pub struct DeletedKeyProperties {
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// The url of the recovery object, used to identify and recover the deleted key.
@@ -155,7 +155,7 @@ pub struct DeletedKeyProperties {
     #[serde(
         default,
         rename = "scheduledPurgeDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
@@ -341,7 +341,7 @@ pub struct Key {
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// The policy rules under which the key can be exported.
@@ -398,7 +398,7 @@ pub struct KeyAttributes {
     /// The key or key version attestation information.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub attestation: Option<KeyAttestation>,
 
     /// Creation time in UTC.
@@ -406,7 +406,7 @@ pub struct KeyAttributes {
     /// Operational visibility: Read
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
@@ -432,7 +432,7 @@ pub struct KeyAttributes {
     /// The underlying HSM Platform.
     ///
     /// Operational visibility: Read
-    #[serde(rename = "hsmPlatform", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hsmPlatform", skip_serializing)]
     pub hsm_platform: Option<String>,
 
     /// Not before date in UTC.
@@ -447,7 +447,7 @@ pub struct KeyAttributes {
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
     ///
     /// Operational visibility: Read
-    #[serde(rename = "recoverableDays", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "recoverableDays", skip_serializing)]
     pub recoverable_days: Option<i32>,
 
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the
@@ -455,7 +455,7 @@ pub struct KeyAttributes {
     /// interval.
     ///
     /// Operational visibility: Read
-    #[serde(rename = "recoveryLevel", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "recoveryLevel", skip_serializing)]
     pub recovery_level: Option<DeletionRecoveryLevel>,
 
     /// Last updated time in UTC.
@@ -463,7 +463,7 @@ pub struct KeyAttributes {
     /// Operational visibility: Read
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
@@ -527,7 +527,7 @@ pub struct KeyOperationResult {
         deserialize_with = "base64::option::deserialize_url_safe",
         rename = "aad",
         serialize_with = "base64::option::serialize_url_safe",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing
     )]
     pub additional_authenticated_data: Option<Vec<u8>>,
 
@@ -539,7 +539,7 @@ pub struct KeyOperationResult {
         deserialize_with = "base64::option::deserialize_url_safe",
         rename = "tag",
         serialize_with = "base64::option::serialize_url_safe",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing
     )]
     pub authentication_tag: Option<Vec<u8>>,
 
@@ -550,14 +550,14 @@ pub struct KeyOperationResult {
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
         serialize_with = "base64::option::serialize_url_safe",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing
     )]
     pub iv: Option<Vec<u8>>,
 
     /// Key identifier
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub kid: Option<String>,
 
     /// The result of the operation.
@@ -568,7 +568,7 @@ pub struct KeyOperationResult {
         deserialize_with = "base64::option::deserialize_url_safe",
         rename = "value",
         serialize_with = "base64::option::serialize_url_safe",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing
     )]
     pub result: Option<Vec<u8>>,
 }
@@ -588,7 +588,7 @@ pub struct KeyProperties {
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.
@@ -626,7 +626,7 @@ pub struct KeyReleaseResult {
     /// A signed object containing the released key.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub value: Option<String>,
 }
 
@@ -640,7 +640,7 @@ pub struct KeyRotationPolicy {
     /// The key policy id.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub id: Option<String>,
 
     /// Actions that will be performed by Key Vault over the lifetime of a key. For preview, lifetimeActions can only have two
@@ -658,7 +658,7 @@ pub struct KeyRotationPolicyAttributes {
     /// Operational visibility: Read
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
@@ -673,7 +673,7 @@ pub struct KeyRotationPolicyAttributes {
     /// Operational visibility: Read
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
@@ -685,7 +685,7 @@ pub struct KeyVaultError {
     /// The key vault server error.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub error: Option<KeyVaultErrorError>,
 }
 
@@ -695,19 +695,19 @@ pub struct KeyVaultErrorError {
     /// The error code.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub code: Option<String>,
 
     /// The key vault server error.
     ///
     /// Operational visibility: Read
-    #[serde(rename = "innererror", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "innererror", skip_serializing)]
     pub inner_error: Option<Box<KeyVaultErrorError>>,
 
     /// The error message.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub message: Option<String>,
 }
 
@@ -718,7 +718,7 @@ pub struct KeyVerifyResult {
     /// True if the signature is verified, otherwise false.
     ///
     /// Operational visibility: Read
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub value: Option<bool>,
 }
 
@@ -762,13 +762,13 @@ pub struct ListDeletedKeyPropertiesResult {
     /// The URL to get the next set of deleted keys.
     ///
     /// Operational visibility: Read
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 
     /// A response message containing a list of deleted keys in the key vault along with a link to the next page of deleted keys.
     ///
     /// Operational visibility: Read
-    #[serde(default)]
+    #[serde(default, skip_serializing)]
     pub value: Vec<DeletedKeyProperties>,
 }
 
@@ -779,13 +779,13 @@ pub struct ListKeyPropertiesResult {
     /// The URL to get the next set of keys.
     ///
     /// Operational visibility: Read
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 
     /// A response message containing a list of keys in the key vault along with a link to the next page of keys.
     ///
     /// Operational visibility: Read
-    #[serde(default)]
+    #[serde(default, skip_serializing)]
     pub value: Vec<KeyProperties>,
 }
 
