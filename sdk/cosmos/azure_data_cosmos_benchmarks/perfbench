@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cSpell:ignore perfbench pipefail esac speedscope
 # perfbench — build a cargo benchmark and profile it with perf, producing a
 # trace file suitable for import into https://speedscope.app.
 #
@@ -134,7 +135,6 @@ echo "Running perf record..."
 echo "  perf record $PERF_EXTRA_ARGS -o $PERF_DATA -- $BINARY_PATH ${BENCH_ARGS[*]+"${BENCH_ARGS[*]}"}"
 echo ""
 
-# shellcheck disable=SC2086
 perf record $PERF_EXTRA_ARGS -o "$PERF_DATA" -- "$BINARY_PATH" "${BENCH_ARGS[@]+"${BENCH_ARGS[@]}"}"
 
 # ---------------------------------------------------------------------------

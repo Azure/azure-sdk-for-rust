@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 //! HTTP client wrapper that evaluates fault injection rules on each request.
 
 use super::result::FaultInjectionResult;

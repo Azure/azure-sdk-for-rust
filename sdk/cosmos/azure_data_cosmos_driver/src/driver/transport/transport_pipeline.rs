@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 //! Transport pipeline: the core loop for executing a single HTTP attempt.
 //!
 //! Header application and request signing live in their own modules:
