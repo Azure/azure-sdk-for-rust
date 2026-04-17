@@ -74,10 +74,7 @@ pub(crate) fn evaluate_transport_result(
                             reason: UnavailableReason::WriteForbidden,
                         },
                         LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
-                            partition_key_range_id: retry_state
-                                .partition_key_range_id
-                                .clone()
-                                .unwrap_or_default(),
+                            partition_key_range_id: retry_state.partition_key_range_id.clone(),
                             region: endpoint.region().cloned(),
                             is_read: false, // WriteForbidden is always a write
                             is_partitioned_resource: operation.resource_type().is_partitioned(),
@@ -147,10 +144,7 @@ pub(crate) fn evaluate_transport_result(
                     // the updated routing state.
                     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
                         UnavailablePartition {
-                            partition_key_range_id: retry_state
-                                .partition_key_range_id
-                                .clone()
-                                .unwrap_or_default(),
+                            partition_key_range_id: retry_state.partition_key_range_id.clone(),
                             region: endpoint.region().cloned(),
                             is_read: false,
                             is_partitioned_resource: operation.resource_type().is_partitioned(),
@@ -173,10 +167,7 @@ pub(crate) fn evaluate_transport_result(
 
                 let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
                     UnavailablePartition {
-                        partition_key_range_id: retry_state
-                            .partition_key_range_id
-                            .clone()
-                            .unwrap_or_default(),
+                        partition_key_range_id: retry_state.partition_key_range_id.clone(),
                         region: endpoint.region().cloned(),
                         is_read: operation.is_read_only(),
                         is_partitioned_resource: operation.resource_type().is_partitioned(),
@@ -203,10 +194,7 @@ pub(crate) fn evaluate_transport_result(
             {
                 let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
                     UnavailablePartition {
-                        partition_key_range_id: retry_state
-                            .partition_key_range_id
-                            .clone()
-                            .unwrap_or_default(),
+                        partition_key_range_id: retry_state.partition_key_range_id.clone(),
                         region: endpoint.region().cloned(),
                         is_read: true,
                         is_partitioned_resource: operation.resource_type().is_partitioned(),
@@ -253,10 +241,7 @@ pub(crate) fn evaluate_transport_result(
 
             let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
                 UnavailablePartition {
-                    partition_key_range_id: retry_state
-                        .partition_key_range_id
-                        .clone()
-                        .unwrap_or_default(),
+                    partition_key_range_id: retry_state.partition_key_range_id.clone(),
                     region: endpoint.region().cloned(),
                     is_read: operation.is_read_only(),
                     is_partitioned_resource: operation.resource_type().is_partitioned(),

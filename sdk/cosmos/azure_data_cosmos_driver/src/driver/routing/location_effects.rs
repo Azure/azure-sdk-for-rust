@@ -5,7 +5,7 @@
 
 use crate::options::Region;
 
-use super::{CosmosEndpoint, UnavailableReason};
+use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, UnavailableReason};
 
 /// Location-state mutation emitted by retry evaluation.
 #[derive(Clone, Debug)]
@@ -24,7 +24,7 @@ pub(crate) enum LocationEffect {
 /// Identifies a partition-region pair to mark unavailable.
 #[derive(Clone, Debug)]
 pub(crate) struct UnavailablePartition {
-    pub partition_key_range_id: String,
+    pub partition_key_range_id: Option<PartitionKeyRangeId>,
     pub region: Option<Region>,
     pub is_read: bool,
     pub is_partitioned_resource: bool,

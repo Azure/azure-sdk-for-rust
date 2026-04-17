@@ -8,6 +8,7 @@ mod endpoint;
 mod location_effects;
 mod location_state_store;
 pub(crate) mod partition_endpoint_state;
+pub(crate) mod partition_key_range_id;
 mod routing_systems;
 pub(crate) mod session_container;
 pub(crate) mod session_manager;

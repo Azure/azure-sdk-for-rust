@@ -7,7 +7,10 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    driver::routing::{
+        partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
+        CosmosEndpoint, LocationStateStore,
+    },
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, DatabaseProperties, DatabaseReference, ResourceType,
@@ -820,7 +823,7 @@ impl CosmosDriver {
     async fn pre_resolve_partition_key_range_id(
         &self,
         operation: &CosmosOperation,
-    ) -> Option<String> {
+    ) -> Option<PartitionKeyRangeId> {
         // Only pre-resolve for partitioned data plane operations.
         if !operation.resource_type().is_partitioned() {
             return None;
@@ -845,6 +848,7 @@ impl CosmosDriver {
                 Box::pin(self.fetch_pk_ranges_from_service(c, cont))
             })
             .await
+            .map(PartitionKeyRangeId::from)
     }
 
     /// Executes a Cosmos DB operation.

@@ -440,7 +440,7 @@ pub(crate) struct PartitionFailoverConfig {
     ///   AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED).
     pub circuit_breaker_option_enabled: bool,
 
-    /// Read failures before circuit trips (default: 2).
+    /// Read failures before circuit trips (default: 5).
     /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS
     pub read_failure_threshold: i32,
 
@@ -663,7 +663,7 @@ increment_request_failure_counter_and_check_if_partition_can_failover(request)
   │
   └─ can_circuit_breaker_trigger_partition_failover(is_read_only):
       ├─ if is_read_only:
-      │   └─ return read_count > read_threshold  (default: 2)
+      │   └─ return read_count > read_threshold  (default: 5)
       └─ else:
           └─ return write_count > write_threshold  (default: 5)
 ```
@@ -672,14 +672,9 @@ increment_request_failure_counter_and_check_if_partition_can_failover(request)
 
 | Parameter | Default | Environment Variable |
 |---|---|---|
-| Read failure threshold | 2 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
+| Read failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
 | Write failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` |
 | Counter reset window | 5 minutes | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` |
-
-**Why reads = 2, writes = 5?** Reads are idempotent and safe to fail over
-aggressively. Writes are more expensive to fail over (potential double-write risk on
-multi-master), so a higher threshold reduces false-positive failovers due to transient
-errors.
 
 ### 7.3 Counter Reset Window
 
@@ -819,8 +814,7 @@ for 503/429/410. The change is to wire the actual `partition_key_range_id` from
 LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
     partition_key_range_id: retry_state
         .partition_key_range_id
-        .clone()
-        .unwrap_or_default(),
+        .clone(),
     region: endpoint.region().cloned(),
     is_read: operation.is_read_only(),
 })
@@ -841,8 +835,7 @@ if status.is_write_forbidden() && retry_state.can_retry_failover() {
             LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
                 partition_key_range_id: retry_state
                     .partition_key_range_id
-                    .clone()
-                    .unwrap_or_default(),
+                    .clone(),
                 region: endpoint.region().cloned(),
                 is_read: false, // WriteForbidden is always a write
             }),
@@ -859,7 +852,7 @@ if status.is_write_forbidden() && retry_state.can_retry_failover() {
 ```rust
 // In LocationStateStore::apply():
 LocationEffect::MarkPartitionUnavailable(partition) => {
-    if partition.partition_key_range_id.is_empty() {
+    if partition.partition_key_range_id.is_none() {
         // No partition key range ID available (first attempt);
         // skip partition-level marking.
         continue;
@@ -883,6 +876,14 @@ pub(crate) struct OperationRetryState {
     /// Partition key range ID resolved from the first response.
     /// None until the first transport attempt returns headers.
     pub partition_key_range_id: Option<PartitionKeyRangeId>,
+
+    /// Whether PPAF allows non-idempotent write retries on failover.
+    pub ppaf_write_retry_allowed: bool,
+
+    /// Whether the per-partition circuit breaker is active for this account.
+    /// When `true`, endpoint-level `MarkEndpointUnavailable` effects are
+    /// suppressed for PPCB-eligible requests.
+    pub ppcb_active: bool,
 }
 ```
 
@@ -1428,7 +1429,7 @@ The partition key range ID is now available through two complementary mechanisms
   using the metadata transport (same pattern as `fetch_account_properties`).
 - `pre_resolve_partition_key_range_id()` checks eligibility (PPAF/PPCB enabled,
   partitioned resource, container + partition key present) before calling the cache.
-- `execute_operation_pipeline` accepts `pre_resolved_pk_range_id: Option<String>`
+- `execute_operation_pipeline` accepts `pre_resolved_pk_range_id: Option<PartitionKeyRangeId>`
   and seeds it on `retry_state` after `OperationRetryState::initial()`.
 
 ### 15.2 `ResourceType.is_partitioned()` Method

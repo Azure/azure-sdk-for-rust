@@ -16,7 +16,7 @@ use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
         jitter::with_jitter,
-        routing::{CosmosEndpoint, LocationIndex},
+        routing::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, LocationIndex},
         transport::AuthorizationContext,
     },
     models::CosmosStatus,
@@ -85,7 +85,7 @@ pub(crate) struct OperationRetryState {
     pub session_retry_routing: SessionRetryRouting,
     /// Partition key range ID resolved from the first response headers.
     /// `None` until the first transport attempt returns headers.
-    pub partition_key_range_id: Option<String>,
+    pub partition_key_range_id: Option<PartitionKeyRangeId>,
     /// Whether PPAF allows non-idempotent write retries on failover.
     ///
     /// When `true`, a non-idempotent write that receives a 503/429/410/408

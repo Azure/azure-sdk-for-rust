@@ -16,9 +16,9 @@ use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     driver::routing::{
         can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-        partition_endpoint_state::HealthStatus, remove_probe_succeeded_entry,
-        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
-        LocationStateStore,
+        partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
+        remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
+        CosmosEndpoint, LocationSnapshot, LocationStateStore,
     },
     driver::transport::CosmosTransport,
     models::{
@@ -65,7 +65,7 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
-    pre_resolved_pk_range_id: Option<String>,
+    pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -262,7 +262,8 @@ pub(crate) async fn execute_operation_pipeline(
                 if let Some(pk_range_id) = headers.get_optional_string(&HeaderName::from_static(
                     "x-ms-documentdb-partitionkeyrangeid",
                 )) {
-                    retry_state.partition_key_range_id = Some(pk_range_id.to_owned());
+                    retry_state.partition_key_range_id =
+                        Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
                 }
             }
         }

@@ -9,7 +9,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::CosmosEndpoint;
+use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 
 /// Immutable partition-level endpoint routing state.
 ///
@@ -19,20 +19,17 @@ use super::CosmosEndpoint;
 pub(crate) struct PartitionEndpointState {
     /// PPAF map: writes on single-master accounts.
     /// Key: partition key range ID.
-    pub failover_overrides: HashMap<String, PartitionFailoverEntry>,
+    pub failover_overrides: HashMap<PartitionKeyRangeId, PartitionFailoverEntry>,
 
     /// PPCB map: reads (any account) + writes on multi-master.
     /// Key: partition key range ID.
-    pub circuit_breaker_overrides: HashMap<String, PartitionFailoverEntry>,
+    pub circuit_breaker_overrides: HashMap<PartitionKeyRangeId, PartitionFailoverEntry>,
 
     /// PPAF enabled (from `AccountProperties.enable_per_partition_failover_behavior`).
     pub per_partition_automatic_failover_enabled: bool,
 
     /// PPCB enabled (from env var + account property).
     pub per_partition_circuit_breaker_enabled: bool,
-
-    /// Retained option value for recomputation on account refresh.
-    pub circuit_breaker_option_enabled: bool,
 
     /// Configuration read from env vars at construction time.
     pub config: PartitionFailoverConfig,
@@ -41,13 +38,11 @@ pub(crate) struct PartitionEndpointState {
 impl Default for PartitionEndpointState {
     fn default() -> Self {
         let config = PartitionFailoverConfig::from_env();
-        let circuit_breaker_option_enabled = config.circuit_breaker_option_enabled;
         Self {
             failover_overrides: HashMap::new(),
             circuit_breaker_overrides: HashMap::new(),
             per_partition_automatic_failover_enabled: false,
-            per_partition_circuit_breaker_enabled: circuit_breaker_option_enabled,
-            circuit_breaker_option_enabled,
+            per_partition_circuit_breaker_enabled: config.circuit_breaker_option_enabled,
             config,
         }
     }
@@ -129,6 +124,10 @@ impl Default for PartitionFailoverConfig {
 
 impl PartitionFailoverConfig {
     /// Reads configuration from environment variables, falling back to defaults.
+    ///
+    /// Called at construction time (via `PartitionEndpointState::default()`).
+    /// Each value is read from the corresponding env var if set, otherwise
+    /// the compile-time default from [`Default`] is used.
     pub fn from_env() -> Self {
         let defaults = Self::default();
 
@@ -205,6 +204,6 @@ mod tests {
         assert!(state.circuit_breaker_overrides.is_empty());
         assert!(!state.per_partition_automatic_failover_enabled);
         assert!(state.per_partition_circuit_breaker_enabled);
-        assert!(state.circuit_breaker_option_enabled);
+        assert!(state.config.circuit_breaker_option_enabled);
     }
 }

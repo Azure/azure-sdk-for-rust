@@ -223,7 +223,7 @@ impl LocationStateStore {
                     });
                 }
                 LocationEffect::MarkPartitionUnavailable(partition) => {
-                    if partition.partition_key_range_id.is_empty() {
+                    if partition.partition_key_range_id.is_none() {
                         // No partition key range ID available (first attempt);
                         // skip partition-level marking.
                         continue;
@@ -391,8 +391,8 @@ impl LocationStateStore {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
-            next.per_partition_circuit_breaker_enabled =
-                per_partition_automatic_failover_enabled || current.circuit_breaker_option_enabled;
+            next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
+                || current.config.circuit_breaker_option_enabled;
             next
         });
     }
