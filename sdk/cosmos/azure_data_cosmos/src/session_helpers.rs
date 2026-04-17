@@ -244,6 +244,9 @@ fn analyze_subsets(
 }
 
 /// Phase 3: split compound session tokens into individual segments.
+///
+/// Feed range context is intentionally dropped here — from this point on,
+/// merging is done purely by partition key range ID (Phase 4).
 fn split_compound_tokens(ranges_and_tokens: &[(FeedRange, String)]) -> Vec<String> {
     let mut result = Vec::new();
     for (_, token) in ranges_and_tokens {
