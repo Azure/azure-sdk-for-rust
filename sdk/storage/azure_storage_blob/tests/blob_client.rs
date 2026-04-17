@@ -3,7 +3,7 @@
 
 use azure_core::{
     error::ErrorKind,
-    http::{headers::CONTENT_TYPE, ClientOptions, RequestContent, StatusCode, Url},
+    http::{headers::CONTENT_TYPE, ClientOptions, RequestContent, StatusCode, Transport, Url},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
@@ -22,8 +22,8 @@ use azure_storage_blob::{
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
-    StorageAccount, TestPolicy,
+    create_test_blob, get_blob_name, get_container_client, get_container_name,
+    new_test_http_client, ClientOptionsExt, StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
 use flate2::{write::GzEncoder, Compression};
@@ -942,14 +942,14 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
 
+    // Use a hardened HTTP client with read_timeout to prevent stalled
+    // downloads from burning the full 300s test timeout on CI.
     let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
+    let mut options =
+        BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone());
+    options.client_options.transport = Some(Transport::new(new_test_http_client()));
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, Some(options)).await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     for TestManagedDownloadArgSet {
