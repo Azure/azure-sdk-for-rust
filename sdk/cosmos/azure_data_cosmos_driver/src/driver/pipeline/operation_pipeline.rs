@@ -1521,124 +1521,126 @@ mod tests {
         );
         // Available endpoint is preferred over the unavailable one.
         assert_eq!(routing.endpoint, available_endpoint);
-        fn build_transport_request_sets_priority_level_header() {
-            let container = test_container();
-            let operation = CosmosOperation::read_item(ItemReference::from_name(
-                &container,
-                PartitionKey::from("pk1"),
-                "doc1",
-            ));
-            let routing = test_routing();
-            let activity_id = ActivityId::new_uuid();
+    }
 
-            let snapshot = ThroughputControlGroupSnapshot::new(
-                ThroughputControlGroupName::new("test-priority"),
-                container,
-                false,
-            )
-            .with_priority_level(PriorityLevel::Low);
+    #[test]
+    fn build_transport_request_sets_priority_level_header() {
+        let container = test_container();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
 
-            let ctx = TransportRequestContext {
-                routing: &routing,
-                activity_id: &activity_id,
-                execution_context: ExecutionContext::Initial,
-                deadline: None,
-                resolved_session_token: None,
-                throughput_control: Some(&snapshot),
-            };
-            let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let snapshot = ThroughputControlGroupSnapshot::new(
+            ThroughputControlGroupName::new("test-priority"),
+            container,
+            false,
+        )
+        .with_priority_level(PriorityLevel::Low);
 
-            let priority = request
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: Some(&snapshot),
+        };
+        let request = build_transport_request(&operation, None, &ctx).unwrap();
+
+        let priority = request
+            .headers
+            .get_optional_str(&request_header_names::PRIORITY_LEVEL)
+            .expect("priority level header should be set");
+        assert_eq!(priority, "Low");
+        assert!(request
+            .headers
+            .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
+            .is_none());
+    }
+
+    #[test]
+    fn build_transport_request_sets_throughput_bucket_header() {
+        let container = test_container();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+
+        let snapshot = ThroughputControlGroupSnapshot::new(
+            ThroughputControlGroupName::new("test-bucket"),
+            container,
+            false,
+        )
+        .with_throughput_bucket(42);
+
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: Some(&snapshot),
+        };
+        let request = build_transport_request(&operation, None, &ctx).unwrap();
+
+        let bucket = request
+            .headers
+            .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
+            .expect("throughput bucket header should be set");
+        assert_eq!(bucket, "42");
+        assert!(request
+            .headers
+            .get_optional_str(&request_header_names::PRIORITY_LEVEL)
+            .is_none());
+    }
+
+    #[test]
+    fn build_transport_request_sets_both_throughput_headers() {
+        let container = test_container();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+
+        let snapshot = ThroughputControlGroupSnapshot::new(
+            ThroughputControlGroupName::new("test-both"),
+            container,
+            false,
+        )
+        .with_priority_level(PriorityLevel::High)
+        .with_throughput_bucket(100);
+
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: Some(&snapshot),
+        };
+        let request = build_transport_request(&operation, None, &ctx).unwrap();
+
+        assert_eq!(
+            request
                 .headers
-                .get_optional_str(&request_header_names::PRIORITY_LEVEL)
-                .expect("priority level header should be set");
-            assert_eq!(priority, "Low");
-            assert!(request
+                .get_optional_str(&request_header_names::PRIORITY_LEVEL),
+            Some("High")
+        );
+        assert_eq!(
+            request
                 .headers
-                .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
-                .is_none());
-        }
-
-        #[test]
-        fn build_transport_request_sets_throughput_bucket_header() {
-            let container = test_container();
-            let operation = CosmosOperation::read_item(ItemReference::from_name(
-                &container,
-                PartitionKey::from("pk1"),
-                "doc1",
-            ));
-            let routing = test_routing();
-            let activity_id = ActivityId::new_uuid();
-
-            let snapshot = ThroughputControlGroupSnapshot::new(
-                ThroughputControlGroupName::new("test-bucket"),
-                container,
-                false,
-            )
-            .with_throughput_bucket(42);
-
-            let ctx = TransportRequestContext {
-                routing: &routing,
-                activity_id: &activity_id,
-                execution_context: ExecutionContext::Initial,
-                deadline: None,
-                resolved_session_token: None,
-                throughput_control: Some(&snapshot),
-            };
-            let request = build_transport_request(&operation, None, &ctx).unwrap();
-
-            let bucket = request
-                .headers
-                .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
-                .expect("throughput bucket header should be set");
-            assert_eq!(bucket, "42");
-            assert!(request
-                .headers
-                .get_optional_str(&request_header_names::PRIORITY_LEVEL)
-                .is_none());
-        }
-
-        #[test]
-        fn build_transport_request_sets_both_throughput_headers() {
-            let container = test_container();
-            let operation = CosmosOperation::read_item(ItemReference::from_name(
-                &container,
-                PartitionKey::from("pk1"),
-                "doc1",
-            ));
-            let routing = test_routing();
-            let activity_id = ActivityId::new_uuid();
-
-            let snapshot = ThroughputControlGroupSnapshot::new(
-                ThroughputControlGroupName::new("test-both"),
-                container,
-                false,
-            )
-            .with_priority_level(PriorityLevel::High)
-            .with_throughput_bucket(100);
-
-            let ctx = TransportRequestContext {
-                routing: &routing,
-                activity_id: &activity_id,
-                execution_context: ExecutionContext::Initial,
-                deadline: None,
-                resolved_session_token: None,
-                throughput_control: Some(&snapshot),
-            };
-            let request = build_transport_request(&operation, None, &ctx).unwrap();
-
-            assert_eq!(
-                request
-                    .headers
-                    .get_optional_str(&request_header_names::PRIORITY_LEVEL),
-                Some("High")
-            );
-            assert_eq!(
-                request
-                    .headers
-                    .get_optional_str(&request_header_names::THROUGHPUT_BUCKET),
-                Some("100")
-            );
-        }
+                .get_optional_str(&request_header_names::THROUGHPUT_BUCKET),
+            Some("100")
+        );
     }
 }
