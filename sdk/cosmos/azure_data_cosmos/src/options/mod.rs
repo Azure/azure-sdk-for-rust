@@ -392,6 +392,26 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
+/// Options for [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
+/// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
+#[derive(Clone, Default, Debug)]
+#[non_exhaustive]
+pub struct ReadFeedRangesOptions {
+    force_refresh: bool,
+}
+
+impl ReadFeedRangesOptions {
+    /// When `true`, discards any cached routing map and fetches a fresh copy from the service.
+    pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
+        self.force_refresh = force_refresh;
+        self
+    }
+
+    pub(crate) fn force_refresh(&self) -> bool {
+        self.force_refresh
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -5,6 +5,7 @@ mod cosmos_batch;
 mod cosmos_containers;
 mod cosmos_databases;
 mod cosmos_fault_injection;
+mod cosmos_feed_ranges;
 mod cosmos_items;
 mod cosmos_offers;
 mod cosmos_proxy;

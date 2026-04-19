@@ -63,7 +63,7 @@ impl SessionContainer {
         }
 
         let mut entries: Vec<_> = pk_map.iter().collect();
-        entries.sort_by_key(|(key, _)| *key);
+        entries.sort_by_key(|(a, _)| *a);
         let composite: Vec<String> = entries
             .iter()
             .map(|(pk_range_id, vector)| format!("{pk_range_id}:{vector}"))

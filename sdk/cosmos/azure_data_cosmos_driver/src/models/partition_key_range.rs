@@ -10,7 +10,7 @@ use std::hash::{Hash, Hasher};
 
 /// Represents a partition key range in the Azure Cosmos DB service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct PartitionKeyRange {
+pub struct PartitionKeyRange {
     /// Gets or sets the Id of the resource
     #[serde(rename = "id")]
     pub id: String,
@@ -51,9 +51,11 @@ pub(crate) struct PartitionKeyRange {
     #[serde(rename = "targetThroughput", skip_serializing_if = "Option::is_none")]
     pub target_throughput: Option<f64>,
 
-    /// Status of the partition key range
+    /// Status of the partition key range.
+    ///
+    /// Not part of the public API surface; uses a crate-internal enum type.
     #[serde(rename = "status", default)]
-    pub status: PartitionKeyRangeStatus,
+    pub(crate) status: PartitionKeyRangeStatus,
 
     /// Log Sequence Number
     #[serde(rename = "_lsn", default)]
@@ -116,7 +118,7 @@ impl PartitionKeyRange {
     }
 
     /// Returns a view of this partition key range as an `EpkRange<&EffectivePartitionKey>`.
-    pub fn as_range(&self) -> EpkRange<&EffectivePartitionKey> {
+    pub(crate) fn as_range(&self) -> EpkRange<&EffectivePartitionKey> {
         EpkRange {
             min: &self.min_inclusive,
             max: &self.max_exclusive,
