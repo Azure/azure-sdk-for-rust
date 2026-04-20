@@ -139,12 +139,12 @@ impl PartitionFailoverConfig {
 
         let read_failure_threshold = view
             .circuit_breaker_failure_count_for_reads()
-            .map(|v| *v as i32)
+            .map(|v| i32::try_from(*v).unwrap_or(i32::MAX))
             .unwrap_or(defaults.read_failure_threshold);
 
         let write_failure_threshold = view
             .circuit_breaker_failure_count_for_writes()
-            .map(|v| *v as i32)
+            .map(|v| i32::try_from(*v).unwrap_or(i32::MAX))
             .unwrap_or(defaults.write_failure_threshold);
 
         let counter_reset_window_minutes = view
