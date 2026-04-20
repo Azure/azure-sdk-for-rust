@@ -25,10 +25,14 @@ async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Upload from a stream.
     const CONTENT_LENGTH: usize = 40_960_000;
+    tracing::info!(CONTENT_LENGTH, "starting stream upload");
     upload::<CONTENT_LENGTH>(&blob_client).await?;
+    tracing::info!("stream upload complete");
 
     // Download to a stream.
+    tracing::info!("starting stream download");
     let len = download(&blob_client).await? as usize;
+    tracing::info!(len, "stream download complete");
     assert_eq!(len, CONTENT_LENGTH);
 
     // Cleanup

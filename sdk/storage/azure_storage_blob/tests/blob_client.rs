@@ -952,14 +952,24 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     .await?;
     let blob_client = container_client.blob_client(&get_blob_name(recording));
 
-    for TestManagedDownloadArgSet {
-        data_len,
-        parallel,
-        partition_len,
-        download_range,
-        expected_gets,
-    } in test_managed_download_args()
+    for (
+        iteration,
+        TestManagedDownloadArgSet {
+            data_len,
+            parallel,
+            partition_len,
+            download_range,
+            expected_gets,
+        },
+    ) in test_managed_download_args().into_iter().enumerate()
     {
+        tracing::info!(
+            iteration,
+            parallel,
+            partition_len,
+            ?download_range,
+            "starting managed download iteration"
+        );
         let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
         blob_client
             .upload(RequestContent::from(data.to_vec()), None)
@@ -967,6 +977,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
+        tracing::debug!(iteration, "calling download");
         let mut download_stream = blob_client
             .download(Some(BlobClientDownloadOptions {
                 partition_size: Some(NonZero::new(partition_len).unwrap()),
@@ -977,10 +988,20 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             .await?
             .body;
 
+        tracing::debug!(iteration, "streaming download chunks");
         let mut downloaded_data = BytesMut::new();
+        let mut chunk_count = 0usize;
         while let Some(bytes) = download_stream.try_next().await? {
+            chunk_count += 1;
+            tracing::trace!(iteration, chunk_count, len = bytes.len(), "received chunk");
             downloaded_data.put(bytes);
         }
+        tracing::debug!(
+            iteration,
+            chunk_count,
+            total_bytes = downloaded_data.len(),
+            "download complete"
+        );
         let downloaded_data = downloaded_data.freeze();
         assert_eq!(
             &downloaded_data,
@@ -1429,8 +1450,10 @@ async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), 
             }),
         )
         .await?;
+    tracing::info!("gzip upload complete");
 
     // Download - auto-decompression is disabled so we get raw bytes.
+    tracing::debug!("starting gzip download");
     let response = blob_client.download(None).await?;
 
     // content-encoding header is present because reqwest did not strip it.
@@ -1441,6 +1464,7 @@ async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), 
     );
 
     let downloaded_bytes = response.body.collect().await?;
+    tracing::debug!(len = downloaded_bytes.len(), "gzip download complete");
     // The body is a valid gzip stream that decodes back to the original plaintext.
     // Note: we compare decompressed output rather than raw bytes because the service
     // may normalize the OS byte in the gzip header.

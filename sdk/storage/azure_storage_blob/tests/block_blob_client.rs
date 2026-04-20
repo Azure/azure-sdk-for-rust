@@ -452,6 +452,11 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let data_len = 50 * MB;
     let expected_stage_block_count = data_len.div_ceil(4 * MB);
+    tracing::info!(
+        data_len,
+        expected_stage_block_count,
+        "generating upload data"
+    );
     let mut bytes = BytesMut::with_capacity(data_len).writer();
     {
         let mut buf = [0u8; 4 * KB];
@@ -465,9 +470,13 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     stage_block_count.store(0, Ordering::Relaxed);
     {
         let _scope = count_policy.check_request_scope();
+        tracing::info!(data_len, "starting large upload");
         block_blob_client.upload(bytes.clone().into(), None).await?;
+        tracing::info!("large upload complete");
     }
+    tracing::debug!("starting large download for verification");
     let body_data = blob_client.download(None).await?.body.collect().await?;
+    tracing::debug!(downloaded_len = body_data.len(), "large download complete");
     assert_eq!(body_data[..], bytes[..]);
     assert_eq!(
         stage_block_count.load(Ordering::Relaxed),
