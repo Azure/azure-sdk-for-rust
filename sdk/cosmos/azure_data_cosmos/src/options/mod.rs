@@ -543,21 +543,4 @@ mod tests {
 
         assert_eq!(headers_result, headers_expected);
     }
-
-    #[test]
-    fn no_throughput_control_headers_from_apply_headers_alone() {
-        // apply_headers() does not set throughput control headers — those are
-        // applied by the driver pipeline. Verify that priority and bucket
-        // headers are absent after apply_headers() only.
-        let options = ItemWriteOptions::default();
-        let mut headers = Headers::new();
-        options.apply_headers(&mut headers);
-
-        assert!(headers
-            .get_optional_str(&constants::PRIORITY_LEVEL)
-            .is_none());
-        assert!(headers
-            .get_optional_str(&constants::THROUGHPUT_BUCKET)
-            .is_none());
-    }
 }

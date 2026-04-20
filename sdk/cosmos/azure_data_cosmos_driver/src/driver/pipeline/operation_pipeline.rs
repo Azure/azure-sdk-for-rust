@@ -20,8 +20,7 @@ use crate::{
     },
     models::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        CosmosResponseHeaders, Credential, DefaultConsistencyLevel, OperationType, SessionToken,
-        SubStatusCode,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -500,7 +499,7 @@ fn build_transport_request(
     // distinguishes them via this header.
     if operation.operation_type() == OperationType::Upsert {
         headers.insert(
-            request_header_names::IS_UPSERT.clone(),
+            HeaderName::from_static(request_header_names::IS_UPSERT),
             HeaderValue::from_static("true"),
         );
     }
@@ -1253,16 +1252,18 @@ mod tests {
         let operation = CosmosOperation::upsert_item(test_container(), PartitionKey::from("pk1"))
             .with_body(b"{}".to_vec());
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &test_routing(),
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         let is_upsert = request
             .headers
@@ -1276,16 +1277,18 @@ mod tests {
         let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
             .with_body(b"{}".to_vec());
 
-        let request = build_transport_request(
-            &operation,
-            None,
-            &test_routing(),
-            &ActivityId::from_string("default-activity".to_string()),
-            ExecutionContext::Initial,
-            None,
-            None,
-        )
-        .expect("request should build");
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
 
         assert!(
             request
