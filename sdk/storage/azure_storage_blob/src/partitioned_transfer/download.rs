@@ -80,6 +80,15 @@ where
     }
     let total_chunks = remaining_ranges.len() + 1;
 
+    tracing::info!(
+        total_chunks,
+        remaining = remaining_ranges.len(),
+        parallel,
+        max_buffers,
+        partition_size,
+        "partitioned download: orchestrating"
+    );
+
     // channel for download workers to send results to their coordinator.
     let (tx, mut rx) = mpsc::unbounded();
 
@@ -104,18 +113,42 @@ where
     // download, indexed by chunk.
     let stream = async_stream::try_stream! {
         while drain.position() < total_chunks {
+            let loop_active = active_tasks_counter.load(Ordering::Relaxed);
+            let loop_accepting = drain.currently_accepting();
+            tracing::info!(
+                drain_pos = drain.position(),
+                total_chunks,
+                next_task_index,
+                active = loop_active,
+                accepting = ?loop_accepting,
+                task_bucket_len = task_bucket.len(),
+                "partitioned download: stream loop top"
+            );
+
             // while there is room in the buffer drain and not at max connections, start new range downloads
+            let mut tasks_started_this_round = 0usize;
             while drain.currently_accepting().contains(&next_task_index) && active_tasks_counter.load(Ordering::Relaxed) < parallel {
                 match remaining_ranges.pop_front() {
                     Some(range) => {
                         let i = next_task_index;
                         next_task_index += 1;
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
+                        tasks_started_this_round += 1;
 
+                        tracing::debug!(
+                            chunk_idx = i,
+                            ?range,
+                            active = active_tasks_counter.load(Ordering::Relaxed),
+                            "partitioned download: starting task"
+                        );
                         let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
                         task_bucket.push(start_download_task(client.clone(), range, etag_lock.clone(), t, active_tasks_counter.clone(), i));
                     }
                     None => {
+                        tracing::info!(
+                            next_task_index,
+                            "partitioned download: all ranges dispatched, dropping spare sender"
+                        );
                         // if ranges are finished, we'll never need to clone the transmitter again.
                         // drop this transmitter to ensure channel closes when expected
                         tx_opt = None;
@@ -123,14 +156,32 @@ where
                     }
                 }
             }
+            if tasks_started_this_round > 0 {
+                tracing::info!(
+                    tasks_started_this_round,
+                    next_task_index,
+                    active = active_tasks_counter.load(Ordering::Relaxed),
+                    "partitioned download: dispatched new tasks"
+                );
+            }
 
             // return next readied bytes, if any
+            let mut yielded_count = 0usize;
             while let Some(bytes) = drain.pop() {
+                yielded_count += 1;
                 yield bytes;
+            }
+            if yielded_count > 0 {
+                tracing::info!(
+                    yielded_count,
+                    drain_pos = drain.position(),
+                    "partitioned download: yielded chunks"
+                );
             }
 
             // early break if finished
             if drain.position() >= total_chunks {
+                tracing::info!("partitioned download: all chunks yielded, breaking");
                 break;
             }
 
@@ -138,9 +189,21 @@ where
             // this will not change until either:
             //   1. a task sends a message through this channel
             //   2. a task fails
+            tracing::info!(
+                drain_pos = drain.position(),
+                active = active_tasks_counter.load(Ordering::Relaxed),
+                task_bucket_len = task_bucket.len(),
+                "partitioned download: awaiting message"
+            );
             let channel_message;
             (channel_message, task_bucket) = await_message_while_joining_workers(&mut rx, task_bucket).await?;
             let (idx, bytes) = channel_message?;
+            tracing::info!(
+                chunk_idx = idx,
+                bytes_len = bytes.len(),
+                drain_pos = drain.position(),
+                "partitioned download: received chunk"
+            );
             drain.push(idx, bytes)?;
         }
     };
@@ -204,12 +267,24 @@ async fn await_message_while_joining_workers<T>(
 
     let mut message_fut = receiver.recv();
     // `task_bucket`` may be empty. `select_all` cannot handle that.
+    let mut join_loop_count = 0usize;
     while !task_bucket.is_empty() {
         match future::select(message_fut, future::select_all(task_bucket)).await {
             Either::Left((message, task_select)) => {
+                tracing::debug!(
+                    join_loop_count,
+                    "partitioned download: await_message got channel message"
+                );
                 return Ok((message.map_err(on_recv_err)?, task_select.into_inner()));
             }
-            Either::Right(((completed_task, _, remaining_tasks), m_fut)) => {
+            Either::Right(((completed_task, idx, remaining_tasks), m_fut)) => {
+                join_loop_count += 1;
+                tracing::debug!(
+                    join_loop_count,
+                    joined_task_idx = idx,
+                    remaining_tasks = remaining_tasks.len(),
+                    "partitioned download: await_message joined task, looping"
+                );
                 completed_task.map_err(map_spawned_task_error)?;
                 task_bucket = remaining_tasks;
                 message_fut = m_fut;
@@ -217,6 +292,7 @@ async fn await_message_while_joining_workers<T>(
         }
     }
 
+    tracing::debug!("partitioned download: await_message all tasks joined, waiting for channel");
     Ok((message_fut.await.map_err(on_recv_err)?, task_bucket))
 }
 
@@ -229,6 +305,10 @@ fn start_initial_download_task(
     partition_size: usize,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
+        tracing::info!(
+            partition_size,
+            "partitioned download: initial task collecting body"
+        );
         let mut dst = vec![0u8; partition_size];
         let res = initial_response
             .into_body()
@@ -236,8 +316,13 @@ fn start_initial_download_task(
             .await
             // this is the initial download task, it's chunk index is 0
             .map(|_| (0usize, dst.into()));
+        tracing::info!(
+            ok = res.is_ok(),
+            "partitioned download: initial task body collected"
+        );
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
         let _send_res = sender.send(res).await;
+        tracing::debug!("partitioned download: initial task sent result");
     }))
 }
 
@@ -252,6 +337,7 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
     chunk_idx: usize,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
+        tracing::debug!(chunk_idx, "partitioned download: task requesting range");
         let mut dst = vec![0u8; range.len()];
         let res = async {
             client
@@ -265,8 +351,14 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
         if let Ok(count) = res {
             dst.truncate(count);
         }
+        tracing::debug!(
+            chunk_idx,
+            ok = res.is_ok(),
+            "partitioned download: task request complete"
+        );
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
         let _send_res = sender.send(res.map(|_| (chunk_idx, dst.into()))).await;
+        tracing::debug!(chunk_idx, "partitioned download: task sent result");
     }))
 }
 
