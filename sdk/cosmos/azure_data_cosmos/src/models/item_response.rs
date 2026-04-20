@@ -77,7 +77,7 @@ impl<T> ItemResponse<T> {
         self.response.cosmos_headers().lsn
     }
 
-    /// The logical sequence number (LSN) of the specific item/document operated on. 
+    /// The logical sequence number (LSN) of the specific item/document operated on.
     /// Reflects the last write to this particular item.
     pub fn item_lsn(&self) -> Option<u64> {
         self.response.cosmos_headers().item_lsn
