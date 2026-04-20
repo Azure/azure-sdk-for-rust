@@ -172,7 +172,7 @@ pub(crate) async fn execute_operation_pipeline(
             execution_context = ?execution_context,
             preferred_write_endpoints = ?location.account.preferred_write_endpoints.iter().map(|e| e.url().to_string()).collect::<Vec<_>>(),
             preferred_read_endpoints = ?location.account.preferred_read_endpoints.iter().map(|e| e.url().to_string()).collect::<Vec<_>>(),
-            unavailable_endpoints = ?location.account.unavailable_endpoints.iter().map(|(e, (_, r))| format!("{}={:?}", e.url(), r)).collect::<Vec<_>>(),
+            unavailable_endpoints = ?location.account.unavailable_endpoints.iter().map(|(e, (_, r))| format!("{}={:?}", e, r)).collect::<Vec<_>>(),
             multi_write = location.account.multiple_write_locations_enabled,
             ppaf_enabled = location.partitions.per_partition_automatic_failover_enabled,
             ppcb_enabled = location.partitions.per_partition_circuit_breaker_enabled,
@@ -229,7 +229,7 @@ pub(crate) async fn execute_operation_pipeline(
             method = ?transport_request.method,
             url = %transport_request.url,
             activity_id = %activity_id,
-            resource_link = %transport_request.auth_context.resource_link,
+            resource_link = ?transport_request.auth_context.resource_link,
             resource_type = ?transport_request.auth_context.resource_type,
             "transport request created",
         );
@@ -1079,7 +1079,7 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
@@ -1450,8 +1450,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint.clone()],
-            preferred_write_endpoints: vec![default_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -1499,7 +1499,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            unavailable_endpoint.clone(),
+            unavailable_endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::ServiceUnavailable,
@@ -1511,8 +1511,8 @@ mod tests {
             preferred_read_endpoints: vec![
                 unavailable_endpoint.clone(),
                 available_endpoint.clone(),
-            ],
-            preferred_write_endpoints: vec![default_endpoint.clone()],
+            ].into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),

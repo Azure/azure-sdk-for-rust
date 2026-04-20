@@ -410,11 +410,11 @@ impl LocationStateStore {
             *last_etag = properties.etag.clone();
         }
 
-        *self.last_synced_properties.lock().unwrap() = Some(properties);
-
         // Update partition-level PPAF/PPCB flags from account properties.
         let per_partition_automatic_failover_enabled =
             properties.enable_per_partition_failover_behavior;
+
+        *self.last_synced_properties.lock().unwrap() = Some(properties);
         self.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled =

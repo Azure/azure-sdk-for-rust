@@ -567,8 +567,9 @@ mod tests {
             preferred_read_endpoints: vec![
                 regional_endpoint("eastus"),
                 regional_endpoint("westus"),
-            ],
-            preferred_write_endpoints: vec![regional_endpoint("eastus")],
+            ]
+            .into(),
+            preferred_write_endpoints: vec![regional_endpoint("eastus")].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint(),
@@ -582,11 +583,13 @@ mod tests {
             preferred_read_endpoints: vec![
                 regional_endpoint("eastus"),
                 regional_endpoint("westus"),
-            ],
+            ]
+            .into(),
             preferred_write_endpoints: vec![
                 regional_endpoint("eastus"),
                 regional_endpoint("westus"),
-            ],
+            ]
+            .into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: default_endpoint(),
@@ -662,7 +665,7 @@ mod tests {
     fn ppaf_not_eligible_with_single_read_endpoint() {
         let ps = partition_state_with_ppaf_ppcb_enabled();
         let account = AccountEndpointState {
-            preferred_read_endpoints: vec![regional_endpoint("eastus")],
+            preferred_read_endpoints: vec![regional_endpoint("eastus")].into(),
             ..single_master_account()
         };
         assert!(!is_eligible_for_ppaf(&ps, &account, false, true));
