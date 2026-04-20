@@ -14,6 +14,7 @@ use crate::models::{
 
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 // =============================================================================
 // DatabaseReference
 // =============================================================================
@@ -128,6 +129,12 @@ pub struct ContainerReference {
     container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
+    /// Pre-computed name-based path: `/dbs/{db_name}/colls/{container_name}`.
+    ///
+    /// Stored as `Arc<str>` so cloning `ContainerReference` is cheap (atomic refcount).
+    name_based_path: Arc<str>,
+    /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
+    rid_based_path: Arc<str>,
 }
 
 impl PartialEq for ContainerReference {
@@ -168,13 +175,21 @@ impl ContainerReference {
         container_rid: impl Into<ResourceId>,
         container_properties: &crate::models::ContainerProperties,
     ) -> Self {
+        let db_name: ResourceName = db_name.into();
+        let db_rid: ResourceId = db_rid.into();
+        let container_name: ResourceName = container_name.into();
+        let container_rid: ResourceId = container_rid.into();
+        let name_based_path: Arc<str> = format!("/dbs/{}/colls/{}", db_name, container_name).into();
+        let rid_based_path: Arc<str> = format!("/dbs/{}/colls/{}", db_rid, container_rid).into();
         Self {
             account,
-            db_name: db_name.into(),
-            db_rid: db_rid.into(),
-            container_name: container_name.into(),
-            container_rid: container_rid.into(),
+            db_name,
+            db_rid,
+            container_name,
+            container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
+            name_based_path,
+            rid_based_path,
         }
     }
 
@@ -209,13 +224,13 @@ impl ContainerReference {
     }
 
     /// Returns the name-based relative path: `/dbs/{db_name}/colls/{container_name}`
-    pub fn name_based_path(&self) -> String {
-        format!("/dbs/{}/colls/{}", self.db_name, self.container_name)
+    pub fn name_based_path(&self) -> &str {
+        &self.name_based_path
     }
 
     /// Returns the RID-based relative path: `/dbs/{db_rid}/colls/{container_rid}`
-    pub fn rid_based_path(&self) -> String {
-        format!("/dbs/{}/colls/{}", self.db_rid, self.container_rid)
+    pub fn rid_based_path(&self) -> &str {
+        &self.rid_based_path
     }
 }
 

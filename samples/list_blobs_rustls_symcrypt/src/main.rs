@@ -18,9 +18,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // pulled in as a dependency and used for TLS when SymCrypt must be used.
     //
     // A simpler alternative is to install SymCrypt as the default provider:
+    //
     //   rustls_symcrypt::default_symcrypt_provider()
     //       .install_default()
     //       .expect("failed to install SymCrypt crypto provider");
+    //
     // However, that approach requires reqwest's `rustls` feature, which pulls
     // in aws-lc-rs. Using `rustls-no-provider` with an explicitly constructed
     // ClientConfig ensures only SymCrypt is used for TLS.

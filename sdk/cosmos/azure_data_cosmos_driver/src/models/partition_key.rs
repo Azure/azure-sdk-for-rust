@@ -318,8 +318,8 @@ impl PartitionKey {
         self.0.len()
     }
 
-    /// Returns the partition key components for use by the EPK hashing logic.
-    pub(crate) fn values(&self) -> &[PartitionKeyValue] {
+    /// Returns the partition key components.
+    pub fn values(&self) -> &[PartitionKeyValue] {
         &self.0
     }
 }

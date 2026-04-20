@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let endpoint = format!("https://{}.blob.core.windows.net/", args.account_name);
 
-    // aws-lc-rs is the default TLS provider for reqwest 0.13.
+    // The reqwest/native-tls feature automatically configures native-tls as the TLS provider.
     let container_client =
         BlobContainerClient::new(&endpoint, &args.container_name, Some(credential), None)?;
 

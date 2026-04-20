@@ -29,11 +29,11 @@ mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
 #[allow(dead_code)]
-pub(crate) mod effective_partition_key;
+pub mod effective_partition_key;
 #[allow(dead_code)]
 mod murmur_hash;
 #[allow(dead_code)]
-pub(crate) mod partition_key_range;
+pub mod partition_key_range;
 #[allow(dead_code)]
 pub(crate) mod range;
 
@@ -44,6 +44,7 @@ pub(crate) use consistency_level::DefaultConsistencyLevel;
 pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
+pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
