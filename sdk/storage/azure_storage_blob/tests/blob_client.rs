@@ -938,7 +938,6 @@ fn test_managed_download_args() -> impl IntoIterator<Item = TestManagedDownloadA
 }
 
 #[recorded::test]
-#[ignore = "Temporarily ignoring until we can figure out how to get this to not take down the whole test pipeline."]
 async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -1409,7 +1408,6 @@ async fn test_gzip_blob_no_metadata_roundtrip(ctx: TestContext) -> Result<(), Bo
 }
 
 #[recorded::test]
-#[ignore = "Temporarily ignoring until we can figure out how to get this to not take down the whole test pipeline."]
 async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let container_client =
