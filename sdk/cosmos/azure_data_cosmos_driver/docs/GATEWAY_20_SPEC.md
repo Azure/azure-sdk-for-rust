@@ -201,7 +201,7 @@ RntbdUUID.encode(activityId, out);  // two longs
 | 0 | 4 | Total message length | uint32 LE | **Inclusive** of the 4 length bytes themselves (matches Java `writeIntLE` semantics). |
 | 4 | 2 | Resource type | uint16 LE | `writeShortLE(resourceType.id())` — narrower than direct-mode RNTBD's uint32 because thin-client IDs fit in 16 bits. |
 | 6 | 2 | Operation type | uint16 LE | `writeShortLE(operationType.id())` — same rationale. |
-| 8 | 16 | Activity ID | UUID, two uint64 LE | Java writes `(mostSignificantBits, leastSignificantBits)` as two little-endian `long`s — **this is not RFC 4122 byte order**. Example: UUID `12345678-1234-5678-1234-567812345678` → bytes `78 56 34 12 34 12 78 56` (MSB LE) then `78 56 34 12 78 56 34 12` (LSB LE). |
+| 8 | 16 | Activity ID | UUID, two uint64 LE | Java writes `(mostSignificantBits, leastSignificantBits)` as two little-endian `long`s — **this is not RFC 4122 byte order**. Worked example for UUID `0a1b2c3d-4e5f-6789-abcd-ef0123456789`: `mostSignificantBits = 0x0a1b2c3d_4e5f_6789` → LE bytes `89 67 5f 4e 3d 2c 1b 0a`; `leastSignificantBits = 0xabcd_ef01_2345_6789` → LE bytes `89 67 45 23 01 ef cd ab`. The on-the-wire 16-byte sequence is the MSB bytes followed by the LSB bytes. |
 | 24 | var | Metadata tokens | Token stream | Filtered by `thinClientProxyExcludedSet` (see §Phase 2 header naming). |
 | 24+N | 4 | Payload length | uint32 LE | **Only present when the operation type implies a payload** (writes, patch, query body, stored-proc args, batch). Absence is signaled by operation-type convention, not a flag bit. Parsers must consult the operation-type → has-payload table derived from Java's `RntbdRequestArgs`. |
 | 28+N | var | Payload body | Raw bytes | JSON or Cosmos binary, per resource type. |
@@ -283,7 +283,7 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 
 #### Range header wire format
 
-EPK range headers (`x-ms-thinclient-range-min` / `-max`) carry the canonical, un-padded hex produced by `EffectivePartitionKey::compute_range()`. **Do not** zero-pad to N×32 on the wire. Local comparisons use `epk_length_aware_cmp` (in `container_routing_map.rs`, introduced by PR #4087) which correctly handles the mixed-length boundaries returned by the backend. `@analogrelay`'s earlier zero-padding proposal was **not** adopted; stay consistent with the length-aware convention.
+EPK range headers (`x-ms-thinclient-range-min` / `-max`) carry the canonical, un-padded hex produced by `EffectivePartitionKey::compute_range()`. **Do not** zero-pad to N×32 on the wire. Local comparisons use `EffectivePartitionKey`'s `Ord` / `cmp` impl, which correctly handles the mixed-length boundaries returned by the backend; the `epk_cmp_*` tests in `container_routing_map.rs` (around L625–665) pin this behavior. The comparator is consumed via `binary_search_by(|r| r.min_inclusive.cmp(&epk_val))` (≈L282 of the same file). `@analogrelay`'s earlier zero-padding proposal in PR #4087 (commit `25233c903`) was **not** adopted; stay consistent with the length-aware convention.
 
 > **`Range` semantics footgun** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
 
@@ -380,9 +380,38 @@ Two distinct fallback mechanisms — do not conflate them:
 | Name | Scope | Trigger | Duration | Unwind |
 | --- | --- | --- | --- | --- |
 | **Eligibility fallback** | Per-request | Operation is not eligible for Gateway 2.0 (fails `is_operation_supported_by_gateway20()`) | Single request only | N/A — recomputed every request |
-| **Failure fallback** | Per-partition, sticky | N consecutive 503 `Proxy unreachable` or equivalent within a rolling window (target N=3, window=30s — confirm in implementation tuning) | Sticky until unwind | (a) next successful account-metadata refresh removes the affected `gateway20_url`, OR (b) a periodic probe to the proxy succeeds, OR (c) a fixed cooldown (target 60s) expires, whichever is first |
+| **Failure fallback** | Per-partition, sticky | N consecutive *Proxy unreachable* events within a rolling window (target N=3, window=30s — confirm in implementation tuning). See "Proxy unreachable definition" below. | Sticky until unwind | (a) next successful account-metadata refresh removes the affected `gateway20_url`, OR (b) a periodic probe to the proxy succeeds, OR (c) a fixed cooldown (target 60s) expires, whichever is first |
 
 Failure fallback is per-partition rather than per-client so that one bad proxy region does not degrade requests to other partitions. Client-lifetime stickiness is explicitly **not** used — it would prevent recovery within the process.
+
+##### Proxy unreachable definition
+
+For the purposes of the failure-fallback counter, a *Proxy unreachable* event is any of the following observed against a Gateway 2.0 endpoint, regardless of which retry layer surfaces it:
+
+1. **Transport-level failures** (no HTTP response received):
+   - TCP connect refused / timed out (`std::io::ErrorKind::ConnectionRefused`, `TimedOut`, `ConnectionReset`).
+   - TLS handshake failure (cert, ALPN, or protocol mismatch).
+   - HTTP/2 `GOAWAY` received before the request stream completes, or the underlying connection is dropped mid-request.
+   - `reqwest::Error` whose `is_connect()`, `is_timeout()`, or `is_request()` returns true *before any response status is observed*.
+2. **HTTP infrastructure responses** (response received but the proxy itself is unhealthy or absent):
+   - HTTP `502 Bad Gateway`, `504 Gateway Timeout`.
+   - HTTP `503 Service Unavailable` **without** a Cosmos sub-status header (i.e., the response did not originate inside the proxy's Cosmos error path).
+
+The following are explicitly **not** *Proxy unreachable*:
+
+- Any response carrying a Cosmos sub-status header — those are server-routed errors and are handled by the regular Retry Decision Table.
+- Application-level 4xx (those go through the normal cross-region retry policy and never trigger Failure fallback).
+- HTTP `503` carrying a Cosmos sub-status (e.g., `SERVER_GENERATED_410`); see the "503 Unavailable | server-returned" row of the Retry Decision Table.
+
+Where transport-level error classification overlaps with the broader transport pipeline, `TRANSPORT_PIPELINE_SPEC.md` is authoritative; this section narrows the set to those classes that count toward the Gateway 2.0 failure-fallback counter.
+
+##### Java parity
+
+The Phase 4 retry approach above — reuse the existing retry policies and add only the failure-fallback counter on top — matches Java's posture. In `Azure/azure-sdk-for-java`, `ThinClientStoreModel extends RxGatewayStoreModel` and a grep for `thin.?client` across `ClientRetryPolicy.java`, `WebExceptionRetryPolicy.java`, `ResourceThrottleRetryPolicy.java`, `BackoffRetryUtility.java`, `DocumentClientRetryPolicy.java`, `MetadataRequestRetryPolicy.java`, `MetadataThrottlingRetryPolicy.java`, `PartitionKeyRangeGoneRetryPolicy.java`, `StaleResourceRetryPolicy.java`, and `WriteRetryPolicy.java` returns **zero** matches. `RxDocumentClientImpl.getRetryPolicyForPointOperation()` builds the same `ResetSessionTokenRetryPolicy → PartitionKeyMismatchRetryPolicy → StaleResourceRetryPolicy` chain regardless of whether the request lands on the gateway or thin-client store model — model selection happens after the retry policy is built.
+
+The Rust failure-fallback counter described above is **more thin-client-aware than Java's**, which has no equivalent counter. Java's only thin-client awareness in the retry-adjacent layer is at the `GlobalEndpointManager` level (parallel `hasThinClientReadLocations` set and `getThinclientRegionalEndpoint()` URL selection); fault injection is also not yet integrated for thin client (`GlobalEndpointManager.java:161` carries a `// TODO: integrate thin client into fault injection`).
+
+> **Java behavioral nuance to avoid replicating**: `ClientRetryPolicy.markEndpointUnavailableFor{Read,Write}` operates on `gatewayRegionalEndpoint`, meaning a thin-client 503 in Java marks the **gateway** endpoint unavailable rather than the thin-client endpoint. The Rust failure-fallback counter is per-partition and keyed off the `gateway20_url` itself, which is the more precise behavior; do not "align" with Java by widening the unavailability scope.
 
 #### Retry Decision Table
 
@@ -400,7 +429,7 @@ Failure fallback is per-partition rather than per-client so that one bad proxy r
 | 449 Retry With | — | Retry same region (transient conflict) |
 | 503 Unavailable | server-returned | Mark endpoint unavailable, failover; increment failure-fallback counter |
 | 503 Unavailable | SDK-generated | Only retry if `SERVER_GENERATED_410` sub-status |
-| Proxy unreachable | — | Increment failure-fallback counter; if threshold crossed, enter Failure fallback (§Fallback taxonomy) and route remainder through `TransportMode::Gateway` |
+| Proxy unreachable (see §"Proxy unreachable definition") | — | Increment failure-fallback counter; if threshold crossed, enter Failure fallback (§Fallback taxonomy) and route remainder through `TransportMode::Gateway` |
 
 #### Files Changed
 
