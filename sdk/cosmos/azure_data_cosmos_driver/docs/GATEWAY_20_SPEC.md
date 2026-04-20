@@ -72,10 +72,10 @@ Gateway 2.0 moves partition-level routing intelligence from the SDK into the ser
 | Latency SLA | No | **Yes** | Yes |
 | Simple Network | Yes | Yes | No |
 | Protocol | HTTP/REST | RNTBD/HTTP2 | RNTBD/TCP |
-| Replica Mgmt | Proxy | Proxy | SDK |
-| Partition Route | Proxy | Proxy | SDK |
+| Replica Mgmt | Gateway/Proxy | Proxy | SDK |
+| Partition Route | Gateway/Proxy | Proxy | SDK |
 | Regional Route | SDK | SDK | SDK |
-| SDK Complexity | Low | Medium | High |
+| SDK Complexity | Medium | Medium | High |
 | Firewall Rules | 1 endpoint | 1 endpoint | N replicas |
 
 ---
@@ -92,7 +92,7 @@ The Rust driver (`azure_data_cosmos_driver`) already has significant gateway 2.0
 - **`ConnectionPoolOptions`** — `is_gateway20_allowed: bool` config (see §3.4 for gating model)
 - **`CosmosTransport`** — `dataplane_gateway20_transport: OnceLock<AdaptiveTransport>`, lazy init with `AdaptiveTransport::gateway20()`
 - **`AdaptiveTransport::ShardedGateway20`** variant — HTTP/2 only with prior knowledge (no HTTP/1.x fallback; the proxy does not accept HTTP/1.x — see Open Question Q1, resolved)
-- **`HttpClientConfig::dataplane_gateway20()`** — HTTP/2-only config; HTTP/2 negotiation failure surfaces as a transport error (which feeds the failure-fallback counter, §Phase 4) rather than downgrading
+- **`HttpClientConfig::dataplane_gateway20()`** — HTTP/2-only config; HTTP/2 negotiation failure surfaces as a transport error (handled by the existing retry policies) rather than downgrading
 - **`TransportKind::Gateway20`** in diagnostics
 
 ### 3.2 Already Implemented — account metadata & routing
@@ -370,48 +370,24 @@ Retry policies are identical between Gateway 2.0 and standard gateway modes in b
   - `COMPLETING_PARTITION_MIGRATION` (1008): Refresh PKRange cache, retry
   - `NAME_CACHE_IS_STALE` (1000): Refresh **collection** cache (NOT PKRange), retry
   - Other sub-statuses: Retry with backoff, no cache refresh
-- **Gateway 2.0 failure-driven fallback** — see "Fallback taxonomy" below.
+- **Gateway 2.0 eligibility fallback** — see "Fallback taxonomy" below.
 - **Partition-Level Failover interaction** — when PLF (see `PARTITION_LEVEL_FAILOVER_SPEC.md`) selects a region whose `CosmosEndpoint` has no `gateway20_url`, **PLF wins**: the request falls back to standard gateway **for that partition** until PLF releases its override. PLF precedence prevents Gateway 2.0 from overriding an explicit per-partition region choice.
 
 #### Fallback taxonomy
 
-Two distinct fallback mechanisms — do not conflate them:
+Gateway 2.0 has a single fallback mechanism:
 
 | Name | Scope | Trigger | Duration | Unwind |
 | --- | --- | --- | --- | --- |
 | **Eligibility fallback** | Per-request | Operation is not eligible for Gateway 2.0 (fails `is_operation_supported_by_gateway20()`) | Single request only | N/A — recomputed every request |
-| **Failure fallback** | Per-partition, sticky | N consecutive *Proxy unreachable* events within a rolling window (target N=3, window=30s — confirm in implementation tuning). See "Proxy unreachable definition" below. | Sticky until unwind | (a) next successful account-metadata refresh removes the affected `gateway20_url`, OR (b) a periodic probe to the proxy succeeds, OR (c) a fixed cooldown (target 60s) expires, whichever is first |
 
-Failure fallback is per-partition rather than per-client so that one bad proxy region does not degrade requests to other partitions. Client-lifetime stickiness is explicitly **not** used — it would prevent recovery within the process.
-
-##### Proxy unreachable definition
-
-For the purposes of the failure-fallback counter, a *Proxy unreachable* event is any of the following observed against a Gateway 2.0 endpoint, regardless of which retry layer surfaces it:
-
-1. **Transport-level failures** (no HTTP response received):
-   - TCP connect refused / timed out (`std::io::ErrorKind::ConnectionRefused`, `TimedOut`, `ConnectionReset`).
-   - TLS handshake failure (cert, ALPN, or protocol mismatch).
-   - HTTP/2 `GOAWAY` received before the request stream completes, or the underlying connection is dropped mid-request.
-   - `reqwest::Error` whose `is_connect()`, `is_timeout()`, or `is_request()` returns true *before any response status is observed*.
-2. **HTTP infrastructure responses** (response received but the proxy itself is unhealthy or absent):
-   - HTTP `502 Bad Gateway`, `504 Gateway Timeout`.
-   - HTTP `503 Service Unavailable` **without** a Cosmos sub-status header (i.e., the response did not originate inside the proxy's Cosmos error path).
-
-The following are explicitly **not** *Proxy unreachable*:
-
-- Any response carrying a Cosmos sub-status header — those are server-routed errors and are handled by the existing retry policies (unchanged from Gateway 1.0; see `ClientRetryPolicy` and friends).
-- Application-level 4xx (those go through the normal cross-region retry policy and never trigger Failure fallback).
-- HTTP `503` carrying a Cosmos sub-status (e.g., `SERVER_GENERATED_410`) — handled by the existing 503 retry path.
-
-Where transport-level error classification overlaps with the broader transport pipeline, `TRANSPORT_PIPELINE_SPEC.md` is authoritative; this section narrows the set to those classes that count toward the Gateway 2.0 failure-fallback counter.
+There is intentionally **no** Gateway 2.0–specific failure-fallback mechanism (no per-partition consecutive-failure counter, no sticky standard-gateway state, no cooldown). Java's thin client takes the same posture: `ThinClientStoreModel extends RxGatewayStoreModel`, model selection is per-request and stateless via `useThinClientStoreModel()`, and the existing `ClientRetryPolicy` / `WebExceptionRetryPolicy` chain already handles transport errors, 502/503/504, and regional unavailability uniformly across both transport modes. Rust follows the same approach: when a Gateway 2.0 request fails, the existing retry policies retry it (which may re-select Gateway 2.0 or land on standard gateway through normal regional-failover behavior); no new state machine is introduced.
 
 #### Files Changed
 
 ```
 EDIT  src/driver/pipeline/operation_pipeline.rs   — Gateway 2.0 retry classification + PLF precedence
-EDIT  src/driver/pipeline/components.rs           — Add Gateway20FailureFallback state if needed
-EDIT  src/driver/transport/transport_pipeline.rs  — Wire failure-fallback counter into transport
-NEW   src/driver/pipeline/gateway20_retry.rs      — Gateway 2.0 failure-fallback state machine
+EDIT  src/driver/pipeline/components.rs           — Gateway 2.0 retry surface integration
 ```
 
 ---
@@ -502,10 +478,9 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Bulk | | | Yes | Fan-out CRUD, distinct from Batch |
 | Change feed | | | Yes | LatestVersion, incremental |
 | Retry: 408 timeout | | Yes | | Cross-region for reads, local-only for writes |
-| Retry: 503 | | Yes | | Regional failover; failure-fallback trigger and unwind |
+| Retry: 503 | | Yes | | Regional failover via existing retry policies |
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
 | Eligibility fallback | | Yes | | StoredProc Execute → standard gateway |
-| Failure fallback | | Yes | | Proxy down → sticky standard gateway; unwind via metadata refresh / cooldown |
 | PLF precedence | | Yes | | Region without gw20_url + PLF override → standard gateway path |
 | Multi-region failover | | Yes | Yes | Preferred regions, failover |
 | Fault injection | | Yes | | Timeout, 503, network error |
@@ -535,7 +510,6 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 ## 5. Open Questions
 
-- **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails (and trips the failure-fallback counter, §Phase 4) rather than downgrading.
+- **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable gateway 2.0 / thin client endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned thin client account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW20_ENDPOINT`, `AZURE_COSMOS_GW20_KEY`); pipeline reads endpoint from environment variables.
 - **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`THINCLIENT_RANGE_MIN`, `THINCLIENT_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
-- **Q4 — Failure-fallback thresholds**: Initial target values are **N=3 consecutive 503s in a 30s sliding window**, **60s cooldown** before retrying Gateway 2.0 for the affected partition. These are starting points; the live test pipeline (§Phase 6) is the tuning surface — values may be adjusted based on observed false-positive rates and recovery latencies before GA. Thresholds are not customer-tunable; they are internal driver constants.
