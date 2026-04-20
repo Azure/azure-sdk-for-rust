@@ -1293,7 +1293,8 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
                 .is_none(),
             "is-upsert header should not be set for create"
-      }
+        );
+    }
 
     #[test]
     fn build_transport_request_sets_priority_level_header() {
