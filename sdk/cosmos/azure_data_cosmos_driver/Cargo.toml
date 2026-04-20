@@ -76,3 +76,4 @@ reqwest_rustls = [
   "azure_core/reqwest_rustls",
 ]
 fault_injection = ["dep:rand"]
+__internal_mocking = []

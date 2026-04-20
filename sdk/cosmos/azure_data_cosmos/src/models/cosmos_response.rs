@@ -50,11 +50,14 @@ impl<T> CosmosResponse<T> {
         }
     }
 
-    /// Creates a `CosmosResponse` from a typed response without a request.
+    /// Creates a `CosmosResponse` from a typed response and pre-parsed headers.
     ///
-    /// Used for driver-routed operations where no `CosmosRequest` is available.
-    pub(crate) fn from_response(response: Response<T>) -> Self {
-        let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+    /// Used by the driver bridge to avoid re-parsing headers that were already
+    /// parsed by the driver pipeline.
+    pub(crate) fn from_driver_response(
+        response: Response<T>,
+        cosmos_headers: CosmosResponseHeaders,
+    ) -> Self {
         let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
         Self {
             response,

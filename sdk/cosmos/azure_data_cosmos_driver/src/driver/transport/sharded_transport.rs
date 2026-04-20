@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore pointee
+
 //! HTTP/2 transport sharding for gateway endpoints.
 
 use std::{
@@ -225,8 +227,14 @@ impl fmt::Debug for ShardedHttpTransport {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub(crate) struct EndpointKey(String);
+/// Key used to look up the connection shard pool for an endpoint.
+///
+/// The inner `Arc<str>` makes cloning cheap — it's an atomic reference count
+/// increment with no heap allocation. Endpoints are created once at startup or
+/// when the account metadata changes, so the underlying string is shared across
+/// all operations routed to the same host:port.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct EndpointKey(Arc<str>);
 
 impl TryFrom<&Url> for EndpointKey {
     type Error = azure_core::Error;
@@ -244,7 +252,7 @@ impl TryFrom<&Url> for EndpointKey {
                 format!("request URL is missing a known port: {url}"),
             )
         })?;
-        Ok(Self(format!("{host}:{port}")))
+        Ok(Self(Arc::from(format!("{host}:{port}").as_str())))
     }
 }
 
@@ -993,7 +1001,7 @@ mod tests {
     fn endpoint_pool_scales_up_when_active_shards_are_full() {
         let factory = Arc::new(TrackingFactory::default());
         let pool = EndpointShardPool::new(
-            EndpointKey("test.documents.azure.com:443".to_owned()),
+            EndpointKey(Arc::from("test.documents.azure.com:443")),
             connection_pool(),
             factory,
             client_config(),
@@ -1014,7 +1022,7 @@ mod tests {
     fn background_sweep_reclaims_idle_overflow_shards() {
         let factory = Arc::new(TrackingFactory::default());
         let pool = EndpointShardPool::new(
-            EndpointKey("test.documents.azure.com:443".to_owned()),
+            EndpointKey(Arc::from("test.documents.azure.com:443")),
             connection_pool(),
             factory,
             client_config(),
@@ -1057,7 +1065,7 @@ mod tests {
     fn all_http2_shards_keep_idle_pings_enabled() {
         let factory = Arc::new(TrackingFactory::default());
         let pool = EndpointShardPool::new(
-            EndpointKey("test.documents.azure.com:443".to_owned()),
+            EndpointKey(Arc::from("test.documents.azure.com:443")),
             connection_pool(),
             factory.clone(),
             client_config(),
@@ -1081,7 +1089,7 @@ mod tests {
     fn health_sweep_evicts_failed_shard_when_healthy_peer_exists() {
         let factory = Arc::new(TrackingFactory::default());
         let pool = EndpointShardPool::new(
-            EndpointKey("test.documents.azure.com:443".to_owned()),
+            EndpointKey(Arc::from("test.documents.azure.com:443")),
             connection_pool(),
             factory,
             client_config(),
@@ -1139,7 +1147,7 @@ mod tests {
     fn health_sweep_replaces_only_one_probe_when_all_shards_are_failing() {
         let factory = Arc::new(TrackingFactory::default());
         let pool = EndpointShardPool::new(
-            EndpointKey("test.documents.azure.com:443".to_owned()),
+            EndpointKey(Arc::from("test.documents.azure.com:443")),
             connection_pool(),
             factory.clone(),
             client_config(),
@@ -1209,7 +1217,7 @@ mod tests {
         let transport = ShardedHttpTransport::new(pool_opts.clone(), factory.clone(), config);
 
         // Create a pool and force a shard above the failure threshold.
-        let endpoint_key = EndpointKey("sweep-test.documents.azure.com:443".to_owned());
+        let endpoint_key = EndpointKey(Arc::from("sweep-test.documents.azure.com:443"));
         let pool = transport.get_or_create_pool(endpoint_key.clone()).unwrap();
 
         // Fill the first shard so a second shard is created.

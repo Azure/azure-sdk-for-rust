@@ -24,18 +24,20 @@ use crate::{
 /// Converts a driver [`DriverResponse`] into the SDK's typed [`CosmosResponse<T>`].
 ///
 /// This reconstructs an `azure_core::Response<T>` from the driver's raw bytes,
-/// status code, and headers, then wraps it in the SDK's response type.
+/// status code, and headers, then wraps it in the SDK's response type using
+/// the pre-parsed headers from the driver to avoid a redundant parse.
 pub(crate) fn driver_response_to_cosmos_response<T>(
     driver_response: DriverResponse,
 ) -> CosmosResponse<T> {
     let status_code: StatusCode = driver_response.status().status_code();
-    let headers = driver_response_headers_to_headers(driver_response.headers());
+    let cosmos_headers = driver_response.headers().clone();
+    let headers = driver_response_headers_to_headers(&cosmos_headers);
     let body = driver_response.into_body();
 
     let raw_response = RawResponse::from_bytes(status_code, headers, Bytes::from(body));
     let typed_response: Response<T> = raw_response.into();
 
-    CosmosResponse::from_response(typed_response)
+    CosmosResponse::from_driver_response(typed_response, cosmos_headers)
 }
 
 /// Converts driver [`CosmosResponseHeaders`] into raw [`Headers`] for the SDK response.
