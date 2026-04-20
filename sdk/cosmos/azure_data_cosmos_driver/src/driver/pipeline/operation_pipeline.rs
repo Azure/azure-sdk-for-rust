@@ -160,7 +160,7 @@ pub(crate) async fn execute_operation_pipeline(
             )
         {
             transport_request.headers.insert(
-                request_header_names::PREFER.clone(),
+                request_header_names::PREFER,
                 HeaderValue::from_static("return=minimal"),
             );
         }
@@ -512,7 +512,7 @@ fn build_transport_request(
     // Add resolved session token
     if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
-            request_header_names::SESSION_TOKEN.clone(),
+            request_header_names::SESSION_TOKEN,
             HeaderValue::from(token.as_str().to_owned()),
         );
     }
@@ -521,13 +521,13 @@ fn build_transport_request(
     if let Some(group) = ctx.throughput_control {
         if let Some(priority) = group.priority_level() {
             headers.insert(
-                request_header_names::PRIORITY_LEVEL.clone(),
+                request_header_names::PRIORITY_LEVEL,
                 HeaderValue::from(priority.as_str().to_owned()),
             );
         }
         if let Some(bucket) = group.throughput_bucket() {
             headers.insert(
-                request_header_names::THROUGHPUT_BUCKET.clone(),
+                request_header_names::THROUGHPUT_BUCKET,
                 HeaderValue::from(bucket.to_string()),
             );
         }
@@ -1268,12 +1268,16 @@ mod tests {
 
         let priority = request
             .headers
-            .get_optional_str(&request_header_names::PRIORITY_LEVEL)
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PRIORITY_LEVEL,
+            ))
             .expect("priority level header should be set");
         assert_eq!(priority, "Low");
         assert!(request
             .headers
-            .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::THROUGHPUT_BUCKET
+            ))
             .is_none());
     }
 
@@ -1307,12 +1311,16 @@ mod tests {
 
         let bucket = request
             .headers
-            .get_optional_str(&request_header_names::THROUGHPUT_BUCKET)
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::THROUGHPUT_BUCKET,
+            ))
             .expect("throughput bucket header should be set");
         assert_eq!(bucket, "42");
         assert!(request
             .headers
-            .get_optional_str(&request_header_names::PRIORITY_LEVEL)
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PRIORITY_LEVEL
+            ))
             .is_none());
     }
 
@@ -1346,15 +1354,15 @@ mod tests {
         let request = build_transport_request(&operation, None, &ctx).unwrap();
 
         assert_eq!(
-            request
-                .headers
-                .get_optional_str(&request_header_names::PRIORITY_LEVEL),
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::PRIORITY_LEVEL
+            )),
             Some("High")
         );
         assert_eq!(
-            request
-                .headers
-                .get_optional_str(&request_header_names::THROUGHPUT_BUCKET),
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::THROUGHPUT_BUCKET
+            )),
             Some("100")
         );
     }

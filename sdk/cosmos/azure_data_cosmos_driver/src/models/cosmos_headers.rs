@@ -15,19 +15,15 @@ use serde::Serialize;
 /// them to lowercase on insertion, so lookups are case-sensitive and will always
 /// match since both sides are lowercase.
 pub(crate) mod request_header_names {
-    use azure_core::http::headers::HeaderName;
-
-    pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-    pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-    pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
-    pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
-    pub static PREFER: HeaderName = HeaderName::from_static("prefer");
-    pub static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
-    pub static OFFER_AUTOPILOT_SETTINGS: HeaderName =
-        HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
-    pub static PRIORITY_LEVEL: HeaderName = HeaderName::from_static("x-ms-cosmos-priority-level");
-    pub static THROUGHPUT_BUCKET: HeaderName =
-        HeaderName::from_static("x-ms-cosmos-throughput-bucket");
+    pub const ACTIVITY_ID: &str = "x-ms-activity-id";
+    pub const SESSION_TOKEN: &str = "x-ms-session-token";
+    pub const IF_MATCH: &str = "if-match";
+    pub const IF_NONE_MATCH: &str = "if-none-match";
+    pub const PREFER: &str = "prefer";
+    pub const OFFER_THROUGHPUT: &str = "x-ms-offer-throughput";
+    pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
+    pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
+    pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
 }
 
 /// Standard Cosmos DB response header names.
@@ -89,38 +85,38 @@ impl CosmosRequestHeaders {
     pub(crate) fn write_to_headers(&self, headers: &mut Headers) {
         if let Some(activity_id) = self.activity_id.as_ref() {
             headers.insert(
-                request_header_names::ACTIVITY_ID.clone(),
+                request_header_names::ACTIVITY_ID,
                 HeaderValue::from(activity_id.as_str().to_owned()),
             );
         }
         if let Some(session_token) = self.session_token.as_ref() {
             headers.insert(
-                request_header_names::SESSION_TOKEN.clone(),
+                request_header_names::SESSION_TOKEN,
                 HeaderValue::from(session_token.as_str().to_owned()),
             );
         }
         if let Some(precondition) = self.precondition.as_ref() {
             match precondition {
                 Precondition::IfMatch(etag) => headers.insert(
-                    request_header_names::IF_MATCH.clone(),
+                    request_header_names::IF_MATCH,
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
                 Precondition::IfNoneMatch(etag) => headers.insert(
-                    request_header_names::IF_NONE_MATCH.clone(),
+                    request_header_names::IF_NONE_MATCH,
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
             }
         }
         if let Some(throughput) = self.offer_throughput {
             headers.insert(
-                request_header_names::OFFER_THROUGHPUT.clone(),
+                request_header_names::OFFER_THROUGHPUT,
                 HeaderValue::from(throughput.to_string()),
             );
         }
         if let Some(autopilot) = self.offer_autopilot_settings.as_ref() {
             if let Ok(json) = serde_json::to_string(autopilot) {
                 headers.insert(
-                    request_header_names::OFFER_AUTOPILOT_SETTINGS.clone(),
+                    request_header_names::OFFER_AUTOPILOT_SETTINGS,
                     HeaderValue::from(json),
                 );
             }
