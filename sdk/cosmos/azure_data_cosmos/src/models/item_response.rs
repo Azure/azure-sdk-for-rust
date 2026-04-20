@@ -71,8 +71,8 @@ impl<T> ItemResponse<T> {
         self.response.diagnostics()
     }
 
-   /// The logical sequence number (LSN) of the partition replica that served this request.
-   /// Advances with every write on the partition.
+    /// The logical sequence number (LSN) of the partition replica that served this request.
+    /// Advances with every write on the partition.
     pub fn lsn(&self) -> Option<u64> {
         self.response.cosmos_headers().lsn
     }
