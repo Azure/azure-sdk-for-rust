@@ -36,6 +36,7 @@ pub(crate) mod response_header_names {
     pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
     pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
     pub const LSN: &str = "lsn";
+    pub const ITEM_LSN: &str = "x-ms-item-lsn";
     pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
     pub const OWNER_ID: &str = "x-ms-content-path";
     pub const OFFER_REPLACE_PENDING: &str = "x-ms-offer-replace-pending";
@@ -246,6 +247,9 @@ impl CosmosResponseHeaders {
                 }
                 response_header_names::LSN => {
                     result.lsn = value.as_str().parse().ok();
+                }
+                response_header_names::ITEM_LSN => {
+                    result.item_lsn = value.as_str().parse().ok();
                 }
                 response_header_names::OWNER_FULL_NAME => {
                     result.owner_full_name = Some(value.as_str().to_owned());
