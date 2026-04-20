@@ -116,7 +116,7 @@ fn merge_ranges_with_subsets(
                 .iter()
                 .enumerate()
                 .skip(1)
-                .filter(|(_, (fr, tok))| !is_compound(tok) && range_cmp.contains(fr))
+                .filter(|(_, (fr, tok))| !is_compound(tok) && fr.is_subset_of(&range_cmp))
                 .map(|(i, (fr, tok))| (i, fr.clone(), tok.clone()))
                 .collect();
 

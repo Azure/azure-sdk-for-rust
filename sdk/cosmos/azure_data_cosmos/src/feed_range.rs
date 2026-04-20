@@ -19,10 +19,10 @@
 //! let ranges = container.read_feed_ranges(None).await?;
 //! println!("Container has {} physical partitions", ranges.len());
 //!
-//! // Check if one range contains another
+//! // Check if one range is a subset of another
 //! let pk_ranges = container.feed_range_from_partition_key("my_partition_key", None).await?;
 //! for range in &ranges {
-//!     if range.contains(&pk_ranges[0]) {
+//!     if pk_ranges[0].is_subset_of(range) {
 //!         println!("Partition key falls within this feed range");
 //!     }
 //! }
@@ -112,10 +112,11 @@ impl FeedRange {
         }
     }
 
-    /// Returns `true` if `other` is entirely contained within this feed range.
+    /// Returns `true` if this feed range is entirely contained within `other`.
     ///
-    /// A feed range A contains feed range B when A's minimum is less than or equal to B's minimum
-    /// and A's maximum is greater than or equal to B's maximum.
+    /// A feed range A is a subset of feed range B when B's minimum is less than or equal to A's
+    /// minimum and B's maximum is greater than or equal to A's maximum. Equivalent to the Python
+    /// SDK's `container.is_feed_range_subset(parent=other, child=self)`.
     ///
     /// # Examples
     ///
@@ -123,10 +124,10 @@ impl FeedRange {
     /// # use azure_data_cosmos::FeedRange;
     /// let full = FeedRange::full();
     /// let sub: FeedRange = "eyJSYW5nZSI6eyJtaW4iOiIiLCJtYXgiOiIzRkZGRkZGRkZGRkYiLCJpc01pbkluY2x1c2l2ZSI6dHJ1ZSwiaXNNYXhJbmNsdXNpdmUiOmZhbHNlfX0=".parse().unwrap();
-    /// assert!(full.contains(&sub));
+    /// assert!(sub.is_subset_of(&full));
     /// ```
-    pub fn contains(&self, other: &FeedRange) -> bool {
-        self.min_inclusive <= other.min_inclusive && self.max_exclusive >= other.max_exclusive
+    pub fn is_subset_of(&self, other: &FeedRange) -> bool {
+        other.min_inclusive <= self.min_inclusive && other.max_exclusive >= self.max_exclusive
     }
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
@@ -329,23 +330,23 @@ mod tests {
     }
 
     #[test]
-    fn contains_full_contains_sub() {
+    fn is_subset_of_full() {
         let full = FeedRange::full();
         let sub = FeedRange {
             min_inclusive: EffectivePartitionKey::from("00"),
             max_exclusive: EffectivePartitionKey::from("80"),
         };
-        assert!(full.contains(&sub));
-        assert!(!sub.contains(&full));
+        assert!(sub.is_subset_of(&full));
+        assert!(!full.is_subset_of(&sub));
     }
 
     #[test]
-    fn contains_self() {
+    fn is_subset_of_self() {
         let range = FeedRange {
             min_inclusive: EffectivePartitionKey::from("20"),
             max_exclusive: EffectivePartitionKey::from("80"),
         };
-        assert!(range.contains(&range));
+        assert!(range.is_subset_of(&range));
     }
 
     #[test]

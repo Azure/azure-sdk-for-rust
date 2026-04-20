@@ -45,7 +45,7 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
             let full = FeedRange::full();
             for range in &ranges {
                 assert!(
-                    full.contains(range),
+                    range.is_subset_of(&full),
                     "full range should contain every partition range"
                 );
             }
@@ -88,7 +88,7 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
                     .parse()
                     .expect("feed range should be parseable from Display output");
                 assert!(
-                    full.contains(&parsed),
+                    parsed.is_subset_of(&full),
                     "parsed feed range should be within full EPK space"
                 );
             }
@@ -191,7 +191,7 @@ pub async fn feed_range_from_full_hpk_returns_single_range() -> Result<(), Box<d
             // The range should be within the full EPK space.
             let full = FeedRange::full();
             assert!(
-                full.contains(&ranges[0]),
+                ranges[0].is_subset_of(&full),
                 "feed range should be within the full EPK space"
             );
 
@@ -237,7 +237,7 @@ pub async fn feed_range_from_prefix_hpk_returns_ranges() -> Result<(), Box<dyn E
             let full = FeedRange::full();
             for range in &ranges {
                 assert!(
-                    full.contains(range),
+                    range.is_subset_of(&full),
                     "each feed range should be within the full EPK space"
                 );
             }
