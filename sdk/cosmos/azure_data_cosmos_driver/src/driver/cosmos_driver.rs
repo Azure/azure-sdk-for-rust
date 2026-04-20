@@ -1150,32 +1150,11 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        tracing::info!(
-            activity_id = %activity_id,
-            operation_type = ?operation.operation_type(),
-            resource_type = ?operation.resource_type(),
-            account_endpoint = %AccountEndpoint::from(account),
-            resolved_endpoint = %endpoint,
-            write_region = ?account_properties.write_account_region().map(|r| &r.name),
-            multi_write = account_properties.writable_locations.len() > 1,
-            container = ?operation.container().map(|c| c.name().to_owned()),
-            partition_key = ?operation.partition_key().map(|pk| format!("{:?}", pk)),
-            "execute_operation: resolved account metadata",
-        );
-
         // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
         let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(&operation).await;
-
-        if pre_resolved_pk_range_id.is_some() {
-            tracing::info!(
-                activity_id = %activity_id,
-                pk_range_id = ?pre_resolved_pk_range_id,
-                "execute_operation: pre-resolved partition key range ID",
-            );
-        }
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();

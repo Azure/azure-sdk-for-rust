@@ -159,27 +159,6 @@ pub(crate) async fn execute_operation_pipeline(
         } else {
             ExecutionContext::RegionFailover
         };
-        tracing::info!(
-            routing_decision = %routing,
-            activity_id = %activity_id,
-            operation_type = ?operation.operation_type(),
-            resource_type = ?operation.resource_type(),
-            is_read_only = operation.is_read_only(),
-            failover_retry = retry_state.failover_retry_count,
-            session_retry = retry_state.session_token_retry_count,
-            pk_range_id = ?retry_state.partition_key_range_id,
-            pipeline = ?pipeline_type,
-            execution_context = ?execution_context,
-            preferred_write_endpoints = ?location.account.preferred_write_endpoints.iter().map(|e| e.url().to_string()).collect::<Vec<_>>(),
-            preferred_read_endpoints = ?location.account.preferred_read_endpoints.iter().map(|e| e.url().to_string()).collect::<Vec<_>>(),
-            unavailable_endpoints = ?location.account.unavailable_endpoints.iter().map(|(e, (_, r))| format!("{}={:?}", e, r)).collect::<Vec<_>>(),
-            multi_write = location.account.multiple_write_locations_enabled,
-            ppaf_enabled = location.partitions.per_partition_automatic_failover_enabled,
-            ppcb_enabled = location.partitions.per_partition_circuit_breaker_enabled,
-            failover_overrides = ?location.partitions.failover_overrides.keys().collect::<Vec<_>>(),
-            circuit_breaker_overrides = ?location.partitions.circuit_breaker_overrides.keys().collect::<Vec<_>>(),
-            "routing decision made",
-        );
 
         let ctx = TransportRequestContext {
             routing: &routing,
@@ -225,14 +204,10 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             }
         }
-        tracing::info!(
+        tracing::trace!(
             method = ?transport_request.method,
             url = %transport_request.url,
-            activity_id = %activity_id,
-            resource_link = ?transport_request.auth_context.resource_link,
-            resource_type = ?transport_request.auth_context.resource_type,
-            "transport request created",
-        );
+            "transport request created");
 
         let selected_transport = match pipeline_type {
             PipelineType::DataPlane => {
@@ -293,11 +268,6 @@ pub(crate) async fn execute_operation_pipeline(
         }
 
         // ── STAGE 5: Evaluate result → action ──────────────────────────
-        tracing::info!(
-            activity_id = %activity_id,
-            outcome = %result.outcome,
-            "transport pipeline result",
-        );
         let (action, effects) =
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
