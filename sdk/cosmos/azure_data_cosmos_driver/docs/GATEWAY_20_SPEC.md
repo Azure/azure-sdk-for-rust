@@ -91,8 +91,8 @@ The Rust driver (`azure_data_cosmos_driver`) already has significant gateway 2.0
 - **`RoutingDecision`** — carries `transport_mode` that distinguishes gateway vs gateway 2.0
 - **`ConnectionPoolOptions`** — `is_gateway20_allowed: bool` config (see §3.4 for gating model)
 - **`CosmosTransport`** — `dataplane_gateway20_transport: OnceLock<AdaptiveTransport>`, lazy init with `AdaptiveTransport::gateway20()`
-- **`AdaptiveTransport::ShardedGateway20`** variant — always HTTP/2 with prior knowledge
-- **`HttpClientConfig::dataplane_gateway20()`** — HTTP/2-only config (see Open Question Q1 about prior-knowledge vs ALPN)
+- **`AdaptiveTransport::ShardedGateway20`** variant — HTTP/2 only with prior knowledge (no HTTP/1.x fallback; the proxy does not accept HTTP/1.x — see Open Question Q1, resolved)
+- **`HttpClientConfig::dataplane_gateway20()`** — HTTP/2-only config; HTTP/2 negotiation failure surfaces as a transport error (which feeds the failure-fallback counter, §Phase 4) rather than downgrading
 - **`TransportKind::Gateway20`** in diagnostics
 
 ### 3.2 Already Implemented — account metadata & routing
@@ -108,7 +108,7 @@ The Rust driver (`azure_data_cosmos_driver`) already has significant gateway 2.0
 ### 3.3 Already Implemented — EPK & constants
 
 - **`EffectivePartitionKey::compute()` / `::compute_range()`** — in `azure_data_cosmos_driver::models::effective_partition_key` (MultiHash-aware, hierarchical-PK correct). This is the canonical path and is what Gateway 2.0 header injection MUST call. Both functions return `azure_core::Result` (per PR #4087 review: MultiHash-requires-V2 and component-count checks are runtime errors, not `debug_assert`s, so a user gets `Err` rather than a panic on malformed input).
-- **Constants** (in `azure_data_cosmos::constants`): `THINCLIENT_PROXY_OPERATION_TYPE` → `x-ms-thinclient-proxy-operation-type`, `THINCLIENT_PROXY_RESOURCE_TYPE` → `x-ms-thinclient-proxy-resource-type`, `START_EPK` → `x-ms-start-epk`, `END_EPK` → `x-ms-end-epk`. Phase 2 reuses these verbatim (see §Phase 2 "Header naming" for mapping).
+- **Constants** (in `azure_data_cosmos::constants`): `THINCLIENT_PROXY_OPERATION_TYPE` → `x-ms-thinclient-proxy-operation-type`, `THINCLIENT_PROXY_RESOURCE_TYPE` → `x-ms-thinclient-proxy-resource-type`. Phase 2 reuses these verbatim. The existing `START_EPK` (= `x-ms-start-epk`) / `END_EPK` (= `x-ms-end-epk`) constants are **not** used on Gateway 2.0 requests; Phase 2 introduces new `THINCLIENT_RANGE_MIN` (= `x-ms-thinclient-range-min`) / `THINCLIENT_RANGE_MAX` (= `x-ms-thinclient-range-max`) constants per Q3 resolution. See §Phase 2 "Header naming" for mapping.
 - **Perf crate** — `gateway20_allowed` config wiring
 
 ### 3.4 Gating model (single source of truth)
@@ -275,11 +275,11 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 | `x-ms-thinclient-proxy-operation-type` | `THINCLIENT_PROXY_OPERATION_TYPE` (SDK today; move to driver per §3.6-10) | Numeric operation type | Every Gateway 2.0 request |
 | `x-ms-thinclient-proxy-resource-type` | `THINCLIENT_PROXY_RESOURCE_TYPE` (SDK today; move) | Numeric resource type | Every Gateway 2.0 request |
 | `x-ms-effective-partition-key` | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver) | Canonical EPK hex | Point ops only |
-| `x-ms-thinclient-range-min` | **Reuse** `START_EPK` (= `x-ms-start-epk`) — confirm header name with service, or add new constant if the proxy requires `x-ms-thinclient-range-min` literally | Lower bound of EPK range | Feed / cross-partition ops only |
-| `x-ms-thinclient-range-max` | **Reuse** `END_EPK` (= `x-ms-end-epk`) — same caveat | Upper bound of EPK range | Feed / cross-partition ops only |
+| `x-ms-thinclient-range-min` | **NEW** — `THINCLIENT_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
+| `x-ms-thinclient-range-max` | **NEW** — `THINCLIENT_RANGE_MAX` (driver) | Upper bound of EPK range | Feed / cross-partition ops only |
 | `x-ms-cosmos-use-thinclient` | **NEW** (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only |
 
-**Action item for Phase 2**: confirm with the service team whether the proxy expects `x-ms-start-epk` / `x-ms-end-epk` (existing constants) or `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` (Java naming). If the latter, introduce new constants and retire the former on the Gateway 2.0 path.
+Per Q3 resolution, the Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` (it does **not** accept `x-ms-start-epk` / `x-ms-end-epk`). Phase 2 introduces the new constants above; the existing `START_EPK` / `END_EPK` constants are not emitted on the Gateway 2.0 path.
 
 #### Range header wire format
 
@@ -553,7 +553,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 ## 5. Open Questions
 
-- **Q1 — HTTP/2 prior knowledge vs ALPN**: Rust already configures gateway 2.0 as HTTP/2 with prior knowledge. `TRANSPORT_PIPELINE_SPEC.md` settled ALPN as the default negotiation for the broader sharded transport. **Need service team confirmation** on which the Gateway 2.0 proxy expects. _Resolution_: pending.
+- **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails (and trips the failure-fallback counter, §Phase 4) rather than downgrading.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable gateway 2.0 / thin client endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned thin client account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW20_ENDPOINT`, `AZURE_COSMOS_GW20_KEY`); pipeline reads endpoint from environment variables.
-- **Q3 — EPK range header names**: Does the Gateway 2.0 proxy accept `x-ms-start-epk` / `x-ms-end-epk` (existing Rust constants) or require `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` (Java naming)? _Resolution_: pending Phase 2 confirmation with service team.
-- **Q4 — Failure-fallback thresholds**: Target values are N=3 consecutive 503s in a 30s window, 60s cooldown. _Resolution_: pending implementation tuning against live test pipeline data.
+- **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`THINCLIENT_RANGE_MIN`, `THINCLIENT_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
+- **Q4 — Failure-fallback thresholds**: Initial target values are **N=3 consecutive 503s in a 30s sliding window**, **60s cooldown** before retrying Gateway 2.0 for the affected partition. These are starting points; the live test pipeline (§Phase 6) is the tuning surface — values may be adjusted based on observed false-positive rates and recovery latencies before GA. Thresholds are not customer-tunable; they are internal driver constants.
