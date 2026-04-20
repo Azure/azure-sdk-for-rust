@@ -561,6 +561,7 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "rand 0.10.1",
+ "reqwest",
  "serde",
  "serde_json",
  "time",

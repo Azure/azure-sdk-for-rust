@@ -51,6 +51,7 @@ opentelemetry.workspace = true
 opentelemetry-stdout.workspace = true
 opentelemetry_sdk.workspace = true
 rand.workspace = true
+reqwest = { workspace = true, features = ["rustls"] }
 tokio = { workspace = true, features = ["macros", "rt"] }
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
