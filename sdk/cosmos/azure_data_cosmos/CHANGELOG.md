@@ -10,11 +10,14 @@
 
 ### Breaking Changes
 
-- Renamed `replace_throughput` to `begin_replace_throughput` on `ContainerClient` and `DatabaseClient`. The return type changed from `ResourceResponse<ThroughputProperties>` to `ThroughputPoller`.
+- Renamed `replace_throughput` to `begin_replace_throughput` on `ContainerClient` and `DatabaseClient`. The return type changed from `ResourceResponse<ThroughputProperties>` to `ThroughputPoller`. ([#4096](https://github.com/Azure/azure-sdk-for-rust/pull/4096))
+- Removed `CreateDatabaseOptions::with_throughput()`. Database-level shared throughput provisioning is no longer supported through the SDK. Use container-level throughput instead. ([#4147](https://github.com/Azure/azure-sdk-for-rust/pull/4147))
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- Database and container CRUD operations (`create_database`, `read`, `create_container`, `delete`) now route through the Cosmos driver pipeline. Throughput provisioning uses typed request headers via the driver. ([#4147](https://github.com/Azure/azure-sdk-for-rust/pull/4147))
 
 ## 0.32.0 (2026-04-09)
 
