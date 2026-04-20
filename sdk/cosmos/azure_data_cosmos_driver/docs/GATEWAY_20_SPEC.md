@@ -399,29 +399,11 @@ For the purposes of the failure-fallback counter, a *Proxy unreachable* event is
 
 The following are explicitly **not** *Proxy unreachable*:
 
-- Any response carrying a Cosmos sub-status header — those are server-routed errors and are handled by the regular Retry Decision Table.
+- Any response carrying a Cosmos sub-status header — those are server-routed errors and are handled by the existing retry policies (unchanged from Gateway 1.0; see `ClientRetryPolicy` and friends).
 - Application-level 4xx (those go through the normal cross-region retry policy and never trigger Failure fallback).
-- HTTP `503` carrying a Cosmos sub-status (e.g., `SERVER_GENERATED_410`); see the "503 Unavailable | server-returned" row of the Retry Decision Table.
+- HTTP `503` carrying a Cosmos sub-status (e.g., `SERVER_GENERATED_410`) — handled by the existing 503 retry path.
 
 Where transport-level error classification overlaps with the broader transport pipeline, `TRANSPORT_PIPELINE_SPEC.md` is authoritative; this section narrows the set to those classes that count toward the Gateway 2.0 failure-fallback counter.
-
-#### Retry Decision Table
-
-| Response | Sub-Status | Action |
-| --- | --- | --- |
-| 200-299 | — | Success |
-| 404 | — | Not Found (propagate to caller) |
-| 408 Timeout | — | Read: retry cross-region; Write: retry local only |
-| 410 Gone | 1002 (PKRangeGone) | Refresh PKRange cache, retry |
-| 410 Gone | 1007 (SplitMerge) | Refresh PKRange cache, retry |
-| 410 Gone | 1008 (PartitionMigration) | Refresh PKRange cache, retry |
-| 410 Gone | 1000 (NameCacheStale) | Refresh **collection** cache, retry |
-| 410 Gone | other | Retry with backoff |
-| 429 Throttled | — | Existing throttle retry loop (unchanged) |
-| 449 Retry With | — | Retry same region (transient conflict) |
-| 503 Unavailable | server-returned | Mark endpoint unavailable, failover; increment failure-fallback counter |
-| 503 Unavailable | SDK-generated | Only retry if `SERVER_GENERATED_410` sub-status |
-| Proxy unreachable (see §"Proxy unreachable definition") | — | Increment failure-fallback counter; if threshold crossed, enter Failure fallback (§Fallback taxonomy) and route remainder through `TransportMode::Gateway` |
 
 #### Files Changed
 
