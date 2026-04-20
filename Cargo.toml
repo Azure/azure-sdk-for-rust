@@ -13,6 +13,7 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
+  "sdk/cosmos/azure_data_cosmos_benchmarks",
   "sdk/cosmos/azure_data_cosmos_driver",
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_perf",
@@ -174,6 +175,13 @@ url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
 windows = { version = "0.62", default-features = false }
 zip = { version = "8.2", default-features = false, features = ["deflate"] }
+
+# Profile for running benchmarks
+# Inherits release optimizations but keeps debug symbols so that tools
+# can produce annotated output.
+[profile.bench]
+inherits = "release"
+debug = 1
 
 [workspace.lints.clippy]
 large_futures = "deny"

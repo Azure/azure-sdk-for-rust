@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;

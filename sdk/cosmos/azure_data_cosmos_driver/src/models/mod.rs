@@ -47,6 +47,7 @@ pub use cosmos_headers::{
 };
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
+pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;

@@ -336,15 +336,10 @@ impl CosmosDriver {
         write_region: Option<&AccountRegion>,
     ) -> AccountEndpoint {
         if let Some(region) = write_region {
-            if let Ok(endpoint) =
-                AccountEndpoint::try_from(region.database_account_endpoint.as_str())
-            {
-                return endpoint;
-            }
+            return region.database_account_endpoint.clone();
         }
 
-        // Fall back to the account-level endpoint when there is no writable
-        // location or the regional URL could not be parsed.
+        // Fall back to the account-level endpoint when there is no writable location.
         AccountEndpoint::from(account)
     }
 
@@ -455,7 +450,7 @@ impl CosmosDriver {
             .readable_locations
             .iter()
             .filter_map(|loc| {
-                let url = Url::parse(&loc.database_account_endpoint).ok()?;
+                let url = loc.database_account_endpoint.url().clone();
                 let ep = AccountEndpoint::from(url.clone());
                 if ep == *primary_endpoint {
                     None
@@ -1006,7 +1001,7 @@ impl CosmosDriver {
         // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
         // Skips the CAS loop when the etag matches (same server version).
         self.location_state_store.sync_account_properties(
-            account_properties.as_ref(),
+            Arc::clone(&account_properties),
             self.location_state_store.default_endpoint(),
         );
 
@@ -1576,8 +1571,10 @@ mod tests {
 
         let region = AccountRegion {
             name: Region::new("West US"),
-            database_account_endpoint: "https://myaccount-westus.documents.azure.com:443/"
-                .to_string(),
+            database_account_endpoint: AccountEndpoint::try_from(
+                "https://myaccount-westus.documents.azure.com:443/",
+            )
+            .unwrap(),
         };
 
         let endpoint = CosmosDriver::endpoint_for_write_region(&account, Some(&region));
@@ -1596,22 +1593,6 @@ mod tests {
         );
 
         let endpoint = CosmosDriver::endpoint_for_write_region(&account, None);
-        assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
-    }
-
-    #[test]
-    fn endpoint_for_write_region_falls_back_for_invalid_url() {
-        let account = AccountReference::with_master_key(
-            Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
-            "test-key",
-        );
-
-        let region = AccountRegion {
-            name: Region::new("westus"),
-            database_account_endpoint: "not-a-valid-url".to_string(),
-        };
-
-        let endpoint = CosmosDriver::endpoint_for_write_region(&account, Some(&region));
         assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
     }
 

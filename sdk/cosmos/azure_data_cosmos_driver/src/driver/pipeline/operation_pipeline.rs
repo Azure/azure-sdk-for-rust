@@ -20,7 +20,7 @@ use crate::{
     },
     models::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        CosmosResponseHeaders, Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
+        Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -199,6 +199,7 @@ pub(crate) async fn execute_operation_pipeline(
                 user_agent,
                 pipeline_type,
                 transport_security,
+                endpoint_key: routing.endpoint.endpoint_key(),
             },
             &mut diagnostics,
         )
@@ -216,13 +217,12 @@ pub(crate) async fn execute_operation_pipeline(
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
         if session_consistency_active {
-            if let Some(headers) = result.response_headers() {
-                let cosmos_headers = CosmosResponseHeaders::from_headers(headers);
+            if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
                     &result.outcome,
                 ) {
-                    session_manager.capture_session_token(operation, &cosmos_headers);
+                    session_manager.capture_session_token(operation, cosmos_headers);
                 }
             }
         }
@@ -408,7 +408,7 @@ fn endpoint_is_available(
 ) -> bool {
     !account
         .unavailable_endpoints
-        .get(endpoint)
+        .get(endpoint.url())
         .is_some_and(|(marked_at, reason)| {
             if operation.is_read_only()
                 && matches!(
@@ -445,9 +445,11 @@ fn build_transport_request(
     ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
-    let request_path = resource_ref.request_path();
+    // Compute both paths in a single pass with a single allocation.
+    let paths = resource_ref.compute_paths();
     let url = {
         let mut base = ctx.routing.selected_url.clone();
+        let request_path = paths.request_path();
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
         } else if request_path.is_empty() {
@@ -461,16 +463,15 @@ fn build_transport_request(
 
     let method = operation.operation_type().http_method();
     let resource_type = operation.resource_type();
-    let resource_link = resource_ref.link_for_signing();
-    let signing_link = resource_link.trim_start_matches('/');
-
-    let auth_context = AuthorizationContext::new(method, resource_type, signing_link);
+    // Move `paths` into AuthorizationContext so the signing link is a zero-copy
+    // sub-slice of the path buffer — no additional string allocation needed.
+    let auth_context = AuthorizationContext::from_paths(method, resource_type, paths);
 
     // Build headers from the operation.
     // Custom headers are inserted first so that SDK-set headers below always
     // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
     // pattern where custom headers are added before SDK headers).
-    let mut headers = azure_core::http::headers::Headers::new();
+    let mut headers = azure_core::http::headers::Headers::with_capacity(16);
     if let Some(custom) = custom_headers {
         for (name, value) in custom {
             headers.insert(name.clone(), value.clone());
@@ -504,7 +505,7 @@ fn build_transport_request(
             )
         {
             use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-            headers.insert(FAULT_INJECTION_OPERATION.clone(), fault_op.as_str());
+            headers.insert(FAULT_INJECTION_OPERATION, fault_op.as_str());
         }
     }
 
@@ -546,16 +547,15 @@ fn build_transport_request(
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
 fn build_cosmos_response(
-    result: TransportResult,
+    result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
 ) -> azure_core::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
             status,
-            headers,
+            cosmos_headers,
             body,
         } => {
-            let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
             diagnostics.set_operation_status(status.status_code(), status.sub_status());
 
             let diagnostics_ctx = Arc::new(diagnostics.complete());
@@ -840,8 +840,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint],
-            preferred_write_endpoints: vec![write_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: write_endpoint.clone(),
@@ -881,7 +881,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            read_endpoint.clone(),
+            read_endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::TransportError,
@@ -890,8 +890,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint],
-            preferred_write_endpoints: vec![default_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -929,7 +929,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            read_endpoint.clone(),
+            read_endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::WriteForbidden,
@@ -938,8 +938,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint.clone()],
-            preferred_write_endpoints: vec![read_endpoint.clone()],
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![read_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: read_endpoint.clone(),
@@ -989,12 +989,14 @@ mod tests {
                 endpoint_a.clone(),
                 endpoint_b.clone(),
                 endpoint_c.clone(),
-            ],
+            ]
+            .into(),
             preferred_write_endpoints: vec![
                 endpoint_a.clone(),
                 endpoint_b.clone(),
                 endpoint_c.clone(),
-            ],
+            ]
+            .into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: endpoint_a.clone(),
@@ -1040,7 +1042,7 @@ mod tests {
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
-            models::{CosmosStatus, SubStatusCode},
+            models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode},
         };
 
         use super::super::should_capture_session_token_from_status;
@@ -1048,7 +1050,7 @@ mod tests {
         fn success_outcome() -> TransportOutcome {
             TransportOutcome::Success {
                 status: CosmosStatus::new(StatusCode::Ok),
-                headers: Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
             }
         }
@@ -1057,6 +1059,7 @@ mod tests {
             TransportOutcome::HttpError {
                 status: CosmosStatus::new(status),
                 headers: Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
                 request_sent: crate::diagnostics::RequestSentStatus::Sent,
             }
@@ -1152,8 +1155,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![endpoint.clone()],
-            preferred_write_endpoints: vec![endpoint.clone()],
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: endpoint.clone(),
@@ -1201,7 +1204,7 @@ mod tests {
 
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
-            endpoint.clone(),
+            endpoint.url().clone(),
             (
                 std::time::Instant::now(),
                 crate::driver::routing::UnavailableReason::TransportError,
@@ -1210,8 +1213,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()],
-            preferred_write_endpoints: vec![endpoint],
+            preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: fallback_endpoint.clone(),

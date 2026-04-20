@@ -1,0 +1,29 @@
+[package]
+name = "azure_data_cosmos_benchmarks"
+version = "0.1.0"
+description = "Benchmarks for the Azure Cosmos DB Rust driver"
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bench]]
+name = "point_read"
+harness = false
+
+[dependencies]
+async-trait.workspace = true
+azure_core = { workspace = true }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
+  "__internal_mocking",
+] }
+tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+url.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[lints]
+workspace = true

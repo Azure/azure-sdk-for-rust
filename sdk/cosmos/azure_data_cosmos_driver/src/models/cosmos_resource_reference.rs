@@ -16,6 +16,62 @@ use crate::models::{
 
 use std::borrow::Cow;
 
+/// Pre-computed request path and signing-link for a single Cosmos DB request.
+///
+/// Obtained via [`CosmosResourceReference::compute_paths`]. Both values are derived
+/// from a single `String` allocation so that `request_path` and `signing_link`
+/// are zero-copy sub-slices wherever possible.
+///
+/// # Layout of `buf`
+///
+/// | Case | `buf` | `signing_link` |
+/// |------|-------|----------------|
+/// | Non-feed op | `/dbs/x/colls/y/docs/z` | `buf[1..]` (`signing_end == buf.len()`) |
+/// | Feed op | `/dbs/x/colls/y/docs` | `buf[1..signing_end]` (parent prefix) |
+/// | Account | `""` | `""` (empty) |
+/// | Offer | `/offers/{rid}` | lowercase RID (`signing_override`) |
+pub(crate) struct ResourcePaths {
+    /// The full request path (may have a leading `/`).
+    buf: String,
+    /// Byte index in `buf` where the signing link ends (exclusive).
+    ///
+    /// For non-feed:  `buf.len()` → signing link = `buf[1..]`  
+    /// For feed:      `parent.len()` → signing link = `buf[1..signing_end]`  
+    /// Always `>= 1` when `buf` is non-empty (skips the leading `/`).
+    signing_end: usize,
+    /// Signing link override for offer resources.
+    ///
+    /// Offers use a lowercased RID that is unrelated to the URL path, so it
+    /// cannot be derived as a sub-slice of `buf`.
+    signing_override: Option<String>,
+}
+
+impl ResourcePaths {
+    fn empty() -> Self {
+        Self {
+            buf: String::new(),
+            signing_end: 0,
+            signing_override: None,
+        }
+    }
+
+    /// Returns the request path (used to set the URL path).
+    pub(crate) fn request_path(&self) -> &str {
+        &self.buf
+    }
+
+    /// Returns the signing link (path without the leading `/`, used for auth).
+    pub(crate) fn signing_link(&self) -> &str {
+        if let Some(ref s) = self.signing_override {
+            return s;
+        }
+        if self.buf.is_empty() {
+            return "";
+        }
+        &self.buf[1..self.signing_end]
+    }
+}
+
 /// A generic reference to any Cosmos DB resource.
 ///
 /// Used internally by [`CosmosOperation`](crate::models::CosmosOperation) to capture the
@@ -107,17 +163,21 @@ impl CosmosResourceReference {
     /// For feed operations this is the **parent** resource's link (because
     /// Cosmos DB signs against the parent when listing children). For single-
     /// resource operations it is the full resource link.
+    ///
+    /// The returned string includes the leading `/` for all non-empty, non-offer
+    /// paths. Use `compute_paths` on the hot path to avoid
+    /// an extra allocation.
     pub fn link_for_signing(&self) -> String {
-        if self.is_feed {
-            self.parent_signing_link()
-        } else if self.resource_type == ResourceType::Offer {
-            // Offers use lowercase RID as the signing link (no path prefix).
-            self.id
-                .as_ref()
-                .map(|id| Self::identifier_str(id).to_lowercase())
-                .unwrap_or_default()
+        let paths = self.compute_paths();
+        if paths.signing_override.is_some() {
+            // Offers: signing link is a lowercase RID, no leading '/'.
+            return paths.signing_link().to_owned();
+        }
+        let link = paths.signing_link();
+        if link.is_empty() {
+            String::new()
         } else {
-            self.resolved_resource_link()
+            format!("/{}", link)
         }
     }
 
@@ -127,17 +187,63 @@ impl CosmosResourceReference {
     /// to the parent link. For single-resource operations it is the same as
     /// the resolved resource link.
     pub fn request_path(&self) -> String {
+        self.compute_paths().request_path().to_owned()
+    }
+
+    /// Computes the request path and signing link in a single pass.
+    ///
+    /// Both values are derived from one `String` allocation: `signing_link` is
+    /// a sub-slice of `request_path` in all common cases (non-offer, non-empty).
+    /// Use this in performance-sensitive code instead of calling
+    /// [`link_for_signing`](Self::link_for_signing) and
+    /// [`request_path`](Self::request_path) separately.
+    pub(crate) fn compute_paths(&self) -> ResourcePaths {
+        if self.resource_type == ResourceType::DatabaseAccount {
+            return ResourcePaths::empty();
+        }
+
+        if self.resource_type == ResourceType::Offer {
+            // Offers use a lowercase RID as the signing link, unrelated to the URL path.
+            let (buf, signing_override) = if let Some(ref id) = self.id {
+                let id_str = Self::identifier_str(id);
+                (format!("/offers/{}", id_str), Some(id_str.to_lowercase()))
+            } else {
+                ("/offers".to_owned(), None)
+            };
+            return ResourcePaths {
+                buf,
+                signing_end: 1,
+                signing_override,
+            };
+        }
+
         if self.is_feed {
-            let parent = self.parent_signing_link();
+            // Feed: request_path = parent_link + "/" + segment
+            //       signing_link  = parent_link (without leading '/')
+            let parent = self.parent_link_cow();
             let segment = self.resource_type.path_segment();
-            if parent.is_empty() {
-                // Account-level feed (e.g., list databases).
+            let buf = if parent.is_empty() {
+                // Account-level feed (e.g., list databases): just "/dbs".
                 format!("/{}", segment)
             } else {
                 format!("{}/{}", parent, segment)
+            };
+            // signing_end marks the boundary between parent and "/{segment}" suffix.
+            let signing_end = if parent.is_empty() { 1 } else { parent.len() };
+            ResourcePaths {
+                buf,
+                signing_end,
+                signing_override: None,
             }
         } else {
-            self.resolved_resource_link()
+            // Non-feed: request_path == signing_link (modulo the leading '/').
+            let buf = self.resolved_resource_link();
+            let signing_end = buf.len();
+            ResourcePaths {
+                buf,
+                signing_end,
+                signing_override: None,
+            }
         }
     }
 
@@ -159,7 +265,7 @@ impl CosmosResourceReference {
             }
             ResourceType::DocumentCollection => {
                 // /dbs/{db}/colls/{id}
-                self.container_link()
+                self.container_link().into_owned()
             }
             ResourceType::Document
             | ResourceType::StoredProcedure
@@ -190,22 +296,19 @@ impl CosmosResourceReference {
         }
     }
 
-    /// Returns the parent's resource link for signing feed operations.
+    /// Returns the parent resource link for feed operations (with leading `/`).
     ///
-    /// For a feed targeting `ResourceType::Database`, the parent is the account
-    /// (empty link). For a feed targeting `ResourceType::DocumentCollection`,
-    /// the parent is `/dbs/{db}`. For feeds below containers, the parent is
-    /// `/dbs/{db}/colls/{container}`.
-    fn parent_signing_link(&self) -> String {
+    /// Returns a borrowed `&str` when the container path is pre-computed (the
+    /// common case), avoiding an allocation on the hot path.
+    fn parent_link_cow(&self) -> Cow<'_, str> {
         match self.resource_type {
-            ResourceType::DatabaseAccount => String::new(),
-            ResourceType::Database | ResourceType::Offer => {
-                // Parent is the account -- empty link.
-                String::new()
+            ResourceType::DatabaseAccount | ResourceType::Database | ResourceType::Offer => {
+                // Parent is the account — empty link.
+                Cow::Borrowed("")
             }
             ResourceType::DocumentCollection => {
                 // Parent is the database.
-                self.db_link()
+                Cow::Owned(self.db_link())
             }
             ResourceType::Document
             | ResourceType::StoredProcedure
@@ -236,19 +339,23 @@ impl CosmosResourceReference {
         String::new()
     }
 
-    /// Builds the container portion of the link from the container reference.
-    fn container_link(&self) -> String {
+    /// Returns the container path.
+    ///
+    /// Returns `Cow::Borrowed` when a `ContainerReference` is present so that the
+    /// pre-computed `Arc<str>` path is reused without any allocation. Falls back to
+    /// `Cow::Owned` for the rare cases where no container reference is available.
+    fn container_link(&self) -> Cow<'_, str> {
         if let Some(ref container) = self.container {
-            // Prefer name-based path.
-            return container.name_based_path();
+            // Hot path: borrow the pre-computed Arc<str> — no allocation.
+            return Cow::Borrowed(container.name_based_path());
         }
         // If we have a database but no container, try using the leaf id.
         if let Some(ref id) = self.id {
             let db = self.db_link();
             let id_str = Self::identifier_str(id);
-            return format!("{}/colls/{}", db, id_str);
+            return Cow::Owned(format!("{}/colls/{}", db, id_str));
         }
-        self.db_link()
+        Cow::Owned(self.db_link())
     }
 
     /// Extracts a string representation from a `ResourceIdentifier`.
@@ -552,5 +659,119 @@ mod tests {
             r.link_for_signing(),
             "/dbs/testdb/colls/testcontainer/udfs/myudf"
         );
+    }
+
+    // ===== compute_paths tests =====
+
+    /// Helper: assert that compute_paths() produces the same values as the
+    /// separate link_for_signing() / request_path() APIs, and additionally
+    /// verify the signing_link() is a sub-slice of the request_path buffer
+    /// where applicable (not for offers / empty paths).
+    fn assert_compute_paths_consistent(r: &CosmosResourceReference) {
+        let paths = r.compute_paths();
+        // The signing link produced by compute_paths (without leading '/').
+        let computed_signing = paths.signing_link().to_owned();
+        // The signing link from the legacy API (with leading '/'), trimmed.
+        let legacy_signing = r.link_for_signing();
+        let legacy_signing_trimmed = legacy_signing.trim_start_matches('/');
+
+        assert_eq!(
+            computed_signing, legacy_signing_trimmed,
+            "compute_paths signing_link mismatch"
+        );
+        assert_eq!(
+            paths.request_path(),
+            r.request_path(),
+            "compute_paths request_path mismatch"
+        );
+
+        // Verify signing_link is a zero-copy sub-slice of the request_path buffer
+        // when it's derived from the same allocation (no signing_override, non-empty).
+        if paths.signing_override.is_none() && !paths.request_path().is_empty() {
+            let req_ptr = paths.request_path().as_ptr() as usize;
+            let req_end = req_ptr + paths.request_path().len();
+            let sign_ptr = paths.signing_link().as_ptr() as usize;
+            let sign_end = sign_ptr + paths.signing_link().len();
+            assert!(
+                sign_ptr >= req_ptr && sign_end <= req_end,
+                "signing_link is not a sub-slice of request_path buffer \
+                (signing_link ptr={:#x} len={}, request_path ptr={:#x} len={})",
+                sign_ptr,
+                paths.signing_link().len(),
+                req_ptr,
+                paths.request_path().len()
+            );
+        }
+    }
+
+    #[test]
+    fn compute_paths_account() {
+        let r: CosmosResourceReference = test_account().into();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "");
+        assert_eq!(paths.signing_link(), "");
+        assert_compute_paths_consistent(&r);
+    }
+
+    #[test]
+    fn compute_paths_database_feed() {
+        let account = test_account();
+        let r = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Database)
+            .into_feed_reference();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs");
+        assert_eq!(paths.signing_link(), "");
+        assert_compute_paths_consistent(&r);
+    }
+
+    #[test]
+    fn compute_paths_container_feed() {
+        let db = DatabaseReference::from_name(test_account(), "mydb");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .into_feed_reference();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs/mydb/colls");
+        assert_eq!(paths.signing_link(), "dbs/mydb");
+        // signing_link is a sub-slice of request_path (no separate allocation).
+        assert!(paths.request_path().starts_with('/'));
+        assert_compute_paths_consistent(&r);
+    }
+
+    #[test]
+    fn compute_paths_item_point_op() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let r: CosmosResourceReference = item.into();
+        let paths = r.compute_paths();
+        let expected = "/dbs/testdb/colls/testcontainer/docs/doc1";
+        assert_eq!(paths.request_path(), expected);
+        // signing_link is the same path without the leading '/'.
+        assert_eq!(paths.signing_link(), &expected[1..]);
+        assert_compute_paths_consistent(&r);
+    }
+
+    #[test]
+    fn compute_paths_item_feed() {
+        let r = CosmosResourceReference::from(test_container())
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs/testdb/colls/testcontainer/docs");
+        assert_eq!(paths.signing_link(), "dbs/testdb/colls/testcontainer");
+        assert_compute_paths_consistent(&r);
+    }
+
+    #[test]
+    fn compute_paths_offer_uses_signing_override() {
+        let account = test_account();
+        let r = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .with_rid("ABC123XYZ".into());
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/offers/ABC123XYZ");
+        // Offers: signing link is the lowercase RID (not a sub-slice of buf).
+        assert_eq!(paths.signing_link(), "abc123xyz");
+        assert!(paths.signing_override.is_some());
     }
 }

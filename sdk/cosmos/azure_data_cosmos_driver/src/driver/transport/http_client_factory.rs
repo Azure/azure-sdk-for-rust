@@ -21,7 +21,7 @@ pub(crate) enum HttpVersionPolicy {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct HttpClientConfig {
+pub struct HttpClientConfig {
     pub(crate) version_policy: HttpVersionPolicy,
     pub(crate) request_timeout: std::time::Duration,
     pub(crate) for_emulator: bool,
@@ -136,7 +136,7 @@ mod tests {
     }
 }
 
-pub(crate) trait HttpClientFactory: fmt::Debug + Send + Sync {
+pub trait HttpClientFactory: fmt::Debug + Send + Sync {
     fn build(
         &self,
         connection_pool: &ConnectionPoolOptions,

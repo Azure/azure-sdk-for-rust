@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 //! Transport pipeline: the core loop for executing a single HTTP attempt.
 //!
 //! Header application and request signing live in their own modules:
@@ -146,6 +148,11 @@ pub(crate) struct TransportPipelineContext<'a> {
     pub user_agent: &'a azure_core::http::headers::HeaderValue,
     pub pipeline_type: PipelineType,
     pub transport_security: TransportSecurity,
+    /// Pre-computed `host:port` key for the target endpoint.
+    ///
+    /// Computed once by the operation pipeline from the routing-level endpoint
+    /// so the transport pipeline doesn't need to allocate a `String` per attempt.
+    pub endpoint_key: EndpointKey,
 }
 
 /// Executes a single transport attempt.
@@ -165,21 +172,9 @@ pub(crate) async fn execute_transport_pipeline(
     let mut prior_failed_transport_shards = Vec::<FailedTransportShardDiagnostics>::new();
     let mut excluded_shard_id = None;
 
-    // Compute the endpoint key once for the entire transport pipeline.
-    // This avoids re-allocating the "host:port" string on every retry
-    // and every inner call (send, pre_select_shard, can_retry, etc.).
-    let endpoint_key = match EndpointKey::try_from(&request.url) {
-        Ok(key) => key,
-        Err(error) => {
-            return TransportResult {
-                outcome: TransportOutcome::TransportError {
-                    status: CosmosStatus::TRANSPORT_GENERATED_503,
-                    error,
-                    request_sent: RequestSentStatus::NotSent,
-                },
-            };
-        }
-    };
+    // The endpoint key is pre-computed by the operation pipeline from the
+    // routing-level CosmosEndpoint so no allocation is needed here.
+    let endpoint_key = &ctx.endpoint_key;
 
     loop {
         // Check deadline before each attempt
@@ -278,7 +273,7 @@ pub(crate) async fn execute_transport_pipeline(
             request_handle,
             diagnostics,
             excluded_shard_id.take(),
-            &endpoint_key,
+            endpoint_key,
         )
         .await;
 
@@ -296,7 +291,7 @@ pub(crate) async fn execute_transport_pipeline(
                 && should_retry_connectivity_failure(&result.result, ctx.allow_sent_transport_retry)
                 && ctx
                     .transport
-                    .can_retry_on_different_shard(failed_shard_id, &endpoint_key)
+                    .can_retry_on_different_shard(failed_shard_id, endpoint_key)
         }) {
             if let Some(failed_transport_shard) = failed_transport_shard(&result) {
                 prior_failed_transport_shards.push(failed_transport_shard);
@@ -658,7 +653,7 @@ fn map_http_response_payload(
     });
 
     diagnostics.complete_request(request_handle, status_code, sub_status);
-    TransportResult::from_http_response(cosmos_status, headers, body)
+    TransportResult::from_http_response(cosmos_status, headers, cosmos_headers, body)
 }
 
 #[cfg(test)]
@@ -715,6 +710,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
                 headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -728,6 +724,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
                 headers,
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -738,7 +735,7 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::Success {
                 status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
-                headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
             },
         }
@@ -920,6 +917,7 @@ mod tests {
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 pipeline_type: PipelineType::Metadata,
                 transport_security: TransportSecurity::Secure,
+                endpoint_key: endpoint.endpoint_key(),
             },
             &mut diagnostics,
         )
@@ -1017,6 +1015,11 @@ mod tests {
         .unwrap()
     }
 
+    fn test_endpoint_key() -> EndpointKey {
+        EndpointKey::try_from(&url::Url::parse("https://test.documents.azure.com:443/").unwrap())
+            .unwrap()
+    }
+
     fn test_request(deadline: Option<Instant>) -> TransportRequest {
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -1059,6 +1062,7 @@ mod tests {
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
+                endpoint_key: test_endpoint_key(),
             },
             &mut diagnostics,
         )
@@ -1106,6 +1110,7 @@ mod tests {
                 user_agent: &user_agent,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
+                endpoint_key: test_endpoint_key(),
             },
             &mut diagnostics,
         )
@@ -1142,6 +1147,7 @@ mod tests {
                 user_agent: &user_agent,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
+                endpoint_key: test_endpoint_key(),
             },
             &mut diagnostics,
         )
@@ -1176,6 +1182,7 @@ mod tests {
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
+                endpoint_key: test_endpoint_key(),
             },
             &mut diagnostics,
         )
