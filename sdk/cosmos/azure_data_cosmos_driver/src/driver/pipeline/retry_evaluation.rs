@@ -49,7 +49,7 @@ pub(crate) fn evaluate_transport_result(
     // losing the error source chain.
     match result.outcome {
         outcome @ TransportOutcome::Success { .. } => (
-            OperationAction::Complete(TransportResult { outcome }),
+            OperationAction::Complete(Box::new(TransportResult { outcome })),
             Vec::new(),
         ),
 
@@ -58,6 +58,7 @@ pub(crate) fn evaluate_transport_result(
             headers,
             body,
             request_sent,
+            ..
         } => {
             let request_definitely_not_sent = request_sent.definitely_not_sent();
 
@@ -364,7 +365,10 @@ mod tests {
     use super::*;
     use crate::{
         diagnostics::RequestSentStatus,
-        models::{AccountReference, CosmosOperation, CosmosStatus, DatabaseReference},
+        models::{
+            AccountReference, CosmosOperation, CosmosResponseHeaders, CosmosStatus,
+            DatabaseReference,
+        },
     };
     use azure_core::http::StatusCode;
 
@@ -390,7 +394,7 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::Success {
                 status: CosmosStatus::new(StatusCode::Ok),
-                headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: b"{}".to_vec(),
             },
         }
@@ -414,6 +418,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(status_code),
                 headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -577,6 +582,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::WRITE_FORBIDDEN,
                 headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -600,6 +606,7 @@ mod tests {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
                 headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },

@@ -93,6 +93,15 @@ impl From<&AccountReference> for AccountEndpoint {
     }
 }
 
+impl<'de> serde::Deserialize<'de> for AccountEndpoint {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Url::parse(&s)
+            .map(Self::new)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
 /// Authentication options for connecting to a Cosmos DB account.
 ///
 /// Either key-based authentication using a master key, or token-based
@@ -416,6 +425,20 @@ mod tests {
             Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
             _ => panic!("Expected MasterKey auth"),
         }
+    }
+
+    #[test]
+    fn account_endpoint_deserialize_valid_url() {
+        let endpoint: AccountEndpoint =
+            serde_json::from_str(r#""https://myaccount.documents.azure.com:443/""#).unwrap();
+        assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
+    }
+
+    #[test]
+    fn account_endpoint_deserialize_invalid_url() {
+        let result: serde_json::Result<AccountEndpoint> =
+            serde_json::from_str(r#""not a valid url""#);
+        assert!(result.is_err());
     }
 
     #[test]

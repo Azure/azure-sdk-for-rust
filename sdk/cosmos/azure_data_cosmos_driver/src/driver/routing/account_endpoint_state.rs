@@ -3,7 +3,9 @@
 
 //! Account-level endpoint routing state.
 
-use std::{collections::HashMap, time::Instant};
+use std::{collections::HashMap, sync::Arc, time::Instant};
+
+use url::Url;
 
 use super::{CosmosEndpoint, UnavailableReason};
 
@@ -13,11 +15,11 @@ pub(crate) struct AccountEndpointState {
     /// Monotonically increasing generation for stale index detection.
     pub generation: u64,
     /// Ordered preferred read endpoints.
-    pub preferred_read_endpoints: Vec<CosmosEndpoint>,
+    pub preferred_read_endpoints: Arc<[CosmosEndpoint]>,
     /// Ordered preferred write endpoints.
-    pub preferred_write_endpoints: Vec<CosmosEndpoint>,
-    /// Endpoints marked temporarily unavailable.
-    pub unavailable_endpoints: HashMap<CosmosEndpoint, (Instant, UnavailableReason)>,
+    pub preferred_write_endpoints: Arc<[CosmosEndpoint]>,
+    /// Endpoints marked temporarily unavailable, keyed by their primary URL.
+    pub unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
     /// Whether account supports multiple write locations.
     pub multiple_write_locations_enabled: bool,
     /// Fallback endpoint when no preferred endpoint is available.
@@ -29,8 +31,8 @@ impl AccountEndpointState {
     pub fn single(default_endpoint: CosmosEndpoint) -> Self {
         Self {
             generation: 0,
-            preferred_read_endpoints: vec![default_endpoint.clone()],
-            preferred_write_endpoints: vec![default_endpoint.clone()],
+            preferred_read_endpoints: vec![default_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: HashMap::new(),
             multiple_write_locations_enabled: false,
             default_endpoint,

@@ -33,13 +33,11 @@ struct SessionContainerInner {
     name_to_rid: HashMap<String, ResourceId>,
 }
 
-/// Builds a `dbs/{db}/colls/{coll}` name path from a [`ContainerReference`].
-fn name_path(container: &ContainerReference) -> String {
-    format!(
-        "dbs/{}/colls/{}",
-        container.database_name(),
-        container.name()
-    )
+/// Returns the `dbs/{db}/colls/{coll}` name path from a [`ContainerReference`],
+/// reusing the pre-computed `name_based_path` by skipping the leading `/`.
+fn name_path(container: &ContainerReference) -> &str {
+    // name_based_path() returns "/dbs/{db}/colls/{coll}"; skip the leading '/'.
+    &container.name_based_path()[1..]
 }
 
 impl SessionContainer {
@@ -87,7 +85,7 @@ impl SessionContainer {
 
         // Fall back to name → RID → token
         let np = name_path(container);
-        if let Some(resolved_rid) = guard.name_to_rid.get(&np) {
+        if let Some(resolved_rid) = guard.name_to_rid.get(np) {
             return Self::build_composite_token(&guard, resolved_rid.as_str());
         }
 
@@ -114,13 +112,13 @@ impl SessionContainer {
         let rid = ResourceId::new(collection_rid.to_owned());
 
         // RID mismatch detection: if the name pointed at a different RID, clear old.
-        if let Some(old_rid) = guard.name_to_rid.get(&np) {
+        if let Some(old_rid) = guard.name_to_rid.get(np) {
             if old_rid.as_str() != collection_rid {
                 let old_rid = old_rid.clone();
                 guard.tokens.remove(&old_rid);
             }
         }
-        guard.name_to_rid.insert(np, rid.clone());
+        guard.name_to_rid.insert(np.to_owned(), rid.clone());
 
         let pk_map = guard.tokens.entry(rid).or_default();
 

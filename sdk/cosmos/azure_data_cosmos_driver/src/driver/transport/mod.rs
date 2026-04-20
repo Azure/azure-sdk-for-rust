@@ -25,6 +25,7 @@ pub(crate) mod request_signing;
 #[cfg(feature = "reqwest")]
 pub(crate) mod reqwest_transport_client;
 mod sharded_transport;
+pub(crate) use sharded_transport::EndpointKey;
 mod tracked_transport;
 pub(crate) mod transport_pipeline;
 
