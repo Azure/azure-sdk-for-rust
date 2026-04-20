@@ -329,9 +329,7 @@ pub(crate) async fn execute_operation_pipeline(
                             let is_probe = current
                                 .circuit_breaker_overrides
                                 .get(pk_range_id.as_str())
-                                .is_some_and(|e| {
-                                    e.health_status == HealthStatus::ProbeCandidate
-                                });
+                                .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
                             if is_probe {
                                 remove_probe_succeeded_entry(current, pk_range_id)
                             } else {
