@@ -18,10 +18,13 @@ fn is_compound(token: &str) -> bool {
 /// When the tokens have different partition key range IDs, keeps the ID from
 /// the token with the higher global LSN (the more recent topology).
 fn merge_tokens_same_range(token1: &str, token2: &str) -> azure_core::Result<String> {
-    let mut seg1 = SessionTokenSegment::parse(token1)?;
-    let seg2 = SessionTokenSegment::parse(token2)?;
+    let mut seg1: SessionTokenSegment = token1.parse()?;
+    let seg2: SessionTokenSegment = token2.parse()?;
 
-    if seg1.pk_range_id() != seg2.pk_range_id() && seg2.global_lsn() > seg1.global_lsn() {
+    if seg1.pk_range_id() != seg2.pk_range_id()
+        && seg2.is_as_recent_as(&seg1)
+        && !seg1.is_as_recent_as(&seg2)
+    {
         seg1.set_pk_range_id(seg2.pk_range_id());
     }
 
@@ -109,7 +112,7 @@ fn merge_ranges_with_subsets(
         let token_cmp = overlapping[0].1.clone();
 
         if !is_compound(&token_cmp) {
-            let seg_cmp = SessionTokenSegment::parse(&token_cmp)?;
+            let seg_cmp: SessionTokenSegment = token_cmp.parse()?;
 
             // Find non-compound subsets of the current range
             let subsets: Vec<(usize, FeedRange, String)> = overlapping
@@ -122,8 +125,8 @@ fn merge_ranges_with_subsets(
 
             if subsets.len() == 1 {
                 // Single subset: only remove child if parent has strictly higher LSN
-                let child_seg = SessionTokenSegment::parse(&subsets[0].2)?;
-                if seg_cmp.global_lsn() > child_seg.global_lsn() {
+                let child_seg: SessionTokenSegment = subsets[0].2.parse()?;
+                if seg_cmp.is_as_recent_as(&child_seg) && !child_seg.is_as_recent_as(&seg_cmp) {
                     overlapping.remove(subsets[0].0);
                 }
             } else if subsets.len() > 1 {
@@ -207,8 +210,10 @@ fn analyze_subsets(
                 let mut children_more_updated = true;
                 let mut parent_more_updated = true;
                 for t in &tokens {
-                    let child_seg = SessionTokenSegment::parse(t)?;
-                    if parent_seg.global_lsn() > child_seg.global_lsn() {
+                    let child_seg: SessionTokenSegment = t.parse()?;
+                    if parent_seg.is_as_recent_as(&child_seg)
+                        && !child_seg.is_as_recent_as(parent_seg)
+                    {
                         children_more_updated = false;
                     } else {
                         parent_more_updated = false;
@@ -266,7 +271,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<Vec<Stri
     let mut pk_map: HashMap<String, SessionTokenSegment> = HashMap::new();
 
     for token in &tokens {
-        let seg = SessionTokenSegment::parse(token)?;
+        let seg: SessionTokenSegment = token.parse()?;
         let pk_id = seg.pk_range_id().to_owned();
         match pk_map.get_mut(&pk_id) {
             Some(existing) => {
