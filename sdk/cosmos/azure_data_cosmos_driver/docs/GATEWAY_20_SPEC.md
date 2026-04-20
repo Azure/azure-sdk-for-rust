@@ -171,7 +171,7 @@ Invariants this spec locks in:
 **Crate**: `azure_data_cosmos_driver`
 **New module**: `src/driver/transport/rntbd/`
 
-The RNTBD (Reliable Network Transfer Binary Data) protocol is the wire format used by Cosmos DB for efficient binary communication. Gateway 2.0 wraps RNTBD-encoded payloads inside HTTP/2 POST requests to the proxy.
+The RNTBD ("Real Name To Be Determined" — a placeholder name that stuck) protocol is the wire format used by Cosmos DB for efficient binary communication. Gateway 2.0 wraps RNTBD-encoded payloads inside HTTP/2 POST requests to the proxy.
 
 #### What Will Be Done
 
