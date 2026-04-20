@@ -1,3 +1,4 @@
+<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity footgun cooldown ALPN -->
 # Gateway 2.0 Design Spec for Rust Driver & SDK
 
 **Status**: Draft / Iterating
@@ -16,9 +17,9 @@
 
 ### Related Specs
 
-- [`TRANSPORT_PIPELINE_SPEC.md`](./TRANSPORT_PIPELINE_SPEC.md) — sharded HTTP/2 transport, timeout regime, hedging, `(HttpClient, host:port)` shard key. Gateway 2.0 reuses the sharded transport defined there verbatim; this spec does **not** introduce a new timeout or hedging policy.
-- [`PARTITION_KEY_RANGE_CACHE_SPEC.md`](./PARTITION_KEY_RANGE_CACHE_SPEC.md) — PKRange cache semantics and `EffectivePartitionKey` usage; cited by Phase 2 for EPK computation and by Phase 4 for 410 handling.
-- [`PARTITION_LEVEL_FAILOVER_SPEC.md`](./PARTITION_LEVEL_FAILOVER_SPEC.md) — per-partition region override semantics; cited by Phase 4 for PLF precedence over Gateway 2.0 routing.
+- [`TRANSPORT_PIPELINE_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md) — sharded HTTP/2 transport, timeout regime, hedging, `(HttpClient, host:port)` shard key. Gateway 2.0 reuses the sharded transport defined there verbatim; this spec does **not** introduce a new timeout or hedging policy.
+- [`PARTITION_KEY_RANGE_CACHE_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/PARTITION_KEY_RANGE_CACHE_SPEC.md) — PKRange cache semantics and `EffectivePartitionKey` usage; cited by Phase 2 for EPK computation and by Phase 4 for 410 handling.
+- [`PARTITION_LEVEL_FAILOVER_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/PARTITION_LEVEL_FAILOVER_SPEC.md) — per-partition region override semantics; cited by Phase 4 for PLF precedence over Gateway 2.0 routing.
 
 ---
 
