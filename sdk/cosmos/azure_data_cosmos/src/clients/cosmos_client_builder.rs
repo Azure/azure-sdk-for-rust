@@ -11,9 +11,10 @@ use crate::{
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
-#[cfg(feature = "allow_invalid_certificates")]
+#[cfg(all(feature = "allow_invalid_certificates", feature = "rustls",))]
 use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation};
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
+use azure_data_cosmos_driver::TlsBackend;
 use std::sync::Arc;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "reqwest"))]
@@ -86,8 +87,10 @@ pub struct CosmosClientBuilder {
     /// Throughput control groups to register on the driver runtime.
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "rustls",))]
     allow_emulator_invalid_certificates: bool,
+    /// Explicit TLS backend configuration.
+    tls_backend: TlsBackend,
     /// Fault injection builder for testing error handling
     #[cfg(feature = "fault_injection")]
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
@@ -141,9 +144,26 @@ impl CosmosClientBuilder {
     ///
     /// * `allow` - Whether to accept invalid certificates for emulator connections.
     #[doc(hidden)]
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "rustls",))]
     pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_emulator_invalid_certificates = allow;
+        self
+    }
+
+    /// Configures the TLS backend used for all HTTP connections.
+    ///
+    /// By default, the client uses rustls with the default crypto provider.
+    /// Use this to supply a pre-configured [`TlsBackend`] — for example, a `TlsBackend::Rustls`
+    /// with a custom `rustls::ClientConfig` that uses SymCrypt or a FIPS-only aws-lc-rs
+    /// crypto provider.
+    ///
+    /// The available TLS backends depends on the feature flags you have enabled.
+    ///
+    /// # Arguments
+    ///
+    /// * `tls` - The TLS backend configuration to use.
+    pub fn with_tls_backend(mut self, tls: TlsBackend) -> Self {
+        self.tls_backend = tls;
         self
     }
 
@@ -269,9 +289,21 @@ impl CosmosClientBuilder {
                 builder = builder.no_proxy();
             }
 
-            #[cfg(feature = "allow_invalid_certificates")]
+            #[cfg(all(feature = "allow_invalid_certificates", feature = "rustls",))]
             if self.allow_emulator_invalid_certificates {
                 builder = builder.danger_accept_invalid_certs(true);
+            }
+
+            match &self.tls_backend {
+                #[cfg(feature = "rustls")]
+                TlsBackend::Rustls(None) => {
+                    builder = builder.use_rustls_tls();
+                }
+                #[cfg(feature = "rustls")]
+                TlsBackend::Rustls(Some(config)) => {
+                    builder = builder.use_preconfigured_tls((**config).clone());
+                }
+                _ => { /* Just don't set any TLS settings and use reqwest's default */ }
             }
 
             let client = builder
@@ -412,8 +444,9 @@ impl CosmosClientBuilder {
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
         #[allow(unused_mut)]
-        let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
-        #[cfg(feature = "allow_invalid_certificates")]
+        let mut driver_runtime_builder =
+            CosmosDriverRuntimeBuilder::new().with_tls_backend(self.tls_backend);
+        #[cfg(all(feature = "allow_invalid_certificates", feature = "rustls",))]
         if self.allow_emulator_invalid_certificates {
             let connection_pool = ConnectionPoolOptions::builder()
                 .with_emulator_server_cert_validation(

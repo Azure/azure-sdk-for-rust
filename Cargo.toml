@@ -131,6 +131,7 @@ hdrhistogram = "7.5"
 hostname = "0.4"
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }
+native-tls = "0.2"
 openssl = { version = "0.10.75" }
 opentelemetry = { version = "0.31", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.31" }
@@ -148,6 +149,7 @@ reqwest = { version = "0.13.2", features = [
 ], default-features = false }
 rust_decimal = "1.40.0"
 rustc_version = "0.4"
+rustls = { version = "0.23", default-features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_amqp = { version = "0.14", features = ["uuid"] }
 serde_bytes = { version = "0.11" }

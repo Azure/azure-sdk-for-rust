@@ -9,6 +9,7 @@ use super::cosmos_transport_client::TransportClient;
 
 use crate::diagnostics::TransportHttpVersion;
 use crate::options::ConnectionPoolOptions;
+use crate::TlsBackend;
 
 /// HTTP protocol policy required by a transport.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -145,11 +146,13 @@ pub trait HttpClientFactory: fmt::Debug + Send + Sync {
 }
 
 #[derive(Debug)]
-pub(crate) struct DefaultHttpClientFactory;
+pub(crate) struct DefaultHttpClientFactory {
+    tls_backend: TlsBackend,
+}
 
 impl DefaultHttpClientFactory {
-    pub(crate) fn new() -> Self {
-        Self
+    pub(crate) fn new(tls_backend: TlsBackend) -> Self {
+        Self { tls_backend }
     }
 }
 
@@ -181,7 +184,26 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         }
 
         if config.for_emulator {
-            builder = builder.danger_accept_invalid_certs(true);
+            #[cfg(feature = "rustls")]
+            {
+                builder = builder.danger_accept_invalid_certs(true);
+            }
+        }
+
+        match &self.tls_backend {
+            #[cfg(feature = "rustls")]
+            TlsBackend::Rustls(maybe_config) => {
+                if let Some(config) = maybe_config {
+                    builder = builder.use_preconfigured_tls((**config).clone());
+                } else {
+                    builder = builder.use_rustls_tls();
+                }
+            }
+            #[cfg(feature = "native_tls")]
+            TlsBackend::NativeTls => {
+                builder = builder.use_native_tls();
+            }
+            _ => { /* No need to configure a backend, just use reqwest's default */ }
         }
 
         builder = match config.version_policy {

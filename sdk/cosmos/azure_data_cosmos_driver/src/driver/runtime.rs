@@ -427,6 +427,7 @@ pub struct CosmosDriverRuntimeBuilder {
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
+    tls_backend: crate::TlsBackend,
     #[cfg(any(test, feature = "__internal_mocking"))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
@@ -509,6 +510,21 @@ impl CosmosDriverRuntimeBuilder {
     /// Valid range: 1000–60000 ms (1–60 seconds).
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.cpu_refresh_interval = Some(interval);
+        self
+    }
+
+    /// Configures the TLS backend used for all HTTP connections.
+    ///
+    /// By default, the driver uses rustls with the default crypto provider.
+    /// If the `rustls` feature is disabled, it will use whatever provider is configured as the
+    /// default for `reqwest`.
+    ///
+    /// Use this method to supply a pre-configured [`TlsBackend`](crate::TlsBackend)
+    /// — for example, to use a custom `rustls::ClientConfig` with a non-default crypto
+    /// provider such as SymCrypt or a FIPS-only aws-lc-rs build.
+    /// Or, use it to force the use of a specific backend when multiple backends are available.
+    pub fn with_tls_backend(mut self, tls: crate::TlsBackend) -> Self {
+        self.tls_backend = tls;
         self
     }
 
@@ -632,13 +648,14 @@ impl CosmosDriverRuntimeBuilder {
             let base_factory: Arc<dyn HttpClientFactory> = {
                 #[cfg(any(test, feature = "__internal_mocking"))]
                 {
-                    self.http_client_factory
-                        .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
+                    self.http_client_factory.unwrap_or_else(|| {
+                        Arc::new(DefaultHttpClientFactory::new(self.tls_backend.clone()))
+                    })
                 }
 
                 #[cfg(not(any(test, feature = "__internal_mocking")))]
                 {
-                    Arc::new(DefaultHttpClientFactory::new())
+                    Arc::new(DefaultHttpClientFactory::new(self.tls_backend.clone()))
                 }
             };
 

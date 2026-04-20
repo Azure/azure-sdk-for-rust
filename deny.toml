@@ -8,14 +8,14 @@ ignore = []
 
 [licenses]
 allow = [
-  # See https://docs.opensource.microsoft.com/legal/resources/oss-licenses-by-type for acceptable licenses.
   "Apache-2.0",
   "BSD-3-Clause",
-  "CDLA-Permissive-2.0",
-  "ISC",
   "MIT",
+  # "OpenSSL",
   "Unicode-3.0",
   "Zlib",
+  "CDLA-Permissive-2.0",
+  "ISC",
 ]
 
 [[licenses.clarify]]

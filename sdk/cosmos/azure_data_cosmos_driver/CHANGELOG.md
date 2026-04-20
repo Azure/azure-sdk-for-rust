@@ -4,15 +4,16 @@
 
 ### Features Added
 
+- Added `TlsBackend` enum with `Rustls` and `NativeTls` variants, enabling explicit per-client TLS configuration without mutating global state. ([#4140](https://github.com/Azure/azure-sdk-for-rust/pull/4140))
+- Added `CosmosDriverRuntimeBuilder::with_tls_backend(TlsBackend)` to configure the TLS stack used for all HTTP connections in the driver. ([#4140](https://github.com/Azure/azure-sdk-for-rust/pull/4140))
+- Added `rustls` feature flag (enabled by default) that configures reqwest with rustls as the TLS stack. ([#4140](https://github.com/Azure/azure-sdk-for-rust/pull/4140))
+- Added `native_tls` feature flag that configures reqwest with native-tls as the TLS stack. Disable default features and enable `native_tls` to use the platform TLS stack. ([#4140](https://github.com/Azure/azure-sdk-for-rust/pull/4140))
+
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
-
-## 0.1.0 (2026-04-09)
-
-### Features Added
 
 - Initial release of `azure_data_cosmos_driver` (core Cosmos DB protocol implementation for cross-language SDK reuse). ([#3772](https://github.com/Azure/azure-sdk-for-rust/pull/3772) and [#3592](https://github.com/Azure/azure-sdk-for-rust/pull/3592))
 - Added cache priming via `CosmosDriver::initialize()` and `CosmosDriver::prime_container()` to avoid cold-start latency on the first data-plane operation. ([#3864](https://github.com/Azure/azure-sdk-for-rust/pull/3864))

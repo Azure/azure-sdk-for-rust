@@ -29,6 +29,7 @@ pub use clients::CosmosClientBuilder;
 
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
+pub use azure_data_cosmos_driver::TlsBackend;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;

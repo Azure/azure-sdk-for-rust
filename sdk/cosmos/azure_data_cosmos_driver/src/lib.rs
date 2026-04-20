@@ -29,9 +29,11 @@ pub mod options;
 pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]
 pub mod testing;
+pub mod tls_backend;
 
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 pub use models::{ActivityId, CosmosResponse, CosmosStatus, RequestCharge};
 pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};
+pub use tls_backend::TlsBackend;
