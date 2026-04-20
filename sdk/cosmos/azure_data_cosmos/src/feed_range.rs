@@ -69,7 +69,7 @@ use crate::routing::range::Range;
 /// # Comparison Methods
 ///
 /// Feed ranges support containment and overlap checks:
-/// - [`contains()`](FeedRange::contains) — checks if another feed range is entirely within this one
+/// - [`is_subset_of()`](FeedRange::is_subset_of) — checks if this feed range is entirely within another
 /// - [`overlaps()`](FeedRange::overlaps) — checks if two feed ranges share any portion of the EPK space
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
