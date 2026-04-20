@@ -58,14 +58,22 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     }
 
     let fn_name = &original_sig.ident;
+    let fn_name_str = fn_name.to_string();
     let mut inputs = original_sig.inputs.iter();
     let setup = match inputs.next() {
         None if recorded_attrs.live => quote! {
-            #fn_name().await
+            ::azure_core_test::__macro_support::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
+            let __result = #fn_name().await;
+            match &__result {
+                Ok(_) => ::azure_core_test::__macro_support::tracing::info!("[recorded::test] finished '{}' in {} (ok)", #fn_name_str, file!()),
+                Err(e) => ::azure_core_test::__macro_support::tracing::error!("[recorded::test] finished '{}' in {} (err: {e})", #fn_name_str, file!()),
+            }
+            __result
         },
         Some(FnArg::Typed(PatType { ty, .. })) if is_test_context(ty.as_ref()) => {
             let test_mode = test_mode_to_tokens(test_mode);
             quote! {
+                ::azure_core_test::__macro_support::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
                 #[allow(dead_code)]
                 let mut ctx = ::azure_core_test::recorded::start(
                     #test_mode,
@@ -74,7 +82,12 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
                     stringify!(#fn_name),
                     ::std::option::Option::None,
                 ).await?;
-                #fn_name(ctx).await
+                let __result = #fn_name(ctx).await;
+                match &__result {
+                    Ok(_) => ::azure_core_test::__macro_support::tracing::info!("[recorded::test] finished '{}' in {} (ok)", #fn_name_str, file!()),
+                    Err(e) => ::azure_core_test::__macro_support::tracing::error!("[recorded::test] finished '{}' in {} (err: {e})", #fn_name_str, file!()),
+                }
+                __result
             }
         }
         _ => {
