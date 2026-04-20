@@ -405,14 +405,6 @@ The following are explicitly **not** *Proxy unreachable*:
 
 Where transport-level error classification overlaps with the broader transport pipeline, `TRANSPORT_PIPELINE_SPEC.md` is authoritative; this section narrows the set to those classes that count toward the Gateway 2.0 failure-fallback counter.
 
-##### Java parity
-
-The Phase 4 retry approach above — reuse the existing retry policies and add only the failure-fallback counter on top — matches Java's posture. In `Azure/azure-sdk-for-java`, `ThinClientStoreModel extends RxGatewayStoreModel` and a grep for `thin.?client` across `ClientRetryPolicy.java`, `WebExceptionRetryPolicy.java`, `ResourceThrottleRetryPolicy.java`, `BackoffRetryUtility.java`, `DocumentClientRetryPolicy.java`, `MetadataRequestRetryPolicy.java`, `MetadataThrottlingRetryPolicy.java`, `PartitionKeyRangeGoneRetryPolicy.java`, `StaleResourceRetryPolicy.java`, and `WriteRetryPolicy.java` returns **zero** matches. `RxDocumentClientImpl.getRetryPolicyForPointOperation()` builds the same `ResetSessionTokenRetryPolicy → PartitionKeyMismatchRetryPolicy → StaleResourceRetryPolicy` chain regardless of whether the request lands on the gateway or thin-client store model — model selection happens after the retry policy is built.
-
-The Rust failure-fallback counter described above is **more thin-client-aware than Java's**, which has no equivalent counter. Java's only thin-client awareness in the retry-adjacent layer is at the `GlobalEndpointManager` level (parallel `hasThinClientReadLocations` set and `getThinclientRegionalEndpoint()` URL selection); fault injection is also not yet integrated for thin client (`GlobalEndpointManager.java:161` carries a `// TODO: integrate thin client into fault injection`).
-
-> **Java behavioral nuance to avoid replicating**: `ClientRetryPolicy.markEndpointUnavailableFor{Read,Write}` operates on `gatewayRegionalEndpoint`, meaning a thin-client 503 in Java marks the **gateway** endpoint unavailable rather than the thin-client endpoint. The Rust failure-fallback counter is per-partition and keyed off the `gateway20_url` itself, which is the more precise behavior; do not "align" with Java by widening the unavailability scope.
-
 #### Retry Decision Table
 
 | Response | Sub-Status | Action |
