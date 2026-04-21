@@ -11,8 +11,9 @@ use crate::{
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
+use azure_data_cosmos_driver::options::ConnectionPoolOptions;
 #[cfg(feature = "allow_invalid_certificates")]
-use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation};
+use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
 
@@ -413,15 +414,20 @@ impl CosmosClientBuilder {
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
         #[allow(unused_mut)]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
+
+        // Forward SDK connection settings to the driver's connection pool.
+        let mut pool_builder = ConnectionPoolOptions::builder();
+        if self.allow_proxy {
+            pool_builder = pool_builder.with_proxy_allowed(true);
+        }
         #[cfg(feature = "allow_invalid_certificates")]
         if self.allow_emulator_invalid_certificates {
-            let connection_pool = ConnectionPoolOptions::builder()
-                .with_emulator_server_cert_validation(
-                    EmulatorServerCertValidation::DangerousDisabled,
-                )
-                .build()?;
-            driver_runtime_builder = driver_runtime_builder.with_connection_pool(connection_pool);
+            pool_builder = pool_builder.with_emulator_server_cert_validation(
+                EmulatorServerCertValidation::DangerousDisabled,
+            );
         }
+        driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
+
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =

@@ -6,6 +6,7 @@
 use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use serde::Serialize;
 
 /// Standard Cosmos DB request header names.
 ///
@@ -19,6 +20,8 @@ pub(crate) mod request_header_names {
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
     pub const PREFER: &str = "prefer";
+    pub const OFFER_THROUGHPUT: &str = "x-ms-offer-throughput";
+    pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
 }
@@ -36,6 +39,7 @@ pub(crate) mod response_header_names {
     pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
     pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
     pub const LSN: &str = "lsn";
+    pub const ITEM_LSN: &str = "x-ms-item-lsn";
     pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
     pub const OWNER_ID: &str = "x-ms-content-path";
     pub const OFFER_REPLACE_PENDING: &str = "x-ms-offer-replace-pending";
@@ -62,6 +66,14 @@ pub struct CosmosRequestHeaders {
 
     /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
     pub precondition: Option<Precondition>,
+
+    /// Manual throughput in RU/s (`x-ms-offer-throughput`).
+    pub offer_throughput: Option<usize>,
+
+    /// Autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
+    ///
+    /// The driver serializes this to JSON for the header value.
+    pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
 
 impl CosmosRequestHeaders {
@@ -96,7 +108,71 @@ impl CosmosRequestHeaders {
                 ),
             }
         }
+        if let Some(throughput) = self.offer_throughput {
+            headers.insert(
+                request_header_names::OFFER_THROUGHPUT,
+                HeaderValue::from(throughput.to_string()),
+            );
+        }
+        if let Some(autopilot) = self.offer_autopilot_settings.as_ref() {
+            if let Ok(json) = serde_json::to_string(autopilot) {
+                headers.insert(
+                    request_header_names::OFFER_AUTOPILOT_SETTINGS,
+                    HeaderValue::from(json),
+                );
+            }
+        }
     }
+}
+
+/// Autoscale throughput settings for the `x-ms-cosmos-offer-autopilot-settings` header.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct OfferAutoscaleSettings {
+    /// Maximum throughput in RU/s for autoscale.
+    pub max_throughput: usize,
+
+    /// Auto-upgrade policy for scaling behavior.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
+}
+
+impl OfferAutoscaleSettings {
+    /// Creates autoscale settings with the given maximum throughput.
+    pub fn new(max_throughput: usize) -> Self {
+        Self {
+            max_throughput,
+            auto_upgrade_policy: None,
+        }
+    }
+
+    /// Sets the auto-upgrade policy with the given increment percent.
+    pub fn with_increment_percent(mut self, increment_percent: usize) -> Self {
+        self.auto_upgrade_policy = Some(AutoscaleAutoUpgradePolicy {
+            throughput_policy: Some(AutoscaleThroughputPolicy { increment_percent }),
+        });
+        self
+    }
+}
+
+/// Auto-upgrade policy for autoscale throughput.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct AutoscaleAutoUpgradePolicy {
+    /// Throughput scaling policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub throughput_policy: Option<AutoscaleThroughputPolicy>,
+}
+
+/// Throughput scaling policy for autoscale.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct AutoscaleThroughputPolicy {
+    /// Percentage to increment throughput during auto-upgrade.
+    pub increment_percent: usize,
 }
 
 /// Cosmos-specific headers extracted from HTTP response.
@@ -147,6 +223,11 @@ pub struct CosmosResponseHeaders {
 
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
+
+    /// Item Logical Sequence Number (`x-ms-item-lsn`).
+    ///
+    /// Only returned on item/document operations (create, read, replace, upsert, delete).
+    pub item_lsn: Option<u64>,
 
     /// Owner full name / alternate content path (`x-ms-alt-content-path`).
     ///
@@ -242,6 +323,9 @@ impl CosmosResponseHeaders {
                 response_header_names::LSN => {
                     result.lsn = value.as_str().parse().ok();
                 }
+                response_header_names::ITEM_LSN => {
+                    result.item_lsn = value.as_str().parse().ok();
+                }
                 response_header_names::OWNER_FULL_NAME => {
                     result.owner_full_name = Some(value.as_str().to_owned());
                 }
@@ -285,6 +369,7 @@ mod tests {
         );
         headers.insert("x-ms-request-duration-ms", "4.56");
         headers.insert("lsn", "42");
+        headers.insert("x-ms-item-lsn", "37");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -320,6 +405,7 @@ mod tests {
         );
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
+        assert_eq!(cosmos_headers.item_lsn, Some(37));
     }
 
     #[test]
@@ -357,6 +443,7 @@ mod tests {
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
             server_duration_ms: Some(4.56),
             lsn: Some(100),
+            item_lsn: Some(99),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
@@ -392,6 +479,7 @@ mod tests {
         assert!(headers.query_metrics.is_none());
         assert!(headers.server_duration_ms.is_none());
         assert!(headers.lsn.is_none());
+        assert!(headers.item_lsn.is_none());
     }
 
     #[test]
@@ -400,6 +488,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
 
         assert_eq!(
@@ -418,6 +508,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -439,6 +531,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -460,6 +554,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -481,6 +577,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -502,6 +600,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
             session_token: Some(SessionToken::new("session:100".to_string())),
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 

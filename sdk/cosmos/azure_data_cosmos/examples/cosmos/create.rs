@@ -5,8 +5,8 @@ use std::{borrow::Cow, error::Error};
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    ContentResponseOnWrite, CosmosClient, CreateContainerOptions, CreateDatabaseOptions,
-    ItemWriteOptions, OperationOptions, PartitionKey,
+    ContentResponseOnWrite, CosmosClient, CreateContainerOptions, ItemWriteOptions,
+    OperationOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -46,9 +46,6 @@ pub enum Subcommands {
     Database {
         /// The ID of the new database to create.
         id: String,
-
-        #[command(flatten)]
-        throughput_options: ThroughputOptions,
     },
 
     /// Create a container (does not support Entra ID).
@@ -109,16 +106,8 @@ impl CreateCommand {
                 Ok(())
             }
 
-            Subcommands::Database {
-                id,
-                throughput_options,
-            } => {
-                let throughput_properties: Option<ThroughputProperties> =
-                    throughput_options.try_into()?;
-                let options = throughput_properties
-                    .map(|p| CreateDatabaseOptions::default().with_throughput(p));
-
-                let db = client.create_database(&id, options).await?.into_model()?;
+            Subcommands::Database { id } => {
+                let db = client.create_database(&id, None).await?.into_model()?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())

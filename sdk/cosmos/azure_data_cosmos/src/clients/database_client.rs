@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
 use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
@@ -12,6 +10,8 @@ use crate::{
     ThroughputOptions,
 };
 use azure_core::http::Context;
+use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
+use azure_data_cosmos_driver::options::OperationOptions;
 
 use super::ThroughputPoller;
 
@@ -23,6 +23,7 @@ pub struct DatabaseClient {
     containers_link: ResourceLink,
     database_id: String,
     context: ClientContext,
+    database_ref: DatabaseReference,
 }
 
 impl DatabaseClient {
@@ -30,12 +31,15 @@ impl DatabaseClient {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
+        let database_ref =
+            DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
 
         Self {
             link,
             containers_link,
             database_id,
             context,
+            database_ref,
         }
     }
 
@@ -82,13 +86,17 @@ impl DatabaseClient {
         &self,
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
-        let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
+        let operation = CosmosOperation::read_database(self.database_ref.clone());
 
-        self.context
-            .pipeline
-            .send(cosmos_request?, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Executes a query against containers in the database.
@@ -137,24 +145,37 @@ impl DatabaseClient {
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
-                .request_headers(&options.throughput)
-                .json(&properties)
-                .build()?;
+        let body = serde_json::to_vec(&properties)?;
+        let mut operation =
+            CosmosOperation::create_container(self.database_ref.clone()).with_body(body);
 
-        self.context
-            .pipeline
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        if let Some(throughput) = &options.throughput {
+            let mut headers = azure_data_cosmos_driver::models::CosmosRequestHeaders::new();
+            throughput.apply_headers(&mut headers);
+            operation = operation.with_request_headers(headers);
+        }
+
+        // Control-plane creates always need the full response body so the
+        // caller can inspect the created resource properties.
+        let mut operation_options = OperationOptions::default();
+        operation_options.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, operation_options)
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Deletes this database.
@@ -168,13 +189,17 @@ impl DatabaseClient {
         &self,
         options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<()>> {
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
-        self.context
-            .pipeline
-            .send(cosmos_request?, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let operation = CosmosOperation::delete_database(self.database_ref.clone());
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Reads database throughput properties, if any.
