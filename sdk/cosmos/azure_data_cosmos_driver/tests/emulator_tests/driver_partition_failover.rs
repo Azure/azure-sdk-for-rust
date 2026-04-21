@@ -13,7 +13,10 @@
 #![cfg(feature = "fault_injection")]
 
 use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::fault_injection::*;
+use azure_data_cosmos_driver::fault_injection::{
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRuleBuilder, FaultOperationType,
+};
 use azure_data_cosmos_driver::options::Region;
 use std::error::Error;
 use std::sync::Arc;

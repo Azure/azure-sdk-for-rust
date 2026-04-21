@@ -329,15 +329,14 @@ pub async fn ppaf_disabled_write_forbidden_on_create_retries_but_no_partition_ov
             rule.disable();
 
             // Without PPAF, there is no partition-level override, so the next write
-            // should go back to the hub region.
+            // to the same partition should go back to the hub region.
             let unique_id2 = Uuid::new_v4().to_string();
             let item2 = create_test_item(&unique_id2);
-            let pk2 = format!("Partition-{}", unique_id2);
 
             let second_response = fault_container_client
-                .create_item(&pk2, &item2, None)
+                .create_item(&pk, &item2, None)
                 .await
-                .expect("Second CreateItem should succeed after fault rule is disabled");
+                .expect("Second CreateItem to same partition should succeed after fault rule is disabled");
 
             assert_eq!(second_response.status(), StatusCode::Created);
 

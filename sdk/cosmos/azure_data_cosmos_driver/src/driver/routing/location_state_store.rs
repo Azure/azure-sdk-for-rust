@@ -32,7 +32,6 @@ use super::{
 #[derive(Clone, Debug)]
 pub(crate) struct LocationSnapshot {
     pub account: Arc<AccountEndpointState>,
-    #[allow(dead_code)]
     pub partitions: Arc<PartitionEndpointState>,
 }
 
@@ -287,7 +286,7 @@ impl LocationStateStore {
     }
 
     /// CAS loop on partition-level state.
-    pub fn apply_partition(
+    pub(crate) fn apply_partition(
         &self,
         mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
     ) {
