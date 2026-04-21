@@ -3,9 +3,9 @@
 
 //! Query execution implementation.
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use azure_core::http::headers::{Header, HeaderValue};
+use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_driver::{
     models::{CosmosOperation, SessionToken},
     options::OperationOptions as DriverOperationOptions,
@@ -25,7 +25,9 @@ pub struct QueryExecutor<T: DeserializeOwned + Send> {
     driver: Arc<CosmosDriver>,
     operation_factory: Box<dyn Fn() -> CosmosOperation + Send>,
     query: Query,
+    query_body: Option<Vec<u8>>,
     base_options: DriverOperationOptions,
+    base_headers: HashMap<HeaderName, HeaderValue>,
     session_token: Option<SessionToken>,
     continuation: Option<String>,
     complete: bool,
@@ -45,11 +47,22 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         base_options: DriverOperationOptions,
         session_token: Option<SessionToken>,
     ) -> Self {
+        // Pre-build the static headers that are the same for every page:
+        // user-provided custom headers + query-specific constants.
+        let mut base_headers = base_options.custom_headers().cloned().unwrap_or_default();
+        base_headers.insert(constants::QUERY.clone(), HeaderValue::from_static("True"));
+        base_headers.insert(
+            azure_core::http::headers::CONTENT_TYPE,
+            HeaderValue::from_static("application/query+json"),
+        );
+
         Self {
             driver,
             operation_factory: Box::new(operation_factory),
             query,
+            query_body: None,
             base_options,
+            base_headers,
             session_token,
             continuation: None,
             complete: false,
@@ -79,30 +92,22 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         // Build a fresh operation for this page
         let mut operation = (self.operation_factory)();
 
-        // Serialize query body
-        let body = serde_json::to_vec(&self.query)?;
-        operation = operation.with_body(body);
+        // Serialize the query body on the first page and cache it for subsequent pages.
+        if self.query_body.is_none() {
+            self.query_body = Some(serde_json::to_vec(&self.query)?);
+        }
+        operation = operation.with_body(self.query_body.clone().unwrap());
 
-        // Set session token if provided
+        // The explicit session token serves as an initial hint; the driver's
+        // internal session manager captures response tokens and applies them
+        // to subsequent requests automatically.
         if let Some(session_token) = &self.session_token {
             operation = operation.with_session_token(session_token.clone());
         }
 
-        // Build custom headers for the driver operation options
-        let mut headers = self
-            .base_options
-            .custom_headers()
-            .cloned()
-            .unwrap_or_default();
-
-        // Query-specific headers
-        headers.insert(constants::QUERY.clone(), HeaderValue::from_static("True"));
-        headers.insert(
-            constants::QUERY_CONTENT_TYPE.name().clone(),
-            HeaderValue::from(constants::QUERY_CONTENT_TYPE.value().as_str().to_owned()),
-        );
-
-        // Continuation token
+        // Clone the pre-built static headers and add the continuation token
+        // (the only header that changes between pages).
+        let mut headers = self.base_headers.clone();
         if let Some(continuation) = &self.continuation {
             headers.insert(
                 constants::CONTINUATION.clone(),
