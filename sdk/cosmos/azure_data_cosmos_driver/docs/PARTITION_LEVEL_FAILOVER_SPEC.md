@@ -1282,7 +1282,7 @@ routing map. This resolved ID is passed to `execute_operation_pipeline` which se
 it on `OperationRetryState.partition_key_range_id`, enabling partition-level
 overrides from the **very first attempt**.
 
-**Cache Behaviour**:
+**Cache Behavior**:
 - On the first operation targeting a given container, the cache is empty. The driver
   fetches partition key ranges from the service (`/pkranges` changefeed endpoint),
   populates the routing map, and resolves the range ID — all before the first
