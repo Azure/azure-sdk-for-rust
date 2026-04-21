@@ -1,3 +1,16 @@
+# Performance test configuration for azure_storage_blob.
+# This file is consumed by the PerfAutomation tool in Azure/azure-sdk-tools.
+#
+# Running a single test locally with cargo bench:
+#   $env:AZURE_STORAGE_ACCOUNT_NAME = "<your-account>"
+#   cargo bench --package azure_storage_blob --bench perf -- <test_name> <args>
+#   Example: cargo bench --package azure_storage_blob --bench perf -- list_blob --count 5 --parallel 4 --duration 10
+#   Use --help to see options: cargo bench --package azure_storage_blob --bench perf -- upload_blob --help
+#
+# Running the full matrix via PerfAutomation (requires a clone of Azure/azure-sdk-tools and .NET SDK):
+#   cd <azure-sdk-tools>/tools/perf-automation/Azure.Sdk.Tools.PerfAutomation
+#   dotnet run -- -l rust --language-version N/A --tests-file <path-to-this-file> --repo-root <path-to-azure-sdk-for-rust>
+
 Service: storage-blob
 
 Project: azure-storage-blobs-perf
