@@ -12,7 +12,10 @@ on:
   reaction: eyes
   roles: all
 
-permissions: read-all
+permissions:
+  issues: read
+  pull-requests: read
+  contents: read
 
 network:
   allowed:
@@ -31,7 +34,7 @@ safe-outputs:
   assign-to-user:
     max: 1
   noop:
-    report-as-issue: false
+    report-as-issue: true
 
 tools:
   bash: false
