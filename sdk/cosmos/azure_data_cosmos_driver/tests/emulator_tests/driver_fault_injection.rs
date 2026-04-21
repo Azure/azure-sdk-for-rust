@@ -154,7 +154,7 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
     );
     let rules = vec![Arc::clone(&rule)];
 
-    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+    Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
         let container_name = context.unique_container_name();
         let container = context
             .create_container(&database, &container_name, "/pk")
@@ -189,7 +189,7 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
         );
 
         Ok(())
-    })
+    }))
     .await
 }
 

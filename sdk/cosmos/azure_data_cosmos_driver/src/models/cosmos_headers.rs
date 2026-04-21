@@ -6,54 +6,50 @@
 use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use serde::Serialize;
 
 /// Standard Cosmos DB request header names.
 ///
-/// All names are lowercase as required by [`HeaderName`]. The azure_core [`Headers`]
-/// type normalizes header names to lowercase on insertion, so lookups are case-sensitive
-/// but will always match since both sides are lowercase.
+/// All names are lowercase as required by the azure_core [`HeaderName`] type.
+/// HTTP header names are technically case-insensitive, but `azure_core` normalizes
+/// them to lowercase on insertion, so lookups are case-sensitive and will always
+/// match since both sides are lowercase.
 pub(crate) mod request_header_names {
-    use azure_core::http::headers::HeaderName;
-
-    pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-    pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-    pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
-    pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
-    pub static PREFER: HeaderName = HeaderName::from_static("prefer");
-    pub static PRIORITY_LEVEL: HeaderName = HeaderName::from_static("x-ms-cosmos-priority-level");
-    pub static THROUGHPUT_BUCKET: HeaderName =
-        HeaderName::from_static("x-ms-cosmos-throughput-bucket");
+    pub const ACTIVITY_ID: &str = "x-ms-activity-id";
+    pub const SESSION_TOKEN: &str = "x-ms-session-token";
+    pub const IF_MATCH: &str = "if-match";
+    pub const IF_NONE_MATCH: &str = "if-none-match";
+    pub const PREFER: &str = "prefer";
+    pub const OFFER_THROUGHPUT: &str = "x-ms-offer-throughput";
+    pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
+    pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
+    pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
 }
 
 /// Standard Cosmos DB response header names.
 pub(crate) mod response_header_names {
-    use azure_core::http::headers::HeaderName;
-
-    pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-    pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
-    pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-    pub static ETAG: HeaderName = HeaderName::from_static("etag");
-    pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
-    pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
-    pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
-    pub static INDEX_METRICS: HeaderName = HeaderName::from_static("x-ms-cosmos-index-utilization");
-    pub static QUERY_METRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-query-metrics");
-    pub static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
-    pub static LSN: HeaderName = HeaderName::from_static("lsn");
-    pub static OWNER_FULL_NAME: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
-    pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
-    pub static OFFER_REPLACE_PENDING: HeaderName =
-        HeaderName::from_static("x-ms-offer-replace-pending");
+    pub const ACTIVITY_ID: &str = "x-ms-activity-id";
+    pub const REQUEST_CHARGE: &str = "x-ms-request-charge";
+    pub const SESSION_TOKEN: &str = "x-ms-session-token";
+    pub const ETAG: &str = "etag";
+    pub const CONTINUATION: &str = "x-ms-continuation";
+    pub const ITEM_COUNT: &str = "x-ms-item-count";
+    pub const SUBSTATUS: &str = "x-ms-substatus";
+    pub const INDEX_METRICS: &str = "x-ms-cosmos-index-utilization";
+    pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
+    pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
+    pub const LSN: &str = "lsn";
+    pub const ITEM_LSN: &str = "x-ms-item-lsn";
+    pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
+    pub const OWNER_ID: &str = "x-ms-content-path";
+    pub const OFFER_REPLACE_PENDING: &str = "x-ms-offer-replace-pending";
 }
 
 /// Header names used by the fault injection framework.
 #[cfg(feature = "fault_injection")]
 pub(crate) mod fault_injection_header_names {
-    use azure_core::http::headers::HeaderName;
-
     /// Operation type header set on requests for fault injection rule matching.
-    pub static FAULT_INJECTION_OPERATION: HeaderName =
-        HeaderName::from_static("x-ms-fault-injection-operation");
+    pub const FAULT_INJECTION_OPERATION: &str = "x-ms-fault-injection-operation";
 }
 
 /// Cosmos request headers for operation-level customization.
@@ -70,6 +66,14 @@ pub struct CosmosRequestHeaders {
 
     /// Precondition for optimistic concurrency (`if-match` / `if-none-match`).
     pub precondition: Option<Precondition>,
+
+    /// Manual throughput in RU/s (`x-ms-offer-throughput`).
+    pub offer_throughput: Option<usize>,
+
+    /// Autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
+    ///
+    /// The driver serializes this to JSON for the header value.
+    pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
 
 impl CosmosRequestHeaders {
@@ -82,29 +86,93 @@ impl CosmosRequestHeaders {
     pub(crate) fn write_to_headers(&self, headers: &mut Headers) {
         if let Some(activity_id) = self.activity_id.as_ref() {
             headers.insert(
-                request_header_names::ACTIVITY_ID.clone(),
+                request_header_names::ACTIVITY_ID,
                 HeaderValue::from(activity_id.as_str().to_owned()),
             );
         }
         if let Some(session_token) = self.session_token.as_ref() {
             headers.insert(
-                request_header_names::SESSION_TOKEN.clone(),
+                request_header_names::SESSION_TOKEN,
                 HeaderValue::from(session_token.as_str().to_owned()),
             );
         }
         if let Some(precondition) = self.precondition.as_ref() {
             match precondition {
                 Precondition::IfMatch(etag) => headers.insert(
-                    request_header_names::IF_MATCH.clone(),
+                    request_header_names::IF_MATCH,
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
                 Precondition::IfNoneMatch(etag) => headers.insert(
-                    request_header_names::IF_NONE_MATCH.clone(),
+                    request_header_names::IF_NONE_MATCH,
                     HeaderValue::from(etag.as_str().to_owned()),
                 ),
             }
         }
+        if let Some(throughput) = self.offer_throughput {
+            headers.insert(
+                request_header_names::OFFER_THROUGHPUT,
+                HeaderValue::from(throughput.to_string()),
+            );
+        }
+        if let Some(autopilot) = self.offer_autopilot_settings.as_ref() {
+            if let Ok(json) = serde_json::to_string(autopilot) {
+                headers.insert(
+                    request_header_names::OFFER_AUTOPILOT_SETTINGS,
+                    HeaderValue::from(json),
+                );
+            }
+        }
     }
+}
+
+/// Autoscale throughput settings for the `x-ms-cosmos-offer-autopilot-settings` header.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct OfferAutoscaleSettings {
+    /// Maximum throughput in RU/s for autoscale.
+    pub max_throughput: usize,
+
+    /// Auto-upgrade policy for scaling behavior.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
+}
+
+impl OfferAutoscaleSettings {
+    /// Creates autoscale settings with the given maximum throughput.
+    pub fn new(max_throughput: usize) -> Self {
+        Self {
+            max_throughput,
+            auto_upgrade_policy: None,
+        }
+    }
+
+    /// Sets the auto-upgrade policy with the given increment percent.
+    pub fn with_increment_percent(mut self, increment_percent: usize) -> Self {
+        self.auto_upgrade_policy = Some(AutoscaleAutoUpgradePolicy {
+            throughput_policy: Some(AutoscaleThroughputPolicy { increment_percent }),
+        });
+        self
+    }
+}
+
+/// Auto-upgrade policy for autoscale throughput.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct AutoscaleAutoUpgradePolicy {
+    /// Throughput scaling policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub throughput_policy: Option<AutoscaleThroughputPolicy>,
+}
+
+/// Throughput scaling policy for autoscale.
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct AutoscaleThroughputPolicy {
+    /// Percentage to increment throughput during auto-upgrade.
+    pub increment_percent: usize,
 }
 
 /// Cosmos-specific headers extracted from HTTP response.
@@ -156,6 +224,11 @@ pub struct CosmosResponseHeaders {
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
 
+    /// Item Logical Sequence Number (`x-ms-item-lsn`).
+    ///
+    /// Only returned on item/document operations (create, read, replace, upsert, delete).
+    pub item_lsn: Option<u64>,
+
     /// Owner full name / alternate content path (`x-ms-alt-content-path`).
     ///
     /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
@@ -189,72 +262,83 @@ impl CosmosResponseHeaders {
     ///
     /// This is part of the public API to allow cross-crate access from `azure_data_cosmos`.
     pub fn from_headers(headers: &Headers) -> Self {
-        Self {
-            activity_id: headers
-                .get_optional_str(&response_header_names::ACTIVITY_ID)
-                .map(|s| ActivityId::from_string(s.to_owned())),
-            request_charge: headers
-                .get_optional_str(&response_header_names::REQUEST_CHARGE)
-                .and_then(|s| s.parse::<f64>().ok())
-                .map(RequestCharge::new),
-            session_token: headers
-                .get_optional_str(&response_header_names::SESSION_TOKEN)
-                .map(|s| SessionToken::new(s.to_owned())),
-            etag: headers
-                .get_optional_str(&response_header_names::ETAG)
-                .map(|s| ETag::new(s.to_owned())),
-            continuation: headers
-                .get_optional_str(&response_header_names::CONTINUATION)
-                .map(|s| s.to_owned()),
-            item_count: headers
-                .get_optional_str(&response_header_names::ITEM_COUNT)
-                .and_then(|s| s.parse().ok()),
-            substatus: headers
-                .get_optional_str(&response_header_names::SUBSTATUS)
-                .and_then(SubStatusCode::from_header_value),
-            index_metrics: headers
-                .get_optional_str(&response_header_names::INDEX_METRICS)
-                .and_then(|s| match STANDARD.decode(s) {
-                    Ok(bytes) => match String::from_utf8(bytes) {
-                        Ok(s) => Some(s),
+        let mut result = Self::default();
+        for (name, value) in headers.iter() {
+            match name.as_str() {
+                response_header_names::ACTIVITY_ID => {
+                    result.activity_id = Some(ActivityId::from_string(value.as_str().to_owned()));
+                }
+                response_header_names::REQUEST_CHARGE => {
+                    result.request_charge =
+                        value.as_str().parse::<f64>().ok().map(RequestCharge::new);
+                }
+                response_header_names::SESSION_TOKEN => {
+                    result.session_token = Some(SessionToken::new(value.as_str().to_owned()));
+                }
+                response_header_names::ETAG => {
+                    result.etag = Some(ETag::new(value.as_str().to_owned()));
+                }
+                response_header_names::CONTINUATION => {
+                    result.continuation = Some(value.as_str().to_owned());
+                }
+                response_header_names::ITEM_COUNT => {
+                    result.item_count = value.as_str().parse().ok();
+                }
+                response_header_names::SUBSTATUS => {
+                    result.substatus = SubStatusCode::from_header_value(value.as_str());
+                }
+                response_header_names::INDEX_METRICS => {
+                    result.index_metrics = match STANDARD.decode(value.as_str()) {
+                        Ok(bytes) => match String::from_utf8(bytes) {
+                            Ok(s) => Some(s),
+                            Err(e) => {
+                                tracing::warn!(
+                                    header = response_header_names::INDEX_METRICS,
+                                    error = %e,
+                                    "Failed to UTF-8 decode index metrics after base64 decode"
+                                );
+                                None
+                            }
+                        },
                         Err(e) => {
                             tracing::warn!(
-                                header = "x-ms-cosmos-index-utilization",
+                                header = response_header_names::INDEX_METRICS,
                                 error = %e,
-                                "Failed to UTF-8 decode index metrics after base64 decode"
+                                "Failed to base64-decode index metrics header"
                             );
                             None
                         }
-                    },
-                    Err(e) => {
-                        tracing::warn!(
-                            header = "x-ms-cosmos-index-utilization",
-                            error = %e,
-                            "Failed to base64-decode index metrics header"
-                        );
-                        None
-                    }
-                }),
-            query_metrics: headers
-                .get_optional_str(&response_header_names::QUERY_METRICS)
-                .map(|s| s.to_owned()),
-            server_duration_ms: headers
-                .get_optional_str(&response_header_names::SERVER_DURATION_MS)
-                .and_then(|s| s.parse::<f64>().ok())
-                .filter(|v| v.is_finite() && *v >= 0.0),
-            lsn: headers
-                .get_optional_str(&response_header_names::LSN)
-                .and_then(|s| s.parse().ok()),
-            owner_full_name: headers
-                .get_optional_str(&response_header_names::OWNER_FULL_NAME)
-                .map(|s| s.to_owned()),
-            owner_id: headers
-                .get_optional_str(&response_header_names::OWNER_ID)
-                .map(|s| s.to_owned()),
-            offer_replace_pending: headers
-                .get_optional_str(&response_header_names::OFFER_REPLACE_PENDING)
-                .and_then(|s| s.parse::<bool>().ok()),
+                    };
+                }
+                response_header_names::QUERY_METRICS => {
+                    result.query_metrics = Some(value.as_str().to_owned());
+                }
+                response_header_names::SERVER_DURATION_MS => {
+                    result.server_duration_ms = value
+                        .as_str()
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite() && *v >= 0.0);
+                }
+                response_header_names::LSN => {
+                    result.lsn = value.as_str().parse().ok();
+                }
+                response_header_names::ITEM_LSN => {
+                    result.item_lsn = value.as_str().parse().ok();
+                }
+                response_header_names::OWNER_FULL_NAME => {
+                    result.owner_full_name = Some(value.as_str().to_owned());
+                }
+                response_header_names::OWNER_ID => {
+                    result.owner_id = Some(value.as_str().to_owned());
+                }
+                response_header_names::OFFER_REPLACE_PENDING => {
+                    result.offer_replace_pending = value.as_str().parse::<bool>().ok();
+                }
+                _ => {}
+            }
         }
+        result
     }
 }
 
@@ -285,6 +369,7 @@ mod tests {
         );
         headers.insert("x-ms-request-duration-ms", "4.56");
         headers.insert("lsn", "42");
+        headers.insert("x-ms-item-lsn", "37");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -320,6 +405,7 @@ mod tests {
         );
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
+        assert_eq!(cosmos_headers.item_lsn, Some(37));
     }
 
     #[test]
@@ -357,6 +443,7 @@ mod tests {
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
             server_duration_ms: Some(4.56),
             lsn: Some(100),
+            item_lsn: Some(99),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
@@ -392,6 +479,7 @@ mod tests {
         assert!(headers.query_metrics.is_none());
         assert!(headers.server_duration_ms.is_none());
         assert!(headers.lsn.is_none());
+        assert!(headers.item_lsn.is_none());
     }
 
     #[test]
@@ -400,6 +488,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
 
         assert_eq!(
@@ -418,6 +508,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -439,6 +531,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -460,6 +554,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -481,6 +577,8 @@ mod tests {
             activity_id: None,
             session_token: None,
             precondition: None,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 
@@ -502,6 +600,8 @@ mod tests {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
             session_token: Some(SessionToken::new("session:100".to_string())),
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+            offer_throughput: None,
+            offer_autopilot_settings: None,
         };
         let mut headers = Headers::new();
 

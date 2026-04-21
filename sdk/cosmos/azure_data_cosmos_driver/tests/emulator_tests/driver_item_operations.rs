@@ -35,65 +35,67 @@ struct TestItem {
     ignore = "requires test_category 'emulator'"
 )]
 pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
-    DriverTestClient::run_with_unique_db(async |context, database| {
-        // Create a container
-        let container_name = context.unique_container_name();
-        let container = context
-            .create_container(&database, &container_name, "/pk")
-            .await?;
+    Box::pin(DriverTestClient::run_with_unique_db(
+        async |context, database| {
+            // Create a container
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
 
-        // Create a test item
-        let item = TestItem {
-            id: "test-doc-001".to_string(),
-            pk: "partition-1".to_string(),
-            value: "Hello, Cosmos!".to_string(),
-            count: 42,
-        };
-        let item_json = serde_json::to_vec(&item)?;
+            // Create a test item
+            let item = TestItem {
+                id: "test-doc-001".to_string(),
+                pk: "partition-1".to_string(),
+                value: "Hello, Cosmos!".to_string(),
+                count: 42,
+            };
+            let item_json = serde_json::to_vec(&item)?;
 
-        // Create the item
-        let create_result = context
-            .create_item(&container, item.pk.clone(), &item_json)
-            .await?;
+            // Create the item
+            let create_result = context
+                .create_item(&container, item.pk.clone(), &item_json)
+                .await?;
 
-        // Validate create diagnostics
-        let create_diagnostics = create_result.diagnostics();
-        context.validate_data_plane_diagnostics(create_diagnostics, 201);
+            // Validate create diagnostics
+            let create_diagnostics = create_result.diagnostics();
+            context.validate_data_plane_diagnostics(create_diagnostics, 201);
 
-        // Verify pipeline type is DataPlane
-        let requests = create_diagnostics.requests();
-        assert_eq!(requests[0].pipeline_type(), PipelineType::DataPlane);
+            // Verify pipeline type is DataPlane
+            let requests = create_diagnostics.requests();
+            assert_eq!(requests[0].pipeline_type(), PipelineType::DataPlane);
 
-        // Read the item back
-        let read_result = context
-            .read_item(&container, &item.id, item.pk.clone())
-            .await?;
+            // Read the item back
+            let read_result = context
+                .read_item(&container, &item.id, item.pk.clone())
+                .await?;
 
-        // Validate read diagnostics
-        let read_diagnostics = read_result.diagnostics();
-        context.validate_data_plane_diagnostics(read_diagnostics, 200);
+            // Validate read diagnostics
+            let read_diagnostics = read_result.diagnostics();
+            context.validate_data_plane_diagnostics(read_diagnostics, 200);
 
-        // Verify the body matches
-        let body = read_result.body();
-        let read_item: TestItem = serde_json::from_slice(body)?;
-        assert_eq!(read_item.id, item.id);
-        assert_eq!(read_item.pk, item.pk);
-        assert_eq!(read_item.value, item.value);
-        assert_eq!(read_item.count, item.count);
+            // Verify the body matches
+            let body = read_result.body();
+            let read_item: TestItem = serde_json::from_slice(body)?;
+            assert_eq!(read_item.id, item.id);
+            assert_eq!(read_item.pk, item.pk);
+            assert_eq!(read_item.value, item.value);
+            assert_eq!(read_item.count, item.count);
 
-        // Check request charge is reasonable (typically 1-5 RUs for point read)
-        let read_requests = read_diagnostics.requests();
-        assert!(
-            read_requests[0].request_charge().value() > 0.0,
-            "Request charge should be positive for reads"
-        );
-        assert!(
-            read_requests[0].request_charge().value() < 100.0,
-            "Request charge should be reasonable for point read"
-        );
+            // Check request charge is reasonable (typically 1-5 RUs for point read)
+            let read_requests = read_diagnostics.requests();
+            assert!(
+                read_requests[0].request_charge().value() > 0.0,
+                "Request charge should be positive for reads"
+            );
+            assert!(
+                read_requests[0].request_charge().value() < 100.0,
+                "Request charge should be reasonable for point read"
+            );
 
-        Ok(())
-    })
+            Ok(())
+        },
+    ))
     .await
 }
 

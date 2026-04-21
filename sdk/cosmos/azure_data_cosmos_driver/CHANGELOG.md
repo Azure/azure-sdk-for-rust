@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `item_lsn` field to `CosmosResponseHeaders` for the `x-ms-item-lsn` response header.
+
 ### Breaking Changes
 
 ### Bugs Fixed

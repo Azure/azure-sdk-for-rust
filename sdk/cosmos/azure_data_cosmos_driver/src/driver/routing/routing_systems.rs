@@ -5,6 +5,7 @@
 
 use std::{
     collections::HashMap,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -51,8 +52,8 @@ pub(crate) fn build_account_endpoint_state(
 
     AccountEndpointState {
         generation,
-        preferred_read_endpoints,
-        preferred_write_endpoints,
+        preferred_read_endpoints: preferred_read_endpoints.into(),
+        preferred_write_endpoints: preferred_write_endpoints.into(),
         unavailable_endpoints: Default::default(),
         multiple_write_locations_enabled: properties.enable_multiple_write_locations,
         default_endpoint,
@@ -72,18 +73,7 @@ fn build_preferred_endpoints(
 
     let mut endpoints = Vec::with_capacity(standard_locations.len());
     for region in standard_locations {
-        let url = match url::Url::parse(&region.database_account_endpoint) {
-            Ok(url) => url,
-            Err(err) => {
-                warn!(
-                    region = %region.name,
-                    endpoint = %region.database_account_endpoint,
-                    error = %err,
-                    "Ignoring malformed standard endpoint URL from AccountProperties"
-                );
-                continue;
-            }
-        };
+        let url = region.database_account_endpoint.url().clone();
 
         let endpoint = thin_client_urls
             .get(&region.name)
@@ -109,18 +99,7 @@ fn parse_thin_client_locations(
     let mut urls = HashMap::new();
 
     for region in thin_client_locations {
-        let url = match url::Url::parse(&region.database_account_endpoint) {
-            Ok(url) => url,
-            Err(err) => {
-                warn!(
-                    region = %region.name,
-                    endpoint = %region.database_account_endpoint,
-                    error = %err,
-                    "Ignoring malformed thin-client endpoint URL from AccountProperties"
-                );
-                continue;
-            }
-        };
+        let url = region.database_account_endpoint.url().clone();
 
         if url.scheme() != "https" {
             warn!(
@@ -156,11 +135,15 @@ pub(crate) fn mark_endpoint_unavailable(
     reason: UnavailableReason,
 ) -> AccountEndpointState {
     let mut unavailable = state.unavailable_endpoints.clone();
-    unavailable.insert(endpoint.clone(), (Instant::now(), reason));
+    unavailable.insert(endpoint.url().clone(), (Instant::now(), reason));
 
     AccountEndpointState {
+        generation: state.generation,
+        preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
+        preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
         unavailable_endpoints: unavailable,
-        ..state.clone()
+        multiple_write_locations_enabled: state.multiple_write_locations_enabled,
+        default_endpoint: state.default_endpoint.clone(),
     }
 }
 
@@ -180,8 +163,12 @@ pub(crate) fn expire_unavailable_endpoints(
         .retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < expiry_duration);
 
     AccountEndpointState {
+        generation: state.generation,
+        preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
+        preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
         unavailable_endpoints: unavailable,
-        ..state.clone()
+        multiple_write_locations_enabled: state.multiple_write_locations_enabled,
+        default_endpoint: state.default_endpoint.clone(),
     }
 }
 
