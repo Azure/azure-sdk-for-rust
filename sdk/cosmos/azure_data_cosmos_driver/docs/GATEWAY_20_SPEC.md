@@ -25,7 +25,7 @@
 
 ## 1. Overview
 
-Gateway 2.0 (formerly "thin client") is a server-side proxy that allows SDK clients to route data-plane operations through a lightweight proxy endpoint instead of directly to backend replicas. It uses RNTBD binary protocol over HTTP/2, with the proxy handling partition routing, replica selection, and load balancing.
+Gateway 2.0 (formerly "thin client") is a server-side proxy that allows SDK clients to route data-plane operations through a lightweight proxy endpoint instead of directly to backend replicas. It uses RNTBD binary serialization over the HTTP/2 protocol, with the proxy handling partition routing, replica selection, and load balancing.
 
 **Naming**: Use "Gateway 2.0" consistently in all Rust code, docs, and comments. Avoid "thin client" except when referencing Java/.NET code or existing constants (`THINCLIENT_*`).
 
@@ -44,7 +44,7 @@ Traditional Cosmos DB offers two connection modes:
 
 ### Key Benefits
 
-- **SLA latency guarantees** — Unlike traditional gateway, Gateway 2.0 provides contractual latency commitments comparable to direct mode
+- **SLA latency guarantees** — Unlike traditional gateway, Gateway 2.0 plans to provide contractual latency commitments comparable to direct mode
 - **Simplified networking** — Clients connect to a single regional proxy endpoint over HTTPS; no need to open firewall rules to individual backend replicas
 - **Reduced SDK complexity** — The proxy handles replica discovery, connection management, and partition-level routing; the SDK only needs RNTBD serialization and endpoint selection
 - **HTTP/2 multiplexing** — Multiple concurrent operations share a single TCP connection, reducing connection overhead vs. direct mode's per-replica TCP connections
@@ -59,6 +59,7 @@ Gateway 2.0 moves partition-level routing intelligence from the SDK into the ser
 - Regional endpoint selection
 - RNTBD serialization
 - EPK header injection
+- Cross-partition query aggregation (unchanged from Gateway/Direct modes — the SDK continues to issue per-partition sub-queries and aggregate results client-side; Gateway 2.0 does not server-side aggregate)
 
 **Gateway 2.0 Proxy (Server-Side):**
 
@@ -72,7 +73,7 @@ Gateway 2.0 moves partition-level routing intelligence from the SDK into the ser
 | --- | --- | --- | --- |
 | Latency SLA | No | **Yes** | Yes |
 | Simple Network | Yes | Yes | No |
-| Protocol | HTTP/REST | RNTBD/HTTP2 | RNTBD/TCP |
+| Protocol | REST/HTTP | RNTBD/HTTP2 | RNTBD/TCP |
 | Replica Mgmt | Gateway/Proxy | Proxy | SDK |
 | Partition Route | Gateway/Proxy | Proxy | SDK |
 | Regional Route | SDK | SDK | SDK |
