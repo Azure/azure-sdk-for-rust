@@ -19,7 +19,6 @@ use super::ThroughputPoller;
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
     link: ResourceLink,
-    containers_link: ResourceLink,
     database_id: String,
     context: ClientContext,
     database_ref: DatabaseReference,
@@ -29,13 +28,11 @@ impl DatabaseClient {
     pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
-        let containers_link = link.feed(ResourceType::Containers);
         let database_ref =
             DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
 
         Self {
             link,
-            containers_link,
             database_id,
             context,
             database_ref,

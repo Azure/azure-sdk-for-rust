@@ -7,7 +7,6 @@ use crate::{
     clients::ClientContext,
     options::ThroughputControlGroupOptions,
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
-    resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
@@ -449,7 +448,6 @@ impl CosmosClientBuilder {
             .await?;
 
         Ok(CosmosClient {
-            databases_link: ResourceLink::root(ResourceType::Databases),
             context: ClientContext {
                 pipeline,
                 driver,

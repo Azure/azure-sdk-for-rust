@@ -4,7 +4,6 @@
 use crate::{
     clients::{ClientContext, DatabaseClient},
     models::{DatabaseProperties, ResourceResponse},
-    resource_context::ResourceLink,
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
 use azure_core::http::Url;
@@ -62,7 +61,6 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// ```
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    pub(crate) databases_link: ResourceLink,
     pub(crate) context: ClientContext,
 }
 
