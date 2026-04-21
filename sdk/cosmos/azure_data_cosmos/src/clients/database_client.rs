@@ -9,7 +9,6 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
-use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 use azure_data_cosmos_driver::options::OperationOptions;
 

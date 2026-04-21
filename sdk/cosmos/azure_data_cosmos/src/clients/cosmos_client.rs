@@ -7,7 +7,7 @@ use crate::{
     resource_context::ResourceLink,
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
-use azure_core::http::{Context, Url};
+use azure_core::http::Url;
 use azure_data_cosmos_driver::models::CosmosOperation;
 use azure_data_cosmos_driver::options::OperationOptions;
 use serde::Serialize;
