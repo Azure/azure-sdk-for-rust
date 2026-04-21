@@ -135,7 +135,7 @@ Invariants this spec locks in:
 4. **`x-ms-cosmos-use-thinclient` header** on account metadata requests (to trigger thin-client endpoint advertisement)
 5. **SDK-to-driver cutover for EPK** — SDK call sites (`feed_range_from_partition_key`, `container_connection.rs:87`) still call the broken SDK hash; they must route through the driver's `EffectivePartitionKey::compute()`
 6. **Session token handling** — Gateway 2.0 may handle session tokens differently (partition-key-range-id prefix)
-7. **Gateway 2.0 specific fallback** — Failure-driven fallback from Gateway 2.0 to standard gateway (see Phase 4)
+7. **Rollout/cutover policy clarification** — Document the intended enablement and cutover behavior (see Phase 4); there is intentionally **no** Gateway 2.0-specific failure-driven fallback to the standard gateway
 8. **Integration/E2E tests** — No gateway 2.0 test coverage beyond the routing-systems unit tests
 9. **Fault injection** — No gateway 2.0 fault injection scenarios
 10. **Constants cross-crate visibility** — `THINCLIENT_PROXY_*` and `START_EPK` / `END_EPK` currently live in `azure_data_cosmos::constants` but Phase 2 injects headers from the driver crate. Options (to decide in Phase 2): (a) move constants to `azure_data_cosmos_driver::constants` and re-export from SDK, (b) re-export SDK constants through a driver-side `pub use`, or (c) duplicate. Recommend (a).
