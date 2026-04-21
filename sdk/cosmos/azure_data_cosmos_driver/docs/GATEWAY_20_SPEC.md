@@ -362,17 +362,9 @@ Retry policies are identical between Gateway 2.0 and standard gateway modes in b
 
 #### What Will Be Done
 
-- **Timeout policy** — Gateway 2.0 requests use the timeout regime defined in `TRANSPORT_PIPELINE_SPEC.md` (single timeout, not bifurcated). Do not introduce Gateway-2.0-specific timeouts.
-- **Read timeout cross-region retry** — On HTTP 408 with `GATEWAY_ENDPOINT_READ_TIMEOUT` sub-status, retry read operations in the next preferred region.
-- **Service unavailable (503)** — Mark endpoint unavailable for partition key range, then retry. Follow Java's conservative approach: only retry server-returned 503 or SDK-generated 503 with `SERVER_GENERATED_410` sub-status.
-- **Gone (410)** — Action depends on sub-status code:
-  - `PARTITION_KEY_RANGE_GONE` (1002): Refresh PKRange cache, retry
-  - `COMPLETING_SPLIT_OR_MERGE` (1007): Refresh PKRange cache, retry
-  - `COMPLETING_PARTITION_MIGRATION` (1008): Refresh PKRange cache, retry
-  - `NAME_CACHE_IS_STALE` (1000): Refresh **collection** cache (NOT PKRange), retry
-  - Other sub-statuses: Retry with backoff, no cache refresh
+- **Timeout policy** — Gateway 2.0 requests use the timeout regime defined in `TRANSPORT_PIPELINE_SPEC.md` (single timeout, not bifurcated). Do not introduce Gateway-2.0-specific timeouts in this work; any Gateway 2.0–specific timeout tuning will be addressed in a follow-up.
 - **Gateway 2.0 eligibility fallback** — see "Fallback taxonomy" below.
-- **Partition-Level Failover interaction** — when PLF (see `PARTITION_LEVEL_FAILOVER_SPEC.md`) selects a region whose `CosmosEndpoint` has no `gateway20_url`, **PLF wins**: the request falls back to standard gateway **for that partition** until PLF releases its override. PLF precedence prevents Gateway 2.0 from overriding an explicit per-partition region choice.
+- **Partition-Level Failover interaction** — when PLF (see `PARTITION_LEVEL_FAILOVER_SPEC.md`) selects a region, the per-request decision is: if that region's `CosmosEndpoint` exposes a `gateway20_url`, the request uses Gateway 2.0; if it does not, the request falls back to standard gateway for that partition until PLF releases its override. PLF chooses the region; Gateway 2.0 is preferred whenever it is available in that region.
 
 #### Fallback taxonomy
 
