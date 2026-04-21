@@ -138,7 +138,7 @@ impl DatabaseClient {
             self.context.driver.clone(),
             factory,
             query.into(),
-            std::collections::HashMap::new(),
+            Default::default(),
             None,
         )
         .into_stream()

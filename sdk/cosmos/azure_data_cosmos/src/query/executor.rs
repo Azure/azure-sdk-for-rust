@@ -3,9 +3,9 @@
 
 //! Query execution implementation.
 
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
-use azure_core::http::headers::{Header, HeaderName, HeaderValue};
+use azure_core::http::headers::{Header, HeaderValue};
 use azure_data_cosmos_driver::{
     models::{CosmosOperation, SessionToken},
     options::OperationOptions as DriverOperationOptions,
@@ -25,7 +25,7 @@ pub struct QueryExecutor<T: DeserializeOwned + Send> {
     driver: Arc<CosmosDriver>,
     operation_factory: Box<dyn Fn() -> CosmosOperation + Send>,
     query: Query,
-    custom_headers: HashMap<HeaderName, HeaderValue>,
+    base_options: DriverOperationOptions,
     session_token: Option<SessionToken>,
     continuation: Option<String>,
     complete: bool,
@@ -42,14 +42,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         driver: Arc<CosmosDriver>,
         operation_factory: impl Fn() -> CosmosOperation + Send + 'static,
         query: Query,
-        custom_headers: HashMap<HeaderName, HeaderValue>,
+        base_options: DriverOperationOptions,
         session_token: Option<SessionToken>,
     ) -> Self {
         Self {
             driver,
             operation_factory: Box::new(operation_factory),
             query,
-            custom_headers,
+            base_options,
             session_token,
             continuation: None,
             complete: false,
@@ -89,7 +89,11 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         }
 
         // Build custom headers for the driver operation options
-        let mut headers = HashMap::new();
+        let mut headers = self
+            .base_options
+            .custom_headers()
+            .cloned()
+            .unwrap_or_default();
 
         // Query-specific headers
         headers.insert(constants::QUERY.clone(), HeaderValue::from_static("True"));
@@ -106,12 +110,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             );
         }
 
-        // Merge user-provided custom headers (they take precedence)
-        for (name, value) in &self.custom_headers {
-            headers.insert(name.clone(), value.clone());
-        }
-
-        let op_options = DriverOperationOptions::default().with_custom_headers(headers);
+        let op_options = self.base_options.clone().with_custom_headers(headers);
 
         // Execute through the driver
         let driver_response = self.driver.execute_operation(operation, op_options).await?;

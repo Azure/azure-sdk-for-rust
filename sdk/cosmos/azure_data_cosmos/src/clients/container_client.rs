@@ -705,17 +705,11 @@ impl ContainerClient {
         let factory =
             move || CosmosOperation::query_items(container_ref.clone(), driver_pk.clone());
 
-        let custom_headers = options
-            .operation
-            .custom_headers()
-            .cloned()
-            .unwrap_or_default();
-
         crate::query::executor::QueryExecutor::new(
             self.context.driver.clone(),
             factory,
             query,
-            custom_headers,
+            options.operation,
             options.session_token,
         )
         .into_stream()
