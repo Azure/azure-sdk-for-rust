@@ -481,7 +481,7 @@ fn resolve_endpoint(
 
         // Track the first unavailable-but-not-excluded endpoint so we can
         // de-prioritize it rather than skip it entirely.  This matches the
-        // SDK behaviour: [available] → [unavailable regional] → global.
+        // SDK behavior: [available] → [unavailable regional] → global.
         if first_unavailable.is_none() {
             first_unavailable = Some(candidate.clone());
         }

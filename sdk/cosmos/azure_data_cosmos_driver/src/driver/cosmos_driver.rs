@@ -947,7 +947,7 @@ impl CosmosDriver {
         continuation: Option<String>,
     ) -> Option<PkRangeFetchResult> {
         // Build the operation through the standard pipeline to get correct
-        // URL construction, signing, and retry behaviour.
+        // URL construction, signing, and retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
 
         // Set changefeed If-None-Match precondition for continuation.
