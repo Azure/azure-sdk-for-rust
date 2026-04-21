@@ -443,7 +443,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 - Single-region gateway 2.0
 - Multi-region gateway 2.0 with failover
-- Gateway 2.0 + standard gateway fallback (both eligibility and failure-driven)
+- Gateway 2.0 + standard gateway eligibility fallback (per-request only; normal retries still apply)
 
 **Test Suites:**
 
