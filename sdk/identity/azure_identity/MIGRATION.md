@@ -41,19 +41,15 @@ The crate name remains `azure_identity`. Update the version:
 
 ```diff
  [dependencies]
--- azure_identity = "0.21"
--+ azure_identity = "0.35"
-+- azure_identity = "0.21"
-++ azure_identity = "0.35"
+- azure_identity = "0.21"
++ azure_identity = "0.35"
 ```
 
 If you were using `azure_sdk_auth_aad` (community era):
 
 ```diff
--- azure_sdk_auth_aad = "0.47"
--+ azure_identity = "0.35"
-+- azure_sdk_auth_aad = "0.47"
-++ azure_identity = "0.35"
+- azure_sdk_auth_aad = "0.47"
++ azure_identity = "0.35"
 ```
 
 ### use Statements and Module Layout
