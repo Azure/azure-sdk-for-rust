@@ -475,6 +475,8 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         expected_stage_block_count
     );
 
+    container_client.delete(None).await?;
+
     Ok(())
 }
 
