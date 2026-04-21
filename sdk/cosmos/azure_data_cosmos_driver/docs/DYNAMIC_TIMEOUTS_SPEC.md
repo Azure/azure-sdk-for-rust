@@ -60,8 +60,8 @@ add latency to the common case.
 - **User-facing per-attempt knobs**: Users do not configure individual ladder tiers, the
   per-attempt timeout, or the timeout-retry budget directly. Their only timeout controls are
   client-level min/max bounds via `ConnectionPoolOptions` (which clamp the ladder) and a per-call
-  end-to-end deadline via `OperationOptions::with_end_to_end_latency_policy()` (which always
-  wins). This keeps the user surface narrow and avoids exposing an internal-only escalation
+  end-to-end deadline via `OperationOptions::new().with_end_to_end_latency_policy(...)` (which
+  always wins). This keeps the user surface narrow and avoids exposing an internal-only escalation
   schedule that may evolve.
 - **Query plan timeout escalation**: Deferred until query plan execution is implemented.
 
@@ -182,12 +182,16 @@ backend-side (e.g., cross-partition query fan-out, throttled partition) and need
 budget. An intermediate step would just delay the inevitable success or failure without adding
 signal. The 65s value matches `max_dataplane_request_timeout`.
 
-**Future: Thin client (Gateway 2.0) ladder** *(Status: deferred — implementation lands with the
-Gateway 2.0 cutover; the driver currently has no thin-client dispatch path even though
-`HttpClientFactory::dataplane_gateway20()` exists)*: When thin client mode is implemented, data
-plane operations can use a tighter ladder of **6s → 6s → 10s**. The gateway performs server-side
-retries on behalf of the client within the first 6s window, so a second attempt at 6s is
-appropriate before escalating to 10s.
+**Future: Thin client ladder for Gateway20** *(Status: deferred)*: The current codebase already
+supports the Gateway20 transport via `HttpClientConfig::dataplane_gateway20(...)`, with dispatch
+through `AdaptiveTransport::gateway20(...)` / `TransportMode::Gateway20`. In this spec, "thin
+client" refers to a future Gateway20 mode with distinct retry semantics (for example,
+gateway-managed retries or a separate binary-protocol path), not merely the existing HTTP/2
+prior-knowledge Gateway20 transport. If that future thin-client mode is introduced, data plane
+operations can use a tighter ladder of **6s → 6s → 10s**. Until then, the existing Gateway20
+transport continues to use the standard data-plane timeout ladder. In the future thin-client
+mode, the gateway performs server-side retries on behalf of the client within the first 6s
+window, so a second attempt at 6s is appropriate before escalating to 10s.
 
 ### Metadata Request Timeout Ladder
 
@@ -473,11 +477,11 @@ ShardedHttpTransport::send(req, attempt_timeout, …)
   reqwest::RequestBuilder::timeout(attempt_timeout).send().await
 ```
 
-The current signatures of `AdaptiveTransport::send_with_dispatch()` (`adaptive_transport.rs:102`)
-and `ShardedHttpTransport::send()` (`sharded_transport.rs:102`) take only `&Request`; they will
-gain a `attempt_timeout: Duration` parameter. The hedging path (`adaptive_transport.rs:122`) gets
-the same parameter and applies tier-0 (`ladder[0]`) per [§5 "Hedging and Timeout Ladder
-Position"](#hedging-and-timeout-ladder-position).
+The current signatures of `AdaptiveTransport::send_with_dispatch()` and
+`ShardedHttpTransport::send()` take only `&Request`; they will gain an
+`attempt_timeout: Duration` parameter. The future hedging path in `AdaptiveTransport` (not yet
+implemented) gets the same parameter and applies tier-0 (`ladder[0]`) per [§5 "Hedging and Timeout
+Ladder Position"](#hedging-and-timeout-ladder-position).
 
 ### Reaching `reqwest::RequestBuilder::timeout()` from the Driver
 
@@ -568,7 +572,7 @@ let options = OperationOptions::new()
 // Attempt 0: ladder says 6s  → clamped to min(6s, 10s) = 6s  → reqwest timeout = 6s
 // Attempt 1: ladder says 10s → clamped to min(10s, 10s) = 10s → reqwest timeout = 10s
 // Attempt 2: ladder says 65s → clamped to min(65s, 10s) = 10s → reqwest timeout = 10s
-// All attempts also subject to the 30s e2e deadline (request.deadline, unmutated).
+// All attempts also subject to the 30s e2e deadline (request.deadline, unchanged).
 ```
 
 #### Required Changes (driver-internal only)
@@ -663,29 +667,43 @@ networks) may see persistent connection failures at 1s.
 
 ### Design: Failure-Rate Adaptive Tuning
 
-The connection timeout starts at **1s** (the aggressive default) and is **adaptively increased to
-5s** if the `ShardedHttpTransport` observes a sustained connection failure rate above a threshold.
-This is a **one-time, persistent transition** — not a per-retry escalation.
+The connection timeout starts from an aggressive **1s target**, but the effective initial value is
+the 1s target **clamped to the configured connect-timeout bounds** from
+`ConnectionPoolOptions`. In other words:
+
+- `initial_connect_timeout = clamp(1s, min_connect_timeout(), max_connect_timeout())`
+- `escalated_connect_timeout = max_connect_timeout()`
+
+If the configured `max_connect_timeout()` is below 1s, the initial timeout is that configured max,
+so the adaptive mechanism does not begin above the allowed upper bound. Likewise,
+`min_connect_timeout()` participates as the lower bound for the initial value, so the initial
+timeout is always consistent with `ConnectionPoolOptions` validation.
+
+On sustained connection failures observed by `ShardedHttpTransport`, the client transitions once
+from the clamped initial timeout to the configured `max_connect_timeout()`. This is a **one-time,
+persistent transition** — not a per-retry escalation. In the common default configuration, this
+remains a transition from 1s to 5s.
 
 **Reconciliation with existing config**: The existing `ConnectionPoolOptions::max_connect_timeout()`
 defaults to 5s and is currently used directly as the `reqwest::Client` connect timeout. This spec
-introduces a new internal **initial** connect timeout of 1s that starts below the pool max. The
-adaptive mechanism transitions from this 1s initial value to the configured
-`max_connect_timeout()` (5s) on sustained connection failures. The pool's `max_connect_timeout`
-remains the upper bound — the adaptive mechanism never exceeds it.
+introduces a new internal **initial** connect timeout derived from the 1s aggressive default, but
+clamped to `ConnectionPoolOptions::{min,max}_connect_timeout()`. The adaptive mechanism then
+transitions from that clamped initial value to the configured `max_connect_timeout()` on sustained
+connection failures. The pool's configured bounds remain authoritative throughout — the adaptive
+mechanism never starts outside them and never exceeds the configured max.
 
 ```text
-Normal state: connect_timeout = 1s
-                    │
-                    ▼
-        ┌───────────────────────┐
-        │ Connection failure    │
-        │ rate exceeds          │──── YES ───▶ connect_timeout = 5s
-        │ threshold?            │             (create new HttpClient)
-        └───────────────────────┘
-                    │ NO
-                    ▼
-              Keep 1s
+Normal state: connect_timeout = clamp(1s, min_connect_timeout, max_connect_timeout)
+                                  │
+                                  ▼
+                      ┌───────────────────────┐
+                      │ Connection failure    │
+                      │ rate exceeds          │──── YES ───▶ connect_timeout = max_connect_timeout
+                      │ threshold?            │             (create new HttpClient)
+                      └───────────────────────┘
+                                  │ NO
+                                  ▼
+                    Keep clamped initial timeout
 ```
 
 ### Key Properties
