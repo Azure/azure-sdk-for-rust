@@ -6,7 +6,6 @@
 use crate::feed_range::FeedRange;
 use azure_core::error::ErrorKind;
 use azure_data_cosmos_driver::models::{SessionToken, SessionTokenSegment};
-use std::collections::HashMap;
 
 /// Returns `true` if the session token string contains multiple comma-separated segments.
 fn is_compound(token: &str) -> bool {
@@ -266,28 +265,15 @@ fn split_compound_tokens(ranges_and_tokens: &[(FeedRange, String)]) -> Vec<Strin
 }
 
 /// Phase 4: merge session token segments that share the same partition key range ID.
-fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<Vec<String>> {
-    let mut pk_order: Vec<String> = Vec::new();
-    let mut pk_map: HashMap<String, SessionTokenSegment> = HashMap::new();
-
-    for token in &tokens {
-        let seg: SessionTokenSegment = token.parse()?;
-        let pk_id = seg.pk_range_id().to_owned();
-        match pk_map.get_mut(&pk_id) {
-            Some(existing) => {
-                existing.merge_value(&seg);
-            }
-            None => {
-                pk_order.push(pk_id.clone());
-                pk_map.insert(pk_id, seg);
-            }
-        }
+///
+/// Delegates to `SessionToken::merge()` on the driver side so that token format
+/// details stay encapsulated.
+fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionToken> {
+    let mut result = SessionToken::new(tokens[0].clone());
+    for t in &tokens[1..] {
+        result = result.merge(&SessionToken::new(t.clone()))?;
     }
-
-    Ok(pk_order
-        .iter()
-        .filter_map(|id| pk_map.get(id).map(|seg| seg.to_string()))
-        .collect())
+    Ok(result)
 }
 
 /// Gets the most up-to-date session token from a list of feed range and session token pairs
@@ -362,10 +348,7 @@ pub(crate) fn get_latest_session_token(
     }
 
     // Step 5: Merge segments with same partition key range ID
-    let merged = merge_tokens_by_partition(remaining)?;
-
-    // Step 6: Compound the remaining segments
-    Ok(SessionToken::new(merged.join(",")))
+    merge_tokens_by_partition(remaining)
 }
 
 #[cfg(test)]
