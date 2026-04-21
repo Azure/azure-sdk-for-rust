@@ -1481,7 +1481,8 @@ mod tests {
             preferred_read_endpoints: vec![
                 unavailable_endpoint.clone(),
                 available_endpoint.clone(),
-            ].into(),
+            ]
+            .into(),
             preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
