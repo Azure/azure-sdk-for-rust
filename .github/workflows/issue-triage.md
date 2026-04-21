@@ -34,7 +34,7 @@ safe-outputs:
   assign-to-user:
     max: 1
   noop:
-    report-as-issue: true
+    report-as-issue: false
 
 tools:
   bash: false
