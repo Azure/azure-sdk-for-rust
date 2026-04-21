@@ -35,10 +35,8 @@ The crate name remains `azure_core`. Update the version in your `Cargo.toml`:
 
 ```diff
  [dependencies]
--- azure_core = "0.21"
--+ azure_core = "0.35"
-+- azure_core = "0.21"
-++ azure_core = "0.35"
+- azure_core = "0.21"
++ azure_core = "0.35"
 ```
 
 The default features have changed significantly. In ≤0.21, you typically needed to opt in to an HTTP backend. In v0.35, the defaults include `reqwest`, `reqwest_rustls`, and `tokio`:
@@ -55,10 +53,8 @@ azure_core = { version = "0.35", default-features = false, features = ["reqwest"
 If you were using the community-era `azure_sdk_core`, replace it entirely:
 
 ```diff
--- azure_sdk_core = "0.43"
--+ azure_core = "0.35"
-+- azure_sdk_core = "0.43"
-++ azure_core = "0.35"
+- azure_sdk_core = "0.43"
++ azure_core = "0.35"
 ```
 
 ### use Statements and Module Layout
