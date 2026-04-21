@@ -185,6 +185,39 @@ where
                 break;
             }
 
+            // BUG FIX: Deadlock when total_chunks > max_buffers (parallel * 2).
+            //
+            // The dispatch loop above is gated by `drain.currently_accepting()`,
+            // which returns `drain_pos .. drain_pos + max_buffers`.  When there
+            // are more chunks than max_buffers, the dispatch loop stops once
+            // next_task_index reaches the upper bound of that window.
+            //
+            // After yielding, drain_pos advances, which shifts the accepting
+            // window forward — potentially making room for more tasks.  Without
+            // this `continue`, we fall through to `await_message`, which blocks
+            // on the channel.  If all previously-dispatched tasks have already
+            // completed and sent their messages (active == 0), no new message
+            // will ever arrive, causing a permanent hang.
+            //
+            // Observed in CI: parallel=8, partition_len=31, 1024-byte blob →
+            // 34 chunks, max_buffers=16.  After draining to position 26 with
+            // active=0, chunks 26–33 were never dispatched and the stream
+            // blocked forever on `await_message`.
+            //
+            // Hypothesis (after a little chat with good ol' Copilot)
+            // This is a race condition that reproduces reliably in CI because
+            // the test proxy returns responses almost instantly — tasks
+            // complete in microseconds, so by the time the stream loop yields
+            // and re-checks, every dispatched task has already finished and
+            // the channel is drained (active == 0).  Against real Azure Blob
+            // Storage, network latency keeps at least one task in-flight at
+            // the critical moment, so its eventual message unblocks the loop
+            // and the next iteration dispatches the remaining chunks.  This
+            // explains why the bug was not caught earlier.
+            if yielded_count > 0 && !remaining_ranges.is_empty() {
+                continue;
+            }
+
             // max tasks are spawned and sequential ready bytes already returned
             // this will not change until either:
             //   1. a task sends a message through this channel

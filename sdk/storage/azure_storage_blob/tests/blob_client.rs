@@ -979,54 +979,32 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
 
-        // Per-iteration timeout to isolate which iteration hangs and collect diagnostics.
-        let iter_result = time::timeout(Duration::from_secs(60), async {
-            tracing::info!(iteration, "calling download");
-            let mut download_stream = blob_client
-                .download(Some(BlobClientDownloadOptions {
-                    partition_size: Some(NonZero::new(partition_len).unwrap()),
-                    parallel: Some(NonZero::new(parallel).unwrap()),
-                    range: download_range.map(|r| r.0..r.1),
-                    ..Default::default()
-                }))
-                .await?
-                .body;
+        tracing::info!(iteration, "calling download");
+        let mut download_stream = blob_client
+            .download(Some(BlobClientDownloadOptions {
+                partition_size: Some(NonZero::new(partition_len).unwrap()),
+                parallel: Some(NonZero::new(parallel).unwrap()),
+                range: download_range.map(|r| r.0..r.1),
+                ..Default::default()
+            }))
+            .await?
+            .body;
 
-            tracing::info!(iteration, "streaming download chunks");
-            let mut downloaded_data = BytesMut::new();
-            let mut chunk_count = 0usize;
-            while let Some(bytes) = download_stream.try_next().await? {
-                chunk_count += 1;
-                tracing::info!(iteration, chunk_count, len = bytes.len(), "received chunk");
-                downloaded_data.put(bytes);
-            }
-            tracing::info!(
-                iteration,
-                chunk_count,
-                total_bytes = downloaded_data.len(),
-                "download complete"
-            );
-            Ok::<_, Box<dyn Error>>(downloaded_data.freeze())
-        })
-        .await;
-
-        let downloaded_data = match iter_result {
-            Ok(Ok(data)) => data,
-            Ok(Err(e)) => return Err(e),
-            Err(_) => {
-                tracing::error!(
-                    iteration,
-                    parallel,
-                    partition_len,
-                    ?download_range,
-                    "managed download iteration timed out after 60s"
-                );
-                return Err(format!(
-                    "iteration {iteration} (parallel={parallel}, partition_len={partition_len}) timed out after 60s"
-                )
-                .into());
-            }
-        };
+        tracing::info!(iteration, "streaming download chunks");
+        let mut downloaded_data = BytesMut::new();
+        let mut chunk_count = 0usize;
+        while let Some(bytes) = download_stream.try_next().await? {
+            chunk_count += 1;
+            tracing::info!(iteration, chunk_count, len = bytes.len(), "received chunk");
+            downloaded_data.put(bytes);
+        }
+        tracing::info!(
+            iteration,
+            chunk_count,
+            total_bytes = downloaded_data.len(),
+            "download complete"
+        );
+        let downloaded_data = downloaded_data.freeze();
 
         assert_eq!(
             &downloaded_data,

@@ -63,61 +63,29 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     let setup = match inputs.next() {
         None if recorded_attrs.live => quote! {
             ::azure_core_test::__macro_support::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
-            let __test_future = async {
-                #fn_name().await
-            };
-            match ::tokio::time::timeout(
-                ::std::time::Duration::from_secs(300),
-                __test_future,
-            ).await {
-                Ok(result) => {
-                    if let Err(e) = &result {
-                        ::azure_core_test::__macro_support::tracing::error!("[recorded::test] finished '{}' in {} (err: {e})", #fn_name_str, file!());
-                    }
-                    result
-                }
-                Err(_) => {
-                    ::azure_core_test::__macro_support::tracing::error!("!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit", #fn_name_str, file!());
-                    Err(::azure_core::Error::with_message(
-                        ::azure_core::error::ErrorKind::Other,
-                        format!("test '{}' in {} timed out after 300s", #fn_name_str, file!()),
-                    ).into())
-                }
+            let result = #fn_name().await;
+            if let Err(e) = &result {
+                ::azure_core_test::__macro_support::tracing::error!("[recorded::test] finished '{}' in {} (err: {e})", #fn_name_str, file!());
             }
+            result
         },
         Some(FnArg::Typed(PatType { ty, .. })) if is_test_context(ty.as_ref()) => {
             let test_mode = test_mode_to_tokens(test_mode);
             quote! {
                 ::azure_core_test::__macro_support::tracing::info!("[recorded::test] starting '{}' in {}", #fn_name_str, file!());
-                let __test_future = async {
-                    #[allow(dead_code)]
-                    let mut ctx = ::azure_core_test::recorded::start(
-                        #test_mode,
-                        env!("CARGO_MANIFEST_DIR"),
-                        file!(),
-                        stringify!(#fn_name),
-                        ::std::option::Option::None,
-                    ).await?;
-                    #fn_name(ctx).await
-                };
-                match ::tokio::time::timeout(
-                    ::std::time::Duration::from_secs(300),
-                    __test_future,
-                ).await {
-                    Ok(result) => {
-                        if let Err(e) = &result {
-                            ::azure_core_test::__macro_support::tracing::error!("[recorded::test] finished '{}' in {} (err: {e})", #fn_name_str, file!());
-                        }
-                        result
-                    }
-                    Err(_) => {
-                        ::azure_core_test::__macro_support::tracing::error!("!!!! TIMEOUT !!!! test '{}' in {} exceeded 300s hard limit", #fn_name_str, file!());
-                        Err(::azure_core::Error::with_message(
-                            ::azure_core::error::ErrorKind::Other,
-                            format!("test '{}' in {} timed out after 300s", #fn_name_str, file!()),
-                        ).into())
-                    }
+                #[allow(dead_code)]
+                let mut ctx = ::azure_core_test::recorded::start(
+                    #test_mode,
+                    env!("CARGO_MANIFEST_DIR"),
+                    file!(),
+                    stringify!(#fn_name),
+                    ::std::option::Option::None,
+                ).await?;
+                let result = #fn_name(ctx).await;
+                if let Err(e) = &result {
+                    ::azure_core_test::__macro_support::tracing::error!("[recorded::test] finished '{}' in {} (err: {e})", #fn_name_str, file!());
                 }
+                result
             }
         }
         _ => {
