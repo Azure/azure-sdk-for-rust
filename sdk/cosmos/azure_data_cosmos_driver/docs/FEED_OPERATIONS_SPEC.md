@@ -190,17 +190,8 @@ account metadata changes, falling back to a full re-plan.
 
 This optimization is not required for correctness — the stateless model works correctly
 today — but should be considered for performance-sensitive workloads with many small pages.
-
-### Open Issue: Backend Query Plan Caching
-
-For cross-partition queries, the Planner fetches a **backend query plan** from the service
-(an HTTP request to get the rewritten query and execution metadata). In the stateless model,
-this fetch recurs on every page — a redundant network round trip, since the backend query
-plan does not change between pages of the same query. A future optimization should cache
-the backend query plan (e.g., on the `ContinuationToken` or via a separate cache keyed by
-query text + container RID) so that subsequent pages skip the query plan fetch. This is
-orthogonal to the cached `OperationPlan` optimization above: the operation plan depends on
-partition key ranges (which may split), but the backend query plan does not.
+The cached operation plan subsumes the backend query plan (which the Planner consumes during
+planning and does not need afterward), so no separate query plan caching is needed.
 
 ---
 
