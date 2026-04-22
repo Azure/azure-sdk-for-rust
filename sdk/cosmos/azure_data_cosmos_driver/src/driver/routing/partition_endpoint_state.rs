@@ -97,7 +97,7 @@ pub(crate) struct PartitionFailoverEntry {
 /// Configuration for partition-level failover, read once at construction.
 #[derive(Clone, Debug)]
 pub(crate) struct PartitionFailoverConfig {
-    /// Read failures before circuit trips (default: 5).
+    /// Read failures before circuit trips (default: 10).
     pub read_failure_threshold: i32,
 
     /// Write failures before circuit trips (default: 5).
@@ -112,19 +112,19 @@ pub(crate) struct PartitionFailoverConfig {
     /// Interval for the background failback sweep (default: 300s).
     pub failback_sweep_interval: Duration,
 
-    /// Whether PPCB is enabled via options (default: true).
+    /// Whether PPCB is enabled via options (default: false).
     pub circuit_breaker_option_enabled: bool,
 }
 
 impl Default for PartitionFailoverConfig {
     fn default() -> Self {
         Self {
-            read_failure_threshold: 5,
+            read_failure_threshold: 10,
             write_failure_threshold: 5,
             counter_reset_window: Duration::from_secs(5 * 60),
             partition_unavailability_duration: Duration::from_secs(5),
             failback_sweep_interval: Duration::from_secs(300),
-            circuit_breaker_option_enabled: true,
+            circuit_breaker_option_enabled: false,
         }
     }
 }
@@ -165,7 +165,7 @@ impl PartitionFailoverConfig {
         let circuit_breaker_option_enabled = view
             .per_partition_circuit_breaker_enabled()
             .copied()
-            .unwrap_or(true);
+            .unwrap_or(false);
 
         Self {
             read_failure_threshold,
@@ -185,7 +185,7 @@ mod tests {
     #[test]
     fn default_config_values() {
         let config = PartitionFailoverConfig::default();
-        assert_eq!(config.read_failure_threshold, 5);
+        assert_eq!(config.read_failure_threshold, 10);
         assert_eq!(config.write_failure_threshold, 5);
         assert_eq!(config.counter_reset_window, Duration::from_secs(300));
         assert_eq!(
@@ -193,7 +193,7 @@ mod tests {
             Duration::from_secs(5)
         );
         assert_eq!(config.failback_sweep_interval, Duration::from_secs(300));
-        assert!(config.circuit_breaker_option_enabled);
+        assert!(!config.circuit_breaker_option_enabled);
     }
 
     #[test]
@@ -202,7 +202,7 @@ mod tests {
         assert!(state.failover_overrides.is_empty());
         assert!(state.circuit_breaker_overrides.is_empty());
         assert!(!state.per_partition_automatic_failover_enabled);
-        assert!(state.per_partition_circuit_breaker_enabled);
-        assert!(state.config.circuit_breaker_option_enabled);
+        assert!(!state.per_partition_circuit_breaker_enabled);
+        assert!(!state.config.circuit_breaker_option_enabled);
     }
 }

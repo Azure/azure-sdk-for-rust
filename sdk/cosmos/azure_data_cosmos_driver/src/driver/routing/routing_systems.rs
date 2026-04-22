@@ -212,16 +212,16 @@ pub(crate) fn is_eligible_for_ppcb(
         && account_state.preferred_read_endpoints.len() > 1
 }
 
-/// Returns `true` if the circuit breaker threshold has been exceeded.
+/// Returns `true` if the circuit breaker threshold has been met.
 pub(crate) fn can_circuit_breaker_trigger_failover(
     entry: &PartitionFailoverEntry,
     is_read_only: bool,
     config: &PartitionFailoverConfig,
 ) -> bool {
     if is_read_only {
-        entry.read_failure_count > config.read_failure_threshold
+        entry.read_failure_count >= config.read_failure_threshold
     } else {
-        entry.write_failure_count > config.write_failure_threshold
+        entry.write_failure_count >= config.write_failure_threshold
     }
 }
 
@@ -721,7 +721,7 @@ mod tests {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
-            read_failure_count: 1, // below threshold of 5
+            read_failure_count: 1, // below threshold of 10
             write_failure_count: 0,
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
@@ -737,7 +737,7 @@ mod tests {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
-            read_failure_count: 6, // above default threshold of 5
+            read_failure_count: 10, // at default threshold of 10
             write_failure_count: 0,
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
@@ -754,7 +754,7 @@ mod tests {
             first_failed_endpoint: regional_endpoint("eastus"),
             failed_endpoints: Default::default(),
             read_failure_count: 0,
-            write_failure_count: 6, // above threshold of 5
+            write_failure_count: 5, // at threshold of 5
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
             health_status: HealthStatus::Unhealthy,
@@ -797,14 +797,14 @@ mod tests {
         assert_eq!(result.circuit_breaker_overrides.len(), 1);
         assert!(result.failover_overrides.is_empty());
         let entry = &result.circuit_breaker_overrides["pk-1"];
-        // Below threshold (1 failure, threshold is 5) so endpoint should NOT have moved
+        // Below threshold (1 failure, threshold is 10) so endpoint should NOT have moved
         assert_eq!(entry.read_failure_count, 1);
         assert_eq!(entry.current_endpoint, regional_endpoint("eastus"));
     }
 
     #[test]
     fn mark_partition_unavailable_ppcb_exceeds_threshold_moves_endpoint() {
-        // Start with an existing PPCB entry that has 5 read failures (at threshold)
+        // Start with an existing PPCB entry that has 9 read failures (one below threshold)
         let mut ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
         ps.circuit_breaker_overrides.insert(
@@ -813,7 +813,7 @@ mod tests {
                 current_endpoint: regional_endpoint("eastus"),
                 first_failed_endpoint: regional_endpoint("eastus"),
                 failed_endpoints: Default::default(),
-                read_failure_count: 5,
+                read_failure_count: 9,
                 write_failure_count: 0,
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
@@ -825,8 +825,8 @@ mod tests {
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
 
         let entry = &result.circuit_breaker_overrides["pk-1"];
-        // 6 failures > default threshold of 5, so endpoint should have moved to westus
-        assert_eq!(entry.read_failure_count, 6);
+        // 10 failures >= default threshold of 10, so endpoint should have moved to westus
+        assert_eq!(entry.read_failure_count, 10);
         assert_eq!(entry.current_endpoint, regional_endpoint("westus"));
     }
 
@@ -1097,18 +1097,18 @@ mod tests {
         ));
 
         // ── Phase 4: Re-failover must accumulate threshold failures ──
-        // Failures 1..threshold stay below the threshold; endpoint must not move.
-        for i in 1..=threshold {
+        // Failures 1..(threshold-1) stay below the threshold; endpoint must not move.
+        for i in 1..threshold {
             ps = mark_partition_unavailable(&ps, &account, &unavail, true);
             let entry = &ps.circuit_breaker_overrides["pk-1"];
             assert_eq!(entry.read_failure_count, i);
             assert_eq!(entry.current_endpoint, regional_endpoint("eastus"));
         }
 
-        // One more failure exceeds the threshold → failover to westus.
+        // The threshold-th failure meets the threshold → failover to westus.
         ps = mark_partition_unavailable(&ps, &account, &unavail, true);
         let entry = &ps.circuit_breaker_overrides["pk-1"];
-        assert_eq!(entry.read_failure_count, threshold + 1);
+        assert_eq!(entry.read_failure_count, threshold);
         assert_eq!(entry.current_endpoint, regional_endpoint("westus"));
     }
 

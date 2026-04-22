@@ -53,7 +53,7 @@ The SDK implements two distinct but complementary partition-level failover mecha
 | Mechanism | Abbreviation | Applies To | Account Type | Trigger |
 |---|---|---|---|---|
 | Per-Partition Automatic Failover | **PPAF** | **Writes only** | **Single-master** (one write region) | 403/3 WriteForbidden, 503, 429/3092, 410/1022 |
-| Per-Partition Circuit Breaker | **PPCB** | **Reads** (any account), **Writes** on multi-master | **Multi-master** + all accounts for reads | Failure count exceeds threshold |
+| Per-Partition Circuit Breaker | **PPCB** | **Reads** (any account), **Writes** on multi-master | **Multi-master** + all accounts for reads | Failure count meets threshold |
 
 These two mechanisms are **mutually exclusive per request** — a given request uses
 either the PPAF path or the PPCB path, never both. The decision is based on the
@@ -64,7 +64,7 @@ write locations.
 
 - **Partition granularity**: Failover state is tracked per `(PartitionKeyRange, Region)` pair.
 - **Threshold-gated**: The circuit breaker does not trip on the first failure. Failure
-  counters must exceed configurable thresholds before a partition is failed over.
+  counters must meet configurable thresholds before a partition is failed over.
 - **Gradual failback**: After a configurable unavailability window, failed
   partitions transition to a `ProbeCandidate` state. A single probe request is
   routed to the original region; only on success is the partition marked healthy.
@@ -198,7 +198,7 @@ same lock-free pattern.
 
 | Flag | Source | Default | Description |
 |---|---|---|---|
-| `per_partition_circuit_breaker_enabled` | Layered `OperationOptionsView` (env → runtime → account) → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. Resolved via the layered `OperationOptionsView` at construction time. The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
+| `per_partition_circuit_breaker_enabled` | Layered `OperationOptionsView` (env → runtime → account) → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `false` | Fallback enablement for PPCB when the server flag is not set. Resolved via the layered `OperationOptionsView` at construction time. The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
 | `per_partition_automatic_failover_enabled` | Server-side `AccountProperties.enable_per_partition_failover_behavior` | `false` | PPAF is enabled when the Cosmos DB account has this flag set. Updated dynamically on each account properties refresh. |
 
 > **Configuration resolution**: The PPCB option is resolved at construction time
@@ -447,7 +447,7 @@ construction time.
 /// Configuration for partition-level failover, read once at construction.
 #[derive(Clone, Debug)]
 pub(crate) struct PartitionFailoverConfig {
-    /// Read failures before circuit trips (default: 5).
+    /// Read failures before circuit trips (default: 10).
     /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS
     pub read_failure_threshold: i32,
 
@@ -467,7 +467,7 @@ pub(crate) struct PartitionFailoverConfig {
     /// Env: AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS
     pub failback_sweep_interval: Duration,
 
-    /// PPCB option value from layered options (default: true).
+    /// PPCB option value from layered options (default: false).
     /// Retained for recomputation on account refresh:
     ///   effective_ppcb = server_flag || circuit_breaker_option_enabled
     /// Resolved via OperationOptionsView (env → runtime → account → operation).
@@ -556,10 +556,10 @@ resolve_endpoint(operation, retry_state, location_snapshot, ttl)
       │
       ├─ if eligible for PPCB (is_eligible_for_ppcb):
       │   └─ lookup in partitions.circuit_breaker_overrides[pk_range_id]
-      │       ├─ if entry found AND threshold exceeded
+      │       ├─ if entry found AND threshold met
       │       │   (can_circuit_breaker_trigger_failover):
       │       │   └─ override endpoint → entry.current_endpoint
-      │       └─ if entry found BUT threshold NOT exceeded:
+      │       └─ if entry found BUT threshold NOT met:
       │           └─ no override (continue to account-level endpoint)
       │
       └─ else if eligible for PPAF (is_eligible_for_ppaf):
@@ -571,7 +571,7 @@ resolve_endpoint(operation, retry_state, location_snapshot, ttl)
 **Key difference**: PPAF overrides unconditionally when an entry exists. PPCB
 additionally checks `can_circuit_breaker_trigger_failover()` — the threshold
 gate — before applying the override. This means PPCB requires the failure count to
-exceed the threshold before the partition is actually routed to the alternate region,
+meet the threshold before the partition is actually routed to the alternate region,
 even if a failover entry already exists.
 
 ### 6.2 Marking Partition Unavailable (Stage 6 — `apply`)
@@ -619,7 +619,7 @@ mark_partition_unavailable(
   │   ├─ if (now - last_failure_time) > counter_reset_window:
   │   │   └─ reset both counters to 0
   │   ├─ increment read or write counter
-  │   └─ if threshold NOT exceeded → return new_state (no endpoint move)
+  │   └─ if threshold NOT met → return new_state (no endpoint move)
   │
   ├─ try_move_next_endpoint(entry, next_endpoints, failed_endpoint):
   │   │
@@ -676,16 +676,16 @@ increment_request_failure_counter_and_check_if_partition_can_failover(request)
   │
   └─ can_circuit_breaker_trigger_partition_failover(is_read_only):
       ├─ if is_read_only:
-      │   └─ return read_count > read_threshold  (default: 5)
+      │   └─ return read_count >= read_threshold  (default: 10)
       └─ else:
-          └─ return write_count > write_threshold  (default: 5)
+          └─ return write_count >= write_threshold  (default: 5)
 ```
 
 ### 7.2 Threshold Configuration
 
 | Parameter | Default | Environment Variable |
 |---|---|---|
-| Read failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
+| Read failure threshold | 10 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
 | Write failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` |
 | Counter reset window | 5 minutes | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` |
 
@@ -734,7 +734,7 @@ the counter fresh.
 | # | From | To | Trigger |
 |---|---|---|---|
 | 1 | HEALTHY | COUNTING | First failure creates an entry in the failover map; counter incremented but below threshold. |
-| 2 | COUNTING | TRIPPED | Counter exceeds threshold; `try_mark_endpoint_unavailable_for_partition_key_range()` moves the partition to the next region; override is now applied on subsequent requests. |
+| 2 | COUNTING | TRIPPED | Counter meets threshold; `try_mark_endpoint_unavailable_for_partition_key_range()` moves the partition to the next region; override is now applied on subsequent requests. |
 | 3 | COUNTING | HEALTHY | Background failback loop removes the entry after `partition_unavailability_duration` elapses (threshold was never reached). |
 | 4 | TRIPPED | HEALTHY | All locations exhausted in `try_move_next_location()`; entry is removed from the map and the partition returns to default routing. |
 | 5 | TRIPPED | PROBE_CANDIDATE | Background failback loop transitions the entry to `ProbeCandidate` after `partition_unavailability_duration` elapses. |
@@ -1163,10 +1163,10 @@ routing for all requests to that region.
 
 | Variable | Type | Default | Description |
 |---|---|---|---|
-| `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `bool` | `true` | Master switch for per-partition circuit breaker |
+| `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `bool` | `false` | Master switch for per-partition circuit breaker |
 | `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` | `i64` | `5` | Minimum time a partition must be unavailable before failback sweep considers it |
 | `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` | `i64` | `300` | Interval between background failback sweep iterations |
-| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `5` | Read failure threshold before circuit trips |
+| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `10` | Read failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` | `i32` | `5` | Write failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` | `i64` | `5` | Window (in minutes) after which failure counters reset |
 
@@ -1260,7 +1260,7 @@ better trade-off than introducing locks.
 
 ### 13.3 Threshold Gate on Override Application
 
-When a PPCB entry exists but the failure count has not yet exceeded the threshold,
+When a PPCB entry exists but the failure count has not yet met the threshold,
 `resolve_endpoint()` returns the account-level endpoint (no override applied).
 This means the request continues to hit the original (possibly unhealthy) region
 until enough failures accumulate. This is a deliberate trade-off:
@@ -1339,7 +1339,7 @@ The implementation should include comprehensive tests covering:
 
 - `mark_partition_unavailable`: PPAF path creates entry and moves to next endpoint
 - `mark_partition_unavailable`: PPCB path increments counter, no move below threshold
-- `mark_partition_unavailable`: PPCB path moves endpoint when threshold exceeded
+- `mark_partition_unavailable`: PPCB path moves endpoint when threshold met
 - `mark_partition_unavailable`: all endpoints exhausted → entry removed
 - `mark_partition_unavailable`: concurrent CAS (different thread already moved)
 - `expire_partition_overrides`: entries older than duration transition to `ProbeCandidate`
@@ -1364,14 +1364,14 @@ The implementation should include comprehensive tests covering:
 - Read failure counter increment and threshold check
 - Write failure counter increment and threshold check
 - Counter reset after timeout window elapses
-- Threshold not exceeded → no failover
-- Threshold exceeded → failover triggered
+- Threshold not met → no failover
+- Threshold met → failover triggered
 
 ### 14.4 `resolve_endpoint` Integration Tests
 
 - Partition override applied when PPAF entry exists
-- Partition override applied when PPCB entry exists and threshold exceeded
-- No partition override when PPCB entry exists but threshold not exceeded
+- Partition override applied when PPCB entry exists and threshold met
+- No partition override when PPCB entry exists but threshold not met
 - No partition override when `partition_key_range_id` is `None`
 - Partition override takes precedence over account-level endpoint
 
