@@ -11,7 +11,7 @@ use azure_messaging_eventhubs::{
 };
 use clap::{Arg, ArgMatches, Command};
 use futures::StreamExt;
-use rand::{rngs::StdRng, Rng, SeedableRng};
+use rand::{rngs::StdRng, RngExt, SeedableRng};
 use std::{
     collections::HashMap,
     error::Error,
