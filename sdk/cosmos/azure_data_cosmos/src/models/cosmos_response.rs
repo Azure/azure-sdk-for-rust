@@ -27,7 +27,7 @@ pub struct CosmosResponse<T> {
 
 impl<T> CosmosResponse<T> {
     /// Creates a new `CosmosResponse` from a typed response and the original request.
-    pub fn new(response: Response<T>, request: CosmosRequest) -> Self {
+    pub(crate) fn new(response: Response<T>, request: CosmosRequest) -> Self {
         Self { response, request }
     }
 
@@ -53,8 +53,16 @@ impl<T> CosmosResponse<T> {
     /// This api is subject to change without a major version bump.
     ///
     #[cfg(feature = "fault_injection")]
-    pub fn request(&self) -> &CosmosRequest {
+    #[allow(dead_code)]
+    pub(crate) fn request(&self) -> &CosmosRequest {
         &self.request
+    }
+
+    /// Returns the final request URL used to fulfill the operation.
+    /// This api is subject to change without a major version bump.
+    #[cfg(feature = "fault_injection")]
+    pub fn request_url(&self) -> azure_core::http::Url {
+        self.request.clone().into_raw_request().url().clone()
     }
 
     /// Consumes the response and returns the response body.
@@ -77,6 +85,16 @@ impl<T> CosmosResponse<T> {
     /// Returns the ETag from this response, if available.
     pub fn etag(&self) -> Option<&str> {
         self.get_optional_header_str(&azure_core::http::headers::ETAG)
+    }
+
+    /// Deserializes the response body without consuming the response.
+    ///
+    /// This is used internally to extract a copy of the response model (e.g.,
+    /// to populate a cache) while still returning the original response to the
+    /// caller. The underlying `Bytes` body is reference-counted so the clone
+    /// is cheap.
+    pub(crate) fn deserialize_body<U: DeserializeOwned>(&self) -> azure_core::Result<U> {
+        self.response.body().json()
     }
 }
 

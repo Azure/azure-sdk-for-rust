@@ -18,7 +18,7 @@ use azure_core::time::Duration;
 /// let policy = ResourceThrottleRetryPolicy::new(3, 100, 2);
 /// ```
 #[derive(Debug)]
-pub struct ResourceThrottleRetryPolicy {
+pub(crate) struct ResourceThrottleRetryPolicy {
     max_attempt_count: usize,
     backoff_delay_factor: u32,
     max_wait_time: Duration,

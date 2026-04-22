@@ -1,0 +1,13 @@
+{
+  "import": [
+    "../../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "amqps",
+    "mgmt",
+    "sasl",
+    "sastoken",
+    "smalluint",
+    "smallulong"
+  ]
+}

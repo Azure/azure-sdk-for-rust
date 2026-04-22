@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::http::Body;
+
 use super::{Bytes, SeekableStream};
 use futures::io::AsyncRead;
 use futures::stream::Stream;
@@ -52,6 +54,12 @@ impl From<Bytes> for BytesStream {
     }
 }
 
+impl From<BytesStream> for Body {
+    fn from(stream: BytesStream) -> Self {
+        Body::SeekableStream(Box::new(stream))
+    }
+}
+
 impl Stream for BytesStream {
     type Item = crate::Result<Bytes>;
 
@@ -72,16 +80,15 @@ impl Stream for BytesStream {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl SeekableStream for BytesStream {
     async fn reset(&mut self) -> crate::Result<()> {
         self.bytes_read = 0;
         Ok(())
     }
 
-    fn len(&self) -> usize {
-        self.bytes.len()
+    fn len(&self) -> Option<u64> {
+        Some(self.bytes.len() as u64)
     }
 }
 

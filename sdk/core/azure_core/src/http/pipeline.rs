@@ -165,8 +165,10 @@ impl Pipeline {
 
         let mut per_try_policies = per_try_policies.clone();
         if let Some(ref tracer) = tracer {
-            let request_instrumentation_policy =
-                RequestInstrumentationPolicy::new(Some(tracer.clone()));
+            let request_instrumentation_policy = RequestInstrumentationPolicy::new(
+                Some(tracer.clone()),
+                core_client_options.allowed_query_params.clone(),
+            );
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
 
@@ -435,7 +437,7 @@ mod tests {
     #[tokio::test]
     async fn pipeline_with_custom_application_id() {
         // Arrange
-        const CUSTOM_APPLICATION_ID: &str = "my-custom-app/2.1.0";
+        const CUSTOM_APPLICATION_ID: &str = "my-custom-app-2.1.0";
         let ctx = Context::new();
 
         let transport = Transport::new(Arc::new(MockHttpClient::new(|req| {
@@ -448,7 +450,7 @@ mod tests {
                 // The user agent should contain the custom application_id followed by the standard Azure SDK format
                 // Expected format: my-custom-app/2.1.0 azsdk-rust-test-crate/1.0.0 (<rustc_version>; <OS>; <ARCH>)
                 assert!(
-                    user_agent.starts_with("my-custom-app/2.1.0 azsdk-rust-test-crate/1.0.0 "),
+                    user_agent.starts_with("my-custom-app-2.1.0 azsdk-rust-test-crate/1.0.0 "),
                     "User-Agent header should start with custom application_id and expected prefix, got: {}",
                     user_agent
                 );

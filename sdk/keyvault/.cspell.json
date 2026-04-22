@@ -1,0 +1,42 @@
+{
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "canonicalizes",
+    "cbcpad",
+    "ciphertext",
+    "ckmaeskeywrap",
+    "ckmaeskeywrappad",
+    "ckmrsaaeskeywrap",
+    "deletedcertificates",
+    "deletedkeys",
+    "deletedsecrets",
+    "deleteissuers",
+    "diffie",
+    "echsm",
+    "ekus",
+    "fips",
+    "getissuers",
+    "innererror",
+    "keyout",
+    "managecontacts",
+    "manageissuers",
+    "newkey",
+    "oaep",
+    "purgeable",
+    "rotationpolicy",
+    "rsaaeskeywrap",
+    "rsaes",
+    "rsahsm",
+    "rsaoaep",
+    "rsassa",
+    "rsnull",
+    "secg",
+    "secp",
+    "setissuers",
+    "unwrapkey",
+    "upns",
+    "wrapkey"
+  ]
+}

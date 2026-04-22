@@ -7,7 +7,7 @@ use azure_core::{credentials::Secret, hmac::hmac_sha256, http::Method};
 use crate::resource_context::ResourceLink;
 
 #[cfg_attr(not(feature = "key_auth"), allow(dead_code))]
-pub struct SignatureTarget<'a> {
+pub(crate) struct SignatureTarget<'a> {
     http_method: Method,
     link: &'a ResourceLink,
     date_string: &'a str,

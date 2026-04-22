@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
-
 use azure_core::{
     http::{pager::PagerOptions, InstrumentationOptions, StatusCode},
     Result,
@@ -558,12 +556,12 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 }
 
                 first_pager
-                    .into_continuation_token()
+                    .into_continuation()
                     .expect("expected continuation token to be created after first page")
             };
             let options = SecretClientListSecretPropertiesOptions {
                 method_options: PagerOptions {
-                    continuation_token: Some(rehydration_token),
+                    continuation: Some(rehydration_token),
                     ..Default::default()
                 },
                 ..Default::default()

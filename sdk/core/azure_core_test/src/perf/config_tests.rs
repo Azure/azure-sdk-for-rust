@@ -32,6 +32,7 @@ fn create_basic_test_metadata() -> PerfTestMetadata {
             expected_args_len: 1,
             mandatory: false,
             sensitive: false,
+            option_type: PerfTestOptionKind::String,
         }],
         create_test: create_failed_test,
     }
@@ -51,6 +52,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
                 expected_args_len: 1,
                 mandatory: true,
                 sensitive: false,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "sensitive-option",
@@ -60,12 +62,14 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
                 expected_args_len: 1,
                 mandatory: false,
                 sensitive: true,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "flag-option",
                 short_activator: Some('f'),
                 long_activator: "flag",
                 display_message: "Flag option",
+                option_type: PerfTestOptionKind::Boolean,
                 ..Default::default()
             },
         ],
@@ -86,6 +90,7 @@ fn create_no_short_activator_test_metadata() -> PerfTestMetadata {
             expected_args_len: 1,
             mandatory: false,
             sensitive: false,
+            ..Default::default()
         }],
         create_test: create_failed_test,
     }
@@ -337,7 +342,7 @@ fn test_perf_runner_with_subcommand() {
         .get_selected_test_name()
         .expect("A test should be selected");
     assert_eq!(selected_test, "basic_test");
-    let option_value: Option<&String> = runner.try_get_test_arg("test-option").ok().flatten();
+    let option_value: Option<String> = runner.try_get_test_arg("test-option").ok().flatten();
     assert!(option_value.is_some());
     assert_eq!(option_value.unwrap(), "value");
 }
@@ -354,13 +359,13 @@ fn test_perf_runner_with_subcommand_short_activator() {
     );
 
     let runner = result.unwrap();
-    let option_value: Option<&String> = runner.try_get_test_arg("test-option").ok().flatten();
+    let option_value: Option<String> = runner.try_get_test_arg("test-option").ok().flatten();
     assert!(option_value.is_some());
     assert_eq!(option_value.unwrap(), "short_value");
 }
 
 #[test]
-fn test_perf_runner_with_complex_subcommand() {
+fn test_perf_runner_with_complex_subcommand() -> azure_core::Result<()> {
     let tests = vec![create_complex_test_metadata()];
     let args = vec![
         "perf-tests",
@@ -405,22 +410,16 @@ fn test_perf_runner_with_complex_subcommand() {
 
     let runner = result.unwrap();
 
-    let mandatory_value: Result<Option<&String>> = runner.try_get_test_arg("mandatory-option");
-    println!("{:?}", mandatory_value);
-    assert!(mandatory_value.is_ok());
+    let mandatory_value: Option<String> = runner.try_get_test_arg("mandatory-option")?;
     let mandatory_value = mandatory_value.unwrap();
-    assert!(mandatory_value.is_some());
-    assert_eq!(mandatory_value.unwrap(), "required_value");
+    assert_eq!(mandatory_value, "required_value");
 
-    let sensitive_value: Option<&String> =
-        runner.try_get_test_arg("sensitive-option").ok().flatten();
-    assert!(sensitive_value.is_some());
-    assert_eq!(sensitive_value.unwrap(), "secret_value");
+    let sensitive_value: String = runner.try_get_test_arg("sensitive-option")?.unwrap();
+    assert_eq!(sensitive_value, "secret_value");
 
-    let flag_value = runner.try_get_test_arg("flag-option").ok().flatten();
-    assert!(flag_value.is_some());
-    let flag_value: bool = *flag_value.unwrap();
+    let flag_value: bool = runner.try_get_test_arg("flag-option")?.unwrap();
     assert!(flag_value);
+    Ok(())
 }
 
 #[test]
@@ -435,7 +434,7 @@ fn test_perf_runner_with_no_short_activator() {
     );
 
     let runner = result.unwrap();
-    let option_value: Option<&String> = runner.try_get_test_arg("long-only").ok().flatten();
+    let option_value: Option<String> = runner.try_get_test_arg("long-only").ok().flatten();
     assert!(option_value.is_some());
     assert_eq!(option_value.unwrap(), "value");
 }
@@ -447,7 +446,7 @@ fn test_perf_runner_get_one_nonexistent() {
 
     let runner =
         PerfRunner::with_command_line(env!("CARGO_MANIFEST_DIR"), file!(), tests, args).unwrap();
-    let result: Result<Option<&String>> = runner.try_get_global_arg("nonexistent");
+    let result: Result<Option<String>> = runner.try_get_global_arg("nonexistent");
     assert!(result.is_err());
 }
 
@@ -460,12 +459,12 @@ fn test_perf_runner_get_one_different_types() {
         PerfRunner::with_command_line(env!("CARGO_MANIFEST_DIR"), file!(), tests, args).unwrap();
 
     // Test getting u32 value
-    let iterations: Option<&u32> = runner.try_get_global_arg("iterations").ok().flatten();
+    let iterations: Option<u32> = runner.try_get_global_arg("iterations").ok().flatten();
     assert!(iterations.is_some());
-    assert_eq!(*iterations.unwrap(), 42);
+    assert_eq!(iterations.unwrap(), 42);
 
     // Test getting wrong type returns None
-    let iterations_as_string: Option<&String> =
+    let iterations_as_string: Option<String> =
         runner.try_get_global_arg("iterations").ok().flatten();
     assert!(iterations_as_string.is_none());
 }
@@ -545,7 +544,7 @@ fn test_perf_runner_with_multiple_tests_and_subcommands() {
     assert!(result.is_ok());
 
     let runner = result.unwrap();
-    let option_value: Option<&String> = runner.try_get_test_arg("test-option").ok().flatten();
+    let option_value: Option<String> = runner.try_get_test_arg("test-option").ok().flatten();
     assert_eq!(option_value.unwrap(), "value1");
 
     // Test with second subcommand
@@ -554,15 +553,14 @@ fn test_perf_runner_with_multiple_tests_and_subcommands() {
     assert!(result.is_ok());
 
     let runner = result.unwrap();
-    let mandatory_value: Option<&String> =
+    let mandatory_value: Option<String> =
         runner.try_get_test_arg("mandatory-option").ok().flatten();
     assert_eq!(mandatory_value.unwrap(), "required");
 }
 
 struct ComplexTest {}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl PerfTest for ComplexTest {
     async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         println!("Setting up ComplexTest...");
@@ -604,6 +602,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 1,
                 mandatory: true,
                 sensitive: false,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "sensitive-option",
@@ -613,6 +612,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 1,
                 mandatory: false,
                 sensitive: true,
+                ..Default::default()
             },
             PerfTestOption {
                 name: "flag-option",
@@ -622,6 +622,7 @@ async fn test_perf_runner_with_test_functions() {
                 expected_args_len: 0,
                 mandatory: false,
                 sensitive: false,
+                option_type: PerfTestOptionKind::Boolean,
             },
         ],
         create_test: complex_test_create,
@@ -644,21 +645,21 @@ async fn test_perf_runner_with_test_functions() {
 
     let runner = result.unwrap();
 
-    let mandatory_value: Result<Option<&String>> = runner.try_get_test_arg("mandatory-option");
+    let mandatory_value: Result<Option<String>> = runner.try_get_test_arg("mandatory-option");
     println!("{:?}", mandatory_value);
     assert!(mandatory_value.is_ok());
     let mandatory_value = mandatory_value.unwrap();
     assert!(mandatory_value.is_some());
     assert_eq!(mandatory_value.unwrap(), "required_value");
 
-    let sensitive_value: Option<&String> =
+    let sensitive_value: Option<String> =
         runner.try_get_test_arg("sensitive-option").ok().flatten();
     assert!(sensitive_value.is_some());
     assert_eq!(sensitive_value.unwrap(), "secret_value");
 
-    let flag_value = runner.try_get_test_arg("flag-option").ok().flatten();
+    let flag_value: Option<bool> = runner.try_get_test_arg("flag-option").ok().flatten();
     assert!(flag_value.is_some());
-    let flag_value: bool = *flag_value.unwrap();
+    let flag_value: bool = flag_value.unwrap();
     assert!(flag_value);
 
     let perf_tests_impl = (runner.tests[0].create_test)(runner.clone())

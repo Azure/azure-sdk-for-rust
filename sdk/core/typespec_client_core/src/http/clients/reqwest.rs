@@ -9,13 +9,28 @@ use crate::http::{
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 use tracing::{debug, warn};
 use typespec::error::{Error, ErrorKind, Result, ResultExt};
 
+const DEFAULT_CONNECTION_TIMEOUT: Duration = Duration::from_secs(20);
+const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(60);
+
 /// Create a new [`HttpClient`] with the `reqwest` backend.
-pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
+///
+/// # Arguments
+///
+/// * `options` - Optional configuration for the [`Client`](::reqwest::Client).
+///   Automatic decompression is enabled if `reqwest_gzip` or `reqwest_deflate` are enabled.
+///   Client libraries can disable this without impacting other client libraries by disabling it
+///   when calling this function.
+#[cfg_attr(
+    not(any(feature = "reqwest_gzip", feature = "reqwest_deflate")),
+    allow(unused_variables)
+)]
+pub fn new_reqwest_client(options: Option<super::HttpClientOptions>) -> Arc<dyn HttpClient> {
     debug!("creating an http client using `reqwest`");
+    let options = options.unwrap_or_default();
 
     // Some customers in the past have reported challenges associated with enabling
     // connection pooling in reqwest. See <https://github.com/hyperium/hyper/issues/2312>
@@ -23,15 +38,35 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     //
     // Due to the significant performance impact when disabling connection pooling,
     // it is enabled here by default. See the `azure_core` troubleshooting guide to disable pooling.
-    let client = ::reqwest::ClientBuilder::new()
-        .build()
-        .expect("failed to build `reqwest` client");
+    #[cfg_attr(
+        not(any(feature = "reqwest_gzip", feature = "reqwest_deflate")),
+        allow(unused_mut)
+    )]
+    let mut builder = ::reqwest::ClientBuilder::new()
+        // TODO: Support configuration options (https://github.com/Azure/azure-sdk-for-rust/issues/4217)
+        .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
+        .read_timeout(DEFAULT_READ_TIMEOUT)
+        // By default, reqwest will chase 3xx redirects up to 10 links. REST API guidelines
+        // discourage services from using 3xx redirects, so disabling the reqwest redirect logic
+        // simplifies the client logic.
+        .redirect(::reqwest::redirect::Policy::none());
+
+    #[cfg(feature = "reqwest_gzip")]
+    {
+        builder = builder.gzip(options.automatic_decompression);
+    }
+
+    #[cfg(feature = "reqwest_deflate")]
+    {
+        builder = builder.deflate(options.automatic_decompression);
+    }
+
+    let client = builder.build().expect("failed to build `reqwest` client");
 
     Arc::new(client)
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse> {
         let url = request.url().clone();
@@ -44,10 +79,6 @@ impl HttpClient for ::reqwest::Client {
 
         let reqwest_request = match body {
             Body::Bytes(bytes) => req.body(bytes).build(),
-
-            // We cannot currently implement `Body::SeekableStream` for WASM
-            // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
-            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(seekable_stream) => req
                 .body(::reqwest::Body::wrap_stream(seekable_stream))
                 .build(),
@@ -58,10 +89,21 @@ impl HttpClient for ::reqwest::Client {
             "performing request {method} '{}' with `reqwest`",
             url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
         );
-        let rsp = self
-            .execute(reqwest_request)
-            .await
-            .with_context(ErrorKind::Io, "failed to execute `reqwest` request")?;
+        let rsp = match self.execute(reqwest_request).await {
+            Ok(rsp) => rsp,
+            Err(err) => {
+                let kind = if err.is_connect() {
+                    ErrorKind::Connection
+                } else {
+                    ErrorKind::Io
+                };
+                return Err(Error::with_error(
+                    kind,
+                    err,
+                    "failed to execute `reqwest` request",
+                ));
+            }
+        };
 
         let status = rsp.status();
         let headers = to_headers(rsp.headers());

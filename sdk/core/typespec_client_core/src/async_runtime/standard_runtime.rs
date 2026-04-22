@@ -2,30 +2,25 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+use crate::async_runtime::AbortableTask;
 use crate::time::Duration;
-#[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
-#[cfg(not(target_arch = "wasm32"))]
+use std::error::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
-#[cfg(not(target_arch = "wasm32"))]
 use std::{
     future,
     sync::{Arc, Mutex},
     task::{Context, Poll, Waker},
     thread,
 };
-#[cfg(not(target_arch = "wasm32"))]
 use std::{future::Future, pin::Pin};
-#[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
 
 /// A future that completes when a thread join handle completes.
-#[cfg(not(target_arch = "wasm32"))]
 struct ThreadJoinFuture {
     join_state: Arc<Mutex<ThreadJoinState>>,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[derive(Default)]
 struct ThreadJoinState {
     join_handle:
@@ -34,7 +29,17 @@ struct ThreadJoinState {
     thread_finished: bool,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+impl AbortableTask for ThreadJoinFuture {
+    fn abort(&self) {
+        // We cannot actually abort the thread, but we can drop the join handle
+        // to avoid blocking on it when the future is dropped.
+        if let Ok(mut join_state) = self.join_state.lock() {
+            join_state.thread_finished = true;
+            join_state.join_handle = None;
+        }
+    }
+}
+
 impl Future for ThreadJoinFuture {
     type Output = std::result::Result<(), Box<dyn std::error::Error + Send>>;
 
@@ -80,82 +85,86 @@ impl Future for ThreadJoinFuture {
     }
 }
 
+struct ThreadJoinError {
+    error: Option<Box<dyn Error + Send>>,
+}
+
+impl Future for ThreadJoinError {
+    type Output = std::result::Result<(), Box<dyn std::error::Error + Send>>;
+
+    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Poll::Ready(Err(self.error.take().unwrap()))
+    }
+}
+
+impl AbortableTask for ThreadJoinError {
+    fn abort(&self) {
+        // No-op since the thread never started
+    }
+}
+
 /// An [`AsyncRuntime`] using [`std::thread::spawn`].
 pub(crate) struct StdRuntime;
 
 impl AsyncRuntime for StdRuntime {
-    #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
-        #[cfg(target_arch = "wasm32")]
+        let join_state = Arc::new(Mutex::new(ThreadJoinState::default()));
         {
-            panic!("std::thread::spawn is not supported on wasm32")
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let join_state = Arc::new(Mutex::new(ThreadJoinState::default()));
-            {
-                let Ok(mut js) = join_state.lock() else {
-                    return Box::pin(future::ready(Err(Box::new(crate::Error::with_message(
+            let Ok(mut js) = join_state.lock() else {
+                // Set thread_finished to true and return a ThreadJoinFuture that will immediately return the error
+                let error = Box::new(crate::Error::with_message(
+                    crate::error::ErrorKind::Other,
+                    "Thread panicked.",
+                )) as Box<dyn std::error::Error + Send>;
+
+                return Box::pin(ThreadJoinError { error: Some(error) });
+            };
+
+            // Clone the join state so it can be moved into the thread
+            // and used to notify the waker when the thread finishes.
+            let join_state_clone = join_state.clone();
+
+            js.join_handle = Some(thread::spawn(move || {
+                // Create a local executor
+                let mut local_pool = LocalPool::new();
+                let spawner = local_pool.spawner();
+
+                // Spawn the future on the local executor
+                let Ok(future_handle) = spawner.spawn_with_handle(f) else {
+                    return Err(Box::new(crate::Error::with_message(
                         crate::error::ErrorKind::Other,
-                        "Thread panicked.",
-                    ))
-                        as Box<dyn std::error::Error + Send>)));
+                        "Failed to spawn future.",
+                    )) as Box<dyn std::error::Error + Send>);
+                };
+                // Drive the executor until the future completes
+                local_pool.run_until(future_handle);
+
+                let Ok(mut join_state) = join_state_clone.lock() else {
+                    return Err(Box::new(crate::Error::with_message(
+                        crate::error::ErrorKind::Other,
+                        "Failed to lock join state",
+                    )) as Box<dyn std::error::Error + Send>);
                 };
 
-                // Clone the join state so it can be moved into the thread
-                // and used to notify the waker when the thread finishes.
-                let join_state_clone = join_state.clone();
-
-                js.join_handle = Some(thread::spawn(move || {
-                    // Create a local executor
-                    let mut local_pool = LocalPool::new();
-                    let spawner = local_pool.spawner();
-
-                    // Spawn the future on the local executor
-                    let Ok(future_handle) = spawner.spawn_with_handle(f) else {
-                        return Err(Box::new(crate::Error::with_message(
-                            crate::error::ErrorKind::Other,
-                            "Failed to spawn future.",
-                        ))
-                            as Box<dyn std::error::Error + Send>);
-                    };
-                    // Drive the executor until the future completes
-                    local_pool.run_until(future_handle);
-
-                    let Ok(mut join_state) = join_state_clone.lock() else {
-                        return Err(Box::new(crate::Error::with_message(
-                            crate::error::ErrorKind::Other,
-                            "Failed to lock join state",
-                        ))
-                            as Box<dyn std::error::Error + Send>);
-                    };
-
-                    // The thread has finished, so we can take the waker
-                    // and notify it.
-                    join_state.thread_finished = true;
-                    if let Some(waker) = join_state.waker.take() {
-                        waker.wake();
-                    }
-                    Ok(())
-                }));
-            }
-            // Create a future that will complete when the thread joins
-            let join_future = ThreadJoinFuture { join_state };
-            Box::pin(join_future)
+                // The thread has finished, so we can take the waker
+                // and notify it.
+                join_state.thread_finished = true;
+                if let Some(waker) = join_state.waker.take() {
+                    waker.wake();
+                }
+                Ok(())
+            }));
         }
+        // Create a future that will complete when the thread joins
+        let join_future = ThreadJoinFuture { join_state };
+        Box::pin(join_future)
     }
 
     /// Creates a future that resolves after a specified duration of time.
     ///
     /// Uses a simple thread based implementation for sleep. A more efficient
     /// implementation is available by using the `tokio` crate feature.
-    #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
     fn sleep(&self, duration: Duration) -> TaskFuture {
-        #[cfg(target_arch = "wasm32")]
-        {
-            panic!("sleep is not supported on wasm32")
-        }
-        #[cfg(not(target_arch = "wasm32"))]
         Box::pin(Sleep {
             signal: None,
             duration,
@@ -163,26 +172,17 @@ impl AsyncRuntime for StdRuntime {
     }
 
     fn yield_now(&self) -> TaskFuture {
-        #[cfg(target_arch = "wasm32")]
-        {
-            panic!("yield_now is not supported on wasm32")
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            std::thread::yield_now();
-            Box::pin(future::ready(()))
-        }
+        std::thread::yield_now();
+        Box::pin(future::ready(()))
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 struct Sleep {
     signal: Option<Arc<AtomicBool>>,
     duration: Duration,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Future for Sleep {
     type Output = ();
 

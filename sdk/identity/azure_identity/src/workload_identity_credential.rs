@@ -90,8 +90,7 @@ impl WorkloadIdentityCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(
         &self,
@@ -141,8 +140,7 @@ impl Token {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl ClientAssertion for Token {
     async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
         const TIMEOUT: Duration = Duration::from_secs(600);
@@ -358,7 +356,7 @@ mod tests {
         let url =
             format!("http://{ip}:8080/api?test=workload-identity&storage-name={storage_name}");
         let u = Url::parse(&url).expect("valid URL");
-        let client = azure_core::http::new_http_client();
+        let client = azure_core::http::new_http_client(None);
         let req = Request::new(u, Method::Get);
 
         let res = client.execute_request(&req).await.expect("response");

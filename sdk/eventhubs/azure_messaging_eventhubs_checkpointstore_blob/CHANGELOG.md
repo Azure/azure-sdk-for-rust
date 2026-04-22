@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.0 (Unreleased)
+## 0.8.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,32 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.7.0 (2026-04-14)
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.6.0 (2026-03-10)
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.5.0 (2026-02-11)
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.4.0 (2026-02-10)
 

@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("requires 'add' or 'update' mode argument");
 
     let script_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let repo_root = script_root.join("../../..").canonicalize()?;
+    let repo_root = script_root.join("../..").canonicalize()?;
 
     // find all Cargo.toml files in the repo_root directory
     let exclude_dirs = vec![

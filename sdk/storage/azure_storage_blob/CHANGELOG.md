@@ -1,15 +1,87 @@
 # Release History
 
-## 0.9.0 (Unreleased)
+## 0.12.0 (2026-04-22)
+
+### Features Added
+
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
+### Breaking Changes
+
+- Added default connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
+- Responses are no longer automatically decompressed.
+- Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
+
+## 0.11.0 (2026-04-14)
+
+### Features Added
+
+- Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
+- Added `models::HttpRange` for specifying byte ranges in blob operations, replacing the removed `format_page_range()` helper.
+
+### Breaking Changes
+
+- Removed `format_page_range()`. Use `HttpRange::new(offset, length)` or `HttpRange::from_offset(offset)` instead.
+- Revised `download()` on `BlobClient` with the following breaking changes:
+  - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
+  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
+  - The previous `BlobClientDownloadResultHeaders` trait was removed.
+- Revised `upload()` on `BlobClient` `BlockBlobClient` with the following breaking changes:
+  - `partition_size` option changed from `Option<NonZero<usize>>` to `Option<NonZero<u64>>`
+
+## 0.10.1 (2026-03-18)
+
+### Bugs Fixed
+
+- `BlobClient::managed_download()` and `BlobClientManagedDownloadOptions` were unintentionally exported in 0.10.0. The method now panics unconditionally; this API will be removed in a future release.
+- Updated minimum dependency versions to incorporate a fix for TLS 1.3 data corruption on Windows when uploading large payloads ([schannel-rs#121](https://github.com/steffengy/schannel-rs/pull/121)).
+
+## 0.10.0 (2026-03-11)
+
+### Breaking Changes
+
+- Revised `upload()` on `BlockBlobClient` and `BlobClient` with the following breaking changes:
+  - Now uses our managed upload logic for optimal performance in single-shot and multi-part transfers.
+  - Removed the `content_length` parameter.
+  - `BlobClient::upload()` removed the `overwrite` parameter; it now **overwrites by default**. Use `BlobClientUploadOptions::with_if_not_exists()` to prevent overwriting an existing blob.
+  - `BlockBlobClient::upload()` accepts `BlockBlobClientUploadOptions`; `BlobClient::upload()` accepts `BlobClientUploadOptions` (a re-export of the same type).
+  - Returns `Result<BlockBlobClientUploadResult>` (or `Result<BlobClientUploadResult>` via `BlobClient`) instead of `Result<Response<BlockBlobClientUploadInternalResult, NoFormat>>`.
+  - Changed `BlockBlobClientUploadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
+- Changed `if_match`, `if_none_match`, `source_if_match`, and `source_if_none_match` fields in all method option structs from `Option<String>` to `Option<Etag>`.
+- Changed `BlobProperties::etag` and `ContainerProperties::etag` from `Option<String>` to `Option<Etag>`.
+- Renamed `ContainerItem.delete` to `ContainerItem.deleted`.
+- Renamed `ListBlobsFlatSegmentResponse` to `ListBlobsResponse`.
+- Changed `BlobItem.name` from `Option<BlobName>` to `Option<String>`. Encoded blob names are now automatically percent-decoded during deserialization.
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+### Bugs Fixed
+
+- Fixed an issue where user-provided `per_try_policies` in `ClientOptions` were ignored when constructing any Blob Storage client.
+
+## 0.9.0 (2026-02-11)
 
 ### Features Added
 
 - Added support for `stage_block_from_url` to `BlockBlobClient`.
+- Added navigation method `BlobServiceClient::blob_client()`.
 
 ### Breaking Changes
 
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 - Renamed `BlobItemInternal` to `BlobItem`.
 - Renamed `BlobPropertiesInternal` to `BlobProperties`.
+- Renamed `BlobContainerClient::create_container()` to `create()`.
+- Renamed `BlobContainerClient::delete_container()` to `delete()`.
+- Renamed `PageBlobClient::upload_page()` to `upload_pages()`.
+- Renamed `PageBlobClient::clear_page()` to `clear_pages()`.
+- Renamed `BlobContainerClientListBlobFlatSegmentOptions` to `BlobContainerClientListBlobsOptions`.
+- Renamed `BlobServiceClientListContainersSegmentOptions` to `BlobServiceClientListContainersOptions`.
+- Renamed `BlobContainerClientCreateContainerOptions` to `BlobContainerClientCreateOptions`.
+- Renamed `BlobContainerClientDeleteContainerOptions` to `BlobContainerClientDeleteOptions`.
+- Removed `BlobServiceClient::from_url()`.
+- Changed `BlobClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
+- Changed `BlobContainerClient`'s `set_metadata` parameter `metadata` type from `HashMap<String, String>` to `&HashMap<String, String>`.
 
 ## 0.8.0 (2026-01-21)
 

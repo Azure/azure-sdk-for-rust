@@ -192,7 +192,7 @@ This example lists all the secrets in the specified Azure Key Vault. The value i
 use azure_security_keyvault_secrets::ResourceExt;
 use futures::TryStreamExt;
 
-let mut pager = client.list_secret_properties(None)?.into_stream();
+let mut pager = client.list_secret_properties(None)?;
 while let Some(secret) = pager.try_next().await? {
     // Get the secret name from the ID.
     let name = secret.resource_id()?.name;

@@ -219,7 +219,7 @@ async fn download_test_proxy(
             "test-proxy not supported on current platform",
         )
     })?;
-    let url: url::Url = format!("https://github.com/Azure/azure-sdk-tools/releases/download/Azure.Sdk.Tools.TestProxy_{}/{}", version, download_file_name).parse()?;
+    let url: azure_core::http::Url = format!("https://github.com/Azure/azure-sdk-tools/releases/download/Azure.Sdk.Tools.TestProxy_{}/{}", version, download_file_name).parse()?;
     Span::current().record("url", url.as_str());
 
     let map_reqwest_err = |err: reqwest::Error| {

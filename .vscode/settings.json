@@ -2,6 +2,9 @@
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
+  "files.associations": {
+    "CODEOWNERS": "ignore"
+  },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".github/instructions/git-commit.instructions.md"
@@ -18,4 +21,5 @@
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
   },
+  "cmake.ignoreCMakeListsMissing": true,
 }

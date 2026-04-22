@@ -97,8 +97,7 @@ pub struct RetryHeaders {
 ///
 /// `wait` can be implemented in more complex cases where a simple test of time
 /// is not enough.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// Determine if no more retries should be performed.
     ///
@@ -149,8 +148,7 @@ const DEFAULT_RETRY_STATUS_CODES: &[StatusCode] = &[
     StatusCode::GatewayTimeout,
 ];
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl<T> Policy for T
 where
     T: RetryPolicy,
@@ -218,18 +216,18 @@ where
                     (Ok(response), retry_after)
                 }
                 Err(error) => {
-                    if error.kind() == &ErrorKind::Io {
+                    if matches!(error.kind(), &ErrorKind::Io | &ErrorKind::Connection) {
                         debug!(
-                            "io error occurred when making request which will be retried: {}",
+                            "transport error occurred when making request which will be retried: {}",
                             error
                         );
-                        // IO error so no Retry-After headers - leave the retry period up to the policy
+                        // Transport error so no Retry-After headers - leave the retry period up to the policy
                         let retry_after = None;
                         (Err(error), retry_after)
                     } else {
-                        return Err(
-                            error.with_context("non-io error occurred which will not be retried")
-                        );
+                        return Err(error.with_context(
+                            "non-transport error occurred which will not be retried",
+                        ));
                     }
                 }
             };
@@ -272,8 +270,7 @@ mod test {
         status: StatusCode,
     }
 
-    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    #[async_trait]
     impl Policy for StatusResponder {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
             let mut count = self.request_count.lock().unwrap();

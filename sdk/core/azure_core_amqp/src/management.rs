@@ -9,15 +9,14 @@ use super::{
 };
 use azure_core::credentials::AccessToken;
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 type ManagementImplementation = super::noop::NoopAmqpManagement;
 
 /// Trait defining the asynchronous APIs for AMQP management operations.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait AmqpManagementApis {
     /// Attaches the management node to the AMQP session.
     async fn attach(&self) -> Result<()>;
@@ -44,8 +43,7 @@ pub struct AmqpManagement {
     implementation: ManagementImplementation,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl AmqpManagementApis for AmqpManagement {
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await

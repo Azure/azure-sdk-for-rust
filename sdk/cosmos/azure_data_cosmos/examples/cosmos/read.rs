@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::error::Error;
 
 use azure_core::http::StatusCode;
@@ -51,7 +54,7 @@ impl ReadCommand {
                 partition_key,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
 
                 let response = container_client
                     .read_item(&partition_key, &item_id, None)
@@ -91,7 +94,7 @@ impl ReadCommand {
                 container,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container);
+                let container_client = db_client.container_client(&container).await;
                 let response = container_client.read(None).await?.into_model()?;
                 println!("Container:");
                 println!("  {:#?}", response);

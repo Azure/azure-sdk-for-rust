@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Clients used to communicate with the service.
 use crate::authorizer::KeyVaultAuthorizer;
-pub use crate::generated::KeyClient;
+pub use crate::generated::clients::*;
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
@@ -29,7 +30,7 @@ pub struct KeyClientOptions {
 impl Default for KeyClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("2025-07-01"),
+            api_version: String::from(DEFAULT_API_VERSION),
             client_options: ClientOptions::default(),
             verify_challenge_resource: Some(true),
         }

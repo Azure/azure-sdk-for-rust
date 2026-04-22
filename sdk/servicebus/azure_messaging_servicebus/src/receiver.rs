@@ -822,7 +822,10 @@ impl Receiver {
 
         // For Service Bus management operations, we need to create a management client
         // The client needs a unique node name and an access token for authorization
-        let client_node_name = format!("servicebus-receiver-management-{}", uuid::Uuid::new_v4());
+        let client_node_name = format!(
+            "servicebus-receiver-management-{}",
+            azure_core::Uuid::new_v4()
+        );
 
         // Create a default access token - in practice, this should come from the connection's
         // authentication mechanism (CBS token, SAS token, etc.)

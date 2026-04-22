@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
-
 use azure_core::{
     http::{Method, StatusCode},
     Result,
@@ -330,9 +328,14 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     const NAME: &str = "ec-certificate-signer";
-    client
+    let certificate = client
         .create_certificate(NAME, body.try_into()?, None)?
-        .await?;
+        .await?
+        .into_model()?;
+    let certificate_version = certificate
+        .resource_id()?
+        .version
+        .expect("certificate version required");
 
     let mut key_options = KeyClientOptions::default();
     recording.instrument(&mut key_options.client_options);
@@ -354,7 +357,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         value: Some(digest),
     };
     let signature = key_client
-        .sign(NAME, body.try_into()?, None)
+        .sign(NAME, &certificate_version, body.try_into()?, None)
         .await?
         .into_model()?;
     assert!(signature.result.is_some());

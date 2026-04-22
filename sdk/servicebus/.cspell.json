@@ -1,0 +1,19 @@
+{
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "amqps",
+    "azuremessagingservicebus",
+    "backoff",
+    "mybus",
+    "myqueue",
+    "myservicebus",
+    "retryable",
+    "SubQueue",
+    "subqueues",
+    "testqueue",
+    "testsubscription",
+    "testtopic"
+  ]
+}

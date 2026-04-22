@@ -7,3 +7,5 @@ Cargo.lock merge=binary
 # Use unix line endings everywhere, even on Windows
 * text=auto eol=lf
 sdk/**/src/generated/**/*.rs linguist-generated=true
+
+.github/workflows/*.lock.yml linguist-generated=true merge=ours

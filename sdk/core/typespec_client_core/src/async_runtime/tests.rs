@@ -5,7 +5,7 @@ use super::*;
 use crate::time::Duration;
 use std::sync::{Arc, Mutex};
 
-#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+#[cfg(not(feature = "tokio"))]
 #[test]
 fn test_task_spawner_execution() {
     let runtime = get_async_runtime();
@@ -108,7 +108,6 @@ async fn tokio_task_execution() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
-#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn std_specific_handling() {
     let spawner = Arc::new(standard_runtime::StdRuntime);
@@ -126,7 +125,6 @@ fn std_specific_handling() {
 }
 
 #[test]
-#[cfg(not(target_arch = "wasm32"))]
 fn std_multiple_tasks() {
     let spawner = Arc::new(standard_runtime::StdRuntime);
     let counter = Arc::new(Mutex::new(0));
@@ -152,7 +150,7 @@ fn std_multiple_tasks() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
-#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+#[cfg(not(feature = "tokio"))]
 #[test]
 fn std_task_execution() {
     let runtime = Arc::new(standard_runtime::StdRuntime);
@@ -176,7 +174,7 @@ fn std_task_execution() {
 // Basic test that launches 10k futures and waits for them to complete:
 // it has a high chance of failing if there is a race condition in the sleep method;
 // otherwise, it runs quickly.
-#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+#[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn test_timeout() {
     use super::*;
@@ -203,7 +201,6 @@ async fn test_timeout() {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[tokio::test]
 async fn test_sleep() {
     let runtime = get_async_runtime();
@@ -211,37 +208,6 @@ async fn test_sleep() {
     runtime.sleep(Duration::milliseconds(100)).await;
     let elapsed = start.elapsed();
     assert!(elapsed >= Duration::milliseconds(100));
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-use wasm_bindgen_test::*;
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-#[wasm_bindgen_test]
-async fn wasm_bindgen_test_sleep() {
-    let runtime = get_async_runtime();
-    runtime.sleep(Duration::milliseconds(100)).await;
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-#[wasm_bindgen_test]
-async fn wasm_bindgen_task_execution() {
-    let spawner = Arc::new(web_runtime::WasmBindgenRuntime);
-    let result = Arc::new(Mutex::new(false));
-    let result_clone = Arc::clone(&result);
-
-    let handle = spawner.spawn(Box::pin(async move {
-        // Simulate some work
-        crate::sleep::sleep(Duration::milliseconds(50)).await;
-        let mut value = result_clone.lock().unwrap();
-        *value = true;
-    }));
-
-    // Wait for task completion
-    handle.await.expect("Task should complete successfully");
-
-    // Verify the task executed
-    assert!(*result.lock().unwrap());
 }
 
 #[test]
@@ -278,4 +244,155 @@ fn test_set_runtime() {
 
     // Ensure that setting the runtime again fails
     set_async_runtime(runtime.clone()).unwrap_err();
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_abort_cancels_task() {
+    let spawner = Arc::new(tokio_runtime::TokioRuntime);
+    let started = Arc::new(Mutex::new(false));
+    let completed = Arc::new(Mutex::new(false));
+    let started_clone = Arc::clone(&started);
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        *started_clone.lock().unwrap() = true;
+        // Sleep long enough that abort will fire before completion
+        crate::sleep::sleep(Duration::seconds(10)).await;
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Give the task a moment to start
+    crate::sleep::sleep(Duration::milliseconds(50)).await;
+    assert!(*started.lock().unwrap(), "task should have started");
+
+    handle.abort();
+
+    // Awaiting the aborted task should yield an error (cancellation), not a successful completion.
+    let result = handle.await;
+    assert!(
+        result.is_err(),
+        "aborted task should return an error when awaited"
+    );
+
+    // The task should not have completed its work after being aborted
+    assert!(
+        !*completed.lock().unwrap(),
+        "task should not have completed after abort"
+    );
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_abort_then_await() {
+    let spawner = Arc::new(tokio_runtime::TokioRuntime);
+
+    let handle = spawner.spawn(Box::pin(async {
+        crate::sleep::sleep(Duration::seconds(10)).await;
+    }));
+
+    // Give the task a moment to start
+    crate::sleep::sleep(Duration::milliseconds(50)).await;
+
+    handle.abort();
+
+    // Awaiting an aborted task should resolve with a cancellation error (not hang)
+    let result = handle.await;
+    assert!(
+        result.is_err(),
+        "aborted task should return an error result"
+    );
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_abort_already_completed_task() {
+    let spawner = Arc::new(tokio_runtime::TokioRuntime);
+    let completed = Arc::new(Mutex::new(false));
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Wait for the task to complete
+    crate::sleep::sleep(Duration::milliseconds(50)).await;
+    assert!(*completed.lock().unwrap());
+
+    // Aborting an already-completed task should not panic
+    handle.abort();
+}
+
+#[test]
+fn std_abort_prevents_blocking() {
+    let spawner = Arc::new(standard_runtime::StdRuntime);
+    let completed = Arc::new(Mutex::new(false));
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        // Sleep long enough that abort will fire before completion
+        std::thread::sleep(std::time::Duration::from_secs(10));
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Give the task a moment to start on its thread
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    // Abort should not panic and should mark the task as finished
+    handle.abort();
+
+    // Awaiting the aborted task should resolve immediately (not block for 10s)
+    let result = futures::executor::block_on(handle);
+    assert!(result.is_ok());
+
+    // The task's long sleep may still be running on its thread, but the future resolved
+    // without waiting for completion.
+}
+
+#[test]
+fn std_abort_already_completed_task() {
+    let spawner = Arc::new(standard_runtime::StdRuntime);
+    let completed = Arc::new(Mutex::new(false));
+    let completed_clone = Arc::clone(&completed);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        *completed_clone.lock().unwrap() = true;
+    }));
+
+    // Wait for the task to complete
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    assert!(*completed.lock().unwrap());
+
+    // Aborting an already-completed task should not panic
+    handle.abort();
+
+    let result = futures::executor::block_on(handle);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn std_abort_multiple_tasks() {
+    let spawner = Arc::new(standard_runtime::StdRuntime);
+    let mut handles = Vec::new();
+
+    for _ in 0..5 {
+        let handle = spawner.spawn(Box::pin(async {
+            std::thread::sleep(std::time::Duration::from_secs(10));
+        }));
+        handles.push(handle);
+    }
+
+    // Give tasks a moment to start
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    // Abort all tasks
+    for handle in &handles {
+        handle.abort();
+    }
+
+    // All aborted tasks should resolve without blocking
+    for handle in handles {
+        let result = futures::executor::block_on(handle);
+        assert!(result.is_ok());
+    }
 }

@@ -1,14 +1,51 @@
 # Release History
 
-## 0.11.0 (Unreleased)
+## 0.14.0 (Unreleased)
 
 ### Features Added
 
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
 ### Breaking Changes
+
+- Added connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
+- `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression - still enabled by default if `reqwest_gzip` or `reqwest_deflate` features are enabled.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.13.0 (2026-04-07)
+
+### Features Added
+
+- Added `From<BytesStream> for Body`.
+
+### Breaking Changes
+
+- `SeekableStream::len()` and `Body::len()` now return `Option<u64>` instead of `usize` to support streams with unknown length and to align with `std::fs::Metadata::len()` for large file sizes.
+- `SeekableStream::is_empty()` and `Body::is_empty()` now return `Option<bool>`.
+- Added `tokio` feature to `default` features.
+- Changed `async_runtime::spawn` to return a `SpawnedTask` trait (supports `abort()`) instead of a raw future.
+
+## 0.12.0 (2026-03-05)
+
+### Features Added
+
+- Added `ErrorKind::Connection` for connection errors.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+- Removed `tracing::FutureExt` and `tracing::WithContext`.
+
+## 0.11.0 (2026-02-10)
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
 
 ## 0.10.0 (2026-01-16)
 

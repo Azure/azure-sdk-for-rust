@@ -92,44 +92,32 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             let message = if let Some(error_message) = T::get_error_message(&stderr) {
-                error_message.to_string()
+                error_message
             } else if output.status.code() == Some(127) || stderr.contains("' is not recognized") {
                 format!("{} not found on PATH", T::tool_name())
             } else {
                 stderr.to_string()
             };
-            Err(Error::with_message_fn(ErrorKind::Credential, || {
-                format!("{} authentication failed: {message}", T::credential_name())
-            }))
+            Err(Error::with_message(ErrorKind::Credential, message))
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let message = format!(
-                "{} authentication failed: {program:?} wasn't found on PATH",
-                T::credential_name(),
-            );
+            let message = format!("{program:?} wasn't found on PATH");
             Err(Error::with_error(ErrorKind::Credential, e, message))
         }
         Err(e) => {
-            let message = format!(
-                "{} failed due to {} error: {e}",
-                T::credential_name(),
-                e.kind()
-            );
+            let message = format!("{} error: {e}", e.kind());
             Err(Error::with_error(ErrorKind::Credential, e, message))
         }
     }
 }
 
 pub(crate) trait OutputProcessor: Send + Sized + Sync + 'static {
-    /// The credential name to include in error messages
-    fn credential_name() -> &'static str;
-
     /// Deserialize an AccessToken from stdout
     fn deserialize_token(stdout: &str) -> Result<AccessToken>;
 
     /// Optionally convert stderr to a user-friendly error message.
     /// When this method returns None, the error message will include stderr verbatim.
-    fn get_error_message(stderr: &str) -> Option<&str>;
+    fn get_error_message(stderr: &str) -> Option<String>;
 
     /// Name of the tool used to get the token e.g. "azd"
     fn tool_name() -> &'static str;

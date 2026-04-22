@@ -5,15 +5,16 @@ use azure_core::http::{ClientOptions, RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-    BlobServiceProperties, BlockBlobClientUploadOptions, GeoReplicationStatusType,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersOptions,
+    BlobServiceProperties, BlockBlobClientUploadOptions, CorsRule, GeoReplicationStatusType,
+    ListContainersIncludeType, Metrics, RetentionPolicy,
 };
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name, recorded_test_setup, StorageAccount,
 };
-use futures::StreamExt;
+use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
@@ -48,7 +49,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let mut container_clients = Vec::new();
     for container_name in container_names.keys() {
         let container_client = service_client.blob_container_client(&container_name.to_string());
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
         container_clients.push(container_client);
     }
 
@@ -72,7 +73,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     }
 
     for container_client in container_clients {
-        container_client.delete_container(None).await?;
+        container_client.delete(None).await?;
     }
 
     Ok(())
@@ -92,11 +93,11 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     let mut container_clients = Vec::new();
     for container_name in container_names.keys() {
         let container_client = service_client.blob_container_client(&container_name.to_string());
-        container_client.create_container(None).await?;
+        container_client.create(None).await?;
         container_clients.push(container_client);
     }
 
-    let list_containers_options = BlobServiceClientListContainersSegmentOptions {
+    let list_containers_options = BlobServiceClientListContainersOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -126,7 +127,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     assert!(page_count >= 2);
 
     for container_client in container_clients {
-        container_client.delete_container(None).await?;
+        container_client.delete(None).await?;
     }
 
     Ok(())
@@ -215,9 +216,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     )
     .await?;
 
-    // Sleep in live mode to allow tags to be indexed on the service
-    if recording.test_mode() == TestMode::Live {
-        time::sleep(Duration::from_secs(5)).await;
+    // Sleep in live and record modes to allow tags to be indexed on the service
+    if ctx.recording().test_mode() == TestMode::Live
+        || ctx.recording().test_mode() == TestMode::Record
+    {
+        time::sleep(Duration::from_secs(15)).await;
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
@@ -225,7 +228,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"foo\"='bar'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -238,7 +241,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"fizz\"='buzz'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -251,7 +254,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -259,13 +262,14 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         "Failed to find \"{blob3_name}\" in filtered blob results."
     );
 
-    container_client_1.delete_container(None).await?;
-    container_client_2.delete_container(None).await?;
+    container_client_1.delete(None).await?;
+    container_client_2.delete(None).await?;
     Ok(())
 }
 
 #[recorded::test(playback)]
 async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test requires a Storage account with secondary endpoint enabled.
     // Recording Setup
     let recording = ctx.recording();
     let mut options = ClientOptions::default();
@@ -295,5 +299,182 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     );
     assert!(stats.geo_replication.unwrap().last_sync_time.is_some());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_containers_with_metadata_include(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+    let container_name = get_container_name(recording);
+    let container_client = service_client.blob_container_client(&container_name);
+    container_client.create(None).await?;
+
+    let metadata = HashMap::from([("team".to_string(), "sdk".to_string())]);
+    container_client.set_metadata(&metadata, None).await?;
+
+    // Metadata Include Scenario
+    let options = BlobServiceClientListContainersOptions {
+        include: Some(vec![ListContainersIncludeType::Metadata]),
+        prefix: Some(container_name.clone()),
+        ..Default::default()
+    };
+    let mut pager = service_client.list_containers(Some(options))?.into_pages();
+    let page = pager.try_next().await?.unwrap().into_model()?;
+
+    // Assert
+    let found = page
+        .container_items
+        .into_iter()
+        .find(|c| c.name.as_deref() == Some(container_name.as_str()))
+        .expect("container not found in listing");
+    assert_eq!(Some(metadata), found.metadata);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+
+    let prefix = "px-";
+    let name_with_prefix = format!("{}{}", prefix, get_container_name(recording));
+    let name_no_prefix = get_container_name(recording);
+
+    let c_with = service_client.blob_container_client(&name_with_prefix);
+    let c_without = service_client.blob_container_client(&name_no_prefix);
+    c_with.create(None).await?;
+    c_without.create(None).await?;
+
+    // Prefix Filter Scenario
+    let options = BlobServiceClientListContainersOptions {
+        prefix: Some(prefix.to_string()),
+        ..Default::default()
+    };
+    let mut pager = service_client.list_containers(Some(options))?.into_pages();
+    let names: Vec<String> = pager
+        .try_next()
+        .await?
+        .unwrap()
+        .into_model()?
+        .container_items
+        .into_iter()
+        .filter_map(|c| c.name)
+        .collect();
+
+    // Assert
+    assert!(names.iter().all(|n| n.starts_with(prefix)));
+    assert!(names.contains(&name_with_prefix));
+
+    c_with.delete(None).await?;
+    c_without.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_service_properties_cors_and_metrics(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+
+    // Save existing properties so they can be restored after the test.
+    let original_props = service_client.get_properties(None).await?.into_model()?;
+
+    // CORS and Metrics Scenario
+    let cors_rule = CorsRule {
+        allowed_origins: Some("https://example.com".to_string()),
+        allowed_methods: Some("GET,PUT".to_string()),
+        allowed_headers: Some("x-ms-*".to_string()),
+        exposed_headers: Some("x-ms-*".to_string()),
+        max_age_in_seconds: Some(3600),
+    };
+    let hour_metrics = Metrics {
+        enabled: Some(true),
+        include_apis: Some(true),
+        retention_policy: Some(RetentionPolicy {
+            enabled: Some(true),
+            days: Some(7),
+            ..Default::default()
+        }),
+        version: Some("1.0".to_string()),
+    };
+    let props = BlobServiceProperties {
+        cors: Some(vec![cors_rule]),
+        hour_metrics: Some(hour_metrics),
+        ..Default::default()
+    };
+    let request_content: RequestContent<BlobServiceProperties, XmlFormat> = props.try_into()?;
+    service_client.set_properties(request_content, None).await?;
+
+    // Assert
+    let response = service_client.get_properties(None).await?;
+    let props = response.into_model()?;
+
+    let rules = props.cors.unwrap_or_default();
+    assert!(!rules.is_empty());
+    let rule = &rules[0];
+    assert_eq!(rule.allowed_origins.as_deref(), Some("https://example.com"));
+    assert_eq!(rule.max_age_in_seconds, Some(3600));
+
+    let hour_metrics = props.hour_metrics.unwrap();
+    assert_eq!(hour_metrics.enabled, Some(true));
+    assert_eq!(hour_metrics.include_apis, Some(true));
+    let retention = hour_metrics.retention_policy.unwrap();
+    assert_eq!(retention.enabled, Some(true));
+    assert_eq!(retention.days, Some(7));
+
+    // Restore original properties to avoid contaminating other tests.
+    let restore_content: RequestContent<BlobServiceProperties, XmlFormat> =
+        original_props.try_into()?;
+    service_client.set_properties(restore_content, None).await?;
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+
+    let prefix = "mr-";
+    let container_names: Vec<String> = (0..3)
+        .map(|_| format!("{}{}", prefix, get_container_name(recording)))
+        .collect();
+    for name in &container_names {
+        service_client
+            .blob_container_client(name)
+            .create(None)
+            .await?;
+    }
+
+    // Max Results Scenario
+    let options = BlobServiceClientListContainersOptions {
+        prefix: Some(prefix.to_string()),
+        maxresults: Some(2),
+        ..Default::default()
+    };
+    let mut pager = service_client.list_containers(Some(options))?.into_pages();
+    let first_page = pager.try_next().await?.unwrap().into_model()?;
+
+    // Assert
+    assert_eq!(first_page.container_items.len(), 2);
+    let second_page_result = pager.try_next().await?;
+    assert!(second_page_result.is_some());
+
+    for name in &container_names {
+        service_client
+            .blob_container_client(name)
+            .delete(None)
+            .await?;
+    }
     Ok(())
 }

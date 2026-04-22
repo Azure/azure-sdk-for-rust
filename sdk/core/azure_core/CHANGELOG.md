@@ -1,14 +1,71 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.35.0 (Unreleased)
 
 ### Features Added
 
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
 ### Breaking Changes
+
+- Added connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
+- `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression - still enabled by default if `reqwest_gzip` or `reqwest_deflate` features are enabled.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.34.0 (2026-04-07)
+
+### Features Added
+
+- Added `From<BytesStream> for Body`.
+- Derived `Clone` and `Serialize` on `ErrorResponse`, `ErrorDetail`, and `InnerError`.
+
+### Breaking Changes
+
+- `SeekableStream::len()` and `Body::len()` now return `Option<u64>` instead of `usize` to support streams with unknown length and to align with `std::fs::Metadata::len()` for large file sizes.
+- `SeekableStream::is_empty()` and `Body::is_empty()` now return `Option<bool>`.
+- Added `tokio` feature to `default` features.
+- Changed `async_runtime::spawn`/`SpawnedTask` to return a trait object that supports `abort()`.
+
+### Other Changes
+
+- The `url.full` span attribute in distributed traces now has query parameter values sanitized. Only parameters in `LoggingOptions::additional_allowed_query_params` and the default allow list (e.g., `api-version`) retain their values; all others are replaced with `REDACTED`.
+
+## 0.33.0 (2026-03-05)
+
+### Features Added
+
+- Added `ErrorKind::Connection` for connection errors.
+- Added `QueryBuilder`, `DEFAULT_ALLOWED_HEADER_NAMES`, `DEFAULT_ALLOWED_QUERY_PARAMETERS`, and `REDACTED_PATTERN` to `azure_core::http`.
+- Added `request_header!`, `request_option!`, and `request_query!` macros.
+- Added `SecretBytes` to `azure_core::credentials` for securely passing byte secrets without printing them in `Debug` or `Display` output.
+- The `reqwest` HTTP client now classifies connection errors as `ErrorKind::Connection`.
+
+### Breaking Changes
+
+- Support for `wasm32-unknown-unknown` has been removed ([#3377](https://github.com/Azure/azure-sdk-for-rust/issues/3377))
+
+## 0.32.0 (2026-02-10)
+
+### Features Added
+
+- Added `PagerContinuation` for `Pager` continuation.
+- Added `PollerContinuation` for `Poller` continuation.
+
+### Breaking Changes
+
+- Changed our minimum supported Rust version (MSRV) from 1.85 to 1.88.
+- Changed paging APIs to use `PagerContinuation` and non-generic `PagerState`/`PagerResult` types.
+- Changed polling APIs to use `PollerContinuation` and non-generic `PollerState`/`PollerResult` types.
+- Renamed `PagerOptions::continuation_token` to `continuation`.
+- Renamed `Pager::continuation_token` to `continuation`.
+- Renamed `Pager::into_continuation_token` to `into_continuation`.
+- Renamed `PageIterator::continuation_token` to `continuation`.
+- Renamed `PageIterator::into_continuation_token` to `into_continuation`.
+- `Pager` callbacks must now return `Result`.
 
 ## 0.31.0 (2026-01-16)
 

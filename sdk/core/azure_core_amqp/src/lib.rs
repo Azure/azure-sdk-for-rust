@@ -5,10 +5,10 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(feature = "fe2o3_amqp")]
 mod fe2o3;
 
-#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
+#[cfg(not(feature = "fe2o3_amqp"))]
 mod noop;
 
 mod cbs;

@@ -5,9 +5,9 @@ use azure_core::http::{
     headers::Headers, AsyncRawResponse, HttpClient, Method, Request, StatusCode, Url,
 };
 use azure_core_test::http::MockHttpClient;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use futures::FutureExt;
-use std::sync::Arc;
+use std::{hint::black_box, sync::Arc};
 
 // how many params to add to the url
 const PARAMS: &[usize] = &[1, 10, 100, 1000];

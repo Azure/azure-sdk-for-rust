@@ -1,63 +1,64 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
+
 use crate::{
-    generated::{
-        clients::BlockBlobClient as GeneratedBlockBlobClient,
-        models::{
-            BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
-            BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-        },
+    generated::models::{
+        BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
+        BlockBlobClientUploadInternalResultHeaders,
     },
-    logging::apply_storage_logging_defaults,
     models::{
-        method_options::BlockBlobClientManagedUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
-    pipeline::StorageHeadersPolicy,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
-    fmt::SafeDebug,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, ClientOptions, NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
+        Body, NoFormat, Pipeline, RequestContent, Url,
     },
-    tracing, Bytes, Result,
+    tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::{num::NonZero, sync::Arc};
-use uuid::Uuid;
 
-/// Options used when creating a [`BlockBlobClient`].
-#[derive(Clone, SafeDebug)]
-pub struct BlockBlobClientOptions {
-    /// Allows customization of the client.
-    pub client_options: ClientOptions,
-    /// Specifies the version of the operation to use for this request.
-    pub version: String,
-}
+impl BlockBlobClient {
+    /// Creates a new BlockBlobClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `container_name` - The name of the container containing this Block blob.
+    /// * `blob_name` - The name of the Block blob to interact with.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn new(
+        endpoint: &str,
+        container_name: &str,
+        blob_name: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlockBlobClientOptions>,
+    ) -> Result<Self> {
+        let mut url = Url::parse(endpoint)?;
 
-impl Default for BlockBlobClientOptions {
-    fn default() -> Self {
-        Self {
-            client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
         }
+
+        Self::from_url(url, credential, options)
     }
-}
 
-/// A client to interact with a specific Azure storage Block blob, although that blob may not yet exist.
-pub struct BlockBlobClient {
-    pub(crate) client: GeneratedBlockBlobClient,
-}
-
-impl GeneratedBlockBlobClient {
-    /// Creates a new GeneratedBlockBlobClient from a block blob URL.
+    /// Creates a new BlockBlobClient from a block blob URL.
     ///
     /// # Arguments
     ///
@@ -71,15 +72,9 @@ impl GeneratedBlockBlobClient {
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
-        apply_storage_logging_defaults(&mut options.client_options);
+        super::apply_client_defaults(&mut options.client_options);
 
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
-
-        let per_retry_policies = if let Some(token_credential) = credential {
+        if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -90,17 +85,15 @@ impl GeneratedBlockBlobClient {
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
             ));
-            vec![auth_policy]
-        } else {
-            Vec::default()
-        };
+            options.client_options.per_try_policies.push(auth_policy);
+        }
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            per_retry_policies,
+            Vec::default(),
             None,
         );
 
@@ -111,17 +104,31 @@ impl GeneratedBlockBlobClient {
         })
     }
 
-    #[tracing::function("Storage.Blob.BlockBlob.managedUpload")]
-    pub async fn managed_upload(
+    /// Gets the URL of the blob.
+    pub fn url(&self) -> &Url {
+        &self.endpoint
+    }
+
+    /// Uploads content to a block blob, overwriting any existing blob by default.
+    ///
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// To perform a partial update of the content of a block blob, use [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - The content to upload.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlockBlob.upload")]
+    pub async fn upload(
         &self,
         content: RequestContent<Bytes, NoFormat>,
-        options: Option<BlockBlobClientManagedUploadOptions<'_>>,
-    ) -> Result<()> {
+        options: Option<BlockBlobClientUploadOptions<'_>>,
+    ) -> Result<BlockBlobClientUploadResult> {
         let options = options.unwrap_or_default();
         let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
         let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
-        // construct exhaustively to ensure we catch new options when added
-        let oneshot_options = BlockBlobClientUploadOptions {
+        // Construct exhaustively to catch new options.
+        let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),
             blob_content_encoding: options.blob_content_encoding.clone(),
@@ -192,187 +199,25 @@ impl GeneratedBlockBlobClient {
             transactional_content_crc64: None,
             transactional_content_md5: None,
         };
-        partitioned_transfer::upload(
-            content.into(),
-            parallel,
-            partition_size,
-            &BlockBlobClientUploadBehavior::new(
-                self,
-                oneshot_options,
-                stage_block_options,
-                commit_block_list_options,
-            ),
-        )
-        .await
-    }
-}
-
-impl BlockBlobClient {
-    /// Creates a new BlockBlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container containing this Block blob.
-    /// * `blob_name` - The name of the Block blob to interact with.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: &str,
-        blob_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<BlockBlobClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-
-        {
-            let mut path_segments = url.path_segments_mut().map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?;
-            path_segments.extend([container_name, blob_name]);
-        }
-
-        let client = GeneratedBlockBlobClient::from_url(url, credential, options)?;
-        Ok(Self { client })
-    }
-
-    /// Creates a new BlockBlobClient from a Block blob URL.
-    ///
-    /// # Arguments
-    ///
-    /// * `blob_url` - The full URL of the Block blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn from_url(
-        blob_url: Url,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<BlockBlobClientOptions>,
-    ) -> Result<Self> {
-        let client = GeneratedBlockBlobClient::from_url(blob_url, credential, options)?;
-
-        Ok(Self { client })
-    }
-
-    /// Gets the URL of the resource this client is configured for.
-    pub fn url(&self) -> &Url {
-        &self.client.endpoint
-    }
-
-    /// Writes to a blob based on blocks specified by the list of IDs and content that make up the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `blocks` - The list of Blob blocks to commit.
-    /// * `options` - Optional configuration for the request.
-    pub async fn commit_block_list(
-        &self,
-        blocks: RequestContent<BlockLookupList, XmlFormat>,
-        options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>> {
-        self.client.commit_block_list(blocks, options).await
-    }
-
-    /// Creates a new block to be later committed as part of a blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `block_id` - A unique identifier for the block (up to 64 bytes). The SDK will Base64-encode this value
-    ///   before sending to the service. For a given blob, the `block_id` must be the same size for each block.
-    /// * `content_length` - Total length of the blob data to be staged.
-    /// * `data` - The content of the block.
-    /// * `options` - Optional configuration for the request.
-    pub async fn stage_block(
-        &self,
-        block_id: &[u8],
-        content_length: u64,
-        body: RequestContent<Bytes, NoFormat>,
-        options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
-        self.client
-            .stage_block(block_id, content_length, body, options)
-            .await
-    }
-
-    /// Retrieves the list of blocks that have been uploaded as part of a block blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `list_type` - Specifies whether to return the list of committed blocks, uncommitted blocks, or both lists together.
-    /// * `options` - Optional configuration for the request.
-    pub async fn get_block_list(
-        &self,
-        list_type: BlockListType,
-        options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList, XmlFormat>> {
-        self.client.get_block_list(list_type, options).await
-    }
-
-    /// Creates a new Block Blob where the content of the blob is read from a given URL. The default behavior is content of an existing blob is overwritten with the new blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob. The value should be URL-encoded as it would appear in a request URI.
-    ///   The source must either be public or must be authenticated via a shared access signature as part of the url or using the source_authorization keyword.
-    ///   If the source is public, no authentication is required. Examples:
-    ///   - `https://myaccount.blob.core.windows.net/mycontainer/myblob`
-    ///   - `https://myaccount.blob.core.windows.net/mycontainer/myblob?snapshot=<DateTime>`
-    ///   - `https://otheraccount.blob.core.windows.net/mycontainer/myblob?sastoken`
-    /// * `options` - Optional configuration for the request.
-    pub async fn upload_blob_from_url(
-        &self,
-        copy_source: String,
-        options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
-        self.client.upload_blob_from_url(copy_source, options).await
-    }
-
-    /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
-    /// a URL.
-    ///
-    /// # Arguments
-    ///
-    /// * `block_id` - A unique identifier for the block (up to 64 bytes). This value will be base64-encoded automatically.
-    ///   For a given blob, the `block_id` must be the same size for each block.
-    /// * `content_length` - The length of the request.
-    /// * `source_url` - Specify a URL to the copy source.
-    /// * `options` - Optional configuration for the request.
-    pub async fn stage_block_from_url(
-        &self,
-        block_id: &[u8],
-        content_length: u64,
-        source_url: String,
-        options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>> {
-        self.client
-            .stage_block_from_url(block_id, content_length, source_url, options)
-            .await
-    }
-
-    /// The managed upload operation updates the content of an existing block blob. Updating an existing block blob overwrites
-    /// any existing metadata on the blob. Partial updates are not supported; the content of the existing blob is
-    /// overwritten with the content of the new blob. To perform a partial update of the content of a block blob, use the Put
-    /// Block List operation.
-    ///
-    /// # Arguments
-    ///
-    /// * `body` - The body of the request.
-    /// * `options` - Optional parameters for the request.
-    pub async fn managed_upload(
-        &self,
-        content: RequestContent<Bytes, NoFormat>,
-        options: Option<BlockBlobClientManagedUploadOptions<'_>>,
-    ) -> Result<()> {
-        self.client.managed_upload(content, options).await
+        let behavior = BlockBlobClientUploadBehavior::new(
+            self,
+            oneshot_options,
+            stage_block_options,
+            commit_block_list_options,
+        );
+        partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
+        behavior.result.into_inner().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Upload completed without setting result.",
+            )
+        })
     }
 }
 
 // unwrap evaluated at compile time
 const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
-const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+const DEFAULT_PARTITION_SIZE: NonZero<u64> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlockInfo {
     offset: u64,
@@ -380,17 +225,18 @@ struct BlockInfo {
 }
 
 struct BlockBlobClientUploadBehavior<'c, 'opt> {
-    client: &'c GeneratedBlockBlobClient,
-    oneshot_options: BlockBlobClientUploadOptions<'opt>,
+    client: &'c BlockBlobClient,
+    oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
     stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
     commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     blocks: Mutex<Vec<BlockInfo>>,
+    result: Mutex<Option<BlockBlobClientUploadResult>>,
 }
 
 impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
     fn new(
-        client: &'c GeneratedBlockBlobClient,
-        oneshot_options: BlockBlobClientUploadOptions<'opt>,
+        client: &'c BlockBlobClient,
+        oneshot_options: BlockBlobClientUploadInternalOptions<'opt>,
         stage_block_options: BlockBlobClientStageBlockOptions<'opt>,
         commit_block_list_options: BlockBlobClientCommitBlockListOptions<'opt>,
     ) -> Self {
@@ -400,33 +246,61 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
             stage_block_options,
             commit_block_list_options,
             blocks: Mutex::new(vec![]),
+            result: Mutex::new(None),
         }
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
-        let content_len = content.len() as u64;
-        self.client
-            .upload(
+        // This should only ever be called by a managed uploader when the length is known.
+        // Otherwise, we can only buffer or error.
+        // Buffering strategy must be left to the caller, so we must error.
+        let Some(content_len) = content.len() else {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Io,
+                "length unknown",
+            ));
+        };
+        let rsp = self
+            .client
+            .upload_internal(
                 content.into(),
                 content_len,
                 Some(self.oneshot_options.clone()),
             )
             .await?;
+        *self.result.lock().await = Some(BlockBlobClientUploadResult {
+            content_md5: rsp.content_md5()?,
+            content_crc64: rsp.content_crc64()?,
+            encryption_key_sha256: rsp.encryption_key_sha256()?,
+            encryption_scope: rsp.encryption_scope()?,
+            etag: rsp.etag()?,
+            is_server_encrypted: rsp.is_server_encrypted()?,
+            last_modified: rsp.last_modified()?,
+            version_id: rsp.version_id()?,
+            raw_response: rsp.to_raw_response(),
+        });
         Ok(())
     }
 
-    async fn transfer_partition(&self, offset: usize, content: Body) -> Result<()> {
+    async fn transfer_partition(&self, offset: u64, content: Body) -> Result<()> {
+        // This should only ever be called by a managed uploader when the length is known.
+        // Otherwise, we can only buffer or error.
+        // Buffering strategy must be left to the caller, so we must error.
+        let Some(content_len) = content.len() else {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Io,
+                "length unknown",
+            ));
+        };
         let block_id = Uuid::new_v4();
-        let content_len = content.len().try_into().unwrap();
         {
-            self.blocks.lock().await.push(BlockInfo {
-                offset: offset as u64,
-                block_id,
-            });
+            self.blocks
+                .lock()
+                .await
+                .push(BlockInfo { offset, block_id });
         }
         self.client
             .stage_block(
@@ -439,13 +313,13 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
         Ok(())
     }
 
-    async fn initialize(&self, _content_len: usize) -> Result<()> {
+    async fn initialize(&self, _content_len: std::option::Option<u64>) -> Result<()> {
         Ok(())
     }
 
     async fn finalize(&self) -> Result<()> {
         let mut blocks = self.blocks.lock().await;
-        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        blocks.sort_by_key(|left| left.offset);
         let blocklist = BlockLookupList {
             latest: Some(
                 blocks
@@ -455,13 +329,24 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
             ),
             ..Default::default()
         };
-        self.client
+        let rsp = self
+            .client
             .commit_block_list(
                 blocklist.try_into()?,
                 Some(self.commit_block_list_options.clone()),
             )
             .await?;
-
+        *self.result.lock().await = Some(BlockBlobClientUploadResult {
+            content_md5: rsp.content_md5()?,
+            content_crc64: rsp.content_crc64()?,
+            encryption_key_sha256: rsp.encryption_key_sha256()?,
+            encryption_scope: rsp.encryption_scope()?,
+            etag: rsp.etag()?,
+            is_server_encrypted: rsp.is_server_encrypted()?,
+            last_modified: rsp.last_modified()?,
+            version_id: rsp.version_id()?,
+            raw_response: rsp.to_raw_response(),
+        });
         Ok(())
     }
 }

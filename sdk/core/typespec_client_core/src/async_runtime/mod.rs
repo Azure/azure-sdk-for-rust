@@ -30,47 +30,52 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[cfg_attr(any(feature = "tokio", feature = "wasm_bindgen"), allow(dead_code))]
+#[cfg_attr(feature = "tokio", allow(dead_code))]
 mod standard_runtime;
 
 #[cfg(feature = "tokio")]
 mod tokio_runtime;
 
-#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-mod web_runtime;
-
 #[cfg(test)]
 mod tests;
 
 /// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
-#[cfg(not(target_arch = "wasm32"))]
 pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
-/// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
-#[cfg(target_arch = "wasm32")]
-pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
-
-/// A `SpawnedTask` is a future that represents a running task.
-/// It can be awaited to block until the task has completed.
-#[cfg(not(target_arch = "wasm32"))]
-pub type SpawnedTask = Pin<
-    Box<
-        dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>>
-            + Send
-            + 'static,
-    >,
->;
-
-/// A `SpawnedTask` is a future that represents a running task.
-/// It can be awaited to block until the task has completed.
-#[cfg(target_arch = "wasm32")]
-pub type SpawnedTask =
-    Pin<Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + 'static>>;
-
-/// An Asynchronous Runtime.
+/// A pinned, boxed [`AbortableTask`].
 ///
-/// This trait defines the various
+/// Returned by [`AsyncRuntime::spawn`]. Await it to wait for the task to
+/// complete, or call [`AbortableTask::abort`] to request cancellation.
+pub type SpawnedTask = Pin<Box<dyn AbortableTask>>;
+
+/// A future that represents a running task which can be cancelled.
 ///
+/// Awaiting an `AbortableTask` blocks until the task completes and yields
+/// `Ok(())` on success or an error if the task panicked or otherwise failed.
+///
+/// Call [`abort`](AbortableTask::abort) to request cancellation. The exact
+/// semantics are runtime-dependent:
+///
+/// * **Tokio** — calls [`JoinHandle::abort`](tokio::task::JoinHandle::abort),
+///   which cancels the task at the next `.await` point.
+/// * **std thread** — drops the join handle and marks the task as finished so
+///   that awaiting the future resolves immediately. The underlying thread may
+///   continue running, but the caller is no longer blocked on it.
+pub trait AbortableTask:
+    Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>> + Send
+{
+    /// Requests cancellation of the task.
+    ///
+    /// After calling `abort`, awaiting this future will resolve without waiting
+    /// for the spawned work to finish. Calling `abort` on an already-completed
+    /// task is a no-op.
+    fn abort(&self);
+}
+
+/// An asynchronous runtime.
+///
+/// This trait abstracts task spawning, sleeping, and yielding so that library
+/// code can remain runtime-agnostic.
 pub trait AsyncRuntime: Send + Sync {
     /// Spawn a task that executes a given future and returns the output.
     ///
@@ -128,7 +133,7 @@ static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock:
 ///
 /// The implementation depends on the target architecture and the features enabled:
 /// - If the `tokio` feature is enabled, it uses a tokio based spawner and timer.
-/// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner and timer.
+/// - If the `tokio` feature is not enabled, it uses a std::thread based spawner and timer.
 ///
 /// # Returns
 ///  An instance of a [`AsyncRuntime`] which can be used to spawn background tasks or perform other asynchronous operations.
@@ -166,17 +171,16 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 ///
 /// ```
 /// use typespec_client_core::async_runtime::{
-///     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
+///     set_async_runtime, AbortableTask, AsyncRuntime, TaskFuture, SpawnedTask};
 /// use std::sync::Arc;
-/// use futures::FutureExt;
 ///
 /// struct CustomRuntime;
 ///
 /// impl AsyncRuntime for CustomRuntime {
-///    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+///    fn spawn(&self, _f: TaskFuture) -> SpawnedTask {
 ///      unimplemented!("Custom spawn not implemented");
 ///    }
-///    fn sleep(&self, duration: typespec_client_core::time::Duration) -> TaskFuture {
+///    fn sleep(&self, _duration: typespec_client_core::time::Duration) -> TaskFuture {
 ///      unimplemented!("Custom sleep not implemented");
 ///    }
 ///    fn yield_now(&self) -> TaskFuture {
@@ -200,15 +204,11 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-    {
-        Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
-    }
     #[cfg(feature = "tokio")]
     {
         Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
     }
-    #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+    #[cfg(not(feature = "tokio"))]
     {
         Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
     }

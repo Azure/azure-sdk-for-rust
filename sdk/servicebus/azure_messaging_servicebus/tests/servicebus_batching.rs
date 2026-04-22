@@ -5,7 +5,7 @@
 
 mod common;
 
-use azure_core::time::Duration;
+use azure_core::{time::Duration, Uuid};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_servicebus::{
     CreateMessageBatchOptions, CreateReceiverOptions, Message, ReceiveMessageOptions, ReceiveMode,
@@ -13,7 +13,6 @@ use azure_messaging_servicebus::{
 };
 use common::{get_queue_name, get_servicebus_namespace};
 use std::{env, error::Error};
-use uuid::Uuid;
 
 #[recorded::test(live)]
 async fn test_token_credential_batch_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {

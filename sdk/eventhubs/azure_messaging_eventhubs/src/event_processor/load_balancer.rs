@@ -8,7 +8,7 @@ use super::{
 };
 use crate::models::ConsumerClientDetails;
 use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error, Result};
-use rand::{seq::SliceRandom, Rng, RngCore, SeedableRng};
+use rand::{rngs::SysRng, seq::SliceRandom, Rng, RngExt, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 use std::{
     cmp::min,
@@ -46,7 +46,7 @@ pub struct LoadBalancer {
     // Random number generator used for load balancing - this is a test hook to allow for deterministic test results.
     // In production, this should be a random number generator that is seeded with entropy.
     // The mutex ensures that we can access a mutable RNG even if self is immutable.
-    rng: Mutex<Box<dyn RngCore + Send + Sync>>,
+    rng: Mutex<Box<dyn Rng + Send + Sync>>,
 }
 
 impl LoadBalancer {
@@ -56,18 +56,20 @@ impl LoadBalancer {
         consumer_client_details: ConsumerClientDetails,
         processor_strategy: ProcessorStrategy,
         duration: Duration,
-        rng: Option<Box<dyn RngCore + Send + Sync>>,
+        rng: Option<Box<dyn Rng + Send + Sync>>,
     ) -> Self {
         LoadBalancer {
             checkpoint_store,
             processor_strategy,
             duration,
             consumer_client_details,
-            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(ChaCha20Rng::from_os_rng()))),
+            rng: Mutex::new(
+                rng.unwrap_or_else(|| Box::new(ChaCha20Rng::try_from_rng(&mut SysRng).unwrap())),
+            ),
         }
     }
 
-    fn rng(&self) -> Result<MutexGuard<'_, Box<dyn RngCore + Send + Sync>>> {
+    fn rng(&self) -> Result<MutexGuard<'_, Box<dyn Rng + Send + Sync>>> {
         self.rng
             .lock()
             .map_err(|_| Error::with_message(AzureErrorKind::Other, "Failed to lock RNG mutex"))

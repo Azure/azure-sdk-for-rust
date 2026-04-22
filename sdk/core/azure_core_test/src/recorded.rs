@@ -10,13 +10,10 @@ use crate::{
 use azure_core::{test::TestMode, Result};
 pub use azure_core_test_macros::test;
 use std::sync::Arc;
-#[cfg(not(target_arch = "wasm32"))]
 use tokio::sync::OnceCell;
 
-#[cfg(not(target_arch = "wasm32"))]
 static ONLY_TRACE: std::sync::OnceLock<()> = std::sync::OnceLock::new();
 
-#[cfg(not(target_arch = "wasm32"))]
 static TEST_PROXY: OnceCell<Result<Arc<Proxy>>> = OnceCell::const_new();
 
 /// Starts playback or recording of live recordings.
@@ -29,14 +26,10 @@ pub async fn start(
     crate_dir: &'static str,
     module_dir: &'static str,
     name: &'static str,
-    #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] options: Option<ProxyOptions>,
+    options: Option<ProxyOptions>,
 ) -> Result<TestContext> {
     let mut ctx = TestContext::new(crate_dir, module_dir, name)?;
 
-    #[cfg(target_arch = "wasm32")]
-    let proxy: Option<Arc<Proxy>> = None;
-
-    #[cfg(not(target_arch = "wasm32"))]
     let proxy = {
         use crate::proxy::ProxyExt;
 
@@ -99,7 +92,6 @@ pub async fn start(
     Ok(ctx)
 }
 
-#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn init_tracing() {
     #[cfg(feature = "tracing")]
     {

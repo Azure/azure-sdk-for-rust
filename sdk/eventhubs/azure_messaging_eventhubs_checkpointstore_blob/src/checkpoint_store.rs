@@ -17,8 +17,8 @@ use azure_messaging_eventhubs::{
 };
 use azure_storage_blob::{
     models::{
-        BlobClientSetMetadataOptions, BlobContainerClientListBlobFlatSegmentOptions,
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
+        BlobClientSetMetadataOptions, BlobContainerClientListBlobsOptions,
+        BlockBlobClientUploadOptions, ListBlobsIncludeItem,
     },
     BlobContainerClient,
 };
@@ -70,7 +70,7 @@ impl BlobCheckpointStore {
     ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
         let blob_client = self.blob_container_client.blob_client(blob_name);
 
-        let result = blob_client.set_metadata(metadata.clone(), None).await;
+        let result = blob_client.set_metadata(&metadata, None).await;
         match result {
             Ok(r) => Ok(Self::process_storage_response_metadata(
                 r.headers().get_optional_string(&LAST_MODIFIED),
@@ -85,11 +85,9 @@ impl BlobCheckpointStore {
                         ..Default::default()
                     };
 
-                    let upload_result = blob_client
-                        .upload(blob_content, true, 0, Some(options))
-                        .await;
+                    let upload_result = blob_client.upload(blob_content, Some(options)).await;
                     match upload_result {
-                        Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
+                        Ok(r) => Ok((r.last_modified, r.etag)),
                         Err(e) => Err(e),
                     }
                 }
@@ -112,11 +110,12 @@ impl BlobCheckpointStore {
                 metadata, blob_name, etag
             );
             let options = BlobClientSetMetadataOptions {
-                if_match: etag.map(|e| e.to_string()),
+                if_match: etag,
                 ..Default::default()
             };
+            let metadata_ref = metadata.unwrap_or_default();
             let result = blob_client
-                .set_metadata(metadata.unwrap_or_default(), Some(options))
+                .set_metadata(&metadata_ref, Some(options))
                 .await?;
             return Self::process_storage_response_metadata(
                 result.headers().get_optional_string(&LAST_MODIFIED),
@@ -128,22 +127,19 @@ impl BlobCheckpointStore {
         let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
         let options = BlockBlobClientUploadOptions {
             metadata: metadata.clone(),
-            if_none_match: Some("*".to_string()), // Upload without an etag, creating a new blob
+            if_none_match: Some(Etag::from("*")), // Upload without an etag, creating a new blob
             ..Default::default()
         };
 
-        let upload_result = blob_client
-            .upload(blob_content, true, 0, Some(options))
-            .await;
+        let upload_result = blob_client.upload(blob_content, Some(options)).await;
         match upload_result {
-            Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
+            Ok(r) => Ok((r.last_modified, r.etag)),
             Err(e) => Err(e),
         }
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl CheckpointStore for BlobCheckpointStore {
     /// Claims ownership of the specified partitions.
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
@@ -217,13 +213,13 @@ impl CheckpointStore for BlobCheckpointStore {
 
         debug!("Using checkpoint prefix: {}", prefix);
 
-        let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobFlatSegmentOptions {
-                prefix: Some(prefix),
-                include: Some(vec![ListBlobsIncludeItem::Metadata]),
-                ..Default::default()
-            },
-        ))?;
+        let mut blobs =
+            self.blob_container_client
+                .list_blobs(Some(BlobContainerClientListBlobsOptions {
+                    prefix: Some(prefix),
+                    include: Some(vec![ListBlobsIncludeItem::Metadata]),
+                    ..Default::default()
+                }))?;
         let mut checkpoints = Vec::new();
 
         let checkpoint = Checkpoint {
@@ -237,23 +233,21 @@ impl CheckpointStore for BlobCheckpointStore {
             debug!("Blob body: {blob:?}");
             let mut checkpoint = checkpoint.clone();
             if let Some(name) = &blob.name {
-                if let Some(name) = &name.content {
-                    checkpoint.partition_id = name
-                        .rfind('/')
-                        .map(|pos| &name[pos + 1..])
-                        .unwrap_or_default()
-                        .to_string();
-                    if let Some(additional_properties) = blob
-                        .metadata
-                        .as_ref()
-                        .and_then(|m| m.additional_properties.as_ref())
-                    {
-                        if let Some(sequence_number) = additional_properties.get(SEQUENCE_NUMBER) {
-                            checkpoint.sequence_number = Some(sequence_number.parse()?);
-                        }
-                        if let Some(offset) = additional_properties.get(OFFSET) {
-                            checkpoint.offset = Some(offset.clone());
-                        }
+                checkpoint.partition_id = name
+                    .rfind('/')
+                    .map(|pos| &name[pos + 1..])
+                    .unwrap_or_default()
+                    .to_string();
+                if let Some(additional_properties) = blob
+                    .metadata
+                    .as_ref()
+                    .and_then(|m| m.additional_properties.as_ref())
+                {
+                    if let Some(sequence_number) = additional_properties.get(SEQUENCE_NUMBER) {
+                        checkpoint.sequence_number = Some(sequence_number.parse()?);
+                    }
+                    if let Some(offset) = additional_properties.get(OFFSET) {
+                        checkpoint.offset = Some(offset.clone());
                     }
                 }
             }
@@ -281,13 +275,13 @@ impl CheckpointStore for BlobCheckpointStore {
 
         debug!("Using ownership prefix: {}", prefix);
 
-        let mut blobs = self.blob_container_client.list_blobs(Some(
-            BlobContainerClientListBlobFlatSegmentOptions {
-                prefix: Some(prefix),
-                include: Some(vec![ListBlobsIncludeItem::Metadata]),
-                ..Default::default()
-            },
-        ))?;
+        let mut blobs =
+            self.blob_container_client
+                .list_blobs(Some(BlobContainerClientListBlobsOptions {
+                    prefix: Some(prefix),
+                    include: Some(vec![ListBlobsIncludeItem::Metadata]),
+                    ..Default::default()
+                }))?;
         let mut ownerships = Vec::new();
 
         let ownership = Ownership {
@@ -301,21 +295,19 @@ impl CheckpointStore for BlobCheckpointStore {
             debug!("Blob body: {blob:?}");
             let mut ownership = ownership.clone();
             if let Some(name) = &blob.name {
-                if let Some(name) = &name.content {
-                    ownership.partition_id = name
-                        .rfind('/')
-                        .map(|pos| &name[pos + 1..])
-                        .unwrap_or_default()
-                        .to_string();
-                    ownership.owner_id = blob
-                        .metadata
-                        .as_ref()
-                        .and_then(|m| m.additional_properties.as_ref())
-                        .and_then(|ap| ap.get(OWNER_ID).cloned());
-                }
+                ownership.partition_id = name
+                    .rfind('/')
+                    .map(|pos| &name[pos + 1..])
+                    .unwrap_or_default()
+                    .to_string();
+                ownership.owner_id = blob
+                    .metadata
+                    .as_ref()
+                    .and_then(|m| m.additional_properties.as_ref())
+                    .and_then(|ap| ap.get(OWNER_ID).cloned());
             }
             if let Some(properties) = &blob.properties {
-                ownership.etag = properties.etag.as_ref().map(|s| Etag::from(s.clone()));
+                ownership.etag = properties.etag.clone();
                 ownership.last_modified_time = properties.last_modified;
             }
 

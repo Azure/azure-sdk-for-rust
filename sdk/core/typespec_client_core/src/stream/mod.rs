@@ -18,18 +18,22 @@ use std::{pin::Pin, task::Context};
 pub const DEFAULT_BUFFER_SIZE: usize = 1024 * 64;
 
 /// Enable a type implementing `AsyncRead` to be consumed as if it were a `Stream` of `Bytes`.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + DynClone {
     /// Resets the stream position to the beginning.
     async fn reset(&mut self) -> Result<()>;
 
-    /// Returns the total length of the stream in bytes.
-    fn len(&self) -> usize;
+    /// Returns the total length of the stream in bytes, if known.
+    ///
+    /// # Notes
+    ///
+    /// [`TransportPolicy`](crate::http::policies::TransportPolicy) implementations will most often want to send a `content-length` header when `len` returns `Some`
+    /// but use `transfer-encoding: chunked` when `len` returns None.
+    fn len(&self) -> Option<u64>;
 
-    /// Returns `true` if the stream is empty.
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+    /// Returns `true` if the stream is empty, if known.
+    fn is_empty(&self) -> Option<bool> {
+        self.len().map(|len| len == 0)
     }
 
     /// Returns the size of the buffer to use when reading from the stream.

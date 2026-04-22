@@ -2,8 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{ErrorKind, Result, ServiceBusError};
-use azure_core::fmt::SafeDebug;
-use azure_core::time::Duration;
+use azure_core::{fmt::SafeDebug, time::Duration, Uuid};
 use azure_core_amqp::{
     message::{AmqpApplicationProperties, AmqpMessageBody, AmqpMessageId, AmqpMessageProperties},
     AmqpMessage, AmqpSimpleValue, AmqpSymbol,
@@ -11,7 +10,6 @@ use azure_core_amqp::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 /// A message to be sent to Service Bus.
 #[derive(SafeDebug, Clone)]
