@@ -125,7 +125,9 @@ pub(crate) async fn execute_operation_pipeline(
         .partitions
         .per_partition_automatic_failover_enabled
         && !location_snapshot.account.multiple_write_locations_enabled
-        && operation.resource_type().is_partitioned();
+        && operation
+            .resource_type()
+            .is_partitioned(operation.operation_type());
 
     // PPCB: when circuit breaker is enabled, partition-level thresholds
     // drive failover instead of marking the whole endpoint unavailable.
