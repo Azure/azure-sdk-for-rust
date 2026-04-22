@@ -16,7 +16,7 @@
 5. [Planner](#5-planner)
 6. [Plan Executor](#6-plan-executor)
 7. [Continuation Tokens](#7-continuation-tokens)
-8. [OpenTelemetry Integration](#8-opentelemetry-integration)
+8. [Diagnostics Structure](#8-diagnostics-structure)
 9. [Error Handling & Partition Splits](#9-error-handling--partition-splits)
 10. [API Semantics & Invariants](#10-api-semantics--invariants)
 11. [Configuration Surface](#11-configuration-surface)
@@ -134,7 +134,7 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
 │  │  ├─ Handle partition splits (re-plan affected ranges)                    │  │
 │  │  ├─ Enforce concurrency caps for fan-out                                 │  │
 │  │  ├─ Integrate with throughput control                                    │  │
-│  │  ├─ Emit OpenTelemetry spans                                             │  │
+│  │  ├─ Collect step-level diagnostics (timing, concurrency)                │  │
 │  │  └─ Produce continuation token in response (if more pages remain)        │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                      │                                                         │
@@ -784,8 +784,8 @@ pub(crate) struct PlanExecutor {
     step_states: Vec<StepState>,
     /// Concurrency control for fan-out.
     concurrency_limit: usize,
-    /// OpenTelemetry context for span linking.
-    trace_context: FeedTraceContext,
+    /// Diagnostics builder for collecting step-level timing.
+    diagnostics: DiagnosticsContextBuilder,
 }
 
 impl PlanExecutor {
@@ -807,7 +807,7 @@ impl PlanExecutor {
 
 Each call to `execute`:
 
-1. **Emit OpenTelemetry span** for this turn (child of the feed operation span, linked to root).
+1. **Record step enqueue** — mark each step as enqueued for concurrency tracking.
 2. **Identify runnable steps** — steps whose dependencies are satisfied.
 3. **Execute runnable steps concurrently** (up to concurrency cap), each via
    `execute_single_operation`.
@@ -1283,49 +1283,234 @@ A continuation token **survives**:
 
 ---
 
-## 8. OpenTelemetry Integration
+## 8. Diagnostics Structure
 
-### 8.1 Span Hierarchy
+### 8.1 Design Principle
 
-Feed operations produce the following span structure:
+The driver does **not** create OpenTelemetry spans or any other telemetry artifacts. Instead,
+each call to `execute_operation` returns a `DiagnosticsContext` on the `CosmosResponse`
+containing a structured hierarchy of timing, concurrency, and request data. The higher-level
+SDK crate uses this data to create OTEL spans, log entries, or any other telemetry it chooses.
+
+This separation ensures the driver remains transport- and telemetry-agnostic while providing
+enough detail for the SDK to reconstruct the full execution timeline.
+
+### 8.2 Hierarchy: Turn → Step → Request
+
+Each `execute_operation` call executes one **Turn** of an operation plan. A Turn contains
+one or more **Steps** (one per plan step executed), and each Step contains zero or more
+**Requests** (the existing `RequestDiagnostics` type, unchanged).
 
 ```text
-Feed Operation Span (root)
-  ├── db.cosmosdb.operation = "query_items" (or "read_many", etc.)
-  ├── db.cosmosdb.container = "my-container"
-  ├── db.cosmosdb.feed_operation_id = <uuid>
-  │
-  ├── Turn 0 Span
-  │   ├── db.cosmosdb.feed_turn_index = 0
-  │   ├── [linked to Feed Operation Span]
-  │   │
-  │   ├── PK Range "0" Fetch Span
-  │   │   └── (transport pipeline spans)
-  │   ├── PK Range "1" Fetch Span
-  │   │   └── (transport pipeline spans)
-  │   └── UnorderedMerge Span
-  │
-  ├── Turn 1 Span  (if paginated)
-  │   ├── db.cosmosdb.feed_turn_index = 1
-  │   └── ...
-  ...
+DiagnosticsContext
+  └── TurnDiagnostics
+        ├── duration, total RU, concurrency metadata
+        │
+        ├── StepDiagnostics [0]  (e.g., Fetch to PK range "0")
+        │     ├── enqueued_at, started_at, completed_at
+        │     ├── step type, EPK range
+        │     └── RequestDiagnostics [0]    (initial attempt)
+        │         RequestDiagnostics [1]    (retry, if any)
+        │
+        ├── StepDiagnostics [1]  (e.g., Fetch to PK range "1")
+        │     ├── enqueued_at, started_at, completed_at
+        │     └── RequestDiagnostics [0]
+        │
+        └── StepDiagnostics [2]  (e.g., UnorderedMerge)
+              ├── started_at, completed_at
+              └── (no requests — local computation only)
 ```
 
-### 8.2 Cross-Process Span Linking
+For point operations, the Turn has exactly one Step with one or more Requests (retries).
+The hierarchy is always present but trivially flat.
 
-When a feed operation is resumed from a continuation token in a different process:
+### 8.3 `TurnDiagnostics`
 
-1. The original Feed Operation Span is NOT re-opened (it may have ended).
-2. A new Feed Operation Span is created in the new process.
-3. The continuation token carries the `feed_operation_id` (a UUID).
-4. Each Turn Span in the new process includes a **span link** to the original
-   feed operation ID, enabling distributed tracing tools to connect the turns
-   across process boundaries.
+```rust
+/// Diagnostics for a single turn (one page) of an operation.
+///
+/// Each call to `execute_operation` produces exactly one `TurnDiagnostics`.
+/// For paginated feed operations, the SDK aggregates multiple turns' diagnostics
+/// across pages.
+pub struct TurnDiagnostics {
+    /// Wall-clock duration of the entire turn.
+    duration: Duration,
 
-### 8.3 Point Operation Spans
+    /// Total RU charge across all steps and requests in this turn.
+    total_request_charge: RequestCharge,
 
-Point operations continue to produce a single span as they do today. The plan/executor layer
-does not add additional span nesting for trivial single-step plans.
+    /// Per-step diagnostics, in execution order.
+    steps: Vec<StepDiagnostics>,
+
+    /// Concurrency metadata for this turn.
+    concurrency: TurnConcurrency,
+}
+
+/// Concurrency metadata for a turn.
+///
+/// Enables the SDK to observe how steps were parallelized and whether the
+/// concurrency cap was a bottleneck. Wait times and max concurrency can
+/// be computed from the step timestamps by the SDK if needed.
+pub struct TurnConcurrency {
+    /// Total number of steps executed in this turn.
+    steps_executed: usize,
+
+    /// The concurrency cap that was configured for this turn.
+    /// Steps beyond this limit waited for a permit before starting.
+    concurrency_cap: usize,
+}
+```
+
+### 8.4 `StepDiagnostics`
+
+```rust
+/// Diagnostics for a single step within a turn.
+///
+/// Captures three timestamps to distinguish **wait time** (waiting for a
+/// concurrency permit) from **execution time** (actually performing the
+/// step's work). These durations can be trivially computed by the SDK:
+///
+/// ```text
+///   enqueued_at          started_at          completed_at
+///       │── wait time ──│── execution time ──│
+///       (started_at -      (completed_at -
+///        enqueued_at)       started_at)
+/// ```
+///
+/// For steps that don't go through the concurrency semaphore (e.g., Merge),
+/// `enqueued_at == started_at` (zero wait time).
+pub struct StepDiagnostics {
+    /// What kind of step this was.
+    step_type: StepType,
+
+    /// The EPK range targeted by this step (for Fetch steps).
+    /// `None` for non-fetch steps (Merge, etc.).
+    epk_range: Option<EpkRange<EffectivePartitionKey>>,
+
+    /// When the step was enqueued for execution (requested a concurrency permit).
+    enqueued_at: Instant,
+
+    /// When the step started executing (acquired its concurrency permit).
+    started_at: Instant,
+
+    /// When the step completed.
+    completed_at: Instant,
+
+    /// Total RU charge for this step.
+    request_charge: RequestCharge,
+
+    /// Individual HTTP request diagnostics for this step.
+    /// Empty for non-HTTP steps (e.g., Merge).
+    /// May contain multiple entries due to retries within the step.
+    requests: Vec<RequestDiagnostics>,
+}
+
+/// Identifies the kind of plan step for diagnostics purposes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StepType {
+    /// A Fetch step that executed an HTTP request via execute_single_operation.
+    Fetch,
+    /// An UnorderedMerge step that concatenated results from upstream steps.
+    UnorderedMerge,
+    // Future: OrderedMerge, OffsetLimit, etc.
+}
+```
+
+### 8.5 Collection Approach
+
+The `PlanExecutor` records timestamps at key points during execution:
+
+1. **Step enqueued** (`enqueued_at`): Recorded when the executor submits a step for
+   execution. For concurrent fan-out, this is when the step requests a permit from the
+   concurrency semaphore.
+
+2. **Step started** (`started_at`): Recorded when the step acquires its concurrency permit
+   and begins executing. For steps that don't use the semaphore (single-step plans, Merge
+   steps), this equals `enqueued_at`.
+
+3. **Step completed** (`completed_at`): Recorded when the step finishes (successfully or
+   with an error). For Fetch steps, this is after `execute_single_operation` returns
+   (including any retries it performs internally).
+
+4. **Derived values**: The SDK can compute wait time (`started_at - enqueued_at`),
+   execution time (`completed_at - started_at`), max concurrent steps (from overlapping
+   intervals), and total wait time (sum across steps) from the raw timestamps. The driver
+   stores only the timestamps to minimize memory.
+
+All timestamps use `Instant::now()` — cheap and monotonic. No allocations beyond the
+`Vec<StepDiagnostics>` that is already needed for the diagnostics output. No derived
+`Duration` fields are stored — the SDK computes them on demand.
+
+### 8.6 `DiagnosticsContext` Changes
+
+The existing `DiagnosticsContext` gains a `TurnDiagnostics` field. The flat
+`requests: Arc<Vec<RequestDiagnostics>>` is replaced by the nested structure, but a
+backward-compatible `requests()` accessor is preserved by flattening the tree:
+
+```rust
+impl DiagnosticsContext {
+    /// Returns the turn diagnostics for this operation.
+    pub fn turn(&self) -> &TurnDiagnostics { ... }
+
+    /// Returns all HTTP request diagnostics, flattened across steps.
+    ///
+    /// This is backward-compatible with the pre-feed-operations API.
+    /// Requests are returned in the order they were executed.
+    pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>> {
+        // Flatten: turn.steps.iter().flat_map(|s| s.requests.iter())
+    }
+}
+```
+
+The `DiagnosticsContextBuilder` gains step-tracking methods:
+
+```rust
+impl DiagnosticsContextBuilder {
+    /// Records that a step has been enqueued for execution.
+    pub(crate) fn enqueue_step(&mut self, step_type: StepType) -> StepHandle { ... }
+
+    /// Records that a step has started executing (acquired concurrency permit).
+    pub(crate) fn start_step(&mut self, handle: &StepHandle) { ... }
+
+    /// Records that a step has completed, with its requests.
+    pub(crate) fn complete_step(
+        &mut self,
+        handle: StepHandle,
+        requests: Vec<RequestDiagnostics>,
+    ) { ... }
+}
+```
+
+### 8.7 Granularity Control
+
+The existing `DiagnosticsVerbosity` enum (Summary / Detailed) controls how the Turn/Step
+tree is serialized:
+
+| Verbosity | Behavior |
+|-----------|----------|
+| **Summary** | Step-level timing is included but per-step wait times may be omitted. Individual `RequestDiagnostics` are deduplicated/aggregated as they are today. Concurrency metadata is included (it's a few integers). |
+| **Detailed** | Full tree: all step timestamps (enqueued/started/completed), all individual `RequestDiagnostics` with events, and concurrency metadata. |
+
+Point operations produce the same output as today at both verbosity levels — the Turn/Step
+nesting is transparent when there's only one step.
+
+### 8.8 Pagination Context
+
+Each `execute_operation` call produces one `DiagnosticsContext` containing one Turn. The
+SDK layer manages pagination and can:
+
+1. **Aggregate Turns** — collect `TurnDiagnostics` from multiple pages to produce a
+   summary of the full pagination operation (total RU, total duration, pages fetched).
+
+2. **Correlate across pages** — the continuation token can optionally carry a
+   `feed_operation_id` (UUID) so the SDK can link diagnostics from different
+   `execute_operation` calls that belong to the same logical feed operation.
+
+3. **Create OTEL spans** — the SDK can create a parent span for the feed operation,
+   child spans for each Turn, and nested spans for each Step, using the timestamps
+   and metadata from the diagnostics tree. The driver does not prescribe span structure —
+   it provides the data.
 
 ---
 
@@ -1599,7 +1784,8 @@ For paginated queries:
 | PlanExecutor — single step | Execute trivial plan, verify result matches direct pipeline call. |
 | PlanExecutor — fan-out | Execute multi-step plan with mock pipeline, verify merge. |
 | PlanExecutor — concurrency | Verify concurrency cap is respected (at most N concurrent fetches). |
-| ContinuationToken — round-trip | Serialize to string, deserialize back, verify equality. |
+| ContinuationToken — serialize | Serialize to string, verify output. |
+| ContinuationToken — deserialize | Deserialize from explicit string, verify result. |
 | ContinuationToken — version compat | Older version tokens deserialize correctly. |
 | ContinuationToken — split recovery | Token with EPK bounds spanning a split range maps to correct child ranges. |
 | ContinuationToken — O(1) size | Token size is constant regardless of partition count (only one Fetch leaf stored). |
