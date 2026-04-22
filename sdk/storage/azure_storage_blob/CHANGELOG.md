@@ -1,17 +1,17 @@
 # Release History
 
-## 0.12.0 (Unreleased)
+## 0.12.0 (2026-04-22)
 
 ### Features Added
 
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
 ### Breaking Changes
 
+- Added default connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
 - Responses are no longer automatically decompressed.
 - Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.11.0 (2026-04-14)
 

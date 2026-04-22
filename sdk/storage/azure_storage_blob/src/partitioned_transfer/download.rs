@@ -111,7 +111,6 @@ where
                         let i = next_task_index;
                         next_task_index += 1;
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
-
                         let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
                         task_bucket.push(start_download_task(client.clone(), range, etag_lock.clone(), t, active_tasks_counter.clone(), i));
                     }
@@ -124,24 +123,16 @@ where
                 }
             }
 
-            // return next readied bytes, if any
-            while let Some(bytes) = drain.pop() {
-                yield bytes;
-            }
-
-            // early break if finished
-            if drain.position() >= total_chunks {
-                break;
-            }
-
-            // max tasks are spawned and sequential ready bytes already returned
-            // this will not change until either:
-            //   1. a task sends a message through this channel
-            //   2. a task fails
+            // await the next completed download
             let channel_message;
             (channel_message, task_bucket) = await_message_while_joining_workers(&mut rx, task_bucket).await?;
             let (idx, bytes) = channel_message?;
             drain.push(idx, bytes)?;
+
+            // return next readied bytes, if any
+            while let Some(bytes) = drain.pop() {
+                yield bytes;
+            }
         }
     };
 
@@ -203,7 +194,7 @@ async fn await_message_while_joining_workers<T>(
     };
 
     let mut message_fut = receiver.recv();
-    // `task_bucket`` may be empty. `select_all` cannot handle that.
+    // `task_bucket` may be empty. `select_all` cannot handle that.
     while !task_bucket.is_empty() {
         match future::select(message_fut, future::select_all(task_bucket)).await {
             Either::Left((message, task_select)) => {

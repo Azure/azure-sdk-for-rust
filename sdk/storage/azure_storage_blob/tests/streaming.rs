@@ -15,8 +15,8 @@ use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccoun
 use futures::TryStreamExt as _;
 use std::error::Error;
 
-#[recorded::test]
-#[ignore = "Temporarily ignoring until we can figure out how to get this to not take down the whole test pipeline."]
+// This test generates a large recording, so marking as live-only.
+#[recorded::test(live)]
 async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Setup
     let recording = ctx.recording();
