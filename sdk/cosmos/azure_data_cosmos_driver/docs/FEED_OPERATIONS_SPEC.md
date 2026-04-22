@@ -87,6 +87,13 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
 - Merging results into a single response
 - Integration with the operation pipeline for each sub-request
 
+This spec is **complete when ReadMany works end-to-end**. Sections covering cross-partition
+queries, ORDER BY merge-sort, continuation token resume strategies (`Drain`, `OrderBy`), and
+`resume_filter` on `PlanStep::Fetch` are included to validate the architecture's extensibility
+— they demonstrate that the core plan/execute model accommodates these future scenarios without
+redesign. However, their designs are **forward-looking and not locked**; cross-partition query
+execution will be specified and implemented in a separate effort.
+
 ---
 
 ## 2. Architectural Overview
@@ -183,6 +190,17 @@ account metadata changes, falling back to a full re-plan.
 
 This optimization is not required for correctness — the stateless model works correctly
 today — but should be considered for performance-sensitive workloads with many small pages.
+
+### Open Issue: Backend Query Plan Caching
+
+For cross-partition queries, the Planner fetches a **backend query plan** from the service
+(an HTTP request to get the rewritten query and execution metadata). In the stateless model,
+this fetch recurs on every page — a redundant network round trip, since the backend query
+plan does not change between pages of the same query. A future optimization should cache
+the backend query plan (e.g., on the `ContinuationToken` or via a separate cache keyed by
+query text + container RID) so that subsequent pages skip the query plan fetch. This is
+orthogonal to the cached `OperationPlan` optimization above: the operation plan depends on
+partition key ranges (which may split), but the backend query plan does not.
 
 ---
 
@@ -290,7 +308,13 @@ pub enum OperationTarget {
     /// the `PartitionKeyRangeCache` at execution time.
     EpkRange(EpkRange<EffectivePartitionKey>),
 }
+```
 
+**Implementation note:** `EpkRange<T>` requires `T: Ord + Clone`. The driver's
+`EffectivePartitionKey` type currently does not implement `Ord`. This must be added
+(via `derive` or manual implementation) before `OperationTarget::EpkRange` can be used.
+
+```rust
 impl OperationTarget {
     /// The full key space: targets all partition key ranges.
     pub fn all_ranges() -> Self {
@@ -434,9 +458,14 @@ pub(crate) enum PlanStep {
     /// substitution before sending the request.
     Fetch {
         /// The operation to execute. Targeted to a specific PK range.
+        /// Wrapped in `Arc` so that fan-out steps can share the base
+        /// operation without cloning the full payload (headers, resource
+        /// reference, etc.). Each `Fetch` step holds a reference to
+        /// a retargeted `CosmosOperation` — for fan-out, these share
+        /// the immutable parts of the original operation.
         /// For ORDER BY queries, the query text contains the
         /// `{documentdb-formattableorderbyquery-filter}` placeholder.
-        operation: CosmosOperation,
+        operation: Arc<CosmosOperation>,
         /// Options for this fetch.
         options: OperationOptions,
         /// Server-provided continuation token for this range, if resuming.
@@ -649,8 +678,8 @@ Caller's CosmosOperation
    Query{rewritten}  Query{rewritten}  Query{rewritten}
       │               │               │
       ▼               ▼               ▼
- execute_operation  execute_operation  execute_operation
- _pipeline()       _pipeline()       _pipeline()
+ execute_single     execute_single     execute_single
+ _operation()       _operation()       _operation()
       │               │               │
       ▼               ▼               ▼
  CosmosResponse    CosmosResponse    CosmosResponse
@@ -663,12 +692,15 @@ Caller's CosmosOperation
               CosmosResponse
 ```
 
-Each decomposed `CosmosOperation` is **retargeted** to a specific EPK range. Note that the
-query payload may differ from the caller's original SQL: the backend query plan may
-**rewrite the query** (e.g., to push down aggregations, add internal projections, or
-restructure filters for per-partition execution), and the Planner uses the rewritten query
-text in the decomposed operations. The operation pipeline handles region failover, retry,
-and auth for each independently.
+Each decomposed `CosmosOperation` is **retargeted** to a specific EPK range and wrapped in
+`Arc` so that fan-out steps share the immutable parts of the operation (headers, resource
+reference, etc.) without cloning. The Planner creates the retargeted operations and wraps
+each in an `Arc`; the executor passes `Arc<CosmosOperation>` to `execute_single_operation`.
+Note that the query payload may differ from the caller's original SQL: the backend query
+plan may **rewrite the query** (e.g., to push down aggregations, add internal projections,
+or restructure filters for per-partition execution), and the Planner uses the rewritten
+query text in the decomposed operations. The operation pipeline handles region failover,
+retry, and auth for each independently.
 
 #### Example: ReadMany
 
@@ -752,22 +784,13 @@ goes through the Planner.
 
 ### 5.5 Resuming from a Continuation Token
 
-When a `ContinuationToken` is provided, the Planner uses it to reconstruct the plan state:
+When a `ContinuationToken` is provided, the Planner validates it (version, container RID,
+operation compatibility), resolves the current partition key ranges, and walks the nested
+`ResumeState` tree to reconstruct the plan with the correct per-step state.
 
-1. Validate the token version, container RID, and operation kind compatibility.
-2. Resolve the current partition key ranges for the container.
-3. Use `PartitionMapper` to classify each range relative to the token's target range:
-   - **Left of target** — ranges whose EPK max ≤ target's EPK min. These are fully drained
-     and receive no `Fetch` step (for unordered) or receive a filter-only `Fetch` step
-     (for ORDER BY, filtering past the last returned ORDER BY values).
-   - **Target range** — the range overlapping the token's EPK bounds. Resumes using the
-     stored `server_continuation`. If the range has split, the Planner maps EPK bounds to
-     the child range(s) and assigns the server continuation appropriately.
-   - **Right of target** — ranges whose EPK min ≥ target's EPK max. Start fresh with no
-     continuation (for unordered) or with a filter from the ORDER BY resume state.
-4. For `OrderedQuery` tokens, extract the `OrderByResumeState` and generate per-partition
-   query filters based on the last returned ORDER BY values. Attach duplicate-elimination
-   state (last `_rid`) for the target range.
+The full resume algorithm — including left/target/right partition classification, filter
+generation for ORDER BY, and partition split handling — is described in
+[§7.3 Resume Strategy](#73-resume-strategy).
 
 ---
 
@@ -1333,6 +1356,21 @@ The hierarchy is always present but trivially flat.
 /// For paginated feed operations, the SDK aggregates multiple turns' diagnostics
 /// across pages.
 pub struct TurnDiagnostics {
+    /// Wall-clock time when this turn started.
+    ///
+    /// Provides an anchor for converting `Instant` timestamps (used in
+    /// `StepDiagnostics`) to `SystemTime` for OTEL spans or other
+    /// wall-clock-based telemetry. The SDK can compute a step's wall-clock
+    /// start as `wall_clock_start + (step.started_at - start_instant)`.
+    wall_clock_start: SystemTime,
+
+    /// Monotonic timestamp when this turn started.
+    ///
+    /// Used as the reference point for computing wall-clock times from
+    /// step-level `Instant` timestamps: for any step `Instant` value `i`,
+    /// the wall-clock time is `wall_clock_start + (i - start_instant)`.
+    start_instant: Instant,
+
     /// Wall-clock duration of the entire turn.
     duration: Duration,
 
@@ -1403,6 +1441,24 @@ pub struct StepDiagnostics {
     /// Empty for non-HTTP steps (e.g., Merge).
     /// May contain multiple entries due to retries within the step.
     requests: Vec<RequestDiagnostics>,
+
+    /// Outcome of this step's execution.
+    ///
+    /// For Fetch steps, the outcome is typically captured in the
+    /// `RequestDiagnostics`. This field captures outcomes for non-HTTP
+    /// steps (e.g., Merge failures) and provides a summary for all
+    /// step types without requiring callers to inspect nested requests.
+    outcome: StepOutcome,
+}
+
+/// Outcome of a plan step's execution.
+#[derive(Clone, Debug)]
+pub enum StepOutcome {
+    /// The step completed successfully.
+    Success,
+    /// The step failed with an error.
+    /// The message is a brief summary (not a full stack trace).
+    Failed { message: String },
 }
 
 /// Identifies the kind of plan step for diagnostics purposes.
@@ -1489,7 +1545,7 @@ tree is serialized:
 
 | Verbosity | Behavior |
 |-----------|----------|
-| **Summary** | Step-level timing is included but per-step wait times may be omitted. Individual `RequestDiagnostics` are deduplicated/aggregated as they are today. Concurrency metadata is included (it's a few integers). |
+| **Summary** | Step-level timing is included but per-step wait times may be omitted. Individual `RequestDiagnostics` are deduplicated/aggregated as they are today. Concurrency metadata is included (a few integers). |
 | **Detailed** | Full tree: all step timestamps (enqueued/started/completed), all individual `RequestDiagnostics` with events, and concurrency metadata. |
 
 Point operations produce the same output as today at both verbosity levels — the Turn/Step
