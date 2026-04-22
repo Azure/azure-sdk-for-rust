@@ -35,6 +35,25 @@ fn is_ppcb_managed(operation: &CosmosOperation, retry_state: &OperationRetryStat
         && (operation.is_read_only() || retry_state.can_use_multiple_write_locations)
 }
 
+/// Builds an [`UnavailablePartition`] from the current operation context.
+///
+/// `is_read` is passed explicitly because some call sites hardcode it
+/// (e.g., `false` for WriteForbidden, `true` for 500-on-reads) rather
+/// than deriving it from `operation.is_read_only()`.
+fn make_partition_unavailable(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    is_read: bool,
+) -> UnavailablePartition {
+    UnavailablePartition {
+        partition_key_range_id: retry_state.partition_key_range_id.clone(),
+        region: endpoint.region().cloned(),
+        is_read,
+        is_partitioned_resource: operation.resource_type().is_partitioned(),
+    }
+}
+
 /// Evaluates the result of a transport attempt and decides what to do next.
 ///
 /// This is a pure function: it takes the operation, result, and retry state,
@@ -74,12 +93,9 @@ pub(crate) fn evaluate_transport_result(
                             endpoint: endpoint.clone(),
                             reason: UnavailableReason::WriteForbidden,
                         },
-                        LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
-                            partition_key_range_id: retry_state.partition_key_range_id.clone(),
-                            region: endpoint.region().cloned(),
-                            is_read: false, // WriteForbidden is always a write
-                            is_partitioned_resource: operation.resource_type().is_partitioned(),
-                        }),
+                        LocationEffect::MarkPartitionUnavailable(
+                            make_partition_unavailable(operation, endpoint, retry_state, false),
+                        ),
                     ],
                 );
             }
@@ -144,12 +160,7 @@ pub(crate) fn evaluate_transport_result(
                     // and endpoint unavailable so future requests benefit from
                     // the updated routing state.
                     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                        UnavailablePartition {
-                            partition_key_range_id: retry_state.partition_key_range_id.clone(),
-                            region: endpoint.region().cloned(),
-                            is_read: false,
-                            is_partitioned_resource: operation.resource_type().is_partitioned(),
-                        },
+                        make_partition_unavailable(operation, endpoint, retry_state, false),
                     )];
                     if !is_ppcb_managed(operation, retry_state) {
                         effects.push(LocationEffect::MarkEndpointUnavailable {
@@ -167,12 +178,12 @@ pub(crate) fn evaluate_transport_result(
                 }
 
                 let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                    UnavailablePartition {
-                        partition_key_range_id: retry_state.partition_key_range_id.clone(),
-                        region: endpoint.region().cloned(),
-                        is_read: operation.is_read_only(),
-                        is_partitioned_resource: operation.resource_type().is_partitioned(),
-                    },
+                    make_partition_unavailable(
+                        operation,
+                        endpoint,
+                        retry_state,
+                        operation.is_read_only(),
+                    ),
                 )];
                 if !is_ppcb_managed(operation, retry_state) {
                     effects.push(LocationEffect::MarkEndpointUnavailable {
@@ -194,12 +205,7 @@ pub(crate) fn evaluate_transport_result(
                 && retry_state.can_retry_failover()
             {
                 let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                    UnavailablePartition {
-                        partition_key_range_id: retry_state.partition_key_range_id.clone(),
-                        region: endpoint.region().cloned(),
-                        is_read: true,
-                        is_partitioned_resource: operation.resource_type().is_partitioned(),
-                    },
+                    make_partition_unavailable(operation, endpoint, retry_state, true),
                 )];
                 if !is_ppcb_managed(operation, retry_state) {
                     effects.push(LocationEffect::MarkEndpointUnavailable {
@@ -241,12 +247,12 @@ pub(crate) fn evaluate_transport_result(
             }
 
             let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                UnavailablePartition {
-                    partition_key_range_id: retry_state.partition_key_range_id.clone(),
-                    region: endpoint.region().cloned(),
-                    is_read: operation.is_read_only(),
-                    is_partitioned_resource: operation.resource_type().is_partitioned(),
-                },
+                make_partition_unavailable(
+                    operation,
+                    endpoint,
+                    retry_state,
+                    operation.is_read_only(),
+                ),
             )];
             if !is_ppcb_managed(operation, retry_state) {
                 effects.push(LocationEffect::MarkEndpointUnavailable {

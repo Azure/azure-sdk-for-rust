@@ -992,12 +992,32 @@ impl CosmosDriver {
                             not_modified: true,
                         });
                     }
+
+                    // Permanent errors (auth/config issues) are logged at error
+                    // level so operators can distinguish misconfiguration from
+                    // transient blips.
+                    // TODO: Consider adding a negative-cache TTL to suppress
+                    // repeated fetches on permanent errors (401/403/404).
+                    if matches!(
+                        *status,
+                        azure_core::http::StatusCode::Unauthorized
+                            | azure_core::http::StatusCode::Forbidden
+                            | azure_core::http::StatusCode::NotFound
+                    ) {
+                        tracing::error!(
+                            container = %container.name(),
+                            status = %status,
+                            error = %e,
+                            "Permanent error fetching partition key ranges — check account credentials and container existence"
+                        );
+                        return None;
+                    }
                 }
 
                 tracing::warn!(
                     container = %container.name(),
                     error = %e,
-                    "Failed to fetch partition key ranges from service"
+                    "Transient error fetching partition key ranges from service"
                 );
                 None
             }
