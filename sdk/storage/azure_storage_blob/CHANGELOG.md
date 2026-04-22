@@ -6,10 +6,6 @@
 
 - Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
 
-### Bugs Fixed
-
-- Fixed a potential deadlock in partitioned downloads when `total_chunks > max_buffers`.
-
 ### Breaking Changes
 
 - Added default connection timeout of 20s and read timeout of 60s.
