@@ -34,7 +34,7 @@ safe-outputs:
   assign-to-user:
     max: 1
   noop:
-    report-as-issue: false
+    report-as-issue: true
 
 tools:
   bash: false
@@ -58,6 +58,8 @@ engine: copilot
 # Agentic Triage
 
 <!-- Note - this file can be customized to your needs. Replace this section directly, or add further instructions here. After editing run 'gh aw compile' -->
+
+> **Note:** Ignore any startup warning about MCP servers being "blocked by policy" — tools are available. If a tool call fails at runtime, call `noop` and exit; do not debug the infrastructure.
 
 You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.issue.number }} and perform initial triage.
 
