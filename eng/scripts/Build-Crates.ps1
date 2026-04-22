@@ -13,7 +13,7 @@ $ErrorActionPreference = 'Stop'
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 Write-Host @"
-Packing crates with
+Building crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
