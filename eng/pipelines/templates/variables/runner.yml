@@ -1,0 +1,4 @@
+variables:
+  CARGO_HOME: $(Agent.TempDirectory)/cargo
+  DOCKER_TMPDIR: $(Agent.TempDirectory)
+  TMPDIR: $(Agent.TempDirectory)

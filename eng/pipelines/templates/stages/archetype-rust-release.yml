@@ -26,6 +26,7 @@ stages:
         variables:
         - template: /eng/pipelines/templates/variables/globals.yml
         - template: /eng/pipelines/templates/variables/image.yml
+        - template: /eng/pipelines/templates/variables/runner.yml
         - template: /eng/pipelines/templates/variables/rust.yml
 
         pool:
