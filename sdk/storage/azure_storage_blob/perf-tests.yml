@@ -1,8 +1,12 @@
 # Performance test configuration for azure_storage_blob.
 # This file is consumed by the PerfAutomation tool in Azure/azure-sdk-tools.
 #
-# Running a single test locally with cargo bench:
+# Provision test resources (one-time, requires PowerShell Core and Az modules):
+#   pwsh eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory storage/azure_storage_blob -ResourceType perf
+# Or set the env var manually if you already have a Storage account:
 #   $env:AZURE_STORAGE_ACCOUNT_NAME = "<your-account>"
+#
+# Running a single test locally with cargo bench:
 #   cargo bench --package azure_storage_blob --bench perf -- <test_name> <args>
 #   Example: cargo bench --package azure_storage_blob --bench perf -- list_blob --count 5 --parallel 4 --duration 10
 #   Use --help to see options: cargo bench --package azure_storage_blob --bench perf -- upload_blob --help
