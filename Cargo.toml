@@ -46,21 +46,21 @@ version = "0.14.0"
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/core/typespec_client_core"
-version = "0.14.0"
+version = "0.15.0"
 
 [workspace.dependencies.typespec_macros]
 version = "0.13.0"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "0.35.0"
+version = "0.36.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_macros]
 version = "0.8.0"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.14.0"
+version = "0.15.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_messaging_eventhubs]
@@ -70,7 +70,7 @@ path = "sdk/eventhubs/azure_messaging_eventhubs"
 [workspace.dependencies.azure_core_opentelemetry]
 # azure_core_opentelemetry should only ever be in dev-dependencies herein
 path = "sdk/core/azure_core_opentelemetry"
-version = "0.9.0"
+version = "0.10.0"
 
 [workspace.dependencies.azure_core_test]
 # azure_core_test is not published and only ever a dev-dependency
