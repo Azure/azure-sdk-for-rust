@@ -19,7 +19,10 @@ azure_core = { workspace = true, features = ["xml"] }
 azure_core_test.workspace = true
 azure_storage_blob.path = "../azure_storage_blob"
 bytes.workspace = true
+clap = { workspace = true, features = ["derive"] }
 futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 tokio = { workspace = true, features = ["rt"] }
 
 [lints]
