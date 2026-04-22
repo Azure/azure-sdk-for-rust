@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Added support for `ResourceIdExt` to `KeyOperationResult`.
+
 ### Breaking Changes
+
+- Moved `key_version` parameter to be an optional parameter for `KeyClient::encrypt()`, `sign()`, and `wrapKey()`.
 
 ### Bugs Fixed
 

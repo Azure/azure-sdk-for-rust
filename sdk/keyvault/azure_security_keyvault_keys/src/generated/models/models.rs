@@ -556,6 +556,14 @@ pub struct KeyOperationResult {
 
     /// Key identifier
     ///
+    /// You should record this when returned from [`KeyClient::encrypt()`](crate::KeyClient::encrypt), [`sign()`](crate::KeyClient::sign),
+    /// and [`wrap_key()`](crate::KeyClient::wrap_key) so you can later parse it with [`ResourceId`](crate::ResourceId)
+    /// and pass the version to [`decrypt()`](crate::KeyClient::decrypt), [`verify()`](crate::KeyClient::verify),
+    /// and [`unwrap_key()`](crate::KeyClient::unwrap_key).
+    /// You can pass an empty string for the version to those functions to select the latest key version
+    /// but if you don't record the specific version used encrypting, signing, or wrapping a key, key rotation can make the data
+    /// inaccessible.
+    ///
     /// Operational visibility: Read
     #[serde(skip_serializing)]
     pub kid: Option<String>,
