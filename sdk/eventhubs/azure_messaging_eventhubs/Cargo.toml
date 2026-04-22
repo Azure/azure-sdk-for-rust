@@ -52,5 +52,9 @@ default = ["azure_core_amqp/default"]
 name = "benchmarks"
 harness = false
 
+[[test]]
+name = "stress_tests"
+harness = false
+
 [lints]
 workspace = true

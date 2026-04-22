@@ -268,7 +268,7 @@ async fn send_loop(
 
     while Instant::now() < end_instant {
         let batch_size = rng.random_range(config.min_batch_size..=config.max_batch_size);
-        let batch = producer
+        let mut batch = producer
             .create_batch(Some(EventDataBatchOptions::default()))
             .await?;
 
@@ -293,12 +293,41 @@ async fn send_loop(
                 .with_message_id(key.clone())
                 .build();
 
-            {
-                let mut missing = state.missing_events.lock().await;
-                missing.insert(key.clone(), expected);
-            }
+            match batch.try_add_event_data(event, None)? {
+                true => {
+                    // Event was successfully added, record it as expected
+                    let mut missing = state.missing_events.lock().await;
+                    missing.insert(key, expected);
+                }
+                false => {
+                    // Batch is full, send it and create a new one
+                    producer.send_batch(batch, None).await?;
 
-            batch.try_add_event_data(event, None)?;
+                    {
+                        let mut metrics = state.metrics.lock().await;
+                        metrics.batches_sent += 1;
+                    }
+
+                    batch = producer
+                        .create_batch(Some(EventDataBatchOptions::default()))
+                        .await?;
+
+                    // Add the current event to the new batch
+                    let event = EventData::builder()
+                        .with_body(key.as_bytes())
+                        .add_property("batch_index".to_string(), expected.batch_index)
+                        .add_property("batch_size".to_string(), expected.batch_size)
+                        .add_property("index".to_string(), expected.index)
+                        .with_message_id(key.clone())
+                        .build();
+
+                    batch.try_add_event_data(event, None)?;
+
+                    // Record it as expected now that it's in a batch
+                    let mut missing = state.missing_events.lock().await;
+                    missing.insert(key, expected);
+                }
+            }
         }
 
         producer.send_batch(batch, None).await?;

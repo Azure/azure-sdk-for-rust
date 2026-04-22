@@ -299,7 +299,8 @@ async fn start_producers(
     Vec<tokio::task::JoinHandle<Result<usize, Box<dyn Error + Send + Sync>>>>,
     Box<dyn Error + Send + Sync>,
 > {
-    let events_per_producer = config.event_count / config.producer_count;
+    let base_events_per_producer = config.event_count / config.producer_count;
+    let remainder = config.event_count % config.producer_count;
     let mut handles = Vec::new();
 
     for producer_id in 0..config.producer_count {
@@ -310,6 +311,10 @@ async fn start_producers(
         let test_id = test_id.clone();
         let published_events = published_events.clone();
 
+        // Distribute remainder across first producers
+        let events_for_this_producer =
+            base_events_per_producer + if producer_id < remainder { 1 } else { 0 };
+
         let handle = tokio::spawn(async move {
             let ctx = ProducerContext {
                 host,
@@ -319,7 +324,7 @@ async fn start_producers(
             run_producer_task(
                 ctx,
                 producer_id,
-                events_per_producer,
+                events_for_this_producer,
                 &config,
                 test_id,
                 published_events,
@@ -442,13 +447,42 @@ async fn start_consumers(
     Vec<tokio::task::JoinHandle<Result<usize, Box<dyn Error + Send + Sync>>>>,
     Box<dyn Error + Send + Sync>,
 > {
-    let mut handles = Vec::new();
+    // Discover partitions up-front so we can spawn one task per partition.
+    // Each partition gets its own dedicated consumer client and polling loop,
+    // which avoids the stream-multiplexing issues that come with select_all.
+    let discovery_client = ConsumerClient::builder()
+        .with_application_id("stress-consumer-discovery".to_string())
+        .open(host.as_str(), eventhub.clone(), credential.clone())
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
 
-    for consumer_id in 0..config.consumer_count {
+    let eventhub_properties = discovery_client
+        .get_eventhub_properties()
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
+
+    let partition_ids = eventhub_properties.partition_ids.clone();
+    if partition_ids.is_empty() {
+        return Err(Box::new(std::io::Error::other(
+            "Event Hub has no partitions",
+        )));
+    }
+
+    info!(
+        "Discovered {} partitions: {:?} (consumer_count hint: {})",
+        partition_ids.len(),
+        partition_ids,
+        config.consumer_count,
+    );
+
+    let mut handles = Vec::new();
+    let total_expected_events = config.event_count;
+
+    // Spawn one consumer task per partition for full coverage
+    for (idx, partition_id) in partition_ids.into_iter().enumerate() {
         let host = host.clone();
         let eventhub = eventhub.clone();
         let credential = credential.clone();
-        let expected_events = config.event_count;
         let consumed_events = consumed_events.clone();
 
         let handle = tokio::spawn(async move {
@@ -456,8 +490,9 @@ async fn start_consumers(
                 host,
                 eventhub,
                 credential,
-                consumer_id,
-                expected_events,
+                idx,
+                partition_id,
+                total_expected_events,
                 consumed_events,
             )
             .await
@@ -473,7 +508,8 @@ async fn run_consumer_task(
     eventhub: String,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     consumer_id: usize,
-    expected_events: usize,
+    partition_id: String,
+    total_expected_events: usize,
     consumed_events: Arc<Mutex<HashMap<String, String>>>,
 ) -> Result<usize, Box<dyn Error + Send + Sync>> {
     let consumer = ConsumerClient::builder()
@@ -482,14 +518,12 @@ async fn run_consumer_task(
         .await
         .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
 
-    // Start reading from the beginning
-    let partition_id = format!("{}", consumer_id % 2); // Use partition 0 or 1 based on consumer ID
     let receiver = consumer
         .open_receiver_on_partition(
             partition_id.clone(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
-                    location: StartLocation::Earliest,
+                    location: StartLocation::Latest,
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -498,14 +532,30 @@ async fn run_consumer_task(
         .await
         .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
 
+    info!(
+        "Consumer {} listening on partition {}",
+        consumer_id, partition_id
+    );
+
     let mut receive_stream = receiver.stream_events();
     let mut events_consumed = 0;
     let start_time = Instant::now();
-    let timeout_duration = Duration::from_secs(120); // 2 minute timeout per consumer
+    let timeout_duration = Duration::from_secs(120);
+    let mut consecutive_timeouts = 0;
+    let max_consecutive_timeouts = 6;
 
-    while events_consumed < expected_events && start_time.elapsed() < timeout_duration {
+    while start_time.elapsed() < timeout_duration {
+        // Check shared consumed count to see if all expected events have been received across all consumers
+        {
+            let consumed = consumed_events.lock().unwrap();
+            if consumed.len() >= total_expected_events {
+                break;
+            }
+        }
+
         match timeout(Duration::from_secs(10), receive_stream.next()).await {
             Ok(Some(Ok(partition_event))) => {
+                consecutive_timeouts = 0;
                 let event_data = partition_event.event_data();
 
                 // Try to get event_id from properties first
@@ -558,8 +608,18 @@ async fn run_consumer_task(
                 break;
             }
             Err(_) => {
-                info!("Consumer {} timeout waiting for events", consumer_id);
-                break;
+                consecutive_timeouts += 1;
+                info!(
+                    "Consumer {} timeout waiting for events ({}/{})",
+                    consumer_id, consecutive_timeouts, max_consecutive_timeouts
+                );
+                if consecutive_timeouts >= max_consecutive_timeouts {
+                    info!(
+                        "Consumer {} exiting after {} consecutive timeouts",
+                        consumer_id, consecutive_timeouts
+                    );
+                    break;
+                }
             }
         }
     }

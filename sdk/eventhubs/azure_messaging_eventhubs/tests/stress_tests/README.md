@@ -70,7 +70,7 @@ The following environment variables are required (loaded via `dotenvy`, so a `.e
 
 ## Behavior & Metrics (high level)
 
-- **basic_publish_read_test**: Publishes a bounded set, tracks per-task publish counts, measures publish/consume durations and throughput, and validates the consumed set against what was sent (collects errors on timeouts, join failures, or payload mismatches).
+- **basic_publish_read_test**: Publishes a bounded set, tracks per-task publish counts, measures publish/consume durations and throughput, and validates end-to-end completion/count-based results (collects errors on timeouts or task join failures). It does not currently compare consumed events against the originally published payloads.
 - **continuous_send_receive_stress**: Long-running loop that emits random batches across partitions, periodically logs heartbeat metrics (sent/received, missing, corrupted body/properties, producer/consumer failures), and emits a final summary including lost events.
 
 Both tests log via `tracing` and exit non-zero on failure to make CI-friendly verdicts.
