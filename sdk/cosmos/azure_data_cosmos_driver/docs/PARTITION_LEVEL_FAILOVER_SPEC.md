@@ -1006,18 +1006,13 @@ expire_partition_overrides(state, now, unavailability_duration) → PartitionEnd
   │       AND entry.health_status == Unhealthy:
   │       └─ Transition entry.health_status → ProbeCandidate
   │
-  ├─ Scan new_state.failover_overrides:
-  │   └─ For entries where (now - entry.first_failure_time) > unavailability_duration
-  │       AND entry.health_status == Unhealthy:
-  │       └─ Transition entry.health_status → ProbeCandidate
+  ├─ (failover_overrides are NOT swept — see §9.5)
   │
   └─ Return new_state
 ```
 
-**Note**: Unlike the SDK, the driver's failback loop scans **both** maps (PPAF and
-PPCB). This is a deliberate improvement — in the SDK, PPAF entries are only removed
-when all locations are exhausted. The driver's immutable-snapshot pattern makes it
-trivial to sweep both maps in the same CAS operation.
+**Note**: The failback loop only sweeps `circuit_breaker_overrides` (PPCB). PPAF
+entries in `failover_overrides` are **not** swept — see §9.5 for rationale.
 
 ### 9.3 Failback Timing
 
@@ -1105,10 +1100,23 @@ gate" for all requests at once is unsafe. By sending a single probe request firs
 
 ### 9.5 Failback Scope
 
-Unlike the SDK (which only scans the PPCB map in its background loop), the driver's
-failback loop scans **both** `circuit_breaker_overrides` and `failover_overrides` in a single
-`apply_partition` CAS operation. This is simpler and avoids the SDK's design quirk
-where PPAF entries can only be removed when all locations are exhausted.
+The failback loop only sweeps `circuit_breaker_overrides` (PPCB entries).
+`failover_overrides` (PPAF entries) are intentionally **not** swept.
+
+**Rationale**: PPAF failovers are *service-directed* — the Cosmos DB backend
+decides when a partition's write region changes (signalled via 403/3
+WriteForbidden). The SDK's role is to follow the service's routing hints, not
+to second-guess them with client-side probing. PPAF overrides therefore persist
+until either:
+
+1. All preferred read endpoints are exhausted in `try_move_next_endpoint()`,
+   at which point the entry is removed and the partition returns to default
+   routing.
+2. The service signals a new routing change (e.g., another 403/3 from the
+   override region triggers a fresh failover cycle).
+
+This matches the Java and .NET SDK behavior, where PPAF entries are not subject
+to the background circuit-breaker recovery sweep.
 
 ---
 

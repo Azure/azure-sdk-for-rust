@@ -93,9 +93,12 @@ pub(crate) fn evaluate_transport_result(
                             endpoint: endpoint.clone(),
                             reason: UnavailableReason::WriteForbidden,
                         },
-                        LocationEffect::MarkPartitionUnavailable(
-                            make_partition_unavailable(operation, endpoint, retry_state, false),
-                        ),
+                        LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+                            operation,
+                            endpoint,
+                            retry_state,
+                            false,
+                        )),
                     ],
                 );
             }
