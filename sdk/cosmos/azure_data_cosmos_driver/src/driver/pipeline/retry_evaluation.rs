@@ -31,7 +31,9 @@ use super::components::{OperationAction, OperationRetryState, TransportOutcome, 
 /// is driven by the partition-level failure counter instead.
 fn is_ppcb_managed(operation: &CosmosOperation, retry_state: &OperationRetryState) -> bool {
     retry_state.ppcb_active
-        && operation.resource_type().is_partitioned()
+        && operation
+            .resource_type()
+            .is_partitioned(operation.operation_type())
         && (operation.is_read_only() || retry_state.can_use_multiple_write_locations)
 }
 
@@ -50,7 +52,9 @@ fn make_partition_unavailable(
         partition_key_range_id: retry_state.partition_key_range_id.clone(),
         region: endpoint.region().cloned(),
         is_read,
-        is_partitioned_resource: operation.resource_type().is_partitioned(),
+        is_partitioned_resource: operation
+            .resource_type()
+            .is_partitioned(operation.operation_type()),
     }
 }
 

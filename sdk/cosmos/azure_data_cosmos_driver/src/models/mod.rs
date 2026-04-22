@@ -370,10 +370,16 @@ impl ResourceType {
 
     /// Returns true if this resource type supports partition-level failover.
     ///
-    /// Only documents and stored procedures (with execute) are routed to
-    /// physical partitions and thus eligible for PPAF/PPCB.
-    pub fn is_partitioned(self) -> bool {
-        matches!(self, ResourceType::Document | ResourceType::StoredProcedure)
+    /// Documents are always partitioned. Stored procedures are only
+    /// partitioned when the operation is `Execute` (i.e. executing the
+    /// sproc against a specific partition). CRUD operations on stored
+    /// procedure metadata are not partition-scoped.
+    pub fn is_partitioned(self, operation_type: OperationType) -> bool {
+        match self {
+            ResourceType::Document => true,
+            ResourceType::StoredProcedure => operation_type == OperationType::Execute,
+            _ => false,
+        }
     }
 
     /// Returns true if this resource type requires a database reference.

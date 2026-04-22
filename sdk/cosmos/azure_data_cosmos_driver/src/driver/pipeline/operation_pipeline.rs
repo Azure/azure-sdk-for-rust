@@ -501,7 +501,9 @@ fn resolve_endpoint(
     if let Some(pk_range_id) = &retry_state.partition_key_range_id {
         let partitions = location.partitions.as_ref();
         let is_read = operation.is_read_only();
-        let is_partitioned = operation.resource_type().is_partitioned();
+        let is_partitioned = operation
+            .resource_type()
+            .is_partitioned(operation.operation_type());
 
         // Helper: build a RoutingDecision from a partition override endpoint.
         let make_partition_routing = |ep: CosmosEndpoint| -> RoutingDecision {

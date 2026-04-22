@@ -1042,7 +1042,10 @@ impl CosmosDriver {
         operation: &CosmosOperation,
     ) -> Option<PartitionKeyRangeId> {
         // Only pre-resolve for partitioned data plane operations.
-        if !operation.resource_type().is_partitioned() {
+        if !operation
+            .resource_type()
+            .is_partitioned(operation.operation_type())
+        {
             return None;
         }
 

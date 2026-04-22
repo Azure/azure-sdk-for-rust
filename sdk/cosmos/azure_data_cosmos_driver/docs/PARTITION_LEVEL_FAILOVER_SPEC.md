@@ -271,7 +271,9 @@ let initial_partition_state = PartitionEndpointState {
 A request is eligible when **all** conditions are true:
 
 1. `partition_state.per_partition_automatic_failover_enabled == true`
-2. The operation targets a partitioned resource (`is_partitioned_resource`)
+2. The operation targets a partitioned resource (`is_partitioned_resource`) —
+   i.e., `ResourceType::Document` or `ResourceType::StoredProcedure` with
+   `OperationType::Execute`
 3. The operation is a **write** (`!is_read_only`)
 4. The account is **single-master** (`!account_state.multiple_write_locations_enabled`)
 5. More than one preferred read endpoint is available
@@ -340,7 +342,7 @@ rather than as external pre-gates. They are listed here for reference:
 1. At least one of PPAF or PPCB must be enabled on `PartitionEndpointState`.
 2. The operation must target a partitioned resource — checked via the
    `is_partitioned_resource` parameter (resolved by the caller from
-   `resource_type().is_partitioned()`).
+   `resource_type().is_partitioned(operation_type())`).
 3. There must be **more than one preferred read endpoint** in `AccountEndpointState`
    (otherwise there is nowhere to fail over to).
 4. A resolved `partition_key_range_id` must be available on `OperationRetryState`
@@ -1460,13 +1462,22 @@ resource. A convenience method on `ResourceType`:
 
 ```rust
 impl ResourceType {
-    pub fn is_partitioned(&self) -> bool {
-        matches!(self, ResourceType::Document | ResourceType::StoredProcedure)
+    pub fn is_partitioned(self, operation_type: OperationType) -> bool {
+        match self {
+            ResourceType::Document => true,
+            ResourceType::StoredProcedure => operation_type == OperationType::Execute,
+            _ => false,
+        }
     }
 }
 ```
 
-**Status**: May already exist or need to be added.
+Documents are always partitioned. Stored procedures are only partitioned when
+the operation is `Execute` (i.e., executing the sproc against a specific
+partition). CRUD operations on stored procedure metadata are not
+partition-scoped. This matches the .NET SDK's
+`CanUsePartitionLevelFailoverLocations()` which checks
+`ResourceType.StoredProcedure && OperationType.ExecuteJavaScript`.
 
 ### 15.3 Environment Variable Reading
 
