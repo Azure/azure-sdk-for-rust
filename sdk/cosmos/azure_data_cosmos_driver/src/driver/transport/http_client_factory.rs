@@ -184,7 +184,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         }
 
         if config.for_emulator {
-            #[cfg(feature = "rustls")]
+            #[cfg(feature = "__tls")]
             {
                 builder = builder.danger_accept_invalid_certs(true);
             }

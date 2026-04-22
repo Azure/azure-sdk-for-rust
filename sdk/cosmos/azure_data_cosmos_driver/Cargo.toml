@@ -71,7 +71,8 @@ reqwest = [
   "azure_core/reqwest",
   "azure_core/tokio",
 ]
-rustls = ["reqwest", "reqwest/rustls", "dep:rustls"]
-native_tls = ["reqwest", "reqwest/native-tls"]
+rustls = ["reqwest", "reqwest/rustls", "dep:rustls", "__tls"]
+native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
 __internal_mocking = []
+__tls = []
