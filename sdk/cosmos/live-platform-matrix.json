@@ -31,6 +31,9 @@
       },
       "Session Split": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; testCategory = 'split' }"
+      },
+      "Session SingleWrite MultiRegion": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'multi_region' }"
       }
     }
   },

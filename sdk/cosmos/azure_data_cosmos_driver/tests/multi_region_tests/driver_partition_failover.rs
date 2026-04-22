@@ -4,11 +4,14 @@
 //! Integration tests for per-partition automatic failover (PPAF) and per-partition
 //! circuit breaker (PPCB).
 //!
-//! **Prereqs**: 3-region single-master session consistency account with PPAF enabled.
+//! **Prereqs**: 2-region single-master session consistency account (East US 2 + West US 3).
 //! Default PPCB thresholds.
 //!
 //! These tests use fault injection to simulate region-level failures and verify
 //! that partition-level failover (PPAF/PPCB) moves operations to alternate regions.
+//!
+//! Gated by `test_category = "multi_region"` — requires a live multi-region Cosmos DB
+//! account, not the local emulator.
 
 #![cfg(feature = "fault_injection")]
 
@@ -34,8 +37,8 @@ const HUB_REGION: Region = Region::EAST_US_2;
 /// the partition should fail over to the next region and the write should succeed.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppaf_enabled_503_on_create_fails_over_to_next_region() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -101,8 +104,8 @@ pub async fn ppaf_enabled_503_on_create_fails_over_to_next_region() -> Result<()
 /// should succeed.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppaf_enabled_write_forbidden_on_create_fails_over_to_next_region(
 ) -> Result<(), Box<dyn Error>> {
@@ -170,8 +173,8 @@ pub async fn ppaf_enabled_write_forbidden_on_create_fails_over_to_next_region(
 /// the request was already sent and PPAF retry is not allowed.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppaf_disabled_503_on_create_does_not_failover() -> Result<(), Box<dyn Error>> {
     // This test requires a single-master account with PPAF **disabled**.
@@ -228,8 +231,8 @@ pub async fn ppaf_disabled_503_on_create_does_not_failover() -> Result<(), Box<d
 /// partition will still attempt the hub region first.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppaf_disabled_write_forbidden_on_create_retries_but_no_partition_override(
 ) -> Result<(), Box<dyn Error>> {
@@ -309,8 +312,8 @@ pub async fn ppaf_disabled_write_forbidden_on_create_retries_but_no_partition_ov
 /// partition-level circuit breaker override.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -399,8 +402,8 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
 /// to verify PPCB also handles write-forbidden errors for reads.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppcb_enabled_write_forbidden_on_read_fails_over_after_threshold(
 ) -> Result<(), Box<dyn Error>> {
@@ -474,8 +477,8 @@ pub async fn ppcb_enabled_write_forbidden_on_read_fails_over_after_threshold(
 /// still eventually succeed after each cross-regional retry.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppcb_disabled_503_on_read_no_partition_failover() -> Result<(), Box<dyn Error>> {
     // This test requires PPCB to be disabled on the account/driver.
@@ -545,8 +548,8 @@ pub async fn ppcb_disabled_503_on_read_no_partition_failover() -> Result<(), Box
 /// Same as above but with 403/3 WriteForbidden on reads when PPCB is disabled.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppcb_disabled_write_forbidden_on_read_no_partition_failover(
 ) -> Result<(), Box<dyn Error>> {

@@ -7,4 +7,3 @@ mod driver_backup_endpoints;
 mod driver_item_operations;
 
 mod driver_fault_injection;
-mod driver_partition_failover;
