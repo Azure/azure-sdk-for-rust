@@ -26,11 +26,13 @@ serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 url.workspace = true
+anyhow = "1.0.102"
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 clap.workspace = true
+rand.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }

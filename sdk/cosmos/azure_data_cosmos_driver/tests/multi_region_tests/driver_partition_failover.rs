@@ -277,10 +277,9 @@ pub async fn ppaf_disabled_write_forbidden_on_create_retries_but_no_partition_ov
         // Disable the rule so the next write can succeed without faults.
         rule.disable();
 
-        // Without PPAF, there is no partition-level override, so the next write
-        // should go back to the hub region (because the endpoint was only marked
-        // unavailable for WriteForbidden, which is ignored for reads and expires
-        // per the TTL).
+        // Without PPAF, the first failover does not persist a partition-level
+        // override, so once the fault rule is disabled the next write should
+        // follow normal routing and go back to the hub region.
         let item_json2 = br#"{"id": "no-ppaf-item-403-2", "pk": "pk1", "value": "test2"}"#;
         let second_response = context
             .create_item(&container, "pk1", item_json2)

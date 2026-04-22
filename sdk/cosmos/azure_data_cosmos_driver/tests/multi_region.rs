@@ -7,6 +7,9 @@
 //! the `test_category = "multi_region"` configuration is not set.
 
 #![cfg(test_category = "multi_region")]
+// The framework module is shared across test binaries; not all exports are used
+// by every binary.
+#![allow(dead_code, unused_imports)]
 
 mod framework;
 mod multi_region_tests;

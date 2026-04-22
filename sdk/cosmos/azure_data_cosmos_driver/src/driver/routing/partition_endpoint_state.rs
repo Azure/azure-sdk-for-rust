@@ -170,9 +170,11 @@ impl PartitionFailoverConfig {
         Self {
             read_failure_threshold,
             write_failure_threshold,
-            counter_reset_window: Duration::from_secs(counter_reset_window_minutes * 60),
-            partition_unavailability_duration: Duration::from_secs(partition_unavailability_secs),
-            failback_sweep_interval: Duration::from_secs(failback_sweep_secs),
+            counter_reset_window: Duration::from_secs(counter_reset_window_minutes.max(1) * 60),
+            partition_unavailability_duration: Duration::from_secs(
+                partition_unavailability_secs.max(1),
+            ),
+            failback_sweep_interval: Duration::from_secs(failback_sweep_secs.max(1)),
             circuit_breaker_option_enabled,
         }
     }

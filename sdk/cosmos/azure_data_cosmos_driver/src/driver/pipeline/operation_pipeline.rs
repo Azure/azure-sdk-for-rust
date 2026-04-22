@@ -117,13 +117,15 @@ pub(crate) async fn execute_operation_pipeline(
     retry_state.partition_key_range_id = pre_resolved_pk_range_id;
 
     // PPAF write-retry: on single-master accounts with per-partition automatic
-    // failover enabled, non-idempotent writes may be retried to a different
-    // region for write region discovery (the service has already failed the
-    // partition over, so the original region will reject the write).
+    // failover enabled, only PPAF-eligible operations (partitioned writes) may
+    // be retried to a different region for write region discovery. This avoids
+    // enabling unsafe retries for non-partitioned writes such as database or
+    // container creates.
     retry_state.ppaf_write_retry_allowed = location_snapshot
         .partitions
         .per_partition_automatic_failover_enabled
-        && !location_snapshot.account.multiple_write_locations_enabled;
+        && !location_snapshot.account.multiple_write_locations_enabled
+        && operation.resource_type().is_partitioned();
 
     // PPCB: when circuit breaker is enabled, partition-level thresholds
     // drive failover instead of marking the whole endpoint unavailable.

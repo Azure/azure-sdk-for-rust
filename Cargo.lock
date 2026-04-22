@@ -391,6 +391,7 @@ dependencies = [
 name = "azure_data_cosmos"
 version = "0.33.0"
 dependencies = [
+ "anyhow",
  "async-lock",
  "async-trait",
  "azure_core",
@@ -401,6 +402,7 @@ dependencies = [
  "clap",
  "futures",
  "pin-project",
+ "rand 0.10.1",
  "reqwest",
  "serde",
  "serde_json",
