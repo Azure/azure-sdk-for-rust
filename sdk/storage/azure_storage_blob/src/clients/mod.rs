@@ -5,6 +5,8 @@
 
 use azure_core::http::{new_http_client, ClientOptions, HttpClientOptions, Transport};
 
+use crate::logging::apply_storage_logging_defaults;
+
 mod append_blob_client;
 mod blob_client;
 mod blob_container_client;
@@ -27,4 +29,5 @@ fn apply_client_defaults(options: &mut ClientOptions) {
             ..Default::default()
         }))))
     }
+    apply_storage_logging_defaults(options);
 }

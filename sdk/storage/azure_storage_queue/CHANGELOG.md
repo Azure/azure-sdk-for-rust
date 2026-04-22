@@ -1,14 +1,19 @@
 # Release History
 
-## 0.6.0 (Unreleased)
+## 0.6.0 (2026-04-22)
 
 ### Features Added
 
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
 ### Breaking Changes
 
-### Bugs Fixed
+- Added default connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
 
 ### Other Changes
+
+- Update dependencies to match.
 
 ## 0.5.0 (2026-04-14)
 

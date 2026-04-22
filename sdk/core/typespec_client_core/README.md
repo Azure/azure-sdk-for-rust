@@ -9,7 +9,7 @@ This is the runtime for [TypeSpec](https://typespec.io)-generated clients.
 - `derive`: enable derive macros e.g., `SafeDebug`.
 - `http` (default): enables HTTP support.
 - `json` (default): enables JSON support.
-- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `rustls` feature.
+- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_rustls` (default): enables `reqwest`'s `rustls` feature, which uses `aws-lc-rs`.

@@ -12,7 +12,10 @@ on:
   reaction: eyes
   roles: all
 
-permissions: read-all
+permissions:
+  issues: read
+  pull-requests: read
+  contents: read
 
 network:
   allowed:
@@ -98,7 +101,7 @@ You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.is
      - Strip leading `@` from users and groups when assigning issues
      - Strip leading `%` from labels
      - Add #e99695 colored service labels from `ServiceLabel`
-     - If `Client` is applicable and there are `AzureSDKOwners`, assign to a random owner; if only `ServiceOwners` exist, add `Service Attention`
+     - If `Client` is applicable and there are `AzureSDKOwners`, use `assign_to_user` to assign a random owner; if only `ServiceOwners` exist, add `Service Attention`
      - Comment using this template when routing:
 
        ```markdown
@@ -112,11 +115,11 @@ You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.is
 
 6. Apply selected labels
 
-   - Use `update_issue` to apply labels
+   - Use `add_labels` to apply labels; use `remove_labels` if any labels should be removed
    - Do not apply labels if none clearly apply
    - Do not add comments beyond the markdown templates above
 
-7. Add an issue comment with your analysis
+7. Use `add_comment` to add an issue comment with your analysis
 
    - Start with "🎯 Agentic Issue Triage"
    - Brief summary of the issue

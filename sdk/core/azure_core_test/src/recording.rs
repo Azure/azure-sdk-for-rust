@@ -542,7 +542,7 @@ impl Recording {
             TestMode::Playback => {
                 let result = client.playback_start(payload.try_into()?, None).await?;
                 let mut variables = self.variables.write().map_err(write_lock_error)?;
-                variables.extend(result.variables.into_iter());
+                variables.extend(result.variables);
 
                 result.recording_id
             }

@@ -8,13 +8,11 @@ use crate::{
         BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
         BlockBlobClientUploadInternalResultHeaders,
     },
-    logging::apply_storage_logging_defaults,
     models::{
         method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
-    pipeline::StorageHeadersPolicy,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -75,13 +73,6 @@ impl BlockBlobClient {
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
-        apply_storage_logging_defaults(&mut options.client_options);
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
 
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
@@ -263,11 +254,15 @@ impl<'c, 'opt> BlockBlobClientUploadBehavior<'c, 'opt> {
 #[async_trait]
 impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     async fn transfer_oneshot(&self, content: Body) -> Result<()> {
-        // cspell:ignore jaschrep
-        // TODO (jaschrep-msft) support oneshot given optional length
-        let content_len = content.len().ok_or_else(|| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
-        })?;
+        // This should only ever be called by a managed uploader when the length is known.
+        // Otherwise, we can only buffer or error.
+        // Buffering strategy must be left to the caller, so we must error.
+        let Some(content_len) = content.len() else {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Io,
+                "length unknown",
+            ));
+        };
         let rsp = self
             .client
             .upload_internal(
@@ -291,11 +286,16 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
     }
 
     async fn transfer_partition(&self, offset: u64, content: Body) -> Result<()> {
+        // This should only ever be called by a managed uploader when the length is known.
+        // Otherwise, we can only buffer or error.
+        // Buffering strategy must be left to the caller, so we must error.
+        let Some(content_len) = content.len() else {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Io,
+                "length unknown",
+            ));
+        };
         let block_id = Uuid::new_v4();
-        // TODO (jaschrep-msft) support oneshot given optional length
-        let content_len = content.len().ok_or_else(|| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Io, "length unknown")
-        })?;
         {
             self.blocks
                 .lock()
@@ -319,7 +319,7 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
 
     async fn finalize(&self) -> Result<()> {
         let mut blocks = self.blocks.lock().await;
-        blocks.sort_by(|left, right| left.offset.cmp(&right.offset));
+        blocks.sort_by_key(|left| left.offset);
         let blocklist = BlockLookupList {
             latest: Some(
                 blocks
