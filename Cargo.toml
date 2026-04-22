@@ -23,7 +23,6 @@ members = [
   "sdk/servicebus/azure_messaging_servicebus",
   "sdk/canary/azure_canary_core",
   "sdk/canary/azure_canary",
-  "sdk/storage/azure_storage_common",
   "sdk/storage/azure_storage_blob",
   "sdk/storage/azure_storage_queue",
 ]
