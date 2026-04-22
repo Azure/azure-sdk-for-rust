@@ -13,6 +13,10 @@
 - Responses are no longer automatically decompressed.
 - Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
 
+### Other Changes
+
+- Updated dependencies.
+
 ## 0.11.0 (2026-04-14)
 
 ### Features Added

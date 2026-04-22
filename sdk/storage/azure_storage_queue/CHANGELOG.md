@@ -13,7 +13,7 @@
 
 ### Other Changes
 
-- Update dependencies to match.
+- Updated dependencies.
 
 ## 0.5.0 (2026-04-14)
 
