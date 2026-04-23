@@ -295,7 +295,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.14.0",
+ "typespec",
  "typespec_client_core",
  "ureq",
 ]
@@ -318,7 +318,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.14.0",
+ "typespec",
  "typespec_macros 0.13.0",
 ]
 
@@ -3970,21 +3970,6 @@ checksum = "40ce102ab67701b8526c123c1bab5cbe42d7040ccfd0f64af1a385808d2f43de"
 
 [[package]]
 name = "typespec"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "247afbeabe0c383f630d0fdcb4fb92818c31cd3fe5d293335daff8cac79d4e0f"
-dependencies = [
- "base64 0.22.1",
- "bytes",
- "futures",
- "quick-xml",
- "serde",
- "serde_json",
- "url",
-]
-
-[[package]]
-name = "typespec"
 version = "0.15.0"
 dependencies = [
  "base64 0.22.1",
@@ -4017,7 +4002,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.14.0",
+ "typespec",
  "typespec_macros 0.13.0",
  "url",
  "uuid",
