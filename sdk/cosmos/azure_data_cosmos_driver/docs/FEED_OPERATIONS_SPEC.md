@@ -138,7 +138,7 @@ execution will be specified and implemented in a separate effort.
 │  │  Responsibilities:                                                       │  │
 │  │  ┌─ Execute plan steps with configurable concurrency                     │  │
 │  │  ├─ Each step calls execute_single_operation() for HTTP                │  │
-│  │  ├─ Handle partition splits (re-plan affected ranges)                    │  │
+│  │  ├─ Handle partition splits (Fetch resolves EPK → PK ranges)             │  │
 │  │  ├─ Enforce concurrency caps for fan-out                                 │  │
 │  │  ├─ Integrate with throughput control                                    │  │
 │  │  ├─ Collect step-level diagnostics (timing, concurrency)                │  │
@@ -182,11 +182,11 @@ resolution, and for cross-partition queries, potentially a backend query plan fe
 page.
 
 For in-process callers (the common case), this is wasteful: the SDK crate calls
-`execute_operation` in a loop, and the plan doesn't change between pages (barring partition
-splits). A future optimization could allow `CosmosResponse` and/or `CosmosOperation` to
-carry a **cached `OperationPlan`** so that subsequent requests skip re-planning when the
-plan is still valid. The cached plan would be invalidated on partition splits (410/1002) or
-account metadata changes, falling back to a full re-plan.
+`execute_operation` in a loop, and the plan structure doesn't change between pages (Fetch
+steps handle partition splits internally by re-resolving EPK ranges). A future optimization
+could allow `CosmosResponse` and/or `CosmosOperation` to carry a **cached `OperationPlan`**
+so that subsequent requests skip re-planning when the plan is still valid. The cached plan
+would be invalidated on account metadata changes, falling back to a full re-plan.
 
 This optimization is not required for correctness — the stateless model works correctly
 today — but should be considered for performance-sensitive workloads with many small pages.
@@ -441,6 +441,14 @@ pub(crate) enum OperationPlan {
 /// A single step in an operation plan.
 pub(crate) enum PlanStep {
     /// Execute a single HTTP request via the operation pipeline.
+    ///
+    /// Each Fetch step targets a specific **EPK range** (not a PK range ID).
+    /// At execution time, the step resolves its EPK range to the current PK
+    /// range ID(s) via the `PartitionKeyRangeCache`. If the EPK range maps
+    /// to multiple PK ranges (due to a partition split), the Fetch step
+    /// internally issues concurrent requests to all relevant PK ranges —
+    /// there is no requirement that the concurrency semaphore issues one
+    /// permit per step, and splits do not require mutating the plan graph.
     ///
     /// The `operation` carries the **unrewritten** query from the backend
     /// query plan, which may contain the `{documentdb-formattableorderbyquery-filter}`
@@ -1565,24 +1573,28 @@ SDK layer manages pagination and can:
 
 ### 9.1 Partition Split During Execution
 
-When a `Fetch` step receives a 410/1002 (Gone — PartitionKeyRangeGone) response:
+Fetch steps target **EPK ranges**, not PK range IDs. When a Fetch step receives a 410/1002
+(Gone — PartitionKeyRangeGone) response:
 
 1. **Invalidate** the `PartitionKeyRangeCache` for the affected container.
 2. **Re-fetch** the partition key ranges.
-3. **Re-plan** the affected step: the original PK range has split into two or more new
-   ranges. The executor replaces the single `Fetch` step with new `Fetch` steps for each
-   new range.
-4. **Update the `UnorderedMerge` step** (if any) to include the new steps.
-5. **Resume execution** with the new steps.
+3. **Re-resolve** the Fetch step's EPK range to the new child PK range IDs. The step's EPK
+   range now maps to multiple PK ranges.
+4. **Issue concurrent requests** to all child PK ranges within the step. The plan structure
+   does not change — the Fetch step internally fans out. There is no requirement that the
+   concurrency semaphore issues one permit per step; a single Fetch step may hold multiple
+   concurrent requests after a split.
+5. **Resume execution** with the child range results.
 
-The continuation token must survive this: since tokens store EPK bounds (not just PK range
-IDs), the re-plan can correctly map EPK bounds to the new PK range IDs.
+The plan graph remains stable across splits — no steps are added, removed, or rewired.
+The continuation token survives because it stores EPK bounds (not PK range IDs), and the
+Fetch step re-resolves those bounds to current PK range IDs on each execution.
 
 ### 9.2 Error Propagation
 
 | Error Scenario | Behavior |
 |----------------|----------|
-| 410/1002 (PartitionKeyRangeGone) | Re-plan affected range(s), retry. |
+| 410/1002 (PartitionKeyRangeGone) | Fetch step re-resolves EPK range to child PK ranges, retries. |
 | 429 (Throttled) | Handled by transport pipeline (backoff + retry). |
 | 503 (Service Unavailable) | Handled by operation pipeline (region failover). |
 | 404 (Not Found) — container | Fail the entire feed operation. |
@@ -1848,7 +1860,7 @@ For paginated queries:
 | ReadMany — basic | Read 10 items across 3 partitions, verify all returned. |
 | ReadMany — missing items | Read items where some don't exist, verify present items returned. |
 | ReadMany — single partition | All items in one partition, verify no unnecessary fan-out. |
-| ReadMany — partition split | Trigger split during ReadMany, verify re-plan and completion. |
+| ReadMany — partition split | Trigger split during ReadMany, verify Fetch step re-resolves and completes. |
 | ReadMany — large set | Read 1000 items, verify server-side pagination within each range works. |
 | Query — single partition | Execute paginated query, verify continuation threading. |
 | Query — resume | Execute query, get continuation, pass token back in next call, verify continues. |
