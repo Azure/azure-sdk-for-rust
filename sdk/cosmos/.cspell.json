@@ -4,7 +4,6 @@
   ],
   "ignoreWords": [
     "accountname",
-    "ALPN",
     "apacsoutheast",
     "Appleby's",
     "australiacentral",
@@ -43,7 +42,6 @@
     "failback",
     "failovers",
     "FILETIME",
-    "flamegraph",
     "fract",
     "francecentral",
     "francesouth",
@@ -96,7 +94,6 @@
     "PPCB",
     "pushback",
     "qname",
-    "RAII",
     "readfeed",
     "replicaset",
     "reqs",

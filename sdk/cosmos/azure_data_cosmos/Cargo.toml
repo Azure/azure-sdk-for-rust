@@ -16,8 +16,8 @@ categories = ["api-bindings"]
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { workspace = true }
+azure_core = { version = "0.35.0", default-features = false }
+azure_data_cosmos_driver = { workspace = true, default-features = false }
 base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
@@ -29,7 +29,7 @@ url.workspace = true
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity.workspace = true
+azure_identity = { version = "0.35.0" }
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 time.workspace = true
@@ -40,19 +40,25 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 workspace = true
 
 [features]
-default = ["hmac_rust", "reqwest"]
-reqwest = ["dep:reqwest", "azure_core/reqwest", "azure_core/tokio", "azure_data_cosmos_driver/reqwest_rustls"]
+default = ["hmac_rust", "reqwest", "rustls"]
+reqwest = ["dep:reqwest", "azure_core/reqwest", "azure_core/tokio", "azure_data_cosmos_driver/reqwest", "azure_data_cosmos_driver/tokio"]
+rustls = ["reqwest", "azure_data_cosmos_driver/rustls", "__tls"]
+native_tls = ["reqwest", "azure_data_cosmos_driver/native_tls", "__tls"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = ["azure_data_cosmos_driver/fault_injection"] # Enables support for fault injection testing
-allow_invalid_certificates = ["reqwest", "reqwest/rustls", "azure_data_cosmos_driver/reqwest_rustls"] # Enables accepting invalid TLS certificates (e.g., for emulator testing)
+allow_invalid_certificates = [] # Enables accepting invalid TLS certificates (e.g., for emulator testing). Must be combined with a TLS feature (`rustls` or `native_tls`).
+__tls = []
 
 [package.metadata.docs.rs]
 features = [
-  "key_auth",
-  "hmac_rust",
-  "hmac_openssl",
   "allow_invalid_certificates",
+  "fault_injection",
+  "hmac_openssl",
+  "hmac_rust",
+  "key_auth",
+  "native_tls",
+  "rustls",
 ]

@@ -8,6 +8,9 @@
 - Added `ThroughputPoller` type that implements `IntoFuture` and `Stream` for tracking asynchronous throughput replacement operations.
 - Added `FeedRange` type with `ContainerClient::read_feed_ranges()` and `ContainerClient::feed_range_from_partition_key()` - supports hierarchical partition keys (MultiHash) including prefix partition keys that return multiple feed ranges. ([#4149](https://github.com/Azure/azure-sdk-for-rust/pull/4149))
 - Added `lsn()` and `item_lsn()` accessors on `ItemResponse<T>` exposing the `lsn` and `x-ms-item-lsn` Cosmos DB response headers. ([#4176](https://github.com/Azure/azure-sdk-for-rust/pull/4176))
+- Added `rustls` feature flag (enabled by default) that configures reqwest with rustls as the TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
+- Added `native_tls` feature flag that configures reqwest with native-tls as the TLS stack. Disable default features and enable `native_tls` to use the platform TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
+- The `allow_invalid_certificates` feature now works with any TLS backend (`rustls` or `native_tls`). ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
 
 ### Breaking Changes
 
