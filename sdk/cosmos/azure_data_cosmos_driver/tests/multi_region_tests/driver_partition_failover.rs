@@ -171,7 +171,7 @@ pub async fn ppaf_enabled_write_forbidden_on_create_fails_over_to_next_region(
 // ────────────────────────────────────────────────────────────────────────────
 
 /// When PPCB is enabled (default when PPAF is enabled) and region 1 returns
-/// 503 for reads, after the default read failure threshold (5) is exceeded,
+/// 503 for reads, after the default read failure threshold (10) is exceeded,
 /// subsequent reads should be routed directly to the next region via a
 /// partition-level circuit breaker override.
 #[tokio::test]
@@ -208,11 +208,11 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
         context.create_item(&container, "pk1", item_json).await?;
 
         // Issue reads to accumulate failures and trigger the circuit breaker threshold.
-        // Default read failure threshold is 5. Each read that hits the hub region
+        // Default read failure threshold is 10. Each read that hits the hub region
         // will increment the counter. Reads are retried across regions, so they
         // should eventually succeed via a non-hub region.
         let mut read_success_count = 0;
-        let total_reads = 10;
+        let total_reads = 15;
         for _ in 0..total_reads {
             match context.read_item(&container, "ppcb-item-503", "pk1").await {
                 Ok(_) => read_success_count += 1,
