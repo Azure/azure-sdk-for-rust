@@ -18,11 +18,17 @@ enum MockStressTestFactory {
 }
 
 impl StressTestFactory for MockStressTestFactory {
-    fn get_test(&self) -> Result<Box<dyn StressTest>> {
+    fn build_test(&self) -> Result<Box<dyn StressTest>> {
         Ok(match self {
             Self::TestOne(_args) => Box::new(MockStressTestOne {}),
             Self::TestTwo(_args) => Box::new(MockStressTestTwo {}),
         })
+    }
+}
+
+impl std::fmt::Display for MockStressTestFactory {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
     }
 }
 
@@ -34,7 +40,7 @@ impl StressTest for MockStressTestOne {
     async fn global_setup(&self) -> Result<()> {
         Ok(())
     }
-    fn get_operation(&self) -> Result<Box<dyn StressTestOperation>> {
+    async fn get_operation(&self) -> Result<Box<dyn StressTestOperation>> {
         Ok(Box::new(MockOperationOne {}))
     }
     async fn global_cleanup(&self) -> Result<()> {
@@ -44,7 +50,7 @@ impl StressTest for MockStressTestOne {
 struct MockOperationOne {}
 #[async_trait]
 impl StressTestOperation for MockOperationOne {
-    async fn run(&self, _result_sender: UnboundedSender<StressRunOutput>) {
+    async fn run(&mut self, _result_sender: UnboundedSender<StressRunOutput>) {
         // todo!()
     }
 }
@@ -66,7 +72,7 @@ impl StressTest for MockStressTestTwo {
     async fn global_setup(&self) -> Result<()> {
         Ok(())
     }
-    fn get_operation(&self) -> Result<Box<dyn StressTestOperation>> {
+    async fn get_operation(&self) -> Result<Box<dyn StressTestOperation>> {
         Ok(Box::new(MockOperationTwo {}))
     }
     async fn global_cleanup(&self) -> Result<()> {
@@ -76,7 +82,7 @@ impl StressTest for MockStressTestTwo {
 struct MockOperationTwo {}
 #[async_trait]
 impl StressTestOperation for MockOperationTwo {
-    async fn run(&self, _result_sender: UnboundedSender<StressRunOutput>) {
+    async fn run(&mut self, _result_sender: UnboundedSender<StressRunOutput>) {
         // todo!()
     }
 }
