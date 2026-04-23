@@ -28,13 +28,13 @@ pub struct BlobClientDownloadOptions<'a> {
     pub encryption_key_sha256: Option<String>,
 
     /// The request should only proceed if an entity matches this string.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// The request should only proceed if the entity was modified after this time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// The request should only proceed if no entity matches this string.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,

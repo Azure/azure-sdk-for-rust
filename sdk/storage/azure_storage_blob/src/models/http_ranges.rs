@@ -449,4 +449,24 @@ mod http_range_tests {
         let range: HttpRange = (..=99usize).into();
         assert_eq!(range.to_string(), "bytes=0-99");
     }
+
+    #[test]
+    fn from_range_nonzero_offset() {
+        // Verify no off-by-one when start != 0
+        let exclusive: HttpRange = (50u64..150).into();
+        let inclusive: HttpRange = (50u64..=149).into();
+        assert_eq!(exclusive.to_string(), "bytes=50-149");
+        assert_eq!(inclusive.to_string(), "bytes=50-149");
+        assert_eq!(exclusive, inclusive);
+    }
+
+    #[test]
+    fn from_range_single_byte() {
+        // A 1-byte range must not produce an off-by-one
+        let exclusive: HttpRange = (42u64..43).into();
+        let inclusive: HttpRange = (42u64..=42).into();
+        assert_eq!(exclusive.to_string(), "bytes=42-42");
+        assert_eq!(inclusive.to_string(), "bytes=42-42");
+        assert_eq!(exclusive, inclusive);
+    }
 }

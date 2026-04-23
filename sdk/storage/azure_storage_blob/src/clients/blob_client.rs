@@ -19,8 +19,8 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, ClientMethodOptions, NoFormat, Pipeline, RequestContent, StatusCode, Url,
-        UrlExt,
+        AsyncRawResponse, ClientMethodOptions, Etag, NoFormat, Pipeline, RequestContent,
+        StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -309,10 +309,10 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
     async fn transfer_range(
         &self,
         range: Option<Range<usize>>,
-        etag_lock: Option<String>,
+        etag_lock: Option<Etag>,
     ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
-        opt.range = range.map(|r| HttpRange::from(r).to_string());
+        opt.range = range.map(HttpRange::from);
         if let Some(etag) = etag_lock {
             opt.if_match = Some(etag);
             opt.if_none_match = None;

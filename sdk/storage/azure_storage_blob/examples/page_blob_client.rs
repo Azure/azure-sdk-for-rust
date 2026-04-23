@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write 512 bytes of data to bytes 0-511.
     let page_data = vec![b'A'; 512];
-    let range = HttpRange::new(0, 512).to_string();
+    let range = HttpRange::new(0, 512);
     page_blob_client
         .upload_pages(RequestContent::from(page_data), 512, range, None)
         .await?;
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Clear the page range (zeroes out those bytes).
     page_blob_client
-        .clear_pages(HttpRange::new(0, 512).to_string(), None)
+        .clear_pages(HttpRange::new(0, 512), None)
         .await?;
     println!("Cleared page range 0-511");
 
