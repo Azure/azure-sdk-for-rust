@@ -302,8 +302,8 @@ pub enum OperationTarget {
 ```
 
 **Implementation note:** `EpkRange<T>` requires `T: Ord + Clone`. The driver's
-`EffectivePartitionKey` type currently does not implement `Ord`. This must be added
-(via `derive` or manual implementation) before `OperationTarget::EpkRange` can be used.
+`EffectivePartitionKey` type already implements `Ord`, so the existing implementation
+is sufficient for `OperationTarget::EpkRange`.
 
 ```rust
 impl OperationTarget {
