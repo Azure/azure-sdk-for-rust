@@ -4,7 +4,7 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::http::headers::{Header, HeaderName, HeaderValue};
 use std::fmt;
-use std::ops::{Range, RangeFrom};
+use std::ops::{Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive};
 use std::str::FromStr;
 
 const PREFIX: &str = "bytes ";
@@ -12,26 +12,6 @@ const WILDCARD: &str = "*";
 const CONTENT_RANGE_ID: HeaderName = HeaderName::from_static("content-range");
 
 type Result<T> = azure_core::Result<T>;
-
-/// Trait to convert a value into an HTTP Range header.
-/// Implemented on `Range<>` and `RangeFrom<>`.
-/// Note that `Range<>` uses an exclusive end value while
-/// HTTP uses an inclusive end value.
-pub(crate) trait IntoRangeHeader {
-    fn as_range_header(&self) -> String;
-}
-
-impl IntoRangeHeader for Range<usize> {
-    fn as_range_header(&self) -> String {
-        format!("bytes={}-{}", self.start, self.end - 1)
-    }
-}
-
-impl IntoRangeHeader for RangeFrom<usize> {
-    fn as_range_header(&self) -> String {
-        format!("bytes={}-", self.start)
-    }
-}
 
 /// Represents the `Content-Range` HTTP response header.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -207,6 +187,16 @@ mod tests {
 /// // Open-ended range starting at offset 255: bytes=255-
 /// let range = HttpRange::from_offset(255);
 /// assert_eq!(range.to_string(), "bytes=255-");
+///
+/// // Convert from standard Rust range types:
+/// let range: HttpRange = (0u64..100).into();
+/// assert_eq!(range.to_string(), "bytes=0-99");
+///
+/// let range: HttpRange = (100u64..).into();
+/// assert_eq!(range.to_string(), "bytes=100-");
+///
+/// let range: HttpRange = (0u64..=99).into();
+/// assert_eq!(range.to_string(), "bytes=0-99");
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRange {
@@ -243,6 +233,14 @@ impl HttpRange {
             length: None,
         }
     }
+
+    pub(crate) fn offset(&self) -> u64 {
+        self.offset
+    }
+
+    pub(crate) fn length(&self) -> Option<u64> {
+        self.length
+    }
 }
 
 impl fmt::Display for HttpRange {
@@ -262,6 +260,73 @@ impl fmt::Display for HttpRange {
 impl From<HttpRange> for HeaderValue {
     fn from(range: HttpRange) -> Self {
         HeaderValue::from(range.to_string())
+    }
+}
+
+// From<Range*<u64>> impls
+
+impl From<Range<u64>> for HttpRange {
+    fn from(range: Range<u64>) -> Self {
+        Self::new(range.start, range.end - range.start)
+    }
+}
+
+impl From<RangeFrom<u64>> for HttpRange {
+    fn from(range: RangeFrom<u64>) -> Self {
+        Self::from_offset(range.start)
+    }
+}
+
+impl From<RangeInclusive<u64>> for HttpRange {
+    fn from(range: RangeInclusive<u64>) -> Self {
+        Self::new(*range.start(), range.end() - range.start() + 1)
+    }
+}
+
+impl From<RangeTo<u64>> for HttpRange {
+    fn from(range: RangeTo<u64>) -> Self {
+        Self::new(0, range.end)
+    }
+}
+
+impl From<RangeToInclusive<u64>> for HttpRange {
+    fn from(range: RangeToInclusive<u64>) -> Self {
+        Self::new(0, range.end + 1)
+    }
+}
+
+// From<Range*<usize>> impls
+
+impl From<Range<usize>> for HttpRange {
+    fn from(range: Range<usize>) -> Self {
+        Self::new(range.start as u64, (range.end - range.start) as u64)
+    }
+}
+
+impl From<RangeFrom<usize>> for HttpRange {
+    fn from(range: RangeFrom<usize>) -> Self {
+        Self::from_offset(range.start as u64)
+    }
+}
+
+impl From<RangeInclusive<usize>> for HttpRange {
+    fn from(range: RangeInclusive<usize>) -> Self {
+        Self::new(
+            *range.start() as u64,
+            (range.end() - range.start() + 1) as u64,
+        )
+    }
+}
+
+impl From<RangeTo<usize>> for HttpRange {
+    fn from(range: RangeTo<usize>) -> Self {
+        Self::new(0, range.end as u64)
+    }
+}
+
+impl From<RangeToInclusive<usize>> for HttpRange {
+    fn from(range: RangeToInclusive<usize>) -> Self {
+        Self::new(0, (range.end + 1) as u64)
     }
 }
 
@@ -319,5 +384,69 @@ mod http_range_tests {
         // offset + length would overflow u64 without saturating arithmetic; must not panic
         let range = HttpRange::new(u64::MAX, u64::MAX);
         let _ = range.to_string();
+    }
+
+    // From<Range*<u64>> tests
+
+    #[test]
+    fn from_range_u64() {
+        let range: HttpRange = (0u64..100).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    #[test]
+    fn from_range_from_u64() {
+        let range: HttpRange = (100u64..).into();
+        assert_eq!(range.to_string(), "bytes=100-");
+    }
+
+    #[test]
+    fn from_range_inclusive_u64() {
+        let range: HttpRange = (0u64..=99).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    #[test]
+    fn from_range_to_u64() {
+        let range: HttpRange = (..100u64).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    #[test]
+    fn from_range_to_inclusive_u64() {
+        let range: HttpRange = (..=99u64).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    // From<Range*<usize>> tests
+
+    #[test]
+    fn from_range_usize() {
+        let range: HttpRange = (0usize..100).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    #[test]
+    fn from_range_from_usize() {
+        let range: HttpRange = (100usize..).into();
+        assert_eq!(range.to_string(), "bytes=100-");
+    }
+
+    #[test]
+    fn from_range_inclusive_usize() {
+        let range: HttpRange = (0usize..=99).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    #[test]
+    fn from_range_to_usize() {
+        let range: HttpRange = (..100usize).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
+    }
+
+    #[test]
+    fn from_range_to_inclusive_usize() {
+        let range: HttpRange = (..=99usize).into();
+        assert_eq!(range.to_string(), "bytes=0-99");
     }
 }

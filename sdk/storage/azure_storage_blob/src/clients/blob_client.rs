@@ -7,8 +7,8 @@ use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::BlobClientDownloadInternalOptions,
     models::{
-        http_ranges::IntoRangeHeader, BlobClientDownloadOptions, BlobClientDownloadResult,
-        BlobClientUploadOptions, BlobClientUploadResult, StorageErrorCode,
+        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientUploadOptions,
+        BlobClientUploadResult, HttpRange, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     AppendBlobClient, BlockBlobClient, PageBlobClient,
@@ -312,7 +312,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         etag_lock: Option<String>,
     ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
-        opt.range = range.map(|r| r.as_range_header());
+        opt.range = range.map(|r| HttpRange::from(r).to_string());
         if let Some(etag) = etag_lock {
             opt.if_match = Some(etag);
             opt.if_none_match = None;

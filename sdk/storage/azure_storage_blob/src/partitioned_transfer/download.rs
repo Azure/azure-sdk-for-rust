@@ -11,6 +11,8 @@ use std::{
     },
 };
 
+use crate::models::HttpRange;
+
 use async_trait::async_trait;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
@@ -49,7 +51,7 @@ pub(crate) trait PartitionedDownloadBehavior {
 /// correct set of additional ranges to download and queues them up. The returned `Stream`
 /// executes these downloads, maintaining limits for parallel downloads and buffer count.
 pub(crate) async fn download<Behavior>(
-    range: Option<Range<usize>>,
+    range: Option<HttpRange>,
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
@@ -57,6 +59,14 @@ pub(crate) async fn download<Behavior>(
 where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
+    let range: Option<Range<usize>> = range.map(|hr| {
+        let start = hr.offset() as usize;
+        let end = match hr.length() {
+            Some(len) => start + len as usize,
+            None => usize::MAX,
+        };
+        start..end
+    });
     let parallel = parallel.get();
     let max_buffers = parallel * 2;
     let partition_size = partition_size.get();
@@ -555,7 +565,7 @@ mod tests {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
             let mut body = download(
-                args.download_range.map(|r| r.0..r.1),
+                args.download_range.map(|r| (r.0..r.1).into()),
                 PARALLEL.try_into().unwrap(),
                 args.partition_len.try_into().unwrap(),
                 mock.clone(),
@@ -629,7 +639,7 @@ mod tests {
             let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
             let mut body = download(
-                args.download_range.map(|r| r.0..r.1),
+                args.download_range.map(|r| (r.0..r.1).into()),
                 args.parallel.try_into().unwrap(),
                 args.partition_len.try_into().unwrap(),
                 mock.clone(),
