@@ -10,13 +10,7 @@
 
 ### Other Changes
 
-## 0.14.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 0.14.0 (2026-04-22)
 
 ### Other Changes
 
