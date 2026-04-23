@@ -40,6 +40,7 @@ pub(crate) mod response_header_names {
     pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
     pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
     pub const LSN: &str = "lsn";
+    pub const ITEM_LSN: &str = "x-ms-item-lsn";
     pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
     pub const OWNER_ID: &str = "x-ms-content-path";
     pub const OFFER_REPLACE_PENDING: &str = "x-ms-offer-replace-pending";
@@ -224,6 +225,11 @@ pub struct CosmosResponseHeaders {
     /// Logical Sequence Number of the resource (`lsn`).
     pub lsn: Option<u64>,
 
+    /// Item Logical Sequence Number (`x-ms-item-lsn`).
+    ///
+    /// Only returned on item/document operations (create, read, replace, upsert, delete).
+    pub item_lsn: Option<u64>,
+
     /// Owner full name / alternate content path (`x-ms-alt-content-path`).
     ///
     /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
@@ -318,6 +324,9 @@ impl CosmosResponseHeaders {
                 response_header_names::LSN => {
                     result.lsn = value.as_str().parse().ok();
                 }
+                response_header_names::ITEM_LSN => {
+                    result.item_lsn = value.as_str().parse().ok();
+                }
                 response_header_names::OWNER_FULL_NAME => {
                     result.owner_full_name = Some(value.as_str().to_owned());
                 }
@@ -361,6 +370,7 @@ mod tests {
         );
         headers.insert("x-ms-request-duration-ms", "4.56");
         headers.insert("lsn", "42");
+        headers.insert("x-ms-item-lsn", "37");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -396,6 +406,7 @@ mod tests {
         );
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
+        assert_eq!(cosmos_headers.item_lsn, Some(37));
     }
 
     #[test]
@@ -433,6 +444,7 @@ mod tests {
             query_metrics: Some("totalExecutionTimeInMs=1.0".to_string()),
             server_duration_ms: Some(4.56),
             lsn: Some(100),
+            item_lsn: Some(99),
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
@@ -468,6 +480,7 @@ mod tests {
         assert!(headers.query_metrics.is_none());
         assert!(headers.server_duration_ms.is_none());
         assert!(headers.lsn.is_none());
+        assert!(headers.item_lsn.is_none());
     }
 
     #[test]
