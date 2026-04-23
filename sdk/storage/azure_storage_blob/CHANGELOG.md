@@ -1,5 +1,15 @@
 # Release History
 
+## 0.13.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.12.0 (2026-04-22)
 
 ### Features Added
@@ -20,6 +30,10 @@
 - Changed `PageBlobClientGetPageRangesOptions.range` from `Option<String>` to `Option<HttpRange>`.
 - Changed `AppendBlobClientAppendBlockFromUrlOptions.source_range` from `Option<String>` to `Option<HttpRange>`.
 - Changed `BlockBlobClientUploadBlobFromUrlOptions.source_range` from `Option<String>` to `Option<HttpRange>`.
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.11.0 (2026-04-14)
 
