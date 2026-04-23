@@ -59,11 +59,11 @@ struct StressRunnerOptions<T: StressTestFactory> {
 
 impl<T: StressTestFactory> std::fmt::Display for StressRunnerOptions<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "StressRunnerOptions: {{ parallel: {}, duration: {}, timeout: {:?} }}",
-            self.parallel, self.duration, self.timeout,
-        )
+        writeln!(f, "=== Stress Runner Configuration ===")?;
+        writeln!(f, "duration: {}", self.duration)?;
+        writeln!(f, "parallel: {}", self.parallel)?;
+        writeln!(f, "timeout: {:?}", self.timeout)?;
+        std::fmt::Display::fmt(&self.command, f)
     }
 }
 
@@ -131,7 +131,7 @@ impl<T: StressTestFactory> StressRunner<T> {
     pub async fn run(&self) -> Result<()> {
         let stress_test = self.options.command.build_test()?;
 
-        println!("Test Configuration: {:#}", self.options);
+        println!("{}", self.options);
 
         let stress_run_result: Result<()> = async {
             println!("========== Starting global setup ==========");

@@ -29,7 +29,11 @@ members = [
   "sdk/canary/azure_canary_core",
   "sdk/canary/azure_canary",
   "sdk/storage/azure_storage_blob",
+<<<<<<< HEAD
   "sdk/storage/azure_storage_common",
+=======
+  "sdk/storage/azure_storage_blob_stress",
+>>>>>>> f92ec0093 (impl display)
   "sdk/storage/azure_storage_queue",
   "sdk/storage/azure_storage_sas",
 ]

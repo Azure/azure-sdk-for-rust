@@ -51,11 +51,12 @@ impl DownloadBlobsTestArgs {
 
 impl std::fmt::Display for DownloadBlobsTestArgs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "DownloadOptions: {{ targets: {}, concurrency: {}, block_len: {}, data_len: {} }}",
-            self.targets, self.concurrency, self.block_len, self.data_len,
-        )
+        writeln!(f, "=== Download Blobs Configuration ===")?;
+        writeln!(f, "block_len: {}", self.block_len)?;
+        writeln!(f, "concurrency: {}", self.concurrency)?;
+        writeln!(f, "data_len: {}", self.data_len)?;
+        writeln!(f, "targets: {}", self.targets)?;
+        Ok(())
     }
 }
 
