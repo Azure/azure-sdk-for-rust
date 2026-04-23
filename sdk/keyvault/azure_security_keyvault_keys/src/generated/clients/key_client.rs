@@ -273,20 +273,20 @@ impl KeyClient {
     /// is supported for asymmetric keys as a convenience for callers that have a key-reference but do not have access to the
     /// public key material. This operation requires the keys/encrypt permission.
     ///
+    /// You should record the ['KeyOperationResult::kid`] that is returned by this operation
+    /// so you can later parse it with [`ResourceId`](crate::ResourceId) and pass the version to [`KeyClient::decrypt()`].
+    /// You can pass an empty string for the version to `decrypt()` to select the latest key version
+    /// but if you don't record the specific version used for encrypting, key rotation can make the data inaccessible.
+    ///
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when encrypting so you can reliably decrypt using the same version. You
-    /// can pass an empty string to select the latest key version but if you don't record the specific version used for encryption,
-    /// key rotation can make the data inaccessible.
     /// * `parameters` - The parameters for the encryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.encrypt")]
     pub async fn encrypt(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientEncryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -301,7 +301,10 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/encrypt");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -1103,20 +1106,20 @@ impl KeyClient {
     /// The SIGN operation is applicable to asymmetric and symmetric keys stored in Azure Key Vault since this operation uses
     /// the private portion of the key. This operation requires the keys/sign permission.
     ///
+    /// You should record the ['KeyOperationResult::kid`] that is returned by this operation
+    /// so you can later parse it with [`ResourceId`](crate::ResourceId) and pass the version to [`KeyClient::verify()`].
+    /// You can pass an empty string for the version to `verify()` to select the latest key version
+    /// but if you don't record the specific version used for signing, key rotation can make the data unverifiable.
+    ///
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when signing so you can reliably verify using the same version. You can
-    /// pass an empty string to select the latest key version but if you don't record the specific version used for signing, key
-    /// rotation can make the data unverifiable.
     /// * `parameters` - The parameters for the signing operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.sign")]
     pub async fn sign(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<SignParameters>,
         options: Option<KeyClientSignOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1131,7 +1134,10 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/sign");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);
@@ -1391,20 +1397,20 @@ impl KeyClient {
     /// keys as a convenience for callers that have a key-reference but do not have access to the public key material. This operation
     /// requires the keys/wrapKey permission.
     ///
+    /// You should record the ['KeyOperationResult::kid`] that is returned by this operation
+    /// so you can later parse it with [`ResourceId`](crate::ResourceId) and pass the version to [`KeyClient::unwrap_key()`].
+    /// You can pass an empty string for the version to `unwrap_key()` to select the latest key version
+    /// but if you don't record the specific version used for wrapping a key, key rotation can make the data inaccessible.
+    ///
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
-    /// The version is required and should be recorded when wrapping a data encryption key so you can reliably unwrap using the
-    /// same version. You can pass an empty string to select the latest key version but if you don't record the specific version
-    /// used for wrapping a key, key encryption key rotation can make the data inaccessible.
     /// * `parameters` - The parameters for wrap operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.wrapKey")]
     pub async fn wrap_key(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientWrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1419,7 +1425,10 @@ impl KeyClient {
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/wrapkey");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url.append_path(&path);
         let mut query_builder = url.query_builder();
         query_builder.set_pair("api-version", &self.api_version);

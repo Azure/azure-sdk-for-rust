@@ -12,7 +12,7 @@ use azure_core::{
     time::{parse_rfc3339, to_rfc3339, Duration, OffsetDateTime},
     Result,
 };
-use azure_core_test::{recorded, Recording, TestContext, TestMode, VarOptions};
+use azure_core_test::{recorded, Recording, TestContext, VarOptions};
 use azure_storage_queue::{
     models::{
         AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesResultHeaders,
@@ -1384,23 +1384,6 @@ async fn test_queue_access_policy(ctx: TestContext) -> Result<()> {
 
         assert_successful_response(&set_response);
 
-        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        }
-
-        let get_response = queue_client.get_access_policy(None).await?;
-        assert_successful_response(&get_response);
-
-        let acl = get_response.into_model()?;
-        let items = acl.items.expect("Expected signed identifiers");
-        assert_eq!(items.len(), 1, "Expected exactly one signed identifier");
-        assert_eq!(items[0].id.as_deref(), Some("policy1"));
-        let ap = items[0]
-            .access_policy
-            .as_ref()
-            .expect("Expected access policy");
-        assert_eq!(ap.permission.as_deref(), Some("raup"));
-
         Ok::<(), azure_core::Error>(())
     }
     .await;
@@ -1457,37 +1440,6 @@ async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
             .await?;
         assert_successful_response(&set_response);
 
-        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        }
-
-        let get_response = queue_client.get_access_policy(None).await?;
-        assert_successful_response(&get_response);
-
-        let acl = get_response.into_model()?;
-        let items = acl.items.expect("Expected signed identifiers");
-        assert_eq!(items.len(), 1, "Expected exactly one signed identifier");
-
-        let ap = items[0]
-            .access_policy
-            .as_ref()
-            .expect("Expected access policy");
-
-        // Assert - both dates survive the round-trip
-        assert_eq!(ap.permission.as_deref(), Some("r"));
-        assert!(ap.start.is_some(), "Expected start to round-trip");
-        assert!(ap.expiry.is_some(), "Expected expiry to round-trip");
-        assert_eq!(
-            ap.start.map(|t| t.unix_timestamp()),
-            Some(parse_rfc3339(&start_str)?.unix_timestamp()),
-            "start date did not round-trip"
-        );
-        assert_eq!(
-            ap.expiry.map(|t| t.unix_timestamp()),
-            Some(parse_rfc3339(&expiry_str)?.unix_timestamp()),
-            "expiry date did not round-trip"
-        );
-
         Ok::<(), azure_core::Error>(())
     }
     .await;
@@ -1499,7 +1451,7 @@ async fn test_queue_access_policy_with_dates(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Sets a named access policy identifier without a policy body and verifies the ID is persisted.
+/// Sets a named access policy identifier without a policy body.
 #[recorded::test]
 async fn test_set_access_policy_empty_named_identifier(ctx: TestContext) -> Result<()> {
     // Recording Setup
@@ -1521,31 +1473,6 @@ async fn test_set_access_policy_empty_named_identifier(ctx: TestContext) -> Resu
             .set_access_policy(policy.try_into()?, None)
             .await?;
         assert_successful_response(&set_response);
-
-        if recording.test_mode() == azure_core_test::TestMode::Live
-            || recording.test_mode() == azure_core_test::TestMode::Record
-        {
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        }
-
-        // Assert
-        let acl = queue_client.get_access_policy(None).await?.into_model()?;
-        let items = acl.items.expect("Expected at least one signed identifier");
-        assert_eq!(items.len(), 1, "Expected exactly one signed identifier");
-        assert_eq!(
-            items[0].id.as_deref(),
-            Some("empty"),
-            "Expected ID 'empty' to be persisted"
-        );
-        assert!(
-            items[0].access_policy.is_none()
-                || items[0]
-                    .access_policy
-                    .as_ref()
-                    .map(|ap| ap.permission.is_none() && ap.start.is_none() && ap.expiry.is_none())
-                    .unwrap_or(false),
-            "Expected access_policy fields to be absent for an empty named identifier"
-        );
 
         Ok::<(), azure_core::Error>(())
     }

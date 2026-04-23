@@ -104,73 +104,6 @@ impl BlobClient {
         })
     }
 
-    /// Downloads a blob directly into a caller-provided buffer.
-    ///
-    /// Unlike [`BlobClient::download`], which allocates and returns the blob data, this method
-    /// writes the content directly into `buffer`. The blob is fetched in parallel range requests and assembled in-place.
-    ///
-    /// # Arguments
-    ///
-    /// * `buffer` - The buffer to write the blob content into. Must be large enough to hold the requested range or the entire blob.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// # Notes
-    ///
-    /// By default, storage clients create their HTTP transport via
-    /// [`azure_core::http::new_http_client()`] with automatic decompression disabled.
-    /// If you set a custom transport in [`BlobClientOptions`] without also disabling
-    /// automatic decompression, partitioned downloads may not succeed.
-    pub async fn download_into(
-        &self,
-        buffer: &mut [u8],
-        options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<usize> {
-        let options = options.unwrap_or_default();
-        let parallel = options.parallel.unwrap_or(DEFAULT_DOWNLOAD_PARALLEL);
-        let partition_size = options
-            .partition_size
-            .unwrap_or(DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        // Construct exhaustively to catch new options.
-        let get_range_options = BlobClientDownloadInternalOptions {
-            encryption_algorithm: options.encryption_algorithm,
-            encryption_key: options.encryption_key,
-            encryption_key_sha256: options.encryption_key_sha256,
-            if_match: options.if_match,
-            if_modified_since: options.if_modified_since,
-            if_none_match: options.if_none_match,
-            if_tags: options.if_tags,
-            if_unmodified_since: options.if_unmodified_since,
-            lease_id: options.lease_id,
-            method_options: ClientMethodOptions {
-                context: options.method_options.context.into_owned(),
-            },
-            range: None,
-            range_get_content_crc64: options.range_get_content_crc64,
-            range_get_content_md5: options.range_get_content_md5,
-            snapshot: options.snapshot,
-            structured_body_type: options.structured_body_type,
-            timeout: options.timeout,
-            version_id: options.version_id,
-        };
-
-        let client = GeneratedBlobClient {
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-            tracer: self.tracer.clone(),
-        };
-        let client = BlobClientDownloadBehavior::new(client, get_range_options);
-
-        partitioned_transfer::download_into(
-            buffer,
-            options.range,
-            parallel,
-            partition_size,
-            Arc::new(client),
-        )
-        .await
-    }
-
     /// Returns a new instance of AppendBlobClient.
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
@@ -373,9 +306,20 @@ impl<'a> BlobClientDownloadBehavior<'a> {
 
 #[async_trait]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
-    async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
+    async fn transfer_range(
+        &self,
+        range: Option<Range<usize>>,
+        etag_lock: Option<String>,
+    ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
         opt.range = range.map(|r| r.as_range_header());
+        if let Some(etag) = etag_lock {
+            opt.if_match = Some(etag);
+            opt.if_none_match = None;
+            opt.if_modified_since = None;
+            opt.if_unmodified_since = None;
+            opt.if_tags = None;
+        }
         self.client
             .download_internal(Some(opt))
             .await
