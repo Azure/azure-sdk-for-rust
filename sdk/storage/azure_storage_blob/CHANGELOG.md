@@ -1,5 +1,15 @@
 # Release History
 
+## 0.13.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.12.0 (2026-04-22)
 
 ### Features Added
@@ -12,6 +22,10 @@
 - Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
 - Responses are no longer automatically decompressed.
 - Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.11.0 (2026-04-14)
 
