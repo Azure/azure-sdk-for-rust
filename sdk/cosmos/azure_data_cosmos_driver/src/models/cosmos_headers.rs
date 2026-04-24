@@ -45,6 +45,7 @@ pub(crate) mod response_header_names {
     pub const OWNER_ID: &str = "x-ms-content-path";
     pub const OFFER_REPLACE_PENDING: &str = "x-ms-offer-replace-pending";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
+    pub const INTERNAL_PARTITION_ID: &str = "x-ms-cosmos-internal-partition-id";
 }
 
 /// Header names used by the fault injection framework.
@@ -254,6 +255,12 @@ pub struct CosmosResponseHeaders {
     ///
     /// Identifies which physical partition handled the operation.
     pub partition_key_range_id: Option<String>,
+
+    /// Internal partition ID (`x-ms-cosmos-internal-partition-id`).
+    ///
+    /// For informational purposes only. This value is an opaque identifier
+    /// assigned by the service and may change without notice.
+    pub internal_partition_id: Option<String>,
 }
 
 impl CosmosResponseHeaders {
@@ -345,6 +352,9 @@ impl CosmosResponseHeaders {
                 response_header_names::PARTITION_KEY_RANGE_ID => {
                     result.partition_key_range_id = Some(value.as_str().to_owned());
                 }
+                response_header_names::INTERNAL_PARTITION_ID => {
+                    result.internal_partition_id = Some(value.as_str().to_owned());
+                }
                 _ => {}
             }
         }
@@ -381,6 +391,7 @@ mod tests {
         headers.insert("lsn", "42");
         headers.insert("x-ms-item-lsn", "37");
         headers.insert("x-ms-documentdb-partitionkeyrangeid", "3");
+        headers.insert("x-ms-cosmos-internal-partition-id", "abc-internal-123");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -418,6 +429,10 @@ mod tests {
         assert_eq!(cosmos_headers.lsn, Some(42));
         assert_eq!(cosmos_headers.item_lsn, Some(37));
         assert_eq!(cosmos_headers.partition_key_range_id.as_deref(), Some("3"));
+        assert_eq!(
+            cosmos_headers.internal_partition_id.as_deref(),
+            Some("abc-internal-123")
+        );
     }
 
     #[test]
@@ -460,6 +475,7 @@ mod tests {
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
             partition_key_range_id: Some("3".to_string()),
+            internal_partition_id: Some("int-part-1".to_string()),
         };
 
         assert_eq!(
@@ -494,6 +510,7 @@ mod tests {
         assert!(headers.lsn.is_none());
         assert!(headers.item_lsn.is_none());
         assert!(headers.partition_key_range_id.is_none());
+        assert!(headers.internal_partition_id.is_none());
     }
 
     #[test]
