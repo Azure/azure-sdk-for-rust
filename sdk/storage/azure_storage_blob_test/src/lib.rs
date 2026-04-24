@@ -5,12 +5,16 @@ pub mod data_streams;
 pub mod stress;
 
 use std::{
+    future::Future,
+    pin::Pin,
     slice,
     sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Sender,
         Arc,
     },
+    task::Poll,
+    time::Duration,
 };
 
 use async_trait::async_trait;
@@ -33,7 +37,12 @@ use azure_storage_blob::{
     BlobServiceClient, BlobServiceClientOptions,
 };
 use bytes::BytesMut;
-use futures::{AsyncRead, AsyncReadExt};
+use futures::{
+    future::{self, Select},
+    ready, AsyncRead, AsyncReadExt,
+};
+use pin_project::pin_project;
+use tokio::time::{sleep, Sleep};
 
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
@@ -504,5 +513,61 @@ impl Policy for FailFirstPolicy {
             ));
         }
         next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+pub trait OptionalTimeoutFutureExt: Sized {
+    fn timeout(self, timeout: Option<Duration>) -> Timeout<Self>;
+}
+
+impl<F: Future> OptionalTimeoutFutureExt for F {
+    fn timeout(self, timeout: Option<Duration>) -> Timeout<Self> {
+        let timeout = timeout.unwrap_or(Duration::MAX);
+        Timeout {
+            fut: future::select(Box::pin(self), Box::pin(sleep(timeout))),
+            timeout_duration: timeout,
+        }
+    }
+}
+
+#[pin_project]
+pub struct Timeout<F> {
+    #[pin]
+    fut: Select<Pin<Box<F>>, Pin<Box<Sleep>>>,
+    timeout_duration: Duration,
+}
+
+impl<T: Future> Future for Timeout<T> {
+    type Output = std::result::Result<T::Output, TimeoutError>;
+
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        let this = self.project();
+        match ready!(this.fut.poll(cx)) {
+            future::Either::Left((output, _)) => Poll::Ready(Ok(output)),
+            future::Either::Right((_timeout, _)) => {
+                // Poll::Ready(Err(azure_core::Error::with_message(
+                //     azure_core::error::ErrorKind::Other,
+                //     "The operation timed out.",
+                // )))
+                Poll::Ready(Err(TimeoutError(*this.timeout_duration)))
+            }
+        }
+    }
+}
+
+pub struct TimeoutError(pub Duration);
+
+impl From<TimeoutError> for azure_core::Error {
+    fn from(value: TimeoutError) -> Self {
+        azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            format!(
+                "The operation timed out after {:.2} seconds",
+                value.0.as_secs_f32()
+            ),
+        )
     }
 }
