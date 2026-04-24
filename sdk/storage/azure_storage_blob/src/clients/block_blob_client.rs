@@ -12,7 +12,7 @@ use crate::{
         method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
-    partitioned_transfer::{self, PartitionedUploadBehavior},
+    partitioned_transfer::{self, defaults, PartitionedUploadBehavior},
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -24,7 +24,7 @@ use azure_core::{
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
-use std::{num::NonZero, sync::Arc};
+use std::sync::Arc;
 
 impl BlockBlobClient {
     /// Creates a new BlockBlobClient, using Entra ID authentication.
@@ -125,8 +125,14 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<BlockBlobClientUploadResult> {
         let options = options.unwrap_or_default();
-        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
-        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        let body: Body = content.into();
+        let parallel = options
+            .parallel
+            .unwrap_or_else(defaults::default_concurrency);
+        let partition_size = options
+            .partition_size
+            .map(defaults::clamp_upload_partition_size)
+            .unwrap_or_else(|| defaults::default_upload_partition_size(body.len()));
         // Construct exhaustively to catch new options.
         let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
@@ -205,7 +211,7 @@ impl BlockBlobClient {
             stage_block_options,
             commit_block_list_options,
         );
-        partitioned_transfer::upload(content.into(), parallel, partition_size, &behavior).await?;
+        partitioned_transfer::upload(body, parallel, partition_size, &behavior).await?;
         behavior.result.into_inner().ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -214,10 +220,6 @@ impl BlockBlobClient {
         })
     }
 }
-
-// unwrap evaluated at compile time
-const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
-const DEFAULT_PARTITION_SIZE: NonZero<u64> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlockInfo {
     offset: u64,

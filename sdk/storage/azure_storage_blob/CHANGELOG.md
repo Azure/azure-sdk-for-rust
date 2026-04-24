@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Default `parallel` and `partition_size` for blob upload and download now match the Azure Storage SDK for .NET. Parallelism scales with CPU count (8 to 32 workers). Upload partition size is 4 MiB for content under 100 MiB and 8 MiB for larger content. Download partition size is 4 MiB. Explicitly provided values still take precedence and are silently clamped at service maximums (4000 MiB per uploaded block, 256 MiB per download range). Upload now rejects content that would require more than 50,000 blocks at the chosen partition size.
+
 ### Breaking Changes
 
 ### Bugs Fixed

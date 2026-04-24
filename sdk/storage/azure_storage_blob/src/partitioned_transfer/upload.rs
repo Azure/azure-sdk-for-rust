@@ -1,13 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::Body;
+use azure_core::{
+    error::{Error, ErrorKind},
+    http::Body,
+};
 use bytes::Bytes;
 
 use async_trait::async_trait;
 use azure_core::stream::SeekableStream;
 use futures::StreamExt;
 
+use crate::partitioned_transfer::defaults;
 use crate::streams::{
     multi_bytes_stream::MultiBytesStream,
     partitioned_stream::{self, stream_multi_buffer_partitions, stream_single_buffer_partitions},
@@ -30,6 +34,19 @@ pub(crate) async fn upload(
     client: &impl PartitionedUploadBehavior,
 ) -> AzureResult<()> {
     if let Some(content_len) = content.len() {
+        let required_min = content_len.div_ceil(defaults::MAX_BLOCKS);
+        if partition_size.get() < required_min {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                format!(
+                    "partition_size {} is too small for content length {}; \
+                     a block blob cannot exceed {} blocks",
+                    partition_size.get(),
+                    content_len,
+                    defaults::MAX_BLOCKS,
+                ),
+            ));
+        }
         if content_len <= partition_size.get() {
             client.transfer_oneshot(content).await?;
             return Ok(());
@@ -315,6 +332,37 @@ mod tests {
         .await;
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn rejects_partition_size_that_would_exceed_50000_blocks() {
+        // With partition_size == 1 and content_len == 50_001, required minimum
+        // partition_size is ceil(50_001 / 50_000) == 2, so partition_size of 1 is
+        // too small and upload() must refuse before contacting the service.
+        let content_len: usize = defaults::MAX_BLOCKS as usize + 1;
+        let partition_size: u64 = 1;
+        let concurrency: usize = 2;
+
+        let mock = MockPartitionedUploadBehavior::new();
+        let src_data = vec![0u8; content_len];
+
+        let result = upload(
+            Body::Bytes(Bytes::from(src_data)),
+            NonZero::new(concurrency).unwrap(),
+            NonZero::new(partition_size).unwrap(),
+            &mock,
+        )
+        .await;
+
+        let err = result.expect_err("expected 50,000-block check to fail");
+        assert!(
+            err.to_string().contains("50000") || err.to_string().contains("50_000"),
+            "error should reference the 50,000-block limit: {err}"
+        );
+        assert!(
+            mock.invocations.lock().await.is_empty(),
+            "no transfer calls should happen when the check fails"
+        );
     }
 
     async fn assert_upload_oneshot_invocations(
