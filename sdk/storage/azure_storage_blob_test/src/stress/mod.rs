@@ -15,7 +15,8 @@ use futures::{
     future,
 };
 use serde::Serialize;
-use std::{fmt::Debug, mem};
+use std::{fmt::Debug, mem, pin::pin, time::Duration};
+use tokio::time::sleep;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -134,50 +135,35 @@ impl<T: StressTestFactory> StressRunner<T> {
         println!("{}", self.options);
 
         let stress_run_result: Result<()> = async {
-            println!("========== Starting global setup ==========");
+            println!("=== Global Setup ===");
             stress_test.global_setup().await?;
 
-            let mut totals = StressRunCounts::default();
-            let mut join_handles = Vec::with_capacity(self.options.parallel);
-            let (tx, mut rx) = mpsc::unbounded();
-            for iteration in 1.. {
-                println!("========== Starting test run {} ==========", iteration);
+            println!("=== Begin Stress ===");
+            // Race an infinite loop of parallel tests against a timeout.
+            // Note that each individual test is spawned into a different worker, and therefore
+            // will NOT cease when the stress loop future is dropped.
+            // This is acceptable, as the next steps are to execute test cleanup and exit application.
+            // If the runs absolutely must be stopped, the [StressTest] implementor can signal to
+            // individual test runs in global cleanup.
+            match future::select(
+                pin!(infinite_stress_loop(stress_test.as_ref(), &self.options)),
+                pin!(sleep(Duration::from_secs(self.options.duration))),
+            )
+            .await
+            {
+                // Test duration completed. This is the expected path.
+                future::Either::Right((_test_duration_timeout, _)) => {}
 
-                let mut operation = stress_test.get_operation().await?;
-                let tx_clone = tx.clone();
-                join_handles.push(get_async_runtime().spawn(Box::pin(async move {
-                    operation.run(tx_clone).await;
-                })));
-
-                // block until free parallel slot
-                while join_handles.len() >= self.options.parallel {
-                    let join_result;
-                    (join_result, _, join_handles) =
-                        future::select_all(mem::take(&mut join_handles)).await;
-                    if let Err(_join_error) = join_result {
-                        todo!("Handle error joining task")
-                    }
-                }
-
-                // non-blocking process run result(s)
-                while let Ok(msg) = rx.try_recv() {
-                    totals.total_loops += 1;
-                    match msg {
-                        StressRunOutput::Success => totals.loops_success += 1,
-                        StressRunOutput::GracefulError(_error) => totals.loops_graceful_error += 1,
-                        StressRunOutput::Timeout => totals.loops_timeout += 1,
-                        StressRunOutput::Panic(_panic_msg) => totals.loops_panic += 1,
-                        StressRunOutput::DataCorruption => totals.loops_data_corruption += 1,
-                    }
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&totals).with_context(
-                            ErrorKind::DataConversion,
-                            "Failed to serialize test results to JSON.",
-                        )?
-                    );
-                }
+                // Infinite run loop exited due to an error managing tests.
+                future::Either::Left((stress_result, _)) => match stress_result {
+                    Ok(()) => Err(Error::with_message(
+                        ErrorKind::Other,
+                        "Infinite stress loop exited with success. This should never happen.",
+                    ))?,
+                    Err(e) => Err(e)?,
+                },
             }
+
             Ok(())
         }
         .await;
@@ -185,9 +171,58 @@ impl<T: StressTestFactory> StressRunner<T> {
             eprintln!("Stress runner failure. {:#}", e);
         }
 
-        println!("========== Starting test cleanup ==========");
+        println!("=== Begin Cleanup ===");
         stress_test.global_cleanup().await
     }
+}
+
+async fn infinite_stress_loop<T: StressTestFactory>(
+    stress_test: &dyn StressTest,
+    options: &StressRunnerOptions<T>,
+) -> Result<()> {
+    let mut totals = StressRunCounts::default();
+    let mut join_handles = Vec::with_capacity(options.parallel);
+    let (tx, mut rx) = mpsc::unbounded();
+
+    for iteration in 1usize.. {
+        println!("Start operation {}", iteration);
+
+        let mut operation = stress_test.get_operation().await?;
+        let tx_clone = tx.clone();
+        join_handles.push(get_async_runtime().spawn(Box::pin(async move {
+            operation.run(tx_clone).await;
+        })));
+
+        // block until free parallel slot
+        while join_handles.len() >= options.parallel {
+            let join_result;
+            (join_result, _, join_handles) = future::select_all(mem::take(&mut join_handles)).await;
+            if let Err(_join_error) = join_result {
+                todo!("Handle error joining task")
+            }
+        }
+
+        // non-blocking process run result(s)
+        while let Ok(msg) = rx.try_recv() {
+            totals.total_loops += 1;
+            match msg {
+                StressRunOutput::Success => totals.loops_success += 1,
+                StressRunOutput::GracefulError(_error) => totals.loops_graceful_error += 1,
+                StressRunOutput::Timeout => totals.loops_timeout += 1,
+                StressRunOutput::Panic(_panic_msg) => totals.loops_panic += 1,
+                StressRunOutput::DataCorruption => totals.loops_data_corruption += 1,
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&totals).with_context(
+                    ErrorKind::DataConversion,
+                    "Failed to serialize test results to JSON.",
+                )?
+            );
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
