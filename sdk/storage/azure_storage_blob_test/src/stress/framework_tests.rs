@@ -50,7 +50,11 @@ impl StressTest for MockStressTestOne {
 struct MockOperationOne {}
 #[async_trait]
 impl StressTestOperation for MockOperationOne {
-    async fn run(&mut self, _result_sender: UnboundedSender<StressRunOutput>) {
+    async fn run(
+        &mut self,
+        _timeout: Option<Duration>,
+        _result_sender: UnboundedSender<StressRunOutput>,
+    ) {
         // todo!()
     }
 }
@@ -82,7 +86,11 @@ impl StressTest for MockStressTestTwo {
 struct MockOperationTwo {}
 #[async_trait]
 impl StressTestOperation for MockOperationTwo {
-    async fn run(&mut self, _result_sender: UnboundedSender<StressRunOutput>) {
+    async fn run(
+        &mut self,
+        _timeout: Option<Duration>,
+        _result_sender: UnboundedSender<StressRunOutput>,
+    ) {
         // todo!()
     }
 }
