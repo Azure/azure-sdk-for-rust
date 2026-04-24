@@ -471,7 +471,7 @@ fn build_transport_request(
     // Custom headers are inserted first so that SDK-set headers below always
     // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
     // pattern where custom headers are added before SDK headers).
-    let mut headers = azure_core::http::headers::Headers::with_capacity(16);
+    let mut headers = azure_core::http::headers::Headers::new();
     if let Some(custom) = custom_headers {
         for (name, value) in custom {
             headers.insert(name.clone(), value.clone());

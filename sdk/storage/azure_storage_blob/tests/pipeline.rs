@@ -17,7 +17,6 @@ use std::error::Error;
 use std::sync::Arc;
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_storage_headers_present(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Arrange: capture outgoing request headers via a per-call policy
     let check_policy = Arc::new(TestPolicy::new(
@@ -62,7 +61,6 @@ async fn test_storage_headers_present(ctx: TestContext) -> Result<(), Box<dyn Er
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_version_header_matches_options(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let api_version = "2024-11-04";
 

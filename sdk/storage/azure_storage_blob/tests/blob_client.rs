@@ -7,7 +7,7 @@ use azure_core::{
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
-use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
+use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
 use azure_storage_blob::{
     models::{
         AccessTier, AccountKind, BlobClientAcquireLeaseOptions,
@@ -36,7 +36,7 @@ use std::{
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        mpsc, Arc,
     },
     time::Duration,
 };
@@ -338,7 +338,11 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
 
     // Sleep until lease expires
-    time::sleep(Duration::from_secs(15)).await;
+    if ctx.recording().test_mode() == TestMode::Live
+        || ctx.recording().test_mode() == TestMode::Record
+    {
+        time::sleep(Duration::from_secs(15)).await;
+    }
 
     // Renew Lease
     blob_client
@@ -760,7 +764,11 @@ async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!(expiry_2.replace_nanosecond(0)?, expires_on.unwrap());
 
     // Sleep to allow immutability policy to expire
-    time::sleep(Duration::from_secs(5)).await;
+    if ctx.recording().test_mode() == TestMode::Live
+        || ctx.recording().test_mode() == TestMode::Record
+    {
+        time::sleep(Duration::from_secs(15)).await;
+    }
 
     blob_client.delete(None).await?;
 
@@ -987,71 +995,6 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
-async fn test_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let request_count = Arc::new(AtomicUsize::new(0));
-    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
-
-    let recording = ctx.recording();
-    let container_client = get_container_client(
-        recording,
-        true,
-        StorageAccount::Standard,
-        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
-    )
-    .await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    for TestManagedDownloadArgSet {
-        data_len,
-        parallel,
-        partition_len,
-        download_range,
-        expected_gets,
-    } in test_managed_download_args()
-    {
-        let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
-        blob_client
-            .upload(RequestContent::from(data.to_vec()), None)
-            .await?;
-
-        request_count.store(0, Ordering::Relaxed);
-        let _scope = count_policy.check_request_scope();
-        let mut destination = vec![0u8; data_len];
-        let written = blob_client
-            .download_into(
-                &mut destination,
-                Some(BlobClientDownloadOptions {
-                    partition_size: Some(NonZero::new(partition_len).unwrap()),
-                    parallel: Some(NonZero::new(parallel).unwrap()),
-                    range: download_range.map(|r| r.0..r.1),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        assert_eq!(
-            written,
-            match download_range {
-                Some(r) => min(r.1 - r.0, data_len),
-                None => data_len,
-            }
-        );
-        assert_eq!(
-            match download_range {
-                Some(r) => &destination[0..min(r.1 - r.0, data_len)],
-                None => &destination,
-            },
-            match download_range {
-                Some(r) => &data[r.0..min(r.1, data_len)],
-                None => &data,
-            }
-        );
-        assert_eq!(request_count.load(Ordering::Relaxed), expected_gets);
-    }
-
-    Ok(())
-}
-
 // TODO edge case where a range was requested on a 0-length blob
 #[recorded::test]
 async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -1085,6 +1028,66 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(downloaded_data.len(), 0);
     // 1 op with a range, 1 op without after the first one fails
     assert_eq!(request_count.load(Ordering::Relaxed), 2);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_managed_download_etag_lock(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let data_len = 2048usize;
+    let parts = 9;
+    let partition_len = data_len.div_ceil(parts);
+
+    let (request_tx, request_rx) = mpsc::channel();
+    let capture_policy = Arc::new(TestPolicy::capture(Some(request_tx)));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(capture_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    blob_client
+        .upload(
+            RequestContent::from((0..data_len).map(|_| recording.random()).collect()),
+            None,
+        )
+        .await?;
+
+    {
+        let _capture_scope = capture_policy.check_request_scope();
+        let _ = blob_client
+            .download(Some(BlobClientDownloadOptions {
+                partition_size: Some(NonZero::new(partition_len).unwrap()),
+                ..Default::default()
+            }))
+            .await?
+            .body
+            .collect()
+            .await?;
+    }
+
+    assert!(request_rx
+        .recv()?
+        .headers()
+        .get_str(&"if-match".into())
+        .is_err());
+
+    let subsequent_requests: Vec<_> = request_rx.try_iter().collect();
+    assert_eq!(subsequent_requests.len(), parts - 1);
+
+    let mut locked_etag = None;
+    for req in subsequent_requests.into_iter() {
+        let req_etag_lock = req.headers().get_str(&"if-match".into())?; // ? tests the value was present
+        match &locked_etag {
+            Some(etag) => assert_eq!(etag, req_etag_lock),
+            None => locked_etag = Some(req_etag_lock.to_string()),
+        }
+    }
 
     Ok(())
 }
@@ -1215,7 +1218,6 @@ async fn test_set_blob_properties_content_headers(ctx: TestContext) -> Result<()
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_blob_overwrite_content_headers(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -1262,7 +1264,6 @@ async fn test_upload_blob_overwrite_content_headers(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1292,7 +1293,6 @@ async fn test_acquire_lease_with_proposed_id(ctx: TestContext) -> Result<(), Box
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -1332,7 +1332,6 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_tier_rehydrate_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
