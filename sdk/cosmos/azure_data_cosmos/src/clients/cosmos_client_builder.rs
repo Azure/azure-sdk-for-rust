@@ -360,7 +360,7 @@ impl CosmosClientBuilder {
 
         let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
-            preferred_regions,
+            preferred_regions.clone(),
             Vec::new(),
             pipeline_core.clone(),
         );
@@ -444,8 +444,12 @@ impl CosmosClientBuilder {
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
+        let driver_options =
+            azure_data_cosmos_driver::options::DriverOptions::builder(driver_account)
+                .with_preferred_regions(preferred_regions)
+                .build();
         let driver = driver_runtime
-            .get_or_create_driver(driver_account, None)
+            .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
             .await?;
 
         Ok(CosmosClient {
