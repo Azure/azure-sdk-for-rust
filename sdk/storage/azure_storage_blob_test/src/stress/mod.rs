@@ -43,7 +43,7 @@ struct StressRunnerOptions<T: StressTestFactory> {
     #[arg(long, default_value_t = 1)]
     parallel: usize,
 
-    /// Run duration in seconds.
+    /// Duration of the overall stress test, excluding setup and cleanup.
     #[arg(long, value_name = "SECONDS", default_value_t = 60)]
     duration: u64,
 
@@ -51,9 +51,6 @@ struct StressRunnerOptions<T: StressTestFactory> {
     #[arg(long, value_name = "SECONDS")]
     timeout: Option<u64>,
 
-    // /// Results output destination.
-    // #[arg(short = 'o', long = "output", value_name = "FILE")]
-    // results_file: String,
     #[command(subcommand)]
     command: T,
 }
@@ -96,15 +93,13 @@ pub struct StressRunner<T: StressTestFactory> {
 }
 
 impl<T: StressTestFactory> StressRunner<T> {
-    /// Construct a stress test runner using one of the provided `tests` based on [`env::args_os`].
-    ///
+    /// Construct a stress test runner with [Subcommand] test factory T, configured through parsed
+    /// arguments from [`std::env::args_os`].
     ///
     /// # Arguments
     ///
     /// * package_dir - The directory containing the package with the tests. Typically `env!("CARGO_PACKAGE_DIR")`
     /// * module_name - The name of the module containing the test, typically `file!()`
-    /// * tests - A set of test definitions.
-    ///
     pub fn new(package_dir: &'static str, module_name: &'static str) -> Self {
         let options = StressRunnerOptions::<T>::parse();
         Self {
@@ -114,7 +109,14 @@ impl<T: StressTestFactory> StressRunner<T> {
         }
     }
 
-    /// Construct a stress test runner using one of the provided `tests` based on provided `args`.
+    /// Construct a stress test runner with [Subcommand] test factory T, configured through parsed
+    /// arguments provided by the caller.
+    ///
+    /// # Arguments
+    ///
+    /// * package_dir - The directory containing the package with the tests. Typically `env!("CARGO_PACKAGE_DIR")`
+    /// * module_name - The name of the module containing the test, typically `file!()`
+    /// * args - The arguments to use for configuring this test run, emulating arguments parsed from the command line.
     pub fn from_args(
         package_dir: &'static str,
         module_name: &'static str,
