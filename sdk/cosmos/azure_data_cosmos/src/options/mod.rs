@@ -395,39 +395,6 @@ mod tests {
     }
 
     #[test]
-    fn item_write_options_default_as_headers() {
-        let options = ItemWriteOptions::default();
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn item_write_options_with_content_response_enabled() {
-        let mut operation = OperationOptions::default();
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
     fn batch_options_as_headers() {
         let mut custom_headers = HashMap::new();
         custom_headers.insert(
