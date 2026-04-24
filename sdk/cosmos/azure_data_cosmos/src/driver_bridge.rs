@@ -15,8 +15,9 @@ use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosR
 
 use crate::{
     constants::{
-        ACTIVITY_ID, CONTINUATION, INDEX_METRICS, ITEM_COUNT, OFFER_REPLACE_PENDING, QUERY_METRICS,
-        REQUEST_CHARGE, REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
+        ACTIVITY_ID, CONTINUATION, INDEX_METRICS, ITEM_COUNT, OFFER_REPLACE_PENDING,
+        PARTITION_KEY_RANGE_ID, QUERY_METRICS, REQUEST_CHARGE, REQUEST_DURATION_MS, SESSION_TOKEN,
+        SUB_STATUS,
     },
     models::CosmosResponse,
 };
@@ -82,6 +83,9 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     }
     if let Some(pending) = cosmos_headers.offer_replace_pending {
         headers.insert(OFFER_REPLACE_PENDING, pending.to_string());
+    }
+    if let Some(pk_range_id) = &cosmos_headers.partition_key_range_id {
+        headers.insert(PARTITION_KEY_RANGE_ID, pk_range_id.clone());
     }
 
     headers
@@ -227,6 +231,7 @@ mod tests {
         h.item_count = Some(42);
         h.substatus = Some(SubStatusCode::new(0));
         h.offer_replace_pending = Some(true);
+        h.partition_key_range_id = Some("5".to_string());
         h
     }
 
@@ -251,6 +256,7 @@ mod tests {
             headers.get_optional_str(&OFFER_REPLACE_PENDING),
             Some("true")
         );
+        assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), Some("5"));
     }
 
     #[test]
@@ -268,6 +274,7 @@ mod tests {
         assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
         assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
         assert_eq!(headers.get_optional_str(&OFFER_REPLACE_PENDING), None);
+        assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), None);
     }
 
     /// Regression test: index_metrics (base64-decoded by the driver) must survive
