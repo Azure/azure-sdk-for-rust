@@ -19,6 +19,7 @@
 ### Other Changes
 
 - Database and container CRUD operations (`create_database`, `read`, `create_container`, `delete`) now route through the Cosmos driver pipeline. Throughput provisioning uses typed request headers via the driver. ([#4147](https://github.com/Azure/azure-sdk-for-rust/pull/4147))
+- Query operations (`query_items`, `query_databases`, `query_containers`) now route through the Cosmos driver pipeline, gaining driver-level transport, routing, and retry capabilities. ([#4174](https://github.com/Azure/azure-sdk-for-rust/pull/4174))
 
 ## 0.32.0 (2026-04-09)
 

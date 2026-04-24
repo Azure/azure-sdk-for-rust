@@ -359,26 +359,6 @@ impl QueryOptions {
     }
 }
 
-impl QueryOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Retained for test coverage; no longer called from production code since
-    // query operations now route through the driver pipeline.
-    #[cfg(test)]
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-    }
-}
-
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -510,36 +490,6 @@ mod tests {
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> =
             vec![("x-custom-header".into(), "custom_value".into())];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn query_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let query_options = QueryOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("QuerySessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        query_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "QuerySessionToken".into()),
-        ];
 
         assert_eq!(
             headers_to_map(headers_result),
