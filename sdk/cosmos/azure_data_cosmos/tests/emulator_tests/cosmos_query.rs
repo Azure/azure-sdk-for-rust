@@ -279,3 +279,116 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
     )
     .await
 }
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(1, 5);
+            let container_client =
+                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+
+            let expected_items =
+                collect_matching_items(&items, |p| p.partition_key == "partition0");
+            assert!(
+                expected_items.len() > 1,
+                "need multiple items to test pagination"
+            );
+
+            // Force 1 item per page to exercise continuation token pagination
+            let mut custom_headers = HashMap::new();
+            custom_headers.insert(constants::MAX_ITEM_COUNT, HeaderValue::from_static("1"));
+            let operation = OperationOptions::default().with_custom_headers(custom_headers);
+            let options = QueryOptions::default().with_operation_options(operation);
+
+            let mut pages = container_client
+                .query_items::<MockItem>("select * from c", "partition0", Some(options))?
+                .into_pages();
+
+            let mut all_items = Vec::new();
+            let mut page_count = 0;
+
+            while let Some(page) = pages.next().await {
+                let page = page?;
+                assert!(
+                    page.items().len() <= 1,
+                    "expected at most 1 item per page, got {}",
+                    page.items().len()
+                );
+                all_items.extend(page.into_items());
+                page_count += 1;
+            }
+
+            assert!(
+                page_count >= expected_items.len(),
+                "expected at least {} pages with max-item-count=1, got {}",
+                expected_items.len(),
+                page_count
+            );
+            assert_eq!(expected_items, all_items);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(3, 3);
+            let container_client =
+                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+
+            // Force 1 item per page for cross-partition query
+            let mut custom_headers = HashMap::new();
+            custom_headers.insert(constants::MAX_ITEM_COUNT, HeaderValue::from_static("1"));
+            let operation = OperationOptions::default().with_custom_headers(custom_headers);
+            let options = QueryOptions::default().with_operation_options(operation);
+
+            let mut pages = container_client
+                .query_items::<MockItem>("select * from c", (), Some(options))?
+                .into_pages();
+
+            let mut all_items = Vec::new();
+            let mut page_count = 0;
+
+            while let Some(page) = pages.next().await {
+                let page = page?;
+                assert!(
+                    page.items().len() <= 1,
+                    "expected at most 1 item per page, got {}",
+                    page.items().len()
+                );
+                all_items.extend(page.into_items());
+                page_count += 1;
+            }
+
+            assert!(
+                page_count > 1,
+                "expected multiple pages with max-item-count=1, got {}",
+                page_count
+            );
+            // Cross-partition ordering is not guaranteed, so just check count
+            assert_eq!(
+                items.len(),
+                all_items.len(),
+                "expected all items to be returned across pages"
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}

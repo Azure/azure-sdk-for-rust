@@ -319,24 +319,6 @@ impl QueryOptions {
     }
 }
 
-impl QueryOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when query operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-    }
-}
-
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -413,33 +395,36 @@ mod tests {
     }
 
     #[test]
-    fn query_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let query_options = QueryOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("QuerySessionToken".to_string());
+    fn item_write_options_default_as_headers() {
+        let options = ItemWriteOptions::default();
 
         let mut headers_result = Headers::new();
-        query_options.apply_headers(&mut headers_result);
+        options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
 
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "QuerySessionToken".into()),
-        ];
+        let headers_expected: Vec<(HeaderName, HeaderValue)> =
+            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
 
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
+        assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn item_write_options_with_content_response_enabled() {
+        let mut operation = OperationOptions::default();
+        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+
+        let options = ItemWriteOptions {
+            operation,
+            ..Default::default()
+        };
+
+        let mut headers_result = Headers::new();
+        options.apply_headers(&mut headers_result);
+        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
+
+        assert_eq!(headers_result, headers_expected);
     }
 
     #[test]

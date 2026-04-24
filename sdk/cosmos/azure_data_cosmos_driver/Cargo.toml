@@ -18,7 +18,7 @@ categories = ["api-bindings"]
 arc-swap.workspace = true
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core = { workspace = true, default-features = false, features = [
+azure_core = { version = "0.35.0", default-features = false, features = [
   "hmac_rust",
 ] }
 azure_data_cosmos_macros.workspace = true
@@ -37,7 +37,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_identity.workspace = true
+azure_identity = { version = "0.35.0" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
@@ -61,7 +61,7 @@ workspace = true
 
 
 [features]
-default = ["tokio", "reqwest_rustls"]
+default = ["tokio", "rustls"]
 tokio = ["dep:tokio"]
 reqwest = [
   "dep:h2",
@@ -70,10 +70,16 @@ reqwest = [
   "azure_core/reqwest",
   "azure_core/tokio",
 ]
-reqwest_rustls = [
-  "reqwest",
-  "reqwest/rustls",
-  "azure_core/reqwest_rustls",
-]
+rustls = ["reqwest", "reqwest/rustls", "__tls"]
+native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
 __internal_mocking = []
+__tls = []
+
+[package.metadata.docs.rs]
+features = [
+  "fault_injection",
+  "native_tls",
+  "rustls",
+  "tokio",
+]

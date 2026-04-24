@@ -24,7 +24,6 @@ use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
 use crate::operation_context::OperationType;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{
     effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
@@ -714,23 +713,20 @@ impl ContainerClient {
         options: Option<QueryOptions>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
         let options = options.unwrap_or_default();
-        let partition_key = partition_key.into();
+        let partition_key: PartitionKey = partition_key.into();
         let query = query.into();
 
-        let mut headers = azure_core::http::headers::Headers::new();
-
-        // Convert PartitionKey and query options into headers.
-        for (name, value) in partition_key.as_headers()? {
-            headers.insert(name, value);
-        }
-        options.apply_headers(&mut headers);
+        let driver_pk = partition_key.into_driver_partition_key();
+        let container_ref = self.container_ref.clone();
+        let factory =
+            move || CosmosOperation::query_items(container_ref.clone(), driver_pk.clone());
 
         crate::query::executor::QueryExecutor::new(
-            self.context.pipeline.clone(),
-            self.items_link.clone(),
-            Context::default(),
+            self.context.driver.clone(),
+            factory,
             query,
-            headers,
+            options.operation,
+            options.session_token,
         )
         .into_stream()
     }
