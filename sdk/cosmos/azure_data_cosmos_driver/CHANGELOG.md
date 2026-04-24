@@ -1,6 +1,6 @@
 # Release History
 
-## 0.2.0 (Unreleased)
+## 0.2.0 (2026-04-24)
 
 ### Features Added
 
@@ -9,12 +9,6 @@
 - Added `rustls` feature flag (enabled by default) that configures reqwest with rustls as the TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
 - Added `native_tls` feature flag that configures reqwest with native-tls as the TLS stack. Disable default features and enable `native_tls` to use the platform TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
 - Added `SessionToken::merge()` for merging two session tokens by partition key range ID. ([#4214](https://github.com/Azure/azure-sdk-for-rust/pull/4214))
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.1.0 (2026-04-09)
 
