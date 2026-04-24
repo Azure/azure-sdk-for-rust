@@ -15,8 +15,9 @@ use futures::{
     future,
 };
 use serde::Serialize;
-use std::{fmt::Debug, mem, pin::pin, time::Duration};
-use tokio::time::sleep;
+use std::{fmt::Debug, future::Future, mem, pin::Pin, time::Duration};
+
+use crate::OptionalTimeoutFutureExt;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -27,14 +28,21 @@ pub trait StressTestFactory: Subcommand + Debug + std::fmt::Display {
 
 #[async_trait::async_trait]
 pub trait StressTest: Send + Sync {
+    /// One-time setup.
     async fn global_setup(&self) -> Result<()>;
+    /// Gets an operation to be ran. Many operations can be run in parallel.
     async fn get_operation(&self) -> Result<Box<dyn StressTestOperation>>;
+    /// One-time cleanup.
     async fn global_cleanup(&self) -> Result<()>;
 }
 
 #[async_trait::async_trait]
 pub trait StressTestOperation: Send + Sync {
-    async fn run(&mut self, result_sender: UnboundedSender<StressRunOutput>);
+    async fn run(
+        &mut self,
+        timeout: Option<Duration>,
+        result_sender: UnboundedSender<StressRunOutput>,
+    );
 }
 
 #[derive(Debug, Clone, Parser)]
@@ -43,24 +51,33 @@ struct StressRunnerOptions<T: StressTestFactory> {
     #[arg(long, default_value_t = 1)]
     parallel: usize,
 
-    /// Duration of the overall stress test, excluding setup and cleanup.
+    /// Duration of the overall stress test in seconds, excluding setup and cleanup.
     #[arg(long, value_name = "SECONDS", default_value_t = 60)]
-    duration: u64,
+    duration_s: u64,
 
     /// Optional timeout in seconds for individual operations.
     #[arg(long, value_name = "SECONDS")]
-    timeout: Option<u64>,
+    timeout_s: Option<u64>,
 
     #[command(subcommand)]
     command: T,
 }
 
+impl<T: StressTestFactory> StressRunnerOptions<T> {
+    fn duration(&self) -> Duration {
+        Duration::from_secs(self.duration_s)
+    }
+    fn timeout(&self) -> Option<Duration> {
+        self.timeout_s.map(Duration::from_secs)
+    }
+}
+
 impl<T: StressTestFactory> std::fmt::Display for StressRunnerOptions<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "=== Stress Runner Configuration ===")?;
-        writeln!(f, "duration: {}", self.duration)?;
+        writeln!(f, "duration: {}", self.duration().as_secs())?;
         writeln!(f, "parallel: {}", self.parallel)?;
-        writeln!(f, "timeout: {:?}", self.timeout)?;
+        writeln!(f, "timeout: {:?}", self.timeout().map(|t| t.as_secs()))?;
         std::fmt::Display::fmt(&self.command, f)
     }
 }
@@ -76,10 +93,32 @@ struct StressRunCounts {
 }
 
 pub enum StressRunOutput {
+    /// The operation completed successfully.
     Success,
+
+    /// The operation failed, but communicated this through [Result::Err].
     GracefulError(Error),
+
+    /// The operation did not complete within the provided timeout.
+    ///
+    /// # Notes
+    ///
+    /// Operation timeout and reporting must be the responsibility of the [StressTestOperation] implementor.
+    /// Since all operations are run in spawned async workers, their work cannot be stopped by
+    /// dropping the join handle, which would lead to the worker reporting a result post-timeout regardless
+    /// of any runner-reported result.
     Timeout,
+
+    /// The operation panicked.
+    ///
+    /// # Notes
+    ///
+    /// Panic unwinding and reporting must be the responsibility of the [StressTestOperation] implementor.
+    /// Unwind safety is not dyn-compatible. Since all operations are dyn in practice, the runner
+    /// can never successfully [std::panic::catch_unwind] the dynamically resolved future.
     Panic(String),
+
+    /// The operation completed successfully, but data integrity checks failed.
     DataCorruption,
 }
 
@@ -147,20 +186,18 @@ impl<T: StressTestFactory> StressRunner<T> {
             // This is acceptable, as the next steps are to execute test cleanup and exit application.
             // If the runs absolutely must be stopped, the [StressTest] implementor can signal to
             // individual test runs in global cleanup.
-            match future::select(
-                pin!(infinite_stress_loop(stress_test.as_ref(), &self.options)),
-                pin!(sleep(Duration::from_secs(self.options.duration))),
-            )
-            .await
+            match infinite_stress_loop(stress_test.as_ref(), &self.options)
+                .timeout(Some(self.options.duration()))
+                .await
             {
                 // Test duration completed. This is the expected path.
-                future::Either::Right((_test_duration_timeout, _)) => {}
+                Err(_timeout_error) => {}
 
                 // Infinite run loop exited due to an error managing tests.
-                future::Either::Left((stress_result, _)) => match stress_result {
+                Ok(stress_result) => match stress_result {
                     Ok(()) => Err(Error::with_message(
                         ErrorKind::Other,
-                        "Infinite stress loop exited with success. This should never happen.",
+                        "Infinite stress loop exited with success. This is a bug.",
                     ))?,
                     Err(e) => Err(e)?,
                 },
@@ -189,11 +226,11 @@ async fn infinite_stress_loop<T: StressTestFactory>(
     for iteration in 1usize.. {
         println!("Start operation {}", iteration);
 
-        let mut operation = stress_test.get_operation().await?;
-        let tx_clone = tx.clone();
-        join_handles.push(get_async_runtime().spawn(Box::pin(async move {
-            operation.run(tx_clone).await;
-        })));
+        join_handles.push(get_async_runtime().spawn(operation_wrapper(
+            stress_test.get_operation().await?,
+            options.timeout(),
+            tx.clone(),
+        )));
 
         // block until free parallel slot
         while join_handles.len() >= options.parallel {
@@ -225,6 +262,14 @@ async fn infinite_stress_loop<T: StressTestFactory>(
     }
 
     Ok(())
+}
+
+fn operation_wrapper(
+    mut operation: Box<dyn StressTestOperation>,
+    timeout: Option<Duration>,
+    tx: UnboundedSender<StressRunOutput>,
+) -> Pin<Box<impl Future<Output = ()>>> {
+    Box::pin(async move { operation.run(timeout, tx.clone()).await })
 }
 
 #[cfg(test)]

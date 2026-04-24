@@ -1,15 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::VecDeque, num::NonZero, sync::Arc};
+use std::{collections::VecDeque, num::NonZero, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::{error::ErrorKind, http::Body, Error, Result};
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobClient, BlobContainerClient};
-use azure_storage_blob_test::stress::{
-    data,
-    value_parsers::{non_zero_u64, non_zero_usize},
-    StressRunOutput, StressTest, StressTestOperation,
+use azure_storage_blob_test::{
+    stress::{
+        data,
+        value_parsers::{non_zero_u64, non_zero_usize},
+        StressRunOutput, StressTest, StressTestOperation,
+    },
+    OptionalTimeoutFutureExt,
 };
 use clap::Args;
 use crc_fast::{CrcAlgorithm, Digest};
@@ -149,10 +152,14 @@ struct DownloadOperation {
 
 #[async_trait]
 impl StressTestOperation for DownloadOperation {
-    async fn run(&mut self, mut result_sender: UnboundedSender<StressRunOutput>) {
+    async fn run(
+        &mut self,
+        timeout: Option<Duration>,
+        mut result_sender: UnboundedSender<StressRunOutput>,
+    ) {
         let mut digest = Digest::new(CRC_ALGORITHM);
 
-        let result: std::result::Result<(), Error> = async {
+        let download_op = async {
             let mut download_body = self
                 .client
                 .download(Some(BlobClientDownloadOptions {
@@ -165,19 +172,19 @@ impl StressTestOperation for DownloadOperation {
             while let Some(bytes) = download_body.try_next().await? {
                 digest.update(&bytes);
             }
-            Ok(())
-        }
-        .await;
+            Ok::<_, Error>(())
+        };
 
-        let output = match result {
-            Ok(()) => {
+        let output = match download_op.timeout(timeout).await {
+            Ok(Ok(())) => {
                 if digest.finalize() == self.expected_content_crc {
                     StressRunOutput::Success
                 } else {
                     StressRunOutput::DataCorruption
                 }
             }
-            Err(e) => StressRunOutput::GracefulError(e),
+            Ok(Err(op_error)) => StressRunOutput::GracefulError(op_error),
+            Err(_timeout) => StressRunOutput::Timeout,
         };
         let _ = result_sender
             .send(output)

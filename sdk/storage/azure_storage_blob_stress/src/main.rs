@@ -16,7 +16,7 @@ async fn main() {
     let runner = StressRunner::<StressTests>::new(env!("CARGO_MANIFEST_DIR"), file!());
 
     if let Err(e) = runner.run().await {
-        eprintln!("{:#}", e);
+        eprintln!("{}", e);
         exit(1);
     }
 }

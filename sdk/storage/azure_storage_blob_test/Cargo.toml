@@ -22,6 +22,7 @@ bytes.workspace = true
 clap = { workspace = true, features = ["derive"] }
 crc-fast = "1.9.0"
 futures.workspace = true
+pin-project.workspace = true
 rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
