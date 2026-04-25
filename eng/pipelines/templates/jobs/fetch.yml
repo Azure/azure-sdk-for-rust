@@ -39,5 +39,7 @@ jobs:
     displayName: Install cargo credential provider
   - pwsh: cargo login --registry azure-sdk
     displayName: Login to azure-sdk registry
-  - pwsh: cargo --config='source.crates-io.replace-with="azure-sdk"' fetch
+  - pwsh: eng/scripts/use-registry.rs azure
+    displayName: Configure azure-sdk registry
+  - pwsh: cargo fetch
     displayName: Fetch dependencies

@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 cargo-util-schemas = "0.11.0"
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
-toml = "1.0.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+toml = "1.1.2"
 ---
 
 use cargo_util_schemas::manifest::{InheritableDependency, TomlDependency, TomlManifest};

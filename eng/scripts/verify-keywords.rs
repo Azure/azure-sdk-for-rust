@@ -4,8 +4,8 @@
 edition = "2021"
 
 [dependencies]
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 ---
 
 // Copyright (c) Microsoft Corporation. All rights reserved.

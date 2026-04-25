@@ -4,8 +4,8 @@
 edition = "2021"
 
 [dependencies]
-cargo-util-schemas = "0.1.0"
-toml = "0.8.10"
+cargo-util-schemas = "0.13.0"
+toml = "1.1.2"
 ---
 
 use cargo_util_schemas::manifest::{InheritableDependency, TomlManifest};
