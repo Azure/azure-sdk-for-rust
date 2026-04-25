@@ -1,0 +1,43 @@
+parameters:
+# Required parameters from generate-job-matrix.yml
+- name: UsePlatformContainer
+  type: boolean
+- name: OSName
+  type: string
+- name: Matrix
+  type: object
+- name: DependsOn
+  type: string
+- name: CloudConfig
+  type: object
+  default: {}
+
+jobs:
+- job:
+  displayName: Fetch
+  condition: and(succeeded(), ne(${{ parameters.Matrix }}, '{}'))
+  dependsOn: ${{ parameters.DependsOn }}
+  strategy:
+    matrix: $[ ${{ parameters.Matrix }} ]
+  variables:
+    CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS: artifacts-cargo-credprovider
+  pool:
+    name: $(Pool)
+    # 1es pipeline templates converts `image` to demands: ImageOverride under the hood
+    # which is incompatible with image selection in the default non-1es hosted pools
+    ${{ if eq(parameters.OSName, 'macOS') }}:
+      vmImage: $(OSVmImage)
+    ${{ else }}:
+      image: $(OSVmImage)
+    os: ${{ parameters.OSName }}
+  steps:
+  - checkout: self
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: $(RustToolchainName)
+  - pwsh: cargo install --locked --index sparse+https://pkgs.dev.azure.com/artifacts-public/PublicTools/_packaging/AzureArtifacts/Cargo/index/ artifacts-cargo-credprovider
+    displayName: Install cargo credential provider
+  - pwsh: cargo login --registry azure-sdk
+    displayName: Login to azure-sdk registry
+  - pwsh: cargo --config='source.crates-io.replace-with="azure-sdk"' fetch
+    displayName: Fetch dependencies

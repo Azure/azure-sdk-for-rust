@@ -1,0 +1,5 @@
+[registries]
+azure-sdk = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/_packaging/azure-sdk-for-rust/Cargo/index/" }
+
+[source.crates-io]
+# replace-with = "azure-sdk"
