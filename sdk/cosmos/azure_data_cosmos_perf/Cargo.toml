@@ -11,9 +11,9 @@ rust-version.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { workspace = true, features = ["reqwest"] }
+azure_core = { version = "0.35.0", features = ["reqwest"] }
 azure_data_cosmos = { workspace = true, features = ["key_auth"] }
-azure_identity.workspace = true
+azure_identity = { version = "0.35.0" }
 clap = { workspace = true, features = ["derive", "env"] }
 futures.workspace = true
 hdrhistogram.workspace = true

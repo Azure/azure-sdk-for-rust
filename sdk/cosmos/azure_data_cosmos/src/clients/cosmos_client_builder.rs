@@ -7,12 +7,11 @@ use crate::{
     clients::ClientContext,
     options::ThroughputControlGroupOptions,
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
-    resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
 use azure_data_cosmos_driver::options::ConnectionPoolOptions;
-#[cfg(feature = "allow_invalid_certificates")]
+#[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
 use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
@@ -87,7 +86,7 @@ pub struct CosmosClientBuilder {
     /// Throughput control groups to register on the driver runtime.
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     allow_emulator_invalid_certificates: bool,
     /// Fault injection builder for testing error handling
     #[cfg(feature = "fault_injection")]
@@ -142,7 +141,7 @@ impl CosmosClientBuilder {
     ///
     /// * `allow` - Whether to accept invalid certificates for emulator connections.
     #[doc(hidden)]
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_emulator_invalid_certificates = allow;
         self
@@ -270,7 +269,7 @@ impl CosmosClientBuilder {
                 builder = builder.no_proxy();
             }
 
-            #[cfg(feature = "allow_invalid_certificates")]
+            #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
             if self.allow_emulator_invalid_certificates {
                 builder = builder.danger_accept_invalid_certs(true);
             }
@@ -360,7 +359,7 @@ impl CosmosClientBuilder {
 
         let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
-            preferred_regions,
+            preferred_regions.clone(),
             Vec::new(),
             pipeline_core.clone(),
         );
@@ -420,7 +419,7 @@ impl CosmosClientBuilder {
         if self.allow_proxy {
             pool_builder = pool_builder.with_proxy_allowed(true);
         }
-        #[cfg(feature = "allow_invalid_certificates")]
+        #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
         if self.allow_emulator_invalid_certificates {
             pool_builder = pool_builder.with_emulator_server_cert_validation(
                 EmulatorServerCertValidation::DangerousDisabled,
@@ -444,12 +443,15 @@ impl CosmosClientBuilder {
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
+        let driver_options =
+            azure_data_cosmos_driver::options::DriverOptions::builder(driver_account)
+                .with_preferred_regions(preferred_regions)
+                .build();
         let driver = driver_runtime
-            .get_or_create_driver(driver_account, None)
+            .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
             .await?;
 
         Ok(CosmosClient {
-            databases_link: ResourceLink::root(ResourceType::Databases),
             context: ClientContext {
                 pipeline,
                 driver,

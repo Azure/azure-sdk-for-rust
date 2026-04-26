@@ -20,6 +20,7 @@ pub(crate) mod request_header_names {
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
     pub const PREFER: &str = "prefer";
+    pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const OFFER_THROUGHPUT: &str = "x-ms-offer-throughput";
     pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";

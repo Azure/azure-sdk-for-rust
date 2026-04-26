@@ -128,6 +128,7 @@ pub(crate) fn evaluate_transport_result(
                 );
             }
 
+            // 429/3092 (SystemResourceUnavailable) and 410 (Gone).
             let is_system_resource_unavailable = status.is_throttled()
                 && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
             let is_service_unavailable =
@@ -207,8 +208,12 @@ pub(crate) fn evaluate_transport_result(
                 );
             }
 
-            if status.status_code() == azure_core::http::StatusCode::InternalServerError
-                && operation.is_read_only()
+            // Server errors (≥500) and request timeouts (408).
+            // Retries ALL operations (reads + writes).
+            // Cross-region retry will be attempted, if not possible in-region retry will be attempted.
+            let status_code = status.status_code();
+            if (status_code.is_server_error()
+                || status_code == azure_core::http::StatusCode::RequestTimeout)
                 && retry_state.can_retry_failover()
             {
                 let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
@@ -651,7 +656,7 @@ mod tests {
     }
 
     #[test]
-    fn service_unavailable_sent_non_idempotent_aborts() {
+    fn service_unavailable_write_retries_and_marks_partition() {
         let op = make_create_operation();
         let result = make_http_error(StatusCode::ServiceUnavailable);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);

@@ -12,7 +12,6 @@ pub mod method_options;
 
 pub use http_ranges::HttpRange;
 pub(crate) mod response_ext;
-pub(crate) mod slice;
 mod upload_result;
 
 pub use crate::generated::models::*;
