@@ -4,13 +4,15 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
+    clients::ClientContext,
+    options::ThroughputControlGroupOptions,
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
-    resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
-#[cfg(feature = "allow_invalid_certificates")]
-use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation};
+use azure_data_cosmos_driver::options::ConnectionPoolOptions;
+#[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
+use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
 
@@ -81,12 +83,16 @@ pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
     /// Whether to allow proxy usage. When false (default), `HTTPS_PROXY` is ignored.
     allow_proxy: bool,
+    /// Throughput control groups to register on the driver runtime.
+    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     allow_emulator_invalid_certificates: bool,
     /// Fault injection builder for testing error handling
     #[cfg(feature = "fault_injection")]
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
+    /// Fallback endpoints tried when the primary endpoint is unavailable.
+    backup_endpoints: Vec<azure_core::http::Url>,
 }
 
 impl CosmosClientBuilder {
@@ -135,7 +141,7 @@ impl CosmosClientBuilder {
     ///
     /// * `allow` - Whether to accept invalid certificates for emulator connections.
     #[doc(hidden)]
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_emulator_invalid_certificates = allow;
         self
@@ -159,6 +165,45 @@ impl CosmosClientBuilder {
     /// * `allow` - Whether to allow proxy usage.
     pub fn with_proxy_allowed(mut self, allow: bool) -> Self {
         self.allow_proxy = allow;
+        self
+    }
+
+    /// Registers a throughput control group on the driver runtime.
+    ///
+    /// Groups define throughput policies (priority level, throughput bucket) that
+    /// are applied to requests referencing the group name via
+    /// [`OperationOptions::throughput_control_group`](crate::OperationOptions::throughput_control_group).
+    pub fn with_throughput_control_group(mut self, group: ThroughputControlGroupOptions) -> Self {
+        self.throughput_control_groups.push(group);
+        self
+    }
+
+    /// Sets backup endpoints for resilience when the primary global endpoint
+    /// is unavailable during initialization.
+    ///
+    /// # When to use
+    ///
+    /// Configure backup endpoints when you want the client to survive a
+    /// global endpoint outage during startup. Provide at least two regional
+    /// endpoints (e.g., `https://myaccount-eastus.documents.azure.com/`).
+    ///
+    /// This is especially important in **non-public clouds** (sovereign,
+    /// government) where the SDK cannot infer regional endpoints from the
+    /// account name — without backup endpoints, a global endpoint failure
+    /// during bootstrap is unrecoverable.
+    ///
+    /// # Behavior
+    ///
+    /// If the primary endpoint fails during driver bootstrap, the SDK tries
+    /// each backup endpoint in order until one succeeds. Once initialized,
+    /// regional endpoints discovered during bootstrap handle subsequent
+    /// refreshes automatically.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoints` - Ordered list of fallback endpoint URLs.
+    pub fn with_backup_endpoints(mut self, endpoints: Vec<crate::CosmosAccountEndpoint>) -> Self {
+        self.backup_endpoints = endpoints.into_iter().map(|e| e.into_url()).collect();
         self
     }
 
@@ -224,7 +269,7 @@ impl CosmosClientBuilder {
                 builder = builder.no_proxy();
             }
 
-            #[cfg(feature = "allow_invalid_certificates")]
+            #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
             if self.allow_emulator_invalid_certificates {
                 builder = builder.danger_accept_invalid_certs(true);
             }
@@ -314,7 +359,7 @@ impl CosmosClientBuilder {
 
         let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
-            preferred_regions,
+            preferred_regions.clone(),
             Vec::new(),
             pipeline_core.clone(),
         );
@@ -364,34 +409,55 @@ impl CosmosClientBuilder {
         // TODO: Each CosmosClient currently creates its own CosmosDriverRuntime. The runtime
         // should be shared across clients targeting the same account to avoid duplicate
         // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
-        let driver_account = build_driver_account(endpoint, driver_credential);
+        let driver_account =
+            build_driver_account(endpoint, driver_credential, self.backup_endpoints);
         #[allow(unused_mut)]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
-        #[cfg(feature = "allow_invalid_certificates")]
-        if self.allow_emulator_invalid_certificates {
-            let connection_pool = ConnectionPoolOptions::builder()
-                .with_emulator_server_cert_validation(
-                    EmulatorServerCertValidation::DangerousDisabled,
-                )
-                .build()?;
-            driver_runtime_builder = driver_runtime_builder.with_connection_pool(connection_pool);
+
+        // Forward SDK connection settings to the driver's connection pool.
+        let mut pool_builder = ConnectionPoolOptions::builder();
+        if self.allow_proxy {
+            pool_builder = pool_builder.with_proxy_allowed(true);
         }
+        #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
+        if self.allow_emulator_invalid_certificates {
+            pool_builder = pool_builder.with_emulator_server_cert_validation(
+                EmulatorServerCertValidation::DangerousDisabled,
+            );
+        }
+        driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
+
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =
                 driver_runtime_builder.with_fault_injection_rules(driver_fi_rules);
         }
+        for group in self.throughput_control_groups {
+            driver_runtime_builder = driver_runtime_builder
+                .register_throughput_control_group(group)
+                .map_err(|e| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!("failed to register throughput control group: {e}"),
+                    )
+                })?;
+        }
         let driver_runtime = driver_runtime_builder.build().await?;
+        let driver_options =
+            azure_data_cosmos_driver::options::DriverOptions::builder(driver_account)
+                .with_preferred_regions(preferred_regions)
+                .build();
         let driver = driver_runtime
-            .get_or_create_driver(driver_account, None)
+            .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
             .await?;
 
         Ok(CosmosClient {
-            databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline,
-            driver,
-            global_endpoint_manager,
-            global_partition_endpoint_manager,
+            context: ClientContext {
+                pipeline,
+                driver,
+                global_endpoint_manager,
+                global_partition_endpoint_manager,
+            },
         })
     }
 }
@@ -401,8 +467,9 @@ impl CosmosClientBuilder {
 fn build_driver_account(
     endpoint: azure_core::http::Url,
     credential: CosmosCredential,
+    backup_endpoints: Vec<azure_core::http::Url>,
 ) -> azure_data_cosmos_driver::models::AccountReference {
-    match credential {
+    let base = match credential {
         CosmosCredential::TokenCredential(tc) => {
             azure_data_cosmos_driver::models::AccountReference::with_credential(endpoint, tc)
         }
@@ -410,7 +477,8 @@ fn build_driver_account(
         CosmosCredential::MasterKey(key) => {
             azure_data_cosmos_driver::models::AccountReference::with_master_key(endpoint, key)
         }
-    }
+    };
+    base.with_backup_endpoints(backup_endpoints)
 }
 
 // Unit tests for routing-strategy behavior were removed because

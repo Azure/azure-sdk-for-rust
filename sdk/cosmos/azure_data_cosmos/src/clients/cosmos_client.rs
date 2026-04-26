@@ -2,22 +2,14 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::DatabaseClient,
-    cosmos_request::CosmosRequest,
+    clients::{ClientContext, DatabaseClient},
     models::{DatabaseProperties, ResourceResponse},
-    operation_context::OperationType,
-    pipeline::GatewayPipeline,
-    resource_context::ResourceLink,
-    routing::{
-        global_endpoint_manager::GlobalEndpointManager,
-        global_partition_endpoint_manager::GlobalPartitionEndpointManager,
-    },
     CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
 };
-use azure_core::http::{Context, Url};
-use azure_data_cosmos_driver::CosmosDriver;
+use azure_core::http::Url;
+use azure_data_cosmos_driver::models::CosmosOperation;
+use azure_data_cosmos_driver::options::OperationOptions;
 use serde::Serialize;
-use std::sync::Arc;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
 
@@ -69,11 +61,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// ```
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    pub(crate) databases_link: ResourceLink,
-    pub(crate) pipeline: Arc<GatewayPipeline>,
-    pub(crate) driver: Arc<CosmosDriver>,
-    pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
-    pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    pub(crate) context: ClientContext,
 }
 
 impl CosmosClient {
@@ -105,18 +93,12 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(
-            self.pipeline.clone(),
-            id,
-            self.driver.clone(),
-            self.global_endpoint_manager.clone(),
-            self.global_partition_endpoint_manager.clone(),
-        )
+        DatabaseClient::new(self.context.clone(), id)
     }
 
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
-        &self.pipeline.endpoint
+        &self.context.pipeline.endpoint
     }
 
     /// Executes a query against databases in the account.
@@ -147,12 +129,15 @@ impl CosmosClient {
         query: impl Into<Query>,
         _options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
+        let account = self.context.driver.account().clone();
+        let factory = move || CosmosOperation::query_databases(account.clone());
+
         crate::query::executor::QueryExecutor::new(
-            self.pipeline.clone(),
-            self.databases_link.clone(),
-            Context::default(),
+            self.context.driver.clone(),
+            factory,
             query.into(),
-            azure_core::http::headers::Headers::new(),
+            Default::default(),
+            None,
         )
         .into_stream()
     }
@@ -167,25 +152,33 @@ impl CosmosClient {
     pub async fn create_database(
         &self,
         id: &str,
+        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<CreateDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
-        let options = options.unwrap_or_default();
-
         #[derive(Serialize)]
         struct RequestBody<'a> {
             id: &'a str,
         }
 
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Create, self.databases_link.clone())
-                .request_headers(&options.throughput)
-                .json(&RequestBody { id })
-                .build()?;
+        let body = serde_json::to_vec(&RequestBody { id })?;
+        let operation =
+            CosmosOperation::create_database(self.context.driver.account().clone()).with_body(body);
 
-        self.pipeline
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        // Control-plane creates always need the full response body so the
+        // caller can inspect the created resource properties.
+        let mut operation_options = OperationOptions::default();
+        operation_options.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, operation_options)
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 }
 

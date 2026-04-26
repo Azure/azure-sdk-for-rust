@@ -1,24 +1,15 @@
-# List Blobs with rustls and aws-lc-rs
+# List Blobs with native-tls
 
-This sample lists blobs from Azure Storage using [reqwest] with [rustls] and the
-default [aws-lc-rs] crypto provider. Azure SDK crates enable `native-tls` by
-default, so this sample disables default features on Azure SDK crates and enables
-reqwest's `rustls` feature instead.
+This sample lists blobs from Azure Storage using [reqwest] with [native-tls],
+which uses `schannel` on Windows and `openssl` everywhere else.
+Azure SDK crates enable `aws-lc-rs` by default, so this sample disables default features
+on Azure SDK crates and enables reqwest's `native-tls` feature instead.
 
 ## Prerequisites
 
 - An Azure subscription and a storage account (or use `azd up` below).
 - Azure CLI and Azure Developer CLI (`azd`) installed.
 - Rust toolchain installed.
-
-### Windows
-
-Building [aws-lc-rs] on Windows requires Visual Studio Build Tools 2017 or later
-with the C++/CLI and C++ CMake components. NASM is recommended for x86-64 but can
-be avoided using prebuilt NASM objects by enabling the `prebuilt-nasm` feature or
-setting `AWS_LC_SYS_PREBUILT_NASM=1`.
-
-See the [aws-lc-rs Windows requirements] for full details.
 
 ## Usage
 
@@ -53,8 +44,6 @@ cargo run -- --account-name <storage_account_name>
 azd down
 ```
 
-[aws-lc-rs]: https://crates.io/crates/aws-lc-rs
-[aws-lc-rs Windows requirements]: https://aws.github.io/aws-lc-rs/requirements/windows.html
 [azd]: https://learn.microsoft.com/azure/developer/azure-developer-cli/
 [reqwest]: https://crates.io/crates/reqwest
-[rustls]: https://crates.io/crates/rustls
+[native-tls]: https://crates.io/crates/native-tls

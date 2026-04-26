@@ -9,27 +9,15 @@ use std::fmt::Display;
 
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
-pub use azure_data_cosmos_driver::models::{ETag, Precondition, SessionToken};
+pub use azure_data_cosmos_driver::models::{
+    ETag, Precondition, SessionToken, ThroughputControlGroupName,
+};
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    OperationOptionsBuilder, OperationOptionsView, ReadConsistencyStrategy, Region,
+    OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
+    ThroughputControlGroupOptions,
 };
-
-// Temporary: these helpers allow the SDK pipeline to apply OperationOptions values
-// as HTTP headers. They will be removed when individual operations use the internal
-// pipeline directly.
-fn apply_precondition_headers(precondition: &Precondition, headers: &mut Headers) {
-    match precondition {
-        Precondition::IfMatch(etag) => {
-            headers.insert(headers::IF_MATCH, etag.to_string());
-        }
-        Precondition::IfNoneMatch(etag) => {
-            headers.insert(constants::IF_NONE_MATCH, etag.to_string());
-        }
-        _ => {}
-    }
-}
 
 // Temporary: applies the prefer header based on the content_response_on_write option.
 // Will be removed when write operations use the internal pipeline directly.
@@ -94,6 +82,7 @@ pub struct CreateContainerOptions {
 }
 
 impl CreateContainerOptions {
+    /// Sets the throughput properties for the new container.
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
         self.throughput = Some(throughput);
         self
@@ -108,16 +97,7 @@ pub struct ReplaceContainerOptions;
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct CreateDatabaseOptions {
-    pub(crate) throughput: Option<ThroughputProperties>,
-}
-
-impl CreateDatabaseOptions {
-    pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
-        self.throughput = Some(throughput);
-        self
-    }
-}
+pub struct CreateDatabaseOptions;
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
@@ -243,31 +223,6 @@ impl ItemWriteOptions {
     }
 }
 
-impl ItemWriteOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when write operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-        if let Some(precondition) = &self.precondition {
-            apply_precondition_headers(precondition, headers);
-        }
-        apply_content_response_on_write_header(
-            self.operation.content_response_on_write.as_ref(),
-            headers,
-        );
-    }
-}
-
 /// Options for transactional batch operations.
 ///
 /// Used by [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
@@ -364,24 +319,6 @@ impl QueryOptions {
     }
 }
 
-impl QueryOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when query operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-    }
-}
-
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -397,6 +334,26 @@ pub struct ReadDatabaseOptions;
 #[non_exhaustive]
 pub struct ThroughputOptions;
 
+/// Options for [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
+/// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
+#[derive(Clone, Default, Debug)]
+#[non_exhaustive]
+pub struct ReadFeedRangesOptions {
+    force_refresh: bool,
+}
+
+impl ReadFeedRangesOptions {
+    /// When `true`, discards any cached routing map and fetches a fresh copy from the service.
+    pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
+        self.force_refresh = force_refresh;
+        self
+    }
+
+    pub(crate) fn force_refresh(&self) -> bool {
+        self.force_refresh
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -408,69 +365,6 @@ mod tests {
         I: IntoIterator<Item = (HeaderName, HeaderValue)>,
     {
         headers.into_iter().collect()
-    }
-
-    #[test]
-    fn item_write_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("SessionToken".to_string())
-        .with_precondition(Precondition::IfMatch(ETag::from("etag_value")));
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "SessionToken".into()),
-            (headers::IF_MATCH, "etag_value".into()),
-            (headers::PREFER, constants::PREFER_MINIMAL),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn custom_headers_should_not_override_sdk_set_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            constants::SESSION_TOKEN,
-            HeaderValue::from_static("CustomSession"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("RealSessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (constants::SESSION_TOKEN, "RealSessionToken".into()),
-            (headers::PREFER, constants::PREFER_MINIMAL),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
     }
 
     #[test]
@@ -498,69 +392,6 @@ mod tests {
             headers_to_map(headers_result),
             headers_to_map(headers_expected)
         );
-    }
-
-    #[test]
-    fn query_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let query_options = QueryOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("QuerySessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        query_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "QuerySessionToken".into()),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn item_write_options_default_as_headers() {
-        let options = ItemWriteOptions::default();
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn item_write_options_with_content_response_enabled() {
-        let mut operation = OperationOptions::default();
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
-
-        assert_eq!(headers_result, headers_expected);
     }
 
     #[test]

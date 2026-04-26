@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# cSpell:ignore perfbench pipefail esac speedscope
+# perfbench — build a cargo benchmark and profile it with perf, producing a
+# trace file suitable for import into https://speedscope.app.
+#
+# Usage:
+#   perfbench <bench_name> [-- <bench_args...>]
+#
+# Options (must come before the bench name):
+#   --perf-args <args>    Extra arguments forwarded to 'perf record'.
+#                         Quote as a single string: --perf-args "-F 997 -e cycles"
+#                         Default: "-g --call-graph dwarf,65528 -F 997"
+#
+# Environment variables:
+#   PERF_ARGS             Alternative way to pass extra perf record args (overrides
+#                         the default, but --perf-args takes precedence).
+#
+# Examples:
+#   perfbench point_read
+#   perfbench point_read -- --bench point_read_mock
+#   perfbench point_read --perf-args "-F 1999 --call-graph dwarf"
+#   PERF_ARGS="-F 499" perfbench point_read
+#
+# Output:
+#   ./target/perf/<bench>-<timestamp>.perf  (repo root)
+#
+# The .perf file is the output of 'perf script' and can be imported directly
+# into https://speedscope.app (drag-and-drop or "Browse").
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+BENCH_NAME=""
+PERF_EXTRA_ARGS="${PERF_ARGS:-"-g --call-graph dwarf,65528 -F 997"}"
+BENCH_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --perf-args)
+            PERF_EXTRA_ARGS="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            BENCH_ARGS=("$@")
+            break
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            echo "Usage: perfbench [--perf-args \"...\"] <bench_name> [-- bench_args...]" >&2
+            exit 1
+            ;;
+        *)
+            if [[ -z "$BENCH_NAME" ]]; then
+                BENCH_NAME="$1"
+                shift
+            else
+                echo "Unexpected argument: $1" >&2
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+if [[ -z "$BENCH_NAME" ]]; then
+    echo "Usage: perfbench [--perf-args \"...\"] <bench_name> [-- bench_args...]" >&2
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Locate repo root (walk up until we find the workspace Cargo.toml)
+# ---------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR"
+while [[ "$REPO_ROOT" != "/" ]]; do
+    if grep -q '^\[workspace\]' "$REPO_ROOT/Cargo.toml" 2>/dev/null; then
+        break
+    fi
+    REPO_ROOT="$(dirname "$REPO_ROOT")"
+done
+if [[ "$REPO_ROOT" == "/" ]]; then
+    echo "Could not locate workspace Cargo.toml" >&2
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Build the benchmark binary
+# ---------------------------------------------------------------------------
+echo "Building bench '$BENCH_NAME' (profile: bench)..."
+BINARY_PATH=$(
+    cargo build \
+        -p azure_data_cosmos_benchmarks \
+        --bench "$BENCH_NAME" \
+        --profile bench \
+        --message-format=json \
+        2>/dev/null \
+    | python3 -c "
+import sys, json
+for line in sys.stdin:
+    try:
+        d = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    if (d.get('reason') == 'compiler-artifact'
+            and d.get('target', {}).get('name') == '$BENCH_NAME'
+            and d.get('executable')):
+        print(d['executable'])
+        break
+"
+)
+
+if [[ -z "$BINARY_PATH" ]]; then
+    echo "Failed to find compiled binary for bench '$BENCH_NAME'." >&2
+    exit 1
+fi
+echo "Binary: $BINARY_PATH"
+
+# ---------------------------------------------------------------------------
+# Prepare output paths
+# ---------------------------------------------------------------------------
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+OUT_DIR="$REPO_ROOT/target/perf"
+mkdir -p "$OUT_DIR"
+
+PERF_DATA="$OUT_DIR/${BENCH_NAME}-${TIMESTAMP}.data"
+TRACE_FILE="$OUT_DIR/${BENCH_NAME}-${TIMESTAMP}.perf"
+
+# ---------------------------------------------------------------------------
+# Record
+# ---------------------------------------------------------------------------
+echo ""
+echo "Running perf record..."
+echo "  perf record $PERF_EXTRA_ARGS -o $PERF_DATA -- $BINARY_PATH ${BENCH_ARGS[*]+"${BENCH_ARGS[*]}"}"
+echo ""
+
+perf record $PERF_EXTRA_ARGS -o "$PERF_DATA" -- "$BINARY_PATH" "${BENCH_ARGS[@]+"${BENCH_ARGS[@]}"}"
+
+# ---------------------------------------------------------------------------
+# Convert to speedscope-compatible trace
+# ---------------------------------------------------------------------------
+echo ""
+echo "Generating trace with perf script..."
+perf script -i "$PERF_DATA" > "$TRACE_FILE"
+
+# Clean up the raw perf.data to save space (keep only the .perf trace)
+rm -f "$PERF_DATA"
+
+echo ""
+echo "Trace written to:"
+echo "  $TRACE_FILE"
+echo ""
+echo "Open https://speedscope.app and drag-and-drop the file above to visualize."

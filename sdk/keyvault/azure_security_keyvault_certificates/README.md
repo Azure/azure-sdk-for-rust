@@ -234,7 +234,7 @@ use azure_security_keyvault_certificates::{
     ResourceExt,
 };
 use azure_security_keyvault_keys::{
-    models::{SignParameters, SignatureAlgorithm},
+    models::{KeyClientSignOptions, SignParameters, SignatureAlgorithm},
 };
 use openssl::sha::sha256;
 
@@ -285,7 +285,14 @@ let body = SignParameters {
 };
 
 let signature = key_client
-    .sign("ec-signing-certificate", &certificate_version, body.try_into()?, None)
+    .sign(
+        "ec-signing-certificate",
+        body.try_into()?,
+        Some(KeyClientSignOptions {
+            key_version: Some(certificate_version.clone()),
+            ..Default::default()
+        }),
+    )
     .await?
     .into_model()?;
 

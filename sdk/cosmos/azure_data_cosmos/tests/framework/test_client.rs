@@ -112,6 +112,17 @@ enum CosmosTestMode {
 
 const DEFAULT_EMULATOR_DATABASE_NAME: &str = "emulator-test-db";
 
+/// Resolves the connection string from the environment, handling the `"emulator"` shorthand.
+pub fn resolve_connection_string() -> Option<ConnectionString> {
+    let env_var = std::env::var(CONNECTION_STRING_ENV_VAR).ok()?;
+    let raw = if env_var == "emulator" {
+        EMULATOR_CONNECTION_STRING
+    } else {
+        &env_var
+    };
+    raw.parse().ok()
+}
+
 fn get_shared_database_id() -> &'static str {
     static SHARED_DATABASE_ID: OnceLock<String> = OnceLock::new();
 
@@ -735,15 +746,20 @@ impl TestRunContext {
 
             let container_id = &created_properties.id;
 
-            // Wait for hub region client to successfully read the container
+            // Wait for hub region client to successfully resolve and read the container.
+            // Both `container_client()` (which resolves metadata via the driver) and
+            // `read()` can fail with 404 while the container replicates.
             loop {
-                match hub_client
-                    .database_client(db_client.id())
-                    .container_client(container_id)
-                    .await?
-                    .read(None)
-                    .await
-                {
+                let result = async {
+                    hub_client
+                        .database_client(db_client.id())
+                        .container_client(container_id)
+                        .await?
+                        .read(None)
+                        .await
+                }
+                .await;
+                match result {
                     Ok(_) => break,
                     Err(e) => {
                         println!(
@@ -756,15 +772,18 @@ impl TestRunContext {
                 }
             }
 
-            // Wait for satellite region client to successfully read the container
+            // Wait for satellite region client to successfully resolve and read the container.
             loop {
-                match satellite_client
-                    .database_client(db_client.id())
-                    .container_client(container_id)
-                    .await?
-                    .read(None)
-                    .await
-                {
+                let result = async {
+                    satellite_client
+                        .database_client(db_client.id())
+                        .container_client(container_id)
+                        .await?
+                        .read(None)
+                        .await
+                }
+                .await;
+                match result {
                     Ok(_) => break,
                     Err(e) => {
                         println!(

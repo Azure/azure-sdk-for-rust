@@ -18,8 +18,8 @@ use crate::{
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistrationError,
-        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
+        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
+        UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -297,18 +297,10 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Returns the throughput control group registry.
-    ///
-    /// The registry contains all groups registered during runtime construction.
-    /// Groups are identified by the combination of container reference and group name.
-    pub fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
-        &self.throughput_control_groups
-    }
-
     /// Returns a throughput control group by container and name.
     ///
     /// This is a convenience method for looking up a specific group.
-    pub fn get_throughput_control_group(
+    pub(crate) fn get_throughput_control_group(
         &self,
         container: &ContainerReference,
         name: &ThroughputControlGroupName,
@@ -320,7 +312,7 @@ impl CosmosDriverRuntime {
     /// Returns the default throughput control group for a container.
     ///
     /// Returns `None` if no default group is registered for the container.
-    pub fn get_default_throughput_control_group(
+    pub(crate) fn get_default_throughput_control_group(
         &self,
         container: &ContainerReference,
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
@@ -435,7 +427,7 @@ pub struct CosmosDriverRuntimeBuilder {
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_mocking"))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
@@ -526,6 +518,16 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
+    /// Sets a custom HTTP client factory, replacing the default reqwest-based transport.
+    ///
+    /// **Unsupported internal API** — only available under the `__internal_mocking` feature
+    /// flag. Intended for benchmarks and test harnesses; no stability guarantees.
+    #[cfg(feature = "__internal_mocking")]
+    pub fn with_mock_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
+        self.http_client_factory = Some(factory);
+        self
+    }
+
     /// Registers a throughput control group.
     ///
     /// Groups are identified by the combination of container reference and group name.
@@ -541,7 +543,7 @@ impl CosmosDriverRuntimeBuilder {
     ///
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
-    /// use azure_data_cosmos_driver::options::{ThroughputControlGroupOptions, ThroughputTarget};
+    /// use azure_data_cosmos_driver::options::{PriorityLevel, ThroughputControlGroupOptions};
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
@@ -559,25 +561,27 @@ impl CosmosDriverRuntimeBuilder {
     /// // Register a throughput control group on a new runtime builder.
     /// let runtime = CosmosDriverRuntimeBuilder::new()
     ///     .register_throughput_control_group(
-    ///         ThroughputControlGroupOptions::client_side(
+    ///         ThroughputControlGroupOptions::new(
     ///             "default-group",
     ///             container.clone(),
-    ///             ThroughputTarget::Threshold(0.5),
-    ///             None,
     ///             true, // is_default
     ///         )
+    ///         .with_priority_level(PriorityLevel::High)
     ///     )?
     ///     .build()
     ///     .await;
     /// # Ok(())
     /// # }
     /// ```
-    #[allow(clippy::result_large_err)]
     pub fn register_throughput_control_group(
         mut self,
         group: ThroughputControlGroupOptions,
-    ) -> Result<Self, ThroughputControlGroupRegistrationError> {
-        self.throughput_control_groups.register(group)?;
+    ) -> azure_core::Result<Self> {
+        self.throughput_control_groups
+            .register(group)
+            .map_err(|e| {
+                azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+            })?;
         Ok(self)
     }
 
@@ -626,13 +630,13 @@ impl CosmosDriverRuntimeBuilder {
         let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(test)]
+                #[cfg(any(test, feature = "__internal_mocking"))]
                 {
                     self.http_client_factory
                         .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
                 }
 
-                #[cfg(not(test))]
+                #[cfg(not(any(test, feature = "__internal_mocking")))]
                 {
                     Arc::new(DefaultHttpClientFactory::new())
                 }
