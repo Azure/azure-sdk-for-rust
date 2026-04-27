@@ -19,14 +19,6 @@
 //! let ranges = container.read_feed_ranges(None).await?;
 //! println!("Container has {} physical partitions", ranges.len());
 //!
-//! // Check if one range is a subset of another
-//! let pk_ranges = container.feed_range_from_partition_key("my_partition_key", None).await?;
-//! for range in &ranges {
-//!     if pk_ranges[0].is_subset_of(range) {
-//!         println!("Partition key falls within this feed range");
-//!     }
-//! }
-//!
 //! // Serialize/deserialize for storage or transfer
 //! let serialized = ranges[0].to_string();
 //! let restored: azure_data_cosmos::FeedRange = serialized.parse()?;
@@ -65,12 +57,6 @@ use crate::routing::range::Range;
 /// - **[`Serialize`]/[`Deserialize`]** — structured JSON (`{"Range": {...}}`), intended for embedding in JSON documents.
 ///
 /// These formats are **not interchangeable**: a value serialized with one cannot be deserialized with the other.
-///
-/// # Comparison Methods
-///
-/// Feed ranges support containment and overlap checks:
-/// - [`is_subset_of()`](FeedRange::is_subset_of) — checks if this feed range is entirely within another
-/// - [`overlaps()`](FeedRange::overlaps) — checks if two feed ranges share any portion of the EPK space
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct FeedRange {
@@ -113,27 +99,14 @@ impl FeedRange {
     }
 
     /// Returns `true` if this feed range is entirely contained within `other`.
-    ///
-    /// A feed range A is a subset of feed range B when B's minimum is less than or equal to A's
-    /// minimum and B's maximum is greater than or equal to A's maximum. Equivalent to the Python
-    /// SDK's `container.is_feed_range_subset(parent=other, child=self)`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use azure_data_cosmos::FeedRange;
-    /// let full = FeedRange::full();
-    /// let sub: FeedRange = "eyJSYW5nZSI6eyJtaW4iOiIiLCJtYXgiOiIzRkZGRkZGRkZGRkYiLCJpc01pbkluY2x1c2l2ZSI6dHJ1ZSwiaXNNYXhJbmNsdXNpdmUiOmZhbHNlfX0=".parse().unwrap();
-    /// assert!(sub.is_subset_of(&full));
-    /// ```
-    pub fn is_subset_of(&self, other: &FeedRange) -> bool {
+    pub(crate) fn is_subset_of(&self, other: &FeedRange) -> bool {
         other.min_inclusive <= self.min_inclusive && other.max_exclusive >= self.max_exclusive
     }
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
     ///
     /// Two feed ranges overlap when one starts before the other ends and vice versa.
-    pub fn overlaps(&self, other: &FeedRange) -> bool {
+    pub(crate) fn overlaps(&self, other: &FeedRange) -> bool {
         self.min_inclusive < other.max_exclusive && other.min_inclusive < self.max_exclusive
     }
 
