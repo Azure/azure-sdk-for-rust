@@ -23,7 +23,7 @@ use crate::{
     driver::transport::CosmosTransport,
     models::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, SessionToken, SubStatusCode,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -633,7 +633,7 @@ fn build_transport_request(
     // Custom headers are inserted first so that SDK-set headers below always
     // take precedence on conflicts (matching the SDK's ItemOptions::apply_headers
     // pattern where custom headers are added before SDK headers).
-    let mut headers = azure_core::http::headers::Headers::with_capacity(16);
+    let mut headers = azure_core::http::headers::Headers::new();
     if let Some(custom) = custom_headers {
         for (name, value) in custom {
             headers.insert(name.clone(), value.clone());
@@ -655,6 +655,15 @@ fn build_transport_request(
         for (name, value) in pk_headers {
             headers.insert(name, value);
         }
+    }
+
+    // Cosmos DB uses POST for both create and upsert; the service
+    // distinguishes them via this header.
+    if operation.operation_type() == OperationType::Upsert {
+        headers.insert(
+            HeaderName::from_static(request_header_names::IS_UPSERT),
+            HeaderValue::from_static("true"),
+        );
     }
 
     // Add operation type header for fault injection rule matching
@@ -1512,6 +1521,58 @@ mod tests {
         );
         // Available endpoint is preferred over the unavailable one.
         assert_eq!(routing.endpoint, available_endpoint);
+    }
+
+    #[test]
+    fn build_transport_request_sets_is_upsert_header() {
+        let operation = CosmosOperation::upsert_item(test_container(), PartitionKey::from("pk1"))
+            .with_body(b"{}".to_vec());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
+
+        let is_upsert = request
+            .headers
+            .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
+            .expect("is-upsert header should be set");
+        assert_eq!(is_upsert, "true");
+    }
+
+    #[test]
+    fn build_transport_request_omits_is_upsert_header_for_create() {
+        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
+            .with_body(b"{}".to_vec());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
+
+        assert!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
+                .is_none(),
+            "is-upsert header should not be set for create"
+        );
     }
 
     #[test]

@@ -466,13 +466,16 @@ impl CosmosOperation {
 
     /// Upserts (creates or replaces) an item (document) in a container.
     ///
-    /// The `ItemReference` contains the container, partition key, and item identifier,
-    /// providing all the information needed for the operation.
+    /// The Cosmos DB REST API treats upsert as a `POST` to the collection feed
+    /// (same as create), so this takes a `ContainerReference` and `PartitionKey`
+    /// rather than an `ItemReference`.
     /// Use `with_body()` to provide the document JSON.
     /// If an item with the same ID exists, it will be replaced; otherwise, a new item is created.
-    pub fn upsert_item(item: ItemReference) -> Self {
-        let partition_key = item.partition_key().clone();
-        Self::new(OperationType::Upsert, item).with_partition_key(partition_key)
+    pub fn upsert_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::Upsert, resource_ref).with_partition_key(partition_key)
     }
 
     /// Replaces an existing item (document) in a container.
@@ -525,14 +528,15 @@ impl CosmosOperation {
     ///
     /// Use `with_body()` to provide the query JSON.
     ///
+    /// This is equivalent to calling `query_items()` with [`PartitionKey::EMPTY`],
+    /// which causes the `x-ms-documentdb-query-enablecrosspartition` header to be
+    /// emitted by the pipeline.
+    ///
     /// **Warning:** Cross-partition queries are inherently less efficient than
     /// single-partition queries. Use `query_items()` with a partition key
     /// when possible.
     pub fn query_items_cross_partition(container: ContainerReference) -> Self {
-        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Query, resource_ref)
+        Self::query_items(container, PartitionKey::EMPTY)
     }
 
     /// Reads (lists) all partition key ranges for a container.

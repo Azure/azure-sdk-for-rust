@@ -9,7 +9,6 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
-use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 use azure_data_cosmos_driver::options::OperationOptions;
 
@@ -20,7 +19,6 @@ use super::ThroughputPoller;
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
     link: ResourceLink,
-    containers_link: ResourceLink,
     database_id: String,
     context: ClientContext,
     database_ref: DatabaseReference,
@@ -30,13 +28,11 @@ impl DatabaseClient {
     pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
-        let containers_link = link.feed(ResourceType::Containers);
         let database_ref =
             DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
 
         Self {
             link,
-            containers_link,
             database_id,
             context,
             database_ref,
@@ -128,12 +124,18 @@ impl DatabaseClient {
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
+        let db_ref = DatabaseReference::from_name(
+            self.context.driver.account().clone(),
+            self.database_id.clone(),
+        );
+        let factory = move || CosmosOperation::query_containers(db_ref.clone());
+
         crate::query::executor::QueryExecutor::new(
-            self.context.pipeline.clone(),
-            self.containers_link.clone(),
-            Context::default(),
+            self.context.driver.clone(),
+            factory,
             query.into(),
-            azure_core::http::headers::Headers::new(),
+            Default::default(),
+            None,
         )
         .into_stream()
     }

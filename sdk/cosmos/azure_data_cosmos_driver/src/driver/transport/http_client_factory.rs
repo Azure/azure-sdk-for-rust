@@ -24,7 +24,7 @@ pub(crate) enum HttpVersionPolicy {
 pub struct HttpClientConfig {
     pub(crate) version_policy: HttpVersionPolicy,
     pub(crate) request_timeout: std::time::Duration,
-    pub(crate) for_emulator: bool,
+    pub(crate) allow_invalid_cert: bool,
     pub(crate) http2_keep_alive_while_idle: bool,
 }
 
@@ -40,7 +40,7 @@ impl HttpClientConfig {
                 TransportHttpVersion::Http11 => HttpVersionPolicy::Http11Only,
             },
             request_timeout: connection_pool.max_metadata_request_timeout(),
-            for_emulator: false,
+            allow_invalid_cert: false,
             http2_keep_alive_while_idle: negotiated_version.is_http2(),
         }
     }
@@ -56,7 +56,7 @@ impl HttpClientConfig {
                 TransportHttpVersion::Http11 => HttpVersionPolicy::Http11Only,
             },
             request_timeout: connection_pool.max_dataplane_request_timeout(),
-            for_emulator: false,
+            allow_invalid_cert: false,
             http2_keep_alive_while_idle: negotiated_version.is_http2(),
         }
     }
@@ -66,13 +66,13 @@ impl HttpClientConfig {
         Self {
             version_policy: HttpVersionPolicy::Http2Only,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
-            for_emulator: false,
+            allow_invalid_cert: false,
             http2_keep_alive_while_idle: true,
         }
     }
 
-    pub(crate) fn for_emulator(mut self) -> Self {
-        self.for_emulator = true;
+    pub(crate) fn with_allow_invalid_cert(mut self) -> Self {
+        self.allow_invalid_cert = true;
         self
     }
 }
@@ -128,11 +128,11 @@ mod tests {
     }
 
     #[test]
-    fn for_emulator_sets_emulator_flag() {
+    fn with_allow_invalid_cert_sets_flag() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         let config = HttpClientConfig::metadata(&pool, TransportHttpVersion::Http2);
-        assert!(!config.for_emulator);
-        assert!(config.for_emulator().for_emulator);
+        assert!(!config.allow_invalid_cert);
+        assert!(config.with_allow_invalid_cert().allow_invalid_cert);
     }
 }
 
@@ -180,8 +180,11 @@ impl HttpClientFactory for DefaultHttpClientFactory {
             builder = builder.local_address(local_addr);
         }
 
-        if config.for_emulator {
-            builder = builder.danger_accept_invalid_certs(true);
+        if config.allow_invalid_cert {
+            #[cfg(feature = "__tls")]
+            {
+                builder = builder.danger_accept_invalid_certs(true);
+            }
         }
 
         builder = match config.version_policy {
