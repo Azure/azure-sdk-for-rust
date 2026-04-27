@@ -23,16 +23,19 @@ use tokio::{select, task::JoinSet};
 /// A trait representing a performance test.
 ///
 /// Performance tests have three phases:
-/// 1. `setup`: Prepare the test environment. This is called once per iteration.
+/// 1. `setup`: Prepare the test environment.
 /// 2. `run`: Execute the performance test. This is called repeatedly for the duration of the test.
-/// 3. `cleanup`: Clean up the test environment. This is called once
+/// 3. `cleanup`: Clean up the test environment.
 ///
-/// Note that the "run" phase will be executed in parallel across multiple tasks, so it must be thread-safe.
+/// One instance of the test is created per parallel task. Each instance owns its own resources
+/// (e.g., clients, containers, blobs) and is not shared across tasks. This allows each task to
+/// set up dedicated resources in `setup` without worrying about concurrent access.
 #[async_trait::async_trait]
 pub trait PerfTest: Send + Sync {
     /// Set up the test environment.
     ///
-    /// Performs whatever steps are needed to set up the test environment. This method is called once per iteration of the test.
+    /// Performs whatever steps are needed to set up the test environment.
+    /// Called once per instance (i.e., once per parallel task) per iteration.
     ///
     /// # Arguments
     /// - `context`: An `Arc` to a `TestContext` that provides context information for the test.
@@ -327,21 +330,8 @@ impl PerfRunner {
                     format!("Test '{}' not found.", test_name),
                 )
             })?;
-        let test_instance = (test.create_test)(self.clone()).await?;
-        let test_instance: Arc<dyn PerfTest> = Arc::from(test_instance);
 
         let test_mode = crate::TestMode::current_opt()?.unwrap_or(crate::TestMode::Live);
-
-        let context = Arc::new(
-            crate::recorded::start(
-                test_mode,
-                self.package_dir,
-                self.module_name,
-                test.name,
-                None,
-            )
-            .await?,
-        );
 
         println!("Test Configuration: {:#}", self.options);
 
@@ -352,16 +342,14 @@ impl PerfRunner {
                 self.options.iterations
             );
 
+            // Create one test instance and context per parallel task.
+            let mut test_instances: Vec<Arc<dyn PerfTest>> = Vec::new();
+            let mut test_contexts: Vec<Arc<TestContext>> = Vec::new();
+
             println!("========== Starting test setup ==========");
-            test_instance.setup(context.clone()).await?;
-
-            println!(
-                "========== Starting test warmup for {} ==========",
-                self.options.warmup
-            );
-
-            let mut test_contexts = Vec::new();
-            for _ in 0..self.options.parallel {
+            for i in 0..self.options.parallel {
+                let instance = (test.create_test)(self.clone()).await?;
+                let instance: Arc<dyn PerfTest> = Arc::from(instance);
                 let context = Arc::new(
                     crate::recorded::start(
                         test_mode,
@@ -372,10 +360,22 @@ impl PerfRunner {
                     )
                     .await?,
                 );
+                instance.setup(context.clone()).await?;
+                println!(
+                    "Setup complete for parallel task {}/{}",
+                    i + 1,
+                    self.options.parallel
+                );
+                test_instances.push(instance);
                 test_contexts.push(context);
             }
 
-            self.run_test_for(test_instance.clone(), &test_contexts, self.options.warmup)
+            println!(
+                "========== Starting test warmup for {} ==========",
+                self.options.warmup
+            );
+
+            self.run_test_for(&test_instances, &test_contexts, self.options.warmup)
                 .await?;
 
             println!(
@@ -384,15 +384,13 @@ impl PerfRunner {
             );
 
             let operations_per_second = self
-                .run_test_for(
-                    Arc::clone(&test_instance),
-                    &test_contexts,
-                    self.options.duration,
-                )
+                .run_test_for(&test_instances, &test_contexts, self.options.duration)
                 .await?;
             if !self.options.no_cleanup {
                 println!("========== Starting test cleanup ==========");
-                test_instance.cleanup(context.clone()).await?;
+                for (instance, context) in test_instances.iter().zip(test_contexts.iter()) {
+                    instance.cleanup(context.clone()).await?;
+                }
             }
 
             println!(
@@ -428,10 +426,12 @@ impl PerfRunner {
         Ok(())
     }
 
-    /// Runs the provided test instance for the specified duration using the provided test contexts.
+    /// Runs the provided test instances for the specified duration using the provided test contexts.
+    ///
+    /// Each parallel task runs its own dedicated test instance, allowing per-task resource isolation.
     ///
     /// # Arguments
-    /// * `test_instance` - The test instance to run.
+    /// * `test_instances` - One test instance per parallel task.
     /// * `test_contexts` - The test contexts to use for each parallel task.
     /// * `duration` - The duration to run the test for.
     ///
@@ -439,7 +439,7 @@ impl PerfRunner {
     /// The operations per second achieved during the test.
     pub async fn run_test_for(
         &self,
-        test_instance: Arc<dyn PerfTest>,
+        test_instances: &[Arc<dyn PerfTest>],
         test_contexts: &[Arc<TestContext>],
         duration: Duration,
     ) -> azure_core::Result<f64> {
@@ -447,7 +447,7 @@ impl PerfRunner {
         self.progress.store(0, Ordering::SeqCst);
         let mut tasks: JoinSet<Result<(i64, tokio::time::Duration)>> = JoinSet::new();
         (0..self.options.parallel).for_each(|i| {
-            let test_instance_clone = Arc::clone(&test_instance);
+            let test_instance = Arc::clone(&test_instances[i as usize]);
             let progress = self.progress.clone();
             let test_context = test_contexts[i as usize].clone();
             tasks.spawn(async move {
@@ -455,7 +455,7 @@ impl PerfRunner {
                 let mut count = 0i64;
                 let timeout = tokio::time::Duration::from_secs_f64(duration.as_seconds_f64());
                 loop {
-                    test_instance_clone.run(test_context.clone()).await?;
+                    test_instance.run(test_context.clone()).await?;
                     progress.fetch_add(1, Ordering::SeqCst);
                     count += 1;
                     if start.elapsed() >= timeout {

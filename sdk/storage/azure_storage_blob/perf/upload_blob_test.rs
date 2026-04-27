@@ -12,7 +12,7 @@ use azure_core_test::{
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
-use futures::{FutureExt, TryStreamExt};
+use futures::FutureExt;
 
 pub struct UploadBlobTest {
     size: usize,
@@ -95,8 +95,7 @@ impl PerfTest for UploadBlobTest {
     }
 
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-        let blob_name = format!("blob-{}", azure_core::Uuid::new_v4());
-        let blob_client = self.client.get().unwrap().blob_client(&blob_name);
+        let blob_client = self.client.get().unwrap().blob_client("perf-blob");
         let data_bytes = self.upload_buffer.get().unwrap().clone();
         blob_client.upload(data_bytes.into(), None).await?;
 
@@ -104,20 +103,8 @@ impl PerfTest for UploadBlobTest {
     }
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-        // Cleanup code after running the test
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
-        while let Some(blob) = iterator.try_next().await? {
-            let blob_client = self
-                .client
-                .get()
-                .unwrap()
-                .blob_client(blob.name.as_ref().unwrap());
-            let _result = blob_client.delete(None).await?;
-        }
-        // After deleting all blobs, delete the container itself to avoid accumulating
-        // empty containers across repeated perf runs.
+        // Each instance has its own container, so just delete it.
         if let Some(container_client) = self.client.get() {
-            // Ignore "not found" errors in case the container was already removed.
             container_client.delete(None).await?;
         }
         Ok(())
