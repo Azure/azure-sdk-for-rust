@@ -322,7 +322,7 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 | `x-ms-thinclient-account-name` | **NEW** — `THINCLIENT_ACCOUNT_NAME` (driver) | Global database account name (e.g., `myacct` from `myacct.documents.azure.com`); region-independent tenant identity. Source: .NET `BaseProxyClientHttpMessageHandler.AccountName` (`/Product/SDK/.net/Microsoft.Azure.Cosmos.Friends/src/BaseProxyClientHttpMessageHandler.cs:20`); value matches `GlobalDatabaseAccountName` (compute-gateway side: `SqlApiOperationHandler.cs:1135`). | Every Gateway 2.0 request |
 | `x-ms-thinclient-regional-account-name` | **NEW** — `THINCLIENT_REGIONAL_ACCOUNT_NAME` (driver) | Region-stamped document-service identity, format `<account-id>-<location-no-spaces>` lowercase (e.g., `myacct-eastus`). Source: .NET `BaseProxyClientHttpMessageHandler.RegionalAccountName` (`BaseProxyClientHttpMessageHandler.cs:22`); value matches `DocumentServiceId`; region-format derivation matches `AdminEndpointActions.cs:6236-6237`. | Every Gateway 2.0 request |
 | `x-ms-effective-partition-key` | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver) | Canonical EPK hex | Point ops only |
-| `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops — emitted **alongside** `x-ms-effective-partition-key` **only when the request carries the full partition-key value** (see HPK note below). For HPK containers scoped to a prefix of the partition-key definition, this header is **omitted** and only the EPK / EPK-range headers are sent. |
+| `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
 | `x-ms-thinclient-range-min` | **NEW** — `THINCLIENT_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
 | `x-ms-thinclient-range-max` | **NEW** — `THINCLIENT_RANGE_MAX` (driver) | Upper bound of EPK range | Feed / cross-partition ops only |
 | `x-ms-cosmos-use-thinclient` | **NEW** (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only |
@@ -338,18 +338,6 @@ Source values:
 
 - Account-name = the host label of the account endpoint URL (the `myacct` portion of `myacct.documents.azure.com`), parsed once at client construction.
 - Regional-account-name = `<account-host-label>-<region-name>` lowercase, where `region-name` is the location string of the target `CosmosEndpoint` (e.g., `myacct-eastus`). The Rust driver's per-`CosmosEndpoint` region context (already maintained by the PLF / preferred-region machinery) is the natural source.
-
-Both headers mirror .NET's `BaseProxyClientHttpMessageHandler` (the shared base class used by `ThinClientHttpMessageHandler`, `DqsClientHttpMessageHandler`, and `DtcClientHttpMessageHandler` — i.e., every proxy path emits both unconditionally).
-
-**PK header alongside EPK (HPK full-key gating)**: the driver emits `x-ms-documentdb-partitionkey` (the raw, JSON-encoded partition-key value) **only when the operation carries the full partition-key value** — i.e., the number of components supplied equals the container's partition-key definition arity. This applies to both point operations and single-logical-partition query operations.
-
-- **Single-component (non-HPK) containers**: every point op and every single-logical-partition query supplies the full PK by definition, so the header is always emitted alongside `x-ms-effective-partition-key`.
-- **Hierarchical (multi-component, HPK) containers**:
-  - Full-key request (component count == definition arity) → emit BOTH `x-ms-documentdb-partitionkey` AND `x-ms-effective-partition-key`. The proxy can use the raw PK to skip recomputing EPK and to choose finer-grained replica selection than EPK alone allows.
-  - Prefix-key request (component count < definition arity) → emit ONLY the EPK-range carriers (`x-ms-thinclient-range-min` / `-max`). Do **not** emit `x-ms-documentdb-partitionkey` with a partial value, because the proxy treats that header as the canonical full PK and a partial value would route incorrectly.
-- **Cross-partition feed / query ops**: continue to emit only the EPK range headers — no PK header on the feed path regardless of HPK arity.
-
-Gating is decided at header-injection time using the partition-key definition (already cached on the container) and the operation's supplied PK component count; no runtime computation cost beyond a length compare.
 
 #### Consistency header reconciliation (`ConsistencyLevel` ↔ `ReadConsistencyStrategy`)
 
@@ -413,7 +401,7 @@ When `transport_mode == Gateway20`:
 1. Set `x-ms-thinclient-proxy-operation-type` (numeric operation type)
 2. Set `x-ms-thinclient-proxy-resource-type` (numeric resource type)
 3. Set `x-ms-thinclient-account-name` (account host label) **and** `x-ms-thinclient-regional-account-name` (`<account>-<region>` lowercase, sourced from the active `CosmosEndpoint`'s region) — every request, see "Account-name + regional-account-name headers" note above
-4. Point op or single-logical-partition query op? Set `x-ms-effective-partition-key` (EPK hash from `EffectivePartitionKey::compute()`); additionally set `x-ms-documentdb-partitionkey` (JSON-encoded PK value) **only when the supplied PK component count equals the container's partition-key definition arity** (full-key gating, see HPK note above). For HPK prefix-key requests, omit the PK header.
+4. Point op or single-logical-partition query op? Set `x-ms-effective-partition-key` (EPK hash from `EffectivePartitionKey::compute()`).
    Cross-partition feed / query operation? Set `x-ms-thinclient-range-min` and `x-ms-thinclient-range-max` (from `EffectivePartitionKey::compute_range()`); do **not** emit the PK header on the feed path.
 5. Serialize the **already-reconciled** consistency value (per "Consistency header reconciliation" above) into the appropriate RNTBD metadata token: `ConsistencyLevel` token if RCS resolved to `Default`, OR the `ReadConsistencyStrategy` token (`0x00F0`, Byte) if RCS resolved to a non-Default value. Emit exactly one of the two — never both. The serializer consumes the resolved value as input; do not re-run resolution here.
 6. Serialize headers + body into RNTBD binary format (Phase 1)
@@ -587,7 +575,6 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
 | Account-name + regional-account-name headers | Yes | | | Both `x-ms-thinclient-account-name` (account host label) and `x-ms-thinclient-regional-account-name` (`<account>-<region>` lowercase, matching the active `CosmosEndpoint` region) present on every Gateway 2.0 request (point, feed, batch, bulk, change feed). Multi-region client: assert regional value changes when the active endpoint switches regions. |
 | SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `(PartitionMerge \| IgnoreUnknownRntbdTokens)`, **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
-| HPK PK+EPK pairing (full-key gating) | Yes | | | Single-component container point op → emits both `x-ms-documentdb-partitionkey` and `x-ms-effective-partition-key`. HPK container full-key point op AND full-key single-logical-partition query → emits both. HPK container prefix-key request (component count < definition arity) → emits ONLY the EPK-range headers, NOT `x-ms-documentdb-partitionkey`. Cross-partition feed → emits neither PK header (only the range headers). |
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
 | Consistency reconciliation: 4-source precedence | Yes | | | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset matching Java's data-provider tests. |
