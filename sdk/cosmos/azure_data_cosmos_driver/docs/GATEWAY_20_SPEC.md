@@ -1,4 +1,4 @@
-<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity cooldown ALPN myacct pushdown analogrelay -->
+<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity cooldown ALPN myacct pushdown analogrelay Kiran -->
 # Gateway 2.0 Design Spec for Rust Driver & SDK
 
 **Status**: Draft / Iterating
@@ -11,9 +11,10 @@
 
 1. [Overview](#1-overview)
 2. [Motivation](#2-motivation)
-3. [Current Rust State](#3-current-rust-state)
-4. [Rust Implementation Plan](#4-rust-implementation-plan)
-5. [Open Questions](#5-open-questions)
+3. [Gating, Configuration & Override](#3-gating-configuration--override)
+4. [Retry Behavior](#4-retry-behavior)
+5. [Rust Implementation Plan](#5-rust-implementation-plan)
+6. [Open Questions](#6-open-questions)
 
 ### Related Specs
 
@@ -25,9 +26,13 @@
 
 ## 1. Overview
 
-Gateway 2.0 (formerly "thin client") is a server-side proxy that allows SDK clients to route data-plane operations through a lightweight proxy endpoint instead of directly to backend replicas. It uses RNTBD binary serialization over the HTTP/2 protocol, with the proxy handling partition routing, replica selection, and load balancing.
+Gateway 2.0 (formerly "thin client") is a server-side proxy that evolves the existing Gateway V1 path: SDK clients still target a regional proxy endpoint instead of opening connections to backend replicas, but the proxy uses RNTBD binary message encoding over HTTP/2 in place of REST/JSON, and the proxy itself owns replica selection, connection management, and load balancing within a partition.
 
-**Naming**: Use "Gateway 2.0" consistently in all Rust code, docs, and comments. Avoid "thin client" except when referencing Java/.NET code or existing constants (`THINCLIENT_*`).
+**RNTBD** stands for "Real Name to be Determined" — the (intentionally placeholder) code name for the proprietary message-encoding and wire-protocol format originally introduced for direct mode. Gateway 2.0 keeps the **message encoding** layer of RNTBD and moves the **wire protocol** to HTTP/2; direct mode used RNTBD over TCP.
+
+Direct mode was never in scope for the Rust SDK, so the rest of this spec compares Gateway 2.0 to **Gateway V1**, not to direct mode.
+
+**Naming**: Use "Gateway 2.0" consistently in all Rust code, docs, and comments. Reserve "thin client" for two narrow uses: (a) when referencing Java/.NET source symbols (`ThinClientHttpMessageHandler`, etc.), and (b) the literal wire-header names that contain `thinclient` (e.g. `x-ms-thinclient-proxy-operation-type`).
 
 ---
 
@@ -35,19 +40,16 @@ Gateway 2.0 (formerly "thin client") is a server-side proxy that allows SDK clie
 
 ### Why Gateway 2.0?
 
-Traditional Cosmos DB offers two connection modes:
+Today the Rust SDK only supports Gateway V1: a shared, stateless HTTP/REST proxy that adds a network hop and provides **no latency SLA**. (Direct mode — where an SDK opens TCP connections directly to backend replicas — was never implemented for Rust because it introduces operational cost: COGS for replica connections, plus debugging complexity for customers when network paths to backend nodes break. It is not in scope.)
 
-- **Gateway mode**: Simple HTTP/REST proxy — easy to use, but adds an extra network hop through a shared stateless gateway. No latency SLA guarantees because the gateway is a shared, best-effort proxy.
-- **Direct mode**: SDK connects directly to backend replicas via TCP/RNTBD — provides latency SLA guarantees but requires the SDK to manage replica discovery, connection pooling, and partition routing itself. This adds significant complexity to the SDK and requires direct network access to backend nodes.
-
-**Gateway 2.0 bridges this gap.** It is a gateway mode with SLA latency guarantees — combining the operational simplicity of gateway mode (single endpoint, no direct backend connectivity required, firewall-friendly) with the performance characteristics of direct mode (RNTBD binary protocol, server-side partition routing, replica-aware load balancing).
+**Gateway 2.0 bridges this gap.** It keeps the operational shape of Gateway V1 (one regional endpoint, no direct backend connectivity required) and adds the performance characteristics of direct mode (RNTBD binary message encoding, server-side replica selection, replica-aware load balancing) — so customers get latency SLAs without taking on the operational burden direct mode imposed.
 
 ### Key Benefits
 
-- **SLA latency guarantees** — Unlike traditional gateway, Gateway 2.0 plans to provide contractual latency commitments comparable to direct mode
-- **Simplified networking** — Clients connect to a single regional proxy endpoint over HTTPS; no need to open firewall rules to individual backend replicas
-- **Reduced SDK complexity** — The proxy handles replica discovery, connection management, and replica-level routing within a partition; the SDK only needs RNTBD serialization, partition-level routing (PKRange resolution / EPK computation), and endpoint selection
-- **HTTP/2 multiplexing** — Multiple concurrent operations share a single TCP connection, reducing connection overhead vs. direct mode's per-replica TCP connections
+- **SLA latency guarantees** — Unlike Gateway V1, Gateway 2.0 plans to provide contractual latency commitments comparable to direct mode
+- **Simplified networking** — Clients connect to a single regional proxy endpoint over HTTP/2 on a non-443 port (e.g. 1125). The endpoint IP set is dynamic and may shift across Gateway 2.0 federations; firewall rules MUST scope by hostname/port, not by specific IPs.
+- **Reduced operational cost** — The proxy handles replica discovery, connection management, and replica-level routing within a partition; the client stays partition-aware (resolves PKRange, computes EPK) but is **never replica-aware**, avoiding the COGS and customer-side debugging burden of maintaining one connection per backend replica.
+- **HTTP/2 multiplexing** — Multiple concurrent operations share a single TCP connection. Note that Gateway V1 also supports HTTP/2 with multiplexing today; the connection-overhead win is relative to direct mode's per-replica TCP connections, not relative to Gateway V1.
 - **Transparent failover** — The proxy handles replica failover within a partition; the SDK handles regional failover across proxy endpoints
 
 ### Design Philosophy
@@ -70,118 +72,94 @@ Gateway 2.0 moves **replica-level** routing intelligence from the SDK into the s
 
 ### Connection Mode Comparison
 
-| Aspect | Gateway | Gateway 2.0 | Direct |
+| Aspect | Gateway V1 | Gateway 2.0 | Direct (not in scope for Rust) |
 | --- | --- | --- | --- |
 | Latency SLA | No | **Yes** | Yes |
 | Simple Network | Yes | Yes | No |
-| Protocol | REST/HTTP | RNTBD/HTTP2 | RNTBD/TCP |
+| Protocol | REST/HTTP, HTTP/2 + multiplexing supported | RNTBD message encoding over HTTP/2 | RNTBD over TCP |
 | Replica Mgmt | Gateway/Proxy | Proxy | SDK |
 | Partition Route | Gateway/Proxy | Proxy | SDK |
 | Regional Route | SDK | SDK | SDK |
-| SDK Complexity | Medium | Medium | High |
-| Firewall Rules | 1 endpoint | 1 endpoint | N replicas |
+| Operational Cost (COGS + debug) | Low | Low | High |
+| Firewall Rules | 1 endpoint (443) | 1 endpoint (non-443, e.g. 1125; dynamic IPs) | N replicas |
 
 ---
 
-## 3. Current Rust State
+## 3. Gating, Configuration & Override
 
-The Rust driver (`azure_data_cosmos_driver`) already has significant gateway 2.0 scaffolding.
+Gateway 2.0 routing is decided **once per request** in the driver's `resolve_endpoint` stage. After that, downstream pipeline stages MUST trust `RoutingDecision.transport_mode` and not re-derive eligibility.
 
-### 3.1 Already Implemented — endpoint & transport
+### 3.1 The `prefer_gateway20` formula
 
-- **`CosmosEndpoint`** — `gateway20_url: Option<Url>` field, `regional_with_gateway20()`, `uses_gateway20()`, `selected_url()` methods
-- **`TransportMode::Gateway20`** enum variant in pipeline components
-- **`RoutingDecision`** — carries `transport_mode` that distinguishes gateway vs gateway 2.0
-- **`ConnectionPoolOptions`** — `is_gateway20_allowed: bool` config (see §3.4 for gating model)
-- **`CosmosTransport`** — `dataplane_gateway20_transport: OnceLock<AdaptiveTransport>`, lazy init with `AdaptiveTransport::gateway20()`
-- **`AdaptiveTransport::ShardedGateway20`** variant — HTTP/2 only with prior knowledge (no HTTP/1.x fallback; the proxy does not accept HTTP/1.x — see Open Question Q1, resolved)
-- **`HttpClientConfig::dataplane_gateway20()`** — HTTP/2-only config; HTTP/2 negotiation failure surfaces as a transport error (handled by the existing retry policies) rather than downgrading
-- **`TransportKind::Gateway20`** in diagnostics
+```text
+prefer_gateway20 = !options.gateway20_disabled
+                && account.has_thin_client_endpoints()
+```
 
-### 3.2 Already Implemented — account metadata & routing
+The account-side check (`has_thin_client_endpoints()`) reads the cached account metadata. The client-side check (`gateway20_disabled`) is the only public toggle.
 
-- **`LocationStateStore`** — `gateway20_enabled` flag, passes through to endpoint construction
-- **`AccountProperties::has_thin_client_endpoints()`** (`account_metadata_cache.rs:191`) — detection helper
-- **`AccountProperties::thin_client_writable_regions()` / `thin_client_readable_regions()`** (`account_metadata_cache.rs:197,205`) — region accessors
-- **`parse_thin_client_locations()`** — parser for `thinClient(Readable|Writable)Locations`
-- **`build_account_endpoint_state()`** (`routing_systems.rs`) — resolves gateway 2.0 URLs from account properties
-- **Existing tests** in `routing_systems.rs:218–289` already exercise GW20 endpoint construction with both readable and writable thin-client locations
-- **`resolve_endpoint()`** in operation pipeline — selects gateway 2.0 URL when `prefer_gateway20` is true (see §3.4)
+### 3.2 Operator override: `CosmosClientOptions::gateway20_disabled`
 
-### 3.3 Already Implemented — EPK & constants
+Default `false`. Customers and operators MAY set `gateway20_disabled = true` on `CosmosClientOptions` to force every request from the client to route through Gateway V1, even when the account advertises Gateway 2.0 endpoints and the operation would otherwise be eligible.
 
-- **`EffectivePartitionKey::compute()` / `::compute_range()`** — in `azure_data_cosmos_driver::models::effective_partition_key` (MultiHash-aware, hierarchical-PK correct). This is the canonical path and is what Gateway 2.0 header injection MUST call. Both functions return `azure_core::Result` (per PR #4087 review: MultiHash-requires-V2 and component-count checks are runtime errors, not `debug_assert`s, so a user gets `Err` rather than a panic on malformed input).
-- **Constants** (in `azure_data_cosmos::constants`): `THINCLIENT_PROXY_OPERATION_TYPE` → `x-ms-thinclient-proxy-operation-type`, `THINCLIENT_PROXY_RESOURCE_TYPE` → `x-ms-thinclient-proxy-resource-type`. Phase 2 reuses these verbatim. The existing `START_EPK` (= `x-ms-start-epk`) / `END_EPK` (= `x-ms-end-epk`) constants are **not** used on Gateway 2.0 requests; Phase 2 introduces new `THINCLIENT_RANGE_MIN` (= `x-ms-thinclient-range-min`) / `THINCLIENT_RANGE_MAX` (= `x-ms-thinclient-range-max`) constants per Q3 resolution. See §Phase 2 "Header naming" for mapping.
-- **Perf crate** — `gateway20_allowed` config wiring
+⚠️ **Setting this flag voids the latency-SLA story Gateway 2.0 is being built to deliver. It also impacts the ability to receive 24/7 Microsoft support for performance regressions on this client. Use only when explicitly directed by Microsoft Support during incident triage.** The flag is intentionally **not** exposed via environment variable to discourage casual / fleet-wide enablement; operators who need it must opt in per-client through code.
 
-### 3.4 Gating model (single source of truth)
+All settings, options, and internal flags **must use a negative-term name** (`gateway20_disabled`, `gateway20_suppressed`, etc.) so that **default values mean Gateway 2.0 is enabled**. Positive-term names (`is_gateway20_allowed`, `gateway20_allowed`, `enable_gateway20`, etc.) are not permitted anywhere — driver, SDK, perf crate, env vars, or test wiring. `gateway20_disabled` is the single supported disablement mechanism; there is no `AZURE_COSMOS_*` env var that toggles Gateway 2.0.
 
-Two independent guards exist today (`is_gateway20_allowed` is checked in both routing and `get_dataplane_transport`). Per PR #3942 review, **routing is the single source of truth**; the transport-layer guard is intentional defense-in-depth and is technically dead code given current callers.
+### 3.3 EPK Range types — driver crate is canonical
 
-Invariants this spec locks in:
+Every Gateway 2.0 EPK-range representation lives in the **driver crate** (`azure_data_cosmos_driver`):
 
-- `prefer_gateway20` is computed **once per request** during `resolve_endpoint` from:
-  `!options.gateway20_disabled && connection_pool().is_gateway20_allowed() && account.has_thin_client_endpoints()`
-- After `resolve_endpoint`, downstream stages MUST trust `RoutingDecision.transport_mode` and not re-derive eligibility.
-- **Operator override: `CosmosClientOptions::gateway20_disabled` (default `false`)** — Customers and operators MAY set `gateway20_disabled = true` on `CosmosClientOptions` to force every request from the client to route through the standard gateway, even when the account advertises Gateway 2.0 endpoints and the operation would otherwise be eligible.
+| Type | Role |
+| --- | --- |
+| `azure_data_cosmos_driver::models::range::EpkRange<T>` | Generic typed EPK range (`min` / `max` / `is_min_inclusive` / `is_max_inclusive` + `contains` / `is_empty` / `check_overlapping` / `Display` `[a,b)` form) |
+| `azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange` | Service model with `min_inclusive: EffectivePartitionKey` / `max_exclusive: EffectivePartitionKey` and full PKR metadata |
+| `azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey` | Strongly-typed EPK newtype with `compute_range()` returning `std::ops::Range<EffectivePartitionKey>` |
 
-  ⚠️ **Setting this flag voids the latency-SLA story Gateway 2.0 is being built to deliver. It also impacts the ability to receive 24/7 Microsoft support for performance regressions on this client. Use only when explicitly directed by Microsoft Support during incident triage.** The flag is intentionally **not** exposed via environment variable to discourage casual / fleet-wide enablement; operators who need it must opt in per-client through code.
-
-  The internal `ConnectionPoolOptions::is_gateway20_allowed` flag and its env var `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED` are pre-existing bring-up scaffolding, slated for removal in Phase 5 cleanup. The public `gateway20_disabled` setting is the single supported disablement mechanism going forward.
-
-### 3.5 Known broken / do-not-use
-
-- **`azure_data_cosmos::hash::get_hashed_partition_key_string()`** (called from `container_connection.rs:87`) — a legacy SDK-side function that is **a known-broken stub for MultiHash (hierarchical-PK) containers**. PR #4087's description explicitly calls it out as awaiting the SDK-to-driver cutover. **Do NOT** wire Phase 2 header injection to this function; use `EffectivePartitionKey::compute()` / `::compute_range()` (§3.3).
-
-### 3.6 Not Yet Implemented (Gaps)
-
-1. **RNTBD serialization/deserialization** — No binary protocol encoding/decoding exists. Both directions live in the driver: serialization in `rntbd/request.rs`, deserialization in `rntbd/response.rs`. The SDK never handles raw RNTBD bytes — the response decode happens inside the driver and the SDK only sees typed results. See §4.2 step 6.
-2. **Gateway 2.0 header injection** — Gateway 2.0 proxy headers and EPK range headers are not applied to requests on the Gateway 2.0 path
-3. **Supported operation filtering** — No `IsOperationSupportedByThinClient()` equivalent
-4. **`x-ms-cosmos-use-thinclient` header** on account metadata requests (to trigger thin-client endpoint advertisement)
-5. **SDK-to-driver cutover for EPK** — SDK call sites (`feed_range_from_partition_key`, `container_connection.rs:87`) still call the broken SDK hash; they must route through the driver's `EffectivePartitionKey::compute()`
-6. **Session token handling** — Gateway 2.0 may handle session tokens differently (partition-key-range-id prefix)
-7. **Rollout/cutover policy clarification** — Document the intended enablement and cutover behavior (see Phase 4); there is intentionally **no** Gateway 2.0-specific failure-driven fallback to the standard gateway. The supported operator override is `CosmosClientOptions::gateway20_disabled` (§3.4) — a per-client opt-out with explicit SLA / support warnings.
-8. **Integration/E2E tests** — No gateway 2.0 test coverage beyond the routing-systems unit tests
-9. **Fault injection** — No gateway 2.0 fault injection scenarios
-10. **Constants cross-crate visibility** — _Resolved_. Per PR review (analogrelay): the SDK has no Gateway-2.0 surface area whatsoever. `THINCLIENT_PROXY_*`, `THINCLIENT_RANGE_MIN/MAX`, and Gateway-2.0-specific header constants live exclusively in `azure_data_cosmos_driver::constants`; **no SDK re-export**. The SDK calls the generic `CosmosDriver::execute_operation` interface and the driver decides Gateway 2.0 vs standard gateway internally. The legacy `START_EPK` / `END_EPK` constants in `azure_data_cosmos::constants` remain for any non-Gateway-2.0 callers but are not used on the Gateway 2.0 path. Phase 2 deliverable includes the move.
-11. **EPK Range type consolidation** — _Resolved_. Audit results across both crates:
-
-    | Crate | Type | Verdict |
-    | --- | --- | --- |
-    | `azure_data_cosmos_driver::models::range::EpkRange<T>` | Generic range with `min` / `max` / `is_min_inclusive` / `is_max_inclusive`, plus `contains` / `is_empty` / `check_overlapping` / `Display` (`[a,b)` form) | **Canonical** for typed EPK ranges |
-    | `azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange` | Service model with `min_inclusive: EffectivePartitionKey` / `max_exclusive: EffectivePartitionKey` and full PKR metadata (id, rid, parents, throughput, status, lsn) | **Canonical** for cached PKR entries |
-    | `azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey` | Strongly-typed EPK newtype with `compute_range()` returning `std::ops::Range<EffectivePartitionKey>` | **Canonical** EPK value type |
-    | `azure_data_cosmos::routing::range::Range<T>` | SDK-side generic range | **Not used** on the Gateway 2.0 path — legacy, kept only for non-Gateway-2.0 SDK callers |
-    | `azure_data_cosmos::routing::partition_key_range::PartitionKeyRange` | SDK-side PKR with `min_inclusive: String` / `max_exclusive: String` (untyped) | **Not used** on the Gateway 2.0 path |
-    | `azure_data_cosmos::hash::EffectivePartitionKey` | SDK-side `EffectivePartitionKey(String)` newtype, distinct from the driver's | **Not used** on the Gateway 2.0 path |
-
-    **Decision**: every Gateway 2.0 EPK-range representation lives in the **driver crate**. Phase 2's EPK header injection MUST consume `EffectivePartitionKey::compute_range()` directly and serialize through the driver crate's existing types; it MUST NOT introduce a new EPK-range struct, and MUST NOT depend on any of the SDK-crate analogs. Per item 10 there is no SDK Gateway-2.0 surface, so the SDK-crate types stay untouched and unreferenced on this path. Phase 2 PR review enforces both rules.
-12. **Gateway 2.0 retry behavior for region-routed status codes** — Beyond the timeout / 408 handling already deferred to `TRANSPORT_PIPELINE_SPEC.md`, the Gateway 2.0 path inherits these region-aware retry rules from the standard pipeline (no Gateway-2.0-specific override needed):
-    - **HTTP 449 (Retry-With)** — Retry against the **same** Gateway 2.0 endpoint with the standard backoff schedule. **Do not** switch regions on 449. **Do not** fall back to standard gateway on 449 — the proxy is healthy; the backend asked for a retry.
-    - **HTTP 404 with sub-status `1002` (`PARTITION_KEY_RANGE_GONE`)** — Refresh the PKRange cache, then retry. **Always prefer a remote region for the retry** when one is available in the client's preferred-region list — the local region is suspected of carrying the stale routing, so pinning the retry to the same Gateway 2.0 endpoint that just returned 1002 reproduces the bug. **PLF takes precedence**: if PLF (per `PARTITION_LEVEL_FAILOVER_SPEC.md`) has already pinned a region for this PKRangeId, the PLF region wins over the "prefer remote" hint.
-
-    These rules apply uniformly to V1 (HTTP) and V2 (RNTBD) — the retry policy operates on the resolved `(status_code, sub_status)` pair before the transport-specific deserializer ever sees the body.
+EPK header injection MUST consume `EffectivePartitionKey::compute_range()` directly and serialize through the driver crate's existing types. It MUST NOT introduce a new EPK-range struct, and MUST NOT depend on any SDK-crate analog (`azure_data_cosmos::routing::range::Range`, `azure_data_cosmos::routing::partition_key_range::PartitionKeyRange`, `azure_data_cosmos::hash::EffectivePartitionKey`). The SDK has no Gateway-2.0 surface area whatsoever — the SDK calls the generic `CosmosDriver::execute_operation` interface and the driver decides Gateway 2.0 vs Gateway V1 internally.
 
 ---
 
-## 4. Rust Implementation Plan
+## 4. Retry Behavior
 
-### 4.1 Current Request Flow (Gateway 1.0)
+Gateway 2.0 reuses the standard retry pipeline. Two status codes have Gateway-2.0-relevant rules; one has its own dedicated policy.
+
+### 4.1 HTTP 449 (Retry-With) — dedicated policy, separate from 410/Gone
+
+449 typically signals a server-side precondition failure (e.g. etag conflict on a single document being updated by many writers). Aggressive retry loops on 449 amplify pathological client patterns — for example, a numeric-ID generator where dozens or hundreds of threads patch the same document. The retry policy MUST optimize for the natural case (precondition failure that resolves with a brief wait) without amplifying abuse.
+
+- **Few attempts** (≤ 3) with **exponential backoff** between them (separate, looser schedule from the one used for 410/Gone).
+- Retry against the **same** endpoint; do not switch regions on 449.
+- **Do not** share the retry budget with 410/Gone — 449 has its own dedicated policy.
+- **Gateway V1 uses the identical 449 policy.** When the server-side adds a "suppress 449" capability (under design with the server team — see Kiran for context), the client negotiates it via the `SdkSupportedCapabilities` channel and treats 449 as a non-retryable terminal error. Until that capability ships, both transports retry per the policy above.
+
+### 4.2 HTTP 404 with sub-status `1002` (`PARTITION_KEY_RANGE_GONE`)
+
+Refresh the PKRange cache, then retry. **Always prefer a remote region for the retry** when one is available in the client's preferred-region list — the local region is suspected of carrying the stale routing, so pinning the retry to the same Gateway 2.0 endpoint that just returned 1002 reproduces the bug. **PLF takes precedence**: if PLF (per `PARTITION_LEVEL_FAILOVER_SPEC.md`) has already pinned a region for this PKRangeId, the PLF region wins over the "prefer remote" hint.
+
+These rules apply uniformly to V1 (HTTP) and V2 (RNTBD) — the retry policy operates on the resolved `(status_code, sub_status)` pair before the transport-specific deserializer ever sees the body.
+
+Beyond 449 and 404/1002, Gateway 2.0 follows the timeout/408 handling defined in `TRANSPORT_PIPELINE_SPEC.md` — no Gateway-2.0-specific override is introduced.
+
+---
+
+## 5. Rust Implementation Plan
+
+### 5.1 Current Request Flow (Gateway V1)
 
 1. `ContainerClient::create_item(partition_key, item, options)` calls into `ContainerClient`
-2. `container_connection.rs` serializes `T` to `&[u8]`, computes EPK (via the broken SDK hash today — see §3.5), resolves PKRange
+2. `container_connection.rs` serializes `T` to `&[u8]`, computes EPK (via the SDK-side hash today, which does not handle MultiHash containers correctly), resolves PKRange
 3. `CosmosDriver::execute_operation()` enters the Operation Pipeline (7-stage loop)
 4. `resolve_endpoint()` selects a gateway endpoint
 5. Transport Pipeline applies cosmos headers, signs request
 6. HTTP/REST request sent to Cosmos Gateway (shared proxy, no SLA)
 
-### 4.2 Target Request Flow (Gateway 2.0)
+### 5.2 Target Request Flow (Gateway 2.0)
 
 1. `ContainerClient::create_item(partition_key, item, options)` calls into `ContainerClient`
 2. `container_connection.rs` serializes `T` to `&[u8]`; EPK computation is deferred to the driver (via `EffectivePartitionKey::compute()` / `::compute_range()`), which then resolves PKRange
 3. `CosmosDriver::execute_operation()` enters the Operation Pipeline (7-stage loop)
-4. `resolve_endpoint()` prefers gateway 2.0 endpoint (if `prefer_gateway20` per §3.4)
+4. `resolve_endpoint()` prefers gateway 2.0 endpoint (if `prefer_gateway20` per §3.1)
 5. Transport Pipeline checks `is_operation_supported_by_gateway20()`:
    - **YES**: Inject gateway 2.0 headers + RNTBD serialize → HTTP/2 POST to Gateway 2.0 Proxy (SLA)
    - **NO**: Standard HTTP/REST request to Cosmos Gateway (eligibility fallback — per-request, deterministic)
@@ -289,7 +267,7 @@ This phase wires RNTBD serialization into the existing transport pipeline and ad
 - **Request body wrapping** — Serialize the entire request (headers + body) into RNTBD binary format and POST as the HTTP/2 body.
 - **Response unwrapping** — Deserialize the RNTBD response body back into `CosmosResponseHeaders` + raw document bytes.
 - **Eligibility fallback** — Operation ineligible for Gateway 2.0 → route through standard gateway for this single request (per-request, deterministic). See §Phase 4 for the distinct failure-driven fallback.
-- **Constants placement** — Move `THINCLIENT_PROXY_*` (and any other Gateway-2.0-specific header constants) into `azure_data_cosmos_driver::constants` as part of Phase 2. **No SDK re-export** — the SDK has no Gateway-2.0 awareness; it invokes the generic `CosmosDriver::execute_operation` interface and the driver decides Gateway 2.0 vs standard gateway internally. See §3.6-10 (resolved).
+- **Constants placement & naming** — Relocate the existing `THINCLIENT_PROXY_*` constants into `azure_data_cosmos_driver::constants` and **rename them to the `GATEWAY20_*` family** as part of Phase 2 (the wire header strings stay the same — they are server-defined and currently `x-ms-thinclient-proxy-*` — only the Rust identifier changes). Concretely: `THINCLIENT_PROXY_OPERATION_TYPE` → `GATEWAY20_OPERATION_TYPE`, `THINCLIENT_PROXY_RESOURCE_TYPE` → `GATEWAY20_RESOURCE_TYPE`, and any new EPK-range / capability constants follow the same `GATEWAY20_*` prefix. **No SDK re-export** — the SDK has no Gateway-2.0 awareness; it invokes the generic `CosmosDriver::execute_operation` interface and the driver decides Gateway 2.0 vs Gateway V1 internally.
 
 #### Supported Operations
 
@@ -317,13 +295,15 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 
 | Header (wire) | Rust constant (crate) | Semantics | When emitted |
 | --- | --- | --- | --- |
-| `x-ms-thinclient-proxy-operation-type` | `THINCLIENT_PROXY_OPERATION_TYPE` (driver) | Numeric operation type | Every Gateway 2.0 request |
-| `x-ms-thinclient-proxy-resource-type` | `THINCLIENT_PROXY_RESOURCE_TYPE` (driver) | Numeric resource type | Every Gateway 2.0 request |
+| `x-ms-thinclient-proxy-operation-type` | `GATEWAY20_OPERATION_TYPE` (driver) | Numeric operation type | Every Gateway 2.0 request |
+| `x-ms-thinclient-proxy-resource-type` | `GATEWAY20_RESOURCE_TYPE` (driver) | Numeric resource type | Every Gateway 2.0 request |
 | `x-ms-effective-partition-key` | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver) | Canonical EPK hex | Point ops only |
 | `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
-| `x-ms-thinclient-range-min` | **NEW** — `THINCLIENT_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
-| `x-ms-thinclient-range-max` | **NEW** — `THINCLIENT_RANGE_MAX` (driver) | Upper bound of EPK range | Feed / cross-partition ops only |
-| `x-ms-cosmos-use-thinclient` | **NEW** (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only |
+| `x-ms-thinclient-range-min` | **NEW** — `GATEWAY20_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
+| `x-ms-thinclient-range-max` | **NEW** — `GATEWAY20_RANGE_MAX` (driver) | Upper bound of EPK range | Feed / cross-partition ops only |
+| `x-ms-cosmos-use-thinclient` | **NEW** — `GATEWAY20_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only |
+
+> Wire-header strings (`x-ms-thinclient-*`) are server-defined and unchanged; the Rust-side identifiers use the `GATEWAY20_*` prefix.
 
 Per Q3 resolution, the Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` (it does **not** accept `x-ms-start-epk` / `x-ms-end-epk`). Phase 2 introduces the new constants above; the existing `START_EPK` / `END_EPK` constants are not emitted on the Gateway 2.0 path.
 
@@ -407,7 +387,7 @@ EDIT  src/driver/transport/transport_pipeline.rs  — Branch on TransportMode in
 EDIT  src/driver/transport/cosmos_headers.rs      — Add gateway 2.0 header application
 EDIT  src/driver/transport/mod.rs                 — Add is_operation_supported_by_gateway20()
 EDIT  src/driver/pipeline/components.rs           — Add EPK fields to TransportRequest if needed
-EDIT  src/driver/constants.rs (or NEW)            — Relocate THINCLIENT_PROXY_* constants from azure_data_cosmos to azure_data_cosmos_driver (no SDK re-export, per §3.6-10)
+EDIT  src/driver/constants.rs (or NEW)            — Relocate + rename THINCLIENT_PROXY_* → GATEWAY20_* constants from azure_data_cosmos to azure_data_cosmos_driver (no SDK re-export)
 EDIT  sdk/cosmos/azure_data_cosmos/src/...        — Replace SDK-side get_hashed_partition_key_string callers with driver's EffectivePartitionKey::compute()
 ```
 
@@ -417,13 +397,13 @@ EDIT  sdk/cosmos/azure_data_cosmos/src/...        — Replace SDK-side get_hashe
 
 **Crate**: `azure_data_cosmos_driver`
 
-> Most of Phase 3 is **audit / verification** against scaffolding already in place (§3.1, §3.2). Only the `x-ms-cosmos-use-thinclient` request header is net-new code. Noted here because the dependency graph lists Phase 3 as a prerequisite for Phase 2; in practice the verification items can happen in parallel with Phase 1 and the one real code change can ride with Phase 2 if convenient.
+> Most of Phase 3 is **audit / verification** against scaffolding already in place. Only the `x-ms-cosmos-use-thinclient` request header is net-new code. Noted here because the dependency graph lists Phase 3 as a prerequisite for Phase 2; in practice the verification items can happen in parallel with Phase 1 and the one real code change can ride with Phase 2 if convenient.
 
 #### What Will Be Done
 
-- **Verify** account metadata cache parses `thinClientReadableLocations` / `thinClientWritableLocations` into `CosmosEndpoint::gateway20_url` (existing, per §3.2)
+- **Verify** account metadata cache parses `thinClientReadableLocations` / `thinClientWritableLocations` into `CosmosEndpoint::gateway20_url`
 - **Confirm** `build_account_endpoint_state()` constructs `CosmosEndpoint::regional_with_gateway20()` correctly in multi-region accounts (existing tests at `routing_systems.rs:218–289` already cover this)
-- **Verify** `AccountProperties::has_thin_client_endpoints()` is used as the gating signal per §3.4
+- **Verify** `AccountProperties::has_thin_client_endpoints()` is used as the gating signal per §3.1
 - **Add** `x-ms-cosmos-use-thinclient` request header on account metadata fetches (new code)
 - **Test** endpoint discovery with live account that has gateway 2.0 enabled (handled by Phase 6 live pipeline)
 
@@ -491,15 +471,15 @@ Gateway 2.0 is **on by default** when the account metadata advertises Gateway 2.
 
 #### What Will Be Done
 
-- **Auto-detection** — When account metadata includes `thinClientReadableLocations` / `thinClientWritableLocations`, the driver automatically prefers gateway 2.0 for eligible operations (per §3.4). No user opt-in required.
-- **Operator override** — `CosmosClientOptions::gateway20_disabled` (default `false`) is a public, documented setting for forcing standard-gateway routing per-client. **It carries an explicit warning that flipping it voids Gateway 2.0's latency SLA and impacts 24/7 Microsoft support eligibility for performance regressions.** Intentionally not exposed via env var. See §3.4 for the full normative wording. The legacy `ConnectionPoolOptions::is_gateway20_allowed` bring-up scaffolding is removed in Phase 5; `gateway20_disabled` is the single supported disablement mechanism.
+- **Auto-detection** — When account metadata includes `thinClientReadableLocations` / `thinClientWritableLocations`, the driver automatically prefers gateway 2.0 for eligible operations (per §3.1). No user opt-in required.
+- **Operator override** — `CosmosClientOptions::gateway20_disabled` (default `false`) is a public, documented setting for forcing Gateway V1 routing per-client. **It carries an explicit warning that flipping it voids Gateway 2.0's latency SLA and impacts 24/7 Microsoft support eligibility for performance regressions.** Intentionally not exposed via env var. See §3.2 for the full normative wording. There is no positive-term internal flag; `gateway20_disabled` is the single supported disablement mechanism.
 - **Diagnostics** — `CosmosDiagnostics` should report when a request used gateway 2.0 vs standard gateway (already partially done via `TransportKind::Gateway20`).
 - **User agent** — Update SDK user agent string to indicate gateway 2.0 capability.
 - **EPK cutover** — Replace SDK-side callers of `get_hashed_partition_key_string` with calls into the driver's `EffectivePartitionKey::compute()` / `::compute_range()` (this is the cutover PR #4087 flagged). Gateway 2.0 header injection depends on this being correct for hierarchical-PK containers.
 
 #### Auto-Detection Flow
 
-When account metadata includes `thinClientReadableLocations`, gateway 2.0 is enabled automatically (internal). `CosmosEndpoint` gets `gateway20_url` and `resolve_endpoint()` prefers Gateway 2.0 (per §3.4's single-source-of-truth rule). No user configuration needed — transparent to the caller.
+When account metadata includes `thinClientReadableLocations`, gateway 2.0 is enabled automatically (internal). `CosmosEndpoint` gets `gateway20_url` and `resolve_endpoint()` prefers Gateway 2.0 (per §3.1's single-source-of-truth rule). No user configuration needed — transparent to the caller.
 
 #### Files Changed
 
@@ -507,7 +487,7 @@ When account metadata includes `thinClientReadableLocations`, gateway 2.0 is ena
 EDIT  src/driver_bridge.rs                        — Ensure internal config passes through
 EDIT  src/handler/container_connection.rs         — Route EPK through driver's EffectivePartitionKey::compute()
 EDIT  src/partition_key.rs                        — Update feed_range_from_partition_key call site
-EDIT  src/constants.rs                            — Remove THINCLIENT_PROXY_* constants (relocated to driver crate, no SDK re-export, per §3.6-10)
+EDIT  src/constants.rs                            — Remove THINCLIENT_PROXY_* constants (relocated + renamed to GATEWAY20_* in driver crate, no SDK re-export)
 ```
 
 ---
@@ -579,7 +559,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Bulk | | | Yes | Fan-out CRUD, distinct from Batch |
 | Change feed | | | Yes | LatestVersion, incremental |
 | Retry: 408 timeout | | Yes | | Cross-region for reads, local-only for writes |
-| Retry: 449 Retry-With | | Yes | | Same Gateway 2.0 endpoint, standard backoff, no region switch, no fallback to standard gateway |
+| Retry: 449 Retry-With | | Yes | | Dedicated 449 policy (≤ 3 attempts, exponential backoff, separate budget from 410/Gone), same Gateway 2.0 endpoint, no region switch, no fallback to Gateway V1 |
 | Retry: 503 | | Yes | | Regional failover via existing retry policies |
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
 | Retry: 404 / sub-status 1002 (PartitionKeyRangeGone) | | Yes | | PKRange cache refresh + retry against **remote-preferred** region; assert local-region retry only when no other region available; assert PLF region wins when PLF has pinned the PKRangeId |
@@ -612,8 +592,8 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 ---
 
-## 5. Open Questions
+## 6. Open Questions
 
 - **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW20_ENDPOINT`, `AZURE_COSMOS_GW20_KEY`); pipeline reads endpoint from environment variables.
-- **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`THINCLIENT_RANGE_MIN`, `THINCLIENT_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
+- **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`GATEWAY20_RANGE_MIN`, `GATEWAY20_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
