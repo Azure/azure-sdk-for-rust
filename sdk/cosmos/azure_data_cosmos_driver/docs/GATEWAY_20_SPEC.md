@@ -319,8 +319,6 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 | --- | --- | --- | --- |
 | `x-ms-thinclient-proxy-operation-type` | `THINCLIENT_PROXY_OPERATION_TYPE` (driver) | Numeric operation type | Every Gateway 2.0 request |
 | `x-ms-thinclient-proxy-resource-type` | `THINCLIENT_PROXY_RESOURCE_TYPE` (driver) | Numeric resource type | Every Gateway 2.0 request |
-| `x-ms-thinclient-account-name` | **NEW** — `THINCLIENT_ACCOUNT_NAME` (driver) | Global database account name (e.g., `myacct` from `myacct.documents.azure.com`); region-independent tenant identity. Source: .NET `BaseProxyClientHttpMessageHandler.AccountName` (`/Product/SDK/.net/Microsoft.Azure.Cosmos.Friends/src/BaseProxyClientHttpMessageHandler.cs:20`); value matches `GlobalDatabaseAccountName` (compute-gateway side: `SqlApiOperationHandler.cs:1135`). | Every Gateway 2.0 request |
-| `x-ms-thinclient-regional-account-name` | **NEW** — `THINCLIENT_REGIONAL_ACCOUNT_NAME` (driver) | Region-stamped document-service identity, format `<account-id>-<location-no-spaces>` lowercase (e.g., `myacct-eastus`). Source: .NET `BaseProxyClientHttpMessageHandler.RegionalAccountName` (`BaseProxyClientHttpMessageHandler.cs:22`); value matches `DocumentServiceId`; region-format derivation matches `AdminEndpointActions.cs:6236-6237`. | Every Gateway 2.0 request |
 | `x-ms-effective-partition-key` | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver) | Canonical EPK hex | Point ops only |
 | `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
 | `x-ms-thinclient-range-min` | **NEW** — `THINCLIENT_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
@@ -329,15 +327,7 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 
 Per Q3 resolution, the Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` (it does **not** accept `x-ms-start-epk` / `x-ms-end-epk`). Phase 2 introduces the new constants above; the existing `START_EPK` / `END_EPK` constants are not emitted on the Gateway 2.0 path.
 
-**Account-name + regional-account-name headers (proxy tenant routing)**: both `x-ms-thinclient-account-name` and `x-ms-thinclient-regional-account-name` are emitted on **every** Gateway 2.0 request (point, feed, batch, bulk, change feed, etc.) — this is the established proxy contract today, not future-proofing. The proxy uses the two headers in tandem:
-
-- **Account-name** identifies the tenant (which Cosmos account this request belongs to) so the proxy can look up the correct backend federation. Region-independent.
-- **Regional-account-name** pins the request to a specific regional document-service / compute-gateway federation. This is required because globally-distributed accounts have one federation per region — writes must land in the write region while reads can stay local — so the proxy must know not just *which account* but also *which physical regional federation* to route to without re-resolving on every request.
-
-Source values:
-
-- Account-name = the host label of the account endpoint URL (the `myacct` portion of `myacct.documents.azure.com`), parsed once at client construction.
-- Regional-account-name = `<account-host-label>-<region-name>` lowercase, where `region-name` is the location string of the target `CosmosEndpoint` (e.g., `myacct-eastus`). The Rust driver's per-`CosmosEndpoint` region context (already maintained by the PLF / preferred-region machinery) is the natural source.
+**Tenant identification (RNTBD token, not HTTP header)**: the proxy identifies the target Cosmos account from the existing RNTBD `GlobalDatabaseAccountName` token (`0x00CE`, `String`, optional) carried inside the RNTBD metadata stream on **every** Gateway 2.0 request. No Gateway-2.0-specific HTTP headers are introduced for account or regional-account identification — the RNTBD token is the canonical carrier and matches the Java/.NET wire contract. The value is the global database account name (e.g., `myacct` from `myacct.documents.azure.com`), parsed once from the account endpoint URL at client construction.
 
 #### Consistency header reconciliation (`ConsistencyLevel` ↔ `ReadConsistencyStrategy`)
 
@@ -400,7 +390,7 @@ When `transport_mode == Gateway20`:
 
 1. Set `x-ms-thinclient-proxy-operation-type` (numeric operation type)
 2. Set `x-ms-thinclient-proxy-resource-type` (numeric resource type)
-3. Set `x-ms-thinclient-account-name` (account host label) **and** `x-ms-thinclient-regional-account-name` (`<account>-<region>` lowercase, sourced from the active `CosmosEndpoint`'s region) — every request, see "Account-name + regional-account-name headers" note above
+3. Serialize the `GlobalDatabaseAccountName` RNTBD metadata token (`0x00CE`, `String`, optional) with the account host label (e.g., `myacct`) — every request, see "Tenant identification" note above
 4. Point op or single-logical-partition query op? Set `x-ms-effective-partition-key` (EPK hash from `EffectivePartitionKey::compute()`).
    Cross-partition feed / query operation? Set `x-ms-thinclient-range-min` and `x-ms-thinclient-range-max` (from `EffectivePartitionKey::compute_range()`); do **not** emit the PK header on the feed path.
 5. Serialize the **already-reconciled** consistency value (per "Consistency header reconciliation" above) into the appropriate RNTBD metadata token: `ConsistencyLevel` token if RCS resolved to `Default`, OR the `ReadConsistencyStrategy` token (`0x00F0`, Byte) if RCS resolved to a non-Default value. Emit exactly one of the two — never both. The serializer consumes the resolved value as input; do not re-run resolution here.
@@ -573,7 +563,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | EPK computation | Yes | | | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count) |
 | Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts StoredProc Execute is rejected |
 | Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
-| Account-name + regional-account-name headers | Yes | | | Both `x-ms-thinclient-account-name` (account host label) and `x-ms-thinclient-regional-account-name` (`<account>-<region>` lowercase, matching the active `CosmosEndpoint` region) present on every Gateway 2.0 request (point, feed, batch, bulk, change feed). Multi-region client: assert regional value changes when the active endpoint switches regions. |
+| Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
 | SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `(PartitionMerge \| IgnoreUnknownRntbdTokens)`, **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
