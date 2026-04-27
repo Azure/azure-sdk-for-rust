@@ -14,6 +14,10 @@ parameters:
   displayName: Run live tests
   type: boolean
   default: false
+- name: release_azure_storage_common
+  displayName: azure_storage_common
+  type: boolean
+  default: false
 - name: release_azure_storage_blob
   displayName: azure_storage_blob
   type: boolean

@@ -39,9 +39,6 @@ pub struct KeyClientDeleteKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::encrypt()`](crate::generated::clients::KeyClient::encrypt())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientEncryptOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -206,9 +203,6 @@ pub struct KeyClientRotateKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::sign()`](crate::generated::clients::KeyClient::sign())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientSignOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -247,9 +241,6 @@ pub struct KeyClientVerifyOptions<'a> {
 /// Options to be passed to [`KeyClient::wrap_key()`](crate::generated::clients::KeyClient::wrap_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientWrapKeyOptions<'a> {
-    /// The version of the key.
-    pub key_version: Option<String>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

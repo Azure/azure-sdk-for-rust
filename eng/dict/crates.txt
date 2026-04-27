@@ -14,7 +14,6 @@ azure_core_opentelemetry
 azure_core_test
 azure_core_test_macros
 azure_data_cosmos
-azure_data_cosmos_driver
 azure_identity
 azure_messaging_eventhubs
 azure_messaging_eventhubs_checkpointstore_blob
@@ -25,10 +24,12 @@ azure_security_keyvault_secrets
 azure_security_keyvault_test
 azure_storage_blob
 azure_storage_blob_test
+azure_storage_common
 azure_storage_queue
 base64
 bytes
 cargo_metadata
+cbindgen
 clap
 criterion
 dotenvy
@@ -64,8 +65,6 @@ opentelemetry_sdk
 opentelemetry_stdout
 opentelemetry-appender-tracing
 opentelemetry-stdout
-percent_encoding
-percent-encoding
 pin_project
 pin-project
 proc_macro2
@@ -78,7 +77,8 @@ rand_chacha
 reqwest
 rust_decimal
 rustc_version
-rustls
+rustdoc_types
+rustdoc-types
 rustls_symcrypt
 rustls-symcrypt
 serde
@@ -94,6 +94,7 @@ tar
 thiserror
 time
 tokio
+toml
 tracing
 tracing_subscriber
 tracing-subscriber
@@ -103,7 +104,5 @@ typespec_macros
 ureq
 url
 uuid
-webpki_roots
-webpki-roots
 zerofrom
 zip

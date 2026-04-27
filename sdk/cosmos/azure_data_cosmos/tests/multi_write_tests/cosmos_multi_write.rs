@@ -53,14 +53,13 @@ impl tracing::field::Visit for StringVisitor {
     }
 }
 
-/// Finds log lines from the driver's operation pipeline containing routing decisions.
-///
-/// The driver emits `tracing::debug!(routing_decision = %routing, "routing decision made")`
-/// which includes the resolved region and endpoint URL.
-fn find_upsert_routing_logs(logs: &[String]) -> Vec<String> {
+/// Finds log lines containing the expected operation and returns them
+fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
     logs.iter()
         .filter(|line| {
-            line.contains("azure_data_cosmos_driver") && line.contains("routing decision made")
+            line.contains("azure_data_cosmos::retry_handler")
+                && line.contains("Upsert")
+                && line.contains("Document")
         })
         .cloned()
         .collect()
@@ -87,7 +86,7 @@ fn create_container_and_write_item<'a>(
             .create_container_with_throughput(db_client, properties, throughput)
             .await?;
 
-        // This upsert operation triggers a routing decision log in the driver
+        // This upsert operation should be logged by the retry_handler
         container_client
             .upsert_item(
                 "item1",
@@ -143,7 +142,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // Check that the upsert went to the hub region
     {
         let logs = log_buffer.lock().unwrap();
-        let upsert_logs = find_upsert_routing_logs(&logs);
+        let upsert_logs = find_upsert_document_logs(&logs);
         println!("Hub region upsert logs: {:?}", upsert_logs);
 
         assert!(
@@ -185,7 +184,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // Check that the upsert went to the satellite region
     {
         let logs = log_buffer.lock().unwrap();
-        let upsert_logs = find_upsert_routing_logs(&logs);
+        let upsert_logs = find_upsert_document_logs(&logs);
         println!("Satellite region upsert logs: {:?}", upsert_logs);
 
         assert!(

@@ -19,7 +19,6 @@ use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
-    options::Region,
 };
 
 use super::{
@@ -62,7 +61,6 @@ pub(crate) struct LocationStateStore {
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
-    preferred_regions: Vec<Region>,
     gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -124,7 +122,6 @@ impl Drop for LocationStateStore {
 
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
         account_metadata_cache: Arc<AccountMetadataCache>,
         account_endpoint: AccountEndpoint,
@@ -133,7 +130,6 @@ impl LocationStateStore {
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
         partition_failover_config: PartitionFailoverConfig,
-        preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
         let partition_state = PartitionEndpointState::new(partition_failover_config);
@@ -150,7 +146,6 @@ impl LocationStateStore {
             account_endpoint,
             account_refresh_fn,
             default_endpoint,
-            preferred_regions,
             gateway20_enabled,
             endpoint_unavailability_ttl,
             // TODO(refresh-config): Make refresh interval configurable.
@@ -399,7 +394,6 @@ impl LocationStateStore {
                 default_endpoint.clone(),
                 Some(current.generation),
                 self.gateway20_enabled,
-                &self.preferred_regions,
             );
             // Carry forward unavailability marks from the current state,
             // filtering out entries that have expired past the configured TTL.
@@ -547,7 +541,6 @@ mod tests {
             false,
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
-            Vec::new(),
         );
 
         store
@@ -585,7 +578,6 @@ mod tests {
             false,
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
-            Vec::new(),
         );
 
         store
@@ -617,7 +609,6 @@ mod tests {
             false,
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
-            Vec::new(),
         );
 
         let properties = Arc::new(test_refresh_payload());

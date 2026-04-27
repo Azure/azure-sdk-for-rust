@@ -12,10 +12,7 @@ on:
   reaction: eyes
   roles: all
 
-permissions:
-  issues: read
-  pull-requests: read
-  contents: read
+permissions: read-all
 
 network:
   allowed:
@@ -38,6 +35,7 @@ safe-outputs:
 
 tools:
   bash: false
+  web-fetch:
   github:
     toolsets: [issues, pull_requests]
     # If in a public repo, setting `lockdown: false` allows
@@ -63,7 +61,7 @@ You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.is
 1. Retrieve issue content using `get_issue`
 
    - If the issue is spam, bot-generated, or not actionable, add a one-sentence analysis comment and exit
-   - If the issue has labels or has a parent issue, exit
+   - If the issue is already assigned, has labels, or has a parent issue, exit
 
 2. Use GitHub tools to gather additional context
 
@@ -92,7 +90,6 @@ You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.is
      - `Mgmt` - crates starting with `azure_resourcemanager_` or mentions of ARM or Resource Manager
      - `Service` - REST API or service behavior outside client SDK control
    - Tag issues from users without repo write access as `customer-reported` and `needs-team-attention`
-   - If the issue is already assigned, do not apply `customer-reported`, `needs-triage`, or `needs-team-triage` labels
    - Tag questions (not bug reports or feature requests) with `question`
    - Add `EngSys` service label for issues with scripts, workflows, or pipelines under /eng but not /eng/common
    - Use labels from similar issues for #e99695 colored service labels
@@ -101,7 +98,7 @@ You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.is
      - Strip leading `@` from users and groups when assigning issues
      - Strip leading `%` from labels
      - Add #e99695 colored service labels from `ServiceLabel`
-     - If `Client` is applicable and there are `AzureSDKOwners`, and the issue is not already assigned, use `assign_to_user` to assign a random owner; if only `ServiceOwners` exist, or the issue is already assigned, add `Service Attention` instead
+     - If `Client` is applicable and there are `AzureSDKOwners`, assign to a random owner; if only `ServiceOwners` exist, add `Service Attention`
      - Comment using this template when routing:
 
        ```markdown
@@ -115,12 +112,11 @@ You are a triage assistant for GitHub issues. Analyze issue #${{ github.event.is
 
 6. Apply selected labels
 
-   - Use `add_labels` to apply labels; use `remove_labels` if any labels should be removed
+   - Use `update_issue` to apply labels
    - Do not apply labels if none clearly apply
-   - If the issue is already assigned, do not apply `needs-triage` or `needs-team-triage`
    - Do not add comments beyond the markdown templates above
 
-7. Use `add_comment` to add an issue comment with your analysis
+7. Add an issue comment with your analysis
 
    - Start with "🎯 Agentic Issue Triage"
    - Brief summary of the issue

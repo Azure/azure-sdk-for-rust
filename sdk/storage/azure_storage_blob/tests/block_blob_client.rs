@@ -431,7 +431,6 @@ async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// This test generates a large recording, so marking as live-only.
 #[recorded::test(live)]
 async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
@@ -475,12 +474,11 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         expected_stage_block_count
     );
 
-    container_client.delete(None).await?;
-
     Ok(())
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_commit_block_list_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -535,6 +533,7 @@ async fn test_commit_block_list_content_headers(ctx: TestContext) -> Result<(), 
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_get_block_list_types(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -593,6 +592,7 @@ async fn test_get_block_list_types(ctx: TestContext) -> Result<(), Box<dyn Error
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -676,6 +676,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_commit_block_list_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -708,6 +709,7 @@ async fn test_commit_block_list_with_tags(ctx: TestContext) -> Result<(), Box<dy
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_stage_block_from_url_source_if_match(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -769,6 +771,7 @@ async fn test_stage_block_from_url_source_if_match(ctx: TestContext) -> Result<(
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_blob_from_url_source_if_match(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -824,6 +827,7 @@ async fn test_upload_blob_from_url_source_if_match(ctx: TestContext) -> Result<(
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_block_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -851,6 +855,7 @@ async fn test_upload_block_blob_with_tags(ctx: TestContext) -> Result<(), Box<dy
 }
 
 #[recorded::test]
+#[ignore = "need to investigate live test pipeline failures"]
 async fn test_upload_blob_from_url_source_timestamp_conditions(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {

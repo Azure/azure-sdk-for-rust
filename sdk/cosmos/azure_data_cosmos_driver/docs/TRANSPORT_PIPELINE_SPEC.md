@@ -2877,7 +2877,7 @@ azure_core = { workspace = true, features = ["hmac_rust"] }
 
 [dev-dependencies]
 # Concrete implementations for testing:
-azure_core = { workspace = true, features = ["reqwest"] }
+azure_core = { workspace = true, features = ["reqwest_native_tls"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 ```
 

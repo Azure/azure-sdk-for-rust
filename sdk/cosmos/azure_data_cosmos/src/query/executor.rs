@@ -3,32 +3,28 @@
 
 //! Query execution implementation.
 
-use std::{collections::HashMap, sync::Arc};
-
-use azure_core::http::headers::{HeaderName, HeaderValue};
-use azure_data_cosmos_driver::{
-    models::{CosmosOperation, SessionToken},
-    options::OperationOptions as DriverOperationOptions,
-    CosmosDriver,
+use azure_core::http::{
+    headers::{Header, Headers},
+    Context,
 };
 use serde::de::DeserializeOwned;
+use std::sync::Arc;
 
-use crate::{constants, driver_bridge, feed::FeedBody, Query, QueryFeedPage};
+use crate::{
+    constants, cosmos_request::CosmosRequest, cosmos_request::CosmosRequestBuilder, feed::FeedBody,
+    operation_context::OperationType, pipeline::GatewayPipeline, resource_context::ResourceLink,
+    Query, QueryFeedPage,
+};
 
-/// A query executor that sends queries through the Cosmos driver.
+/// A query executor that sends queries directly to the gateway endpoint.
 ///
-/// This executor handles pagination via continuation tokens and works for
-/// item queries (with partition key), database queries, and container queries.
-/// The `operation_factory` closure produces the appropriate `CosmosOperation`
-/// for each page request.
+/// This executor does not support cross-partition queries and requires a partition key to be specified.
 pub struct QueryExecutor<T: DeserializeOwned + Send> {
-    driver: Arc<CosmosDriver>,
-    operation_factory: Box<dyn Fn() -> CosmosOperation + Send>,
+    http_pipeline: Arc<GatewayPipeline>,
+    items_link: ResourceLink,
+    context: Context<'static>,
     query: Query,
-    query_body: Option<Vec<u8>>,
-    base_options: DriverOperationOptions,
-    base_headers: HashMap<HeaderName, HeaderValue>,
-    session_token: Option<SessionToken>,
+    base_headers: Headers,
     continuation: Option<String>,
     complete: bool,
     // Why is our phantom type a function? Because that represents how we _use_ the type T.
@@ -41,29 +37,18 @@ pub struct QueryExecutor<T: DeserializeOwned + Send> {
 
 impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub(crate) fn new(
-        driver: Arc<CosmosDriver>,
-        operation_factory: impl Fn() -> CosmosOperation + Send + 'static,
+        http_pipeline: Arc<GatewayPipeline>,
+        items_link: ResourceLink,
+        context: Context<'static>,
         query: Query,
-        base_options: DriverOperationOptions,
-        session_token: Option<SessionToken>,
+        base_headers: Headers,
     ) -> Self {
-        // Pre-build the static headers that are the same for every page:
-        // user-provided custom headers + query-specific constants.
-        let mut base_headers = base_options.custom_headers().cloned().unwrap_or_default();
-        base_headers.insert(constants::QUERY.clone(), HeaderValue::from_static("True"));
-        base_headers.insert(
-            azure_core::http::headers::CONTENT_TYPE,
-            HeaderValue::from_static("application/query+json"),
-        );
-
         Self {
-            driver,
-            operation_factory: Box::new(operation_factory),
+            http_pipeline,
+            items_link,
+            context,
             query,
-            query_body: None,
-            base_options,
             base_headers,
-            session_token,
             continuation: None,
             complete: false,
             phantom: std::marker::PhantomData,
@@ -89,42 +74,28 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             return Ok(None);
         }
 
-        // Build a fresh operation for this page
-        let mut operation = (self.operation_factory)();
+        // Build CosmosRequest for this page
+        let mut builder = create_query_cosmos_request_builder(&self.items_link, &self.query)?;
 
-        // Serialize the query body on the first page and cache it for subsequent pages.
-        if self.query_body.is_none() {
-            self.query_body = Some(serde_json::to_vec(&self.query)?);
-        }
-        operation = operation.with_body(self.query_body.clone().unwrap());
-
-        // The explicit session token serves as an initial hint; the driver's
-        // internal session manager captures response tokens and applies them
-        // to subsequent requests automatically.
-        if let Some(session_token) = &self.session_token {
-            operation = operation.with_session_token(session_token.clone());
+        // Apply base headers
+        for (name, value) in self.base_headers.clone() {
+            builder = builder.header(name, value);
         }
 
-        // Clone the pre-built static headers and add the continuation token
-        // (the only header that changes between pages).
-        let mut headers = self.base_headers.clone();
+        // Apply continuation token if present
         if let Some(continuation) = &self.continuation {
-            headers.insert(
-                constants::CONTINUATION.clone(),
-                HeaderValue::from(continuation.clone()),
-            );
+            builder = builder.header(constants::CONTINUATION, continuation.clone());
         }
 
-        let op_options = self.base_options.clone().with_custom_headers(headers);
+        let cosmos_request = builder.build()?;
 
-        // Execute through the driver
-        let driver_response = self.driver.execute_operation(operation, op_options).await?;
+        // Send through the pipeline
+        let resp = self
+            .http_pipeline
+            .send::<FeedBody<T>>(cosmos_request, self.context.to_borrowed())
+            .await?;
 
-        // Bridge driver response to SDK types
-        let cosmos_response =
-            driver_bridge::driver_response_to_cosmos_response::<FeedBody<T>>(driver_response);
-
-        let page = QueryFeedPage::<T>::from_response(cosmos_response).await?;
+        let page = QueryFeedPage::<T>::from_response(resp).await?;
 
         match page.continuation() {
             Some(token) => self.continuation = Some(token.to_string()),
@@ -133,4 +104,18 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
 
         Ok(Some(page))
     }
+}
+
+fn create_query_cosmos_request_builder(
+    items_link: &ResourceLink,
+    query: &Query,
+) -> azure_core::Result<CosmosRequestBuilder> {
+    let builder = CosmosRequest::builder(OperationType::Query, items_link.clone())
+        .header(constants::QUERY, "True")
+        .header(
+            constants::QUERY_CONTENT_TYPE.name(),
+            constants::QUERY_CONTENT_TYPE.value(),
+        )
+        .json(query);
+    Ok(builder)
 }

@@ -19,7 +19,7 @@ use azure_security_keyvault_certificates::{
     CertificateClient, CertificateClientOptions, ResourceExt as _,
 };
 use azure_security_keyvault_keys::{
-    models::{KeyClientSignOptions, SignParameters, SignatureAlgorithm},
+    models::{SignParameters, SignatureAlgorithm},
     KeyClient, KeyClientOptions,
 };
 use azure_security_keyvault_test::Retry;
@@ -357,14 +357,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         value: Some(digest),
     };
     let signature = key_client
-        .sign(
-            NAME,
-            body.try_into()?,
-            Some(KeyClientSignOptions {
-                key_version: Some(certificate_version.clone()),
-                ..Default::default()
-            }),
-        )
+        .sign(NAME, &certificate_version, body.try_into()?, None)
         .await?
         .into_model()?;
     assert!(signature.result.is_some());

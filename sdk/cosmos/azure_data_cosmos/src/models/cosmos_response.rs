@@ -50,12 +50,10 @@ impl<T> CosmosResponse<T> {
         }
     }
 
-    /// Creates a `CosmosResponse` from a typed response and pre-parsed driver headers.
+    /// Creates a `CosmosResponse` from a typed response and pre-parsed headers.
     ///
-    /// Used by the driver bridge to avoid double-parsing response headers.
-    /// The driver already decodes headers (e.g., base64 for index metrics),
-    /// so re-parsing from raw headers would fail on values that are no longer
-    /// in their wire format.
+    /// Used by the driver bridge to avoid re-parsing headers that were already
+    /// parsed by the driver pipeline.
     pub(crate) fn from_driver_response(
         response: Response<T>,
         cosmos_headers: CosmosResponseHeaders,

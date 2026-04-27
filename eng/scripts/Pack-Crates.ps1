@@ -1,23 +1,16 @@
 #!/usr/bin/env pwsh
 
 #Requires -Version 7.0
-[CmdletBinding(DefaultParameterSetName = 'ManifestDir')]
+[CmdletBinding(DefaultParameterSetName = "none")]
 param(
-  [Parameter(Position = 0, ParameterSetName = 'ManifestDir')]
-  [string[]] $ManifestDir,
-
-  [string] $OutputPath,
-
-  [Parameter(ParameterSetName = 'PackageName')]
-  [alias('PackageNames')]
-  [string[]] $PackageName,
-
+  [string]$OutputPath,
+  [Parameter(ParameterSetName = 'Named')]
+  [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
-  [string] $PackageInfoDirectory,
-
-  [switch] $Release,
-  [switch] $NoVerify,
-  [string] $OutBuildOrderFile
+  [string]$PackageInfoDirectory,
+  [switch]$Release,
+  [switch]$NoVerify,
+  [string]$OutBuildOrderFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,13 +23,16 @@ Packing crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
-if ($ManifestDir) {
-  [string[]] $script:manifestPath = Join-Path $ManifestDir 'Cargo.toml' -Resolve
-}
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
-  [string[]] $outputPackageNames = Get-OutputPackageNames $packages
+  $outputPackageNames = Get-OutputPackageNames $packages
+
+  # Force array in instances of a single package name
+  if ($outputPackageNames -isnot [array]) {
+    $outputPackageNames = @($outputPackageNames)
+  }
+
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
 
   if ($Release) {
@@ -60,33 +56,24 @@ function Get-PackagesToBuild() {
   return $packagesToBuild
 }
 
-function Get-OutputPackageNames($packages) {
+function Get-OutputPackageNames($workspacePackages) {
   $names = @()
-  switch ($PSCmdlet.ParameterSetName) {
-    # Falls through to default case if empty.
-    { $ManifestDir } {
-      LogDebug "Packing manifest(s) '$( $manifestPath -join "', '" )' and dependencies"
-      $names = $packages.Where({ $_.manifest_path -in $manifestPath }).name
-    }
-
-    'PackageName' {
-      LogDebug "Packing package(s) '$( $PackageName -join "', '" )' and dependencies"
-      $names = $PackageName
+  switch ($PsCmdlet.ParameterSetName) {
+    'Named' {
+      $names = $PackageNames
     }
 
     'PackageInfo' {
-      LogDebug "Packing packages from '$PackageInfoDirectory'"
       $names = Get-PackageNamesFromPackageInfo $PackageInfoDirectory
     }
 
     default {
-      LogDebug "Packing all packages in workspace"
-      return $packages.name
+      return $workspacePackages.name
     }
   }
 
   foreach ($name in $names) {
-    if (-not $packages.name.Contains($name)) {
+    if (-not $workspacePackages.name.Contains($name)) {
       Write-Error "Package '$name' is not in the workspace or does not publish"
       exit 1
     }

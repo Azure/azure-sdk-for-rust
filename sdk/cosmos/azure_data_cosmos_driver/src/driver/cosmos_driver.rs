@@ -772,7 +772,6 @@ impl CosmosDriver {
             runtime.connection_pool().is_gateway20_allowed(),
             endpoint_unavailability_ttl,
             partition_failover_config,
-            options.preferred_regions().to_vec(),
         ));
 
         // Spawn the background failback loop for partition-level overrides.
@@ -1922,8 +1921,7 @@ mod tests {
         .unwrap();
 
         assert!(factory.configs().iter().any(|config| {
-            matches!(config.version_policy, HttpVersionPolicy::Http11Only)
-                && config.allow_invalid_cert
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
         }));
     }
 
@@ -1965,8 +1963,7 @@ mod tests {
         assert_eq!(version, TransportHttpVersion::Http11);
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert!(factory.configs().iter().any(|config| {
-            matches!(config.version_policy, HttpVersionPolicy::Http11Only)
-                && config.allow_invalid_cert
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
         }));
     }
 
