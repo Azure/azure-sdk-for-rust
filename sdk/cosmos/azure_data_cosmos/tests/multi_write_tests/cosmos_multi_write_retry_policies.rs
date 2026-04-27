@@ -93,7 +93,9 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item_id, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -189,7 +191,9 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
             let item_id = format!("Item-{}", unique_id);
 
             // Write should fail with 408 — no cross-region retry for writes
-            let result = fault_container_client.create_item(&pk, &item_id, &item, None).await;
+            let result = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
 
             let err = result.expect_err("write should fail with 408 and not retry across regions");
             assert_eq!(
@@ -265,7 +269,9 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             let item_id = format!("Item-{}", unique_id);
 
             // Upsert should fail with 408 — no cross-region retry for writes
-            let result = fault_container_client.upsert_item(&pk, &item_id, &item, None).await;
+            let result = fault_container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await;
 
             let err = result.expect_err("upsert should fail with 408 and not retry across regions");
             assert_eq!(
@@ -337,7 +343,9 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item_id, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -420,7 +428,9 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item_id, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -510,7 +520,9 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let item_id = format!("Item-{}", unique_id);
 
             // Create the item first via the non-fault client
-            container_client.create_item(&pk, &item_id, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -602,7 +614,9 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             let item_id = format!("Item-{}", unique_id);
 
             // Create the item first via the non-fault client
-            container_client.create_item(&pk, &item_id, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()

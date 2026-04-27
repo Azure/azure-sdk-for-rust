@@ -135,7 +135,9 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition@1-{}", unique_id);
             let item_id = format!("Item@1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -257,7 +259,9 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let create_response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -316,7 +320,9 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let upsert_response = container_client.upsert_item(&pk, &item_id, &item, None).await?;
+            let upsert_response = container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &upsert_response,
                 StatusCode::Created,
@@ -367,7 +373,9 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let create_response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -521,7 +529,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -613,7 +623,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -705,7 +717,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -739,7 +753,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             );
 
             //Add item again for second delete test
-            let create_response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -962,7 +978,9 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
             let item_id = format!("dup-{}", unique_id);
 
             // First create should succeed.
-            let response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -971,7 +989,9 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
             );
 
             // Second create of the same item should fail with 409 Conflict.
-            let result = container_client.create_item(&pk, &item_id, &item, None).await;
+            let result = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
             assert_eq!(
                 Some(StatusCode::Conflict),
                 result
@@ -1061,7 +1081,9 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
             let pk = format!("pk-{}", unique_id);
             let item_id = format!("meta-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item_id, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_eq!(response.status(), StatusCode::Created);
 
             // Session token must be present for session consistency.

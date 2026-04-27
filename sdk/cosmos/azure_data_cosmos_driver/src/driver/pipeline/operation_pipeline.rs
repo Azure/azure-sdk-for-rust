@@ -1263,8 +1263,7 @@ mod tests {
     fn build_transport_request_sets_is_upsert_header() {
         let container = test_container();
         let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
-        let operation = CosmosOperation::upsert_item(item)
-            .with_body(b"{}".to_vec());
+        let operation = CosmosOperation::upsert_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
@@ -1290,8 +1289,7 @@ mod tests {
     fn build_transport_request_omits_is_upsert_header_for_create() {
         let container = test_container();
         let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
-        let operation = CosmosOperation::create_item(item)
-            .with_body(b"{}".to_vec());
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());

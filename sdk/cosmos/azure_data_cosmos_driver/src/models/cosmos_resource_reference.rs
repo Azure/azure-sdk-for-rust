@@ -158,11 +158,6 @@ impl CosmosResourceReference {
         self
     }
 
-    /// Returns the item identifier (name), if this reference has one.
-    pub(crate) fn item_id(&self) -> Option<&str> {
-        self.id.as_ref().and_then(|id| id.name())
-    }
-
     /// Computes paths treating this reference as a feed operation.
     ///
     /// Used by Create and Upsert which carry an [`ItemReference`] (with an

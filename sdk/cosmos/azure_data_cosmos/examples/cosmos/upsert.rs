@@ -50,7 +50,9 @@ impl UpsertCommand {
             None
         };
 
-        let response = container_client.upsert_item(pk, &self.item_id, item, options).await?;
+        let response = container_client
+            .upsert_item(pk, &self.item_id, item, options)
+            .await?;
         println!("Item updated successfully");
 
         if self.show_updated {

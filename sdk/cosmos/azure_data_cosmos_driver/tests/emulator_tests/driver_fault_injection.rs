@@ -104,7 +104,9 @@ pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), 
             .await?;
 
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-        context.create_item(&container, "item1", "pk1", item_json).await?;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
 
         // With probability 1.0, the read should fail
         let read_result = context.read_item(&container, "item1", "pk1").await;
@@ -305,7 +307,9 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
             .await?;
 
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-        context.create_item(&container, "item1", "pk1", item_json).await?;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
 
         // With a connection error injected, the read should fail
         let read_result = context.read_item(&container, "item1", "pk1").await;

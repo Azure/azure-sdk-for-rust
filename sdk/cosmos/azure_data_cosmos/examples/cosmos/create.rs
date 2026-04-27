@@ -99,7 +99,9 @@ impl CreateCommand {
                     None
                 };
 
-                let response = container_client.create_item(pk, &item_id, item, options).await?;
+                let response = container_client
+                    .create_item(pk, &item_id, item, options)
+                    .await?;
 
                 println!("Created item successfully");
 
