@@ -1,58 +1,58 @@
 ---
 description: |
-  Intelligent issue triage assistant that processes new issues.
-  Analyzes issue content, evaluates whether the author is an external customer,
-  predicts category and service labels, looks up owners from CODEOWNERS, and
-  posts an analysis comment. Implements the initial issue triage rules for the
-  Azure SDK for Rust repository.
+    Intelligent issue triage assistant that processes new issues.
+    Analyzes issue content, evaluates whether the author is an external customer,
+    predicts category and service labels, looks up owners from CODEOWNERS, and
+    posts an analysis comment. Implements the initial issue triage rules for the
+    Azure SDK for Rust repository.
 
 on:
-  issues:
-    types: [opened]
-  reaction: eyes
-  roles: all
+    issues:
+        types: [opened]
+    reaction: eyes
+    roles: all
 
 permissions:
-  issues: read
-  pull-requests: read
-  contents: read
+    issues: read
+    pull-requests: read
+    contents: read
 
 network:
-  allowed:
-    - github
-    - threat-detection
-  blocked:
-    - registry.npmjs.org
+    allowed:
+        - github
+        - threat-detection
+    blocked:
+        - registry.npmjs.org
 
 safe-outputs:
-  report-failure-as-issue: false
-  add-labels:
-    max: 7
-    target: "*"
-  remove-labels:
-    max: 7
-    target: "*"
-  add-comment:
-    max: 2
-    target: "*"
-  assign-to-user:
-    max: 1
-    target: "*"
-  noop:
-    report-as-issue: false
+    report-failure-as-issue: true
+    add-labels:
+        max: 7
+        target: "*"
+    remove-labels:
+        max: 7
+        target: "*"
+    add-comment:
+        max: 2
+        target: "*"
+    assign-to-user:
+        max: 1
+        target: "*"
+    noop:
+        report-as-issue: false
 
 tools:
-  bash: false
-  github:
-    toolsets: [issues, pull_requests]
-    # If in a public repo, setting `lockdown: false` allows
-    # reading issues, pull requests and comments from 3rd-parties.
-    # If in a private repo this has no particular effect.
-    lockdown: false
-    # Allow the agent to read issue content from any author,
-    # including external users with no repo affiliation.
-    allowed-repos: [azure/azure-sdk-for-rust]
-    min-integrity: none
+    bash: false
+    github:
+        toolsets: [issues, pull_requests]
+        # If in a public repo, setting `lockdown: false` allows
+        # reading issues, pull requests and comments from 3rd-parties.
+        # If in a private repo this has no particular effect.
+        lockdown: false
+        # Allow the agent to read issue content from any author,
+        # including external users with no repo affiliation.
+        allowed-repos: [azure/azure-sdk-for-rust]
+        min-integrity: none
 
 timeout-minutes: 10
 source: githubnext/agentics/workflows/issue-triage.md@8e6d7c86bba37371d2d0eee1a23563db3e561eb5
@@ -86,7 +86,7 @@ Note: The gh-aw runtime provides additional baseline defenses including the XPIA
 
 ## Step 1: Retrieve and Validate the Issue
 
-The issue number is `${{ github.event.issue.number }}`. Pass it as `item_number` to `add-labels`, `remove-labels`, and `add-comment`, and as `issue_number` to `assign-to-user`.
+The issue number is `${{ github.event.issue.number }}`. Pass it as `item_number` to `add_labels`, `remove_labels`, and `add_comment`, and as `issue_number` to `assign_to_user`.
 
 Retrieve the issue using `get_issue`.
 
@@ -146,17 +146,17 @@ All issues reaching this step proceed through label prediction and ownership rou
 Labels are distinguished by color. Actively inspect label colors when examining repository labels and previous issues:
 
 - **Category label** (color #ffeb77): exactly one of `Client`, `Mgmt`, or `Service`.
-  - `Client` — crates that do NOT start with `azure_resourcemanager_` (e.g., `azure_core`, `azure_identity`, `azure_security_keyvault_secrets`, `azure_storage_blob`).
-  - `Mgmt` — crates that start with `azure_resourcemanager_`, or any mention of ARM or Azure Resource Manager.
-  - `Service` — issues with the REST API or Azure service behavior outside SDK control.
+    - `Client` — crates that do NOT start with `azure_resourcemanager_` (e.g., `azure_core`, `azure_identity`, `azure_security_keyvault_secrets`, `azure_storage_blob`).
+    - `Mgmt` — crates that start with `azure_resourcemanager_`, or any mention of ARM or Azure Resource Manager.
+    - `Service` — issues with the REST API or Azure service behavior outside SDK control.
 - **Service label** (color #e99695): exactly one label identifying the Azure service. Match the service directory name under `sdk/<service>/`, for example:
-  - `sdk/storage/...` → `Storage`.
-  - `sdk/identity/...` → `Azure.Identity`.
-  - `sdk/core/...` → `Azure.Core`.
-  - `sdk/keyvault/...` → `KeyVault`.
-  - `sdk/cosmos/...` → `Cosmos`.
-  - `sdk/eventhubs/...` → `Event Hubs`.
-  - Engineering-system issues (scripts, workflows, pipelines under `/eng` but NOT under `/eng/common`) → service `EngSys`.
+    - `sdk/storage/...` → `Storage`.
+    - `sdk/identity/...` → `Azure.Identity`.
+    - `sdk/core/...` → `Azure.Core`.
+    - `sdk/keyvault/...` → `KeyVault`.
+    - `sdk/cosmos/...` → `Cosmos`.
+    - `sdk/eventhubs/...` → `Event Hubs`.
+    - Engineering-system issues (scripts, workflows, pipelines under `/eng` but NOT under `/eng/common`) → service `EngSys`.
 
 ### Excluded Category Labels
 
@@ -215,16 +215,15 @@ CODEOWNERS contains `# ServiceLabel: %<Label>` entries that associate one or mor
 # ServiceOwners: @svcowner1 @svcowner2
 ```
 
-**Matching uses bottom-to-top scanning with first-match-wins semantics:**
+**Matching uses last-match-wins semantics:**
 
-1. Start from the END of CODEOWNERS and scan upward.
-2. For each `# ServiceLabel:` entry, check if ALL labels listed in it (after each `%`) are present in the issue's predicted labels.
-3. STOP at the first entry where all its labels match — this is the matching entry.
-4. Use the AzureSDKOwners and/or ServiceOwners from that entry and any adjacent owner lines.
+1. For each `# ServiceLabel:` entry, check if ALL labels listed in it (after each `%`) are present in the issue's predicted labels.
+2. If multiple entries match, the last (bottom-most) matching entry in the file is selected.
+3. Use the AzureSDKOwners and/or ServiceOwners from that entry and any adjacent owner lines.
 
 Notes specific to this repository:
 
-- Owner lines may use either `# AzureSdkOwners:` or `# AzureSDKOwners:` (capital "SDK") — treat both identically.
+- Comment labels like `AzureSDKOwners` are case-insensitive.
 - `# PRLabel:` entries apply to pull request labeling; for issue triage rely on `# ServiceLabel:` entries only.
 - Owners may be individual users (`@username`) or GitHub teams (`@Azure/team-name`); strip the leading `@` when passing values to safe-outputs that prepend it themselves.
 
@@ -291,7 +290,7 @@ The format depends on whether triage was confident (Standard) or fell back to ma
 - **Affected API:** `<type, function, or component if identifiable>`
 - **Scenario:** <what the user was trying to do>
 - **Root ask:** <what the author needs>
-</details>
+    </details>
 
 <details>
 <summary>🔎 Debugging / Reproduction Notes</summary>
@@ -299,10 +298,11 @@ The format depends on whether triage was confident (Standard) or fell back to ma
 <diagnostic observations about the issue>
 
 **Suggested investigation steps:**
+
 1. <step 1>
 2. <step 2>
 3. <step 3>
-</details>
+ </details>
 
 <details>
 <summary>🏷️ Label Confidence</summary>
@@ -310,7 +310,7 @@ The format depends on whether triage was confident (Standard) or fell back to ma
 - **Category:** `<label>` — <reasoning>
 - **Service:** `<label>` — <reasoning>
 - **Confidence:** <High|Medium|Low> — <justification>
-</details>
+    </details>
 
 <details>
 <summary>👥 Owner Routing</summary>
@@ -319,7 +319,7 @@ The format depends on whether triage was confident (Standard) or fell back to ma
 - **AzureSDKOwners:** <owners or "none listed">
 - **ServiceOwners:** <owners or "none listed">
 - **Routing action:** <what was done>
-</details>
+    </details>
 ```
 
 ### Fallback Comment Format
@@ -335,7 +335,7 @@ Used when `needs-triage` (label prediction failed) or `needs-team-triage` (owner
 - **Candidate labels considered:** <list each candidate category+service label pair evaluated and why each was or wasn't viable>
 - **Confidence blockers:** <which Confidence Criteria were not met>
 - **Outcome:** <"Applied needs-triage — could not confidently predict labels" or similar>
-</details>
+    </details>
 
 <details>
 <summary>👥 Owner Routing</summary>
@@ -344,7 +344,7 @@ Used when `needs-triage` (label prediction failed) or `needs-team-triage` (owner
 - **Matched entry:** <the entry that matched, or "no match found">
 - **Owners found:** <AzureSDKOwners and ServiceOwners from the matched entry, or "none listed">
 - **Outcome:** <routing action taken>
-</details>
+    </details>
 ```
 
 Rules for both formats:
