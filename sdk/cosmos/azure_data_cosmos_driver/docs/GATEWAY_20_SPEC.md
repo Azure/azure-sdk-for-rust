@@ -1,4 +1,4 @@
-<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity footgun cooldown ALPN myacct pushdown analogrelay -->
+<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity cooldown ALPN myacct pushdown analogrelay -->
 # Gateway 2.0 Design Spec for Rust Driver & SDK
 
 **Status**: Draft / Iterating
@@ -383,7 +383,7 @@ The compute gateway rejects requests that carry both `x-ms-consistency-level` AN
 
 When the resolved RCS is `GlobalStrong` and the account default consistency is **not** `Strong`, the driver MUST fail the operation **before** transport selection / serialization with a `BadRequestException`-equivalent (Rust: `azure_core::Error` with the appropriate `ErrorKind`). This avoids a wasted round-trip and matches Java's fail-fast semantics. The check uses the cached account properties already maintained by the driver; no additional metadata fetch is required.
 
-##### Implementation footgun (Java bug class to avoid)
+##### Implementation pitfall (Java bug class to avoid)
 
 Resolution MUST NOT mutate the request's header map in place. The Java fix in `RxGatewayStoreModel.applySessionToken()` switched to a header-map copy because the prior code's mutation rewrote `x-ms-consistency-level` (e.g., `LatestCommitted` was rewritten to `BoundedStaleness`); the gateway then rejected the request because `BoundedStaleness` was stricter than the Session account default. Even though the underlying conflict was real, the diagnostic was unrecoverable because the original headers had already been clobbered.
 
@@ -393,7 +393,7 @@ For Rust: thread the resolved consistency value through the pipeline as an expli
 
 EPK range headers (`x-ms-thinclient-range-min` / `-max`) carry the canonical, un-padded hex produced by `EffectivePartitionKey::compute_range()`. **Do not** zero-pad to N×32 on the wire. Local comparisons use `EffectivePartitionKey`'s `Ord` / `cmp` impl, which correctly handles the mixed-length boundaries returned by the backend; the `epk_cmp_*` tests in `container_routing_map.rs` (around L625–665) pin this behavior. The comparator is consumed via `binary_search_by(|r| r.min_inclusive.cmp(&epk_val))` (≈L282 of the same file). `@analogrelay`'s earlier zero-padding proposal in PR #4087 (commit `25233c903`) was **not** adopted; stay consistent with the length-aware convention.
 
-> **`Range` semantics footgun** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
+> **`Range` semantics pitfall** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
 
 #### Gateway 2.0 Header Injection Flow
 
