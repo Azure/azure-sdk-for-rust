@@ -347,7 +347,7 @@ The Cosmos SDK exposes two consistency knobs that can both target the same read 
 - **`ConsistencyLevel`** — per-request override of the account default consistency.
 - **`ReadConsistencyStrategy`** (defined in `azure_data_cosmos_driver::options::read_consistency`) — read-only strategy override (`Default`, `Eventual`, `Session`, `LatestCommitted`, `GlobalStrong`); supersedes `ConsistencyLevel` on reads.
 
-This subsection is the Rust mirror of the cross-SDK design landed in [Java PR #48787](https://github.com/Azure/azure-sdk-for-java/pull/48787) (with .NET parity in PR #5685 and proxy-side changes coordinated via internal ADO PR #2031635). Wire-format and resolution semantics MUST match Java/.NET so that a single proxy-side validation suite is sufficient.
+This subsection is the Rust mirror of the cross-SDK design landed in [Java PR #48787](https://github.com/Azure/azure-sdk-for-java/pull/48787) (with .NET parity in PR #5685 and matching proxy-side changes). Wire-format and resolution semantics MUST match Java/.NET so that a single proxy-side validation suite is sufficient.
 
 ##### Wire carriers
 
@@ -356,7 +356,7 @@ This subsection is the Rust mirror of the cross-SDK design landed in [Java PR #4
 | Standard Gateway (V1, HTTP) | HTTP request header `x-ms-cosmos-read-consistency-strategy` (per Java `HttpConstants.READ_CONSISTENCY_STRATEGY`) | String, exact case-sensitive values: `"Eventual"`, `"Session"`, `"LatestCommitted"`, `"GlobalStrong"`. Header is omitted entirely when the resolved RCS is `Default`. |
 | Gateway 2.0 (RNTBD) | RNTBD metadata token ID `0x00F0` | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; per the Java PR an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
 
-The byte values are pinned against the proxy's C++ enum (proxy ADO PR #2031635). Phase 1's RNTBD token catalog grows a row for `ReadConsistencyStrategy = 0x00F0 (Byte)` enumerating the four byte values.
+The byte values are pinned against the proxy's C++ enum. Phase 1's RNTBD token catalog grows a row for `ReadConsistencyStrategy = 0x00F0 (Byte)` enumerating the four byte values.
 
 ##### Resolution precedence
 
