@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `item_lsn` field to `CosmosResponseHeaders` for the `x-ms-item-lsn` response header.
+- Added `partition_key_range_id` and `internal_partition_id` fields to `CosmosResponseHeaders` for the `x-ms-documentdb-partitionkeyrangeid` and `x-ms-cosmos-internal-partition-id` response headers. ([#4278](https://github.com/Azure/azure-sdk-for-rust/pull/4278))
 - Added `rustls` feature flag (enabled by default) that configures reqwest with rustls as the TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
 - Added `native_tls` feature flag that configures reqwest with native-tls as the TLS stack. Disable default features and enable `native_tls` to use the platform TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
 
