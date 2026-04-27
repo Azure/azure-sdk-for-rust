@@ -50,6 +50,6 @@ impl Transport {
 impl Default for Transport {
     /// Creates an instance of the `Transport` using the default [`HttpClient`].
     fn default() -> Self {
-        Self::new(clients::new_http_client())
+        Self::new(clients::new_http_client(None))
     }
 }

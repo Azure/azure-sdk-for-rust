@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 //! HTTP client wrapper that evaluates fault injection rules on each request.
 
 use super::result::FaultInjectionResult;
@@ -17,7 +19,7 @@ use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::SubStatusCode;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
-use azure_core::http::headers::Headers;
+use azure_core::http::headers::{HeaderName, Headers};
 use azure_core::http::{RawResponse, StatusCode};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -110,7 +112,7 @@ impl FaultClient {
         if let Some(expected_op) = condition.operation_type() {
             let request_op = request
                 .headers
-                .get_optional_str(&FAULT_INJECTION_OPERATION)
+                .get_optional_str(&HeaderName::from_static(FAULT_INJECTION_OPERATION))
                 .and_then(|s| s.parse::<FaultOperationType>().ok());
             if request_op != Some(expected_op) {
                 return Some(FaultInjectionEvaluation::OperationMismatch {
@@ -264,7 +266,7 @@ impl FaultClient {
 
         let mut headers = Headers::new();
         if let Some(ss) = sub_status {
-            headers.insert(SUBSTATUS.clone(), ss.value().to_string());
+            headers.insert(SUBSTATUS, ss.value().to_string());
         }
         let raw_response = Box::new(RawResponse::from_bytes(
             status_code,
@@ -354,7 +356,7 @@ impl TransportClient for FaultClient {
             // Build a clean request without the fault injection operation header
             // before forwarding to the real transport.
             let mut clean_headers = request.headers.clone();
-            clean_headers.remove(FAULT_INJECTION_OPERATION.clone());
+            clean_headers.remove(FAULT_INJECTION_OPERATION);
 
             // Collector intentionally omitted: evaluations already captured above.
             let clean_request = HttpRequest {
@@ -389,7 +391,10 @@ mod tests {
     use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
-    use azure_core::http::{headers::Headers, Method, Url};
+    use azure_core::http::{
+        headers::{HeaderName, Headers},
+        Method, Url,
+    };
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -739,7 +744,9 @@ mod tests {
                     Some(expected) => {
                         let actual: u32 = response
                             .headers()
-                            .get_as::<u32, std::num::ParseIntError>(&SUBSTATUS)
+                            .get_as::<u32, std::num::ParseIntError>(&HeaderName::from_static(
+                                SUBSTATUS,
+                            ))
                             .unwrap_or_else(|_| {
                                 panic!("{:?} should have x-ms-substatus header", error_type)
                             });
@@ -751,7 +758,9 @@ mod tests {
                         );
                     }
                     None => {
-                        let substatus_header = response.headers().get_optional_str(&SUBSTATUS);
+                        let substatus_header = response
+                            .headers()
+                            .get_optional_str(&HeaderName::from_static(SUBSTATUS));
                         assert!(
                             substatus_header.is_none(),
                             "{:?} should not have x-ms-substatus header",
@@ -858,7 +867,7 @@ mod tests {
         let (mut request, _collector) = create_test_request();
         request
             .headers
-            .insert(FAULT_INJECTION_OPERATION.clone(), "ReadItem");
+            .insert(FAULT_INJECTION_OPERATION, "ReadItem");
 
         let result = fault_client.send(&request).await;
         assert!(

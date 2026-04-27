@@ -348,13 +348,19 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
     .await
 }
 
-/// Test write region retries - inject 503 for primary region, verify cross region retries.
+/// Test that a transport-generated 503 on a non-idempotent write aborts (not retried).
+///
+/// Fault injection simulates transport-level failures (e.g. connection drops) which
+/// produce a synthetic 503/20003 (`TransportGenerated503`). These are distinct from
+/// HTTP-level 503s returned by the service: transport errors on non-idempotent writes
+/// are NOT retried because we cannot know whether the server processed the request.
+/// HTTP-level 503s ARE retried for all operations (see retry_evaluation.rs Block 2).
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Error>> {
+pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
         .build();
@@ -364,7 +370,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
         .with_region(HUB_REGION)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("write-region-503", server_error)
+    let rule = FaultInjectionRuleBuilder::new("write-region-transport-503", server_error)
         .with_condition(condition)
         .with_hit_limit(1)
         .build();
@@ -400,23 +406,14 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
             };
             let pk = format!("Partition-{}", unique_id);
 
-            // Try to create using fault client - should  succeed via retry
+            // Transport-generated 503 on a non-idempotent write (upsert) should NOT
+            // be retried — the driver cannot know if the server processed the request.
             let result = fault_container_client.upsert_item(&pk, &item, None).await;
 
             assert!(
-                result.is_ok(),
-                "Write should succeed via retry, but got error: {:?}",
-                result.err()
+                result.is_err(),
+                "Transport-generated 503 on non-idempotent write should abort, not retry"
             );
-
-            let response = result.unwrap();
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                // Verify the request went to a different endpoint than the faulted one
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to secondary region"
-                );
-            }
 
             Ok(())
         },

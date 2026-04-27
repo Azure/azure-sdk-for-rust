@@ -7,12 +7,12 @@ use crate::{
     clients::ClientContext,
     options::ThroughputControlGroupOptions,
     pipeline::{AuthorizationPolicy, CosmosHeadersPolicy, GatewayPipeline},
-    resource_context::{ResourceLink, ResourceType},
     CosmosAccountReference, CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
-#[cfg(feature = "allow_invalid_certificates")]
-use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation};
+use azure_data_cosmos_driver::options::ConnectionPoolOptions;
+#[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
+use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
 use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 use std::sync::Arc;
 
@@ -86,7 +86,7 @@ pub struct CosmosClientBuilder {
     /// Throughput control groups to register on the driver runtime.
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     allow_emulator_invalid_certificates: bool,
     /// Fault injection builder for testing error handling
     #[cfg(feature = "fault_injection")]
@@ -141,7 +141,7 @@ impl CosmosClientBuilder {
     ///
     /// * `allow` - Whether to accept invalid certificates for emulator connections.
     #[doc(hidden)]
-    #[cfg(feature = "allow_invalid_certificates")]
+    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_emulator_invalid_certificates = allow;
         self
@@ -178,13 +178,26 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets backup endpoints that the client will try when the primary global
-    /// endpoint is unavailable during initialization.
+    /// Sets backup endpoints for resilience when the primary global endpoint
+    /// is unavailable during initialization.
     ///
-    /// If the primary endpoint fails during driver bootstrap, the SDK will try
-    /// each backup endpoint in order until one succeeds. A successful connection
-    /// allows normal service discovery to proceed. Once initialized, regional
-    /// endpoints discovered during bootstrap handle subsequent refreshes.
+    /// # When to use
+    ///
+    /// Configure backup endpoints when you want the client to survive a
+    /// global endpoint outage during startup. Provide at least two regional
+    /// endpoints (e.g., `https://myaccount-eastus.documents.azure.com/`).
+    ///
+    /// This is especially important in **non-public clouds** (sovereign,
+    /// government) where the SDK cannot infer regional endpoints from the
+    /// account name — without backup endpoints, a global endpoint failure
+    /// during bootstrap is unrecoverable.
+    ///
+    /// # Behavior
+    ///
+    /// If the primary endpoint fails during driver bootstrap, the SDK tries
+    /// each backup endpoint in order until one succeeds. Once initialized,
+    /// regional endpoints discovered during bootstrap handle subsequent
+    /// refreshes automatically.
     ///
     /// # Arguments
     ///
@@ -256,7 +269,7 @@ impl CosmosClientBuilder {
                 builder = builder.no_proxy();
             }
 
-            #[cfg(feature = "allow_invalid_certificates")]
+            #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
             if self.allow_emulator_invalid_certificates {
                 builder = builder.danger_accept_invalid_certs(true);
             }
@@ -346,7 +359,7 @@ impl CosmosClientBuilder {
 
         let global_endpoint_manager = GlobalEndpointManager::new(
             endpoint.clone(),
-            preferred_regions,
+            preferred_regions.clone(),
             Vec::new(),
             pipeline_core.clone(),
         );
@@ -400,15 +413,20 @@ impl CosmosClientBuilder {
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
         #[allow(unused_mut)]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
-        #[cfg(feature = "allow_invalid_certificates")]
-        if self.allow_emulator_invalid_certificates {
-            let connection_pool = ConnectionPoolOptions::builder()
-                .with_emulator_server_cert_validation(
-                    EmulatorServerCertValidation::DangerousDisabled,
-                )
-                .build()?;
-            driver_runtime_builder = driver_runtime_builder.with_connection_pool(connection_pool);
+
+        // Forward SDK connection settings to the driver's connection pool.
+        let mut pool_builder = ConnectionPoolOptions::builder();
+        if self.allow_proxy {
+            pool_builder = pool_builder.with_proxy_allowed(true);
         }
+        #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
+        if self.allow_emulator_invalid_certificates {
+            pool_builder = pool_builder.with_emulator_server_cert_validation(
+                EmulatorServerCertValidation::DangerousDisabled,
+            );
+        }
+        driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
+
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =
@@ -425,12 +443,15 @@ impl CosmosClientBuilder {
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
+        let driver_options =
+            azure_data_cosmos_driver::options::DriverOptions::builder(driver_account)
+                .with_preferred_regions(preferred_regions)
+                .build();
         let driver = driver_runtime
-            .get_or_create_driver(driver_account, None)
+            .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
             .await?;
 
         Ok(CosmosClient {
-            databases_link: ResourceLink::root(ResourceType::Databases),
             context: ClientContext {
                 pipeline,
                 driver,

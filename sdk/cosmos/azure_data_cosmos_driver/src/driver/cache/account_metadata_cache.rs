@@ -29,7 +29,7 @@ use std::time::{Duration, Instant};
 pub(crate) struct AccountRegion {
     pub name: Region,
 
-    pub database_account_endpoint: String,
+    pub database_account_endpoint: AccountEndpoint,
 }
 
 /// Describes replica set sizing characteristics for user/system replication policies.

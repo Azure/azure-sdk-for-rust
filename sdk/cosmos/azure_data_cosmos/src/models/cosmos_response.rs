@@ -50,11 +50,16 @@ impl<T> CosmosResponse<T> {
         }
     }
 
-    /// Creates a `CosmosResponse` from a typed response without a request.
+    /// Creates a `CosmosResponse` from a typed response and pre-parsed driver headers.
     ///
-    /// Used for driver-routed operations where no `CosmosRequest` is available.
-    pub(crate) fn from_response(response: Response<T>) -> Self {
-        let cosmos_headers = CosmosResponseHeaders::from_headers(response.headers());
+    /// Used by the driver bridge to avoid double-parsing response headers.
+    /// The driver already decodes headers (e.g., base64 for index metrics),
+    /// so re-parsing from raw headers would fail on values that are no longer
+    /// in their wire format.
+    pub(crate) fn from_driver_response(
+        response: Response<T>,
+        cosmos_headers: CosmosResponseHeaders,
+    ) -> Self {
         let diagnostics = CosmosDiagnostics::from_headers(&cosmos_headers);
         Self {
             response,
@@ -292,6 +297,62 @@ mod tests {
             item_response.etag().map(|e| e.to_string()),
             Some("\"some-etag\"".to_string())
         );
+    }
+
+    #[test]
+    fn item_response_lsn_returns_parsed_value() {
+        let mut headers = Headers::new();
+        headers.insert("lsn", "42");
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let item_response = ItemResponse::new(response);
+        assert_eq!(item_response.lsn(), Some(42));
+    }
+
+    #[test]
+    fn item_response_lsn_returns_none_when_missing() {
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let item_response = ItemResponse::new(response);
+        assert_eq!(item_response.lsn(), None);
+    }
+
+    #[test]
+    fn item_response_item_lsn_returns_parsed_value() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-item-lsn", "37");
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let item_response = ItemResponse::new(response);
+        assert_eq!(item_response.item_lsn(), Some(37));
+    }
+
+    #[test]
+    fn item_response_item_lsn_returns_none_when_missing() {
+        let raw_response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            Bytes::from(r#"{"id":"test","value":1}"#),
+        );
+        let typed_response: Response<TestModel> = raw_response.into();
+        let response = CosmosResponse::new(typed_response, create_mock_request());
+        let item_response = ItemResponse::new(response);
+        assert_eq!(item_response.item_lsn(), None);
     }
 
     #[test]

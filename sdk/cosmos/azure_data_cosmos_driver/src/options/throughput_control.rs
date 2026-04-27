@@ -19,9 +19,11 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-/// Mutable runtime values for a throughput control group.
+/// Runtime settings for a throughput control group.
+///
+/// These settings can be modified at runtime via the group's `set_*` methods.
 #[derive(Clone, Debug, Default)]
-struct MutableValues {
+struct ThroughputControlSettings {
     throughput_bucket: Option<u32>,
     priority_level: Option<PriorityLevel>,
 }
@@ -43,7 +45,7 @@ pub struct ThroughputControlGroupOptions {
     name: ThroughputControlGroupName,
     container: ContainerReference,
     is_default: bool,
-    mutable: Arc<RwLock<MutableValues>>,
+    mutable: Arc<RwLock<ThroughputControlSettings>>,
 }
 
 impl ThroughputControlGroupOptions {
@@ -57,7 +59,7 @@ impl ThroughputControlGroupOptions {
             name: name.into(),
             container,
             is_default,
-            mutable: Arc::new(RwLock::new(MutableValues::default())),
+            mutable: Arc::new(RwLock::new(ThroughputControlSettings::default())),
         }
     }
 

@@ -5,16 +5,18 @@ use std::{
     slice,
     sync::{
         atomic::{AtomicUsize, Ordering},
+        mpsc::Sender,
         Arc,
     },
 };
 
 use async_trait::async_trait;
 use azure_core::{
-    http::StatusCode,
+    error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
+        StatusCode,
     },
     Bytes, Result,
 };
@@ -348,16 +350,40 @@ pub struct TestPolicy {
     on_response: Check<AsyncRawResponse>,
 }
 
+impl Default for TestPolicy {
+    fn default() -> Self {
+        Self {
+            request_scope_counter: Default::default(),
+            response_scope_counter: Default::default(),
+            on_request: Arc::new(|_| Ok(())),
+            on_response: Arc::new(|_| Ok(())),
+        }
+    }
+}
+
 impl TestPolicy {
     pub fn new(
         on_request: Option<Check<Request>>,
         on_response: Option<Check<AsyncRawResponse>>,
     ) -> Self {
         TestPolicy {
-            request_scope_counter: Arc::new(AtomicUsize::new(0)),
-            response_scope_counter: Arc::new(AtomicUsize::new(0)),
             on_request: on_request.unwrap_or(Arc::new(|_| Ok(()))),
             on_response: on_response.unwrap_or(Arc::new(|_| Ok(()))),
+            ..Self::default()
+        }
+    }
+
+    pub fn capture(request_sender: Option<Sender<Request>>) -> Self {
+        TestPolicy {
+            on_request: match request_sender {
+                Some(sender) => Arc::new(move |req| {
+                    sender.send(req.clone()).map_err(|e| {
+                        azure_core::Error::with_error(ErrorKind::Other, e, "Capture failure.")
+                    })
+                }),
+                None => Arc::new(|_| Ok(())),
+            },
+            ..Self::default()
         }
     }
 
@@ -421,5 +447,59 @@ impl std::fmt::Debug for TestPolicy {
             .field("check_request_counter", &self.request_scope_counter)
             .field("check_response_counter", &self.response_scope_counter)
             .finish()
+    }
+}
+
+/// A [`Policy`] that fails (returns an `Io` error) for the first `fail_count` invocations
+/// without forwarding the request downstream, then passes through normally.
+///
+/// This is designed to sit inside the retry loop via `per_try_policies` so that the SDK's
+/// retry infrastructure can be exercised without any real network calls.
+pub struct FailFirstPolicy {
+    fail_count: usize,
+    call_count: Arc<AtomicUsize>,
+}
+
+impl FailFirstPolicy {
+    /// Creates a new `FailFirstPolicy`.
+    ///
+    /// * `fail_count` - number of initial invocations that will return an error.
+    /// * `call_count` - shared counter incremented on every invocation (total, including failures).
+    pub fn new(fail_count: usize, call_count: Arc<AtomicUsize>) -> Self {
+        Self {
+            fail_count,
+            call_count,
+        }
+    }
+}
+
+impl std::fmt::Debug for FailFirstPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FailFirstPolicy")
+            .field("fail_count", &self.fail_count)
+            .field("call_count", &self.call_count)
+            .finish()
+    }
+}
+
+#[async_trait]
+impl Policy for FailFirstPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let n = self.call_count.fetch_add(1, Ordering::SeqCst);
+        if n < self.fail_count {
+            return Err(azure_core::Error::new(
+                ErrorKind::Io,
+                std::io::Error::new(
+                    std::io::ErrorKind::ConnectionRefused,
+                    "simulated transient error",
+                ),
+            ));
+        }
+        next[0].send(ctx, request, &next[1..]).await
     }
 }

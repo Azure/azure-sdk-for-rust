@@ -9,8 +9,10 @@
 //! single client-level timeout, but Cosmos DB operations need distinct timeouts
 //! for metadata vs. data-plane calls and for individual retry attempts.
 //!
-//! All types in this module are `pub(crate)` — they are implementation details
-//! of the driver and are not exposed in the public API.
+//! Most types in this module are `pub(crate)` — they are implementation details
+//! of the driver. The four core transport types ([`HttpRequest`], [`HttpResponse`],
+//! [`TransportError`], [`TransportClient`]) are `pub` so they can be re-exported
+//! via the `testing` module under the `__internal_mocking` feature flag.
 
 use std::fmt;
 use std::time::Duration;
@@ -34,7 +36,7 @@ use crate::fault_injection::EvaluationCollector;
 /// field so the transport layer can enforce a deadline that differs from the
 /// client-level default.
 #[derive(Clone, Debug)]
-pub(crate) struct HttpRequest {
+pub struct HttpRequest {
     pub url: Url,
     pub method: Method,
     pub headers: Headers,
@@ -50,7 +52,7 @@ pub(crate) struct HttpRequest {
     /// them after the request completes — without a global store or
     /// header-based correlation.
     #[cfg(feature = "fault_injection")]
-    pub evaluation_collector: Option<EvaluationCollector>,
+    pub(crate) evaluation_collector: Option<EvaluationCollector>,
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +65,7 @@ pub(crate) struct HttpRequest {
 /// via configuration), so buffering the entire body is safe and simplifies
 /// downstream processing.
 #[derive(Clone, Debug)]
-pub(crate) struct HttpResponse {
+pub struct HttpResponse {
     pub status: u16,
     pub headers: Headers,
     pub body: Vec<u8>,
@@ -80,7 +82,7 @@ pub(crate) struct HttpResponse {
 ///
 /// * [`request_sent`](Self::request_sent) — tri-state indicator of whether the
 ///   request reached the wire.
-pub(crate) struct TransportError {
+pub struct TransportError {
     /// The underlying error, preserved as `azure_core::Error` for public API
     /// compatibility.
     pub error: azure_core::Error,
@@ -129,7 +131,7 @@ impl std::error::Error for TransportError {
 /// Implementations handle the actual network I/O, including enforcing the
 /// per-request [`timeout`](HttpRequest::timeout) when present.
 #[async_trait::async_trait]
-pub(crate) trait TransportClient: Send + Sync + fmt::Debug {
+pub trait TransportClient: Send + Sync + fmt::Debug {
     /// Sends an HTTP request and returns a buffered response.
     ///
     /// # Errors
