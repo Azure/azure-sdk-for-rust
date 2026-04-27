@@ -185,6 +185,7 @@ impl<T: StressTestFactory> StressRunner<T> {
 
     pub async fn run(&self) -> Result<()> {
         let stress_test = self.options.command.build_test()?;
+        let mut totals = StressRunCounts::default();
 
         println!("{}", self.options);
 
@@ -203,7 +204,7 @@ impl<T: StressTestFactory> StressRunner<T> {
             // This is acceptable, as the next steps are to execute test cleanup and exit application.
             // If the runs absolutely must be stopped, the [StressTest] implementor can signal to
             // individual test runs in global cleanup.
-            match infinite_stress_loop(stress_test.as_ref(), &self.options)
+            match infinite_stress_loop(stress_test.as_ref(), &mut totals, &self.options)
                 .timeout(Some(self.options.duration))
                 .await
             {
@@ -227,6 +228,14 @@ impl<T: StressTestFactory> StressRunner<T> {
             eprintln!("Stress runner failure. {:#}", e);
         }
 
+        println!(
+            "Final results: {}",
+            serde_json::to_string_pretty(&totals).with_context(
+                ErrorKind::DataConversion,
+                "Failed to serialize test results to JSON.",
+            )?
+        );
+
         println!("=== Begin Cleanup ===");
         stress_test
             .global_cleanup()
@@ -237,9 +246,9 @@ impl<T: StressTestFactory> StressRunner<T> {
 
 async fn infinite_stress_loop<T: StressTestFactory>(
     stress_test: &dyn StressTest,
+    totals: &mut StressRunCounts,
     options: &StressRunnerOptions<T>,
 ) -> Result<()> {
-    let mut totals = StressRunCounts::default();
     let mut join_handles = Vec::with_capacity(options.parallel);
     let (tx, mut rx) = mpsc::unbounded();
 
@@ -264,20 +273,23 @@ async fn infinite_stress_loop<T: StressTestFactory>(
         // non-blocking process run result(s)
         while let Ok(msg) = rx.try_recv() {
             totals.total_loops += 1;
-            match msg {
+            match &msg {
                 StressRunOutput::Success => totals.loops_success += 1,
                 StressRunOutput::GracefulError(_error) => totals.loops_graceful_error += 1,
                 StressRunOutput::Timeout => totals.loops_timeout += 1,
                 StressRunOutput::Panic(_panic_msg) => totals.loops_panic += 1,
                 StressRunOutput::DataCorruption => totals.loops_data_corruption += 1,
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&totals).with_context(
-                    ErrorKind::DataConversion,
-                    "Failed to serialize test results to JSON.",
-                )?
-            );
+            match msg {
+                StressRunOutput::Success | StressRunOutput::GracefulError(_) => {}
+                _ => println!(
+                    "{}",
+                    serde_json::to_string_pretty(&totals).with_context(
+                        ErrorKind::DataConversion,
+                        "Failed to serialize test results to JSON.",
+                    )?
+                ),
+            }
         }
     }
 
