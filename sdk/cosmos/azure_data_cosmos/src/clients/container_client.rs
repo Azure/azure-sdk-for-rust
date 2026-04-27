@@ -15,7 +15,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
-    Query, ReplaceContainerOptions, SessionToken, ThroughputOptions,
+    Query, ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
