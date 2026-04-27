@@ -339,6 +339,14 @@ impl CosmosOperation {
         Self::new(OperationType::Delete, resource_ref)
     }
 
+    /// Replaces a container's properties.
+    ///
+    /// Use `with_body()` to provide the updated container properties JSON.
+    pub fn replace_container(container: ContainerReference) -> Self {
+        let resource_ref: CosmosResourceReference = container.into();
+        Self::new(OperationType::Replace, resource_ref)
+    }
+
     /// Reads a container's properties from the service.
     ///
     /// Returns the full container properties payload for the container,
