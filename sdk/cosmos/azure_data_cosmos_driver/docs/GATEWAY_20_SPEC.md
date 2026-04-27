@@ -89,14 +89,14 @@ Gateway 2.0 moves **replica-level** routing intelligence from the SDK into the s
 
 Gateway 2.0 routing is decided **once per request** in the driver's `resolve_endpoint` stage. After that, downstream pipeline stages MUST trust `RoutingDecision.transport_mode` and not re-derive eligibility.
 
-### 3.1 The `prefer_gateway20` formula
+### 3.1 The `gateway20_suppressed` formula
 
 ```text
-prefer_gateway20 = !options.gateway20_disabled
-                && account.has_thin_client_endpoints()
+gateway20_suppressed = options.gateway20_disabled
+                    || !account.has_thin_client_endpoints()
 ```
 
-The account-side check (`has_thin_client_endpoints()`) reads the cached account metadata. The client-side check (`gateway20_disabled`) is the only public toggle.
+When `gateway20_suppressed` is `false` (the default whenever the account advertises Gateway 2.0 endpoints and the operator has not flipped the override), the request routes through Gateway 2.0. When it is `true`, the request falls through to Gateway V1. The account-side check (`has_thin_client_endpoints()`) reads the cached account metadata. The client-side check (`gateway20_disabled`) is the only public toggle.
 
 ### 3.2 Operator override: `CosmosClientOptions::gateway20_disabled`
 
@@ -159,7 +159,7 @@ Beyond 449 and 404/1002, Gateway 2.0 follows the timeout/408 handling defined in
 1. `ContainerClient::create_item(partition_key, item, options)` calls into `ContainerClient`
 2. `container_connection.rs` serializes `T` to `&[u8]`; EPK computation is deferred to the driver (via `EffectivePartitionKey::compute()` / `::compute_range()`), which then resolves PKRange
 3. `CosmosDriver::execute_operation()` enters the Operation Pipeline (7-stage loop)
-4. `resolve_endpoint()` prefers gateway 2.0 endpoint (if `prefer_gateway20` per §3.1)
+4. `resolve_endpoint()` prefers gateway 2.0 endpoint when `!gateway20_suppressed` per §3.1
 5. Transport Pipeline checks `is_operation_supported_by_gateway20()`:
    - **YES**: Inject gateway 2.0 headers + RNTBD serialize → HTTP/2 POST to Gateway 2.0 Proxy (SLA)
    - **NO**: Standard HTTP/REST request to Cosmos Gateway (eligibility fallback — per-request, deterministic)
