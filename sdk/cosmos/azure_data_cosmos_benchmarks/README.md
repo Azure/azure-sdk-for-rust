@@ -15,6 +15,7 @@ cargo bench -p azure_data_cosmos_benchmarks --bench point_read
 
 Results are written to `target/criterion/point_read/`.
 
+<!-- cspell:ignore flamegraph -->
 ### CPU flamegraph (pprof)
 
 Pass `--profile-time <seconds>` to enable pprof sampling:

@@ -37,6 +37,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
 azure_identity = { version = "0.35.0" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
@@ -73,6 +74,7 @@ reqwest = [
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
+in_memory_emulator = ["dep:tokio"]
 __internal_mocking = []
 __tls = []
 

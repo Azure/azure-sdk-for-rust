@@ -636,7 +636,11 @@ impl CosmosDriverRuntimeBuilder {
                         .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
                 }
 
-                #[cfg(not(any(test, feature = "in_memory_emulator", feature = "__internal_mocking")))]
+                #[cfg(not(any(
+                    test,
+                    feature = "in_memory_emulator",
+                    feature = "__internal_mocking"
+                )))]
                 {
                     Arc::new(DefaultHttpClientFactory::new())
                 }

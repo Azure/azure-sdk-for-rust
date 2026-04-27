@@ -48,6 +48,7 @@ static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
+static PREFER: HeaderName = HeaderName::from_static("prefer");
 static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
 
 /// Parses an HTTP request into a `ParsedRequest`.
@@ -63,10 +64,19 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
         .map(|s| s.to_string());
-    let content_response_on_write = headers
-        .get_optional_str(&CONTENT_RESPONSE)
-        .map(|s| s.eq_ignore_ascii_case("true"))
-        .unwrap_or(true);
+    // Determine whether write responses should include the document body.
+    // Check the explicit header first; if absent, check the `Prefer` header
+    // (the driver pipeline sends `Prefer: return=minimal` to suppress bodies).
+    // Default to true (service returns body when neither header is present).
+    let content_response_on_write = if let Some(val) =
+        headers.get_optional_str(&CONTENT_RESPONSE)
+    {
+        val.eq_ignore_ascii_case("true")
+    } else if let Some(prefer) = headers.get_optional_str(&PREFER) {
+        !prefer.contains("return=minimal")
+    } else {
+        true
+    };
     let is_upsert = headers
         .get_optional_str(&IS_UPSERT)
         .map(|s| s.eq_ignore_ascii_case("true"))

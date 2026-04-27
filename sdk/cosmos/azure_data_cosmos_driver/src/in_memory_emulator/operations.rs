@@ -35,7 +35,7 @@ pub(crate) async fn handle_operation(
     match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, start),
         OperationType::CreateDatabase => {
-            handle_create_database(store, region_name, request_body, start)
+            handle_create_database(store, region_name, parsed, request_body, start)
         }
         OperationType::ReadDatabase => handle_read_database(
             store,
@@ -53,6 +53,7 @@ pub(crate) async fn handle_operation(
             store,
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
+            parsed,
             request_body,
             start,
         ),
@@ -119,6 +120,7 @@ fn handle_read_account(store: &Arc<EmulatorStore>, start: Instant) -> AsyncRawRe
 fn handle_create_database(
     store: &Arc<EmulatorStore>,
     region_name: &str,
+    parsed: &ParsedRequest,
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
@@ -175,9 +177,16 @@ fn handle_create_database(
 
     let meta = store.create_database_internal(&db_id);
     let response_body = database_to_json(&meta);
-    success_response(StatusCode::Created, &response_body, 1.0, "", start)
-        .with_etag(&meta.etag)
-        .build()
+    if parsed.content_response_on_write {
+        success_response(StatusCode::Created, &response_body, 1.0, "", start)
+            .with_etag(&meta.etag)
+            .build()
+    } else {
+        ResponseBuilder::new(StatusCode::Created, start)
+            .with_request_charge(1.0)
+            .with_etag(&meta.etag)
+            .build()
+    }
 }
 
 fn handle_read_database(
@@ -259,6 +268,7 @@ fn handle_create_container(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     db_id: &str,
+    parsed: &ParsedRequest,
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
@@ -365,9 +375,16 @@ fn handle_create_container(
         ContainerConfig::default(),
     );
     let response_body = container_to_json(&meta);
-    success_response(StatusCode::Created, &response_body, 1.0, "", start)
-        .with_etag(&meta.etag)
-        .build()
+    if parsed.content_response_on_write {
+        success_response(StatusCode::Created, &response_body, 1.0, "", start)
+            .with_etag(&meta.etag)
+            .build()
+    } else {
+        ResponseBuilder::new(StatusCode::Created, start)
+            .with_request_charge(1.0)
+            .with_etag(&meta.etag)
+            .build()
+    }
 }
 
 fn handle_read_container(
