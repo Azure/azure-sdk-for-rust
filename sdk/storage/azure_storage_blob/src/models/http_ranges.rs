@@ -177,18 +177,29 @@ mod tests {
 ///
 /// # Examples
 ///
+/// Range of 512 bytes starting at offset 0:
+///
 /// ```
 /// use azure_storage_blob::models::HttpRange;
 ///
-/// // Range of 512 bytes starting at offset 0: bytes=0-511
 /// let range = HttpRange::new(0, 512);
 /// assert_eq!(range.to_string(), "bytes=0-511");
+/// ```
 ///
-/// // Open-ended range starting at offset 255: bytes=255-
+/// Open-ended range starting at offset 255:
+///
+/// ```
+/// use azure_storage_blob::models::HttpRange;
+///
 /// let range = HttpRange::from_offset(255);
 /// assert_eq!(range.to_string(), "bytes=255-");
+/// ```
 ///
-/// // Convert from standard Rust range types:
+/// Convert from standard Rust range types:
+///
+/// ```
+/// use azure_storage_blob::models::HttpRange;
+///
 /// let range: HttpRange = (0u64..100).into();
 /// assert_eq!(range.to_string(), "bytes=0-99");
 ///
