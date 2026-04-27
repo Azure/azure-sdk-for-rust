@@ -35,8 +35,8 @@ pub(crate) struct ResourcePaths {
     buf: String,
     /// Byte index in `buf` where the signing link ends (exclusive).
     ///
-    /// For non-feed:  `buf.len()` → signing link = `buf[1..]`  
-    /// For feed:      `parent.len()` → signing link = `buf[1..signing_end]`  
+    /// For non-feed:  `buf.len()` → signing link = `buf[1..]`
+    /// For feed:      `parent.len()` → signing link = `buf[1..signing_end]`
     /// Always `>= 1` when `buf` is non-empty (skips the leading `/`).
     signing_end: usize,
     /// Signing link override for offer resources.
