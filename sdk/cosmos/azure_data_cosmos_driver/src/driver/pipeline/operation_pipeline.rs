@@ -20,7 +20,8 @@ use crate::{
     },
     models::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
+        Credential, DefaultConsistencyLevel, OperationType, ResourceType, SessionToken,
+        SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -445,8 +446,19 @@ fn build_transport_request(
     ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
     let resource_ref = operation.resource_reference();
-    // Compute both paths in a single pass with a single allocation.
-    let paths = resource_ref.compute_paths();
+    // Create and Upsert are POSTed to the collection feed even though the
+    // operation carries an ItemReference with the document id.  Use the
+    // feed-path variant so the request URL targets the collection and the
+    // signing link uses the parent resource.
+    let paths = if matches!(
+        operation.operation_type(),
+        OperationType::Create | OperationType::Upsert
+    ) && operation.resource_type() == ResourceType::Document
+    {
+        resource_ref.compute_feed_paths()
+    } else {
+        resource_ref.compute_paths()
+    };
     let url = {
         let mut base = ctx.routing.selected_url.clone();
         let request_path = paths.request_path();
@@ -1249,7 +1261,9 @@ mod tests {
 
     #[test]
     fn build_transport_request_sets_is_upsert_header() {
-        let operation = CosmosOperation::upsert_item(test_container(), PartitionKey::from("pk1"))
+        let container = test_container();
+        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::upsert_item(item)
             .with_body(b"{}".to_vec());
 
         let routing = test_routing();
@@ -1274,7 +1288,9 @@ mod tests {
 
     #[test]
     fn build_transport_request_omits_is_upsert_header_for_create() {
-        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
+        let container = test_container();
+        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item)
             .with_body(b"{}".to_vec());
 
         let routing = test_routing();

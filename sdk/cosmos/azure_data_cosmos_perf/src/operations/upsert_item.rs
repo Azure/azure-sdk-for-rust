@@ -44,7 +44,7 @@ impl Operation for UpsertItemOperation {
         };
 
         container
-            .upsert_item(&item.partition_key, &item, self.options.clone())
+            .upsert_item(&item.partition_key, &seeded.id, &item, self.options.clone())
             .await?;
         Ok(())
     }

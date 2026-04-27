@@ -158,6 +158,33 @@ impl CosmosResourceReference {
         self
     }
 
+    /// Returns the item identifier (name), if this reference has one.
+    pub(crate) fn item_id(&self) -> Option<&str> {
+        self.id.as_ref().and_then(|id| id.name())
+    }
+
+    /// Computes paths treating this reference as a feed operation.
+    ///
+    /// Used by Create and Upsert which carry an [`ItemReference`] (with an
+    /// item id) but still POST to the parent (collection) URL and sign
+    /// against the parent resource.
+    pub(crate) fn compute_feed_paths(&self) -> ResourcePaths {
+        // Temporarily treat the reference as a feed for path computation.
+        let parent = self.parent_link_cow();
+        let segment = self.resource_type.path_segment();
+        let buf = if parent.is_empty() {
+            format!("/{}", segment)
+        } else {
+            format!("{}/{}", parent, segment)
+        };
+        let signing_end = if parent.is_empty() { 1 } else { parent.len() };
+        ResourcePaths {
+            buf,
+            signing_end,
+            signing_override: None,
+        }
+    }
+
     /// Returns the resource link used for authorization signing.
     ///
     /// For feed operations this is the **parent** resource's link (because

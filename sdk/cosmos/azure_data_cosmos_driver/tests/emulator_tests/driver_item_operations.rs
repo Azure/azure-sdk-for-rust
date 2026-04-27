@@ -54,7 +54,7 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 
             // Create the item
             let create_result = context
-                .create_item(&container, item.pk.clone(), &item_json)
+                .create_item(&container, &item.id, item.pk.clone(), &item_json)
                 .await?;
 
             // Validate create diagnostics
@@ -128,7 +128,7 @@ pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>
         let item_json = serde_json::to_vec(&test_item)?;
 
         let result = context
-            .create_item(&container, test_item.pk.clone(), &item_json)
+            .create_item(&container, &test_item.id, test_item.pk.clone(), &item_json)
             .await?;
 
         // Verify item creation succeeded
@@ -164,7 +164,7 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
         let item_json = serde_json::to_vec(&item)?;
 
         let result = context
-            .create_item(&container, item.pk.clone(), &item_json)
+            .create_item(&container, &item.id, item.pk.clone(), &item_json)
             .await?;
 
         let diagnostics = result.diagnostics();

@@ -276,7 +276,7 @@ impl ContainerClient {
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
-    ///     .create_item("category1", p, None)
+    ///     .create_item("category1", "product1", p, None)
     ///     .await?;
     /// # }
     /// ```
@@ -308,7 +308,7 @@ impl ContainerClient {
     /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let created_item = container_client
-    ///     .create_item("category1", p, Some(options))
+    ///     .create_item("category1", "product1", p, Some(options))
     ///     .await?
     ///     .into_body().json::<Product>();
     /// # Ok(())
@@ -317,16 +317,22 @@ impl ContainerClient {
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
+        item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
-        let driver_pk = partition_key.into().into_driver_partition_key();
+
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let operation =
-            CosmosOperation::create_item(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = CosmosOperation::create_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -469,7 +475,7 @@ impl ContainerClient {
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
-    ///     .upsert_item("category1", p, None)
+    ///     .upsert_item("category1", "product1", p, None)
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -502,7 +508,7 @@ impl ContainerClient {
     /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let updated_product = container_client
-    ///     .upsert_item("category1", p, Some(options))
+    ///     .upsert_item("category1", "product1", p, Some(options))
     ///     .await?
     ///     .into_body().json::<Product>()?;
     /// Ok(())
@@ -510,16 +516,22 @@ impl ContainerClient {
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
+        item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
-        let driver_pk = partition_key.into().into_driver_partition_key();
+
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let operation =
-            CosmosOperation::upsert_item(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -954,9 +966,9 @@ mod tests {
         assert_send(client.read_throughput(todo!()));
         assert_send(client.begin_replace_throughput(todo!(), todo!()));
         assert_send(client.delete(todo!()));
-        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
         assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
         assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
         assert_send(client.delete_item("", todo!(), todo!()));
         assert_send(client.execute_transactional_batch(todo!(), todo!()));

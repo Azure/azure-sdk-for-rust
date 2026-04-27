@@ -376,9 +376,10 @@ impl CosmosOperation {
 
     // ===== Data Plane Factory Methods =====
 
-    /// Creates an item (document) in a container.
+    /// Creates a new item (document) in a container.
     ///
-    /// The `container` and `partition_key` identify where to create the document.
+    /// The `ItemReference` contains the container, partition key, and item identifier,
+    /// providing all the information needed for the operation.
     /// Use `with_body()` to provide the document JSON.
     ///
     /// # Example
@@ -386,7 +387,7 @@ impl CosmosOperation {
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     /// use azure_data_cosmos_driver::models::{
-    ///     AccountReference, CosmosOperation, ContainerReference, PartitionKey,
+    ///     AccountReference, CosmosOperation, ItemReference, PartitionKey,
     /// };
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
@@ -400,10 +401,10 @@ impl CosmosOperation {
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
-    /// let pk = PartitionKey::from("pk-value");
+    /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
     ///     .execute_operation(
-    ///         CosmosOperation::create_item(container, pk)
+    ///         CosmosOperation::create_item(item)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
     ///         OperationOptions::default(),
     ///     )
@@ -411,11 +412,9 @@ impl CosmosOperation {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
-        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Create, resource_ref).with_partition_key(partition_key)
+    pub fn create_item(item: ItemReference) -> Self {
+        let partition_key = item.partition_key().clone();
+        Self::new(OperationType::Create, item).with_partition_key(partition_key)
     }
 
     /// Reads an item (document) from a container.
@@ -466,16 +465,13 @@ impl CosmosOperation {
 
     /// Upserts (creates or replaces) an item (document) in a container.
     ///
-    /// The Cosmos DB REST API treats upsert as a `POST` to the collection feed
-    /// (same as create), so this takes a `ContainerReference` and `PartitionKey`
-    /// rather than an `ItemReference`.
+    /// The `ItemReference` contains the container, partition key, and item identifier,
+    /// providing all the information needed for the operation.
     /// Use `with_body()` to provide the document JSON.
     /// If an item with the same ID exists, it will be replaced; otherwise, a new item is created.
-    pub fn upsert_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
-        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Upsert, resource_ref).with_partition_key(partition_key)
+    pub fn upsert_item(item: ItemReference) -> Self {
+        let partition_key = item.partition_key().clone();
+        Self::new(OperationType::Upsert, item).with_partition_key(partition_key)
     }
 
     /// Replaces an existing item (document) in a container.
