@@ -17,7 +17,7 @@ use futures::{
 use serde::Serialize;
 use std::{fmt::Debug, future::Future, mem, pin::Pin, time::Duration};
 
-use crate::OptionalTimeoutFutureExt;
+use crate::{stress::value_parsers::simple_duration, OptionalTimeoutFutureExt};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -46,38 +46,51 @@ pub trait StressTestOperation: Send + Sync {
 }
 
 #[derive(Debug, Clone, Parser)]
-struct StressRunnerOptions<T: StressTestFactory> {
+pub(crate) struct StressRunnerOptions<T: StressTestFactory> {
     /// Parallel operations to run.
     #[arg(long, default_value_t = 1)]
-    parallel: usize,
+    pub parallel: usize,
 
-    /// Duration of the overall stress test in seconds, excluding setup and cleanup.
-    #[arg(long, value_name = "SECONDS", default_value_t = 60)]
-    duration_s: u64,
+    /// Duration of the stress test, excluding setup and cleanup.
+    #[arg(long, default_value = "10", value_parser = simple_duration, value_name = "SECONDS")]
+    duration: Duration,
 
-    /// Optional timeout in seconds for individual operations.
-    #[arg(long, value_name = "SECONDS")]
-    timeout_s: Option<u64>,
+    /// Optional timeout for one-time test setup.
+    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
+    setup_timeout: Option<Duration>,
+
+    /// Optional timeout for individual operations during the test.
+    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
+    operation_timeout: Option<Duration>,
+
+    /// Optional timeout for one-time test cleanup.
+    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
+    cleanup_timeout: Option<Duration>,
 
     #[command(subcommand)]
-    command: T,
-}
-
-impl<T: StressTestFactory> StressRunnerOptions<T> {
-    fn duration(&self) -> Duration {
-        Duration::from_secs(self.duration_s)
-    }
-    fn timeout(&self) -> Option<Duration> {
-        self.timeout_s.map(Duration::from_secs)
-    }
+    pub command: T,
 }
 
 impl<T: StressTestFactory> std::fmt::Display for StressRunnerOptions<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "=== Stress Runner Configuration ===")?;
-        writeln!(f, "duration: {}", self.duration().as_secs())?;
+        writeln!(f, "duration: {}", self.duration.as_secs())?;
         writeln!(f, "parallel: {}", self.parallel)?;
-        writeln!(f, "timeout: {:?}", self.timeout().map(|t| t.as_secs()))?;
+        writeln!(
+            f,
+            "operation_timeout: {:?}",
+            self.operation_timeout.map(|t| t.as_secs())
+        )?;
+        writeln!(
+            f,
+            "setup_timeout: {:?}",
+            self.setup_timeout.map(|t| t.as_secs())
+        )?;
+        writeln!(
+            f,
+            "cleanup_timeout: {:?}",
+            self.cleanup_timeout.map(|t| t.as_secs())
+        )?;
         std::fmt::Display::fmt(&self.command, f)
     }
 }
@@ -175,9 +188,13 @@ impl<T: StressTestFactory> StressRunner<T> {
 
         println!("{}", self.options);
 
-        let stress_run_result: Result<()> = async {
+        // Catch all Err returns of setup and test run, ensuring we always run cleanup.
+        let setup_and_run_result: Result<()> = async {
             println!("=== Global Setup ===");
-            stress_test.global_setup().await?;
+            stress_test
+                .global_setup()
+                .timeout(self.options.setup_timeout)
+                .await??;
 
             println!("=== Begin Stress ===");
             // Race an infinite loop of parallel tests against a timeout.
@@ -187,7 +204,7 @@ impl<T: StressTestFactory> StressRunner<T> {
             // If the runs absolutely must be stopped, the [StressTest] implementor can signal to
             // individual test runs in global cleanup.
             match infinite_stress_loop(stress_test.as_ref(), &self.options)
-                .timeout(Some(self.options.duration()))
+                .timeout(Some(self.options.duration))
                 .await
             {
                 // Test duration completed. This is the expected path.
@@ -206,12 +223,15 @@ impl<T: StressTestFactory> StressRunner<T> {
             Ok(())
         }
         .await;
-        if let Err(e) = stress_run_result {
+        if let Err(e) = setup_and_run_result {
             eprintln!("Stress runner failure. {:#}", e);
         }
 
         println!("=== Begin Cleanup ===");
-        stress_test.global_cleanup().await
+        stress_test
+            .global_cleanup()
+            .timeout(self.options.cleanup_timeout)
+            .await?
     }
 }
 
@@ -228,7 +248,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
 
         join_handles.push(get_async_runtime().spawn(operation_wrapper(
             stress_test.get_operation().await?,
-            options.timeout(),
+            options.operation_timeout,
             tx.clone(),
         )));
 
