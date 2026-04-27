@@ -8,7 +8,7 @@ use std::error::Error;
 
 use azure_data_cosmos::{
     models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions, FeedRange,
+    CreateContainerOptions,
 };
 use base64::Engine;
 
