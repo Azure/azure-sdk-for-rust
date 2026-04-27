@@ -4,15 +4,18 @@
 edition = "2021"
 
 [dependencies]
-serde = { version = "1.0.228", features = ["derive"] }
-toml = "1.1.2"
+toml_edit = "0.25.10"
 ---
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, path::PathBuf, process};
+use std::{fs, path::PathBuf, process};
+use toml_edit::{value, DocumentMut, InlineTable, Item, Table, Value};
+
+const REGISTRY: &str = "azure-sdk-for-rust";
+const INDEX: &str =
+    "sparse+https://pkgs.dev.azure.com/azure-sdk/_packaging/azure-sdk-for-rust/Cargo/index/";
 
 fn main() {
     let mode = match std::env::args().nth(1).as_deref() {
@@ -28,54 +31,37 @@ fn main() {
         }
     };
 
-    let config_path = find_config();
-    let content = std::fs::read_to_string(&config_path).unwrap_or_else(|err| {
-        eprintln!("error: failed to read {}: {err}", config_path.display());
+    let cargo_home = std::env::var("CARGO_HOME").unwrap_or_else(|_| {
+        eprintln!("error: CARGO_HOME is not set");
         process::exit(1);
     });
+    let config_path = PathBuf::from(cargo_home).join("config.toml");
 
-    let mut config: CargoConfig = toml::from_str(&content).unwrap_or_else(|err| {
+    let content = if config_path.exists() {
+        fs::read_to_string(&config_path).unwrap_or_else(|err| {
+            eprintln!("error: failed to read {}: {err}", config_path.display());
+            process::exit(1);
+        })
+    } else {
+        String::new()
+    };
+
+    let mut doc: DocumentMut = content.parse().unwrap_or_else(|err| {
         eprintln!("error: failed to parse {}: {err}", config_path.display());
         process::exit(1);
     });
 
-    // Find the name of the other registry defined under [registries].
-    let registry_name = match config.registries.keys().next() {
-        Some(name) => name.clone(),
-        None => {
-            eprintln!("error: no registries defined in {}", config_path.display());
-            process::exit(1);
-        }
-    };
-
-    let crates_io = config
-        .source
-        .entry("crates-io".to_string())
-        .or_insert_with(Source::default);
-
     match mode {
         Mode::Azure => {
-            if crates_io.replace_with.as_deref() == Some(&registry_name) {
-                // Already pointing to the registry; nothing to do.
-                return;
-            }
-            crates_io.replace_with = Some(registry_name);
+            ensure_registry(&mut doc);
+            set_replace_with(&mut doc);
         }
         Mode::CratesIo => {
-            if crates_io.replace_with.is_none() {
-                // Already using crates.io; nothing to do.
-                return;
-            }
-            crates_io.replace_with = None;
+            remove_replace_with(&mut doc);
         }
     }
 
-    let output = toml::to_string(&config).unwrap_or_else(|err| {
-        eprintln!("error: failed to serialize config: {err}");
-        process::exit(1);
-    });
-
-    std::fs::write(&config_path, output).unwrap_or_else(|err| {
+    fs::write(&config_path, doc.to_string()).unwrap_or_else(|err| {
         eprintln!("error: failed to write {}: {err}", config_path.display());
         process::exit(1);
     });
@@ -83,39 +69,52 @@ fn main() {
     eprintln!("updated {}", config_path.display());
 }
 
-fn find_config() -> PathBuf {
-    let dir = std::env::current_dir().expect("current directory");
-    for ancestor in dir.ancestors() {
-        let path = ancestor.join(".cargo/config.toml");
-        if path.exists() {
-            return path;
+/// Add the azure-sdk-for-rust registry to [registries] if not already present.
+fn ensure_registry(doc: &mut DocumentMut) {
+    let registries = doc
+        .entry("registries")
+        .or_insert_with(|| Item::Table(Table::new()))
+        .as_table_mut()
+        .expect("[registries] should be a table");
+
+    if registries.get(REGISTRY).is_none() {
+        let mut entry = InlineTable::new();
+        entry.insert("index", Value::from(INDEX));
+        registries.insert(REGISTRY, Item::Value(Value::InlineTable(entry)));
+    }
+}
+
+/// Add [source.crates-io] if needed and set replace-with.
+fn set_replace_with(doc: &mut DocumentMut) {
+    let source = doc
+        .entry("source")
+        .or_insert_with(|| {
+            let mut t = Table::new();
+            t.set_implicit(true);
+            Item::Table(t)
+        })
+        .as_table_mut()
+        .expect("[source] should be a table");
+
+    let crates_io = source
+        .entry("crates-io")
+        .or_insert_with(|| Item::Table(Table::new()))
+        .as_table_mut()
+        .expect("[source.crates-io] should be a table");
+
+    crates_io.insert("replace-with", value(REGISTRY));
+}
+
+/// Remove replace-with from [source.crates-io] if present.
+fn remove_replace_with(doc: &mut DocumentMut) {
+    if let Some(source) = doc.get_mut("source").and_then(|s| s.as_table_mut()) {
+        if let Some(crates_io) = source.get_mut("crates-io").and_then(|c| c.as_table_mut()) {
+            crates_io.remove("replace-with");
         }
     }
-    eprintln!("error: .cargo/config.toml not found");
-    process::exit(1);
 }
 
 enum Mode {
     Azure,
     CratesIo,
-}
-
-#[derive(Deserialize, Serialize)]
-struct CargoConfig {
-    #[serde(default)]
-    registries: BTreeMap<String, Registry>,
-    #[serde(default)]
-    source: BTreeMap<String, Source>,
-}
-
-#[derive(Deserialize, Serialize)]
-struct Registry {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    index: Option<String>,
-}
-
-#[derive(Default, Deserialize, Serialize)]
-struct Source {
-    #[serde(rename = "replace-with", skip_serializing_if = "Option::is_none")]
-    replace_with: Option<String>,
 }

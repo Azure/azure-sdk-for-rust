@@ -32,14 +32,19 @@ jobs:
     os: ${{ parameters.OSName }}
   steps:
   - checkout: self
+  - ${{ if ne(RustToolchainName, 'nightly') }}:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: nightly
+
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: $(RustToolchainName)
   - pwsh: cargo install --locked --index sparse+https://pkgs.dev.azure.com/artifacts-public/PublicTools/_packaging/AzureArtifacts/Cargo/index/ artifacts-cargo-credprovider
     displayName: Install cargo credential provider
-  - pwsh: cargo login --registry azure-sdk
-    displayName: Login to azure-sdk registry
-  - pwsh: eng/scripts/use-registry.rs azure
-    displayName: Configure azure-sdk registry
+  - pwsh: cargo login --registry azure-sdk-for-rust
+    displayName: Login to azure-sdk-for-rust registry
+  - pwsh: cargo +nightly -Zscript eng/scripts/use-registry.rs azure
+    displayName: Configure azure-sdk-for-rust registry
   - pwsh: cargo fetch
     displayName: Fetch dependencies
