@@ -37,6 +37,9 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
+dhat = "0.3"
+compact_str = "0.8"
+smallvec = "1.13"
 azure_identity = { version = "0.35.0" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
@@ -84,3 +87,7 @@ features = [
   "rustls",
   "tokio",
 ]
+
+[[bench]]
+name = "ppcb_state_memory"
+harness = false
