@@ -9,7 +9,7 @@ use azure_storage_blob::{models::BlobClientDownloadOptions, BlobClient, BlobCont
 use azure_storage_blob_test::{
     stress::{
         data,
-        value_parsers::{non_zero_u64, non_zero_usize},
+        value_parsers::{non_zero_usize, simple_non_zero_len_u64, simple_non_zero_len_usize},
         StressRunOutput, StressTest, StressTestOperation,
     },
     OptionalTimeoutFutureExt,
@@ -24,18 +24,19 @@ const CRC_ALGORITHM: CrcAlgorithm = CrcAlgorithm::Crc64Nvme;
 #[derive(Args, Debug)]
 pub(crate) struct DownloadBlobsTestArgs {
     /// Number of blobs used across download operations.
-    #[arg(long, default_value_t = 1, value_parser = non_zero_usize)]
+    #[arg(long, default_value_t = 1, value_parser = non_zero_usize, value_name = "COUNT")]
     targets: usize,
 
     /// Concurrency value for download options.
-    #[arg(long, default_value_t = 2, value_parser = non_zero_usize)]
+    #[arg(long, default_value_t = 2, value_parser = non_zero_usize, value_name = "NUM WORKERS")]
     concurrency: usize,
 
     /// Block length for download options.
-    #[arg(long, default_value_t = 4 << 20, value_parser = non_zero_usize)]
+    #[arg(long, default_value_t = 4 << 20, value_parser = simple_non_zero_len_usize)]
     block_len: usize,
 
-    #[arg(long, value_parser = non_zero_u64)]
+    /// Data length of blob(s) to download.
+    #[arg(long, value_parser = simple_non_zero_len_u64)]
     data_len: u64,
 }
 
