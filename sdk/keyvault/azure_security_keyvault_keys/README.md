@@ -234,7 +234,7 @@ use azure_security_keyvault_keys::{
     models::{
         CreateKeyParameters, EncryptionAlgorithm, KeyOperationParameters, KeyType,
     },
-    ResourceExt,
+    ResourceExt, ResourceId,
 };
 use rand::random;
 
@@ -249,7 +249,6 @@ let key = client
     .create_key("key-name", body.try_into()?, None)
     .await?
     .into_model()?;
-let key_version = key.resource_id()?.version.expect("key version required");
 
 // Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
 let dek = random::<u32>().to_le_bytes().to_vec();
@@ -261,16 +260,21 @@ let mut parameters = KeyOperationParameters {
     ..Default::default()
 };
 let wrapped = client
-    .wrap_key("key-name", &key_version, parameters.clone().try_into()?, None)
+    .wrap_key("key-name", parameters.clone().try_into()?, None)
     .await?
     .into_model()?;
 
 assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
 
+// Retain the key ID that was used to wrap so you can unwrap using the same version later.
+// We'll parse the version to pass to `unwrap_key` below.
+let ResourceId { version, .. } = wrapped.resource_id()?;
+let key_version = version.as_deref().unwrap_or_default();
+
 // Unwrap the DEK.
 parameters.value = wrapped.result;
 let unwrapped = client
-    .unwrap_key("key-name", &key_version, parameters.try_into()?, None)
+    .unwrap_key("key-name", key_version, parameters.try_into()?, None)
     .await?
     .into_model()?;
 

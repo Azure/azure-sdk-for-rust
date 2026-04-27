@@ -10,7 +10,6 @@ mod extensions;
 pub(crate) mod http_ranges;
 pub mod method_options;
 pub(crate) mod response_ext;
-pub(crate) mod slice;
 mod upload_result;
 
 pub use crate::generated::models::*;

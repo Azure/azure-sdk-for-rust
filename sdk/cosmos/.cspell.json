@@ -165,6 +165,7 @@
     "uknorth",
     "uksouth",
     "ukwest",
+    "uncontended",
     "unsharded",
     "upsert",
     "upserted",

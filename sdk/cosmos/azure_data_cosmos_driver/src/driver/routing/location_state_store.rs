@@ -17,6 +17,7 @@ use futures::future::BoxFuture;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
+    options::Region,
 };
 
 use super::{
@@ -62,6 +63,7 @@ pub(crate) struct LocationStateStore {
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
+    preferred_regions: Vec<Region>,
     gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -69,6 +71,12 @@ pub(crate) struct LocationStateStore {
     /// The etag of the last `AccountProperties` that was synced.
     /// Used to skip the CAS loop when the account metadata hasn't changed.
     last_synced_etag: std::sync::Mutex<String>,
+    /// Pointer identity of the last synced `AccountProperties` arc.
+    /// When `sync_account_properties` is called with the same `Arc` (i.e.,
+    /// the account metadata cache returned the same cached value), the entire
+    /// sync is skipped without acquiring any other locks or rebuilding endpoint
+    /// lists.
+    last_synced_properties: std::sync::Mutex<Option<Arc<AccountProperties>>>,
     /// Monotonic version counter bumped on every successful CAS write.
     account_version: AtomicU64,
     /// Cached snapshot: (version, snapshot). When the version matches
@@ -120,6 +128,7 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
+        preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
 
@@ -135,12 +144,14 @@ impl LocationStateStore {
             account_endpoint,
             account_refresh_fn,
             default_endpoint,
+            preferred_regions,
             gateway20_enabled,
             endpoint_unavailability_ttl,
             // TODO(refresh-config): Make refresh interval configurable.
             refresh_interval: Duration::from_secs(5),
             last_refresh_epoch_ms: AtomicU64::new(0),
             last_synced_etag: std::sync::Mutex::new(String::new()),
+            last_synced_properties: std::sync::Mutex::new(None),
             account_version: AtomicU64::new(0),
             cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
         }
@@ -294,7 +305,7 @@ impl LocationStateStore {
         };
 
         let default_endpoint = self.default_endpoint.clone();
-        self.sync_account_properties(properties.as_ref(), &default_endpoint);
+        self.sync_account_properties(properties, &default_endpoint);
     }
 
     /// Updates account state from properties using a CAS loop that preserves
@@ -304,14 +315,25 @@ impl LocationStateStore {
     /// the last synced value (same server version, properties unchanged).
     pub fn sync_account_properties(
         &self,
-        properties: &AccountProperties,
+        properties: Arc<AccountProperties>,
         default_endpoint: &CosmosEndpoint,
     ) {
+        // Fast path: same Arc pointer means identical data — nothing changed.
+        {
+            let last = self.last_synced_properties.lock().unwrap();
+            if last.as_ref().is_some_and(|p| Arc::ptr_eq(p, &properties)) {
+                return;
+            }
+        }
+
         self.prune_expired_unavailable_endpoints();
 
         if !properties.etag.is_empty() {
-            let last = self.last_synced_etag.lock().unwrap();
-            if *last == properties.etag {
+            let last_etag = self.last_synced_etag.lock().unwrap();
+            if *last_etag == properties.etag {
+                // Etag matches: update the pointer so future calls hit the fast path.
+                drop(last_etag);
+                *self.last_synced_properties.lock().unwrap() = Some(properties);
                 return;
             }
         }
@@ -320,10 +342,11 @@ impl LocationStateStore {
         let ttl = self.endpoint_unavailability_ttl;
         self.apply_account(|current| {
             let mut next = build_account_endpoint_state(
-                properties,
+                &properties,
                 default_endpoint.clone(),
                 Some(current.generation),
                 self.gateway20_enabled,
+                &self.preferred_regions,
             );
             // Carry forward unavailability marks from the current state,
             // filtering out entries that have expired past the configured TTL.
@@ -335,9 +358,10 @@ impl LocationStateStore {
         });
 
         if !properties.etag.is_empty() {
-            let mut last = self.last_synced_etag.lock().unwrap();
-            *last = properties.etag.clone();
+            let mut last_etag = self.last_synced_etag.lock().unwrap();
+            *last_etag = properties.etag.clone();
         }
+        *self.last_synced_properties.lock().unwrap() = Some(properties);
     }
 
     fn prune_expired_unavailable_endpoints(&self) {
@@ -418,6 +442,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            Vec::new(),
         );
 
         store
@@ -454,6 +479,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            Vec::new(),
         );
 
         store
@@ -484,10 +510,11 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            Vec::new(),
         );
 
-        let properties = test_refresh_payload();
-        store.sync_account_properties(&properties, &default_endpoint);
+        let properties = Arc::new(test_refresh_payload());
+        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
 
         let expired_endpoint = CosmosEndpoint::regional(
             "eastus".into(),
@@ -496,7 +523,7 @@ mod tests {
         store.apply_account(|current| {
             let mut next = current.clone();
             next.unavailable_endpoints.insert(
-                expired_endpoint.clone(),
+                expired_endpoint.url().clone(),
                 (
                     Instant::now() - Duration::from_secs(120),
                     UnavailableReason::TransportError,
@@ -505,7 +532,9 @@ mod tests {
             next
         });
 
-        store.sync_account_properties(&properties, &default_endpoint);
+        // Use a different Arc to force a re-sync (same data, different pointer).
+        let properties2 = Arc::new(test_refresh_payload());
+        store.sync_account_properties(properties2, &default_endpoint);
 
         let snapshot = store.snapshot();
         assert!(snapshot.account.unavailable_endpoints.is_empty());

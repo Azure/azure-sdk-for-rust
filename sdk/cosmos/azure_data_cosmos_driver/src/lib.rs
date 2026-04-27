@@ -29,6 +29,8 @@ pub mod in_memory_emulator;
 pub mod models;
 pub mod options;
 pub(crate) mod system;
+#[cfg(feature = "__internal_mocking")]
+pub mod testing;
 
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};

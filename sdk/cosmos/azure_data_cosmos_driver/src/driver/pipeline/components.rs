@@ -19,7 +19,7 @@ use crate::{
         routing::{CosmosEndpoint, LocationIndex},
         transport::AuthorizationContext,
     },
-    models::CosmosStatus,
+    models::{CosmosResponseHeaders, CosmosStatus},
     options::Region,
 };
 
@@ -296,12 +296,17 @@ impl TransportResult {
     ///
     /// Successful status codes are mapped to `Success`; non-success status codes
     /// are mapped to `HttpError` with `request_sent` set to `Sent`.
-    pub fn from_http_response(status: CosmosStatus, headers: Headers, body: Vec<u8>) -> Self {
+    pub fn from_http_response(
+        status: CosmosStatus,
+        headers: Headers,
+        cosmos_headers: CosmosResponseHeaders,
+        body: Vec<u8>,
+    ) -> Self {
         if status.is_success() {
             Self {
                 outcome: TransportOutcome::Success {
                     status,
-                    headers,
+                    cosmos_headers,
                     body,
                 },
             }
@@ -310,6 +315,7 @@ impl TransportResult {
                 outcome: TransportOutcome::HttpError {
                     status,
                     headers,
+                    cosmos_headers,
                     body,
                     request_sent: RequestSentStatus::Sent,
                 },
@@ -317,14 +323,25 @@ impl TransportResult {
         }
     }
 
-    /// Returns the response headers if this is an HTTP response.
-    pub fn response_headers(&self) -> Option<&Headers> {
+    /// Returns the parsed Cosmos response headers if this is an HTTP response.
+    pub fn cosmos_headers(&self) -> Option<&CosmosResponseHeaders> {
         match &self.outcome {
-            TransportOutcome::Success { headers, .. } => Some(headers),
-            TransportOutcome::HttpError { headers, .. } => Some(headers),
+            TransportOutcome::Success { cosmos_headers, .. } => Some(cosmos_headers),
+            TransportOutcome::HttpError { cosmos_headers, .. } => Some(cosmos_headers),
             TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
                 None
             }
+        }
+    }
+
+    /// Returns the raw response headers for HTTP error responses.
+    ///
+    /// Raw headers are only retained for error responses (needed to build a `RawResponse`
+    /// for callers). For success responses, only parsed `CosmosResponseHeaders` are kept.
+    pub fn response_headers(&self) -> Option<&Headers> {
+        match &self.outcome {
+            TransportOutcome::HttpError { headers, .. } => Some(headers),
+            _ => None,
         }
     }
 }
@@ -334,13 +351,17 @@ pub(crate) enum TransportOutcome {
     /// Successful response (2xx).
     Success {
         status: CosmosStatus,
-        headers: Headers,
+        /// Parsed Cosmos-specific response headers.
+        cosmos_headers: CosmosResponseHeaders,
         body: Vec<u8>,
     },
     /// HTTP error response (non-2xx) that may be retryable at the operation level.
     HttpError {
         status: CosmosStatus,
+        /// Raw headers retained for building `RawResponse` in error reporting.
         headers: Headers,
+        /// Parsed Cosmos-specific response headers.
+        cosmos_headers: CosmosResponseHeaders,
         body: Vec<u8>,
         request_sent: RequestSentStatus,
     },
@@ -371,12 +392,9 @@ impl std::fmt::Display for TransportOutcome {
 impl std::fmt::Debug for TransportOutcome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TransportOutcome::Success {
-                status, headers, ..
-            } => f
+            TransportOutcome::Success { status, .. } => f
                 .debug_struct("Success")
                 .field("status", status)
-                .field("headers", headers)
                 .field("body", &"...")
                 .finish(),
             TransportOutcome::HttpError {
@@ -413,7 +431,7 @@ impl std::fmt::Debug for TransportOutcome {
 #[derive(Debug)]
 pub(crate) enum OperationAction {
     /// Return the successful response.
-    Complete(TransportResult),
+    Complete(Box<TransportResult>),
     /// Retry in another endpoint/region.
     FailoverRetry {
         new_state: OperationRetryState,

@@ -1,5 +1,27 @@
 # Release History
 
+## 0.36.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.35.0 (2026-04-22)
+
+### Features Added
+
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+
+### Breaking Changes
+
+- Added connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
+- `new_http_client()` now takes an `Option<HttpClientOptions>` to disable automatic decompression - still enabled by default if `reqwest_gzip` or `reqwest_deflate` features are enabled.
+
 ## 0.34.0 (2026-04-07)
 
 ### Features Added
