@@ -93,6 +93,8 @@ pub struct CosmosClientBuilder {
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
+    /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
+    driver_runtime_builder: Option<CosmosDriverRuntimeBuilder>,
 }
 
 impl CosmosClientBuilder {
@@ -204,6 +206,17 @@ impl CosmosClientBuilder {
     /// * `endpoints` - Ordered list of fallback endpoint URLs.
     pub fn with_backup_endpoints(mut self, endpoints: Vec<crate::CosmosAccountEndpoint>) -> Self {
         self.backup_endpoints = endpoints.into_iter().map(|e| e.into_url()).collect();
+        self
+    }
+
+    /// Provides a pre-configured [`CosmosDriverRuntimeBuilder`] for the client to use.
+    ///
+    /// When set, the client uses this builder instead of creating a default one.
+    /// This enables testing with custom transports such as the
+    /// [`InMemoryEmulatorHttpClient`](azure_data_cosmos_driver::in_memory_emulator::InMemoryEmulatorHttpClient).
+    #[doc(hidden)]
+    pub fn with_driver_runtime_builder(mut self, builder: CosmosDriverRuntimeBuilder) -> Self {
+        self.driver_runtime_builder = Some(builder);
         self
     }
 
@@ -412,7 +425,8 @@ impl CosmosClientBuilder {
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
         #[allow(unused_mut)]
-        let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
+        let mut driver_runtime_builder =
+            self.driver_runtime_builder.unwrap_or_default();
         #[cfg(feature = "allow_invalid_certificates")]
         if self.allow_emulator_invalid_certificates {
             let connection_pool = ConnectionPoolOptions::builder()

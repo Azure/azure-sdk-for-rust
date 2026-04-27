@@ -44,6 +44,43 @@ pub(crate) mod response_header_names {
     pub static OWNER_ID: HeaderName = HeaderName::from_static("x-ms-content-path");
     pub static OFFER_REPLACE_PENDING: HeaderName =
         HeaderName::from_static("x-ms-offer-replace-pending");
+    pub static RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
+    pub static CORRELATED_ACTIVITY_ID: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-correlated-activityid");
+    pub static TRANSPORT_REQUEST_ID: HeaderName =
+        HeaderName::from_static("x-ms-transport-request-id");
+    pub static GLOBAL_COMMITTED_LSN: HeaderName =
+        HeaderName::from_static("x-ms-global-committed-lsn");
+    pub static QUORUM_ACKED_LSN: HeaderName = HeaderName::from_static("x-ms-quorum-acked-lsn");
+    pub static QUORUM_ACKED_LOCAL_LSN: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-quorum-acked-llsn");
+    pub static LOCAL_LSN: HeaderName = HeaderName::from_static("x-ms-cosmos-llsn");
+    pub static ITEM_LSN: HeaderName = HeaderName::from_static("x-ms-item-lsn");
+    pub static ITEM_LOCAL_LSN: HeaderName = HeaderName::from_static("x-ms-cosmos-item-llsn");
+    pub static CURRENT_REPLICA_SET_SIZE: HeaderName =
+        HeaderName::from_static("x-ms-current-replica-set-size");
+    pub static CURRENT_WRITE_QUORUM: HeaderName =
+        HeaderName::from_static("x-ms-current-write-quorum");
+    pub static NUMBER_OF_READ_REGIONS: HeaderName =
+        HeaderName::from_static("x-ms-number-of-read-regions");
+    pub static XP_ROLE: HeaderName = HeaderName::from_static("x-ms-xp-role");
+    pub static LAST_STATE_CHANGE_UTC: HeaderName =
+        HeaderName::from_static("x-ms-last-state-change-utc");
+    pub static SCHEMA_VERSION: HeaderName = HeaderName::from_static("x-ms-schemaversion");
+    pub static GATEWAY_VERSION: HeaderName = HeaderName::from_static("x-ms-gatewayversion");
+    pub static SERVICE_VERSION: HeaderName = HeaderName::from_static("x-ms-serviceversion");
+    pub static RESOURCE_QUOTA: HeaderName = HeaderName::from_static("x-ms-resource-quota");
+    pub static RESOURCE_USAGE: HeaderName = HeaderName::from_static("x-ms-resource-usage");
+    pub static HAS_TENTATIVE_WRITES: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-allow-tentative-writes");
+    pub static PARTITION_KEY_RANGE_ID: HeaderName =
+        HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
+    pub static LOG_RESULTS: HeaderName =
+        HeaderName::from_static("x-ms-documentdb-script-log-results");
+    pub static COLLECTION_INDEX_TRANSFORMATION_PROGRESS: HeaderName =
+        HeaderName::from_static("x-ms-documentdb-collection-index-transformation-progress");
+    pub static COLLECTION_LAZY_INDEXING_PROGRESS: HeaderName =
+        HeaderName::from_static("x-ms-documentdb-collection-lazy-indexing-progress");
 }
 
 /// Header names used by the fault injection framework.
@@ -174,6 +211,83 @@ pub struct CosmosResponseHeaders {
     ///
     /// When `true`, a throughput change is still being processed asynchronously.
     pub offer_replace_pending: Option<bool>,
+
+    /// Retry-after duration in milliseconds (`x-ms-retry-after-ms`).
+    ///
+    /// Returned on 429 (Too Many Requests) responses to indicate how long
+    /// the client should wait before retrying.
+    pub retry_after_ms: Option<u64>,
+
+    /// Correlated activity ID (`x-ms-cosmos-correlated-activityid`).
+    ///
+    /// Links related operations across service boundaries for distributed tracing.
+    pub correlated_activity_id: Option<String>,
+
+    /// Transport-level request ID (`x-ms-transport-request-id`).
+    pub transport_request_id: Option<u32>,
+
+    /// Global committed LSN across all regions (`x-ms-global-committed-lsn`).
+    pub global_committed_lsn: Option<i64>,
+
+    /// Quorum-acknowledged LSN (`x-ms-quorum-acked-lsn`).
+    pub quorum_acked_lsn: Option<i64>,
+
+    /// Quorum-acknowledged local LSN (`x-ms-cosmos-quorum-acked-llsn`).
+    pub quorum_acked_local_lsn: Option<i64>,
+
+    /// Local LSN of the partition (`x-ms-cosmos-llsn`).
+    pub local_lsn: Option<u64>,
+
+    /// Item-level LSN (`x-ms-item-lsn`).
+    pub item_lsn: Option<u64>,
+
+    /// Item-level local LSN (`x-ms-cosmos-item-llsn`).
+    pub item_local_lsn: Option<u64>,
+
+    /// Current replica set size (`x-ms-current-replica-set-size`).
+    pub current_replica_set_size: Option<u32>,
+
+    /// Current write quorum (`x-ms-current-write-quorum`).
+    pub current_write_quorum: Option<u32>,
+
+    /// Number of read regions (`x-ms-number-of-read-regions`).
+    pub number_of_read_regions: Option<u32>,
+
+    /// XP role of the responding replica (`x-ms-xp-role`).
+    pub xp_role: Option<u32>,
+
+    /// Timestamp of the last state change (`x-ms-last-state-change-utc`).
+    pub last_state_change_utc: Option<String>,
+
+    /// Schema version of the service (`x-ms-schemaversion`).
+    pub schema_version: Option<String>,
+
+    /// Gateway version (`x-ms-gatewayversion`).
+    pub gateway_version: Option<String>,
+
+    /// Service version (`x-ms-serviceversion`).
+    pub service_version: Option<String>,
+
+    /// Resource quota information (`x-ms-resource-quota`).
+    pub resource_quota: Option<String>,
+
+    /// Resource usage information (`x-ms-resource-usage`).
+    pub resource_usage: Option<String>,
+
+    /// Whether the region has tentative (not yet committed) writes (`x-ms-cosmos-allow-tentative-writes`).
+    pub has_tentative_writes: Option<bool>,
+
+    /// Partition key range ID for the responding partition (`x-ms-documentdb-partitionkeyrangeid`).
+    pub partition_key_range_id: Option<String>,
+
+    /// Stored procedure log output (`x-ms-documentdb-script-log-results`).
+    pub log_results: Option<String>,
+
+    /// Collection index transformation progress percentage (`x-ms-documentdb-collection-index-transformation-progress`).
+    pub collection_index_transformation_progress: Option<i64>,
+
+    /// Collection lazy indexing progress percentage (`x-ms-documentdb-collection-lazy-indexing-progress`).
+    pub collection_lazy_indexing_progress: Option<i64>,
 }
 
 impl CosmosResponseHeaders {
@@ -254,6 +368,78 @@ impl CosmosResponseHeaders {
             offer_replace_pending: headers
                 .get_optional_str(&response_header_names::OFFER_REPLACE_PENDING)
                 .and_then(|s| s.parse::<bool>().ok()),
+            retry_after_ms: headers
+                .get_optional_str(&response_header_names::RETRY_AFTER_MS)
+                .and_then(|s| s.parse().ok()),
+            correlated_activity_id: headers
+                .get_optional_str(&response_header_names::CORRELATED_ACTIVITY_ID)
+                .map(|s| s.to_owned()),
+            transport_request_id: headers
+                .get_optional_str(&response_header_names::TRANSPORT_REQUEST_ID)
+                .and_then(|s| s.parse().ok()),
+            global_committed_lsn: headers
+                .get_optional_str(&response_header_names::GLOBAL_COMMITTED_LSN)
+                .and_then(|s| s.parse().ok()),
+            quorum_acked_lsn: headers
+                .get_optional_str(&response_header_names::QUORUM_ACKED_LSN)
+                .and_then(|s| s.parse().ok()),
+            quorum_acked_local_lsn: headers
+                .get_optional_str(&response_header_names::QUORUM_ACKED_LOCAL_LSN)
+                .and_then(|s| s.parse().ok()),
+            local_lsn: headers
+                .get_optional_str(&response_header_names::LOCAL_LSN)
+                .and_then(|s| s.parse().ok()),
+            item_lsn: headers
+                .get_optional_str(&response_header_names::ITEM_LSN)
+                .and_then(|s| s.parse().ok()),
+            item_local_lsn: headers
+                .get_optional_str(&response_header_names::ITEM_LOCAL_LSN)
+                .and_then(|s| s.parse().ok()),
+            current_replica_set_size: headers
+                .get_optional_str(&response_header_names::CURRENT_REPLICA_SET_SIZE)
+                .and_then(|s| s.parse().ok()),
+            current_write_quorum: headers
+                .get_optional_str(&response_header_names::CURRENT_WRITE_QUORUM)
+                .and_then(|s| s.parse().ok()),
+            number_of_read_regions: headers
+                .get_optional_str(&response_header_names::NUMBER_OF_READ_REGIONS)
+                .and_then(|s| s.parse().ok()),
+            xp_role: headers
+                .get_optional_str(&response_header_names::XP_ROLE)
+                .and_then(|s| s.parse().ok()),
+            last_state_change_utc: headers
+                .get_optional_str(&response_header_names::LAST_STATE_CHANGE_UTC)
+                .map(|s| s.to_owned()),
+            schema_version: headers
+                .get_optional_str(&response_header_names::SCHEMA_VERSION)
+                .map(|s| s.to_owned()),
+            gateway_version: headers
+                .get_optional_str(&response_header_names::GATEWAY_VERSION)
+                .map(|s| s.to_owned()),
+            service_version: headers
+                .get_optional_str(&response_header_names::SERVICE_VERSION)
+                .map(|s| s.to_owned()),
+            resource_quota: headers
+                .get_optional_str(&response_header_names::RESOURCE_QUOTA)
+                .map(|s| s.to_owned()),
+            resource_usage: headers
+                .get_optional_str(&response_header_names::RESOURCE_USAGE)
+                .map(|s| s.to_owned()),
+            has_tentative_writes: headers
+                .get_optional_str(&response_header_names::HAS_TENTATIVE_WRITES)
+                .and_then(|s| s.parse::<bool>().ok()),
+            partition_key_range_id: headers
+                .get_optional_str(&response_header_names::PARTITION_KEY_RANGE_ID)
+                .map(|s| s.to_owned()),
+            log_results: headers
+                .get_optional_str(&response_header_names::LOG_RESULTS)
+                .map(|s| s.to_owned()),
+            collection_index_transformation_progress: headers
+                .get_optional_str(&response_header_names::COLLECTION_INDEX_TRANSFORMATION_PROGRESS)
+                .and_then(|s| s.parse().ok()),
+            collection_lazy_indexing_progress: headers
+                .get_optional_str(&response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS)
+                .and_then(|s| s.parse().ok()),
         }
     }
 }
@@ -285,6 +471,37 @@ mod tests {
         );
         headers.insert("x-ms-request-duration-ms", "4.56");
         headers.insert("lsn", "42");
+        headers.insert("x-ms-retry-after-ms", "1000");
+        headers.insert("x-ms-cosmos-correlated-activityid", "corr-456");
+        headers.insert("x-ms-transport-request-id", "99");
+        headers.insert("x-ms-global-committed-lsn", "50");
+        headers.insert("x-ms-quorum-acked-lsn", "48");
+        headers.insert("x-ms-cosmos-quorum-acked-llsn", "47");
+        headers.insert("x-ms-cosmos-llsn", "51");
+        headers.insert("x-ms-item-lsn", "40");
+        headers.insert("x-ms-cosmos-item-llsn", "39");
+        headers.insert("x-ms-current-replica-set-size", "4");
+        headers.insert("x-ms-current-write-quorum", "3");
+        headers.insert("x-ms-number-of-read-regions", "2");
+        headers.insert("x-ms-xp-role", "1");
+        headers.insert("x-ms-last-state-change-utc", "2024-01-01T00:00:00Z");
+        headers.insert("x-ms-schemaversion", "1.18");
+        headers.insert("x-ms-gatewayversion", "2.18.0");
+        headers.insert("x-ms-serviceversion", "version 2.18.0");
+        headers.insert("x-ms-resource-quota", "documentSize=10240;");
+        headers.insert("x-ms-resource-usage", "documentSize=0;");
+        headers.insert("x-ms-cosmos-allow-tentative-writes", "true");
+        headers.insert("x-ms-documentdb-partitionkeyrangeid", "0");
+        // cspell:disable-next-line
+        headers.insert("x-ms-documentdb-script-log-results", "logoutput");
+        headers.insert(
+            "x-ms-documentdb-collection-index-transformation-progress",
+            "100",
+        );
+        headers.insert(
+            "x-ms-documentdb-collection-lazy-indexing-progress",
+            "75",
+        );
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -320,6 +537,58 @@ mod tests {
         );
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
+        assert_eq!(cosmos_headers.retry_after_ms, Some(1000));
+        assert_eq!(
+            cosmos_headers.correlated_activity_id.as_deref(),
+            Some("corr-456")
+        );
+        assert_eq!(cosmos_headers.transport_request_id, Some(99));
+        assert_eq!(cosmos_headers.global_committed_lsn, Some(50));
+        assert_eq!(cosmos_headers.quorum_acked_lsn, Some(48));
+        assert_eq!(cosmos_headers.quorum_acked_local_lsn, Some(47));
+        assert_eq!(cosmos_headers.local_lsn, Some(51));
+        assert_eq!(cosmos_headers.item_lsn, Some(40));
+        assert_eq!(cosmos_headers.item_local_lsn, Some(39));
+        assert_eq!(cosmos_headers.current_replica_set_size, Some(4));
+        assert_eq!(cosmos_headers.current_write_quorum, Some(3));
+        assert_eq!(cosmos_headers.number_of_read_regions, Some(2));
+        assert_eq!(cosmos_headers.xp_role, Some(1));
+        assert_eq!(
+            cosmos_headers.last_state_change_utc.as_deref(),
+            Some("2024-01-01T00:00:00Z")
+        );
+        assert_eq!(cosmos_headers.schema_version.as_deref(), Some("1.18"));
+        assert_eq!(cosmos_headers.gateway_version.as_deref(), Some("2.18.0"));
+        assert_eq!(
+            cosmos_headers.service_version.as_deref(),
+            Some("version 2.18.0")
+        );
+        assert_eq!(
+            cosmos_headers.resource_quota.as_deref(),
+            Some("documentSize=10240;")
+        );
+        assert_eq!(
+            cosmos_headers.resource_usage.as_deref(),
+            Some("documentSize=0;")
+        );
+        assert_eq!(cosmos_headers.has_tentative_writes, Some(true));
+        assert_eq!(
+            cosmos_headers.partition_key_range_id.as_deref(),
+            Some("0")
+        );
+        assert_eq!(
+            cosmos_headers.log_results.as_deref(),
+            // cspell:disable-next-line
+            Some("logoutput")
+        );
+        assert_eq!(
+            cosmos_headers.collection_index_transformation_progress,
+            Some(100)
+        );
+        assert_eq!(
+            cosmos_headers.collection_lazy_indexing_progress,
+            Some(75)
+        );
     }
 
     #[test]
@@ -360,6 +629,7 @@ mod tests {
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
+            ..Default::default()
         };
 
         assert_eq!(

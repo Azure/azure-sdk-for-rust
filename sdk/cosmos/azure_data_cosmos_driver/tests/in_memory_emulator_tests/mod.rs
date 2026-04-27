@@ -6,6 +6,7 @@
 pub mod control_plane;
 pub mod driver_end_to_end;
 pub mod dual_backend;
+pub mod end_to_end;
 pub mod error_cases;
 pub mod multi_region;
 pub mod point_operations;
