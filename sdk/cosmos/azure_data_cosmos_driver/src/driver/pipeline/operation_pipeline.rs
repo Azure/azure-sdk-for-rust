@@ -20,8 +20,7 @@ use crate::{
     },
     models::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, ResourceType, SessionToken,
-        SubStatusCode,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -445,20 +444,7 @@ fn build_transport_request(
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
-    let resource_ref = operation.resource_reference();
-    // Create and Upsert are POSTed to the collection feed even though the
-    // operation carries an ItemReference with the document id.  Use the
-    // feed-path variant so the request URL targets the collection and the
-    // signing link uses the parent resource.
-    let paths = if matches!(
-        operation.operation_type(),
-        OperationType::Create | OperationType::Upsert
-    ) && operation.resource_type() == ResourceType::Document
-    {
-        resource_ref.compute_feed_paths()
-    } else {
-        resource_ref.compute_paths()
-    };
+    let paths = operation.compute_resource_paths();
     let url = {
         let mut base = ctx.routing.selected_url.clone();
         let request_path = paths.request_path();
@@ -1283,6 +1269,13 @@ mod tests {
             .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
             .expect("is-upsert header should be set");
         assert_eq!(is_upsert, "true");
+
+        // Upsert targets the collection feed URL, not the individual document.
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs",
+            "upsert should POST to the collection feed, not /docs/doc1"
+        );
     }
 
     #[test]
@@ -1310,6 +1303,13 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
                 .is_none(),
             "is-upsert header should not be set for create"
+        );
+
+        // Create targets the collection feed URL, not the individual document.
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs",
+            "create should POST to the collection feed, not /docs/doc1"
         );
     }
 

@@ -254,6 +254,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the new item.
+    /// * `item_id` - The id of the new item.
     /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///
@@ -453,6 +454,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the item to create or replace.
+    /// * `item_id` - The id of the item to create or replace.
     /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///

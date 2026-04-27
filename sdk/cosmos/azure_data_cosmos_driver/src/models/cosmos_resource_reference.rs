@@ -785,6 +785,35 @@ mod tests {
     }
 
     #[test]
+    fn compute_feed_paths_item_reference() {
+        // An ItemReference carries the document id, but compute_feed_paths
+        // must produce the same feed-style paths as compute_paths on a
+        // feed reference (without the item id in the URL).
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let r: CosmosResourceReference = item.into();
+
+        let feed_paths = r.compute_feed_paths();
+        assert_eq!(
+            feed_paths.request_path(),
+            "/dbs/testdb/colls/testcontainer/docs",
+            "request path should target the collection feed, not the individual document"
+        );
+        assert_eq!(
+            feed_paths.signing_link(),
+            "dbs/testdb/colls/testcontainer",
+            "signing link should be the parent container path"
+        );
+
+        // Verify consistency with compute_paths on an equivalent feed reference.
+        let feed_ref = CosmosResourceReference::from(test_container())
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let expected = feed_ref.compute_paths();
+        assert_eq!(feed_paths.request_path(), expected.request_path());
+        assert_eq!(feed_paths.signing_link(), expected.signing_link());
+    }
+
+    #[test]
     fn compute_paths_offer_uses_signing_override() {
         let account = test_account();
         let r = CosmosResourceReference::from(account)

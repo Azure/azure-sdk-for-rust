@@ -86,6 +86,24 @@ impl CosmosOperation {
         &self.resource_reference
     }
 
+    /// Computes the request path and signing link for this operation.
+    ///
+    /// Create and Upsert document operations use feed-style paths (targeting
+    /// the collection URL) even though they carry an item id, because the
+    /// Cosmos DB REST API POSTs these to the collection feed. All other
+    /// operations use the standard resource paths.
+    pub(crate) fn compute_resource_paths(&self) -> crate::models::ResourcePaths {
+        if matches!(
+            self.operation_type,
+            OperationType::Create | OperationType::Upsert
+        ) && self.resource_type == ResourceType::Document
+        {
+            self.resource_reference.compute_feed_paths()
+        } else {
+            self.resource_reference.compute_paths()
+        }
+    }
+
     /// Returns the container for this operation, if applicable.
     ///
     /// Returns `None` for account-level and database-level operations.
