@@ -1,4 +1,4 @@
-<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity cooldown ALPN myacct pushdown analogrelay Kiran -->
+<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity cooldown ALPN myacct pushdown -->
 # Gateway 2.0 Design Spec for Rust Driver & SDK
 
 **Status**: Draft / Iterating
@@ -131,7 +131,7 @@ Gateway 2.0 reuses the standard retry pipeline. Two status codes have Gateway-2.
 - **Few attempts** (≤ 3) with **exponential backoff** between them (separate, looser schedule from the one used for 410/Gone).
 - Retry against the **same** endpoint; do not switch regions on 449.
 - **Do not** share the retry budget with 410/Gone — 449 has its own dedicated policy.
-- **Gateway V1 uses the identical 449 policy.** When the server-side adds a "suppress 449" capability (under design with the server team — see Kiran for context), the client negotiates it via the `SdkSupportedCapabilities` channel and treats 449 as a non-retryable terminal error. Until that capability ships, both transports retry per the policy above.
+- **Gateway V1 uses the identical 449 policy.** When the server-side adds a "suppress 449" capability (under design with the server team), the client negotiates it via the `SdkSupportedCapabilities` channel and treats 449 as a non-retryable terminal error. Until that capability ships, both transports retry per the policy above.
 
 ### 4.2 HTTP 404 with sub-status `1002` (`PARTITION_KEY_RANGE_GONE`)
 
@@ -360,7 +360,7 @@ For Rust: thread the resolved consistency value through the pipeline as an expli
 
 #### Range header wire format
 
-EPK range headers (`x-ms-thinclient-range-min` / `-max`) carry the canonical, un-padded hex produced by `EffectivePartitionKey::compute_range()`. **Do not** zero-pad to N×32 on the wire. Local comparisons use `EffectivePartitionKey`'s `Ord` / `cmp` impl, which correctly handles the mixed-length boundaries returned by the backend; the `epk_cmp_*` tests in `container_routing_map.rs` (around L625–665) pin this behavior. The comparator is consumed via `binary_search_by(|r| r.min_inclusive.cmp(&epk_val))` (≈L282 of the same file). `@analogrelay`'s earlier zero-padding proposal in PR #4087 (commit `25233c903`) was **not** adopted; stay consistent with the length-aware convention.
+EPK range headers (`x-ms-thinclient-range-min` / `-max`) carry the canonical, un-padded hex produced by `EffectivePartitionKey::compute_range()`. **Do not** zero-pad to N×32 on the wire. Local comparisons use `EffectivePartitionKey`'s `Ord` / `cmp` impl, which correctly handles the mixed-length boundaries returned by the backend; the `epk_cmp_*` tests in `container_routing_map.rs` (around L625–665) pin this behavior. The comparator is consumed via `binary_search_by(|r| r.min_inclusive.cmp(&epk_val))` (≈L282 of the same file). An earlier zero-padding proposal in PR #4087 (commit `25233c903`) was **not** adopted; stay consistent with the length-aware convention.
 
 > **`Range` semantics pitfall** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
 
