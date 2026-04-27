@@ -311,8 +311,7 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
     ignore_conflict(
         driver
             .execute_operation(
-                CosmosOperation::create_item(item_ref)
-                    .with_body(item_body.into_bytes()),
+                CosmosOperation::create_item(item_ref).with_body(item_body.into_bytes()),
                 OperationOptions::default(),
             )
             .await,
