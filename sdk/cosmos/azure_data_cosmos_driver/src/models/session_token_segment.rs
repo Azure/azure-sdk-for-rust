@@ -102,12 +102,9 @@ mod tests {
     }
 
     #[test]
-    fn display_round_trip() {
+    fn display_formats_expected_string() {
         let seg: SessionTokenSegment = "0:1#100#1=10".parse().unwrap();
-        let s = seg.to_string();
-        let seg2: SessionTokenSegment = s.parse().unwrap();
-        assert_eq!(seg2.pk_range_id(), "0");
-        assert_eq!(seg2.global_lsn(), 100);
+        assert_eq!(seg.to_string(), "0:1#100#1=10");
     }
 
     #[test]

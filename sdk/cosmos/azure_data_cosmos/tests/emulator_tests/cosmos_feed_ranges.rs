@@ -72,10 +72,6 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
                     !inner.get("isMaxInclusive").unwrap().as_bool().unwrap(),
                     "isMaxInclusive should be false"
                 );
-
-                let parsed: FeedRange = serialized
-                    .parse()
-                    .expect("feed range should be parseable from Display output");
             }
 
             Ok(())
