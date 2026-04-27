@@ -261,6 +261,10 @@ mod tests {
             Some("true")
         );
         assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), Some("5"));
+        assert_eq!(
+            headers.get_optional_str(&COSMOS_INTERNAL_PARTITION_ID),
+            Some("int-part-99")
+        );
     }
 
     #[test]
