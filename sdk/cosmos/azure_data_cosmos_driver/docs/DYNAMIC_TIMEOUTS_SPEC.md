@@ -135,35 +135,6 @@ internal defaults chosen to balance latency and reliability.
   [§9](#9-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
   `ShardedHttpTransport`.
 
-### Why not `azure_core::RetryPolicy`?
-
-This logic intentionally lives in the driver's transport pipeline rather than as a custom
-`RetryPolicy` plugged into the `azure_core::Pipeline`. The driver's pipeline is deliberately
-separate from `azure_core::Pipeline` for several reasons that also apply here:
-
-- **Custom diagnostics payloads**: Cosmos `DiagnosticsContext` records per-attempt charge,
-  activity ID, session token, and the effective per-attempt timeout. The `azure_core` retry
-  abstraction has no hook for this.
-- **HTTP/2 stream limits and shard health**: Timeout retries interact with `ShardedHttpTransport`
-  shard selection, eviction, and HTTP/2 stream accounting. A generic `RetryPolicy` cannot see
-  shard state.
-- **Partition-level failover and region routing**: Retries must coordinate with
-  `OperationRetryState` (failover region, excluded regions, session token) which are Cosmos-
-  specific concepts that don't belong in `azure_core`.
-- **Multi-request "operations"**: A single user operation may issue multiple HTTP requests
-  (address refresh, metadata, then data plane). Retry decisions span the operation, not a single
-  request.
-- **Hedging and parallel attempts**: The transport pipeline owns hedging primary/secondary
-  coordination (`TRANSPORT_PIPELINE_SPEC.md` §4.2). A linear `RetryPolicy` does not model
-  speculative concurrent attempts.
-- **Custom binary protocol path**: Future thin client / Gateway 2.0 work uses a different wire
-  format. The transport pipeline is the layer that abstracts these dispatch differences; a
-  shared `RetryPolicy` would not.
-
-In short, timeout escalation needs visibility into Cosmos-specific transport state
-(shard pool, region context, hedging, per-attempt diagnostics) that an `azure_core::RetryPolicy`
-intentionally does not expose.
-
 ---
 
 ## 4. Timeout Ladders
@@ -807,38 +778,12 @@ fn on_connect_result(pool: &EndpointShardPool, success: bool) {
 
 ## 10. Cross-SDK Reference
 
-### Java SDK (`azure-cosmos`)
-
-From `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`:
-
-**Gateway mode (HTTP):**
-
-| Operation Type   | Request Timeout Ladder | Connection Timeout |
-|------------------|------------------------|--------------------|
-| QueryPlan        | 0.5s, 5s, 10s          | 45s                |
-| AddressRefresh   | 0.5s, 5s, 10s          | 45s                |
-| Database Account | 5s, 10s, 20s           | 45s                |
-| Other HTTP calls | 60s, 60s, 60s          | 45s                |
-
-**Direct mode (TCP):**
-
-| Operation Type | Request Timeout    | Connection Timeout |
-|----------------|--------------------|--------------------|
-| All TCP calls  | 5s (fixed)         | 5s (fixed)         |
-
 ### This Spec (Rust Driver)
 
 | Request Type | Request Timeout Ladder |
 |--------------|------------------------|
 | Data plane   | 6s, 10s, 65s           |
 | Metadata     | 5s, 10s, 20s           |
-
-**Differences from Java SDK:**
-
-- Rust data plane uses 6s/10s/65s; Java direct mode uses a flat 5s.
-- Java gateway "Other HTTP calls" use a flat 60s; Rust data plane starts lower (6s).
-- Connection timeouts: Java uses a flat 45s (gateway) / 5s (direct). Rust uses an adaptive
-  model starting at 1s and escalating to 5s on sustained connection failures.
 
 ---
 
