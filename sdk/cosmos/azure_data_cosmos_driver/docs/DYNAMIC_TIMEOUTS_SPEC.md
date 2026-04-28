@@ -59,7 +59,7 @@ add latency to the common case.
 - **User-facing per-attempt knobs**: Users do not configure individual ladder tiers, the
   per-attempt timeout, or the timeout-retry budget directly. Their only timeout controls are
   client-level min/max bounds via `ConnectionPoolOptions` (which clamp the ladder) and a per-call
-  end-to-end deadline via `OperationOptions::new().with_end_to_end_latency_policy(...)` (which
+  end-to-end deadline via `OperationOptions.end_to_end_latency_policy` (which
   always wins). This keeps the user surface narrow and avoids exposing an internal-only escalation
   schedule that may evolve.
 - **Query plan timeout escalation**: Deferred until query plan execution is implemented.
@@ -409,12 +409,11 @@ Ladder Position"](#hedging-and-timeout-ladder-position).
 ### Reaching `reqwest::RequestBuilder::timeout()` from the Driver
 
 The driver owns the `HttpClientFactory` (`http_client_factory.rs`) that constructs `reqwest::Client`
-instances, but the factory currently returns `Arc<dyn HttpClient>` (line 216:
-`Ok(Arc::new(client))`). Once a request is dispatched via the `azure_core::http::HttpClient` trait
-(`HttpClient::execute_request(&Request)`), there is **no surface** for a per-request timeout —
-the trait was designed by `typespec_client_core` without one (see tracking issue
+instances, but the factory currently returns `Arc<dyn TransportClient>`. Once a request is
+dispatched via the `TransportClient` trait, there is **no surface** for a per-request timeout —
+the trait was designed without one (see tracking issue
 [#3878](https://github.com/Azure/azure-sdk-for-rust/issues/3878) and the existing TODO at
-`transport_pipeline.rs:247-249`).
+`transport_pipeline.rs:225-227`).
 
 Because the driver already owns the construction path, this spec resolves the gap **driver-side**
 without waiting on issue #3878:
@@ -425,7 +424,7 @@ without waiting on issue #3878:
    any other consumer that needs the trait, but the driver's transport layer holds and uses the
    concrete type.
 2. `ClientShard` (`sharded_transport.rs`) stores the `Arc<DriverHttpClient>` instead of
-   `Arc<dyn HttpClient>`. `ShardedHttpTransport::send()` calls
+   `Arc<dyn TransportClient>`. `ShardedHttpTransport::send()` calls
    `client.dispatch_with_timeout(req, attempt_timeout)` which internally builds the
    `reqwest::Request` and applies `RequestBuilder::timeout(attempt_timeout)` before `.send()`.
 3. **`HttpClientFactory::build()` no longer sets a client-level
@@ -439,8 +438,8 @@ without waiting on issue #3878:
    is no new code path for timeout enforcement.
 
 This is intentionally a **driver-internal** concrete-reqwest dispatch path — it does not change
-`typespec_client_core` or the public `azure_core::http::HttpClient` trait. Consumers outside the
-driver who pass an `Arc<dyn HttpClient>` into the driver are not supported for timeout
+`typespec_client_core` or the public `TransportClient` trait. Consumers outside the
+driver who pass an `Arc<dyn TransportClient>` into the driver are not supported for timeout
 escalation; the driver constructs its dispatch clients itself via `HttpClientFactory` regardless
 of any externally supplied `HttpClient`.
 
@@ -462,7 +461,7 @@ timeout-retry budget directly (see [§1 Non-Goals](#1-goals--motivation)).
 - **`RuntimeOptions`** (inheritable: driver-level → operation-level)
   - `end_to_end_latency_policy` — overall operation deadline
     (set via `DriverOptions` or overridden per-operation via
-    `OperationOptions.with_end_to_end_latency_policy()`)
+    `OperationOptions.end_to_end_latency_policy`)
 
 **Internal Driver Behavior:**
 
@@ -486,10 +485,10 @@ let pool = ConnectionPoolOptions::builder()
     .build()?;
 
 // Operation-level: 30s overall budget
-let options = OperationOptions::new()
-    .with_end_to_end_latency_policy(
-        EndToEndOperationLatencyPolicy::new(Duration::from_secs(30))
-    );
+let mut options = OperationOptions::default();
+options.end_to_end_latency_policy = Some(
+    EndToEndOperationLatencyPolicy::new(Duration::from_secs(30))
+);
 
 // Internal behavior (not user-visible):
 // Attempt 0: ladder says 6s  → clamped to min(6s, 10s) = 6s  → reqwest timeout = 6s
