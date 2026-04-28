@@ -570,6 +570,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_storage_blob_stress"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core",
+ "azure_core_test",
+ "azure_identity",
+ "azure_storage_blob",
+ "azure_storage_blob_test",
+ "clap",
+ "crc-fast",
+ "futures",
+ "rand 0.10.1",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
@@ -579,7 +597,10 @@ dependencies = [
  "azure_storage_blob",
  "bytes",
  "clap",
+ "crc-fast",
  "futures",
+ "pin-project",
+ "rand 0.10.1",
  "serde",
  "serde_json",
  "tokio",
@@ -950,6 +971,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b2a41393f66f16b0823bb79094d54ac5fbd34ab292ddafb9a0456ac9f87d201"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "crc-fast"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e75b2483e97a5a7da73ac68a05b629f9c53cff58d8ed1c77866079e18b00dba5"
+dependencies = [
+ "digest",
+ "spin",
 ]
 
 [[package]]
@@ -3115,6 +3146,12 @@ dependencies = [
  "libc",
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "spin"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
 
 [[package]]
 name = "stable_deref_trait"
