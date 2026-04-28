@@ -1807,8 +1807,8 @@ mod tests {
         // Multi-write account: writes can rotate across both write regions.
         // After the first attempt to eastus fails, the in-flight skip set
         // should route the next attempt to westus2 instead of repeating eastus.
-        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
-            .with_body(b"{}".to_vec());
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let east = CosmosEndpoint::regional(
             "eastus".into(),
@@ -1863,8 +1863,8 @@ mod tests {
         // attempt targets westus2 (the user's preferred region) and probes for
         // the actual write region, rather than blindly hitting the only entry
         // in the write list.
-        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
-            .with_body(b"{}".to_vec());
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let east = CosmosEndpoint::regional(
             "eastus".into(),
@@ -1911,8 +1911,8 @@ mod tests {
         // Single-master account with PPAF: write_endpoints = [eastus] only.
         // After eastus has failed, PPAF write retry should fall back to a
         // read region (westus2) for cross-regional write region discovery.
-        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
-            .with_body(b"{}".to_vec());
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let east = CosmosEndpoint::regional(
             "eastus".into(),
@@ -2207,8 +2207,7 @@ mod tests {
 
     #[test]
     fn build_transport_request_sets_is_upsert_header() {
-        let container = test_container();
-        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::upsert_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
@@ -2240,8 +2239,7 @@ mod tests {
 
     #[test]
     fn build_transport_request_omits_is_upsert_header_for_create() {
-        let container = test_container();
-        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
