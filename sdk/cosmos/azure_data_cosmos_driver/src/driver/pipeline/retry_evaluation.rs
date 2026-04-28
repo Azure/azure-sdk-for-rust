@@ -40,9 +40,12 @@ fn is_ppcb_managed(operation: &CosmosOperation, retry_state: &OperationRetryStat
 
 /// Builds an [`UnavailablePartition`] from the current operation context.
 ///
-/// `is_read` is passed explicitly because some call sites hardcode it
-/// (e.g., `false` for WriteForbidden, `true` for 500-on-reads) rather
-/// than deriving it from `operation.is_read_only()`.
+/// `is_read` is passed explicitly because the WriteForbidden handler hardcodes
+/// it to `false` (the request was a write, even though the gateway redirected
+/// us to read from a different region). All other call sites derive it from
+/// `operation.is_read_only()` so that PPCB increments the correct
+/// per-partition counter (read vs write) and gates failover by the matching
+/// threshold.
 fn make_partition_unavailable(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -222,7 +225,7 @@ pub(crate) fn evaluate_transport_result(
 ///
 /// The order matters: the more specific Cosmos sub-status checks (403/3,
 /// 404/1002, 429/3092) come before the generic status-code-family checks
-/// (5xx). The first handler that recognises the response returns
+/// (5xx). The first handler that recognizes the response returns
 /// `Some(action, effects)`; if none match, the response is aborted with a
 /// rich HTTP error.
 fn evaluate_http_outcome(
@@ -458,7 +461,7 @@ fn try_handle_server_error(
     }
 
     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-        make_partition_unavailable(operation, endpoint, retry_state, true),
+        make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
     if !is_ppcb_managed(operation, retry_state) {
         effects.push(LocationEffect::MarkEndpointUnavailable {

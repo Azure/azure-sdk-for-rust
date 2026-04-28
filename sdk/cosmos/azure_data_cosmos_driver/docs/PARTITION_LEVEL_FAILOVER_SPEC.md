@@ -1367,7 +1367,7 @@ the full lifecycle.
 When the operation completes with a region-confirming status, the pipeline
 additionally emits `LocationEffect::RecordPpafWriteRegion` (only if a snapshot
 pre-check shows the override is missing or points elsewhere). This effect
-idempotently inserts the discovered region into `failover_overrides` for the
+is idempotent: it inserts the discovered region into `failover_overrides` for the
 partition.
 
 ---
