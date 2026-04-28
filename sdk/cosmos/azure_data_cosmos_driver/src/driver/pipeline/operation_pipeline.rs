@@ -1359,8 +1359,13 @@ mod tests {
 
     #[test]
     fn build_transport_request_omits_batch_headers_for_create() {
-        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
-            .with_body(b"{}".to_vec());
+        let container = test_container();
+        let operation = CosmosOperation::create_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(b"{}".to_vec());
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
