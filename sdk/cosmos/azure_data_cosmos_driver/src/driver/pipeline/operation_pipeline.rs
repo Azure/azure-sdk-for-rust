@@ -158,15 +158,7 @@ pub(crate) async fn execute_operation_pipeline(
         );
 
         // ── STAGE 3: Build transport request ───────────────────────────
-        let execution_context = if retry_state.failover_retry_count == 0
-            && retry_state.session_token_retry_count == 0
-        {
-            ExecutionContext::Initial
-        } else if retry_state.session_token_retry_count > 0 {
-            ExecutionContext::Retry
-        } else {
-            ExecutionContext::RegionFailover
-        };
+        let execution_context = compute_execution_context(&retry_state);
 
         let ctx = TransportRequestContext {
             routing: &routing,
@@ -185,33 +177,8 @@ pub(crate) async fn execute_operation_pipeline(
         };
         let mut transport_request = build_transport_request(operation, custom_headers, &ctx)?;
 
-        // Apply content-response-on-write preference.
-        // By default, (None or Disabled), suppress the response body for write
-        // operations to reduce bandwidth. Only omit the header when Enabled.
-        // Only applies to write operations; reads always need the full body.
-        if !operation.operation_type().is_read_only()
-            && !matches!(
-                options.content_response_on_write(),
-                Some(&crate::options::ContentResponseOnWrite::Enabled)
-            )
-        {
-            transport_request.headers.insert(
-                request_header_names::PREFER,
-                HeaderValue::from_static("return=minimal"),
-            );
-        }
+        apply_optional_request_headers(&mut transport_request, operation, options);
 
-        // Apply custom headers from resolved options.
-        // Inserted conditionally so they don't override SDK-set headers.
-        if let Some(custom_headers) = options.custom_headers() {
-            for (name, value) in custom_headers {
-                if !transport_request.headers.iter().any(|(n, _)| n == name) {
-                    transport_request
-                        .headers
-                        .insert(name.clone(), value.clone());
-                }
-            }
-        }
         tracing::trace!(
             method = ?transport_request.method,
             url = %transport_request.url,
@@ -310,40 +277,12 @@ pub(crate) async fn execute_operation_pipeline(
                 flush_pending_write_effects(&mut retry_state, location_state_store).await;
 
                 // If a PPCB probe request succeeded, remove the ProbeCandidate entry.
-                // Only circuit breaker overrides use probe-based failback; PPAF
-                // overrides persist until the backend signals a change organically.
-                if let Some(pk_range_id) = &retry_state.partition_key_range_id {
-                    // Fast path: skip the CAS loop if no ProbeCandidate entry exists.
-                    // This avoids an expensive full-state clone on every successful
-                    // request (the overwhelmingly common case).
-                    let snapshot = location_state_store.snapshot();
-                    let needs_probe_cleanup = snapshot
-                        .partitions
-                        .circuit_breaker_overrides
-                        .get(pk_range_id.as_str())
-                        .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
-                    if needs_probe_cleanup {
-                        location_state_store.apply_partition(|current| {
-                            // Re-check ProbeCandidate status inside the CAS closure to
-                            // avoid a TOCTOU race: if another thread transitions the
-                            // entry to Unhealthy between the snapshot check and the CAS,
-                            // we must not remove the Unhealthy entry.
-                            let is_probe = current
-                                .circuit_breaker_overrides
-                                .get(pk_range_id.as_str())
-                                .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
-                            if is_probe {
-                                remove_probe_succeeded_entry(current, pk_range_id)
-                            } else {
-                                current.clone()
-                            }
-                        });
-                    }
-                }
+                try_cleanup_probe_candidate(&retry_state, location_state_store);
+
                 return build_cosmos_response(result, diagnostics);
             }
             OperationAction::FailoverRetry { new_state, delay } => {
-                tracing::warn!(
+                tracing::debug!(
                     activity_id = %activity_id,
                     failover_attempt = new_state.failover_retry_count,
                     delay = ?delay,
@@ -351,56 +290,14 @@ pub(crate) async fn execute_operation_pipeline(
                     deferred_effects = retry_state.pending_write_effects.len(),
                     "failover retry triggered",
                 );
-                if let Some(delay) = delay {
-                    if !delay.is_zero() {
-                        if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
-                            azure_core::sleep(duration).await;
-                        }
-                    }
-                }
-
-                let next_location = location_state_store.snapshot();
-                let endpoints_len = preferred_endpoints_for_attempt(
-                    next_location.account.as_ref(),
-                    &new_state,
+                apply_failover_delay(delay).await;
+                advance_to_next_attempt(
+                    &mut retry_state,
+                    new_state,
+                    location_state_store,
                     operation.is_read_only(),
-                )
-                .len();
-
-                // Carry deferred write-path effects forward into the next
-                // attempt. `evaluate_transport_result` cloned `retry_state`
-                // BEFORE this attempt's deferred effects were appended, so
-                // `new_state.pending_write_effects` is the pre-extend
-                // snapshot. Without this transfer, every retry starts with
-                // an empty `pending_write_effects`, which means
-                // `in_flight_failed` (built from those effects in
-                // `resolve_endpoint`) is empty — so the next attempt does
-                // not skip the region that just failed and may pick the
-                // same region again (or, when all regions are unavailable,
-                // fall back to the global default endpoint).
-                let pending = std::mem::take(&mut retry_state.pending_write_effects);
-                retry_state =
-                    new_state.advance_location(endpoints_len, next_location.account.generation);
-                retry_state.pending_write_effects = pending;
-
-                // Check deadline before retrying
-                if let Some(d) = deadline {
-                    if Instant::now() >= d {
-                        let timeout_duration = options
-                            .end_to_end_latency_policy()
-                            .map(|p| p.timeout())
-                            .unwrap_or_default();
-
-                        diagnostics.set_operation_status(
-                            azure_core::http::StatusCode::RequestTimeout,
-                            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-                        );
-                        return Err(azure_core::Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-                        ));
-                    }
-                }
+                );
+                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
@@ -409,41 +306,13 @@ pub(crate) async fn execute_operation_pipeline(
                 // guarantees. Container-recreation (RID change) handling
                 // will be addressed via deterministic RID comparison in
                 // a future change.
-
-                let next_location = location_state_store.snapshot();
-                let endpoints_len = preferred_endpoints_for_attempt(
-                    next_location.account.as_ref(),
-                    &new_state,
+                advance_to_next_attempt(
+                    &mut retry_state,
+                    new_state,
+                    location_state_store,
                     operation.is_read_only(),
-                )
-                .len();
-                // Preserve any deferred write-path effects across the
-                // session-retry transition for the same reason as in
-                // `FailoverRetry`: the new_state inside the action carries
-                // a stale snapshot of `pending_write_effects`.
-                let pending = std::mem::take(&mut retry_state.pending_write_effects);
-                retry_state =
-                    new_state.advance_location(endpoints_len, next_location.account.generation);
-                retry_state.pending_write_effects = pending;
-
-                // Check deadline before retrying
-                if let Some(d) = deadline {
-                    if Instant::now() >= d {
-                        let timeout_duration = options
-                            .end_to_end_latency_policy()
-                            .map(|p| p.timeout())
-                            .unwrap_or_default();
-
-                        diagnostics.set_operation_status(
-                            azure_core::http::StatusCode::RequestTimeout,
-                            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-                        );
-                        return Err(azure_core::Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-                        ));
-                    }
-                }
+                );
+                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
             OperationAction::Abort { error, status } => {
                 // Flush deferred write-path effects if the abort status
@@ -978,6 +847,195 @@ fn should_capture_session_token_from_status(
         }
         _ => false,
     }
+}
+
+// ── Pipeline stage helpers ────────────────────────────────────────────
+//
+// These pure (or narrowly-scoped) helpers carry the per-stage logic for
+// `execute_operation_pipeline` so the main loop body stays readable and
+// each stage can be unit-tested in isolation.
+
+/// Maps the current retry counts to the `ExecutionContext` value that the
+/// transport pipeline expects for diagnostics annotation.
+///
+/// - First attempt (no failover, no session retry) → `Initial`
+/// - Any session retry in progress → `Retry`
+/// - Otherwise (a failover retry) → `RegionFailover`
+///
+/// Session-retry takes precedence over failover-retry because in the rare
+/// case where both counters are non-zero, the most recent advance was the
+/// session retry (failover counters are not reset on session retry, but the
+/// session retry happens later in the loop).
+fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionContext {
+    if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
+        ExecutionContext::Initial
+    } else if retry_state.session_token_retry_count > 0 {
+        ExecutionContext::Retry
+    } else {
+        ExecutionContext::RegionFailover
+    }
+}
+
+/// Applies operation-options-driven request headers that are only known
+/// after the request has been built by `build_transport_request`.
+///
+/// Two concerns are layered here, in this order:
+///
+/// 1. **content-response-on-write**: For non-read operations whose
+///    `content_response_on_write` is `None` (default) or `Disabled`,
+///    inject `Prefer: return=minimal` so the service suppresses the
+///    response body. Reads always need the body and are unaffected.
+/// 2. **custom_headers**: Pass-through of caller-supplied headers, but
+///    only when no SDK-set header with the same name already exists —
+///    SDK headers always take precedence.
+fn apply_optional_request_headers(
+    transport_request: &mut TransportRequest,
+    operation: &CosmosOperation,
+    options: &OperationOptionsView<'_>,
+) {
+    if !operation.operation_type().is_read_only()
+        && !matches!(
+            options.content_response_on_write(),
+            Some(&crate::options::ContentResponseOnWrite::Enabled)
+        )
+    {
+        transport_request.headers.insert(
+            request_header_names::PREFER,
+            HeaderValue::from_static("return=minimal"),
+        );
+    }
+
+    if let Some(custom_headers) = options.custom_headers() {
+        for (name, value) in custom_headers {
+            if !transport_request.headers.iter().any(|(n, _)| n == name) {
+                transport_request
+                    .headers
+                    .insert(name.clone(), value.clone());
+            }
+        }
+    }
+}
+
+/// Sleeps for the failover-retry delay if one was requested.
+///
+/// Treats `None` and zero-duration delays as no-ops so callers don't have
+/// to repeat that guard themselves. Conversion to `azure_core::time::Duration`
+/// is performed once; if it fails (e.g., overflow) the sleep is silently
+/// skipped because a too-large delay is no worse than no delay at all.
+async fn apply_failover_delay(delay: Option<Duration>) {
+    let Some(delay) = delay else {
+        return;
+    };
+    if delay.is_zero() {
+        return;
+    }
+    if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
+        azure_core::sleep(duration).await;
+    }
+}
+
+/// Advances `retry_state` to a fresh attempt against an updated location
+/// snapshot, preserving any deferred write-path effects.
+///
+/// `evaluate_transport_result` cloned `retry_state` BEFORE this attempt's
+/// deferred effects were appended, so `new_state.pending_write_effects` is
+/// the pre-extend snapshot. Without explicit transfer, every retry would
+/// start with an empty `pending_write_effects` — which means
+/// `in_flight_failed` (built from those effects in `resolve_endpoint`) would
+/// be empty, so the next attempt would not skip the region that just failed
+/// and may pick the same region again (or, when all regions are unavailable,
+/// fall back to the global default endpoint).
+fn advance_to_next_attempt(
+    retry_state: &mut OperationRetryState,
+    new_state: OperationRetryState,
+    location_state_store: &LocationStateStore,
+    is_read_only: bool,
+) {
+    let next_location = location_state_store.snapshot();
+    let endpoints_len =
+        preferred_endpoints_for_attempt(next_location.account.as_ref(), &new_state, is_read_only)
+            .len();
+    let pending = std::mem::take(&mut retry_state.pending_write_effects);
+    *retry_state = new_state.advance_location(endpoints_len, next_location.account.generation);
+    retry_state.pending_write_effects = pending;
+}
+
+/// Returns `Err` with a `RequestTimeout`-coded error if the end-to-end
+/// deadline has been reached, otherwise `Ok(())`.
+///
+/// On timeout, the diagnostics builder is updated with
+/// `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` so downstream telemetry
+/// can distinguish a client-side end-to-end timeout from a service 408.
+fn enforce_deadline_or_timeout(
+    deadline: Option<Instant>,
+    options: &OperationOptionsView<'_>,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> azure_core::Result<()> {
+    let Some(d) = deadline else {
+        return Ok(());
+    };
+    if Instant::now() < d {
+        return Ok(());
+    }
+
+    let timeout_duration = options
+        .end_to_end_latency_policy()
+        .map(|p| p.timeout())
+        .unwrap_or_default();
+
+    diagnostics.set_operation_status(
+        azure_core::http::StatusCode::RequestTimeout,
+        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+    );
+    Err(azure_core::Error::new(
+        azure_core::error::ErrorKind::Other,
+        format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
+    ))
+}
+
+/// On a successful PPCB probe request, removes the `ProbeCandidate` entry
+/// for this partition so subsequent requests resume default routing.
+///
+/// Only PPCB circuit-breaker overrides use probe-based failback. PPAF
+/// overrides persist until the backend signals a change organically, so
+/// this function is a no-op for them.
+///
+/// **Fast path**: skips the CAS loop entirely when no `ProbeCandidate`
+/// entry exists for this partition, avoiding an expensive full-state
+/// clone on every successful request (the overwhelmingly common case).
+///
+/// **TOCTOU guard**: re-checks the `ProbeCandidate` status inside the CAS
+/// closure. If another thread transitions the entry to `Unhealthy` between
+/// the snapshot check and the CAS, the unhealthy entry must not be removed.
+fn try_cleanup_probe_candidate(
+    retry_state: &OperationRetryState,
+    location_state_store: &LocationStateStore,
+) {
+    let Some(pk_range_id) = &retry_state.partition_key_range_id else {
+        return;
+    };
+
+    let snapshot = location_state_store.snapshot();
+    let needs_cleanup = snapshot
+        .partitions
+        .circuit_breaker_overrides
+        .get(pk_range_id.as_str())
+        .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
+    if !needs_cleanup {
+        return;
+    }
+
+    location_state_store.apply_partition(|current| {
+        let is_probe = current
+            .circuit_breaker_overrides
+            .get(pk_range_id.as_str())
+            .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
+        if is_probe {
+            remove_probe_succeeded_entry(current, pk_range_id)
+        } else {
+            current.clone()
+        }
+    });
 }
 
 #[cfg(test)]
@@ -2327,6 +2385,126 @@ mod tests {
                 request_header_names::THROUGHPUT_BUCKET
             )),
             Some("100")
+        );
+    }
+
+    // ── compute_execution_context ─────────────────────────────────────
+
+    fn retry_state_with_counts(
+        failover_retry_count: u32,
+        session_token_retry_count: u32,
+    ) -> super::OperationRetryState {
+        let mut state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.failover_retry_count = failover_retry_count;
+        state.session_token_retry_count = session_token_retry_count;
+        state
+    }
+
+    #[test]
+    fn execution_context_initial_when_no_retries() {
+        let state = retry_state_with_counts(0, 0);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::Initial
+        ));
+    }
+
+    #[test]
+    fn execution_context_retry_when_session_retry_active() {
+        // Session-retry takes precedence over failover-retry: when both
+        // counters are non-zero, the most recent advance was the session
+        // retry, so the attempt is annotated as a `Retry`.
+        let state = retry_state_with_counts(1, 1);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::Retry
+        ));
+
+        let state = retry_state_with_counts(0, 1);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::Retry
+        ));
+    }
+
+    #[test]
+    fn execution_context_region_failover_when_only_failover_active() {
+        let state = retry_state_with_counts(1, 0);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::RegionFailover
+        ));
+    }
+
+    // ── apply_failover_delay ──────────────────────────────────────────
+
+    #[tokio::test]
+    async fn failover_delay_none_returns_immediately() {
+        let start = std::time::Instant::now();
+        super::apply_failover_delay(None).await;
+        // Allow generous slack for CI scheduling jitter; the goal is to
+        // confirm that `None` does not invoke the sleep path at all.
+        assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test]
+    async fn failover_delay_zero_returns_immediately() {
+        let start = std::time::Instant::now();
+        super::apply_failover_delay(Some(Duration::ZERO)).await;
+        assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn failover_delay_real_value_actually_sleeps() {
+        // Use tokio's pause-time to verify the sleep path is taken
+        // without making the test wall-clock-slow.
+        let start = tokio::time::Instant::now();
+        super::apply_failover_delay(Some(Duration::from_secs(5))).await;
+        assert!(start.elapsed() >= Duration::from_secs(5));
+    }
+
+    // ── enforce_deadline_or_timeout ───────────────────────────────────
+
+    fn empty_options_view() -> crate::options::OperationOptionsView<'static> {
+        crate::options::OperationOptionsView::new(None, None, None, None)
+    }
+
+    fn test_diagnostics() -> crate::diagnostics::DiagnosticsContextBuilder {
+        crate::diagnostics::DiagnosticsContextBuilder::new(
+            crate::models::ActivityId::from_string("test-deadline".to_owned()),
+            std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
+        )
+    }
+
+    #[test]
+    fn enforce_deadline_none_is_ok() {
+        let options = empty_options_view();
+        let mut diagnostics = test_diagnostics();
+        let result = super::enforce_deadline_or_timeout(None, &options, &mut diagnostics);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn enforce_deadline_in_future_is_ok() {
+        let options = empty_options_view();
+        let mut diagnostics = test_diagnostics();
+        let deadline = std::time::Instant::now() + Duration::from_secs(60);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn enforce_deadline_in_past_returns_timeout_error() {
+        let options = empty_options_view();
+        let mut diagnostics = test_diagnostics();
+        let deadline = std::time::Instant::now() - Duration::from_millis(1);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let err = result.expect_err("past deadline should produce an error");
+        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
+        let msg = err.to_string();
+        assert!(
+            msg.contains("end-to-end operation timeout exceeded"),
+            "unexpected error message: {msg}"
         );
     }
 }

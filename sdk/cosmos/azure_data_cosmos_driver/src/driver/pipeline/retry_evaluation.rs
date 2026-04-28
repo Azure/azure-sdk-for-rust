@@ -19,6 +19,7 @@
 use azure_core::http::headers::Headers;
 
 use crate::{
+    diagnostics::RequestSentStatus,
     driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
     models::{CosmosOperation, CosmosStatus, SubStatusCode},
 };
@@ -163,6 +164,10 @@ pub(crate) fn partition_effects_for_deferral(
 ///
 /// This is a pure function: it takes the operation, result, and retry state,
 /// and returns an `OperationAction`. No side effects.
+///
+/// Dispatches to a per-outcome handler so each transport outcome shape is
+/// classified in isolation. The HTTP-error handler in turn dispatches to a
+/// chain of per-status-family helpers.
 pub(crate) fn evaluate_transport_result(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -183,243 +188,379 @@ pub(crate) fn evaluate_transport_result(
             body,
             request_sent,
             ..
-        } => {
-            let request_definitely_not_sent = request_sent.definitely_not_sent();
-
-            if status.is_write_forbidden() && retry_state.can_retry_failover() {
-                return (
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.clone().advance_failover(),
-                        delay: None,
-                    },
-                    vec![
-                        LocationEffect::RefreshAccountProperties,
-                        LocationEffect::MarkEndpointUnavailable {
-                            endpoint: endpoint.clone(),
-                            reason: UnavailableReason::WriteForbidden,
-                        },
-                        LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
-                            operation,
-                            endpoint,
-                            retry_state,
-                            false,
-                        )),
-                    ],
-                );
-            }
-
-            if status.is_read_session_not_available() && retry_state.can_retry_session() {
-                if !retry_state.can_use_multiple_write_locations
-                    && retry_state.session_token_retry_count >= 2
-                {
-                    return (
-                        OperationAction::Abort {
-                            error: build_http_error(&status, &headers, &body),
-                            status: Some(status),
-                        },
-                        Vec::new(),
-                    );
-                }
-
-                return (
-                    OperationAction::SessionRetry {
-                        new_state: retry_state.clone().advance_session_retry(),
-                    },
-                    Vec::new(),
-                );
-            }
-
-            // 429/3092 (SystemResourceUnavailable) and 410 (Gone).
-            let is_system_resource_unavailable = status.is_throttled()
-                && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
-            let is_service_unavailable =
-                status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
-            let is_gone = status.is_gone();
-            let is_request_timeout =
-                status.status_code() == azure_core::http::StatusCode::RequestTimeout;
-
-            if (is_system_resource_unavailable
-                || is_service_unavailable
-                || is_gone
-                || is_request_timeout)
-                && retry_state.can_retry_failover()
-            {
-                if request_definitely_not_sent {
-                    return (
-                        OperationAction::FailoverRetry {
-                            new_state: retry_state.clone().advance_failover(),
-                            delay: None,
-                        },
-                        Vec::new(),
-                    );
-                }
-
-                let unavailable_reason = if is_request_timeout {
-                    UnavailableReason::RequestTimeout
-                } else {
-                    UnavailableReason::ServiceUnavailable
-                };
-
-                if !(operation.is_read_only()
-                    || operation.is_idempotent()
-                    || retry_state.ppaf_write_retry_allowed)
-                {
-                    // Non-idempotent write that was already sent and PPAF is
-                    // not available — unsafe to retry. We still mark partition
-                    // and endpoint unavailable so future requests benefit from
-                    // the updated routing state.
-                    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                        make_partition_unavailable(operation, endpoint, retry_state, false),
-                    )];
-                    if !is_ppcb_managed(operation, retry_state) {
-                        effects.push(LocationEffect::MarkEndpointUnavailable {
-                            endpoint: endpoint.clone(),
-                            reason: unavailable_reason,
-                        });
-                    }
-                    return (
-                        OperationAction::Abort {
-                            error: build_http_error(&status, &headers, &body),
-                            status: Some(status),
-                        },
-                        effects,
-                    );
-                }
-
-                let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                    make_partition_unavailable(
-                        operation,
-                        endpoint,
-                        retry_state,
-                        operation.is_read_only(),
-                    ),
-                )];
-                if !is_ppcb_managed(operation, retry_state) {
-                    effects.push(LocationEffect::MarkEndpointUnavailable {
-                        endpoint: endpoint.clone(),
-                        reason: unavailable_reason,
-                    });
-                }
-                return (
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.clone().advance_failover(),
-                        delay: None,
-                    },
-                    effects,
-                );
-            }
-
-            // Server errors (≥500) and request timeouts (408).
-            // Retries ALL operations (reads + writes).
-            // Cross-region retry will be attempted, if not possible in-region retry will be attempted.
-            let status_code = status.status_code();
-            if (status_code.is_server_error()
-                || status_code == azure_core::http::StatusCode::RequestTimeout)
-                && retry_state.can_retry_failover()
-            {
-                let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                    make_partition_unavailable(operation, endpoint, retry_state, true),
-                )];
-                if !is_ppcb_managed(operation, retry_state) {
-                    effects.push(LocationEffect::MarkEndpointUnavailable {
-                        endpoint: endpoint.clone(),
-                        reason: UnavailableReason::InternalServerError,
-                    });
-                }
-                return (
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.clone().advance_failover(),
-                        delay: None,
-                    },
-                    effects,
-                );
-            }
-
-            (
-                OperationAction::Abort {
-                    error: build_http_error(&status, &headers, &body),
-                    status: Some(status),
-                },
-                Vec::new(),
-            )
-        }
+        } => evaluate_http_outcome(
+            operation,
+            endpoint,
+            retry_state,
+            status,
+            headers,
+            body,
+            request_sent,
+        ),
 
         TransportOutcome::TransportError {
             status,
             error,
             request_sent,
-        } => {
-            if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
-                return (
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.clone().advance_failover(),
-                        delay: None,
-                    },
-                    Vec::new(),
-                );
-            }
-
-            let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-                make_partition_unavailable(
-                    operation,
-                    endpoint,
-                    retry_state,
-                    operation.is_read_only(),
-                ),
-            )];
-            if !is_ppcb_managed(operation, retry_state) {
-                effects.push(LocationEffect::MarkEndpointUnavailable {
-                    endpoint: endpoint.clone(),
-                    reason: UnavailableReason::TransportError,
-                });
-            }
-
-            if (operation.is_read_only()
-                || operation.is_idempotent()
-                || retry_state.ppaf_write_retry_allowed)
-                && retry_state.can_retry_failover()
-            {
-                return (
-                    OperationAction::FailoverRetry {
-                        new_state: retry_state.clone().advance_failover(),
-                        delay: None,
-                    },
-                    effects,
-                );
-            }
-
-            // Non-idempotent write that was already sent and PPAF is not
-            // available — unsafe to retry. We still mark partition and
-            // endpoint unavailable so future requests benefit from the
-            // updated routing state.
-            (
-                OperationAction::Abort {
-                    error: build_transport_error(&status, error),
-                    status: Some(status),
-                },
-                effects,
-            )
-        }
+        } => evaluate_transport_layer_outcome(
+            operation,
+            endpoint,
+            retry_state,
+            status,
+            error,
+            request_sent,
+        ),
 
         TransportOutcome::DeadlineExceeded { request_sent } => {
-            let message = if request_sent.definitely_not_sent() {
-                "end-to-end operation timeout exceeded before request was sent"
-            } else {
-                "end-to-end operation timeout exceeded"
-            };
-
-            (
-                OperationAction::Abort {
-                    error: azure_core::Error::new(azure_core::error::ErrorKind::Other, message),
-                    status: Some(CosmosStatus::from_parts(
-                        azure_core::http::StatusCode::RequestTimeout,
-                        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-                    )),
-                },
-                Vec::new(),
-            )
+            evaluate_deadline_exceeded_outcome(request_sent)
         }
     }
+}
+
+/// Classifies an HTTP error response by walking a chain of per-status-family
+/// handlers in priority order.
+///
+/// The order matters: the more specific Cosmos sub-status checks (403/3,
+/// 404/1002, 429/3092) come before the generic status-code-family checks
+/// (5xx). The first handler that recognises the response returns
+/// `Some(action, effects)`; if none match, the response is aborted with a
+/// rich HTTP error.
+fn evaluate_http_outcome(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: CosmosStatus,
+    headers: Headers,
+    body: Vec<u8>,
+    request_sent: RequestSentStatus,
+) -> (OperationAction, Vec<LocationEffect>) {
+    if let Some(result) = try_handle_write_forbidden(operation, endpoint, retry_state, &status) {
+        return result;
+    }
+
+    if let Some(result) =
+        try_handle_read_session_not_available(retry_state, &status, &headers, &body)
+    {
+        return result;
+    }
+
+    if let Some(result) = try_handle_retry_trigger_group(
+        operation,
+        endpoint,
+        retry_state,
+        &status,
+        &headers,
+        &body,
+        request_sent,
+    ) {
+        return result;
+    }
+
+    if let Some(result) = try_handle_server_error(operation, endpoint, retry_state, &status) {
+        return result;
+    }
+
+    (
+        OperationAction::Abort {
+            error: build_http_error(&status, &headers, &body),
+            status: Some(status),
+        },
+        Vec::new(),
+    )
+}
+
+/// Handles 403/3 WriteForbidden — the gateway has identified that this region
+/// is not currently the write region for the partition.
+///
+/// Always retries cross-region when the failover budget allows, and emits
+/// effects to (a) refresh account properties so the new write region is
+/// learned, (b) mark this endpoint unavailable, and (c) mark this partition
+/// unavailable in the current (read) region for write traffic.
+fn try_handle_write_forbidden(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    if !(status.is_write_forbidden() && retry_state.can_retry_failover()) {
+        return None;
+    }
+
+    Some((
+        OperationAction::FailoverRetry {
+            new_state: retry_state.clone().advance_failover(),
+            delay: None,
+        },
+        vec![
+            LocationEffect::RefreshAccountProperties,
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint.clone(),
+                reason: UnavailableReason::WriteForbidden,
+            },
+            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+                operation,
+                endpoint,
+                retry_state,
+                false,
+            )),
+        ],
+    ))
+}
+
+/// Handles 404/1002 ReadSessionNotAvailable — session token is ahead of the
+/// region being read from (session lag).
+///
+/// On single-master accounts a session retry that has already happened twice
+/// is treated as a permanent miss (the writes truly haven't replicated and
+/// retrying further is unlikely to help). Otherwise issues a `SessionRetry`
+/// which advances to a different region without consuming failover budget.
+fn try_handle_read_session_not_available(
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+    headers: &Headers,
+    body: &[u8],
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    if !(status.is_read_session_not_available() && retry_state.can_retry_session()) {
+        return None;
+    }
+
+    if !retry_state.can_use_multiple_write_locations && retry_state.session_token_retry_count >= 2 {
+        return Some((
+            OperationAction::Abort {
+                error: build_http_error(status, headers, body),
+                status: Some(*status),
+            },
+            Vec::new(),
+        ));
+    }
+
+    Some((
+        OperationAction::SessionRetry {
+            new_state: retry_state.clone().advance_session_retry(),
+        },
+        Vec::new(),
+    ))
+}
+
+/// Handles the retry-trigger group — 503 ServiceUnavailable, 410 Gone,
+/// 408 RequestTimeout, and 429/3092 SystemResourceUnavailable.
+///
+/// Three sub-cases:
+///
+/// 1. **Request not sent** — safe to retry against any region with no
+///    location-state side effects (the failure is purely client-side).
+/// 2. **Sent + non-idempotent + no PPAF** — unsafe to retry. Aborts but
+///    still emits `MarkPartitionUnavailable` (and, when not PPCB-managed,
+///    `MarkEndpointUnavailable`) so future requests benefit from the
+///    updated routing state.
+/// 3. **Sent + (read || idempotent || PPAF write)** — failover retry with
+///    the same routing-state effects.
+fn try_handle_retry_trigger_group(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+    headers: &Headers,
+    body: &[u8],
+    request_sent: RequestSentStatus,
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    let is_system_resource_unavailable = status.is_throttled()
+        && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
+    let is_service_unavailable =
+        status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
+    let is_gone = status.is_gone();
+    let is_request_timeout = status.status_code() == azure_core::http::StatusCode::RequestTimeout;
+
+    let in_trigger_group =
+        is_system_resource_unavailable || is_service_unavailable || is_gone || is_request_timeout;
+    if !(in_trigger_group && retry_state.can_retry_failover()) {
+        return None;
+    }
+
+    if request_sent.definitely_not_sent() {
+        return Some((
+            OperationAction::FailoverRetry {
+                new_state: retry_state.clone().advance_failover(),
+                delay: None,
+            },
+            Vec::new(),
+        ));
+    }
+
+    let unavailable_reason = if is_request_timeout {
+        UnavailableReason::RequestTimeout
+    } else {
+        UnavailableReason::ServiceUnavailable
+    };
+
+    let safe_to_retry = operation.is_read_only()
+        || operation.is_idempotent()
+        || retry_state.ppaf_write_retry_allowed;
+
+    if !safe_to_retry {
+        // Non-idempotent write that was already sent and PPAF is not
+        // available — unsafe to retry. We still mark partition and endpoint
+        // unavailable so future requests benefit from the updated routing
+        // state.
+        let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+            make_partition_unavailable(operation, endpoint, retry_state, false),
+        )];
+        if !is_ppcb_managed(operation, retry_state) {
+            effects.push(LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint.clone(),
+                reason: unavailable_reason,
+            });
+        }
+        return Some((
+            OperationAction::Abort {
+                error: build_http_error(status, headers, body),
+                status: Some(*status),
+            },
+            effects,
+        ));
+    }
+
+    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+        make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
+    )];
+    if !is_ppcb_managed(operation, retry_state) {
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: unavailable_reason,
+        });
+    }
+    Some((
+        OperationAction::FailoverRetry {
+            new_state: retry_state.clone().advance_failover(),
+            delay: None,
+        },
+        effects,
+    ))
+}
+
+/// Handles generic 5xx server errors (and 408 RequestTimeout as a defensive
+/// fallback for the rare path where it didn't get classified by the
+/// retry-trigger-group helper).
+///
+/// Cross-region retry is attempted for both reads and writes — the assumption
+/// is that an internal error in one region is unlikely to repeat in another.
+fn try_handle_server_error(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    let status_code = status.status_code();
+    let is_eligible_status = status_code.is_server_error()
+        || status_code == azure_core::http::StatusCode::RequestTimeout;
+    if !(is_eligible_status && retry_state.can_retry_failover()) {
+        return None;
+    }
+
+    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+        make_partition_unavailable(operation, endpoint, retry_state, true),
+    )];
+    if !is_ppcb_managed(operation, retry_state) {
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::InternalServerError,
+        });
+    }
+    Some((
+        OperationAction::FailoverRetry {
+            new_state: retry_state.clone().advance_failover(),
+            delay: None,
+        },
+        effects,
+    ))
+}
+
+/// Handles transport-layer errors (connection failures, TLS errors, etc.) —
+/// no HTTP response was produced.
+///
+/// Three sub-cases mirror the retry-trigger-group helper:
+/// 1. Request definitely not sent → safe failover retry, no side effects.
+/// 2. Sent and read/idempotent/PPAF write → failover retry with marks.
+/// 3. Sent and non-idempotent without PPAF → abort with marks.
+fn evaluate_transport_layer_outcome(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: CosmosStatus,
+    error: azure_core::Error,
+    request_sent: RequestSentStatus,
+) -> (OperationAction, Vec<LocationEffect>) {
+    if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
+        return (
+            OperationAction::FailoverRetry {
+                new_state: retry_state.clone().advance_failover(),
+                delay: None,
+            },
+            Vec::new(),
+        );
+    }
+
+    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+        make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
+    )];
+    if !is_ppcb_managed(operation, retry_state) {
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::TransportError,
+        });
+    }
+
+    let safe_to_retry = operation.is_read_only()
+        || operation.is_idempotent()
+        || retry_state.ppaf_write_retry_allowed;
+    if safe_to_retry && retry_state.can_retry_failover() {
+        return (
+            OperationAction::FailoverRetry {
+                new_state: retry_state.clone().advance_failover(),
+                delay: None,
+            },
+            effects,
+        );
+    }
+
+    // Non-idempotent write that was already sent and PPAF is not available —
+    // unsafe to retry. Marks are kept so future requests benefit from the
+    // updated routing state.
+    (
+        OperationAction::Abort {
+            error: build_transport_error(&status, error),
+            status: Some(status),
+        },
+        effects,
+    )
+}
+
+/// Handles a deadline-exceeded transport outcome — the end-to-end operation
+/// timeout fired before a response could be returned.
+///
+/// No retry is possible (the deadline applies to the whole operation, so
+/// retrying would immediately re-trigger). The synthesized error carries
+/// `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` so callers can distinguish
+/// a client-side end-to-end timeout from a service 408.
+fn evaluate_deadline_exceeded_outcome(
+    request_sent: RequestSentStatus,
+) -> (OperationAction, Vec<LocationEffect>) {
+    let message = if request_sent.definitely_not_sent() {
+        "end-to-end operation timeout exceeded before request was sent"
+    } else {
+        "end-to-end operation timeout exceeded"
+    };
+
+    (
+        OperationAction::Abort {
+            error: azure_core::Error::new(azure_core::error::ErrorKind::Other, message),
+            status: Some(CosmosStatus::from_parts(
+                azure_core::http::StatusCode::RequestTimeout,
+                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            )),
+        },
+        Vec::new(),
+    )
 }
 
 /// Builds an `azure_core::Error` from a Cosmos HTTP error status.
