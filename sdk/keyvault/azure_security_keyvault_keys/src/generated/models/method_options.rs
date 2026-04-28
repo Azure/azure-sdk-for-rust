@@ -39,6 +39,9 @@ pub struct KeyClientDeleteKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::encrypt()`](crate::generated::clients::KeyClient::encrypt())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientEncryptOptions<'a> {
+    /// The version of the key.
+    pub key_version: Option<String>,
+
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -50,22 +53,22 @@ pub struct KeyClientGetDeletedKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`KeyClient::get_key()`](crate::generated::clients::KeyClient::get_key())
+/// Options to be passed to [`KeyClient::get_key_attestation()`](crate::generated::clients::KeyClient::get_key_attestation())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientGetKeyOptions<'a> {
-    /// Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If not specified, the
-    /// latest version of the key is returned.
+pub struct KeyClientGetKeyAttestationOptions<'a> {
+    /// Adding the version parameter retrieves attestation blob for specific version of a key. This URI fragment is optional.
+    /// If not specified, the latest version of the key attestation blob is returned.
     pub key_version: Option<String>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`KeyClient::get_key_attestation()`](crate::generated::clients::KeyClient::get_key_attestation())
+/// Options to be passed to [`KeyClient::get_key()`](crate::generated::clients::KeyClient::get_key())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientGetKeyAttestationOptions<'a> {
-    /// Adding the version parameter retrieves attestation blob for specific version of a key. This URI fragment is optional.
-    /// If not specified, the latest version of the key attestation blob is returned.
+pub struct KeyClientGetKeyOptions<'a> {
+    /// Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If not specified, the
+    /// latest version of the key is returned.
     pub key_version: Option<String>,
 
     /// Allows customization of the method call.
@@ -203,6 +206,9 @@ pub struct KeyClientRotateKeyOptions<'a> {
 /// Options to be passed to [`KeyClient::sign()`](crate::generated::clients::KeyClient::sign())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientSignOptions<'a> {
+    /// The version of the key.
+    pub key_version: Option<String>,
+
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -241,6 +247,9 @@ pub struct KeyClientVerifyOptions<'a> {
 /// Options to be passed to [`KeyClient::wrap_key()`](crate::generated::clients::KeyClient::wrap_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientWrapKeyOptions<'a> {
+    /// The version of the key.
+    pub key_version: Option<String>,
+
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

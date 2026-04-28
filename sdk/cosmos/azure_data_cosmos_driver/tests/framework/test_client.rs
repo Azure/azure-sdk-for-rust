@@ -24,20 +24,20 @@ use super::env::{
 
 /// A test client that provides access to a Cosmos DB driver for testing.
 pub struct DriverTestClient {
-    runtime: CosmosDriverRuntime,
+    runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
 }
 
 /// Resolved test environment containing account and connection pool configuration.
-struct TestEnv {
-    account: AccountReference,
-    connection_pool: ConnectionPoolOptions,
+pub struct TestEnv {
+    pub account: AccountReference,
+    pub connection_pool: ConnectionPoolOptions,
 }
 
 /// Resolves the test environment from environment variables.
 ///
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
-fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
+pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .try_init();
@@ -255,7 +255,7 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -284,7 +284,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (204 No Content)
@@ -317,7 +317,7 @@ impl DriverTestRunContext {
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -338,6 +338,7 @@ impl DriverTestRunContext {
     pub async fn create_item(
         &self,
         container: &ContainerReference,
+        item_id: &str,
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
@@ -348,11 +349,11 @@ impl DriverTestRunContext {
             .await?;
 
         let pk = partition_key.into();
-        let operation =
-            CosmosOperation::create_item(container.clone(), pk).with_body(body.to_vec());
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
@@ -376,7 +377,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)

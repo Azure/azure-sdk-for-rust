@@ -134,6 +134,11 @@ impl Headers {
         Self::default()
     }
 
+    /// Create a new headers collection with at least the specified capacity.
+    pub fn with_capacity(n: usize) -> Self {
+        Self(std::collections::HashMap::with_capacity(n))
+    }
+
     /// Gets the headers represented by `H`, or return an error if the header is not found.
     pub fn get<H: FromHeaders>(&self) -> crate::Result<H> {
         match H::from_headers(self) {

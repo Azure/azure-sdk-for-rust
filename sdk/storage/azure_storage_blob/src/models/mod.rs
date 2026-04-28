@@ -3,13 +3,20 @@
 
 //! Model types for Azure Blob Storage.
 
+mod download_result;
+pub(crate) mod drains;
 pub mod error;
 mod extensions;
 pub(crate) mod http_ranges;
 pub mod method_options;
+
+pub use http_ranges::HttpRange;
+pub(crate) mod response_ext;
 mod upload_result;
 
 pub use crate::generated::models::*;
+pub use download_result::{BlobClientDownloadResult, BlobDownloadProperties};
+pub use method_options::BlobClientDownloadOptions;
 pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
 pub use upload_result::BlockBlobClientUploadResult;
@@ -115,13 +122,6 @@ pub mod blob_name {
         }
     }
 }
-
-// TODO: Need mechanism to have these models not have "Internal" suffix
-pub use crate::generated::models::{
-    BlobClientDownloadInternalOptions as BlobClientDownloadOptions,
-    BlobClientDownloadInternalResult as BlobClientDownloadResult,
-    BlobClientDownloadInternalResultHeaders as BlobClientDownloadResultHeaders,
-};
 
 #[cfg(test)]
 mod tests {

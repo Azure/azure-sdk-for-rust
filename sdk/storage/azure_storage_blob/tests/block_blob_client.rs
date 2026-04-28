@@ -2,24 +2,26 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{headers::CONTENT_TYPE, RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        method_options::BlockBlobClientUploadOptions, BlobClientDownloadResultHeaders,
-        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientUploadBlobFromUrlOptions,
-        BlockListType, BlockLookupList,
+        BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, BlockListType,
+        BlockLookupList,
     },
     BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, predicates, ClientOptionsExt,
-    StorageAccount, TestPolicy, KB, MB,
+    block_lookup, create_test_blob, get_blob_name, get_container_client, predicates,
+    ClientOptionsExt, StorageAccount, TestPolicy, KB, MB,
 };
 use bytes::{BufMut, BytesMut};
 use std::{
+    collections::HashMap,
     error::Error,
     io::Write,
     num::NonZero,
@@ -27,6 +29,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
+    time::Duration,
 };
 
 #[recorded::test]
@@ -108,14 +111,9 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client.download(None).await?;
 
     // Assert
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(9, content_length.unwrap());
-    assert_eq!(
-        Bytes::from_static(b"AAABBBCCC"),
-        response_body.collect().await?.as_ref(),
-    );
+    assert_eq!(9, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(b"AAABBBCCC"), &body_data[..],);
     assert_eq!(
         3,
         block_list
@@ -274,16 +272,13 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     // Committed Block Scenario
     let response = dest_blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-
     // Assert
-    assert!(status_code.is_success());
-    assert_eq!(source_content.len(), content_length.unwrap() as usize);
     assert_eq!(
-        Bytes::from_static(source_content),
-        response_body.collect().await?.as_ref(),
+        source_content.len(),
+        response.properties.content_length.unwrap() as usize
     );
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(source_content), &body_data[..],);
 
     // Source Authorization Scenario
     let access_token = format!(
@@ -331,14 +326,9 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
 
     let response = dest_blob_client.download(None).await?;
-    let (status_code, _, response_body) = response.deconstruct();
-
     // Assert
-    assert!(status_code.is_success());
-    assert_eq!(
-        Bytes::from_static(source_content_2),
-        response_body.collect().await?.as_ref(),
-    );
+    let body_data = response.body.collect().await?;
+    assert_eq!(Bytes::from_static(source_content_2), &body_data[..],);
 
     container_client.delete(None).await?;
     Ok(())
@@ -385,13 +375,9 @@ async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
                 .upload(bytes.clone().into(), Some(options))
                 .await?;
         }
+        let body_data = blob_client.download(None).await?.body.collect().await?;
         assert_eq!(
-            blob_client
-                .download(None)
-                .await?
-                .into_body()
-                .collect()
-                .await?[..],
+            body_data[..],
             data,
             "Failed parallel={},partition_size={}",
             parallel,
@@ -438,20 +424,14 @@ async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             .upload(bytes.clone().into(), Some(options))
             .await?;
     }
-    assert_eq!(
-        blob_client
-            .download(None)
-            .await?
-            .into_body()
-            .collect()
-            .await?[..],
-        data
-    );
+    let body_data = blob_client.download(None).await?.body.collect().await?;
+    assert_eq!(body_data[..], data);
     assert_eq!(request_count.load(Ordering::Relaxed), 1);
 
     Ok(())
 }
 
+// This test generates a large recording, so marking as live-only.
 #[recorded::test(live)]
 async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
@@ -488,19 +468,461 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         let _scope = count_policy.check_request_scope();
         block_blob_client.upload(bytes.clone().into(), None).await?;
     }
-    assert_eq!(
-        blob_client
-            .download(None)
-            .await?
-            .into_body()
-            .collect()
-            .await?[..],
-        bytes[..]
-    );
+    let body_data = blob_client.download(None).await?.body.collect().await?;
+    assert_eq!(body_data[..], bytes[..]);
     assert_eq!(
         stage_block_count.load(Ordering::Relaxed),
         expected_stage_block_count
     );
 
+    container_client.delete(None).await?;
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_commit_block_list_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+    let block_id = b"block-1".to_vec();
+    let content = b"commit-block-list-content-headers";
+    let md5: Vec<u8> = (0u8..16).collect();
+
+    // Stage Block
+    block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content.to_vec()),
+            None,
+        )
+        .await?;
+
+    // Commit Block List with Content Headers
+    // Note: blob_content_md5 on commit_block_list is stored metadata (not validated against
+    // actual content), so an arbitrary value can be used to verify roundtrip behavior.
+    block_blob_client
+        .commit_block_list(
+            block_lookup(block_id).try_into()?,
+            Some(BlockBlobClientCommitBlockListOptions {
+                blob_cache_control: Some("max-age=600".to_string()),
+                blob_content_disposition: Some("inline".to_string()),
+                blob_content_encoding: Some("identity".to_string()),
+                blob_content_language: Some("de-DE".to_string()),
+                blob_content_md5: Some(md5.clone()),
+                blob_content_type: Some("application/json".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert Content Headers Roundtrip
+    let props = blob_client.get_properties(None).await?;
+    assert_eq!(Some("max-age=600".to_string()), props.cache_control()?);
+    assert_eq!(Some("inline".to_string()), props.content_disposition()?);
+    assert_eq!(Some("identity".to_string()), props.content_encoding()?);
+    assert_eq!(Some("de-DE".to_string()), props.content_language()?);
+    assert_eq!(Some(md5), props.content_md5()?);
+    let content_type: Option<String> = props.headers().get_optional_as(&CONTENT_TYPE)?;
+    assert_eq!(Some("application/json".to_string()), content_type);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_block_list_types(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let block_id: Vec<u8> = b"a".to_vec();
+    block_blob_client
+        .stage_block(&block_id, 1, RequestContent::from(b"X".to_vec()), None)
+        .await?;
+
+    // Uncommitted Blocks Only
+    let block_list = block_blob_client
+        .get_block_list(BlockListType::Uncommitted, None)
+        .await?
+        .into_model()?;
+    assert!(block_list.committed_blocks.is_none());
+    assert!(block_list
+        .uncommitted_blocks
+        .as_ref()
+        .map(|v| v.len() == 1)
+        .unwrap_or(false));
+
+    // Commit the block
+    block_blob_client
+        .commit_block_list(block_lookup(block_id).try_into()?, None)
+        .await?;
+
+    // Committed Blocks Only
+    let block_list = block_blob_client
+        .get_block_list(BlockListType::Committed, None)
+        .await?
+        .into_model()?;
+    assert!(block_list
+        .committed_blocks
+        .as_ref()
+        .map(|v| v.len() == 1)
+        .unwrap_or(false));
+    assert!(block_list.uncommitted_blocks.is_none());
+
+    // All Blocks
+    let block_list = block_blob_client
+        .get_block_list(BlockListType::All, None)
+        .await?
+        .into_model()?;
+    assert!(block_list
+        .committed_blocks
+        .as_ref()
+        .map(|v| v.len() == 1)
+        .unwrap_or(false));
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let content = b"hello".to_vec();
+    // MD5("hello") - well-known test vector
+    let correct_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    // CRC64-ECMA-182 of b"hello", server-confirmed (base64: V0JSBnCFdzM=)
+    let correct_crc64: Vec<u8> = vec![87, 66, 82, 6, 112, 133, 119, 51];
+    let block_id: Vec<u8> = b"1".to_vec();
+
+    // MD5 Mismatch Scenario
+    let response = block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content.clone()),
+            Some(BlockBlobClientStageBlockOptions {
+                transactional_content_md5: Some(vec![0u8; 16]),
+                ..Default::default()
+            }),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::BadRequest,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    // MD5 Match Scenario
+    block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content.clone()),
+            Some(BlockBlobClientStageBlockOptions {
+                transactional_content_md5: Some(correct_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // CRC64 Mismatch Scenario
+    let response = block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content.clone()),
+            Some(BlockBlobClientStageBlockOptions {
+                transactional_content_crc64: Some(vec![0u8; 8]),
+                ..Default::default()
+            }),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::BadRequest,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    // CRC64 Match Scenario
+    block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(content.len())?,
+            RequestContent::from(content),
+            Some(BlockBlobClientStageBlockOptions {
+                transactional_content_crc64: Some(correct_crc64),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_commit_block_list_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    let block_id: Vec<u8> = b"1".to_vec();
+    block_blob_client
+        .stage_block(&block_id, 5, RequestContent::from(b"hello".to_vec()), None)
+        .await?;
+    block_blob_client
+        .commit_block_list(
+            block_lookup(block_id).try_into()?,
+            Some(BlockBlobClientCommitBlockListOptions {
+                blob_tags_string: Some("sdk=rust".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let expected = HashMap::from([("sdk".to_string(), "rust".to_string())]);
+    let map: HashMap<String, String> = blob_client.get_tags(None).await?.into_model()?.into();
+    assert_eq!(expected, map);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_stage_block_from_url_source_if_match(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let source_data = b"source";
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(source_data.to_vec())),
+        None,
+    )
+    .await?;
+    let etag = source_blob_client
+        .get_properties(None)
+        .await?
+        .etag()?
+        .unwrap()
+        .to_string();
+
+    let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = dest_blob_client.block_blob_client();
+    let block_id: Vec<u8> = b"b1".to_vec();
+
+    // Source If-Match Scenario
+    block_blob_client
+        .stage_block_from_url(
+            &block_id,
+            u64::try_from(source_data.len())?,
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientStageBlockFromUrlOptions {
+                source_if_match: Some(etag.clone().into()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Source If-None-Match Scenario (ETag matches, so condition is not satisfied)
+    let response = block_blob_client
+        .stage_block_from_url(
+            &block_id,
+            u64::try_from(source_data.len())?,
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientStageBlockFromUrlOptions {
+                source_if_none_match: Some(etag.into()),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+    // Assert
+    assert_eq!(
+        StatusCode::NotModified,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_from_url_source_if_match(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(b"source data".to_vec())),
+        None,
+    )
+    .await?;
+    let etag = source_blob_client
+        .get_properties(None)
+        .await?
+        .etag()?
+        .unwrap()
+        .to_string();
+
+    let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = dest_blob_client.block_blob_client();
+
+    // Source If-Match Scenario
+    block_blob_client
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_if_match: Some(etag.clone().into()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Source If-None-Match Scenario (ETag matches, so condition is not satisfied)
+    let response = block_blob_client
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_if_none_match: Some(etag.into()),
+                ..Default::default()
+            }),
+        )
+        .await;
+
+    // Assert
+    assert_eq!(
+        StatusCode::NotModified,
+        response.unwrap_err().http_status().unwrap()
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_block_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    let expected = HashMap::from([("version".to_string(), "1".to_string())]);
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(b"tagged blob content".to_vec())),
+        Some(BlockBlobClientUploadOptions {
+            blob_tags_string: Some("version=1".to_string()),
+            ..Default::default()
+        }),
+    )
+    .await?;
+
+    // Assert
+    let map: HashMap<String, String> = blob_client.get_tags(None).await?.into_model()?.into();
+    assert_eq!(expected, map);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_from_url_source_timestamp_conditions(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(&source_blob_client, None, None).await?;
+    let last_modified = source_blob_client
+        .get_properties(None)
+        .await?
+        .last_modified()?
+        .unwrap();
+    let before = last_modified - Duration::from_secs(60);
+    let after = last_modified + Duration::from_secs(60);
+
+    let dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = dest_blob_client.block_blob_client();
+
+    // source_if_modified_since=before - Succeeds (source was modified after 'before')
+    block_blob_client
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_if_modified_since: Some(before),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // source_if_modified_since=after - Not Modified (source was not modified after 'after')
+    let err = block_blob_client
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_if_modified_since: Some(after),
+                ..Default::default()
+            }),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::NotModified,
+        err.unwrap_err().http_status().unwrap()
+    );
+
+    // source_if_unmodified_since=after - Succeeds (source was not modified after 'after')
+    block_blob_client
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_if_unmodified_since: Some(after),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // source_if_unmodified_since=before - Precondition Failed (source was modified after 'before')
+    let err = block_blob_client
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_if_unmodified_since: Some(before),
+                ..Default::default()
+            }),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::PreconditionFailed,
+        err.unwrap_err().http_status().unwrap()
+    );
+
+    container_client.delete(None).await?;
     Ok(())
 }

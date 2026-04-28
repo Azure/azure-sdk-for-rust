@@ -7,7 +7,10 @@ use azure_core::{
     json,
 };
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{
+        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
+        PerfTestOptionKind,
+    },
     TestContext,
 };
 use futures::FutureExt as _;
@@ -22,7 +25,6 @@ impl MockJsonTest {
         async move {
             let count = runner
                 .try_get_test_arg("count")?
-                .cloned()
                 .unwrap_or(super::DEFAULT_COUNT);
             let pipeline = super::create_pipeline(count, json::to_json)?;
             Ok(Box::new(MockJsonTest { pipeline }) as Box<dyn PerfTest>)
@@ -41,6 +43,7 @@ impl MockJsonTest {
                 short_activator: None,
                 long_activator: "count",
                 expected_args_len: 1,
+                option_type: PerfTestOptionKind::Usize,
                 ..Default::default()
             }],
             create_test: Self::create_items,

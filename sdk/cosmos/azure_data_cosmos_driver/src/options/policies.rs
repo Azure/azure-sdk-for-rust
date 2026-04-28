@@ -37,6 +37,33 @@ impl From<ContentResponseOnWrite> for bool {
     }
 }
 
+impl std::str::FromStr for ContentResponseOnWrite {
+    type Err = azure_core::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "true" | "enabled" => Ok(Self::Enabled),
+            "false" | "disabled" => Ok(Self::Disabled),
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "Unknown content response on write value: '{}'. Expected 'true'/'false' or 'enabled'/'disabled'",
+                    s
+                ),
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for ContentResponseOnWrite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Enabled => f.write_str("Enabled"),
+            Self::Disabled => f.write_str("Disabled"),
+        }
+    }
+}
+
 /// Configuration for end-to-end operation latency policy.
 ///
 /// Specifies the maximum time an operation can take, including all retries.
@@ -105,62 +132,6 @@ impl ExcludedRegions {
 impl<T: Into<Region>> FromIterator<T> for ExcludedRegions {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self(iter.into_iter().map(Into::into).collect())
-    }
-}
-
-/// Controls whether JavaScript stored procedure logging is enabled.
-///
-/// When enabled, script logs from stored procedures are included in the response.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum ScriptLoggingEnabled {
-    /// Script logging is enabled.
-    Enabled,
-    /// Script logging is disabled.
-    #[default]
-    Disabled,
-}
-
-impl From<bool> for ScriptLoggingEnabled {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<ScriptLoggingEnabled> for bool {
-    fn from(value: ScriptLoggingEnabled) -> Self {
-        matches!(value, ScriptLoggingEnabled::Enabled)
-    }
-}
-
-/// Controls whether quota information is included in responses.
-///
-/// When enabled, container quota stats are returned in the response headers.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum QuotaInfoEnabled {
-    /// Quota info is enabled.
-    Enabled,
-    /// Quota info is disabled.
-    #[default]
-    Disabled,
-}
-
-impl From<bool> for QuotaInfoEnabled {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<QuotaInfoEnabled> for bool {
-    fn from(value: QuotaInfoEnabled) -> Self {
-        matches!(value, QuotaInfoEnabled::Enabled)
     }
 }
 

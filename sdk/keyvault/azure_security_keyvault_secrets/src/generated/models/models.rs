@@ -13,11 +13,13 @@ use std::collections::HashMap;
 #[non_exhaustive]
 pub struct BackupSecretResult {
     /// The backup blob containing the backed up secret.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         deserialize_with = "base64::option::deserialize_url_safe",
         serialize_with = "base64::option::serialize_url_safe",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing
     )]
     pub value: Option<Vec<u8>>,
 }
@@ -35,10 +37,12 @@ pub struct DeletedSecret {
     pub content_type: Option<String>,
 
     /// The time when the secret was deleted, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "deletedDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
@@ -48,12 +52,16 @@ pub struct DeletedSecret {
     pub id: Option<String>,
 
     /// If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
     pub kid: Option<String>,
 
     /// True if the secret's lifetime is managed by key vault. If this is a secret backing a certificate, then managed will be
     /// true.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// The version of the previous certificate, if applicable. Applies only to certificates created after June 1, 2025. Certificates
@@ -66,10 +74,12 @@ pub struct DeletedSecret {
     pub recovery_id: Option<String>,
 
     /// The time when the secret is scheduled to be purged, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "scheduledPurgeDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
@@ -96,10 +106,12 @@ pub struct DeletedSecretProperties {
     pub content_type: Option<String>,
 
     /// The time when the secret was deleted, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "deletedDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
@@ -109,7 +121,9 @@ pub struct DeletedSecretProperties {
     pub id: Option<String>,
 
     /// True if the secret's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// The url of the recovery object, used to identify and recover the deleted secret.
@@ -117,10 +131,12 @@ pub struct DeletedSecretProperties {
     pub recovery_id: Option<String>,
 
     /// The time when the secret is scheduled to be purged, in UTC
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
         rename = "scheduledPurgeDate",
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
@@ -130,17 +146,53 @@ pub struct DeletedSecretProperties {
     pub tags: Option<HashMap<String, String>>,
 }
 
+/// The key vault error exception.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct KeyVaultError {
+    /// The key vault server error.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
+    pub error: Option<KeyVaultErrorError>,
+}
+
+/// The key vault server error.
+#[derive(Clone, Deserialize, SafeDebug, Serialize)]
+pub struct KeyVaultErrorError {
+    /// The error code.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+
+    /// The key vault server error.
+    ///
+    /// Operational visibility: Read
+    #[serde(rename = "innererror", skip_serializing)]
+    pub inner_error: Option<Box<KeyVaultErrorError>>,
+
+    /// The error message.
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+}
+
 /// The deleted secret list result
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListDeletedSecretPropertiesResult {
     /// The URL to get the next set of deleted secrets.
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 
     /// A response message containing a list of deleted secrets in the key vault along with a link to the next page of deleted
     /// secrets.
-    #[serde(default)]
+    ///
+    /// Operational visibility: Read
+    #[serde(default, skip_serializing)]
     pub value: Vec<DeletedSecretProperties>,
 }
 
@@ -149,11 +201,15 @@ pub struct ListDeletedSecretPropertiesResult {
 #[non_exhaustive]
 pub struct ListSecretPropertiesResult {
     /// The URL to get the next set of secrets.
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 
     /// A response message containing a list of secrets in the key vault along with a link to the next page of secrets.
-    #[serde(default)]
+    ///
+    /// Operational visibility: Read
+    #[serde(default, skip_serializing)]
     pub value: Vec<SecretProperties>,
 }
 
@@ -188,12 +244,16 @@ pub struct Secret {
     pub id: Option<String>,
 
     /// If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
     pub kid: Option<String>,
 
     /// True if the secret's lifetime is managed by key vault. If this is a secret backing a certificate, then managed will be
     /// true.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// The version of the previous certificate, if applicable. Applies only to certificates created after June 1, 2025. Certificates
@@ -214,9 +274,11 @@ pub struct Secret {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SecretAttributes {
     /// Creation time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
@@ -244,19 +306,25 @@ pub struct SecretAttributes {
     pub not_before: Option<OffsetDateTime>,
 
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
-    #[serde(rename = "recoverableDays", skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(rename = "recoverableDays", skip_serializing)]
     pub recoverable_days: Option<i32>,
 
     /// Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable',
     /// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
     /// of the retention interval.
-    #[serde(rename = "recoveryLevel", skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(rename = "recoveryLevel", skip_serializing)]
     pub recovery_level: Option<DeletionRecoveryLevel>,
 
     /// Last updated time in UTC.
+    ///
+    /// Operational visibility: Read
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
+        skip_serializing,
         with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
@@ -279,7 +347,9 @@ pub struct SecretProperties {
     pub id: Option<String>,
 
     /// True if the secret's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    ///
+    /// Operational visibility: Read
+    #[serde(skip_serializing)]
     pub managed: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.

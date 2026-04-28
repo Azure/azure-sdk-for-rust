@@ -19,7 +19,7 @@ use super::rule::FaultInjectionRule;
 ///
 /// ```rust,no_run
 /// use azure_data_cosmos::{
-///     CosmosClientBuilder, CosmosAccountEndpoint, RoutingStrategy, regions,
+///     CosmosClientBuilder, CosmosAccountEndpoint, Region, RoutingStrategy,
 ///     fault_injection::{
 ///         FaultInjectionClientBuilder, FaultInjectionErrorType,
 ///         FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
@@ -43,7 +43,7 @@ use super::rule::FaultInjectionRule;
 ///     .with_fault_injection(fault_builder)
 ///     .build(
 ///         (endpoint, Secret::from("my_account_key")),
-///         RoutingStrategy::ProximityTo(regions::EAST_US),
+///         RoutingStrategy::ProximityTo(Region::EAST_US),
 ///     )
 ///     .await
 ///     .unwrap();
@@ -76,6 +76,11 @@ impl FaultInjectionClientBuilder {
         self
     }
 
+    /// Returns a reference to the current fault injection rules.
+    pub(crate) fn rules(&self) -> &[Arc<FaultInjectionRule>] {
+        &self.rules
+    }
+
     /// Sets a custom inner HTTP client to wrap with fault injection.
     ///
     /// This is useful when you need fault injection combined with other transport
@@ -97,7 +102,7 @@ impl FaultInjectionClientBuilder {
     pub fn build(self) -> Transport {
         let inner_client = self
             .inner_client
-            .unwrap_or_else(|| azure_core::http::new_http_client());
+            .unwrap_or_else(|| azure_core::http::new_http_client(None));
 
         let fault_client = FaultClient::new(inner_client, self.rules);
         Transport::new(Arc::new(fault_client))

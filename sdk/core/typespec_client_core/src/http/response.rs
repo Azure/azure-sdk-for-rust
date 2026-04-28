@@ -10,6 +10,7 @@ use crate::{
     http::{headers::Headers, DeserializeWith, Format, StatusCode},
     Bytes,
 };
+use bytes::BytesMut;
 use futures::{Stream, StreamExt};
 use std::{fmt, marker::PhantomData, pin::Pin, task::Poll};
 use typespec::error::ResultExt as _;
@@ -312,13 +313,45 @@ impl AsyncResponseBody {
 
     /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
-        let mut final_result = Vec::new();
-
+        // Append each chunk directly into a growing BytesMut using reserve(),
+        // This avoids the intermediate Vec<Bytes> of the previous implementation,
+        // which was held in memory simultaneously with the final buffer.
+        let mut result = BytesMut::new();
         while let Some(res) = self.next().await {
-            final_result.extend(&res?);
+            let chunk = res?;
+            result.reserve(chunk.len());
+            result.extend_from_slice(&chunk);
         }
+        Ok(result.into())
+    }
 
-        Ok(final_result.into())
+    /// Collect the stream into a caller supplied buffer.
+    ///
+    /// The buffer must be large enough to hold the entire body, otherwise an error is returned.
+    ///
+    /// Arguments:
+    /// - `buffer`: The buffer to collect the body into.
+    ///
+    /// Returns:
+    /// - `Ok(usize)`: The number of bytes copied into the buffer.
+    /// - `Err`: If the buffer is too small to hold the chunk read from the stream or
+    ///   if there was an error reading from the stream.
+    ///
+    pub async fn collect_into(mut self, buffer: &mut [u8]) -> crate::Result<usize> {
+        let mut total_copied = 0usize;
+        while let Some(res) = self.next().await {
+            let bytes = res?;
+            // If the remaining space in the buffer won't hold this chunk, fail.
+            if buffer.len() - total_copied < bytes.len() {
+                return Err(crate::Error::with_message(
+                    ErrorKind::Io,
+                    "buffer is too small to hold response body",
+                ));
+            }
+            buffer[total_copied..total_copied + bytes.len()].copy_from_slice(bytes.as_ref());
+            total_copied += bytes.len();
+        }
+        Ok(total_copied)
     }
 
     /// Collect the stream into a [`String`].
@@ -368,7 +401,7 @@ impl fmt::Debug for AsyncResponseBody {
 mod tests {
     use super::*;
     use crate::http::{headers::Headers, AsyncRawResponse, RawResponse, Response, StatusCode};
-    use futures::stream;
+    use futures::{stream, StreamExt};
 
     #[test]
     fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
@@ -429,6 +462,98 @@ mod tests {
         .into();
         let buffer: Vec<u8> = response.into_body().collect().await.unwrap().to_vec();
         assert_eq!(buffer, vec![0xde, 0xad, 0xbe, 0xef]);
+    }
+
+    #[tokio::test]
+    async fn into_body_collect_into_simple() {
+        let response: AsyncResponse = AsyncRawResponse::new(
+            StatusCode::Ok,
+            Headers::new(),
+            stream::iter(vec![
+                Ok(Bytes::from_static(&[0xde, 0xad])),
+                Ok(Bytes::from_static(&[0xbe, 0xef])),
+            ])
+            .boxed(),
+        )
+        .into();
+        // Buffer holds the entire 2 chunk result payload.
+        let mut buffer = vec![0u8; 4];
+        let len = response
+            .into_body()
+            .collect_into(&mut buffer)
+            .await
+            .unwrap();
+        assert_eq!(len, 4);
+        assert_eq!(buffer, vec![0xde, 0xad, 0xbe, 0xef]);
+    }
+
+    #[tokio::test]
+    async fn into_body_collect_into_too_small() {
+        let response: AsyncResponse = AsyncRawResponse::new(
+            StatusCode::Ok,
+            Headers::new(),
+            stream::iter(vec![
+                Ok(Bytes::from_static(&[0xde, 0xad, 0xbe, 0xef])),
+                Ok(Bytes::from_static(&[0xde, 0xad, 0xbe, 0xef])),
+            ])
+            .boxed(),
+        )
+        .into();
+        // Buffer is too small for the 1st chunk.
+        let mut buffer = vec![0u8; 2];
+        let result = response.into_body().collect_into(&mut buffer).await;
+        assert!(result.is_err());
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("buffer is too small"));
+    }
+
+    #[tokio::test]
+    async fn into_body_collect_into_too_small2() {
+        let response: AsyncResponse = AsyncRawResponse::new(
+            StatusCode::Ok,
+            Headers::new(),
+            stream::iter(vec![
+                Ok(Bytes::from_static(&[0xde, 0xad, 0xbe, 0xef])),
+                Ok(Bytes::from_static(&[0xde, 0xad, 0xbe, 0xef])),
+            ])
+            .boxed(),
+        )
+        .into();
+
+        // Buffer is too small for the 2nd chunk, even if it can hold the 1st chunk.
+        let mut buffer = vec![0u8; 6];
+        let result = response.into_body().collect_into(&mut buffer).await;
+        assert!(result.is_err());
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("buffer is too small"));
+    }
+
+    #[tokio::test]
+    async fn into_body_collect_into_too_large() {
+        let response: AsyncResponse = AsyncRawResponse::new(
+            StatusCode::Ok,
+            Headers::new(),
+            stream::iter(vec![
+                Ok(Bytes::from_static(&[0xde, 0xad, 0xbe, 0xef])),
+                Ok(Bytes::from_static(&[0xde, 0xad, 0xbe, 0xef])),
+            ])
+            .boxed(),
+        )
+        .into();
+        // Buffer is larger than the payload.
+        let mut buffer = vec![0u8; 10];
+        let length = response
+            .into_body()
+            .collect_into(&mut buffer)
+            .await
+            .unwrap();
+        assert_eq!(length, 8);
     }
 
     mod json {

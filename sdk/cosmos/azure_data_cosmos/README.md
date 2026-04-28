@@ -105,10 +105,10 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
         value: "2".into(),
     };
 
-    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await;
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await?;
 
     // Create an item
-    container.create_item("partition1", item, None).await?;
+    container.create_item("partition1", "1", item, None).await?;
 
     // Read an item
     let item_response = container.read_item("partition1", "1", None).await?;

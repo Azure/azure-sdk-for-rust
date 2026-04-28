@@ -1,6 +1,6 @@
 # Azure Cosmos DB Macros for Rust
 
-This crate provides procedural macros for the Azure Cosmos DB SDK for Rust.
+This crate provides procedural macros for the Azure Cosmos DB SDK for Rust. It is intended for internal use. No official Microsoft support is provided when using this package directly.
 
 ## `#[derive(CosmosOptions)]`
 

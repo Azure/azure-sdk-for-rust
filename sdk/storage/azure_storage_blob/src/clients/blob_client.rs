@@ -5,14 +5,12 @@ pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
-    logging::apply_storage_logging_defaults,
+    generated::models::BlobClientDownloadInternalOptions,
     models::{
-        http_ranges::IntoRangeHeader, method_options::BlobClientManagedDownloadOptions,
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientUploadOptions,
-        BlobClientUploadResult, StorageErrorCode,
+        http_ranges::IntoRangeHeader, BlobClientDownloadOptions, BlobClientDownloadResult,
+        BlobClientUploadOptions, BlobClientUploadResult, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
-    pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
 use async_trait::async_trait;
@@ -21,13 +19,12 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        response::{AsyncResponse, PinnedStream},
-        AsyncRawResponse, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
+        AsyncRawResponse, ClientMethodOptions, NoFormat, Pipeline, RequestContent, StatusCode, Url,
+        UrlExt,
     },
     tracing, Bytes, Result,
 };
-use std::sync::Arc;
-use std::{num::NonZero, ops::Range};
+use std::{num::NonZero, ops::Range, sync::Arc};
 
 impl BlobClient {
     /// Creates a new BlobClient, using Entra ID authentication.
@@ -75,13 +72,7 @@ impl BlobClient {
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
-        apply_storage_logging_defaults(&mut options.client_options);
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
+        super::apply_client_defaults(&mut options.client_options);
 
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
@@ -111,52 +102,6 @@ impl BlobClient {
             version: options.version,
             pipeline,
         })
-    }
-
-    /// The managed download operation retrieves the content of an existing blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    pub async fn managed_download(
-        &self,
-        options: Option<BlobClientManagedDownloadOptions<'_>>,
-    ) -> Result<PinnedStream> {
-        let options = options.unwrap_or_default();
-        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
-        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
-        // construct exhaustively to ensure we catch new options when added
-        let get_range_options = BlobClientDownloadOptions {
-            encryption_algorithm: options.encryption_algorithm,
-            encryption_key: options.encryption_key,
-            encryption_key_sha256: options.encryption_key_sha256,
-            if_match: options.if_match,
-            if_modified_since: options.if_modified_since,
-            if_none_match: options.if_none_match,
-            if_tags: options.if_tags,
-            if_unmodified_since: options.if_unmodified_since,
-            lease_id: options.lease_id,
-            // TODO: method_options: options.method_options,
-            range: None,
-            range_get_content_crc64: options.range_get_content_crc64,
-            range_get_content_md5: options.range_get_content_md5,
-            snapshot: options.snapshot,
-            structured_body_type: options.structured_body_type,
-            timeout: options.timeout,
-            version_id: options.version_id,
-            ..Default::default()
-        };
-
-        let client = GeneratedBlobClient {
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-            tracer: self.tracer.clone(),
-        };
-        let client = BlobClientDownloadBehavior::new(client, get_range_options);
-
-        partitioned_transfer::download(options.range, parallel, partition_size, Arc::new(client))
-            .await
     }
 
     /// Returns a new instance of AppendBlobClient.
@@ -236,14 +181,72 @@ impl BlobClient {
         })
     }
 
-    /// Downloads a blob from the service, including its metadata and properties.
+    /// Downloads a blob and its contents from the service.
+    ///
+    /// This operation performs a managed (multi-part) download, splitting the blob into
+    /// parallel range requests for better performance on large blobs. The returned
+    /// [`BlobClientDownloadResult::body`] contains the complete blob data, while
+    /// [`BlobClientDownloadResult::properties`] and /// [`BlobClientDownloadResult::headers`]
+    /// reflect only the initial response's metadata and properties.
+    ///
+    /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
+    ///
+    /// # Notes
+    ///
+    /// By default, storage clients create their HTTP transport via
+    /// [`azure_core::http::new_http_client()`] with automatic decompression disabled.
+    /// If you set a custom transport in [`BlobClientOptions`] without also disabling
+    /// automatic decompression, partitioned downloads may not succeed.
+    #[tracing::function("Storage.Blob.Blob.download")]
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
-        self.download_internal(options).await
+    ) -> Result<BlobClientDownloadResult> {
+        let options = options.unwrap_or_default();
+        let parallel = options.parallel.unwrap_or(DEFAULT_DOWNLOAD_PARALLEL);
+        let partition_size = options
+            .partition_size
+            .unwrap_or(DEFAULT_DOWNLOAD_PARTITION_SIZE);
+        // Construct exhaustively to catch new options.
+        let get_range_options = BlobClientDownloadInternalOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            if_match: options.if_match,
+            if_modified_since: options.if_modified_since,
+            if_none_match: options.if_none_match,
+            if_tags: options.if_tags,
+            if_unmodified_since: options.if_unmodified_since,
+            lease_id: options.lease_id,
+            // requires into_owned due to BlobClientDownloadBehavior w/ 'static Behavior
+            method_options: ClientMethodOptions {
+                context: options.method_options.context.into_owned(),
+            },
+            range: None,
+            range_get_content_crc64: options.range_get_content_crc64,
+            range_get_content_md5: options.range_get_content_md5,
+            snapshot: options.snapshot,
+            structured_body_type: options.structured_body_type,
+            timeout: options.timeout,
+            version_id: options.version_id,
+        };
+        let inner_client = GeneratedBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
+        let behavior = BlobClientDownloadBehavior::new(inner_client, get_range_options);
+        let response = partitioned_transfer::download(
+            options.range,
+            parallel,
+            partition_size,
+            Arc::new(behavior),
+        )
+        .await?;
+        BlobClientDownloadResult::from_headers(response)
     }
 
     /// Uploads content to a block blob, overwriting any existing blob by default.
@@ -287,24 +290,36 @@ impl BlobClient {
 }
 
 // unwrap evaluated at compile time
-const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
-const DEFAULT_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+const DEFAULT_DOWNLOAD_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
+const DEFAULT_DOWNLOAD_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlobClientDownloadBehavior<'a> {
     client: GeneratedBlobClient,
-    options: BlobClientDownloadOptions<'a>,
+    options: BlobClientDownloadInternalOptions<'a>,
 }
+
 impl<'a> BlobClientDownloadBehavior<'a> {
-    fn new(client: GeneratedBlobClient, options: BlobClientDownloadOptions<'a>) -> Self {
+    fn new(client: GeneratedBlobClient, options: BlobClientDownloadInternalOptions<'a>) -> Self {
         Self { client, options }
     }
 }
 
 #[async_trait]
 impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
-    async fn transfer_range(&self, range: Option<Range<usize>>) -> Result<AsyncRawResponse> {
+    async fn transfer_range(
+        &self,
+        range: Option<Range<usize>>,
+        etag_lock: Option<String>,
+    ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
         opt.range = range.map(|r| r.as_range_header());
+        if let Some(etag) = etag_lock {
+            opt.if_match = Some(etag);
+            opt.if_none_match = None;
+            opt.if_modified_since = None;
+            opt.if_unmodified_since = None;
+            opt.if_tags = None;
+        }
         self.client
             .download_internal(Some(opt))
             .await

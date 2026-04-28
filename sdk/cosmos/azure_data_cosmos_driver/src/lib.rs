@@ -6,8 +6,7 @@
 //! Azure Cosmos DB Driver - Core Implementation Layer
 //!
 //! This crate provides the core transport, routing, and protocol handling for Azure Cosmos DB.
-//! It is designed to be reused across multiple language SDKs (Rust, Java, .NET, Python) via
-//! the C API wrapper (`azure_data_cosmos_native`).
+//! It is designed to be reused across multiple language SDKs.
 //!
 //! # Support Model
 //!
@@ -28,6 +27,8 @@ pub mod fault_injection;
 pub mod models;
 pub mod options;
 pub(crate) mod system;
+#[cfg(feature = "__internal_mocking")]
+pub mod testing;
 
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};

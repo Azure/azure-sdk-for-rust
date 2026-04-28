@@ -1,6 +1,6 @@
 [package]
 name = "typespec_client_core"
-version = "0.13.0"
+version = "0.15.0"
 authors.workspace = true
 edition.workspace = true
 description = "Client runtime for TypeSpec-generated libraries."
@@ -13,6 +13,7 @@ keywords = []
 [dependencies]
 async-trait.workspace = true
 base64.workspace = true
+bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
 gloo-timers = { workspace = true, optional = true }
@@ -38,7 +39,7 @@ uuid.workspace = true
 tokio = { workspace = true, features = ["fs"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
-typespec_macros.path = "../typespec_macros"
+typespec_macros.workspace = true
 
 [features]
 default = [
@@ -47,7 +48,8 @@ default = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "reqwest_native_tls",
+  "reqwest_rustls",
+  "tokio",
 ]
 debug = ["typespec_macros?/debug"]
 decimal = ["dep:rust_decimal"]
@@ -57,7 +59,7 @@ json = ["dep:serde_json", "typespec/json"]
 reqwest = ["dep:reqwest"]
 reqwest_deflate = ["reqwest", "reqwest/deflate"]
 reqwest_gzip = ["reqwest", "reqwest/gzip"]
-reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
+reqwest_rustls = ["reqwest", "reqwest/rustls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 xml = [
@@ -83,7 +85,7 @@ features = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "reqwest_native_tls",
+  "reqwest_rustls",
   "tokio",
   "xml",
 ]

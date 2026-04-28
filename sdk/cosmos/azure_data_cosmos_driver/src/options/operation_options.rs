@@ -1,240 +1,227 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Request options for Cosmos DB operations.
+//! Operation options that participate in runtime/account/operation resolution.
+
+use std::collections::HashMap;
+use std::time::Duration;
+
+use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_data_cosmos_macros::CosmosOptions;
 
 use crate::{
-    models::{PartitionKey, Precondition, SessionToken, ThroughputControlGroupName},
+    models::ThroughputControlGroupName,
     options::{
-        ContentResponseOnWrite, DedicatedGatewayOptions, DiagnosticsThresholds,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, QuotaInfoEnabled,
-        ReadConsistencyStrategy, RuntimeOptions, ScriptLoggingEnabled, TriggerOptions,
+        ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+        ReadConsistencyStrategy,
     },
 };
 
-/// Options that can be applied to Cosmos DB operations.
+/// Options that apply to individual Cosmos DB requests.
 ///
-/// This struct provides a fluent builder interface for configuring request options
-/// such as consistency levels, session tokens, triggers, and other policies.
+/// `OperationOptions` controls cross-cutting concerns such as consistency, routing,
+/// retry behavior, and custom headers. These settings can be specified at multiple
+/// levels — each per-operation options type (e.g., `ItemReadOptions`)
+/// has an `operation` field of this type.
 ///
-/// # Runtime Options
+/// # Layered Resolution
 ///
-/// Many settings (like `throughput_control_group_name`, `dedicated_gateway_options`, etc.)
-/// are shared with `EnvironmentOptions` and `DriverOptions` via [`RuntimeOptions`].
-/// Operation-level settings override driver-level, which override environment-level defaults.
+/// When the same option is set at multiple levels, the most specific value wins:
 ///
-/// # Example
+/// 1. **Operation** — set on the per-request options (highest priority)
+/// 2. **Account** — set on `CosmosClientOptions` when building the client
+/// 3. **Runtime** — application-wide defaults
+/// 4. **Environment** — loaded from `AZURE_COSMOS_*` environment variables (lowest priority)
 ///
-/// ```rust,no_run
-/// use azure_data_cosmos_driver::options::{OperationOptions, PriorityLevel, ContentResponseOnWrite};
-/// use azure_data_cosmos_driver::models::PartitionKey;
-///
-/// let options = OperationOptions::new()
-///     .with_partition_key(PartitionKey::from("my-partition"))
-///     .with_priority_level(PriorityLevel::Low)
-///     .with_content_response_on_write(ContentResponseOnWrite::Disabled);
-/// ```
+/// A field set to `None` means "inherit from a lower-priority level."
+/// A field set to `Some(value)` overrides all lower levels.
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime, account, operation))]
 #[non_exhaustive]
-#[derive(Clone, Debug, Default)]
 pub struct OperationOptions {
-    // Shared runtime options (can be set at environment/driver/operation level)
-    runtime: RuntimeOptions,
+    /// Read consistency strategy for this request.
+    ///
+    /// Controls the consistency guarantee for read operations. Set to `None` to
+    /// inherit the account or runtime default.
+    #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
+    pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
 
-    // Operation-specific options (not shared with environment/driver)
-    session_token: Option<SessionToken>,
-    partition_key: Option<PartitionKey>,
-    quota_info_enabled: Option<QuotaInfoEnabled>,
-    priority_level: Option<PriorityLevel>,
+    /// Regions to exclude from request routing.
+    ///
+    /// When set, the SDK will not route this request to the specified regions.
+    /// Set to `Some(empty)` to clear exclusions; `None` inherits from a lower level.
+    pub excluded_regions: Option<ExcludedRegions>,
 
-    // Just read operations
-    etag_condition: Option<Precondition>,
+    /// Whether write responses include the resource body.
+    ///
+    /// [`ContentResponseOnWrite::Enabled`] returns the written resource in the response.
+    /// [`ContentResponseOnWrite::Disabled`] suppresses the body to reduce bandwidth.
+    /// `None` inherits from a lower level (default: disabled).
+    #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
+    pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    // Just write operations
-    triggers: Option<TriggerOptions>,
+    /// Throughput control group name for this request.
+    ///
+    /// References a group registered at runtime via
+    /// [`CosmosDriverRuntimeBuilder::register_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::register_throughput_control_group).
+    ///
+    /// `None` inherits from a lower-priority level or falls back to the
+    /// container's default group.
+    pub throughput_control_group: Option<ThroughputControlGroupName>,
 
-    // Only StoredProc executions
-    script_logging_enabled: Option<ScriptLoggingEnabled>,
+    /// End-to-end timeout policy for this request.
+    pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
+
+    /// Maximum number of region failover retries.
+    #[option(env = "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT")]
+    pub max_failover_retry_count: Option<u32>,
+
+    /// How long an endpoint is considered unavailable after a failure.
+    pub endpoint_unavailability_ttl: Option<Duration>,
+
+    /// Disables automatic session token management.
+    ///
+    /// When `None` or `Some(false)`, session tokens are captured from responses
+    /// and sent on subsequent requests for session consistency.
+    /// Set to `Some(true)` to disable this behavior.
+    pub session_capturing_disabled: Option<bool>,
+
+    /// Maximum number of session-consistency retries on 404/1002 errors.
+    #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
+    pub max_session_retry_count: Option<u32>,
+
+    // Additional headers beyond those natively supported by the driver.
+    // May be removed in the future as we analyze exactly what options are needed.
+    custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 }
 
 impl OperationOptions {
-    /// Creates a new empty `OperationOptions`.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Returns the embedded runtime options.
-    ///
-    /// These are the options shared with environment and driver levels.
-    pub fn runtime(&self) -> &RuntimeOptions {
-        &self.runtime
-    }
-
-    /// Returns a mutable reference to the embedded runtime options.
-    pub fn runtime_mut(&mut self) -> &mut RuntimeOptions {
-        &mut self.runtime
-    }
-
-    /// Creates effective runtime options by merging with a base.
-    ///
-    /// Operation-level settings take precedence over the base settings.
-    pub fn effective_runtime(&self, base: &RuntimeOptions) -> RuntimeOptions {
-        self.runtime.merge_with_base(base)
-    }
-
-    /// Sets the trigger options for this operation.
-    pub fn with_triggers(mut self, triggers: TriggerOptions) -> Self {
-        self.triggers = Some(triggers);
+    /// Sets additional headers to include in the request.
+    pub fn with_custom_headers(mut self, headers: HashMap<HeaderName, HeaderValue>) -> Self {
+        self.custom_headers = Some(headers);
         self
     }
 
-    /// Gets the trigger options.
-    pub fn triggers_ref(&self) -> Option<&TriggerOptions> {
-        self.triggers.as_ref()
+    /// Gets the custom headers.
+    pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
+        self.custom_headers.as_ref()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_operation_options() {
+        let options = OperationOptions::default();
+        assert!(options.read_consistency_strategy.is_none());
+        assert!(options.excluded_regions.is_none());
+        assert!(options.content_response_on_write.is_none());
+        assert!(options.throughput_control_group.is_none());
+        assert!(options.max_failover_retry_count.is_none());
+        assert!(options.max_session_retry_count.is_none());
     }
 
-    /// Sets the read consistency strategy for this operation.
-    pub fn with_read_consistency_strategy(mut self, strategy: ReadConsistencyStrategy) -> Self {
-        self.runtime.read_consistency_strategy = Some(strategy);
-        self
+    #[test]
+    fn builder_creates_options() {
+        let options = OperationOptionsBuilder::new()
+            .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+            .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
+            .with_max_failover_retry_count(5)
+            .with_max_session_retry_count(3)
+            .build();
+
+        assert_eq!(
+            options.content_response_on_write,
+            Some(ContentResponseOnWrite::Disabled)
+        );
+        assert_eq!(
+            options.read_consistency_strategy,
+            Some(ReadConsistencyStrategy::Session)
+        );
+        assert_eq!(options.max_failover_retry_count, Some(5));
+        assert_eq!(options.max_session_retry_count, Some(3));
     }
 
-    /// Gets the read consistency strategy.
-    pub fn read_consistency_strategy_ref(&self) -> Option<&ReadConsistencyStrategy> {
-        self.runtime.read_consistency_strategy.as_ref()
+    #[test]
+    fn view_resolves_across_layers() {
+        use std::sync::Arc;
+
+        let env = Arc::new(OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
+            max_failover_retry_count: Some(3),
+            ..Default::default()
+        });
+
+        let runtime = Arc::new(OperationOptions {
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            ..Default::default()
+        });
+
+        let account = Arc::new(OperationOptions {
+            max_failover_retry_count: Some(5),
+            content_response_on_write: Some(ContentResponseOnWrite::Disabled),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
+            ..Default::default()
+        };
+
+        let view =
+            OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
+
+        // Operation overrides env
+        assert_eq!(
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::Session)
+        );
+        // Account overrides runtime
+        assert_eq!(
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Disabled)
+        );
+        // Account overrides env
+        assert_eq!(view.max_failover_retry_count(), Some(&5));
+        // Not set anywhere
+        assert!(view.excluded_regions().is_none());
+        assert!(view.max_session_retry_count().is_none());
     }
 
-    /// Sets the session token for session consistency.
-    pub fn with_session_token(mut self, token: SessionToken) -> Self {
-        self.session_token = Some(token);
-        self
+    #[test]
+    fn from_env_vars_parses_known_vars() {
+        let options = OperationOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY" => Ok("Session".to_string()),
+            "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
+            "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
+            "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(
+            options.read_consistency_strategy,
+            Some(ReadConsistencyStrategy::Session)
+        );
+        assert_eq!(
+            options.content_response_on_write,
+            Some(ContentResponseOnWrite::Enabled)
+        );
+        assert_eq!(options.max_failover_retry_count, Some(7));
+        assert_eq!(options.max_session_retry_count, Some(3));
+        // Fields without env annotation remain None
+        assert!(options.excluded_regions.is_none());
     }
 
-    /// Gets the session token.
-    pub fn session_token_ref(&self) -> Option<&SessionToken> {
-        self.session_token.as_ref()
-    }
+    #[test]
+    fn from_env_vars_returns_none_for_missing_vars() {
+        let options = OperationOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
 
-    /// Sets the partition key for this operation.
-    pub fn with_partition_key(mut self, key: PartitionKey) -> Self {
-        self.partition_key = Some(key);
-        self
-    }
-
-    /// Gets the partition key.
-    pub fn partition_key_ref(&self) -> Option<&PartitionKey> {
-        self.partition_key.as_ref()
-    }
-
-    /// Sets the ETag condition for read operations.
-    pub fn with_etag_condition(mut self, condition: Precondition) -> Self {
-        self.etag_condition = Some(condition);
-        self
-    }
-
-    /// Gets the ETag condition.
-    pub fn etag_condition_ref(&self) -> Option<&Precondition> {
-        self.etag_condition.as_ref()
-    }
-
-    /// Sets whether the response should include the content after write operations.
-    pub fn with_content_response_on_write(mut self, value: ContentResponseOnWrite) -> Self {
-        self.runtime.content_response_on_write = Some(value);
-        self
-    }
-
-    /// Gets the content response on write setting.
-    pub fn content_response_on_write_ref(&self) -> Option<&ContentResponseOnWrite> {
-        self.runtime.content_response_on_write.as_ref()
-    }
-
-    /// Sets the throughput control group name for this operation.
-    pub fn with_throughput_control_group_name(mut self, name: ThroughputControlGroupName) -> Self {
-        self.runtime.throughput_control_group_name = Some(name);
-        self
-    }
-
-    /// Gets the throughput control group name.
-    pub fn throughput_control_group_name_ref(&self) -> Option<&ThroughputControlGroupName> {
-        self.runtime.throughput_control_group_name.as_ref()
-    }
-
-    /// Sets the dedicated gateway options for integrated cache.
-    pub fn with_dedicated_gateway_options(mut self, options: DedicatedGatewayOptions) -> Self {
-        self.runtime.dedicated_gateway_options = Some(options);
-        self
-    }
-
-    /// Gets the dedicated gateway options.
-    pub fn dedicated_gateway_options_ref(&self) -> Option<&DedicatedGatewayOptions> {
-        self.runtime.dedicated_gateway_options.as_ref()
-    }
-
-    /// Sets the diagnostics thresholds for this operation.
-    pub fn with_diagnostics_thresholds(mut self, thresholds: DiagnosticsThresholds) -> Self {
-        self.runtime.diagnostics_thresholds = Some(thresholds);
-        self
-    }
-
-    /// Gets the diagnostics thresholds.
-    pub fn diagnostics_thresholds_ref(&self) -> Option<&DiagnosticsThresholds> {
-        self.runtime.diagnostics_thresholds.as_ref()
-    }
-
-    /// Sets the end-to-end operation latency policy.
-    pub fn with_end_to_end_latency_policy(
-        mut self,
-        policy: EndToEndOperationLatencyPolicy,
-    ) -> Self {
-        self.runtime.end_to_end_latency_policy = Some(policy);
-        self
-    }
-
-    /// Gets the end-to-end operation latency policy.
-    pub fn end_to_end_latency_policy_ref(&self) -> Option<&EndToEndOperationLatencyPolicy> {
-        self.runtime.end_to_end_latency_policy.as_ref()
-    }
-
-    /// Sets the regions to exclude from routing.
-    pub fn with_excluded_regions(mut self, regions: ExcludedRegions) -> Self {
-        self.runtime.excluded_regions = Some(regions);
-        self
-    }
-
-    /// Gets the excluded regions.
-    pub fn excluded_regions_ref(&self) -> Option<&ExcludedRegions> {
-        self.runtime.excluded_regions.as_ref()
-    }
-
-    /// Sets the priority level for this operation.
-    pub fn with_priority_level(mut self, level: PriorityLevel) -> Self {
-        self.priority_level = Some(level);
-        self
-    }
-
-    /// Gets the priority level.
-    pub fn priority_level_ref(&self) -> Option<&PriorityLevel> {
-        self.priority_level.as_ref()
-    }
-
-    /// Sets whether script logging is enabled.
-    pub fn with_script_logging_enabled(mut self, value: ScriptLoggingEnabled) -> Self {
-        self.script_logging_enabled = Some(value);
-        self
-    }
-
-    /// Gets the script logging enabled setting.
-    pub fn script_logging_enabled_ref(&self) -> Option<&ScriptLoggingEnabled> {
-        self.script_logging_enabled.as_ref()
-    }
-
-    /// Sets whether quota info is included in responses.
-    pub fn with_quota_info_enabled(mut self, value: QuotaInfoEnabled) -> Self {
-        self.quota_info_enabled = Some(value);
-        self
-    }
-
-    /// Gets the quota info enabled setting.
-    pub fn quota_info_enabled_ref(&self) -> Option<&QuotaInfoEnabled> {
-        self.quota_info_enabled.as_ref()
+        assert!(options.read_consistency_strategy.is_none());
+        assert!(options.content_response_on_write.is_none());
+        assert!(options.excluded_regions.is_none());
+        assert!(options.max_failover_retry_count.is_none());
+        assert!(options.max_session_retry_count.is_none());
     }
 }

@@ -15,13 +15,12 @@ use azure_core::{
 use std::sync::Arc;
 
 impl QueueServiceClient {
-    /// Creates a new QueueServiceClient, using Entra ID authentication.
+    /// Creates a new `QueueServiceClient`.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token for authentication.
-    ///   If None, the URL must contain authentication information (e.g., SAS token).
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Service")]
     pub fn new(

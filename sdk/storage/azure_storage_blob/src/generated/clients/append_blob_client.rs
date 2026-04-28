@@ -596,11 +596,14 @@ impl AppendBlobClient {
     }
 }
 
+/// Default value for [`AppendBlobClientOptions::version`].
+pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+
 impl Default for AppendBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2026-04-06"),
+            version: String::from(DEFAULT_VERSION),
         }
     }
 }

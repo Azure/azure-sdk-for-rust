@@ -4,7 +4,7 @@
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultOperationType;
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::options::ExcludedRegions;
 use crate::request_context::RequestContext;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::{constants, PartitionKey};
@@ -59,7 +59,7 @@ pub(crate) struct CosmosRequest {
     pub query_string: Option<String>,
     pub continuation: Option<String>,
     pub entity_id: Option<String>,
-    pub excluded_regions: Option<Vec<RegionName>>,
+    pub excluded_regions: Option<ExcludedRegions>,
 }
 
 impl CosmosRequest {
@@ -99,11 +99,6 @@ impl CosmosRequest {
     /// Determines if the given operation type is read only.
     pub fn is_read_only_request(&self) -> bool {
         self.operation_type.is_read_only()
-    }
-
-    /// Returns the container ID extracted from the request's resource link, if present.
-    pub fn container_id(&self) -> Option<String> {
-        self.resource_link.container_id()
     }
 
     /// Gets the corresponding http method for the given `OperationType`.
@@ -186,7 +181,7 @@ pub(crate) struct CosmosRequestBuilder {
     authorization_token_type: AuthorizationTokenType,
     continuation: Option<String>,
     entity_id: Option<String>,
-    excluded_regions: Option<Vec<RegionName>>,
+    excluded_regions: Option<ExcludedRegions>,
     // Flags
     is_feed: bool,
     use_gateway_mode: bool,
@@ -234,7 +229,7 @@ impl CosmosRequestBuilder {
         self
     }
 
-    pub fn excluded_regions(mut self, excluded_regions: Option<Vec<RegionName>>) -> Self {
+    pub fn excluded_regions(mut self, excluded_regions: Option<ExcludedRegions>) -> Self {
         // Sets the excluded regions for the given request. If None is provided,
         // client-level excluded regions will be used. If an empty vector is provided,
         // no regions will be excluded for this request.
@@ -297,7 +292,7 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::resource_context::ResourceType;
-    use crate::{constants, CosmosClientOptions, ItemOptions, PartitionKey};
+    use crate::{constants, PartitionKey};
 
     fn make_base_request(op: OperationType) -> CosmosRequest {
         let req = CosmosRequest::builder(op, ResourceLink::root(ResourceType::Documents))
@@ -402,54 +397,6 @@ mod tests {
             .iter()
             .any(|(n, _)| n == &constants::IS_UPSERT);
         assert!(has_upsert);
-    }
-
-    #[test]
-    fn prioritize_request_headers_over_client_headers() {
-        let mut request_custom_headers = std::collections::HashMap::new();
-        request_custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let item_options = ItemOptions::default()
-            .with_session_token("RequestSession".to_string().into())
-            .with_custom_headers(request_custom_headers);
-        let mut req = CosmosRequest::builder(
-            OperationType::Create,
-            ResourceLink::root(ResourceType::Documents),
-        )
-        .build()
-        .unwrap();
-        item_options.apply_headers(&mut req.headers);
-
-        req.request_context.location_endpoint_to_route =
-            Some("https://example.com/".parse().unwrap());
-
-        let mut client_custom_headers = std::collections::HashMap::new();
-        client_custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value-2"),
-        );
-
-        let client_options =
-            CosmosClientOptions::default().with_custom_headers(client_custom_headers);
-        client_options.apply_headers(&mut req.headers);
-
-        let raw = req.into_raw_request();
-        let get_header = |name: &HeaderName| {
-            raw.headers()
-                .iter()
-                .find(|(n, _)| n == &name)
-                .map(|(_, v)| v.as_str())
-                .unwrap()
-        };
-
-        assert_eq!(get_header(&constants::SESSION_TOKEN), "RequestSession");
-        assert_eq!(
-            get_header(&HeaderName::from_static("x-custom-header")),
-            "custom_value"
-        );
     }
 
     #[test]

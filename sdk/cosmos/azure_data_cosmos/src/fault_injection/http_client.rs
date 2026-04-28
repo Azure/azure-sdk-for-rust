@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
@@ -144,7 +146,7 @@ impl FaultClient {
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 return Some(Err(azure_core::Error::with_message(
-                    ErrorKind::Io,
+                    ErrorKind::Connection,
                     "Injected fault: connection error",
                 )));
             }
@@ -219,7 +221,10 @@ impl FaultClient {
 impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule and clone the result if needed
-        let fault_result: Option<FaultInjectionResult> = {
+        let (fault_result, matched_rule): (
+            Option<FaultInjectionResult>,
+            Option<Arc<FaultInjectionRule>>,
+        ) = {
             let rules = self.rules.lock().unwrap();
             let mut applicable_rule_index: Option<usize> = None;
 
@@ -234,9 +239,9 @@ impl HttpClient for FaultClient {
             if let Some(index) = applicable_rule_index {
                 let rule = &rules[index];
                 rule.increment_hit_count();
-                Some(rule.result.clone())
+                (Some(rule.result.clone()), Some(Arc::clone(rule)))
             } else {
-                None
+                (None, None)
             }
         };
 
@@ -257,7 +262,23 @@ impl HttpClient for FaultClient {
                 .remove(constants::FAULT_INJECTION_OPERATION);
 
             // No fault injection or delay-only fault, proceed with actual request
-            self.inner.execute_request(&clean_request).await
+            let result = self.inner.execute_request(&clean_request).await;
+
+            // Record response status only for true spy rules: no error_type,
+            // no custom_response, and no delay. This excludes probability-skipped
+            // faults and any rule that injected a delay.
+            if let (Some(rule), Some(ref fr), Ok(ref response)) =
+                (&matched_rule, &fault_result, &result)
+            {
+                if fr.error_type.is_none()
+                    && fr.custom_response.is_none()
+                    && fr.delay == Duration::ZERO
+                {
+                    rule.record_passthrough_status(response.status());
+                }
+            }
+
+            result
         };
 
         // Apply delay after the request is sent
@@ -283,7 +304,7 @@ mod tests {
         CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::regions;
+    use crate::regions::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
     use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Method, Request, Url};
@@ -499,7 +520,7 @@ mod tests {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_region(regions::WEST_US)
+            .with_region(Region::WEST_US)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -670,6 +691,12 @@ mod tests {
         let result = fault_client.execute_request(&request).await;
         assert!(result.is_err(), "should produce an error");
 
+        let err = result.unwrap_err();
+        assert_eq!(
+            err.kind(),
+            &ErrorKind::Connection,
+            "connection error should have Connection ErrorKind"
+        );
         assert_eq!(mock_client.call_count(), 0);
     }
 

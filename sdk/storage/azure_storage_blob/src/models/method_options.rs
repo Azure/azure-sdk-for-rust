@@ -11,9 +11,9 @@ use time::OffsetDateTime;
 
 use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode};
 
-/// Options to be passed to `BlockBlobClient::managed_download()`
+/// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobClientManagedDownloadOptions<'a> {
+pub struct BlobClientDownloadOptions<'a> {
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
     pub encryption_algorithm: Option<EncryptionAlgorithmType>,
@@ -180,7 +180,7 @@ pub struct BlockBlobClientUploadOptions<'a> {
 
     /// Optional. Size to partition data into.
     /// A default value will be chosen if none is provided.
-    pub partition_size: Option<NonZero<usize>>,
+    pub partition_size: Option<NonZero<u64>>,
 
     /// Optional. The server-side timeout to apply on each individual request. This is not a timeout for the whole operation.
     /// The timeout parameter is expressed in seconds. For more information, see

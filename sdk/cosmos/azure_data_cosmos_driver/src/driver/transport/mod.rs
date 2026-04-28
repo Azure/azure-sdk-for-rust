@@ -18,10 +18,14 @@ mod authorization_policy;
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;
 pub(crate) mod cosmos_headers;
+pub(crate) mod cosmos_transport_client;
 mod emulator;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
+#[cfg(feature = "reqwest")]
+pub(crate) mod reqwest_transport_client;
 mod sharded_transport;
+pub(crate) use sharded_transport::EndpointKey;
 mod tracked_transport;
 pub(crate) mod transport_pipeline;
 
@@ -123,7 +127,7 @@ impl CosmosTransport {
     /// The `negotiated_version` should be determined by probing the gateway
     /// during `CosmosDriver::initialize()`.
     #[cfg(test)]
-    pub(crate) fn new(
+    pub(crate) fn for_tests(
         connection_pool: ConnectionPoolOptions,
         negotiated_version: TransportHttpVersion,
     ) -> azure_core::Result<Self> {
@@ -233,7 +237,7 @@ impl CosmosTransport {
                 None => {
                     let config =
                         HttpClientConfig::metadata(&self.connection_pool, self.negotiated_version)
-                            .for_emulator();
+                            .with_allow_invalid_cert();
                     let t = AdaptiveTransport::from_config(
                         &self.connection_pool,
                         self.http_client_factory.clone(),
@@ -264,7 +268,7 @@ impl CosmosTransport {
                         &self.connection_pool,
                         self.negotiated_version,
                     )
-                    .for_emulator();
+                    .with_allow_invalid_cert();
                     let t = AdaptiveTransport::from_config(
                         &self.connection_pool,
                         self.http_client_factory.clone(),
@@ -309,7 +313,7 @@ pub(crate) mod tests {
     #[test]
     fn transport_creates_with_http2() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
 
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
@@ -322,7 +326,7 @@ pub(crate) mod tests {
             .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
 
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
         assert!(transport.should_use_insecure_emulator_transport(&endpoint));
@@ -338,7 +342,7 @@ pub(crate) mod tests {
     #[test]
     fn transport_ignores_emulator_hosts_when_validation_enabled() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
 
         let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
         assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
@@ -347,7 +351,7 @@ pub(crate) mod tests {
     #[test]
     fn metadata_transport_is_sharded_when_http2_negotiated() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -360,7 +364,7 @@ pub(crate) mod tests {
     #[test]
     fn metadata_transport_is_unsharded_when_http11_negotiated() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http11).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -373,7 +377,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_is_unsharded_when_http11_negotiated() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http11).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -389,7 +393,7 @@ pub(crate) mod tests {
             .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -405,7 +409,7 @@ pub(crate) mod tests {
             .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
@@ -421,7 +425,7 @@ pub(crate) mod tests {
             .with_is_gateway20_allowed(false)
             .build()
             .unwrap();
-        let transport = CosmosTransport::new(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 

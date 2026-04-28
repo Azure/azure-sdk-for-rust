@@ -126,6 +126,7 @@ where
     }
 
     /// Inserts a value directly into the cache.
+    #[allow(dead_code)] // Fundamental cache operation, will be used again
     pub async fn insert(&self, key: K, value: V) {
         let mut store = self.store.write().await;
         let entry = CacheEntry::new(value, self.ttl);

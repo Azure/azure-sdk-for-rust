@@ -27,6 +27,8 @@ if ($IsAzDo) {
         $env:AZURE_COSMOS_TEST_MODE = "required"
     } else {
         $env:AZURE_COSMOS_TEST_MODE = "skipped"
+        Write-Host "Skipping Cosmos DB Emulator setup on non-Windows Azure DevOps agents."
+        return
     }
 }
 
@@ -63,7 +65,11 @@ if ($IsWindows) {
             Write-Host "Emulator responded with status $($response.StatusCode)."
             $emulatorReady = $true
         } catch {
-             $response = $_.Exception.Response
+             # Some exceptions (e.g. connection refused) have no Response property.
+             $response = $null
+             if ($_.Exception.PSObject.Properties['Response']) {
+                 $response = $_.Exception.Response
+             }
              if ($null -ne $response -and $null -ne $response.StatusCode) {
                  $statusCode = $response.StatusCode.value__
                  if ($statusCode -ge 400 -and $statusCode -lt 500) {
@@ -89,6 +95,9 @@ if ($IsWindows) {
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+
+    # Run tests single-threaded to avoid env var contamination from proxy tests.
+    $env:RUST_TEST_THREADS = "1"
 } elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
 
@@ -135,6 +144,9 @@ if ($IsWindows) {
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+
+    # Run tests single-threaded to avoid env var contamination from proxy tests.
+    $env:RUST_TEST_THREADS = "1"
 
     Write-Host "Cosmos DB Emulator is running in Docker."
 } else {

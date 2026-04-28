@@ -3,7 +3,9 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::{CosmosClient, ItemOptions, PartitionKey};
+use azure_data_cosmos::{
+    ContentResponseOnWrite, CosmosClient, ItemWriteOptions, OperationOptions, PartitionKey,
+};
 use clap::Args;
 
 /// Creates a new item or replaces an existing item, if a matching item already exists.
@@ -19,6 +21,10 @@ pub struct UpsertCommand {
     #[arg(long, short)]
     partition_key: String,
 
+    /// The id of the new item.
+    #[arg(long, short)]
+    item_id: String,
+
     /// The JSON of the new item.
     #[arg(long, short)]
     json: String,
@@ -31,16 +37,21 @@ pub struct UpsertCommand {
 impl UpsertCommand {
     pub async fn run(self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
         let db_client = client.database_client(&self.database);
-        let container_client = db_client.container_client(&self.container).await;
+        let container_client = db_client.container_client(&self.container).await?;
 
         let pk = PartitionKey::from(&self.partition_key);
         let item: serde_json::Value = serde_json::from_str(&self.json)?;
 
-        let options =
-            ItemOptions::default().with_content_response_on_write_enabled(self.show_updated);
+        let options = if self.show_updated {
+            let mut operation = OperationOptions::default();
+            operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+            Some(ItemWriteOptions::default().with_operation_options(operation))
+        } else {
+            None
+        };
 
         let response = container_client
-            .upsert_item(pk, item, Some(options))
+            .upsert_item(pk, &self.item_id, item, options)
             .await?;
         println!("Item updated successfully");
 

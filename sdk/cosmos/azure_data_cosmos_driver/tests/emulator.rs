@@ -3,12 +3,8 @@
 
 //! Emulator-based E2E tests for azure_data_cosmos_driver.
 //!
-//! These tests require a running Cosmos DB emulator and are gated by
-//! the `test_category = "emulator"` configuration.
-
-// We also want to enable this code when in rust-analyzer.
-
-#![cfg(test_category = "emulator")]
+//! These tests require a running Cosmos DB emulator and are ignored when
+//! the `test_category = "emulator"` configuration is not set.
 
 mod emulator_tests;
 mod framework;

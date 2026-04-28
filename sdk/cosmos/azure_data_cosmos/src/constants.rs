@@ -39,6 +39,7 @@ cosmos_headers! {
     IS_UPSERT => "x-ms-documentdb-is-upsert",
     OFFER_THROUGHPUT => "x-ms-offer-throughput",
     OFFER_AUTOPILOT_SETTINGS => "x-ms-cosmos-offer-autopilot-settings",
+    OFFER_REPLACE_PENDING => "x-ms-offer-replace-pending",
     CONSISTENCY_LEVEL => "x-ms-consistency-level",
     PRE_TRIGGER_INCLUDE => "x-ms-documentdb-pre-trigger-include",
     POST_TRIGGER_INCLUDE => "x-ms-documentdb-post-trigger-include",

@@ -5,8 +5,9 @@
 
 use crate::models::{
     AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, ItemReference, OperationType, PartitionKey, ResourceType,
+    DatabaseReference, ItemReference, OperationType, PartitionKey, Precondition, ResourceType,
 };
+use std::borrow::Cow;
 
 /// Represents a Cosmos DB operation with its routing and execution context.
 ///
@@ -47,7 +48,7 @@ use crate::models::{
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -83,6 +84,24 @@ impl CosmosOperation {
     /// Returns a reference to the resource being operated on.
     pub(crate) fn resource_reference(&self) -> &CosmosResourceReference {
         &self.resource_reference
+    }
+
+    /// Computes the request path and signing link for this operation.
+    ///
+    /// Create and Upsert document operations use feed-style paths (targeting
+    /// the collection URL) even though they carry an item id, because the
+    /// Cosmos DB REST API POSTs these to the collection feed. All other
+    /// operations use the standard resource paths.
+    pub(crate) fn compute_resource_paths(&self) -> crate::models::ResourcePaths {
+        if matches!(
+            self.operation_type,
+            OperationType::Create | OperationType::Upsert
+        ) && self.resource_type == ResourceType::Document
+        {
+            self.resource_reference.compute_feed_paths()
+        } else {
+            self.resource_reference.compute_paths()
+        }
     }
 
     /// Returns the container for this operation, if applicable.
@@ -132,6 +151,17 @@ impl CosmosOperation {
     pub fn with_activity_id(mut self, activity_id: crate::models::ActivityId) -> Self {
         self.request_headers.activity_id = Some(activity_id);
         self
+    }
+
+    /// Sets the precondition for optimistic concurrency control.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.request_headers.precondition = Some(precondition);
+        self
+    }
+
+    /// Returns the precondition, if set.
+    pub fn precondition(&self) -> Option<&Precondition> {
+        self.request_headers.precondition.as_ref()
     }
 
     /// Sets the request body.
@@ -316,7 +346,7 @@ impl CosmosOperation {
     /// let result = driver
     ///     .execute_operation(
     ///         CosmosOperation::delete_container(container),
-    ///         OperationOptions::new(),
+    ///         OperationOptions::default(),
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -364,9 +394,10 @@ impl CosmosOperation {
 
     // ===== Data Plane Factory Methods =====
 
-    /// Creates an item (document) in a container.
+    /// Creates a new item (document) in a container.
     ///
-    /// The `container` and `partition_key` identify where to create the document.
+    /// The `ItemReference` contains the container, partition key, and item identifier,
+    /// providing all the information needed for the operation.
     /// Use `with_body()` to provide the document JSON.
     ///
     /// # Example
@@ -374,7 +405,7 @@ impl CosmosOperation {
     /// ```no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     /// use azure_data_cosmos_driver::models::{
-    ///     AccountReference, CosmosOperation, ContainerReference, PartitionKey,
+    ///     AccountReference, CosmosOperation, ItemReference, PartitionKey,
     /// };
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
@@ -388,22 +419,20 @@ impl CosmosOperation {
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
-    /// let pk = PartitionKey::from("pk-value");
+    /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
     ///     .execute_operation(
-    ///         CosmosOperation::create_item(container, pk)
+    ///         CosmosOperation::create_item(item)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
-    ///         OperationOptions::new(),
+    ///         OperationOptions::default(),
     ///     )
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item(container: ContainerReference, partition_key: PartitionKey) -> Self {
-        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Create, resource_ref).with_partition_key(partition_key)
+    pub fn create_item(item: ItemReference) -> Self {
+        let partition_key = item.partition_key().clone();
+        Self::new(OperationType::Create, item).with_partition_key(partition_key)
     }
 
     /// Reads an item (document) from a container.
@@ -433,7 +462,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::new())
+    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -513,14 +542,15 @@ impl CosmosOperation {
     ///
     /// Use `with_body()` to provide the query JSON.
     ///
+    /// This is equivalent to calling `query_items()` with [`PartitionKey::EMPTY`],
+    /// which causes the `x-ms-documentdb-query-enablecrosspartition` header to be
+    /// emitted by the pipeline.
+    ///
     /// **Warning:** Cross-partition queries are inherently less efficient than
     /// single-partition queries. Use `query_items()` with a partition key
     /// when possible.
     pub fn query_items_cross_partition(container: ContainerReference) -> Self {
-        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Query, resource_ref)
+        Self::query_items(container, PartitionKey::EMPTY)
     }
 
     /// Returns true if this is a read-only operation.
@@ -531,6 +561,43 @@ impl CosmosOperation {
     /// Returns true if this operation is idempotent.
     pub fn is_idempotent(&self) -> bool {
         self.operation_type.is_idempotent()
+    }
+
+    // -- Offer operations --
+
+    /// Queries offers in the account.
+    ///
+    /// Use `with_body()` to provide the query JSON and set `Content-Type` and
+    /// `x-ms-documentdb-isquery` headers via `OperationOptions::with_custom_headers()`.
+    pub fn query_offers(account: AccountReference) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .into_feed_reference();
+        Self::new(OperationType::Query, resource_ref)
+    }
+
+    /// Reads a specific offer by its ID.
+    ///
+    /// For offers, the JSON `"id"` field is the offer RID.
+    pub fn read_offer(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .with_rid(offer_id.into());
+        Self::new(OperationType::Read, resource_ref)
+    }
+
+    /// Replaces a specific offer by its ID.
+    ///
+    /// For offers, the JSON `"id"` field is the offer RID.
+    /// Use `with_body()` to provide the updated offer JSON.
+    pub fn replace_offer(
+        account: AccountReference,
+        offer_id: impl Into<Cow<'static, str>>,
+    ) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::Offer)
+            .with_rid(offer_id.into());
+        Self::new(OperationType::Replace, resource_ref)
     }
 }
 

@@ -259,6 +259,7 @@ pub struct CosmosAccountOptions { /* fields below */ }
 | --- | --- | --- | --- |
 | `user_agent_suffix` | `Option<String>` | `AZURE_COSMOS_USER_AGENT_SUFFIX` | Application identifier appended to the User-Agent header for telemetry. |
 | `account_initialization_custom_endpoints` | `Option<HashSet<Url>>` | `AZURE_COSMOS_CUSTOM_ENDPOINTS` | Custom endpoints for initial account discovery (private endpoints, etc.). Env var is comma-separated. |
+| `custom_headers` | `Option<HashMap<HeaderName, HeaderValue>>` | — | **Best-effort only.** Additional HTTP headers injected into outgoing requests. Intended for proxies, gateways, or external telemetry systems — **not** for setting Cosmos DB backend headers. The SDK may use non-standard transports (e.g., custom framing over TCP) where HTTP headers do not apply; in those cases custom headers are silently ignored. The SDK reserves the right to override any header that conflicts with its internal protocol. `None` inherits from a lower layer; `Some(map)` replaces (does not merge) the inherited value. No environment variable — headers are not representable as a single string. |
 
 ---
 
@@ -489,9 +490,11 @@ The `ConsistencyLevel` enum itself is **retained** as a model type for account-l
 
 ### 6.3 Custom HTTP Headers (`custom_headers`)
 
-**Removed from:** `CosmosClientOptions`, `ItemOptions`, `QueryOptions`
+**Moved from:** `CosmosClientOptions`, `ItemOptions`, `QueryOptions` → `CosmosAccountOptions.custom_headers`
 
-The Rust SDK does not expose a custom HTTP header mechanism. Features that other SDKs surface through custom headers (e.g., dedicated gateway cache control) will be modeled as first-class typed options when supported.
+Retained as a **best-effort** mechanism for injecting HTTP headers into outgoing requests. This is intended for proxies, gateways, or external telemetry systems — **not** for setting Cosmos DB backend headers. The Cosmos SDK does not always use standard HTTP or HTTP/2 (e.g., it may use custom framing over TCP); custom headers are silently ignored on transports where they do not apply. The SDK reserves the right to override any header that conflicts with its internal protocol.
+
+Features that other SDKs surface through custom headers (e.g., dedicated gateway cache control) will continue to be modeled as first-class typed options rather than relying on `custom_headers`.
 
 ### 6.4 Indexing Directive (`indexing_directive`)
 
@@ -531,7 +534,7 @@ The Cosmos SDK manages its own transport, retry, and telemetry pipeline internal
 | `throughput_bucket` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | — | **Deferred** to throughput control follow-up spec |
 | `session_retry_options` | `CosmosClientOptions` | `RetryOptions.session_retry` | Nested; fields become `Option<T>` |
 | `priority` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | — | **Deferred** to throughput control follow-up spec |
-| `custom_headers` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | — | **Removed** (§6.3) |
+| `custom_headers` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | `CosmosAccountOptions.custom_headers` | Moved to option group; best-effort only (see §6.3) |
 | `pre_triggers` | `ItemOptions` | — | **Removed** (§6.5) |
 | `post_triggers` | `ItemOptions` | — | **Removed** (§6.5) |
 | `session_token` | `ItemOptions`, `QueryOptions` | Operation-only on each type | Duplicated across read/write/query/batch |

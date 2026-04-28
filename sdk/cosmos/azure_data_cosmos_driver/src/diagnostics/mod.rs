@@ -19,6 +19,7 @@
 //! `DiagnosticsContext` which is safe to share via `Arc` without locking.
 
 mod diagnostics_context;
+mod proxy_configuration;
 
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
@@ -26,3 +27,4 @@ pub use diagnostics_context::{
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
     TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };
+pub use proxy_configuration::ProxyConfiguration;

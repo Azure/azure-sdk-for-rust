@@ -1855,4 +1855,101 @@ mod tests {
         // Verify both calls were made
         assert_eq!(*call_count.lock().unwrap(), 2);
     }
+
+    #[tokio::test]
+    async fn into_future_output_model_and_raw_response() {
+        let call_count = Arc::new(Mutex::new(0));
+        let final_json = br#"{"id":"res1","name":"My Resource"}"#;
+
+        let mock_client = {
+            let call_count = call_count.clone();
+            Arc::new(MockHttpClient::new(move |_| {
+                let call_count = call_count.clone();
+                async move {
+                    let mut count = call_count.lock().unwrap();
+                    *count += 1;
+
+                    if *count == 1 {
+                        Ok(AsyncRawResponse::from_bytes(
+                            StatusCode::Accepted,
+                            Headers::new(),
+                            br#"{"status":"InProgress"}"#.to_vec(),
+                        ))
+                    } else {
+                        Ok(AsyncRawResponse::from_bytes(
+                            StatusCode::Ok,
+                            Headers::new(),
+                            br#"{"status":"Succeeded"}"#.to_vec(),
+                        ))
+                    }
+                }
+                .boxed()
+            }))
+        };
+
+        let poller = Poller::new(
+            move |_, _| {
+                let client = mock_client.clone();
+                Box::pin(async move {
+                    let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                    let raw_response = client.execute_request(&req).await?;
+                    let (status, headers, body) = raw_response.deconstruct();
+                    let bytes = body.collect().await?;
+
+                    let test_status: TestStatus = crate::json::from_json(&bytes)?;
+                    let response: Response<TestStatus> =
+                        RawResponse::from_bytes(status, headers.clone(), bytes).into();
+
+                    match test_status.status() {
+                        PollerStatus::InProgress => Ok(PollerResult::InProgress {
+                            response,
+                            retry_after: Duration::ZERO,
+                            continuation: PollerContinuation::Links {
+                                next_link: req.url().clone(),
+                                final_link: None,
+                            },
+                        }),
+                        PollerStatus::Succeeded => {
+                            let target_body =
+                                bytes::Bytes::from_static(br#"{"id":"res1","name":"My Resource"}"#);
+                            Ok(PollerResult::Succeeded {
+                                response,
+                                target: Box::new(move || {
+                                    Box::pin(async move {
+                                        Ok(RawResponse::from_bytes(
+                                            StatusCode::Ok,
+                                            Headers::new(),
+                                            target_body,
+                                        )
+                                        .into())
+                                    })
+                                }),
+                            })
+                        }
+                        _ => Ok(PollerResult::Done { response }),
+                    }
+                })
+            },
+            None,
+        );
+
+        // Await the poller to get Response<TestOutput> (the StatusMonitor::Output type).
+        let response = poller.await.unwrap();
+        assert_eq!(response.status(), StatusCode::Ok);
+
+        // Clone the RawResponse before consuming via into_model().
+        let raw = response.to_raw_response();
+
+        // Deserialize into the Output model and verify fields.
+        let output = response.into_model().unwrap();
+        assert_eq!(output.id.as_deref(), Some("res1"));
+        assert_eq!(output.name.as_deref(), Some("My Resource"));
+
+        // The RawResponse still holds the full JSON body.
+        let (raw_status, _, raw_body) = raw.deconstruct();
+        assert_eq!(raw_status, StatusCode::Ok);
+        assert_eq!(raw_body.as_ref(), final_json);
+
+        assert_eq!(*call_count.lock().unwrap(), 2);
+    }
 }

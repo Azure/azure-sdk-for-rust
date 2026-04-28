@@ -8,14 +8,14 @@ use azure_core::{
 };
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
 use azure_storage_blob::{
-    format_page_range,
-    models::{BlobClientDownloadResultHeaders, BlockLookupList},
+    models::{BlockLookupList, HttpRange},
     BlobClient,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
 
+// This test generates a large recording, so marking as live-only.
 #[recorded::test(live)]
 async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Setup
@@ -54,11 +54,12 @@ async fn stream_blob_upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(data.len() as u64, content_length.unwrap());
-    assert_eq!(data.to_vec(), response_body.collect().await?.to_vec());
+    assert_eq!(
+        data.len() as u64,
+        response.properties.content_length.unwrap()
+    );
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.to_vec(), body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -108,14 +109,15 @@ async fn stream_stage_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
     let expected_len = block_1_data.len() + block_2_data.len();
-    assert_eq!(expected_len as u64, content_length.unwrap());
+    assert_eq!(
+        expected_len as u64,
+        response.properties.content_length.unwrap()
+    );
     let mut expected = block_1_data.to_vec();
     expected.extend_from_slice(block_2_data);
-    assert_eq!(expected, response_body.collect().await?.to_vec());
+    let body_data = response.body.collect().await?;
+    assert_eq!(expected, body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -152,14 +154,15 @@ async fn stream_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
     let expected_len = block_1.len() + block_2.len();
-    assert_eq!(expected_len as u64, content_length.unwrap());
+    assert_eq!(
+        expected_len as u64,
+        response.properties.content_length.unwrap()
+    );
     let mut expected = block_1.to_vec();
     expected.extend_from_slice(block_2);
-    assert_eq!(expected, response_body.collect().await?.to_vec());
+    let body_data = response.body.collect().await?;
+    assert_eq!(expected, body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -183,18 +186,16 @@ async fn stream_upload_pages(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             request_content_from_bytes(&data),
             512,
-            format_page_range(0, 512)?,
+            HttpRange::new(0, 512).to_string(),
             None,
         )
         .await?;
 
     // Assert
     let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(512, content_length.unwrap());
-    assert_eq!(data, response_body.collect().await?.to_vec());
+    assert_eq!(512, response.properties.content_length.unwrap());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data, body_data);
 
     container_client.delete(None).await?;
     Ok(())
@@ -224,7 +225,7 @@ async fn upload<const CONTENT_LENGTH: usize>(client: &BlobClient) -> azure_core:
 #[tracing::instrument(skip_all, fields(content_length), err)]
 async fn download(client: &BlobClient) -> azure_core::Result<u64> {
     let mut len = 0;
-    let mut response = client.download(None).await?.into_body();
+    let mut response = client.download(None).await?.body;
     while let Some(data) = response.try_next().await? {
         tracing::debug!("received {} bytes", data.len());
 

@@ -9,7 +9,7 @@ use super::{
 use crate::constants::{self, SubStatusCode};
 use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
-use crate::regions::RegionName;
+use crate::regions::Region;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use azure_core::error::ErrorKind;
@@ -83,7 +83,7 @@ pub(crate) struct ClientRetryPolicy {
     retry_context: Option<RetryContext>,
 
     /// Regions excluded from routing for the current request
-    excluded_regions: Option<Vec<RegionName>>,
+    excluded_regions: Option<Vec<Region>>,
 
     /// Underlying policy for handling resource throttling (429) with exponential backoff
     throttling_retry: ResourceThrottleRetryPolicy,
@@ -107,7 +107,7 @@ impl ClientRetryPolicy {
     pub fn new(
         global_endpoint_manager: Arc<GlobalEndpointManager>,
         partition_key_range_location_cache: Arc<GlobalPartitionEndpointManager>,
-        excluded_regions: Option<Vec<RegionName>>,
+        excluded_regions: Option<Vec<Region>>,
     ) -> Self {
         Self {
             global_endpoint_manager,
@@ -157,7 +157,7 @@ impl ClientRetryPolicy {
         // Hence, the outcome of the operation is ignored here.
         _ = self.global_endpoint_manager.refresh_location(false).await;
         self.operation_type = Some(request.operation_type);
-        self.excluded_regions = request.excluded_regions.clone();
+        self.excluded_regions = request.excluded_regions.clone().map(|e| e.0);
         self.can_use_multiple_write_locations = self
             .global_endpoint_manager
             .can_use_multiple_write_locations(request);
@@ -742,8 +742,7 @@ mod tests {
     use crate::models::AccountRegion;
     use crate::operation_context::OperationType;
     use crate::partition_key::PartitionKey;
-    use crate::regions;
-    use crate::regions::RegionName;
+    use crate::regions::Region;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
     use crate::routing::partition_key_range::PartitionKeyRange;
@@ -764,7 +763,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             pipeline,
         )
@@ -800,11 +799,7 @@ mod tests {
 
         GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![
-                regions::EAST_ASIA,
-                regions::WEST_US,
-                regions::NORTH_CENTRAL_US,
-            ],
+            vec![Region::EAST_ASIA, Region::WEST_US, Region::NORTH_CENTRAL_US],
             vec![],
             pipeline,
         )
@@ -893,17 +888,17 @@ mod tests {
 
         let manager = GlobalEndpointManager::new(
             "https://test.documents.azure.com".parse().unwrap(),
-            vec![RegionName::from("West US"), RegionName::from("East US")],
+            vec![Region::from("West US"), Region::from("East US")],
             vec![],
             pipeline,
         );
 
         let west = AccountRegion {
-            name: RegionName::from("West US"),
+            name: Region::from("West US"),
             database_account_endpoint: "https://test-westus.documents.azure.com".parse().unwrap(),
         };
         let east = AccountRegion {
-            name: RegionName::from("East US"),
+            name: Region::from("East US"),
             database_account_endpoint: "https://test-eastus.documents.azure.com".parse().unwrap(),
         };
 
@@ -1532,12 +1527,92 @@ mod tests {
         );
     }
 
+    fn create_connection_error(message: &str) -> azure_core::Error {
+        azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Connection,
+            message.to_string(),
+        )
+    }
+
     fn create_timeout_error(message: &str) -> azure_core::Error {
         azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
     }
 
     fn create_io_error(message: &str) -> azure_core::Error {
         azure_core::Error::with_message(azure_core::error::ErrorKind::Io, message.to_string())
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_read() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_connection_error("connection refused");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "connection error should retry read requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_write() {
+        let mut policy = create_test_policy();
+        let mut request = create_write_request();
+        policy.before_send_request(&mut request).await;
+
+        let err = create_connection_error("connection refused");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(
+            result.is_retry(),
+            "connection error should retry write requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn connection_error_retries_on_same_endpoint() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        // First 3 connection errors should retry on the same endpoint.
+        for i in 1..=3 {
+            let err = create_connection_error("connection refused");
+            let result = policy.should_retry(&Err(err)).await;
+            assert!(result.is_retry(), "connection attempt {i} should retry");
+            assert_eq!(policy.connection_retry_count, i);
+            assert_eq!(
+                policy.failover_retry_count, 0,
+                "should not failover during local retries"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn connection_error_fails_over_after_max_retries() {
+        let mut policy = create_test_policy();
+        let mut request = create_test_request();
+        policy.before_send_request(&mut request).await;
+
+        // Exhaust local retries.
+        for _ in 0..3 {
+            let err = create_connection_error("connection refused");
+            policy.should_retry(&Err(err)).await;
+        }
+
+        // Next connection error should trigger failover.
+        let err = create_connection_error("connection refused");
+        let result = policy.should_retry(&Err(err)).await;
+        assert!(result.is_retry(), "should failover to next endpoint");
+        assert_eq!(
+            policy.failover_retry_count, 1,
+            "failover_retry_count should increment after local retries exhausted"
+        );
+        assert_eq!(
+            policy.connection_retry_count, 0,
+            "connection_retry_count should reset for new endpoint"
+        );
     }
 
     #[tokio::test]

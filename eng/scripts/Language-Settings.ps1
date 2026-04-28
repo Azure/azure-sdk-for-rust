@@ -115,7 +115,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $pkgProp.IsNewSdk = $true
     $pkgProp.ArtifactName = $package.name
 
-    if ($package.name -match "mgmt") {
+    if ($package.name -match "^azure_resourcemanager_") {
       $pkgProp.SdkType = "mgmt"
     }
     else {

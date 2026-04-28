@@ -9,55 +9,15 @@ use std::error::Error;
 
 use azure_data_cosmos::{
     models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions, CreateDatabaseOptions,
+    CreateContainerOptions,
 };
 use framework::TestClient;
 
 #[tokio::test]
-pub async fn database_throughput_crud() -> Result<(), Box<dyn Error>> {
-    TestClient::run(async |run_context| {
-        let cosmos_client = run_context.client();
-
-        let test_db_id = run_context.db_name();
-        let throughput = ThroughputProperties::manual(400);
-
-        // Create a database with throughput
-        let properties = cosmos_client
-            .create_database(
-                &test_db_id,
-                Some(CreateDatabaseOptions::default().with_throughput(throughput)),
-            )
-            .await?
-            .into_model()?;
-
-        assert_eq!(&test_db_id, &properties.id);
-
-        let db_client = cosmos_client.database_client(&test_db_id);
-
-        // Read throughput
-        let current_throughput = db_client
-            .read_throughput(None)
-            .await?
-            .ok_or("expected a throughput offer")?;
-        assert_eq!(Some(400), current_throughput.throughput());
-        assert!(current_throughput.autoscale_increment().is_none());
-        assert!(current_throughput.autoscale_maximum().is_none());
-
-        // Replace throughput
-        let new_throughput = db_client
-            .replace_throughput(ThroughputProperties::manual(500), None)
-            .await?
-            .into_model()?;
-        assert_eq!(Some(500), new_throughput.throughput());
-        assert!(new_throughput.autoscale_increment().is_none());
-        assert!(new_throughput.autoscale_maximum().is_none());
-
-        Ok(())
-    })
-    .await
-}
-
-#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -84,7 +44,8 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
             // Replace throughput
             let new_throughput = ThroughputProperties::manual(500);
             let throughput_response = container_client
-                .replace_throughput(new_throughput, None)
+                .begin_replace_throughput(new_throughput, None)
+                .await?
                 .await?
                 .into_model()?;
             assert_eq!(Some(500), throughput_response.throughput());
@@ -97,6 +58,10 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {

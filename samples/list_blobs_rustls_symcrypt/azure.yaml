@@ -1,0 +1,26 @@
+name: list-blobs-rustls-symcrypt
+metadata:
+  template: list-blobs-rustls-symcrypt@0.1.0
+infra:
+  provider: bicep
+  path: infra
+  module: main
+hooks:
+  # cspell:ignore postprovision
+  postprovision:
+    posix:
+      shell: sh
+      run: |
+        echo "Uploading sample blobs to container 'samples'..."
+        echo "Hello from blob 1" | az storage blob upload --account-name "$AZURE_STORAGE_ACCOUNT_NAME" --container-name samples --name hello1.txt --data @- --auth-mode login --overwrite
+        echo "Hello from blob 2" | az storage blob upload --account-name "$AZURE_STORAGE_ACCOUNT_NAME" --container-name samples --name hello2.txt --data @- --auth-mode login --overwrite
+        echo "Hello from blob 3" | az storage blob upload --account-name "$AZURE_STORAGE_ACCOUNT_NAME" --container-name samples --name subdir/hello3.txt --data @- --auth-mode login --overwrite
+        echo "Done uploading sample blobs."
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Uploading sample blobs to container 'samples'..."
+        "Hello from blob 1" | az storage blob upload --account-name "${env:AZURE_STORAGE_ACCOUNT_NAME}" --% --container-name samples --name hello1.txt --data @- --auth-mode login --overwrite
+        "Hello from blob 2" | az storage blob upload --account-name "${env:AZURE_STORAGE_ACCOUNT_NAME}" --% --container-name samples --name hello2.txt --data @- --auth-mode login --overwrite
+        "Hello from blob 3" | az storage blob upload --account-name "${env:AZURE_STORAGE_ACCOUNT_NAME}" --% --container-name samples --name subdir/hello3.txt --data @- --auth-mode login --overwrite
+        Write-Host "Done uploading sample blobs."

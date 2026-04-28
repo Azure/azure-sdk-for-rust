@@ -26,6 +26,7 @@
 //!   decorator that wraps created clients with fault injection.
 
 mod condition;
+mod evaluation;
 mod fault_injecting_factory;
 mod http_client;
 mod result;
@@ -33,16 +34,47 @@ mod rule;
 
 use std::fmt;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
 use crate::models::{OperationType, ResourceType};
 
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
+pub use evaluation::FaultInjectionEvaluation;
 pub(crate) use fault_injecting_factory::FaultInjectingHttpClientFactory;
 pub use http_client::FaultClient;
 pub use result::{
     CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
 };
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
+
+/// Shared collector for fault injection evaluations.
+///
+/// Created by the transport pipeline and attached to [`HttpRequest`](crate::driver::transport::cosmos_transport_client::HttpRequest).
+/// [`FaultClient`] writes evaluations into the collector during `send()`, and
+/// the transport pipeline reads them after the request completes.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct EvaluationCollector(Arc<Mutex<Vec<FaultInjectionEvaluation>>>);
+
+impl EvaluationCollector {
+    /// Appends all evaluations from `evals` into the collector, draining the source.
+    pub fn push_all(&self, evals: &mut Vec<FaultInjectionEvaluation>) {
+        self.0
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .append(evals);
+    }
+
+    /// Takes all collected evaluations, leaving the collector empty.
+    pub fn take(self) -> Vec<FaultInjectionEvaluation> {
+        match Arc::try_unwrap(self.0) {
+            Ok(mutex) => mutex.into_inner().unwrap_or_else(|e| e.into_inner()),
+            Err(arc) => {
+                let mut evaluations = arc.lock().unwrap_or_else(|e| e.into_inner());
+                std::mem::take(&mut *evaluations)
+            }
+        }
+    }
+}
 
 /// Represents different server error types that can be injected for fault testing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
