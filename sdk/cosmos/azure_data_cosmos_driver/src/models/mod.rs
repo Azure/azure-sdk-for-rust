@@ -25,6 +25,7 @@ mod partition_key;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;
+mod session_token_segment;
 mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
@@ -59,6 +60,7 @@ pub use resource_reference::{DatabaseReference, ItemReference};
 pub use resource_reference::{
     PartitionKeyRangeReference, StoredProcedureReference, TriggerReference, UdfReference,
 };
+pub use session_token_segment::SessionTokenSegment;
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
@@ -554,6 +556,47 @@ impl SessionToken {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Merges this session token with another, returning the combined result.
+    ///
+    /// Both tokens may be compound (comma-separated segments). Segments with
+    /// the same partition key range ID are merged using version-aware logic
+    /// (higher version wins, then per-region LSN max). Segments with distinct
+    /// IDs are kept as separate entries in the resulting compound token.
+    ///
+    /// This is the primary API for combining session tokens without exposing
+    /// internal token format details.
+    pub fn merge(&self, other: &Self) -> azure_core::Result<Self> {
+        use std::collections::HashMap;
+
+        let mut pk_order: Vec<String> = Vec::new();
+        let mut pk_map: HashMap<String, SessionTokenSegment> = HashMap::new();
+
+        for raw in self.as_str().split(',').chain(other.as_str().split(',')) {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let seg: SessionTokenSegment = trimmed.parse()?;
+            let pk_id = seg.pk_range_id().to_owned();
+            match pk_map.get_mut(&pk_id) {
+                Some(existing) => {
+                    existing.merge_value(&seg);
+                }
+                None => {
+                    pk_order.push(pk_id.clone());
+                    pk_map.insert(pk_id, seg);
+                }
+            }
+        }
+
+        let merged: Vec<String> = pk_order
+            .iter()
+            .filter_map(|id| pk_map.get(id).map(|seg| seg.to_string()))
+            .collect();
+
+        Ok(Self::new(merged.join(",")))
+    }
 }
 
 impl<T: Into<Cow<'static, str>>> From<T> for SessionToken {
@@ -740,5 +783,39 @@ mod tests {
         );
         let parsed: PartitionKeyDefinition = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, pk_def);
+    }
+
+    #[test]
+    fn session_token_merge_same_pk_range() {
+        let a = SessionToken::new("0:1#100#3=50");
+        let b = SessionToken::new("0:1#200#3=60");
+        let merged = a.merge(&b).unwrap();
+        assert_eq!(merged.as_str(), "0:1#200#3=60");
+    }
+
+    #[test]
+    fn session_token_merge_different_pk_ranges() {
+        let a = SessionToken::new("0:1#100#3=50");
+        let b = SessionToken::new("1:1#200#3=60");
+        let merged = a.merge(&b).unwrap();
+        assert_eq!(merged.as_str(), "0:1#100#3=50,1:1#200#3=60");
+    }
+
+    #[test]
+    fn session_token_merge_compound() {
+        let a = SessionToken::new("0:1#100#3=50,1:1#200#3=60");
+        let b = SessionToken::new("0:1#150#3=55,2:1#300#3=70");
+        let merged = a.merge(&b).unwrap();
+        // pk 0: merged (max), pk 1: kept, pk 2: kept
+        assert_eq!(merged.as_str(), "0:1#150#3=55,1:1#200#3=60,2:1#300#3=70");
+    }
+
+    #[test]
+    fn session_token_merge_cross_version() {
+        let a = SessionToken::new("0:1#500#1=100");
+        let b = SessionToken::new("0:2#200#1=50");
+        let merged = a.merge(&b).unwrap();
+        // Higher version (2) wins for globalLSN; region 1: max(100, 50) = 100
+        assert_eq!(merged.as_str(), "0:2#200#1=100");
     }
 }

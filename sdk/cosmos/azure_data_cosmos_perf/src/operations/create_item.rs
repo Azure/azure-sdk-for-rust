@@ -49,7 +49,7 @@ impl Operation for CreateItemOperation {
         };
 
         container
-            .create_item(&item.partition_key, &item, self.options.clone())
+            .create_item(&item.partition_key, &id, &item, self.options.clone())
             .await?;
 
         self.items.push(SeededItem { id, partition_key });
