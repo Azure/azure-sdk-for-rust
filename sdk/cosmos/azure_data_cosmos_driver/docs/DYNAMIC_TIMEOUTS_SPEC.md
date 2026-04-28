@@ -9,16 +9,15 @@
 ## Table of Contents
 
 1. [Goals & Motivation](#1-goals--motivation)
-2. [Current Behavior](#2-current-behavior)
-3. [Design: Dynamic Timeout Escalation](#3-design-dynamic-timeout-escalation)
-4. [Timeout Ladders](#4-timeout-ladders)
-5. [Integration with Retry Loop](#5-integration-with-retry-loop)
-6. [Interaction with End-to-End Deadline](#6-interaction-with-end-to-end-deadline)
-7. [Interaction with ConnectionPoolOptions Bounds](#7-interaction-with-connectionpooloptions-bounds)
-8. [Implementation Details](#8-implementation-details)
-9. [Adaptive Connection Timeout](#9-adaptive-connection-timeout)
-10. [Cross-SDK Reference](#10-cross-sdk-reference)
-11. [Open Questions](#11-open-questions)
+2. [Design: Dynamic Timeout Escalation](#2-design-dynamic-timeout-escalation)
+3. [Timeout Ladders](#3-timeout-ladders)
+4. [Integration with Retry Loop](#4-integration-with-retry-loop)
+5. [Interaction with End-to-End Deadline](#5-interaction-with-end-to-end-deadline)
+6. [Interaction with ConnectionPoolOptions Bounds](#6-interaction-with-connectionpooloptions-bounds)
+7. [Implementation Details](#7-implementation-details)
+8. [Adaptive Connection Timeout](#8-adaptive-connection-timeout)
+9. [Cross-SDK Reference](#9-cross-sdk-reference)
+10. [Open Questions](#10-open-questions)
 
 ---
 
@@ -46,17 +45,17 @@ add latency to the common case.
 4. **Bounded transport-level retry budget**: Timeout escalation introduces a new transport-level
    timeout-retry counter (distinct from the operation pipeline's `max_failover_retries` budget,
    which governs region failover on routing failures). The counter is bounded by the ladder length
-   so a saturated ladder cannot loop indefinitely. See [§5](#5-integration-with-retry-loop) for
+   so a saturated ladder cannot loop indefinitely. See [§4](#4-integration-with-retry-loop) for
    ordering relative to the existing throttle and local-connectivity counters.
 
 ### Non-Goals
 
 - **User-configurable ladders**: The escalation ladder is a fixed internal default. Users cannot
   override the step durations. The existing `ConnectionPoolOptions` min/max bounds still act as
-  clamping limits (see [§7](#7-interaction-with-connectionpooloptions-bounds)).
+  clamping limits (see [§6](#6-interaction-with-connectionpooloptions-bounds)).
 - **Connection timeout escalation per retry**: Connection timeouts are NOT escalated per retry
   attempt like request timeouts are. Instead, connection timeouts use an adaptive model described
-  in [§9](#9-adaptive-connection-timeout).
+  in [§8](#8-adaptive-connection-timeout).
 - **User-facing per-attempt knobs**: Users do not configure individual ladder tiers, the
   per-attempt timeout, or the timeout-retry budget directly. Their only timeout controls are
   client-level min/max bounds via `ConnectionPoolOptions` (which clamp the ladder) and a per-call
@@ -67,54 +66,7 @@ add latency to the common case.
 
 ---
 
-## 2. Current Behavior
-
-### Static Timeouts
-
-Today, timeouts are configured once via `ConnectionPoolOptions` and applied uniformly to every
-request attempt:
-
-| Timeout Type                | Default | Min   | Max   |
-|-----------------------------|---------|-------|-------|
-| Connection timeout (min)    | 100ms   | 100ms | 6s    |
-| Connection timeout (max)    | 5s      | 100ms | 6s    |
-| Data plane request (min)    | 100ms   | 100ms | 65s   |
-| Data plane request (max)    | 6s      | 100ms | ∞     |
-| Metadata request (min)      | 100ms   | 100ms | 6s    |
-| Metadata request (max)      | 65s     | 100ms | 65s   |
-
-**Note on `min_*` values**: The `min_*` timeout fields are defined in `ConnectionPoolOptions` with
-getters and builder setters, but are **not yet consumed** outside `connection_pool.rs`. Only the
-`max_*` values are wired into the transport (e.g., `max_connect_timeout()` is passed to
-`reqwest::ClientBuilder::connect_timeout()`). The `min_*` fields exist as placeholders for the
-dynamic timeout clamping described in [§7](#7-interaction-with-connectionpooloptions-bounds).
-
-### Transport Retry
-
-The retry loop lives in `execute_operation_pipeline()` (in `operation_pipeline.rs`), which runs a
-7-stage loop. When a transport failure occurs, the pipeline evaluates the result and produces one
-of:
-
-- `FailoverRetry`: Retry in a different region/endpoint (budget: `max_failover_retries`, default 3)
-- `SessionRetry`: Retry for session consistency (budget: `max_session_retries`, default 1)
-
-The retry state is tracked in `OperationRetryState`:
-
-```rust
-pub(crate) struct OperationRetryState {
-    pub failover_retry_count: u32,
-    pub max_failover_retries: u32,
-    pub session_token_retry_count: u32,
-    pub max_session_retries: u32,
-    // ... location, excluded regions, etc.
-}
-```
-
-Currently, timeouts are static — every attempt uses the same timeout regardless of retry count.
-
----
-
-## 3. Design: Dynamic Timeout Escalation
+## 2. Design: Dynamic Timeout Escalation
 
 ### Core Concept
 
@@ -125,19 +77,19 @@ internal defaults chosen to balance latency and reliability.
 
 ### Separate Mechanisms
 
-- **Request timeouts**: Escalated per retry attempt via a fixed ladder (see [§4](#4-timeout-ladders)).
+- **Request timeouts**: Escalated per retry attempt via a fixed ladder (see [§3](#3-timeout-ladders)).
   Per-attempt enforcement requires direct access to a concrete `reqwest::Client`'s
   `RequestBuilder::timeout()` because the `azure_core::http::HttpClient` trait dispatch
   (`HttpClient::execute_request(&Request)` in `typespec_client_core`) exposes no per-request
-  timeout option — see [§8](#8-implementation-details) for the dispatch path that makes this
+  timeout option — see [§7](#7-implementation-details) for the dispatch path that makes this
   available driver-internally.
 - **Connection timeouts**: Adaptively tuned based on observed failure rate (see
-  [§9](#9-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
+  [§8](#8-adaptive-connection-timeout)). Applied at the `HttpClient` level by the
   `ShardedHttpTransport`.
 
 ---
 
-## 4. Timeout Ladders
+## 3. Timeout Ladders
 
 ### Data Plane Request Timeout Ladder
 
@@ -182,7 +134,7 @@ Following the Java SDK pattern for `DatabaseAccount` metadata calls:
 
 ---
 
-## 5. Integration with Retry Loop
+## 4. Integration with Retry Loop
 
 ### Retry Model
 
@@ -249,11 +201,11 @@ pipeline:
 - `PipelineType::Metadata` → `METADATA_REQUEST_TIMEOUT_LADDER`
 
 Attempts beyond the ladder length saturate at the final tier (see
-[§4 Ladder Behavior](#4-timeout-ladders)).
+[§3 Ladder Behavior](#3-timeout-ladders)).
 
 ### Hedging and Timeout Ladder Position
 
-When hedging is enabled (see `TRANSPORT_PIPELINE_SPEC.md` §4.2), the hedged attempt runs in a
+When hedging is enabled (see `TRANSPORT_PIPELINE_SPEC.md` §3.2), the hedged attempt runs in a
 secondary region as a speculative execution. **Hedged attempts always start at tier 0 of the
 timeout ladder**, independent of the primary attempt's ladder position.
 
@@ -336,16 +288,16 @@ loop {
 ```
 
 This pseudocode is the **single source of truth** for the integration shape.
-[§8](#8-implementation-details) describes only the dispatch-side plumbing
+[§7](#7-implementation-details) describes only the dispatch-side plumbing
 (`send_with_dispatch`, `reqwest::RequestBuilder::timeout()`) — it does not redefine the loop.
 
 ---
 
-## 6. Interaction with End-to-End Deadline
+## 5. Interaction with End-to-End Deadline
 
 The end-to-end operation deadline (from `EndToEndOperationLatencyPolicy`) takes precedence over the
 per-attempt timeout ladder. The per-attempt deadline computed from the ladder is clamped against
-the e2e deadline — see [§7](#7-interaction-with-connectionpooloptions-bounds) for the full
+the e2e deadline — see [§6](#6-interaction-with-connectionpooloptions-bounds) for the full
 clamping order.
 
 If the remaining deadline is zero (or already exceeded), the retry loop exits immediately with a
@@ -361,12 +313,12 @@ the rest of the loop relies on for retry decisions, in particular the `Retry-Aft
 that compares the suggested back-off to the remaining e2e budget.
 
 Instead, the per-attempt timeout is carried as a separate `attempt_timeout: Duration` value through
-the dispatch chain (see [§8](#8-implementation-details) for the threading), and the resulting
+the dispatch chain (see [§7](#7-implementation-details) for the threading), and the resulting
 `reqwest::RequestBuilder::timeout()` enforcement is independent of `request.deadline`.
 
 ---
 
-## 7. Interaction with ConnectionPoolOptions Bounds
+## 6. Interaction with ConnectionPoolOptions Bounds
 
 The `ConnectionPoolOptions` min/max bounds act as clamping limits on the ladder value **before**
 the deadline clamp is applied. The clamping order is critical — pool bounds first, deadline last:
@@ -378,7 +330,7 @@ let pool_clamped = ladder_value
     .min(connection_pool.max_dataplane_request_timeout());
 
 // Step 2: Clamp against remaining e2e budget (e2e always wins). Result is a Duration —
-// request.deadline is NOT mutated; see §6 "Per-Attempt Deadline ≠ request.deadline".
+// request.deadline is NOT mutated; see §5 "Per-Attempt Deadline ≠ request.deadline".
 let attempt_timeout = match request.deadline {
     Some(e2e) => pool_clamped.min(e2e.saturating_duration_since(Instant::now())),
     None => pool_clamped,
@@ -422,12 +374,12 @@ semantics.
 
 ---
 
-## 8. Implementation Details
+## 7. Implementation Details
 
 ### Per-Attempt Timeout Threading
 
 The codebase consistently uses the existing `TransportRequest.deadline: Option<Instant>` field as
-the **end-to-end** deadline. As discussed in [§6](#6-interaction-with-end-to-end-deadline), the
+the **end-to-end** deadline. As discussed in [§5](#5-interaction-with-end-to-end-deadline), the
 per-attempt ladder value is **not** folded into that field, because the rest of the transport
 retry loop (`Retry-After` honor, abandonment checks, hedging coordination) reads it as the e2e
 budget.
@@ -436,7 +388,7 @@ Instead, the per-attempt timeout is plumbed as a separate `Duration` value throu
 chain:
 
 ```text
-execute_transport_pipeline()        // §5 loop computes attempt_timeout: Duration
+execute_transport_pipeline()        // §4 loop computes attempt_timeout: Duration
         │
         ▼
 AdaptiveTransport::send_with_dispatch(req, attempt_timeout, …)
@@ -451,7 +403,7 @@ ShardedHttpTransport::send(req, attempt_timeout, …)
 The current signatures of `AdaptiveTransport::send_with_dispatch()` and
 `ShardedHttpTransport::send()` take only `&Request`; they will gain an
 `attempt_timeout: Duration` parameter. The future hedging path in `AdaptiveTransport` (not yet
-implemented) gets the same parameter and applies tier-0 (`ladder[0]`) per [§5 "Hedging and Timeout
+implemented) gets the same parameter and applies tier-0 (`ladder[0]`) per [§4 "Hedging and Timeout
 Ladder Position"](#hedging-and-timeout-ladder-position).
 
 ### Reaching `reqwest::RequestBuilder::timeout()` from the Driver
@@ -504,7 +456,7 @@ timeout-retry budget directly (see [§1 Non-Goals](#1-goals--motivation)).
 - **`ConnectionPoolOptions`** (client-level, set once at driver creation)
   - `max_dataplane_request_timeout` (default 6s) — clamps ladder max
   - `min_dataplane_request_timeout` (default 100ms) — clamps ladder min
-    (see [§7 Migration Note](#migration-note-min__request_timeout-becomes-a-hard-floor))
+    (see [§6 Migration Note](#migration-note-min__request_timeout-becomes-a-hard-floor))
   - `max_metadata_request_timeout` (default 65s) — clamps ladder max
   - `min_metadata_request_timeout` (default 100ms) — clamps ladder min
 - **`RuntimeOptions`** (inheritable: driver-level → operation-level)
@@ -515,8 +467,8 @@ timeout-retry budget directly (see [§1 Non-Goals](#1-goals--motivation)).
 **Internal Driver Behavior:**
 
 - Timeout ladder computes per-attempt `Duration` from constants
-- Clamps to `ConnectionPoolOptions` min/max bounds ([§7](#7-interaction-with-connectionpooloptions-bounds))
-- Clamps against remaining e2e budget ([§6](#6-interaction-with-end-to-end-deadline)) — e2e always wins
+- Clamps to `ConnectionPoolOptions` min/max bounds ([§6](#6-interaction-with-connectionpooloptions-bounds))
+- Clamps against remaining e2e budget ([§5](#5-interaction-with-end-to-end-deadline)) — e2e always wins
 - Threaded through dispatch chain as a `Duration` parameter (see "Per-Attempt Timeout Threading"
   above)
 - Enforced via `reqwest::RequestBuilder::timeout()` per request inside the driver-owned
@@ -570,7 +522,7 @@ fn timeout_for_attempt(timeout_retry_count: usize, ladder: &[Duration]) -> Durat
 }
 ```
 
-1. **Loop integration** — see the [§5 pseudocode](#pseudocode), which is the canonical reference
+1. **Loop integration** — see the [§4 pseudocode](#pseudocode), which is the canonical reference
    for counter ordering, bounds, and the `attempt_timeout: Duration` calculation. Do not
    duplicate the loop here.
 
@@ -623,7 +575,7 @@ value after clamping by both `ConnectionPoolOptions` bounds and the end-to-end d
 
 ---
 
-## 9. Adaptive Connection Timeout
+## 8. Adaptive Connection Timeout
 
 ### Motivation
 
@@ -776,7 +728,7 @@ fn on_connect_result(pool: &EndpointShardPool, success: bool) {
 
 ---
 
-## 10. Cross-SDK Reference
+## 9. Cross-SDK Reference
 
 ### This Spec (Rust Driver)
 
@@ -787,7 +739,7 @@ fn on_connect_result(pool: &EndpointShardPool, success: bool) {
 
 ---
 
-## 11. Open Questions
+## 10. Open Questions
 
 1. **Metadata timeout ladder scope**: Should the metadata ladder (5s → 10s → 20s) apply to all
    metadata operations uniformly, or should specific metadata operations (e.g., database account
