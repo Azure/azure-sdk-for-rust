@@ -33,6 +33,10 @@ pub enum Subcommands {
         #[arg(long, short)]
         partition_key: String,
 
+        /// The id of the new item.
+        #[arg(long, short)]
+        item_id: String,
+
         /// The JSON of the new item.
         #[arg(long, short)]
         json: String,
@@ -77,6 +81,7 @@ impl CreateCommand {
                 database,
                 container,
                 partition_key,
+                item_id,
                 json,
                 show_updated,
             } => {
@@ -94,7 +99,9 @@ impl CreateCommand {
                     None
                 };
 
-                let response = container_client.create_item(pk, item, options).await?;
+                let response = container_client
+                    .create_item(pk, &item_id, item, options)
+                    .await?;
 
                 println!("Created item successfully");
 

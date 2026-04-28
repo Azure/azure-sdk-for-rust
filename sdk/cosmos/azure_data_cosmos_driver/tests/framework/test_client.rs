@@ -380,6 +380,7 @@ impl DriverTestRunContext {
     pub async fn create_item(
         &self,
         container: &ContainerReference,
+        item_id: &str,
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
@@ -390,8 +391,8 @@ impl DriverTestRunContext {
             .await?;
 
         let pk = partition_key.into();
-        let operation =
-            CosmosOperation::create_item(container.clone(), pk).with_body(body.to_vec());
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
             .execute_operation(operation, OperationOptions::default())

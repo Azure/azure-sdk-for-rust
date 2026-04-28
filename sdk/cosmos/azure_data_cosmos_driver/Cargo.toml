@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_driver"
-version = "0.2.0"
+version = "0.3.0"
 description = "Core implementation layer for Azure Cosmos DB - provides transport, routing, and protocol handling for cross-language SDK reuse"
 readme = "README.md"
 authors.workspace = true
