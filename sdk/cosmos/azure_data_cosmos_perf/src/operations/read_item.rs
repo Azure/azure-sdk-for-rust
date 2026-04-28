@@ -4,12 +4,13 @@
 //! Point read operation.
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::options::ItemReadOptions;
 
-use super::Operation;
+use super::{extract_backend_duration, Operation};
 use crate::seed::SharedItems;
 
 /// Reads a random seeded item by ID and partition key.
@@ -31,12 +32,12 @@ impl Operation for ReadItemOperation {
         "ReadItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()> {
+    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
         let item = self.items.random();
 
-        container
+        let response = container
             .read_item::<serde_json::Value>(&item.partition_key, &item.id, self.options.clone())
             .await?;
-        Ok(())
+        Ok(extract_backend_duration(response.headers()))
     }
 }
