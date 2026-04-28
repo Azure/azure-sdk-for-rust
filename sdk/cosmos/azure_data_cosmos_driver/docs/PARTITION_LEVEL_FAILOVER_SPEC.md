@@ -633,9 +633,16 @@ apply(effects):
 
 A pure function in `routing_systems.rs` that produces a new `PartitionEndpointState`:
 
+> **Signature note**: The actual implementation takes a fourth parameter
+> `is_partitioned_resource: bool` so the eligibility checks (§4.1, §4.2) can
+> be evaluated without re-deriving it from the operation. The caller copies
+> the value from `UnavailablePartition.is_partitioned_resource` (which was
+> populated when `evaluate_transport_result` produced the effect). The
+> pseudocode below omits that parameter for readability.
+
 ```
 mark_partition_unavailable(
-    current_state, account_state, unavailable_partition)
+    current_state, account_state, unavailable_partition, is_partitioned_resource)
   │
   ├─ Determine mechanism and target map:
   │   ├─ if eligible for PPCB → use circuit_breaker_overrides
@@ -1268,7 +1275,10 @@ Background failback sweep:
 resolve_endpoint():
   │
   └─ if entry exists and entry.health_status == ProbeCandidate:
-      └─ Route this ONE request to the original region (first_failed_endpoint)
+      └─ Route this ONE request to entry.first_failed_endpoint (the
+         originally failed region — see §5.2). PPCB is the only consumer
+         of this field; PPAF entries do not participate in probe-based
+         failback (see §9.5).
          (subsequent requests continue to the override endpoint until the
           probe result is known)
 
@@ -1514,10 +1524,37 @@ from the **very first attempt**.
 - The cache uses incremental change feed (`A-IM: Incremental feed` + `If-None-Match`
   etag) for efficient refresh.
 
-**Fallback**: If the pre-resolution fetch fails (network error, service
-unavailable), the pipeline falls back to the response-header approach — the first
-attempt uses account-level routing, and the partition key range ID is captured from
-`x-ms-documentdb-partitionkeyrangeid` on the response for use in subsequent retries.
+**Retry & Fail-Fast Policy** (`fetch_pk_ranges_from_service`):
+
+The `/pkranges` request is dispatched through the standard `execute_operation`
+pipeline, so it inherits the pipeline's full retry stack — including
+**cross-region failover** via `retry_evaluation`. On transient outcomes
+(503 ServiceUnavailable, 408 RequestTimeout, 429-3092, 410-Gone, transport-layer
+errors), `evaluate_transport_result` returns `OperationAction::FailoverRetry` and
+the pipeline rotates to the next preferred read region. A single call therefore
+walks every preferred read region before giving up — no additional outer retry
+loop is needed.
+
+Permanent errors are treated as **fail-fast**:
+
+- **401 Unauthorized / 403 Forbidden / 404 NotFound** → return `None` immediately;
+  no retry is attempted. These indicate misconfiguration (bad credentials, missing
+  resource) where retrying or failing over to another region cannot help. The
+  caller surfaces a clear signal to the caller (and operators see an error-level
+  log line so they can distinguish misconfiguration from transient blips).
+
+The PK ranges call is foundational — without it the SDK cannot apply
+partition-level overrides — so this layered policy ensures we exhaust legitimate
+recovery options (cross-region retry) but stop quickly on conditions that cannot
+be fixed by retrying.
+
+**Fallback (last resort)**: If the cross-region retry cycle is exhausted or a
+permanent error occurs, the function returns `None` and the pipeline falls back
+to the response-header approach — the first attempt uses account-level routing,
+and the partition key range ID is captured from
+`x-ms-documentdb-partitionkeyrangeid` on the response for use in subsequent
+retries. This keeps the operation correct (partition-level overrides simply
+don't engage on the first attempt) without surfacing a hard error to the caller.
 
 ### 13.5 Stale Override After Account Refresh
 
@@ -1674,7 +1711,10 @@ The partition key range ID is now available through two complementary mechanisms
 **Implementation details**:
 - `PartitionKeyRangeCache` field added to `CosmosDriver` struct.
 - `fetch_pk_ranges_from_service()` method fetches ranges via `/pkranges` changefeed
-  using the metadata transport (same pattern as `fetch_account_properties`).
+  using the standard `execute_operation` pipeline. The pipeline's
+  `retry_evaluation` provides cross-region failover on transient errors
+  (503/408/429/410); permanent errors (401/403/404) fail fast (return `None`
+  without retry).
 - `pre_resolve_partition_key_range_id()` checks eligibility (PPAF/PPCB enabled,
   partitioned resource, container + partition key present) before calling the cache.
 - `execute_operation_pipeline` accepts `pre_resolved_pk_range_id: Option<PartitionKeyRangeId>`
