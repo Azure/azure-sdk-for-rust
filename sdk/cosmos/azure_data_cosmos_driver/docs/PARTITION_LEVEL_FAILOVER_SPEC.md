@@ -820,6 +820,22 @@ The retry loop's location index advances on each attempt and the deferred
 to pick a different region (until the union is exhausted, at which point the
 retry budget is the only remaining gate).
 
+> **In-flight skip set applies to the PPAF override branch too.** Because PPAF
+> defers `MarkPartitionUnavailable` until success, the persistent
+> `failover_overrides[pk_range_id].current_endpoint` can lag the per-attempt
+> failure history within a single operation: a failback scenario where the
+> previously discovered region (e.g. `centralus`) starts returning 403/3 would
+> otherwise see every retry re-routed to that same stale override target.
+> `resolve_endpoint` therefore checks `entry.current_endpoint.region()`
+> against `in_flight_failed` *before* honouring the PPAF override; if the
+> region is in the skip set the override is bypassed for this attempt and the
+> branch falls through to `selected` (the primary endpoint computed by
+> `try_select_endpoint`, which has already rotated past the failed region).
+> The same guard is applied to the PPCB `ProbeCandidate` and threshold-met
+> branches for symmetry. The persistent override entry itself is left in
+> place; it is rewritten on the next region-confirming flush via
+> `mark_partition_unavailable`.
+
 ---
 
 ## 7. Circuit Breaker Mechanics
@@ -1655,6 +1671,8 @@ The implementation should include comprehensive tests covering:
 - Pipeline: 409/412 abort on PPAF SM write flushes deferred effects
 - Pipeline: 503 abort (retry budget exhausted) on PPAF SM write **discards** deferred effects (no override entry is created)
 - Pipeline: deferred effects are carried forward across `FailoverRetry` (skip set drives next-region selection)
+- `resolve_endpoint` (PPAF branch) bypasses the override when `entry.current_endpoint.region()` is in the in-flight skip set, falling through to the primary `selected` endpoint (regression test for the PPAF write failback infinite-retry bug — without this guard, a stale override pointing at a freshly-failing region causes every retry to hammer the same failed region)
+- `resolve_endpoint` (PPAF branch) honours the override when its `current_endpoint` is NOT in the in-flight skip set
 
 ### 14.6 `LocationStateStore::apply` Tests
 

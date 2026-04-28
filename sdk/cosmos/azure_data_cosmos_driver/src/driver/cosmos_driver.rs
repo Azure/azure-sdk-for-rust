@@ -940,21 +940,35 @@ impl CosmosDriver {
     /// for incremental fetches. The server may return 304 Not Modified if no
     /// new ranges exist since the last fetch.
     ///
-    /// Returns `None` if the request fails (transient error, network issue, etc.).
-    /// The caller (the PK range cache) falls back gracefully on `None`.
+    /// # Retry Policy
+    ///
+    /// The request is dispatched through the standard `execute_operation`
+    /// pipeline, which performs in-flight cross-region failover on transient
+    /// errors (503, 410, 408, 429, 403/3) by routing successive retries to
+    /// the next preferred read region. A single call therefore traverses
+    /// every preferred region before giving up — no additional outer retry
+    /// loop is needed here.
+    ///
+    /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
+    /// terminal: `None` is returned immediately so the caller can surface a
+    /// clear misconfiguration signal.
+    ///
+    /// Returns `None` if the pipeline exhausts its cross-region failover
+    /// budget or the response cannot be parsed. The caller (the PK range
+    /// cache) falls back gracefully on `None`.
     async fn fetch_pk_ranges_from_service(
         &self,
         container: ContainerReference,
         continuation: Option<String>,
     ) -> Option<PkRangeFetchResult> {
         // Build the operation through the standard pipeline to get correct
-        // URL construction, signing, and retry behavior.
+        // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
 
         // Set changefeed If-None-Match precondition for continuation.
-        if let Some(ref token) = continuation {
+        if let Some(token) = continuation.as_deref() {
             operation = operation
-                .with_precondition(crate::models::Precondition::if_none_match(token.clone()));
+                .with_precondition(crate::models::Precondition::if_none_match(token.to_owned()));
         }
 
         // Custom headers for changefeed (a-im, max item count).
@@ -983,12 +997,20 @@ impl CosmosDriver {
                     });
                 }
 
-                let ranges = parse_pk_ranges_response(response.body())?;
-                Some(PkRangeFetchResult {
-                    ranges,
-                    continuation: etag,
-                    not_modified: false,
-                })
+                match parse_pk_ranges_response(response.body()) {
+                    Some(ranges) => Some(PkRangeFetchResult {
+                        ranges,
+                        continuation: etag,
+                        not_modified: false,
+                    }),
+                    None => {
+                        tracing::error!(
+                            container = %container.name(),
+                            "Failed to parse partition key ranges response body"
+                        );
+                        None
+                    }
+                }
             }
             Err(e) => {
                 if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
@@ -1016,7 +1038,7 @@ impl CosmosDriver {
                 tracing::warn!(
                     container = %container.name(),
                     error = %e,
-                    "Transient error fetching partition key ranges from service"
+                    "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
                 None
             }
