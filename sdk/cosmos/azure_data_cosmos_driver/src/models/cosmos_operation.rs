@@ -543,7 +543,14 @@ impl CosmosOperation {
     ///
     /// Returns a feed of partition key range resources.
     /// Used internally by the partition key range cache to build routing maps.
-    pub fn read_all_partition_key_ranges(container: ContainerReference) -> Self {
+    ///
+    /// **Crate-internal**: this constructor is intentionally not part of the
+    /// public API. Public callers should always go through the partition key
+    /// range cache (which already invokes this on cache miss) so that reads
+    /// benefit from caching, etag-based conditional refresh, and the standard
+    /// retry pipeline. Exposing a raw "read all PK ranges" entry point would
+    /// invite callers to bypass the cache and hammer the gateway.
+    pub(crate) fn read_all_partition_key_ranges(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::PartitionKeyRange)
             .into_feed_reference();

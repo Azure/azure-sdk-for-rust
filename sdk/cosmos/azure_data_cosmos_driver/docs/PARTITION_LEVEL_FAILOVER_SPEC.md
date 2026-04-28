@@ -1484,19 +1484,16 @@ until enough failures accumulate. This is a deliberate trade-off:
 - **Pro**: Prevents premature failovers on transient, self-healing errors.
 - **Con**: Requests continue to fail until the threshold is reached, adding latency.
 
-### 13.4 First Attempt Has No Partition Override (Partially Addressed)
+### 13.4 First-Attempt Partition Override via PK Range Cache
 
-~~The partition key range ID is not known until the first response is received
-(from the `x-ms-documentdb-partitionkeyrangeid` header).~~
-
-**Update (PK Range Cache Integration)**: The driver now uses a
-`PartitionKeyRangeCache` to pre-resolve partition key range IDs before the first
-attempt. When PPAF/PPCB is enabled and the operation provides a container reference
-and partition key, `CosmosDriver::pre_resolve_partition_key_range_id()` computes
-the effective partition key hash and looks up the owning range from the cached
-routing map. This resolved ID is passed to `execute_operation_pipeline` which seeds
-it on `OperationRetryState.partition_key_range_id`, enabling partition-level
-overrides from the **very first attempt**.
+The driver uses a `PartitionKeyRangeCache` to pre-resolve partition key range IDs
+**before** the first pipeline attempt. When PPAF/PPCB is enabled and the operation
+provides a container reference and partition key,
+`CosmosDriver::pre_resolve_partition_key_range_id()` computes the effective
+partition key hash and looks up the owning range from the cached routing map. The
+resolved ID is passed into `execute_operation_pipeline` which seeds it on
+`OperationRetryState.partition_key_range_id`, enabling partition-level overrides
+from the **very first attempt**.
 
 **Cache Behavior**:
 - On the first operation targeting a given container, the cache is empty. The driver
@@ -1508,7 +1505,7 @@ overrides from the **very first attempt**.
 - The cache uses incremental change feed (`A-IM: Incremental feed` + `If-None-Match`
   etag) for efficient refresh.
 
-**Remaining limitation**: If the pre-resolution fetch fails (network error, service
+**Fallback**: If the pre-resolution fetch fails (network error, service
 unavailable), the pipeline falls back to the response-header approach — the first
 attempt uses account-level routing, and the partition key range ID is captured from
 `x-ms-documentdb-partitionkeyrangeid` on the response for use in subsequent retries.

@@ -460,35 +460,19 @@ pub(crate) async fn execute_operation_pipeline(
                     retry_state.pending_write_effects.clear();
                 }
 
-                // 304 Not Modified is an expected response for changefeed-based
-                // pagination (e.g., partition key range refresh). Log it at debug
-                // level instead of error to avoid noisy false alarms.
-                let is_not_modified = status
-                    .as_ref()
-                    .is_some_and(|s| s.status_code() == azure_core::http::StatusCode::NotModified);
-                if is_not_modified {
-                    tracing::debug!(
-                        activity_id = %activity_id,
-                        status = ?status,
-                        operation_type = ?operation.operation_type(),
-                        resource_type = ?operation.resource_type(),
-                        "operation completed with 304 Not Modified",
-                    );
-                } else {
-                    tracing::error!(
-                        activity_id = %activity_id,
-                        status = ?status,
-                        error = %error,
-                        operation_type = ?operation.operation_type(),
-                        resource_type = ?operation.resource_type(),
-                        is_read_only = operation.is_read_only(),
-                        is_idempotent = operation.is_idempotent(),
-                        failover_retries = retry_state.failover_retry_count,
-                        session_retries = retry_state.session_token_retry_count,
-                        pk_range_id = ?retry_state.partition_key_range_id,
-                        "operation aborted",
-                    );
-                }
+                tracing::error!(
+                    activity_id = %activity_id,
+                    status = ?status,
+                    error = %error,
+                    operation_type = ?operation.operation_type(),
+                    resource_type = ?operation.resource_type(),
+                    is_read_only = operation.is_read_only(),
+                    is_idempotent = operation.is_idempotent(),
+                    failover_retries = retry_state.failover_retry_count,
+                    session_retries = retry_state.session_token_retry_count,
+                    pk_range_id = ?retry_state.partition_key_range_id,
+                    "operation aborted",
+                );
                 if let Some(cosmos_status) = status {
                     diagnostics.set_operation_status(
                         cosmos_status.status_code(),

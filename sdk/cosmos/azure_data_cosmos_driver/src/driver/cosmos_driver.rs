@@ -973,7 +973,16 @@ impl CosmosDriver {
             Ok(response) => {
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
-                // Pipeline treats 2xx as success; 304 is routed to the error path.
+                // 304 Not Modified is a success outcome for conditional
+                // changefeed reads: the cached routing map is still current.
+                if response.status().status_code() == azure_core::http::StatusCode::NotModified {
+                    return Some(PkRangeFetchResult {
+                        ranges: vec![],
+                        continuation,
+                        not_modified: true,
+                    });
+                }
+
                 let ranges = parse_pk_ranges_response(response.body())?;
                 Some(PkRangeFetchResult {
                     ranges,
@@ -982,18 +991,7 @@ impl CosmosDriver {
                 })
             }
             Err(e) => {
-                // 304 Not Modified is returned as an error by the pipeline
-                // because it is not a 2xx status. Treat it as a success
-                // indicating the cached routing map is still current.
                 if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
-                    if *status == azure_core::http::StatusCode::NotModified {
-                        return Some(PkRangeFetchResult {
-                            ranges: vec![],
-                            continuation,
-                            not_modified: true,
-                        });
-                    }
-
                     // Permanent errors (auth/config issues) are logged at error
                     // level so operators can distinguish misconfiguration from
                     // transient blips.
