@@ -44,6 +44,16 @@ impl LocationSnapshot {
             partitions: Arc::new(PartitionEndpointState::default()),
         }
     }
+
+    pub(crate) fn for_tests_with_partitions(
+        account: Arc<AccountEndpointState>,
+        partitions: Arc<PartitionEndpointState>,
+    ) -> Self {
+        Self {
+            account,
+            partitions,
+        }
+    }
 }
 
 type AccountRefreshFn = Arc<

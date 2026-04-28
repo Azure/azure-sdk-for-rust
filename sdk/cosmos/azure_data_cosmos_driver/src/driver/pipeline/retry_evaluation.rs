@@ -58,6 +58,107 @@ fn make_partition_unavailable(
     }
 }
 
+/// Returns `true` when a status proves the request reached a server and was
+/// processed by it.
+///
+/// Used by the operation pipeline to decide whether to flush deferred
+/// write-path `MarkPartitionUnavailable` (and, for PPAF on single-master,
+/// `MarkEndpointUnavailable`) effects when the operation aborts rather than
+/// completing successfully. The intuition is: any response outside the
+/// retry-trigger set means the *current* region accepted the request, which
+/// retroactively confirms that the *earlier* failed regions were the
+/// unhealthy ones — their pending marks should be applied so future requests
+/// route around them.
+///
+/// The decision is **deny-listed**, not allow-listed: every status is
+/// treated as region-confirming **except** the explicit retry-trigger set
+/// and client-synthesized statuses. This means uncommon-but-deterministic
+/// service responses (202 Accepted, 207 MultiStatus, 404/0 NotFound, 413
+/// Payload Too Large, 449 RetryWith, 451 Unavailable For Legal Reasons,
+/// etc.) all flush deferred marks just like the more familiar 200/409/412.
+///
+/// Returns `false` for:
+/// - 503 ServiceUnavailable, 408 RequestTimeout, 410 Gone, 429/3092 (system
+///   resource unavailable), 403/3 (write forbidden) — the retry-trigger set;
+///   we have no proof any region accepted the request.
+/// - Client-synthesized statuses (e.g. `CLIENT_OPERATION_TIMEOUT`) — these
+///   never came from a server.
+///
+/// Returns `true` for everything else, including:
+/// - All 2xx (200 OK, 201 Created, 202 Accepted, 204 No Content, 207
+///   MultiStatus). The 2xx case is normally taken via
+///   `OperationAction::Complete`, but is preserved here for defense in depth.
+/// - Definitive 4xx (400, 401, 404 with any non-1002 sub-status, 409
+///   Conflict, 412 Precondition Failed, 413 Payload Too Large) — the server
+///   processed and rejected the request.
+/// - Server errors (500, 501, 504, 505) once the retry budget is exhausted.
+pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
+    let code = status.status_code();
+
+    if code.is_success() {
+        return true;
+    }
+
+    // Retry-trigger statuses — not confirming.
+    if code == azure_core::http::StatusCode::ServiceUnavailable
+        || code == azure_core::http::StatusCode::RequestTimeout
+        || code == azure_core::http::StatusCode::Gone
+    {
+        return false;
+    }
+
+    if status.is_throttled()
+        && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE)
+    {
+        return false;
+    }
+
+    if status.is_write_forbidden() {
+        return false;
+    }
+
+    // Synthesized client-side statuses (e.g., end-to-end timeout) — not from a server.
+    if status.sub_status() == Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT) {
+        return false;
+    }
+
+    // Any other status from the service confirms the region processed the request.
+    true
+}
+
+/// Splits a list of location effects into immediate effects and deferred
+/// write-path effects.
+///
+/// For writes, `MarkPartitionUnavailable` effects are always deferred (returned
+/// in the second tuple element) until the write definitively reaches a region.
+/// When `ppaf_write_retry_allowed` is also true (PPAF on a single-master
+/// account), `MarkEndpointUnavailable` effects are likewise deferred so a
+/// transient retry against the only known write region cannot pollute the
+/// endpoint-unavailability state with an unverified failure.
+///
+/// For reads, all effects are immediate and the deferred list is empty.
+pub(crate) fn partition_effects_for_deferral(
+    is_read_only: bool,
+    ppaf_write_retry_allowed: bool,
+    effects: Vec<LocationEffect>,
+) -> (Vec<LocationEffect>, Vec<LocationEffect>) {
+    if is_read_only {
+        return (effects, Vec::new());
+    }
+    let mut immediate = Vec::with_capacity(effects.len());
+    let mut deferred = Vec::new();
+    for effect in effects {
+        match effect {
+            LocationEffect::MarkPartitionUnavailable(_) => deferred.push(effect),
+            LocationEffect::MarkEndpointUnavailable { .. } if ppaf_write_retry_allowed => {
+                deferred.push(effect);
+            }
+            other => immediate.push(other),
+        }
+    }
+    (immediate, deferred)
+}
+
 /// Evaluates the result of a transport attempt and decides what to do next.
 ///
 /// This is a pure function: it takes the operation, result, and retry state,
@@ -566,6 +667,7 @@ mod tests {
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
+            pending_write_effects: Vec::new(),
         };
 
         let endpoint = CosmosEndpoint::global(
@@ -809,5 +911,213 @@ mod tests {
                 ..
             }
         )));
+    }
+
+    // ── is_region_confirming_status ───────────────────────────────────
+
+    fn status_with_substatus(code: StatusCode, sub: SubStatusCode) -> CosmosStatus {
+        CosmosStatus::from_parts(code, Some(sub))
+    }
+
+    #[test]
+    fn region_confirming_true_for_2xx() {
+        // 200 OK, 201 Created — typical write success codes.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Ok
+        )));
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Created
+        )));
+        // 202 Accepted — used by long-running control-plane operations
+        // (e.g., container offer adjustments) that complete asynchronously.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Accepted
+        )));
+        // 204 No Content — used by deletes and some replace operations.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::NoContent
+        )));
+        // 207 MultiStatus — used by transactional batch responses; every
+        // sub-operation result is encoded in the body but the outer status
+        // still proves the region processed the batch.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::from(207u16)
+        )));
+    }
+
+    #[test]
+    fn region_confirming_true_for_definitive_4xx() {
+        // 409 Conflict — server processed and rejected the write.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Conflict
+        )));
+        // 412 Precondition Failed — server processed and rejected.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::PreconditionFailed
+        )));
+        // 413 Payload Too Large — server processed and rejected.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::PayloadTooLarge
+        )));
+        // 400/401 — server processed and rejected.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::BadRequest
+        )));
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Unauthorized
+        )));
+        // 404 with no sub-status (404/0) — server confirms the resource is
+        // gone. Distinct from 404/1002 (ReadSessionNotAvailable), which is
+        // routed to `SessionRetry` rather than `Abort`.
+        assert!(is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::NotFound
+        )));
+        // Explicit 404/0 (sub-status 0) construction — same outcome.
+        assert!(is_region_confirming_status(&status_with_substatus(
+            StatusCode::NotFound,
+            SubStatusCode::from(0u32)
+        )));
+    }
+
+    #[test]
+    fn region_confirming_false_for_retry_trigger_statuses() {
+        // 503 ServiceUnavailable
+        assert!(!is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::ServiceUnavailable
+        )));
+        // 408 RequestTimeout
+        assert!(!is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::RequestTimeout
+        )));
+        // 410 Gone
+        assert!(!is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Gone
+        )));
+        // 429/3092 SystemResourceUnavailable
+        assert!(!is_region_confirming_status(&status_with_substatus(
+            StatusCode::TooManyRequests,
+            SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE
+        )));
+        // 403/3 WriteForbidden
+        assert!(!is_region_confirming_status(&status_with_substatus(
+            StatusCode::Forbidden,
+            SubStatusCode::WRITE_FORBIDDEN
+        )));
+    }
+
+    #[test]
+    fn region_confirming_false_for_client_synthesized_timeout() {
+        assert!(!is_region_confirming_status(&status_with_substatus(
+            StatusCode::RequestTimeout,
+            SubStatusCode::CLIENT_OPERATION_TIMEOUT
+        )));
+    }
+
+    // ── partition_effects_for_deferral ────────────────────────────────
+
+    fn endpoint_for_test() -> CosmosEndpoint {
+        CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com:443/").unwrap())
+    }
+
+    #[test]
+    fn deferral_passes_all_effects_through_for_reads() {
+        let effects = vec![
+            LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                partition_key_range_id: None,
+                region: None,
+                is_read: true,
+                is_partitioned_resource: true,
+            }),
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint_for_test(),
+                reason: UnavailableReason::ServiceUnavailable,
+            },
+            LocationEffect::RefreshAccountProperties,
+        ];
+        let (immediate, deferred) = partition_effects_for_deferral(true, false, effects);
+        assert_eq!(immediate.len(), 3);
+        assert!(deferred.is_empty());
+    }
+
+    #[test]
+    fn deferral_extracts_partition_marks_for_writes() {
+        let effects = vec![
+            LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                partition_key_range_id: None,
+                region: None,
+                is_read: false,
+                is_partitioned_resource: true,
+            }),
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint_for_test(),
+                reason: UnavailableReason::ServiceUnavailable,
+            },
+            LocationEffect::RefreshAccountProperties,
+        ];
+        // Non-PPAF write: partition mark is deferred, endpoint mark stays immediate.
+        let (immediate, deferred) = partition_effects_for_deferral(false, false, effects);
+        assert_eq!(immediate.len(), 2);
+        assert!(immediate
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(immediate
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert_eq!(deferred.len(), 1);
+        assert!(matches!(
+            deferred[0],
+            LocationEffect::MarkPartitionUnavailable(_)
+        ));
+    }
+
+    #[test]
+    fn deferral_with_no_partition_marks_returns_empty_deferred() {
+        let effects = vec![
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint_for_test(),
+                reason: UnavailableReason::ServiceUnavailable,
+            },
+            LocationEffect::RefreshAccountProperties,
+        ];
+        // Non-PPAF write: endpoint mark stays immediate.
+        let (immediate, deferred) = partition_effects_for_deferral(false, false, effects);
+        assert_eq!(immediate.len(), 2);
+        assert!(deferred.is_empty());
+    }
+
+    #[test]
+    fn deferral_defers_endpoint_mark_for_ppaf_single_master_writes() {
+        // PPAF on single-master account: a transient write failure must NOT
+        // immediately mark the only known write region as unavailable.
+        // Both partition and endpoint marks must be deferred until the write
+        // definitively reaches a region.
+        let effects = vec![
+            LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                partition_key_range_id: None,
+                region: None,
+                is_read: false,
+                is_partitioned_resource: true,
+            }),
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint_for_test(),
+                reason: UnavailableReason::TransportError,
+            },
+            LocationEffect::RefreshAccountProperties,
+        ];
+        let (immediate, deferred) = partition_effects_for_deferral(false, true, effects);
+        // Only RefreshAccountProperties should be applied immediately.
+        assert_eq!(immediate.len(), 1);
+        assert!(matches!(
+            immediate[0],
+            LocationEffect::RefreshAccountProperties
+        ));
+        // Both partition and endpoint marks are deferred.
+        assert_eq!(deferred.len(), 2);
+        assert!(deferred
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(deferred
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 }

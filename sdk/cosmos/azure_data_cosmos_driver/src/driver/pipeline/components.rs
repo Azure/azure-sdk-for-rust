@@ -16,7 +16,10 @@ use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
         jitter::with_jitter,
-        routing::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, LocationIndex},
+        routing::{
+            partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, LocationEffect,
+            LocationIndex,
+        },
         transport::AuthorizationContext,
     },
     models::{CosmosResponseHeaders, CosmosStatus},
@@ -100,6 +103,35 @@ pub(crate) struct OperationRetryState {
     /// multi-master). Failover is driven by the partition-level failure
     /// threshold instead of marking the entire endpoint unavailable.
     pub ppcb_active: bool,
+    /// Write-path location effects deferred until the write definitively
+    /// reaches a region.
+    ///
+    /// On the write path we cannot tell from a single failed response (503,
+    /// 429/3092, 410, 408, 403/3, transport error) whether the failure was a
+    /// real per-region outage or a transient blip we'll never see again.
+    /// Applying `MarkPartitionUnavailable` (and, for PPAF on single-master,
+    /// `MarkEndpointUnavailable`) immediately on every such failure pollutes
+    /// the routing state with unverified failures and makes failover behave
+    /// non-deterministically across retries.
+    ///
+    /// Instead, we accumulate the would-be effects here as the operation
+    /// retries. They are flushed only when the write definitively reaches a
+    /// region — either `OperationAction::Complete` (HTTP 2xx) or
+    /// `OperationAction::Abort` with a region-confirming status such as 409
+    /// Conflict or 412 Precondition Failed (statuses that prove the server
+    /// processed the request). On any other abort path the buffer is
+    /// discarded.
+    ///
+    /// **What gets deferred** is decided by `partition_effects_for_deferral`:
+    /// - Always: `MarkPartitionUnavailable` for writes (per-partition state
+    ///   should never be polluted by unverified retries).
+    /// - Additionally for PPAF on single-master writes
+    ///   (`ppaf_write_retry_allowed`): `MarkEndpointUnavailable` is also
+    ///   deferred so a transient retry doesn't darken the only write region.
+    ///
+    /// Read-path effects are NOT deferred — PPCB read counters drive
+    /// threshold-based failover and need the failure signal immediately.
+    pub pending_write_effects: Vec<LocationEffect>,
 }
 
 /// How a session retry should resolve endpoints for a read operation.
@@ -132,6 +164,7 @@ impl OperationRetryState {
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
+            pending_write_effects: Vec::new(),
         }
     }
 
