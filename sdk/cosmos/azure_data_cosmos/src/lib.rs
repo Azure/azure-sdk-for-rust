@@ -17,6 +17,7 @@ mod partition_key;
 pub(crate) mod pipeline;
 pub mod query;
 pub(crate) mod resource_context;
+mod session_helpers;
 pub(crate) mod utils;
 
 pub mod models;

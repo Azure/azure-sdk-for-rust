@@ -21,6 +21,10 @@ pub struct UpsertCommand {
     #[arg(long, short)]
     partition_key: String,
 
+    /// The id of the new item.
+    #[arg(long, short)]
+    item_id: String,
+
     /// The JSON of the new item.
     #[arg(long, short)]
     json: String,
@@ -46,7 +50,9 @@ impl UpsertCommand {
             None
         };
 
-        let response = container_client.upsert_item(pk, item, options).await?;
+        let response = container_client
+            .upsert_item(pk, &self.item_id, item, options)
+            .await?;
         println!("Item updated successfully");
 
         if self.show_updated {
