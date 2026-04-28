@@ -29,6 +29,7 @@
     "mycontainer",
     "myqueue",
     "numofmessages",
+    "nvme",
     "pagelist",
     "peekonly",
     "policyid",

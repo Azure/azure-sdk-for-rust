@@ -61,9 +61,9 @@ pub fn simple_duration(s: &str) -> Result<Duration, String> {
 ///
 /// # Suffixes
 /// - `B` - bytes. (Default)
-/// - `KiB` - kibibytes.
-/// - `MiB` - mebibytes.
-/// - `GiB` - gibibytes.
+/// - `KiB` - 1024 bytes.
+/// - `MiB` - 1024 KiB.
+/// - `GiB` - 1024 GiB.
 ///
 /// # Examples
 /// - "10" - 10 bytes.
