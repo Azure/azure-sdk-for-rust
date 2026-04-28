@@ -128,10 +128,11 @@ same lock-free pattern.
 │           ├─ PPAF write-path effects → buffered (NOT applied here)          │
 │           └─ RefreshAccountProperties → async refresh                       │
 │  STAGE 7: Act on OperationAction                                            │
-│           ├─ Complete (HTTP 2xx) → emit RecordPpafWriteRegion (if PPAF SM   │
-│           │   and not already recorded), then flush deferred effects        │
-│           ├─ Abort with 409/412 → emit RecordPpafWriteRegion (region        │
-│           │   confirmed by status), then flush deferred effects             │
+│           ├─ Complete (HTTP 2xx) → flush deferred effects (mark previously- │
+│           │   failed regions unavailable for this PK, rotating the PPAF     │
+│           │   override past them)                                           │
+│           ├─ Abort with 409/412 → flush deferred effects (region confirmed  │
+│           │   by status)                                                    │
 │           ├─ Abort with non-confirming status → DISCARD deferred effects    │
 │           └─ FailoverRetry → carry deferred effects forward to next attempt │
 │                                                                             │
@@ -624,9 +625,11 @@ apply(effects):
 
 ### 6.3 `mark_partition_unavailable` (Pure Routing System Function)
 
-> **Applies to PPCB only.** PPAF + single-master writes use
-> `record_ppaf_write_region` (see [§6.4](#64-ppaf--single-master-writes-success-time-discovery))
-> instead of this function.
+> **Shared by PPAF and PPCB.** The same pure function handles both mechanisms;
+> the difference is *when* it runs. For PPCB it is applied immediately on every
+> failure; for PPAF + single-master writes it is **deferred** and only applied
+> when the operation reaches a region-confirming status — see
+> [§6.4](#64-ppaf--single-master-writes-success-time-discovery).
 
 A pure function in `routing_systems.rs` that produces a new `PartitionEndpointState`:
 
@@ -705,10 +708,12 @@ This design has three goals:
    the next attempt naturally rolls over to a different region. The first
    region to return a region-confirming status is recorded as the new override.
 3. **Once-only cost.** After discovery, the override persists; subsequent
-   writes go directly to the discovered region. The `record_ppaf_write_region`
-   function is idempotent (a snapshot pre-check skips the CAS loop entirely
-   when the override already points at the success endpoint), so the
-   steady-state cost converges to a single shared-pointer read.
+   writes go directly to the discovered region. `flush_pending_write_effects`
+   performs a snapshot pre-check (`is_effect_already_applied`) and drops any
+   deferred effect whose target endpoint is already marked unavailable or whose
+   partition override already rotated past the failed region, so the
+   steady-state cost of a successful write that retried converges to a single
+   shared-pointer snapshot read.
 
 #### Effect emission and flow
 
@@ -738,14 +743,18 @@ STAGE 5 (evaluate)        STAGE 6 (apply)              STAGE 7 (act)
                                                         regions that failed)
 
 [success on attempt N+1]   (no new effects)            Complete:
-                                                         emit RecordPpafWriteRegion
-                                                           (snapshot pre-check;
-                                                            no-op if override
-                                                            already points here)
                                                          flush pending_write_effects
-                                                           (now it's safe to mark
+                                                           (snapshot pre-check
+                                                            drops no-op effects;
+                                                            mark_partition_unavailable
+                                                            then accumulates the
                                                             previously-failed
-                                                            regions for this PK)
+                                                            endpoints into the
+                                                            entry's failed_endpoints
+                                                            set and rotates
+                                                            current_endpoint past
+                                                            them via
+                                                            try_move_next_endpoint)
 ```
 
 For an **abort** path the same logic applies, but the flush only happens when
@@ -754,35 +763,40 @@ the status is region-confirming (409/412). On any other abort (503/429-3092/
 the driver never proved any region was actually healthy, so it must not
 pollute routing state.
 
-#### `record_ppaf_write_region` (Pure Routing System Function)
+#### How the override entry is created and where `current_endpoint` lands
 
-```
-record_ppaf_write_region(state, pk_range_id, discovered_endpoint)
-  │
-  ├─ if state.failover_overrides[pk_range_id].current_endpoint == discovered_endpoint:
-  │     └─ return state.clone()  // idempotent; no-op fast path
-  │
-  ├─ Clone state → new_state
-  │
-  └─ Insert PartitionFailoverEntry into new_state.failover_overrides:
-       current_endpoint     = discovered_endpoint
-       first_failed_endpoint = discovered_endpoint  // see note below
-       failed_endpoints     = ∅
-       read_failure_count   = 0
-       write_failure_count  = 0
-       health_status        = Unhealthy
-```
+There is **no separate `RecordPpafWriteRegion` effect or pure function**. The
+PPAF override entry is created and rotated through the same
+`mark_partition_unavailable` function used by PPCB (see [§6.3](#63-mark_partition_unavailable-pure-routing-system-function)),
+the only difference being that for PPAF SM writes its application is deferred.
 
-The operation pipeline calls `record_ppaf_discovery_if_needed`, which performs
-a snapshot pre-check before queuing the effect. Concretely, only when the
-override is missing or points elsewhere does it emit
-`LocationEffect::RecordPpafWriteRegion { pk_range_id, endpoint }`. The CAS loop
-in `LocationStateStore::apply()` then re-checks the same condition under the
-successful CAS, so two concurrent successes on the same region race only once.
+When `flush_pending_write_effects` finally runs after a region-confirming
+status, each buffered `MarkPartitionUnavailable(failed_endpoint)` effect feeds
+`mark_partition_unavailable`, which:
+
+- creates the `PartitionFailoverEntry` on first encounter (initial
+  `current_endpoint = first_failed_endpoint`, both copies of the failed region),
+- inserts the failed endpoint into `failed_endpoints`, and
+- calls `try_move_next_endpoint` to advance `current_endpoint` to the next
+  candidate from `account_state.preferred_read_endpoints` that is not already
+  in `failed_endpoints`.
+
+After all deferred effects have been flushed, the entry's `failed_endpoints`
+contains every region that failed during the retry chain and `current_endpoint`
+points at the next candidate region in preferred-read order that is not in
+that set. This is **not guaranteed** to be the exact region that returned the
+region-confirming status — convergence happens implicitly: any subsequent
+failure on the still-unhealthy region rotates again, while any success leaves
+the entry alone. Because
+[`preferred_endpoints_for_attempt`](#cross-region-routing-during-discovery)
+exposes the union of read+write endpoints, both the retry loop and the
+post-flush rotation share the same candidate ordering, so steady-state
+convergence on the actually-healthy region is reached quickly.
 
 > **Note on `first_failed_endpoint`:** PPAF entries do not use probe-based
 > failback (see [§9.5](#95-failback-scope)), so `first_failed_endpoint` is set
-> to the discovered endpoint as a placeholder. It is never read for PPAF.
+> to the originally failed region by the entry constructor and is never read
+> for PPAF.
 
 #### Cross-region routing during discovery
 
@@ -1045,13 +1059,11 @@ LocationEffect::MarkPartitionUnavailable(partition) => {
         )
     });
 }
-
-LocationEffect::RecordPpafWriteRegion { pk_range_id, endpoint } => {
-    self.apply_partition(|current_partitions| {
-        record_ppaf_write_region(current_partitions, &pk_range_id, &endpoint)
-    });
-}
 ```
+
+There is no separate effect arm for PPAF success-time recording — the same
+`MarkPartitionUnavailable` arm above is what eventually creates and rotates
+PPAF override entries when buffered write-path effects are flushed.
 
 **Deferral split.** Before `apply()` is called, `partition_effects_for_deferral()`
 partitions the emitted effects into `(immediate, deferred)`:
@@ -1063,11 +1075,11 @@ partitions the emitted effects into `(immediate, deferred)`:
   [§6.4](#64-ppaf--single-master-writes-success-time-discovery) for the
   complete rules.
 
-The `RecordPpafWriteRegion` effect is **not** produced by
-`evaluate_transport_result`. It is produced by the pipeline in Stage 7
-(`record_ppaf_discovery_if_needed`) when the operation completes with a
-region-confirming status, after a snapshot pre-check determines the override
-needs updating.
+For PPAF + SM writes there is no additional effect synthesized at success
+time: the override entry is created and rotated past failed regions purely
+as a side effect of replaying the buffered `MarkPartitionUnavailable` /
+`MarkEndpointUnavailable` effects through `mark_partition_unavailable` and
+the normal endpoint-marking path.
 
 ### 8.2 `OperationRetryState` Changes
 
@@ -1362,13 +1374,10 @@ SM write:
 For PPAF SM writes, both effects are buffered in
 `retry_state.pending_write_effects` and only applied on a region-confirming
 flush. See [§6.4](#64-ppaf--single-master-writes-success-time-discovery) for
-the full lifecycle.
-
-When the operation completes with a region-confirming status, the pipeline
-additionally emits `LocationEffect::RecordPpafWriteRegion` (only if a snapshot
-pre-check shows the override is missing or points elsewhere). This effect
-is idempotent: it inserts the discovered region into `failover_overrides` for the
-partition.
+the full lifecycle. No additional effect is synthesized at success time —
+the override entry is created (or rotated past more failed regions) purely
+through `mark_partition_unavailable` replaying the buffered
+`MarkPartitionUnavailable` effects against `failover_overrides`.
 
 ---
 
@@ -1602,14 +1611,12 @@ The implementation should include comprehensive tests covering:
 - `partition_effects_for_deferral` defers `MarkPartitionUnavailable` for PPAF SM writes
 - `partition_effects_for_deferral` defers `MarkEndpointUnavailable` for PPAF SM writes
 - `partition_effects_for_deferral` does **not** defer for reads or multi-master writes
-- `record_ppaf_write_region` inserts a new entry with zero counters
-- `record_ppaf_write_region` is idempotent when the override already points at the discovered endpoint
-- `record_ppaf_write_region` replaces the override when the endpoint differs
+- `mark_partition_unavailable` (PPAF branch) creates a new `failover_overrides` entry on first failed endpoint, rotates `current_endpoint` to the next preferred read endpoint, and accumulates failed endpoints across successive flushed effects
 - `union_read_write_endpoints` produces a deduplicated read-then-write list
 - `is_region_confirming_status` returns true for 409 / 412 only
-- Pipeline: 2xx success on PPAF SM write emits `RecordPpafWriteRegion` and flushes deferred effects
-- Pipeline: 409/412 abort on PPAF SM write emits `RecordPpafWriteRegion` and flushes deferred effects
-- Pipeline: 503 abort (retry budget exhausted) on PPAF SM write **discards** deferred effects
+- Pipeline: 2xx success on PPAF SM write flushes deferred effects (override entry now exists for the partition with all failed regions accumulated)
+- Pipeline: 409/412 abort on PPAF SM write flushes deferred effects
+- Pipeline: 503 abort (retry budget exhausted) on PPAF SM write **discards** deferred effects (no override entry is created)
 - Pipeline: deferred effects are carried forward across `FailoverRetry` (skip set drives next-region selection)
 
 ### 14.6 `LocationStateStore::apply` Tests
@@ -1725,13 +1732,13 @@ self.apply_partition(|current| {
 | File | Action | Purpose |
 |------|--------|---------|
 | `src/driver/routing/partition_endpoint_state.rs` | **Create** | `PartitionEndpointState`, `PartitionFailoverEntry`, `PartitionFailoverConfig` |
-| `src/driver/routing/routing_systems.rs` | **Modify** | Add `mark_partition_unavailable()`, `expire_partition_overrides()` pure functions; add `record_ppaf_write_region()` (success-time PPAF SM discovery) |
-| `src/driver/routing/location_state_store.rs` | **Modify** | Replace empty `PartitionEndpointState`; add `apply_partition()` CAS method; handle `RecordPpafWriteRegion` effect; spawn failback loop via `BackgroundTaskManager`; update `sync_account_properties()` |
-| `src/driver/routing/location_effects.rs` | **Modify** | Remove `#[allow(dead_code)]` from `MarkPartitionUnavailable` and `UnavailablePartition`; add `RecordPpafWriteRegion { pk_range_id, endpoint }` variant |
-| `src/driver/routing/mod.rs` | **Modify** | Export new `partition_endpoint_state` module; re-export `record_ppaf_write_region` |
+| `src/driver/routing/routing_systems.rs` | **Modify** | Add `mark_partition_unavailable()` and `expire_partition_overrides()` pure functions; the PPAF branch of `mark_partition_unavailable` is what creates and rotates `failover_overrides` entries when buffered write-path effects are flushed (see [§6.4](#64-ppaf--single-master-writes-success-time-discovery)) |
+| `src/driver/routing/location_state_store.rs` | **Modify** | Replace empty `PartitionEndpointState`; add `apply_partition()` CAS method; spawn failback loop via `BackgroundTaskManager`; update `sync_account_properties()` |
+| `src/driver/routing/location_effects.rs` | **Modify** | Remove `#[allow(dead_code)]` from `MarkPartitionUnavailable` and `UnavailablePartition` |
+| `src/driver/routing/mod.rs` | **Modify** | Export new `partition_endpoint_state` module |
 | `src/driver/pipeline/components.rs` | **Modify** | Add `partition_key_range_id: Option<PartitionKeyRangeId>` and `pending_write_effects: Vec<LocationEffect>` to `OperationRetryState`; add `ppaf_write_retry_allowed` flag |
 | `src/driver/pipeline/retry_evaluation.rs` | **Modify** | Wire `partition_key_range_id` from retry state; emit `MarkPartitionUnavailable` for 403/3; add `partition_effects_for_deferral()` helper that splits effects into immediate / deferred based on `is_read_only` and `ppaf_write_retry_allowed` |
-| `src/driver/pipeline/operation_pipeline.rs` | **Modify** | Capture `partition_key_range_id` from response headers; consult partition overrides in `resolve_endpoint()`; accept `pre_resolved_pk_range_id` parameter and seed it on `OperationRetryState`; for PPAF SM writes, route via union of read+write endpoints (`union_read_write_endpoints`) and skip in-flight failed regions; in Stage 7 `Complete`/`Abort(409\|412)`, call `record_ppaf_discovery_if_needed` and flush `pending_write_effects`; on non-confirming abort, discard `pending_write_effects`; on `FailoverRetry`/`SessionRetry`, transfer `pending_write_effects` across the retry-state transition |
+| `src/driver/pipeline/operation_pipeline.rs` | **Modify** | Capture `partition_key_range_id` from response headers; consult partition overrides in `resolve_endpoint()`; accept `pre_resolved_pk_range_id` parameter and seed it on `OperationRetryState`; for PPAF SM writes, route via union of read+write endpoints (`union_read_write_endpoints`) and skip in-flight failed regions; in Stage 7 `Complete`/`Abort(409\|412)`, call `flush_pending_write_effects` to apply the buffered `MarkPartitionUnavailable` / `MarkEndpointUnavailable` effects; on non-confirming abort, discard `pending_write_effects`; on `FailoverRetry`/`SessionRetry`, transfer `pending_write_effects` across the retry-state transition |
 | `src/driver/cosmos_driver.rs` | **Modify** | Add `PartitionKeyRangeCache` field; implement `fetch_pk_ranges_from_service()` and `pre_resolve_partition_key_range_id()`; wire pre-resolution into `execute_operation()` |
 | `src/driver/cache/mod.rs` | **Modify** | Export `parse_pk_ranges_response`, `PartitionKeyRangeCache`, `PkRangeFetchResult` |
 
