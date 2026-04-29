@@ -14,7 +14,6 @@
 //! Cache priming (account metadata, container metadata) is performed in setup,
 //! outside the measured iteration loop.
 //!
-// cspell:ignore flamegraph
 //! # CPU flamegraph profiling
 //!
 //! Run with `--profile-time` to generate a flamegraph SVG via pprof:
