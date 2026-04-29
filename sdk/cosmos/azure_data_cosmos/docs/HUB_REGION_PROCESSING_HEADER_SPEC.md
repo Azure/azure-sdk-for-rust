@@ -176,7 +176,8 @@ x-ms-cosmos-hub-region-processing-only: True
 to the outgoing `CosmosRequest`. The header value is the literal `"True"` (capitalized) — see
 [§4.2(b)](#42-sdkcosmosazure_data_cosmossrcretry_policiesclient_retry_policyrs) for the wire-format rationale.
 The header rides along on retries triggered by **any** status code that does still fall within
-the policy's budget — connection failures (which are non-counted under `MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`),
+the policy's budget — connection failures (which are tracked under a separate budget,
+`MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`, rather than the `session_token_retry_count` budget),
 endpoint-failure failovers, and any future status codes that produce additional attempts —
 until the operation terminates.
 
@@ -269,17 +270,15 @@ is `"True"`, and that is the wire value the backend has been validated against. 
 own (independent) backend parser; we cannot assume the new header's parser is case-insensitive
 without a contract reference. Do **not** use `"true"` (lowercase) or `"True".to_string()`.
 
-**(c) Set the latch.** In `should_retry_on_session_not_available`, after the counter
-increment at the top of the function (around line 268) and before any `return`:
+**(c) Set the latch.** In `should_retry_on_session_not_available`, after the
+discovery-enabled early return (`if !self.enable_endpoint_discovery { return DoNotRetry }`)
+and the counter increment around line 268, but **before** the budget/gating
+conditionals that decide `Retry` vs `DoNotRetry`:
 
 ```rust
 if !self.add_hub_region_processing_only_header
     && self.session_token_retry_count == 1
-    && self
-        .global_endpoint_manager
-        .location_cache()
-        .can_use_multiple_write_locations()
-        == false
+    && !self.global_endpoint_manager.account_supports_multi_write()
 {
     self.add_hub_region_processing_only_header = true;
     debug!(
@@ -291,19 +290,38 @@ if !self.add_hub_region_processing_only_header
 
 Notes on the gate:
 
-- The single-master check goes through `LocationCache::can_use_multiple_write_locations()`
-  (`location_cache.rs:381`), which is account-level (`write_endpoints().len() > 1`). Do
-  **not** use `self.can_use_multiple_write_locations` — that field is populated from
-  `GlobalEndpointManager::can_use_multiple_write_locations(request)` which returns `false`
-  for all read operations regardless of account topology, and would cause the latch to fire
-  for every read on a multi-master account too.
-- The trigger uses `== 1` (exact equality), matching the boundary that pins this latch to
-  Rust's existing single-master read-retry budget. See [§3.1](#31-trigger) for the parity-gap
-  rationale.
-- The expression `self.global_endpoint_manager.location_cache()` assumes a `location_cache()`
-  accessor exists on `GlobalEndpointManager`. If only an internal accessor is present today,
-  the implementer should add the minimum visibility (e.g. `pub(crate)`) needed to read the
-  flag — or use whichever existing accessor returns the underlying `LocationCache`.
+- The single-master check goes through a new forwarding accessor on
+  `GlobalEndpointManager`, **not** a borrow of the `LocationCache` itself: the
+  `location_cache` field is `Mutex<LocationCache>` (`global_endpoint_manager.rs:31`),
+  so any accessor that returned `&LocationCache` would not be lifetime-compatible
+  with method chaining behind the lock guard. Add this method to
+  `GlobalEndpointManager`:
+
+  ```rust
+  pub(crate) fn account_supports_multi_write(&self) -> bool {
+      self.location_cache
+          .lock()
+          .unwrap()
+          .can_use_multiple_write_locations()
+      // (.unwrap() is consistent with existing callers at lines 354 and 283
+      // that .lock().unwrap() the same mutex.)
+  }
+  ```
+
+  This wraps `LocationCache::can_use_multiple_write_locations()`
+  (`location_cache.rs:381`), which is account-level (`write_endpoints().len() > 1`).
+  Do **not** use `self.can_use_multiple_write_locations` on the policy — that field
+  is populated from `GlobalEndpointManager::can_use_multiple_write_locations(request)`
+  (line 242) which returns `false` for all read operations regardless of account
+  topology, and would cause the latch to fire for every read on a multi-master
+  account too.
+- The trigger uses `== 1` (exact equality), matching the boundary that pins this
+  latch to Rust's existing single-master read-retry budget. See
+  [§3.1](#31-trigger) for the parity-gap rationale.
+- The condition uses `!self.global_endpoint_manager.account_supports_multi_write()`
+  (logical negation) rather than `... == false`, which clippy's `bool_comparison`
+  lint flags. §7.3 enforces `cargo clippy -- -D warnings`, so the example must
+  match the lint policy.
 
 Also, at the increment site itself (`self.session_token_retry_count += 1;`, line 268), add a
 short inline comment cross-referencing this spec so a future refactor that moves the
@@ -465,7 +483,7 @@ guidance to omit `test_` does **not** apply here — every test in this file use
 | AC-3  | `test_session_not_available_latch_pins_to_counter_eq_1`         | Boundary regression. Pre-set `session_token_retry_count = 0` and call into the latch path → latch flips ON and `before_send_request` emits the header. Pre-set `session_token_retry_count = 1` (so the increment at line 268 takes it to 2) → policy returns `DoNotRetry` and the latch does NOT flip. Protects the trigger from silent breakage if the increment is ever moved. |
 | AC-4  | `test_session_not_available_no_header_for_multi_master`         | Multi-master account (mock `LocationCache::can_use_multiple_write_locations()` to return `true`), any number of 404/1002 invocations → header NEVER emitted. Pin specifically to the **account-level** gate, not to `ClientRetryPolicy.can_use_multiple_write_locations`. |
 | AC-5  | `test_session_not_available_no_header_when_discovery_disabled`  | `enable_endpoint_discovery = false` → policy returns `DoNotRetry`, latch never set. |
-| AC-6  | `test_hub_region_header_persists_across_connection_failure`     | After AC-2 latches the flag, drive a connection failure that takes the same-endpoint retry path (`MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`-bounded, non-counted against `session_token_retry_count`) → `before_send_request` STILL emits the header. Confirms the latch survives intervening attempts that exist under the current budget. |
+| AC-6  | `test_hub_region_header_persists_across_connection_failure`     | After AC-2 latches the flag, drive a connection failure that takes the same-endpoint retry path (tracked under `MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`, separate from the `session_token_retry_count` budget) → `before_send_request` STILL emits the header. Confirms the latch survives intervening attempts that exist under the current budget. |
 
 The earlier AC-3 / AC-6 / AC-7 tests covering "post-latch retry on 503" and "post-latch retry
 on 410/1022" have been intentionally **dropped**: under Rust's current single-master read
