@@ -18,6 +18,9 @@ use azure_data_cosmos_driver::models::{
 };
 use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
 
+#[cfg(feature = "fault_injection")]
+use azure_data_cosmos_driver::options::Region;
+
 use super::dual_backend::DualBackend;
 use super::validation::{
     compare_responses, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
@@ -678,4 +681,370 @@ async fn upsert_item_through_driver() {
 
     // Cleanup
     backend.cleanup_real_database(&db_name).await;
+}
+
+// ─── Multi-region fault injection ────────────────────────────────────────────
+
+/// Tests that fault injection on the primary (preferred) read region causes
+/// the driver to failover to the secondary region and return a successful
+/// response. Validates status code, headers, and body on the failover path.
+///
+/// Setup:
+/// - Multi-region emulator: East US (write region) + West US (read-only)
+/// - Preferred regions: [East US, West US]
+/// - Fault rule: 503 ServiceUnavailable on ReadItem in East US (hit limit = 4)
+///
+/// Flow:
+/// 1. Create an item in East US (no fault — rule targets ReadItem only)
+/// 2. Read the item — driver hits 503 in East US, retries, fails over to West US
+/// 3. Verify the read succeeds with 200, correct body, and proper headers
+///
+/// When `AZURE_COSMOS_CONNECTION_STRING` is set, the same fault injection
+/// scenario runs against a real account and responses are compared.
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn read_failover_on_503_via_fault_injection() {
+    use azure_core::http::Url;
+    use azure_data_cosmos_driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
+    };
+    use azure_data_cosmos_driver::in_memory_emulator::{
+        ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+        VirtualRegion, WriteMode,
+    };
+    use azure_data_cosmos_driver::models::AccountReference;
+    use azure_data_cosmos_driver::options::DriverOptionsBuilder;
+    use std::sync::Arc;
+
+    let _ = tracing_subscriber::fmt::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .try_init();
+
+    // ── Fault injection rule: 503 on ReadItem in East US ─────────
+    let fault_result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+
+    let fault_condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(Region::EAST_US)
+        .build();
+
+    // Use a shared rule so both emulator and real backends share the same hit
+    // count state and the same `enabled` flag.
+    let shared_enabled = Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let shared_hit_count = Arc::new(std::sync::atomic::AtomicU32::new(0));
+
+    let emu_rule = Arc::new(
+        FaultInjectionRuleBuilder::new("read-503-east-us", fault_result.clone())
+            .with_condition(fault_condition.clone())
+            .with_hit_limit(4) // enough for local retries then failover
+            .with_shared_state(Arc::clone(&shared_enabled), Arc::clone(&shared_hit_count))
+            .build(),
+    );
+
+    // ── Multi-region emulator setup ──────────────────────────────
+    let east_url = "https://eastus.emulator.local";
+    let west_url = "https://westus.emulator.local";
+
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+    ])
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
+
+    let emulator = InMemoryEmulatorHttpClient::new(config);
+    let emulator_store = emulator.store();
+
+    // Build runtime with fault injection rules layered on top of the emulator.
+    let emulator_runtime = emulator
+        .runtime_builder()
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .build()
+        .await
+        .unwrap();
+
+    // Provision database and container.
+    emulator_store.create_database("fi-testdb");
+    emulator_store.create_container(
+        "fi-testdb",
+        "fi-testcoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    let emu_account = AccountReference::with_master_key(
+        Url::parse(east_url).unwrap(),
+        "dGVzdGtleQ==",
+    );
+    let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
+        .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .build();
+    let emu_driver = emulator_runtime
+        .get_or_create_driver(emu_account.clone(), Some(emu_driver_opts))
+        .await
+        .unwrap();
+
+    let emu_container = emu_driver
+        .resolve_container("fi-testdb", "fi-testcoll")
+        .await
+        .unwrap();
+
+    // ── Create item (no fault — rule targets ReadItem only) ──────
+    let item_body = serde_json::to_vec(&serde_json::json!({
+        "id": "failover-item",
+        "pk": "pk1",
+        "value": 42
+    }))
+    .unwrap();
+
+    let emu_create = emu_driver
+        .execute_operation(
+            CosmosOperation::create_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            ))
+            .with_body(item_body.clone()),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        u16::from(emu_create.status().status_code()),
+        201,
+        "Emulator create should return 201",
+    );
+
+    // ── Read item — should failover from East US → West US ───────
+    let emu_read = emu_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        u16::from(emu_read.status().status_code()),
+        200,
+        "Emulator read should succeed via failover to West US",
+    );
+
+    // Verify fault rule was hit (confirms failover actually occurred).
+    assert!(
+        emu_rule.hit_count() > 0,
+        "Fault rule should have been hit at least once (was hit {} times)",
+        emu_rule.hit_count(),
+    );
+
+    // Verify response body.
+    let doc: serde_json::Value = serde_json::from_slice(emu_read.body()).unwrap();
+    assert_eq!(doc["id"], "failover-item");
+    assert_eq!(doc["value"], 42);
+
+    // Verify key headers on the successful response.
+    let emu_headers = emu_read.headers();
+    assert!(
+        emu_headers.activity_id.is_some(),
+        "activity_id should be present",
+    );
+    assert!(
+        emu_headers.request_charge.is_some(),
+        "request_charge should be present",
+    );
+    assert!(
+        emu_headers.session_token.is_some(),
+        "session_token should be present",
+    );
+    assert!(
+        emu_headers.etag.is_some(),
+        "etag should be present on successful read",
+    );
+    assert!(
+        emu_headers.server_duration_ms.is_some(),
+        "server_duration_ms should be present",
+    );
+    assert!(
+        emu_read.status().sub_status().is_none(),
+        "successful read should have no substatus",
+    );
+
+    // Verify system properties in body.
+    assert!(doc.get("_rid").is_some(), "should have _rid");
+    assert!(doc.get("_etag").is_some(), "should have _etag");
+
+    // ── Real account comparison (if available) ───────────────────
+    let real_result = try_real_failover_comparison(
+        &item_body,
+        fault_condition,
+        fault_result,
+        shared_enabled,
+        shared_hit_count,
+    )
+    .await;
+
+    if let Some(real_read) = real_result {
+        let real_snap = ResponseSnapshot::capture(&real_read, "real");
+        let emu_snap = ResponseSnapshot::capture(&emu_read, "emulator");
+        compare_responses(
+            &real_snap,
+            &emu_snap,
+            &HeaderValidationSpec::for_point_operation(),
+            BodyValidationSpec::DocumentMatch,
+        );
+    }
+}
+
+/// Runs the same fault-injection failover scenario against a real Cosmos DB
+/// account when `AZURE_COSMOS_CONNECTION_STRING` is set.
+///
+/// Returns `Some(CosmosResponse)` with the successful read, or `None` when
+/// no real account is configured.
+#[cfg(feature = "fault_injection")]
+async fn try_real_failover_comparison(
+    item_body: &[u8],
+    fault_condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
+    fault_result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
+    shared_enabled: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    shared_hit_count: std::sync::Arc<std::sync::atomic::AtomicU32>,
+) -> Option<azure_data_cosmos_driver::models::CosmosResponse> {
+    use azure_core::http::Url;
+    use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
+    use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
+    use azure_data_cosmos_driver::models::{AccountReference, ConnectionString};
+    use azure_data_cosmos_driver::options::{
+        ConnectionPoolOptions, DriverOptionsBuilder, EmulatorServerCertValidation,
+    };
+    use std::sync::Arc;
+
+    let conn_str_raw = std::env::var("AZURE_COSMOS_CONNECTION_STRING").ok()?;
+    let mode = std::env::var("AZURE_COSMOS_TEST_MODE")
+        .unwrap_or_default()
+        .to_lowercase();
+    if mode == "skipped" {
+        return None;
+    }
+
+    let conn_str: ConnectionString = conn_str_raw.parse().ok()?;
+    let endpoint: Url = conn_str.account_endpoint().parse().ok()?;
+    let key = conn_str.account_key().secret().to_string();
+    let account = AccountReference::with_master_key(endpoint, key);
+
+    // Reset shared hit count for the real leg.
+    shared_hit_count.store(0, std::sync::atomic::Ordering::SeqCst);
+
+    let real_rule = Arc::new(
+        FaultInjectionRuleBuilder::new("read-503-east-us-real", fault_result)
+            .with_condition(fault_condition)
+            .with_hit_limit(4)
+            .with_shared_state(shared_enabled, shared_hit_count)
+            .build(),
+    );
+
+    let mut pool_builder = ConnectionPoolOptions::builder();
+    if conn_str.account_endpoint().contains("localhost") {
+        pool_builder = pool_builder
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
+    }
+    let pool = pool_builder.build().ok()?;
+
+    let runtime = CosmosDriverRuntime::builder()
+        .with_connection_pool(pool)
+        .with_fault_injection_rules(vec![Arc::clone(&real_rule)])
+        .build()
+        .await
+        .ok()?;
+
+    let driver_opts = DriverOptionsBuilder::new(account.clone())
+        .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .build();
+
+    let driver = runtime
+        .get_or_create_driver(account.clone(), Some(driver_opts))
+        .await
+        .ok()?;
+
+    // Create a unique database for this test run.
+    let run_id = uuid::Uuid::new_v4().to_string()[..8].to_string();
+    let db_name = format!("fi-failover-{run_id}");
+
+    let db_body = serde_json::to_vec(&serde_json::json!({"id": &db_name})).ok()?;
+    let db_ref = azure_data_cosmos_driver::models::DatabaseReference::from_name(
+        account.clone(),
+        db_name.clone(),
+    );
+    driver
+        .execute_operation(
+            CosmosOperation::create_database(account.clone()).with_body(db_body),
+            OperationOptions::default(),
+        )
+        .await
+        .ok()?;
+
+    let coll_body = serde_json::to_vec(&serde_json::json!({
+        "id": "fi-testcoll",
+        "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2}
+    }))
+    .ok()?;
+    driver
+        .execute_operation(
+            CosmosOperation::create_container(db_ref.clone()).with_body(coll_body),
+            OperationOptions::default(),
+        )
+        .await
+        .ok()?;
+
+    let container = driver
+        .resolve_container(&db_name, "fi-testcoll")
+        .await
+        .ok()?;
+
+    // Create item.
+    driver
+        .execute_operation(
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            ))
+            .with_body(item_body.to_vec()),
+            OperationOptions::default(),
+        )
+        .await
+        .ok()?;
+
+    // Read item — should failover.
+    let read_result = driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
+
+    // Cleanup.
+    let _ = driver
+        .execute_operation(
+            CosmosOperation::delete_database(db_ref),
+            OperationOptions::default(),
+        )
+        .await;
+
+    read_result.ok()
 }

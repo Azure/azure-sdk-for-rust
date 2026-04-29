@@ -462,6 +462,282 @@ async fn sdk_read_with_stale_session_token_returns_error() {
     backend.cleanup_real_database(&db_name).await;
 }
 
+// ─── Multi-region fault injection via SDK ────────────────────────────────────
+
+/// Demonstrates combining the in-memory emulator with fault injection through
+/// the SDK (`CosmosClient` → `ContainerClient`).
+///
+/// Setup:
+/// - Multi-region emulator: East US (write) + West US (read-only), immediate
+///   replication, session consistency.
+/// - Fault rule: 503 ServiceUnavailable on ReadItem in East US with a hit
+///   limit so the driver exhausts local retries then fails over.
+///
+/// Flow:
+/// 1. Build a `CosmosClient` using the emulator's `runtime_builder()` with
+///    fault injection rules applied.
+/// 2. Create an item via the SDK.
+/// 3. Read the item — the driver hits 503 in East US, retries, and fails
+///    over to West US.
+/// 4. Verify the read succeeds with 200, correct typed body, and all
+///    expected Cosmos headers.
+///
+/// When `AZURE_COSMOS_CONNECTION_STRING` is set, a second `CosmosClient`
+/// (backed by a real account) runs the same scenario and responses are
+/// compared via [`compare_item_responses`].
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn sdk_read_failover_on_503_via_fault_injection() {
+    use azure_data_cosmos_driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
+    };
+    use azure_data_cosmos_driver::in_memory_emulator::{
+        ReplicationConfig, VirtualAccountConfig, VirtualRegion, WriteMode,
+    };
+    use azure_data_cosmos_driver::options::Region as DriverRegion;
+    use std::sync::Arc;
+
+    let _ = tracing_subscriber::fmt::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .try_init();
+
+    let run_id = Uuid::new_v4().to_string()[..8].to_string();
+
+    // ── Fault injection rule ─────────────────────────────────────
+    let fault_result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+    let fault_condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(DriverRegion::EAST_US)
+        .build();
+    let emu_rule = Arc::new(
+        FaultInjectionRuleBuilder::new("sdk-read-503-east", fault_result.clone())
+            .with_condition(fault_condition.clone())
+            .with_hit_limit(4)
+            .build(),
+    );
+
+    // ── Multi-region emulator ────────────────────────────────────
+    let east_url = "https://eastus.emulator.local";
+    let west_url = "https://westus.emulator.local";
+
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", azure_core::http::Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", azure_core::http::Url::parse(west_url).unwrap()),
+    ])
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
+
+    let emulator = InMemoryEmulatorHttpClient::new(config);
+    let emulator_store = emulator.store();
+
+    // Build the runtime with fault injection layered on top of the emulator.
+    let runtime_builder = emulator
+        .runtime_builder()
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)]);
+
+    // Provision resources in the emulator store.
+    let db_name = format!("sdk-fi-{run_id}");
+    emulator_store.create_database(&db_name);
+    emulator_store.create_container(
+        &db_name,
+        "ficoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    // Build the SDK client with the emulator runtime.
+    let emu_account = CosmosAccountReference::with_master_key(
+        east_url.parse().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    let emu_client = CosmosClientBuilder::new()
+        .with_driver_runtime_builder(runtime_builder)
+        .build(emu_account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await
+        .unwrap();
+
+    let emu_container = emu_client
+        .database_client(&db_name)
+        .container_client("ficoll")
+        .await
+        .unwrap();
+
+    // ── Create item ──────────────────────────────────────────────
+    let item = TestItem {
+        id: "fi-item".into(),
+        pk: "pk1".into(),
+        value: 42,
+    };
+    let emu_create = emu_container
+        .create_item("pk1", "fi-item", &item, Some(write_options_with_content()))
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_create, StatusCode::Created);
+
+    // ── Read item — should failover from East US → West US ───────
+    let emu_read = emu_container
+        .read_item::<TestItem>("pk1", "fi-item", None)
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_read, StatusCode::Ok);
+
+    // Verify the fault rule was hit (confirms 503 was injected).
+    assert!(
+        emu_rule.hit_count() > 0,
+        "Fault rule should have been hit at least once (was hit {} times)",
+        emu_rule.hit_count(),
+    );
+
+    // Verify response headers.
+    assert!(emu_read.etag().is_some(), "etag should be present");
+    let snap = snapshot_from_item_response(&emu_read, "emulator");
+    assert!(snap.headers.activity_id.is_some(), "activity_id present");
+    assert!(snap.headers.etag.is_some(), "etag present");
+    assert!(
+        snap.headers.request_charge.is_some(),
+        "request_charge present",
+    );
+    assert!(
+        snap.headers.session_token.is_some(),
+        "session_token present",
+    );
+    assert!(
+        snap.headers.server_duration_ms.is_some(),
+        "server_duration_ms present",
+    );
+    assert!(
+        snap.sub_status_code.is_none(),
+        "successful read should have no substatus",
+    );
+
+    // Verify typed body.
+    let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+    assert_eq!(emu_doc.id, "fi-item");
+    assert_eq!(emu_doc.pk, "pk1");
+    assert_eq!(emu_doc.value, 42);
+
+    // ── Real account comparison (if available) ───────────────────
+    if let Ok(Some(real_client)) = resolve_real_client_with_fault_injection(
+        fault_condition,
+        fault_result,
+    )
+    .await
+    {
+        let real_db_name = format!("sdk-fi-real-{run_id}");
+        // Create DB + container on real account.
+        real_client.create_database(&real_db_name, None).await.unwrap();
+        let real_db = real_client.database_client(&real_db_name);
+        let props = ContainerProperties::new("ficoll".to_string(), "/pk".into());
+        real_db.create_container(props, None).await.unwrap();
+        let real_container = real_db.container_client("ficoll").await.unwrap();
+
+        // Create item.
+        let real_create = real_container
+            .create_item("pk1", "fi-item", &item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+        assert_eq!(real_create.status(), StatusCode::Created);
+
+        // Read item — should also failover.
+        let real_read = real_container
+            .read_item::<TestItem>("pk1", "fi-item", None)
+            .await
+            .unwrap();
+        assert_eq!(real_read.status(), StatusCode::Ok);
+
+        // Compare real vs. emulator read headers.
+        // `snap` was captured from the emulator read before `into_body()` consumed it.
+        let real_snap = snapshot_from_item_response(&real_read, "real");
+        compare_responses(
+            &real_snap,
+            &snap,
+            &HeaderValidationSpec::for_point_operation(),
+            BodyValidationSpec::DocumentMatch,
+        );
+        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        assert_eq!(real_doc.id, "fi-item");
+        assert_eq!(real_doc.value, 42);
+
+        // Cleanup.
+        let _ = real_db.delete(None).await;
+    }
+}
+
+/// Builds a real-account `CosmosClient` with fault injection rules matching the
+/// emulator test. Returns `None` when no real account is configured.
+///
+/// Fault injection is applied at the driver runtime level via
+/// `with_fault_injection_rules` on the runtime builder, then passed into the
+/// SDK via `CosmosClientBuilder::with_driver_runtime_builder`.
+#[cfg(feature = "fault_injection")]
+async fn resolve_real_client_with_fault_injection(
+    _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
+    _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
+) -> Result<Option<CosmosClient>, Box<dyn Error>> {
+    use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
+    use azure_data_cosmos_driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
+    };
+    use azure_data_cosmos_driver::options::Region as DriverRegion;
+    use std::sync::Arc;
+
+    let mode = std::env::var(TEST_MODE_ENV_VAR)
+        .unwrap_or_default()
+        .to_lowercase();
+    if mode == "skipped" {
+        return Ok(None);
+    }
+
+    let conn_str_raw = match std::env::var(CONNECTION_STRING_ENV_VAR) {
+        Ok(val) => val,
+        Err(_) => return Ok(None),
+    };
+
+    let conn_str: ConnectionString = conn_str_raw.parse()?;
+    let endpoint = conn_str.account_endpoint().to_string();
+    let key = conn_str.account_key().secret().to_string();
+
+    let account = CosmosAccountReference::with_master_key(
+        endpoint.parse().unwrap(),
+        azure_core::credentials::Secret::new(key),
+    );
+
+    // Build a driver-level fault injection rule.
+    let fi_result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+    let fi_condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(DriverRegion::EAST_US)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", fi_result)
+            .with_condition(fi_condition)
+            .with_hit_limit(4)
+            .build(),
+    );
+
+    // Apply fault injection to the runtime builder and pass it to the SDK.
+    let runtime_builder = CosmosDriverRuntime::builder()
+        .with_fault_injection_rules(vec![rule]);
+
+    let client = CosmosClientBuilder::new()
+        .with_driver_runtime_builder(runtime_builder)
+        .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await?;
+
+    Ok(Some(client))
+}
+
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
