@@ -205,7 +205,9 @@ impl BlobClient {
         options: Option<BlobClientDownloadOptions<'_>>,
     ) -> Result<BlobClientDownloadResult> {
         let options = options.unwrap_or_default();
-        let parallel = options.parallel.unwrap_or(DEFAULT_DOWNLOAD_PARALLEL);
+        let parallel = options
+            .parallel
+            .unwrap_or_else(crate::partitioned_transfer::defaults::default_concurrency);
         let partition_size = options
             .partition_size
             .unwrap_or(DEFAULT_DOWNLOAD_PARTITION_SIZE);
@@ -290,7 +292,6 @@ impl BlobClient {
 }
 
 // unwrap evaluated at compile time
-const DEFAULT_DOWNLOAD_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
 const DEFAULT_DOWNLOAD_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlobClientDownloadBehavior<'a> {
