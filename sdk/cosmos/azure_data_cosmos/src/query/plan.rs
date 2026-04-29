@@ -71,7 +71,11 @@ pub(crate) fn generate_query_plan(
         }
     })?;
 
-    let pk_paths: Vec<&str> = pk_definition.paths.iter().map(|p| p.as_str()).collect();
+    let pk_paths: Vec<&str> = pk_definition
+        .paths()
+        .iter()
+        .map(|p| p.as_ref())
+        .collect();
     let raw_plan = azure_data_cosmos_query::plan::generate_query_plan(&program.query, &pk_paths);
 
     let targeting = build_targeting(&raw_plan.pk_filters, query)?;
@@ -146,15 +150,15 @@ fn find_parameter_value(query: &Query, name: &str) -> Option<serde_json::Value> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::PartitionKeyKind;
     use azure_data_cosmos_query::plan::{AggregateKind, DistinctType, SortOrder};
 
     fn make_pk_def(paths: &[&str]) -> PartitionKeyDefinition {
-        PartitionKeyDefinition {
-            paths: paths.iter().map(|s| s.to_string()).collect(),
-            kind: PartitionKeyKind::new(PartitionKeyKind::HASH),
-            version: Some(2),
-        }
+        PartitionKeyDefinition::new(
+            paths
+                .iter()
+                .map(|s| std::borrow::Cow::from(s.to_string()))
+                .collect(),
+        )
     }
 
     fn plan(sql: &str) -> ClientQueryPlan {
