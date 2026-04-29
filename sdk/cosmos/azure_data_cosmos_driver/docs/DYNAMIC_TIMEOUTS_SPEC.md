@@ -443,6 +443,56 @@ driver who pass an `Arc<dyn TransportClient>` into the driver are not supported 
 escalation; the driver constructs its dispatch clients itself via `HttpClientFactory` regardless
 of any externally supplied `HttpClient`.
 
+### Connection Lifecycle on Request Timeout
+
+When `reqwest::RequestBuilder::timeout()` fires, the in-flight hyper `ResponseFuture` is dropped.
+The impact on the underlying connection depends on the HTTP version:
+
+**HTTP/1.1 — connection is destroyed:**
+
+1. Dropping the response future signals cancellation to hyper's H1 `Dispatcher` via the internal
+   `Callback` channel (`taker.cancel()`).
+2. The dispatcher's `poll_ready()` observes the cancellation and returns `Err(())`.
+3. `poll_read_head()` calls `self.close()`, which sets both `close_read()` and `close_write()` on
+   the underlying connection, marking it `is_closing = true`.
+4. The connection is shut down. When hyper-util's `Pooled<T>::drop` runs, `is_open()` returns
+   `false` (the connection is no longer ready), so it is **not returned to the pool** — it is
+   simply dropped and the TCP socket is closed.
+
+**HTTP/2 — only the stream is reset; connection survives:**
+
+1. Dropping the response future drops the inner `h2::OpaqueStreamRef`.
+2. `OpaqueStreamRef::drop()` calls `maybe_cancel()`, which sends a `RST_STREAM(CANCEL)` frame
+   for that specific stream via `schedule_implicit_reset()`.
+3. Only the timed-out **stream** is cancelled. The underlying HTTP/2 connection — which
+   multiplexes many concurrent streams — remains open and healthy.
+4. The `PoolClient` for H2 is a clone of the `h2::client::SendRequest` handle. It remains
+   `is_open()` and `can_share()`, so the connection stays in the pool and is reused immediately
+   for subsequent requests.
+
+**Summary:**
+
+| Protocol | On request timeout                                                   | Connection reused? |
+|----------|----------------------------------------------------------------------|--------------------|
+| HTTP/1.1 | Callback cancelled → dispatcher closes connection → TCP shut down    | No                 |
+| HTTP/2   | `RST_STREAM(CANCEL)` sent for the stream only                        | Yes                |
+
+**Implications for `ShardedHttpTransport`:**
+
+- **HTTP/1.1 connection churn**: Each timed-out request kills its shard's connection. The shard
+  must re-establish a TCP connection (and TLS handshake) on the next attempt. This is an inherent
+  cost of HTTP/1.1 timeout escalation — the driver cannot avoid it because hyper's H1 dispatcher
+  cannot safely reuse a connection with a partially-read or unsent response.
+- **HTTP/2 stream accounting**: A timed-out stream consumes one entry in `h2`'s locally-reset
+  stream tracking (`max_concurrent_reset_streams`, default 10, configurable). Rapidly timing out
+  many concurrent streams could exhaust this budget and force `h2` to purge older reset stream
+  records. For the driver's typical workload (low tens of concurrent streams per connection),
+  this is not a concern.
+- **Shard health**: The shard health tracking in `ShardedHttpTransport` should count
+  timeout-induced connection loss the same as any other connection failure for HTTP/1.1. For
+  HTTP/2, a stream-level timeout is **not** a shard-health signal — the connection is still
+  healthy.
+
 ### Timeout Control via Options Hierarchy
 
 User-facing timeout control is provided through the driver's options containers.
