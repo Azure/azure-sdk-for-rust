@@ -1,7 +1,7 @@
 # Hub-Region Processing-Only Header Spec for `azure_data_cosmos`
 
 **Status:** Draft / Iterating
-**Confidence:** Medium — call graph for `ClientRetryPolicy` (single-master read budget, `before_send_request`/`should_retry_on_session_not_available` flow, `GlobalEndpointManager` → `LocationCache` mutex layering) is traced and verified against `main`; the backend's case-sensitivity for the `x-ms-cosmos-hub-region-processing-only` header value is **assumed** to match .NET's `bool.TrueString` (`"True"`) and is not verified against a backend contract reference. The driver-resident forward target ([§1.5](#15-two-crate-landscape-sdk-vs-driver), [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy)) is described against the present-day driver crate (`cosmos_driver.rs`, `pipeline.rs`, `transport/mod.rs` on `upstream/main`); the migration step itself is **not** yet designed and is gated on driver prerequisites enumerated in ALT-6.
+**Confidence:** Medium — call graph for `ClientRetryPolicy` (single-master read budget, `before_send_request`/`should_retry_on_session_not_available` flow, `GlobalEndpointManager` → `LocationCache` mutex layering) is traced and verified against `main`; the backend's case-sensitivity for the `x-ms-cosmos-hub-region-processing-only` header value is **assumed** to match .NET's `bool.TrueString` (`"True"`) and is not verified against a backend contract reference. The driver-resident forward target ([§1.5](#15-two-crate-landscape-sdk-vs-driver), [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy)) is described against the present-day driver crate (`upstream/main`); the *header-emission relocation* is straightforward (see ALT-6 cross-walk and [§8 Future Work](#future-work)), but the *driver-side retry shape* on `404/1002` (ALT-6 prerequisite #1) is **not** yet designed and must be resolved before the migration can begin. Driver-crate file citations in this spec are relative to `sdk/cosmos/azure_data_cosmos_driver/src/`.
 **Date:** 2026-04-29
 **Authors:** (team)
 **Crate (interim home):** `azure_data_cosmos` (still owns retry + region routing today)
@@ -96,9 +96,9 @@ responsibilities:
 | Default outbound headers          | —                         | ✅ `CosmosHeadersPolicy`              | Implemented      |
 | Status-code retry (404/1002, 429, 503, …) | ✅ `ClientRetryPolicy`, `BackOffRetryHandler` | ❌ Not implemented (see [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy)) | SDK-only today |
 | Transport-failure retry           | —                         | ✅ `CosmosDriver::execute_operation` (idempotent / `definitely_not_sent`, `MAX_TRANSPORT_RETRIES = 1`) | Implemented |
-| Region routing / `LocationCache` / `GlobalEndpointManager` | ✅ Owns | ❌ Not implemented (`_account_write_region = Region::new("Unknown")` placeholder, `cosmos_driver.rs:202`) | SDK-only today |
+| Region routing / `LocationCache` / `GlobalEndpointManager` | ✅ Owns | ❌ Not implemented (`_account_write_region = Region::new("Unknown")` placeholder, `driver/cosmos_driver.rs:202`) | SDK-only today |
 | Single-master vs multi-master account topology | ✅ via `LocationCache::can_use_multiple_write_locations()` | ❌ Not surfaced | SDK-only today |
-| SDK→Driver dependency             | —                         | —                                    | **Not wired:** `sdk/cosmos/azure_data_cosmos/Cargo.toml` does not depend on `azure_data_cosmos_driver` on `main` |
+| SDK consumes driver               | ❌ Not yet                | —                                    | **Not wired:** `sdk/cosmos/azure_data_cosmos/Cargo.toml` has no `azure_data_cosmos_driver` dependency on `main`; SDK and driver coexist independently |
 
 **Implication for this work item.** The fix must land where the prerequisites exist
 *today*. The 404/1002 trigger requires:
@@ -156,34 +156,48 @@ driver acquires the prerequisites enumerated in
 emission point shifts from `ClientRetryPolicy::before_send_request` to a driver-side
 `Policy` slotted into the existing pipeline order — for reference, today's order is
 `CosmosHeadersPolicy → AuthorizationPolicy → TrackedTransportPolicy`
-(`transport/mod.rs:206-211`). The latch state then has to live somewhere addressable from
-inside a `Policy::send` impl: either on a per-operation type that carries its own
-`Arc<Mutex<...>>` and is registered with the pipeline before each call, or threaded
-through `azure_core::http::Context` so each invocation reads/mutates its own copy. The
-driver's outer retry loop in `CosmosDriver::execute_operation` (`cosmos_driver.rs:240`)
-would then need to be extended (or wrapped) to retry on `404/1002` rather than only on
-transport failures, and to make `LocationCache`-style account topology available so the
-single-master gate can be evaluated. None of those pieces exist today; this section is
-forward-looking.
+(`driver/transport/mod.rs:206-211`). The latch state then has to live somewhere
+addressable from inside a `Policy::send` impl: either on a per-operation type that
+carries its own `Arc<Mutex<...>>` and is registered with the pipeline before each call,
+or threaded through `azure_core::http::Context` so each invocation reads/mutates its own
+copy.
+
+The harder change is on the retry side. Today, `CosmosDriver::execute_operation`
+(`driver/cosmos_driver.rs:181-313`) returns successful HTTP responses to the caller
+unconditionally — its `Ok(response)` arm extracts the body and returns immediately
+(`driver/cosmos_driver.rs:280-292`). To trigger the latch on a `404/1002`, that arm must
+become a `match` on `CosmosStatus` that conditionally `continue`s the loop instead of
+returning, *or* the entire `execute_operation` must be wrapped by an outer status-code
+retry handler. Neither shape exists today; both are out of scope for this PR. See ALT-6
+prerequisite #1 for the concrete gap, and the cross-walk for which migration cells are
+mechanical vs. design-pending.
 
 ```mermaid
-flowchart TD
-    subgraph Driver["azure_data_cosmos_driver — forward target (NOT today)"]
-        direction TB
-        DRV["CosmosDriver::execute_operation<br/><i>extended to retry on 404/1002</i>"]
-        PIPE["CosmosPipeline::send"]
-        HDR["CosmosHeadersPolicy<br/>(default headers)"]
-        HUB["HubRegionHeaderPolicy <i>NEW</i><br/>if latch.is_set() insert<br/>x-ms-cosmos-hub-region-processing-only: True"]
-        AUTH["AuthorizationPolicy"]
-        XPORT[("TrackedTransportPolicy → HTTP")]
-        DRV --> PIPE --> HDR --> HUB --> AUTH --> XPORT
-        XPORT -. "404/1002 + single-master + first ⇒ latch.set()" .-> DRV
+flowchart LR
+    subgraph DriverToday["Driver pipeline today (no retry hook on 404/1002)"]
+        direction LR
+        DRV1["CosmosDriver::execute_operation<br/>Ok(response) ⇒ return immediately"]
+        PIPE1["CosmosPipeline::send"]
+        HDR1["CosmosHeadersPolicy"]
+        AUTH1["AuthorizationPolicy"]
+        XPORT1[("TrackedTransportPolicy → HTTP")]
+        DRV1 --> PIPE1 --> HDR1 --> AUTH1 --> XPORT1
     end
+    subgraph Gap["Prerequisites for driver-resident latch + header (ALT-6)"]
+        direction TB
+        P1["#1 Status-code retry hook<br/>(extend execute_operation, or<br/>wrap with retry handler)"]
+        P2["#2 LocationCache-equivalent<br/>+ single-master accessor"]
+        P3["#3 Per-operation state<br/>(Context or per-op wrapper)"]
+    end
+    DriverToday -. "blocked on" .-> Gap
 ```
 
-The diagram is illustrative; the driver does not yet expose a single-master gate, a
-status-code retry hook, or per-operation latch storage, so this end-state is gated on
-work that is out of scope for this PR. See ALT-6 for the full prerequisite list.
+The diagram intentionally shows the *current* driver pipeline (no retry feedback into
+`execute_operation` from a successful response) and the three prerequisites that must
+land before a driver-side `HubRegionHeaderPolicy` can replace this spec's SDK
+implementation. ALT-6's cross-walk lists which migration cells are mechanical (latch
+storage, emission site, header constant) and which are design-pending (retry trigger,
+single-master gate).
 
 ---
 
@@ -274,12 +288,8 @@ deferred to Future Work.
 ## 4. Code Changes
 
 > **Crate boundary note.** All file paths in §4 are under `sdk/cosmos/azure_data_cosmos/`
-> (the SDK). This is intentional: the prerequisites for the trigger (status-code retry,
-> account-level single-master detection, per-operation mutable state) live only in the
-> SDK on `main`. The driver-resident end-state is described in
-> [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy); the migration is
-> captured under [§8 Future Work](#future-work). Reviewers evaluating "should this go in
-> the driver instead?" should read ALT-6 first.
+> (the SDK). The driver-resident end-state is described in
+> [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy).
 
 ### 4.1 `sdk/cosmos/azure_data_cosmos/src/constants.rs`
 
@@ -453,7 +463,7 @@ block above it.
 | SE-003 | 🔴 Breaking — accepted via AG-1..AG-4 | Latch correctness depends on `ClientRetryPolicy` being constructed fresh per top-level operation. If the policy is ever pooled or reused across operations, the latch leaks and the header attaches to unrelated requests. | **Promoted to a hard acceptance gate** for the implementation PR — see [§7.4](#74-acceptance-gates-implementation-pr). The plain `bool` field choice ([§3.1](#31-trigger)) further depends on `&mut self`-only access being preserved by future refactors. |
 | SE-004 | 🟢 Minor        | Spec deviation: the issue text describes a 403/3 "skip-set rotation" flow. The .NET PR did not implement it; we mirror .NET. | Documented in [§6](#6-alternatives-considered) (ALT-4) and [§8](#8-open-questions--future-work) (OQ-1). Existing `should_retry_on_endpoint_failure` already rotates on 403/3 and the latched header rides along. |
 | SE-005 | 🟢 Minor        | Pre-existing inline doc-comment typo `404.1022 → 404.1002 (READ_SESSION_NOT_AVAILABLE)`. | Fixed opportunistically in §4.2(d). |
-| SE-006 | 🟡 Potential    | **Crate-boundary drift.** This work lands in `azure_data_cosmos` because the driver lacks the prerequisites today (see [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy)). When `azure_data_cosmos` migrates its data plane onto `azure_data_cosmos_driver`, this latch and header emission must move to a driver-side `Policy`; until then, two parallel retry surfaces could exist if anyone adds status-code retry to the driver in the interim. | Migration is gated by AG-5 (a `// TODO(driver-migration):` anchor in the implementation PR), the cross-walk in [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy), and the "Driver migration" bullet in [§8 Future Work](#future-work). The header itself is wire-identical regardless of which crate emits it, so an interim period where both crates have retry logic does not double-emit. |
+| SE-006 | 🟡 Potential    | **Crate-boundary drift.** This work lands in `azure_data_cosmos` because the driver lacks the prerequisites today (see [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy)). When `azure_data_cosmos` migrates its data plane onto `azure_data_cosmos_driver`, this latch and header emission must move to a driver-side `Policy`. | Migration is gated by AG-5 (a `// TODO(driver-migration):` anchor in the implementation PR), the cross-walk in [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy), and the "Driver migration" bullet in [§8 Future Work](#future-work). Double-emission cannot occur because the SDK→driver migration removes `ClientRetryPolicy`'s status-code retry as part of the same change set — there is no deployment state where both the SDK *and* driver retry status codes on the same request path. The header itself is wire-identical regardless of which crate emits it. |
 
 ### Cross-cutting concerns touched
 
@@ -547,39 +557,47 @@ accessor.
 **Why it is rejected today** — three concrete prerequisites are absent on `main`:
 
 1. **No status-code retry in the driver.** `CosmosDriver::execute_operation`
-   (`cosmos_driver.rs:181-313`) returns successful HTTP responses (including
+   (`driver/cosmos_driver.rs:181-313`) returns successful HTTP responses (including
    `404`/`1002`) directly to the caller; its retry loop is gated on `Err(transport
    failure) && (idempotent || definitely_not_sent)` with `MAX_TRANSPORT_RETRIES = 1`
-   (`cosmos_driver.rs:237-309`). Adding a 404/1002 trigger first requires designing
+   (`driver/cosmos_driver.rs:237-309`). Adding a 404/1002 trigger first requires designing
    driver-side status-code retry — substantially larger than this work item.
-2. **No account topology surface.** `cosmos_driver.rs:202` documents
-   `_account_write_region = Region::new("Unknown");` as a hard-coded fallback ("Account-level
-   metadata resolution is currently a direct fallback value"). There is no
-   `LocationCache` equivalent, no `can_use_multiple_write_locations()` accessor, and no
-   account-metadata fetch path. The single-master gate (§3.1 condition #3) cannot be
-   evaluated.
+2. **No account-metadata fetch or topology tracking.** The driver has no equivalent of
+   `GlobalEndpointManager` / `LocationCache` — it cannot query whether an account is
+   single-master or multi-master, cannot discover available write/read regions from the
+   backend, and hard-codes `_account_write_region = Region::new("Unknown")` as an
+   *unused* placeholder (the underscore prefix is intentional;
+   `driver/cosmos_driver.rs:202` documents it as "Account-level metadata resolution is
+   currently a direct fallback value"). The single-master gate (§3.1 condition #3) cannot
+   be evaluated without this surface, and adding it means designing a `LocationCache`
+   equivalent + an account-metadata fetch path — substantially larger than this work
+   item.
 3. **Mismatched per-operation state model.** `CosmosPipeline` holds
-   `Vec<Arc<dyn Policy>>` (`pipeline.rs:26-66`); each `Policy` is shared across all
-   requests. A latch is per-operation state and would have to be threaded via
+   `Vec<Arc<dyn Policy>>` (`driver/transport/pipeline.rs:26-66`); each `Policy` is shared
+   across all requests. A latch is per-operation state and would have to be threaded via
    `azure_core::http::Context` (per-call insertion/lookup) or a parallel per-operation
-   wrapper — a different idiom than the SDK's `&mut self`-on-`ClientRetryPolicy`.
-   The pattern is workable but unestablished in the driver today.
+   wrapper — a different idiom than the SDK's `&mut self`-on-`ClientRetryPolicy`. The
+   pattern is workable but unestablished in the driver today.
 
-**Cross-walk for the future migration.** When the prerequisites land, the relocation maps
-1:1:
+**Cross-walk for the future migration.** When the prerequisites land, the relocation
+breaks into mechanical cells (the latch field, emission site, header constant) and
+design-pending cells (retry trigger, single-master gate, both gated on prerequisites
+above). Mechanical cells map 1:1; design-pending cells are placeholders pending the
+prerequisite work:
 
-| SDK today (this PR)                                           | Driver tomorrow (forward target)                                                          |
-|---------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `ClientRetryPolicy::before_send_request` emits the header     | `HubRegionHeaderPolicy::send` emits the header before `AuthorizationPolicy`               |
-| Latch field `add_hub_region_processing_only_header: bool` on `&mut self` | Latch on a per-operation context type or via `Context::insert::<HubRegionLatch>(...)` |
-| Trigger in `should_retry_on_session_not_available`            | Trigger in the future driver status-code retry hook on `404/1002`                         |
-| Single-master gate via `GlobalEndpointManager::account_supports_multi_write()` (new accessor, §4.2(c)) | Single-master gate via the future driver `LocationCache`-equivalent              |
-| Constant `SHOULD_PROCESS_ONLY_IN_HUB_REGION` in `azure_data_cosmos::constants` | Move to `azure_data_cosmos_driver` and re-export, or keep as wire literal in driver headers helper |
+| SDK today (this PR)                                           | Driver tomorrow (forward target)                                                          | Status |
+|---------------------------------------------------------------|-------------------------------------------------------------------------------------------|--------|
+| `ClientRetryPolicy::before_send_request` emits the header     | `HubRegionHeaderPolicy::send` emits the header before `AuthorizationPolicy`               | Mechanical |
+| Latch field `add_hub_region_processing_only_header: bool` on `&mut self` | Latch on a per-operation context type or via `Context::insert::<HubRegionLatch>(...)` | Mechanical (idiom switch, no semantic change) |
+| Trigger in `should_retry_on_session_not_available`            | TBD — depends on driver-side status-code retry shape (prerequisite #1)                    | **Design-pending** |
+| Single-master gate via `GlobalEndpointManager::account_supports_multi_write()` (new accessor, §4.2(c)) | TBD — depends on driver-side `LocationCache`-equivalent (prerequisite #2)        | **Design-pending** |
+| Constant `SHOULD_PROCESS_ONLY_IN_HUB_REGION` in `azure_data_cosmos::constants` | Move to `azure_data_cosmos_driver` and re-export, or keep as wire literal in driver headers helper | Mechanical |
 
-The wire output is identical in either home; the migration is a refactor, not a behavior
-change. AG-5 ([§7.4](#74-acceptance-gates-implementation-pr)) requires the implementation
-PR to leave a `// TODO(driver-migration):` anchor referencing this ALT and the migration
-bullet in [§8](#future-work).
+The wire output is identical in either home; the migration is a refactor of the
+mechanical cells *plus* a design step for the two design-pending cells. AG-5
+([§7.4](#74-acceptance-gates-implementation-pr)) requires the implementation PR to leave
+a `// TODO(driver-migration):` anchor referencing this ALT and the migration bullet in
+[§8](#future-work).
 
 ---
 
@@ -600,7 +618,7 @@ guidance to omit `test_` does **not** apply here — every test in this file use
 | AC-3  | `test_session_not_available_latch_pins_to_counter_eq_1`         | Boundary regression. Pre-set `session_token_retry_count = 0` and call into the latch path → latch flips ON and `before_send_request` emits the header. Pre-set `session_token_retry_count = 1` (so the increment at line 268 takes it to 2) → policy returns `DoNotRetry` and the latch does NOT flip. Protects the trigger from silent breakage if the increment is ever moved. |
 | AC-4  | `test_session_not_available_no_header_for_multi_master`         | Multi-master account (mock `LocationCache::can_use_multiple_write_locations()` to return `true`), any number of 404/1002 invocations → header NEVER emitted. Pin specifically to the **account-level** gate, not to `ClientRetryPolicy.can_use_multiple_write_locations`. |
 | AC-5  | `test_session_not_available_no_header_when_discovery_disabled`  | `enable_endpoint_discovery = false` → policy returns `DoNotRetry`, latch never set. |
-| AC-6  | `test_hub_region_header_persists_across_connection_failure`     | After AC-2 latches the flag, drive a connection failure that takes the same-endpoint retry path (tracked under `MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`, separate from the `session_token_retry_count` budget) → `before_send_request` STILL emits the header. Confirms the latch survives intervening attempts that exist under the current budget. |
+| AC-6  | `test_hub_region_header_persists_across_connection_failure`     | After AC-2 latches the flag, drive a connection failure (the SDK's term for a transport-layer failure, tracked under `MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`, separate from the `session_token_retry_count` budget) that takes the same-endpoint retry path → `before_send_request` STILL emits the header. Confirms the latch survives intervening attempts that exist under the current budget. |
 
 The earlier AC-3 / AC-6 / AC-7 tests covering "post-latch retry on 503" and "post-latch retry
 on 410/1022" have been intentionally **dropped**: under Rust's current single-master read
