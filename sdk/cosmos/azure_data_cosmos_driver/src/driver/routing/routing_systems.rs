@@ -266,7 +266,7 @@ pub(crate) fn can_circuit_breaker_trigger_failover(
 ///
 /// The jitter is added to `partition_unavailability_duration` before an
 /// `Unhealthy` PPCB entry is allowed to transition to `ProbeCandidate`. This
-/// desynchronizes the failback of partitions that all failed in the same
+/// spreads out the failback of partitions that all failed in the same
 /// burst, preventing a thundering-herd stampede on the recovering region.
 ///
 /// Sampled from `SystemTime` nanos to avoid pulling in a `rand` dependency
@@ -360,8 +360,8 @@ pub(crate) fn mark_partition_unavailable(
             entry.failed_endpoints.clear();
             entry.first_failure_time = now;
             entry.last_failure_time = now;
-            // Re-sample jitter so the next failback window is desynchronized
-            // from any other entries that may have failed on the same tick.
+            // Re-sample jitter so the next failback window is offset from
+            // any other entries that may have failed on the same tick.
             entry.failback_jitter =
                 ppcb_failback_jitter(current_state.config.partition_unavailability_duration);
             return new_state;
