@@ -87,7 +87,9 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -153,7 +155,9 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -222,7 +226,9 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -293,7 +299,9 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let item_id = format!("Item-{}", unique_id);
 
             // Create using normal client
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -315,7 +323,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let mut updated_item = item.clone();
             updated_item.value = 100;
             let upsert_result = fault_container_client
-                .upsert_item(&pk, &updated_item, None)
+                .upsert_item(&pk, &item_id, &updated_item, None)
                 .await;
             assert!(
                 upsert_result.is_ok(),
@@ -381,7 +389,9 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -482,7 +492,9 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -560,7 +572,9 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -638,7 +652,9 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -709,7 +725,9 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -775,7 +793,9 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -871,7 +891,9 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            let create_result = fault_container_client.create_item(&pk, &item, None).await;
+            let create_result = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
             assert!(
                 create_result.is_ok(),
                 "create item should succeed: {:?}",
@@ -892,7 +914,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
             let mut updated_item = item.clone();
             updated_item.value = 999;
             let upsert_result = fault_container_client
-                .upsert_item(&pk, &updated_item, None)
+                .upsert_item(&pk, &item_id, &updated_item, None)
                 .await;
             assert!(
                 upsert_result.is_ok(),
@@ -952,7 +974,9 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()

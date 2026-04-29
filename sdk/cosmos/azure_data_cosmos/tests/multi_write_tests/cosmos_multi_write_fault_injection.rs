@@ -80,7 +80,9 @@ async fn verify_read_fails_with_injected_error(
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -231,7 +233,9 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let item_id = format!("Item1-{}", unique_id);
 
             // Create the item using the normal client (this should succeed)
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -314,7 +318,9 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -405,10 +411,13 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
             // Transport-generated 503 on a non-idempotent write (upsert) should NOT
             // be retried — the driver cannot know if the server processed the request.
-            let result = fault_container_client.upsert_item(&pk, &item, None).await;
+            let result = fault_container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await;
 
             assert!(
                 result.is_err(),
@@ -476,7 +485,9 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -575,9 +586,10 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
             let response = fault_container_client
-                .create_item(&pk, &item, None)
+                .create_item(&pk, &item_id, &item, None)
                 .await
                 .expect("write should succeed via failover to satellite");
 
@@ -648,7 +660,9 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             let item_id = format!("Item-{}", unique_id);
 
             // Create item with the normal client
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -739,8 +753,11 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
-            let result = fault_container_client.create_item(&pk, &item, None).await;
+            let result = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
 
             assert!(
                 result.is_err(),
@@ -807,7 +824,9 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -898,9 +917,10 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
             let response = fault_container_client
-                .create_item(&pk, &item, None)
+                .create_item(&pk, &item_id, &item, None)
                 .await
                 .expect("write should succeed via reverse failover to hub");
 
@@ -971,7 +991,9 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()

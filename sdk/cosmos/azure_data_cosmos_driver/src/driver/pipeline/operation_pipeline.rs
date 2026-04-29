@@ -444,9 +444,7 @@ fn build_transport_request(
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
-    let resource_ref = operation.resource_reference();
-    // Compute both paths in a single pass with a single allocation.
-    let paths = resource_ref.compute_paths();
+    let paths = operation.compute_resource_paths();
     let url = {
         let mut base = ctx.routing.selected_url.clone();
         let request_path = paths.request_path();
@@ -1249,8 +1247,9 @@ mod tests {
 
     #[test]
     fn build_transport_request_sets_is_upsert_header() {
-        let operation = CosmosOperation::upsert_item(test_container(), PartitionKey::from("pk1"))
-            .with_body(b"{}".to_vec());
+        let container = test_container();
+        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::upsert_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
@@ -1270,12 +1269,20 @@ mod tests {
             .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
             .expect("is-upsert header should be set");
         assert_eq!(is_upsert, "true");
+
+        // Upsert targets the collection feed URL, not the individual document.
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs",
+            "upsert should POST to the collection feed, not /docs/doc1"
+        );
     }
 
     #[test]
     fn build_transport_request_omits_is_upsert_header_for_create() {
-        let operation = CosmosOperation::create_item(test_container(), PartitionKey::from("pk1"))
-            .with_body(b"{}".to_vec());
+        let container = test_container();
+        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
@@ -1296,6 +1303,13 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static("x-ms-documentdb-is-upsert"))
                 .is_none(),
             "is-upsert header should not be set for create"
+        );
+
+        // Create targets the collection feed URL, not the individual document.
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs",
+            "create should POST to the collection feed, not /docs/doc1"
         );
     }
 

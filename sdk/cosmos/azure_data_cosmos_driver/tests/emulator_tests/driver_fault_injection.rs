@@ -42,7 +42,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
             .await?;
 
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-        context.create_item(&container, "pk1", item_json).await?;
+        context.create_item(&container, "item1", "pk1", item_json).await?;
 
         // With probability 0.0, the read should succeed
         let read_response = context
@@ -104,7 +104,9 @@ pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), 
             .await?;
 
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-        context.create_item(&container, "pk1", item_json).await?;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
 
         // With probability 1.0, the read should fail
         let read_result = context.read_item(&container, "item1", "pk1").await;
@@ -163,7 +165,7 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
         // CreateItem should succeed (rule only targets ReadItem)
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
         let create_response = context
-            .create_item(&container, "pk1", item_json)
+            .create_item(&container, "item1", "pk1", item_json)
             .await
             .expect("CreateItem should succeed when rule targets ReadItem");
 
@@ -229,7 +231,7 @@ pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<
                 .await?;
 
             let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-            context.create_item(&container, "pk1", item_json).await?;
+            context.create_item(&container, "item1", "pk1", item_json).await?;
 
             // Execute reads to consume the hit limit.
             // Due to internal retries, the limit may be exhausted within fewer
@@ -305,7 +307,9 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
             .await?;
 
         let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-        context.create_item(&container, "pk1", item_json).await?;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
 
         // With a connection error injected, the read should fail
         let read_result = context.read_item(&container, "item1", "pk1").await;

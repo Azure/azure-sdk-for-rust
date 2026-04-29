@@ -303,14 +303,15 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
 
     // Create the benchmark item if it doesn't already exist.
     let item_body = format!(r#"{{"id": "{}", "pk": "{}"}}"#, item_id, pk_value);
+    let item_ref = ItemReference::from_name(
+        &container_ref,
+        PartitionKey::from(pk_value.clone()),
+        item_id.clone(),
+    );
     ignore_conflict(
         driver
             .execute_operation(
-                CosmosOperation::create_item(
-                    container_ref.clone(),
-                    PartitionKey::from(pk_value.clone()),
-                )
-                .with_body(item_body.into_bytes()),
+                CosmosOperation::create_item(item_ref).with_body(item_body.into_bytes()),
                 OperationOptions::default(),
             )
             .await,

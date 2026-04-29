@@ -91,6 +91,7 @@ fn create_container_and_write_item<'a>(
         container_client
             .upsert_item(
                 "item1",
+                "item1",
                 &serde_json::json!({"id": "item1", "value": "test"}),
                 None,
             )

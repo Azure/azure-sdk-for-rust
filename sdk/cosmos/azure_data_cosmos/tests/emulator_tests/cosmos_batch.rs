@@ -132,10 +132,10 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
             };
 
             container_client
-                .create_item(&partition_key, &item1, None)
+                .create_item(&partition_key, &item1.id, &item1, None)
                 .await?;
             container_client
-                .create_item(&partition_key, &item2, None)
+                .create_item(&partition_key, &item2.id, &item2, None)
                 .await?;
 
             // Now execute a batch with mixed operations
@@ -206,7 +206,7 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
             };
 
             container_client
-                .create_item(&partition_key, &item1, None)
+                .create_item(&partition_key, &item1.id, &item1, None)
                 .await?;
 
             // Try to create a batch that will fail (trying to delete a non-existent item)
