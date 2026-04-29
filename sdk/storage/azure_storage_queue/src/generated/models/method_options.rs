@@ -79,7 +79,7 @@ pub struct QueueClientPeekMessagesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// Optional. A nonzero integer value that specifies the number of messages to
+    /// A nonzero integer value that specifies the number of messages to
     /// retrieve from the queue, up to a maximum of 32. If fewer are visible, the
     /// visible messages are returned. By default, a single message is retrieved from
     /// the queue with this operation.
@@ -95,7 +95,7 @@ pub struct QueueClientReceiveMessagesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// Optional. A nonzero integer value that specifies the number of messages to
+    /// A nonzero integer value that specifies the number of messages to
     /// retrieve from the queue, up to a maximum of 32. If fewer are visible, the
     /// visible messages are returned. By default, a single message is retrieved from
     /// the queue with this operation.
@@ -104,17 +104,16 @@ pub struct QueueClientReceiveMessagesOptions<'a> {
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 
-    /// Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified
-    /// value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol
-    /// versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry
-    /// time.
+    /// Specifies the new visibility timeout value, in seconds, relative to server time. A specified value must be
+    /// larger than or equal to 1 second, and cannot be larger than 7 days. The visibility timeout of a message
+    /// can be set to a value later than the expiry time.
     pub visibility_timeout: Option<i32>,
 }
 
 /// Options to be passed to `QueueClient::send_message()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueClientSendMessageOptions<'a> {
-    /// Optional. Specifies the time-to-live interval for the message, in seconds.
+    /// Specifies the time-to-live interval for the message, in seconds.
     /// Prior to version 2017-07-29, the maximum time-to-live allowed is 7 days. For
     /// version 2017-07-29 or later, the maximum time-to-live can be any positive
     /// number, as well as -1 indicating that the message does not expire. If this
@@ -127,10 +126,9 @@ pub struct QueueClientSendMessageOptions<'a> {
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 
-    /// Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified
-    /// value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol
-    /// versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry
-    /// time.
+    /// Specifies the new visibility timeout value, in seconds, relative to server time. A specified value must be
+    /// larger than or equal to 1 second, and cannot be larger than 7 days. The visibility timeout of a message
+    /// can be set to a value later than the expiry time.
     pub visibility_timeout: Option<i32>,
 }
 
@@ -160,7 +158,8 @@ pub struct QueueClientUpdateMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// A Message object which can be stored in a Queue
+    /// The queue message. The message must be in a format that can be included in
+    /// an XML request with UTF-8 encoding. The encoded message can be up to 64 KB in size.
     pub queue_message: Option<RequestContent<QueueMessage, XmlFormat>>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
@@ -190,17 +189,17 @@ pub struct QueueServiceClientGetStatisticsOptions<'a> {
 /// Options to be passed to `QueueServiceClient::list_queues()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientListQueuesOptions<'a> {
-    /// Include this parameter to specify that the queue's metadata be returned as part of the response body.
+    /// Specify to include additional, optional information.
     pub include: Option<Vec<ListQueuesIncludeType>>,
 
-    /// A string value that identifies the portion of the list of queues to be returned with the next listing operation. The operation
-    /// returns the NextMarker value within the response body if the listing operation did not return all queues remaining to
-    /// be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent
-    /// call to request the next page of list items. The marker value is opaque to the client.
+    /// Identifies the portion of the list of queues to be returned with the next listing operation. The operation
+    /// returns the marker value if the listing operation did not return all queues remaining. The marker value can
+    /// be used as the value for the marker parameter in a subsequent call to request the next page of list items.
+    /// The marker value is opaque to the client.
     pub marker: Option<String>,
 
-    /// Specifies the maximum number of queues to return. If the request does not specify maxresults, or specifies a value greater
-    /// than 5000, the server will return up to 5000 items.
+    /// Specifies the maximum number of queues to return. If the request does not specify maxresults, or specifies
+    /// a value greater than 5000, the server will return up to 5000 items.
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
