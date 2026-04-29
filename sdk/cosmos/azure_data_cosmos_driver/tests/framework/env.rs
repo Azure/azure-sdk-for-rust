@@ -9,9 +9,11 @@ use std::str::FromStr;
 pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 
 /// Environment variable for shared database name.
+#[allow(dead_code)]
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 
 /// Environment variable to allow invalid certificates.
+#[allow(dead_code)]
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 
 /// Environment variable for test mode.

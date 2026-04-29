@@ -58,7 +58,9 @@ Instantiate a `DeveloperToolsCredential` to pass to the client. The same instanc
 
 ```rust
 use azure_identity::DeveloperToolsCredential;
-use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint};
+use azure_data_cosmos::{
+    CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, RoutingStrategy,
+};
 
 async fn example() -> Result<(), Box<dyn std::error::Error>> {
     let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
@@ -67,7 +69,8 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
         .parse()?;
     let account = CosmosAccountReference::with_credential(endpoint, credential);
     let cosmos_client = CosmosClient::builder()
-        .build(account).await?;
+        .build(account, RoutingStrategy::ProximityTo("East US".into()))
+        .await?;
     Ok(())
 }
 ```
@@ -102,10 +105,10 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
         value: "2".into(),
     };
 
-    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await;
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await?;
 
     // Create an item
-    container.create_item("partition1", item, None).await?;
+    container.create_item("partition1", "1", item, None).await?;
 
     // Read an item
     let item_response = container.read_item("partition1", "1", None).await?;

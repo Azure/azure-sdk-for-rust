@@ -75,10 +75,13 @@
 //! // 5. Create the client with fault injection
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection(fault_builder)
-//!     .build(CosmosAccountReference::with_master_key(
-//!         "https://myaccount.documents.azure.com/".parse().unwrap(),
-//!         Secret::new("my_account_key"),
-//!     ))
+//!     .build(
+//!         CosmosAccountReference::with_master_key(
+//!             "https://myaccount.documents.azure.com/".parse().unwrap(),
+//!             Secret::new("my_account_key"),
+//!         ),
+//!         azure_data_cosmos::RoutingStrategy::ProximityTo("East US".into()),
+//!     )
 //!     .await
 //!     .unwrap();
 //! # }
@@ -105,7 +108,9 @@ use crate::resource_context::ResourceType;
 
 pub use client_builder::FaultInjectionClientBuilder;
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
-pub use result::{CustomResponse, FaultInjectionResult, FaultInjectionResultBuilder};
+pub use result::{
+    CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
+};
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Represents different server error types that can be injected for fault testing.

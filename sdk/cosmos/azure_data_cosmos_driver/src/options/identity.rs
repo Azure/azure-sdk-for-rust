@@ -145,6 +145,12 @@ impl CorrelationId {
     }
 }
 
+impl AsRef<str> for CorrelationId {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl fmt::Display for CorrelationId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -218,6 +224,12 @@ impl UserAgentSuffix {
     /// Returns the user agent suffix string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl AsRef<str> for UserAgentSuffix {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 

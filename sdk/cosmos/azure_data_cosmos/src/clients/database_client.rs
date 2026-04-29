@@ -1,68 +1,58 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::cosmos_request::CosmosRequest;
-use crate::operation_context::OperationType;
-use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use crate::{
-    clients::{ContainerClient, OffersClient},
-    models::{ContainerProperties, CosmosResponse, DatabaseProperties, ThroughputProperties},
+    clients::{offers_client, ClientContext, ContainerClient},
+    models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
-    pipeline::GatewayPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
-use azure_core::http::Context;
-use std::sync::Arc;
+use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
+use azure_data_cosmos_driver::options::OperationOptions;
+
+use super::ThroughputPoller;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
     link: ResourceLink,
-    containers_link: ResourceLink,
     database_id: String,
-    pipeline: Arc<GatewayPipeline>,
-    global_endpoint_manager: Arc<GlobalEndpointManager>,
-    global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
+    context: ClientContext,
+    database_ref: DatabaseReference,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(
-        pipeline: Arc<GatewayPipeline>,
-        database_id: &str,
-        global_endpoint_manager: Arc<GlobalEndpointManager>,
-        global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
-    ) -> Self {
+    pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
-        let containers_link = link.feed(ResourceType::Containers);
+        let database_ref =
+            DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
 
         Self {
             link,
-            containers_link,
             database_id,
-            pipeline,
-            global_endpoint_manager,
-            global_partition_endpoint_manager,
+            context,
+            database_ref,
         }
     }
 
     /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
     ///
+    /// This method eagerly resolves immutable container metadata (resource ID and partition key
+    /// definition) from the service, so the returned client is ready for immediate use without
+    /// per-operation cache lookups.
+    ///
     /// # Arguments
     /// * `name` - The name of the container.
-    pub async fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(
-            self.pipeline.clone(),
-            &self.link,
-            name,
-            self.global_endpoint_manager.clone(),
-            self.global_partition_endpoint_manager.clone(),
-        )
-        .await
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the container does not exist or the metadata cannot be resolved.
+    pub async fn container_client(&self, name: &str) -> azure_core::Result<ContainerClient> {
+        ContainerClient::new(self.context.clone(), &self.link, name, &self.database_id).await
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -87,17 +77,22 @@ impl DatabaseClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<DatabaseProperties>> {
-        let cosmos_request = CosmosRequest::builder(OperationType::Read, self.link.clone()).build();
+    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
+        let operation = CosmosOperation::read_database(self.database_ref.clone());
 
-        self.pipeline
-            .send(cosmos_request?, Context::default())
-            .await
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Executes a query against containers in the database.
@@ -123,19 +118,24 @@ impl DatabaseClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub fn query_containers(
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
+        let db_ref = DatabaseReference::from_name(
+            self.context.driver.account().clone(),
+            self.database_id.clone(),
+        );
+        let factory = move || CosmosOperation::query_containers(db_ref.clone());
+
         crate::query::executor::QueryExecutor::new(
-            self.pipeline.clone(),
-            self.containers_link.clone(),
-            Context::default(),
+            self.context.driver.clone(),
+            factory,
             query.into(),
-            azure_core::http::headers::Headers::new(),
+            Default::default(),
+            None,
         )
         .into_stream()
     }
@@ -147,21 +147,37 @@ impl DatabaseClient {
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions>,
-    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
+    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Create, self.containers_link.clone())
-                .request_headers(&options.throughput)
-                .json(&properties)
-                .build()?;
+        let body = serde_json::to_vec(&properties)?;
+        let mut operation =
+            CosmosOperation::create_container(self.database_ref.clone()).with_body(body);
 
-        self.pipeline.send(cosmos_request, Context::default()).await
+        if let Some(throughput) = &options.throughput {
+            let mut headers = azure_data_cosmos_driver::models::CosmosRequestHeaders::new();
+            throughput.apply_headers(&mut headers);
+            operation = operation.with_request_headers(headers);
+        }
+
+        // Control-plane creates always need the full response body so the
+        // caller can inspect the created resource properties.
+        let mut operation_options = OperationOptions::default();
+        operation_options.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, operation_options)
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Deletes this database.
@@ -170,17 +186,22 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build();
-        self.pipeline
-            .send(cosmos_request?, Context::default())
-            .await
+    ) -> azure_core::Result<ResourceResponse<()>> {
+        let operation = CosmosOperation::delete_database(self.database_ref.clone());
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Reads database throughput properties, if any.
@@ -189,7 +210,6 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
@@ -202,26 +222,47 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.read(Context::default()).await
+        offers_client::find_offer(
+            &self.context.driver,
+            self.context.driver.account(),
+            &resource_id,
+        )
+        .await
     }
 
-    /// Replaces the database throughput properties.
+    /// Begins replacing the database throughput properties.
     ///
-    /// Note that throughput changes may not take effect immediately.
-    /// The service processes the change asynchronously, so you may need to poll
-    /// [`DatabaseClient::read_throughput()`] to confirm the new throughput is in effect.
+    /// The Cosmos DB service may process throughput changes asynchronously. The returned
+    /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
+    /// stream to observe progress.
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
     /// * `options` - Optional parameters for the request.
-    #[tracing::instrument(skip_all, fields(id = self.database_id))]
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
-    pub async fn replace_throughput(
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::models::ThroughputProperties;
+    /// # async fn example(db_client: azure_data_cosmos::clients::DatabaseClient) -> azure_core::Result<()> {
+    /// let throughput = db_client
+    ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
+    ///     .await? // start the replace operation
+    ///     .await? // wait for completion (polls if async)
+    ///     .into_model()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+    ) -> azure_core::Result<ThroughputPoller> {
+        #[allow(
+            unused_variables,
+            reason = "The 'options' variable may be used in the future"
+        )]
+        let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -229,7 +270,33 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        let offers_client = OffersClient::new(self.pipeline.clone(), resource_id);
-        offers_client.replace(Context::default(), throughput).await
+        offers_client::begin_replace(
+            self.context.driver.clone(),
+            self.context.driver.account().clone(),
+            &resource_id,
+            throughput,
+        )
+        .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `DatabaseClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &DatabaseClient = todo!();
+        assert_send(client.container_client(todo!()));
+        assert_send(client.read(todo!()));
+        assert_send(client.create_container(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.begin_replace_throughput(todo!(), todo!()));
     }
 }
