@@ -90,7 +90,7 @@ pub async fn ppcb_enabled_503_on_create_fails_over_after_threshold() -> Result<(
                 let body = format!(
                     r#"{{"id": "ppcb-create-503-{i}", "pk": "pk1", "value": "test"}}"#
                 );
-                match context.create_item(&container, "pk1", body.as_bytes()).await {
+                match context.create_item_with_pk(&container, "pk1", body.as_bytes()).await {
                     Ok(_) => create_success_count += 1,
                     Err(e) => {
                         // Some early creates may fail if the retry budget is exhausted
@@ -122,7 +122,7 @@ pub async fn ppcb_enabled_503_on_create_fails_over_after_threshold() -> Result<(
                     r#"{{"id": "ppcb-create-503-post-{i}", "pk": "pk1", "value": "test"}}"#
                 );
                 let response = context
-                    .create_item(&container, "pk1", body.as_bytes())
+                    .create_item_with_pk(&container, "pk1", body.as_bytes())
                     .await
                     .expect(
                         "Post-threshold creates should succeed directly via the alternate write region",
@@ -222,7 +222,7 @@ pub async fn ppcb_failback_to_hub_region_after_write_fault_clears() -> Result<()
                 );
                 // Errors during ramp-up are tolerated; we only need the rule to
                 // accumulate enough hits to trip the breaker for this partition.
-                let _ = context.create_item(&container, "pk1", body.as_bytes()).await;
+                let _ = context.create_item_with_pk(&container, "pk1", body.as_bytes()).await;
             }
 
             assert!(
@@ -235,7 +235,7 @@ pub async fn ppcb_failback_to_hub_region_after_write_fault_clears() -> Result<()
             let tripped_body =
                 br#"{"id": "ppcb-write-failback-tripped", "pk": "pk1", "value": "test"}"#;
             let tripped_response = context
-                .create_item(&container, "pk1", tripped_body)
+                .create_item_with_pk(&container, "pk1", tripped_body)
                 .await
                 .expect("Create after breaker trip should succeed via the alternate write region");
 
@@ -273,7 +273,7 @@ pub async fn ppcb_failback_to_hub_region_after_write_fault_clears() -> Result<()
             let probe_body =
                 br#"{"id": "ppcb-write-failback-probe", "pk": "pk1", "value": "test"}"#;
             let probe_response = context
-                .create_item(&container, "pk1", probe_body)
+                .create_item_with_pk(&container, "pk1", probe_body)
                 .await
                 .expect("Probe write after failback sweep should succeed against the hub region");
 
@@ -300,7 +300,7 @@ pub async fn ppcb_failback_to_hub_region_after_write_fault_clears() -> Result<()
                     r#"{{"id": "ppcb-write-failback-steady-{i}", "pk": "pk1", "value": "test"}}"#
                 );
                 let response = context
-                    .create_item(&container, "pk1", body.as_bytes())
+                    .create_item_with_pk(&container, "pk1", body.as_bytes())
                     .await
                     .expect("Post-failback writes should succeed via normal routing");
 

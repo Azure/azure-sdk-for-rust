@@ -26,7 +26,7 @@ use std::sync::Arc;
 
 /// The primary region where the account's hub is located.
 /// Must match the first preferred write region of the test account.
-const HUB_REGION: Region = Region::EAST_US_2;
+const HUB_REGION: Region = Region::NORTH_CENTRAL_US;
 
 // ────────────────────────────────────────────────────────────────────────────
 // Test 1: PPAF enabled — 503 on CreateItem from region 1 → partition fails
@@ -68,7 +68,7 @@ pub async fn ppaf_enabled_503_on_create_fails_over_to_next_region() -> Result<()
         // Write with 503 injected in hub region — PPAF should trigger partition failover.
         let item_json = br#"{"id": "ppaf-item-503", "pk": "pk1", "value": "test"}"#;
         let create_response = context
-            .create_item(&container, "pk1", item_json)
+            .create_item_with_pk(&container, "pk1", item_json)
             .await
             .expect("CreateItem should succeed via PPAF failover to another region");
 
@@ -136,7 +136,7 @@ pub async fn ppaf_enabled_write_forbidden_on_create_fails_over_to_next_region(
 
         let item_json = br#"{"id": "ppaf-item-403", "pk": "pk1", "value": "test"}"#;
         let create_response = context
-            .create_item(&container, "pk1", item_json)
+            .create_item_with_pk(&container, "pk1", item_json)
             .await
             .expect("CreateItem should succeed via PPAF failover on 403/3 WriteForbidden");
 
@@ -213,7 +213,9 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
 
             // Seed an item first (no fault on writes — rule only targets reads in hub region).
             let item_json = br#"{"id": "ppcb-item-503", "pk": "pk1", "value": "test"}"#;
-            context.create_item(&container, "pk1", item_json).await?;
+            context
+                .create_item_with_pk(&container, "pk1", item_json)
+                .await?;
 
             // Issue reads to accumulate failures and trigger the circuit breaker threshold.
             // Default read failure threshold is 10. Each read that hits the hub region
@@ -342,7 +344,7 @@ pub async fn ppcb_failback_to_hub_region_after_fault_clears() -> Result<(), Box<
 
             // Seed an item — writes are not affected by the rule (reads only).
             let item_json = br#"{"id": "ppcb-failback-item", "pk": "pk1", "value": "test"}"#;
-            context.create_item(&container, "pk1", item_json).await?;
+            context.create_item_with_pk(&container, "pk1", item_json).await?;
 
             // ── Phase 1: Trip the circuit breaker by exceeding the read failure
             //             threshold (default 10) on the hub region.
