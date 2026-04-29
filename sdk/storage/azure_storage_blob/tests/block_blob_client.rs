@@ -431,8 +431,8 @@ async fn upload_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
-#[ignore = "Temporarily ignoring until we can figure out how to get this to not take down the whole test pipeline."]
+// This test generates a large recording, so marking as live-only.
+#[recorded::test(live)]
 async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let stage_block_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(
@@ -474,6 +474,8 @@ async fn upload_large(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         stage_block_count.load(Ordering::Relaxed),
         expected_stage_block_count
     );
+
+    container_client.delete(None).await?;
 
     Ok(())
 }

@@ -6,7 +6,7 @@ Azure Blob storage is Microsoft's object storage solution for the cloud. Blob st
 
 ## Getting started
 
-**⚠️ Note: The `azure_storage_blob` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please open a GitHub issue [here](https://github.com/Azure/azure-sdk-for-rust/issues).**
+**⚠️ Note: The `azure_storage_blob` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please [open a GitHub issue](https://github.com/Azure/azure-sdk-for-rust/issues).**
 
 ### Install the package
 
@@ -18,7 +18,7 @@ cargo add azure_storage_blob
 
 ### Prerequisites
 
-* You must have an [Azure subscription] and an [Azure storage account] to use this package.
+- You must have an [Azure subscription] and an [Azure storage account] to use this package.
 
 ### Create a storage account
 
@@ -48,10 +48,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
-        "container_name",                                        // Container Name
-        "blob_name",                                             // Blob Name
-        Some(credential),                                        // Credential
-        Some(BlobClientOptions::default()),                      // BlobClient Options
+        "<container_name>",                                       // Container Name
+        "<blob_name>",                                            // Blob Name
+        Some(credential),                                         // Credential
+        Some(BlobClientOptions::default()),                       // BlobClient Options
     )?;
     Ok(())
 }
@@ -65,14 +65,16 @@ You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID
 
 You can find executable examples for all major SDK functions in:
 
-* [blob_hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_hello_world.rs) - Getting started: create a container, upload and download a blob
-* [blob_container_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_container_client.rs) - Container-level operations: metadata, list blobs with continuation, access policies
-* [blob_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_service_client.rs) - Service-level operations: list containers, service properties, statistics
-* [block_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/block_blob_client.rs) - Block blob operations: staged block upload, copy from URL
-* [append_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/append_blob_client.rs) - Append blob operations: create, append blocks, seal
-* [page_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/page_blob_client.rs) - Page blob operations: create, upload/clear pages, list page ranges, resize
-* [blob_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
-* [storage_error.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/storage_error.rs) - Structured error handling with `StorageError`
+- [blob_hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_hello_world.rs) - Getting started: create a container, upload and download a blob
+- [blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_client.rs) - Blob-level operations: exists, metadata, index tags, access tier
+- [blob_container_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_container_client.rs) - Container-level operations: metadata, list blobs with continuation, access policies
+- [blob_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_service_client.rs) - Service-level operations: list containers, service properties, statistics
+- [block_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/block_blob_client.rs) - Block blob operations: staged block upload, copy from URL
+- [append_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/append_blob_client.rs) - Append blob operations: create, append blocks, seal
+- [page_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/page_blob_client.rs) - Page blob operations: create, upload/clear pages, list page ranges, resize
+- [blob_storage_upload_file.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_storage_upload_file.rs) - Upload a local file with streaming support for large files
+- [blob_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
+- [storage_error.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/storage_error.rs) - Structured error handling with `StorageError`
 
 ### Upload a blob
 
@@ -86,8 +88,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/",
-        "container_name",
-        "blob_name",
+        "<container_name>",
+        "<blob_name>",
         Some(credential),
         Some(BlobClientOptions::default()),
     )?;
@@ -114,12 +116,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
-        "container_name",                                        // Container Name
-        "blob_name",                                             // Blob Name
-        Some(credential),                                        // Credential
-        Some(BlobClientOptions::default()),                      // BlobClient Options
+        "<container_name>",                                       // Container Name
+        "<blob_name>",                                            // Blob Name
+        Some(credential),                                         // Credential
+        Some(BlobClientOptions::default()),                       // BlobClient Options
     )?;
-    let blob_properties = blob_client.get_properties(None).await?;
+    let response = blob_client.download(None).await?;
+    let data = String::from_utf8(response.body.collect().await?.into())?;
+    println!("Downloaded: {data}");
     Ok(())
 }
 ```
@@ -131,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 By default, all storage clients create an HTTP transport with automatic decompression disabled,
 which is required for partitioned (multi-part) downloads to work correctly. If you set a custom transport
 in client options (e.g., a `reqwest::Client` with gzip enabled) without disabling automatic
-decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download).
+decompression, partitioned downloads via [`BlobClient::download`](https://docs.rs/azure_storage_blob/latest/azure_storage_blob/clients/struct.BlobClient.html#method.download) may not work correctly.
 If you need to provide a custom transport, disable automatic decompression to be consistent with default SDK behavior.
 
 ## Next Steps
@@ -154,7 +158,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure Portal]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-portal
 [Azure PowerShell]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-powershell
 [Azure CLI]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
-[cargo]: https://dev-doc.rust-lang.org/stable/cargo/commands/cargo.html
+[cargo]: https://doc.rust-lang.org/cargo/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [API reference documentation]: https://docs.rs/crate/azure_storage_blob/latest
 [Package (crates.io)]: https://crates.io/crates/azure_storage_blob

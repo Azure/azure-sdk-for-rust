@@ -212,11 +212,11 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "0.35.0"
+version = "0.36.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core_macros",
+ "azure_core_macros 0.8.0",
  "azure_core_test",
  "azure_identity",
  "azure_security_keyvault_certificates",
@@ -239,14 +239,14 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec",
+ "typespec 0.14.0",
  "typespec_client_core",
  "ureq",
 ]
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -262,8 +262,20 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec",
- "typespec_macros",
+ "typespec 0.14.0",
+ "typespec_macros 0.13.0",
+]
+
+[[package]]
+name = "azure_core_macros"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70066e34b8db2c3f0b852c56a99333bd25fdedfb8850cd95dddf930928b47b80"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+ "tracing",
 ]
 
 [[package]]
@@ -280,7 +292,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -374,7 +386,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.35.0"
+version = "0.36.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -399,7 +411,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -422,7 +434,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -469,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -491,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -514,7 +526,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -542,7 +554,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -583,12 +595,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "azure_storage_common"
-version = "0.1.0"
-
-[[package]]
 name = "azure_storage_queue"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -2072,9 +2080,9 @@ checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
 
 [[package]]
 name = "openssl"
-version = "0.10.76"
+version = "0.10.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "951c002c75e16ea2c65b8c7e4d3d51d5530d8dfa7d060b4776828c88cfb18ecf"
+checksum = "f38c4372413cdaaf3cc79dd92d29d7d9f5ab09b51b10dded508fb90bb70b9222"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -2104,9 +2112,9 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.112"
+version = "0.9.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57d55af3b3e226502be1526dfdba67ab0e9c96fc293004e79576b2b9edb0dbdb"
+checksum = "13ce1245cd07fcc4cfdb438f7507b0c7e4f3849a69fd84d52374c66d83741bb6"
 dependencies = [
  "cc",
  "libc",
@@ -2175,7 +2183,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7d950ca161dc355eaf28f82b11345ed76c6e1f6eb1f4f4479e0323b9e2fbd0e"
 dependencies = [
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -2472,9 +2480,9 @@ checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
 name = "rand"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
@@ -2726,7 +2734,7 @@ dependencies = [
  "borsh",
  "bytes",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rkyv",
  "serde",
  "serde_json",
@@ -2826,9 +2834,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.12"
+version = "0.103.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8279bb85272c9f10811ae6a6c547ff594d6a7f3c6c6b02ee9726d1d0dcfcdd06"
+checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -3565,6 +3573,21 @@ checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
 
 [[package]]
 name = "typespec"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "247afbeabe0c383f630d0fdcb4fb92818c31cd3fe5d293335daff8cac79d4e0f"
+dependencies = [
+ "base64",
+ "bytes",
+ "futures",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "typespec"
 version = "0.15.0"
 dependencies = [
  "base64",
@@ -3579,7 +3602,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3597,10 +3620,22 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec",
- "typespec_macros",
+ "typespec 0.14.0",
+ "typespec_macros 0.13.0",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "typespec_macros"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d17153fde258b3c862cecffad95e185c0eb83e619e76542c4b3ed9828af840f0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "rustc_version",
+ "syn 2.0.117",
 ]
 
 [[package]]

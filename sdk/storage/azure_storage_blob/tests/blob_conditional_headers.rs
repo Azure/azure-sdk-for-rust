@@ -43,7 +43,7 @@ mod blob_client {
 
         create_test_blob(&blob_client, None, None).await?;
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
 
         // Read Operations - if_match Success + if_none_match 304
 
@@ -68,7 +68,7 @@ mod blob_client {
         // Download if_match Failure
         let err = blob_client
             .download(Some(BlobClientDownloadOptions {
-                if_match: Some(BAD_ETAG.to_string()),
+                if_match: Some(BAD_ETAG.to_string().into()),
                 ..Default::default()
             }))
             .await;
@@ -80,13 +80,13 @@ mod blob_client {
         // Get Properties
         blob_client
             .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
         let err = blob_client
             .get_properties(Some(BlobClientGetPropertiesOptions {
-                if_none_match: Some(etag.clone().into()),
+                if_none_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await;
@@ -98,13 +98,13 @@ mod blob_client {
         // Get Tags
         blob_client
             .get_tags(Some(BlobClientGetTagsOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
         let err = blob_client
             .get_tags(Some(BlobClientGetTagsOptions {
-                if_none_match: Some(etag.clone().into()),
+                if_none_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await;
@@ -116,13 +116,13 @@ mod blob_client {
         // Create Snapshot
         blob_client
             .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
         let err = blob_client
             .create_snapshot(Some(BlobClientCreateSnapshotOptions {
-                if_none_match: Some(etag.clone().into()),
+                if_none_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await;
@@ -152,21 +152,21 @@ mod blob_client {
             .set_metadata(
                 &metadata,
                 Some(BlobClientSetMetadataOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
             .await?;
         // Set Metadata Changes the ETag - Refresh
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
 
         // if_none_match Failure on Set Metadata
         let err = blob_client
             .set_metadata(
                 &metadata,
                 Some(BlobClientSetMetadataOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -190,14 +190,14 @@ mod blob_client {
         );
         blob_client
             .set_properties(Some(BlobClientSetPropertiesOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 blob_content_type: Some("application/octet-stream".to_string()),
                 ..Default::default()
             }))
             .await?;
         // Set Properties Changes the ETag - Refresh
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
 
         // Set Tags - Does Not Change the ETag, so etag remains valid for repeated use
         let err = blob_client
@@ -223,7 +223,7 @@ mod blob_client {
                     "test".to_string(),
                 )])))?,
                 Some(BlobClientSetTagsOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -251,7 +251,7 @@ mod blob_client {
             .acquire_lease(
                 -1,
                 Some(BlobClientAcquireLeaseOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -278,7 +278,7 @@ mod blob_client {
             .renew_lease(
                 lease_id_1.clone(),
                 Some(BlobClientRenewLeaseOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -307,7 +307,7 @@ mod blob_client {
                 lease_id_1,
                 proposed_id.clone(),
                 Some(BlobClientChangeLeaseOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -334,7 +334,7 @@ mod blob_client {
             .release_lease(
                 lease_id_2,
                 Some(BlobClientReleaseLeaseOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -356,7 +356,7 @@ mod blob_client {
         );
         blob_client
             .break_lease(Some(BlobClientBreakLeaseOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
@@ -374,7 +374,7 @@ mod blob_client {
         );
         blob_client
             .delete(Some(BlobClientDeleteOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 delete_snapshots: Some(DeleteSnapshotsOptionType::Include),
                 ..Default::default()
             }))
@@ -1095,7 +1095,7 @@ mod block_blob_client {
         // Upload Initial Blob
         create_test_blob(&blob_client, None, None).await?;
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1119,7 +1119,7 @@ mod block_blob_client {
             .upload(
                 RequestContent::from(b"new-content".to_vec()),
                 Some(BlockBlobClientUploadOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -1175,7 +1175,7 @@ mod block_blob_client {
             .upload(
                 RequestContent::from(b"updated".to_vec()),
                 Some(BlockBlobClientUploadOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -1190,7 +1190,7 @@ mod block_blob_client {
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1219,7 +1219,7 @@ mod block_blob_client {
             .commit_block_list(
                 RequestContent::try_from(lookup.clone())?,
                 Some(BlockBlobClientCommitBlockListOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -1278,7 +1278,7 @@ mod block_blob_client {
             .commit_block_list(
                 RequestContent::try_from(lookup)?,
                 Some(BlockBlobClientCommitBlockListOptions {
-                    if_match: Some(etag.into()),
+                    if_match: Some(etag),
                     ..Default::default()
                 }),
             )
@@ -1342,7 +1342,7 @@ mod append_blob_client {
         // Create Initial Append Blob (No Conditions)
         append_blob_client.create(None).await?;
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1363,7 +1363,7 @@ mod append_blob_client {
         // if_none_match Failure
         let err = append_blob_client
             .create(Some(AppendBlobClientCreateOptions {
-                if_none_match: Some(etag.clone().into()),
+                if_none_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await;
@@ -1407,14 +1407,14 @@ mod append_blob_client {
         // Create Success With if_match
         append_blob_client
             .create(Some(AppendBlobClientCreateOptions {
-                if_match: Some(etag.into()),
+                if_match: Some(etag),
                 blob_tags_string: Some("env=test".to_string()),
                 ..Default::default()
             }))
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1444,7 +1444,7 @@ mod append_blob_client {
                 chunk.clone(),
                 5u64,
                 Some(AppendBlobClientAppendBlockOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -1504,14 +1504,14 @@ mod append_blob_client {
                 chunk,
                 5u64,
                 Some(AppendBlobClientAppendBlockOptions {
-                    if_match: Some(etag.into()),
+                    if_match: Some(etag),
                     ..Default::default()
                 }),
             )
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1532,7 +1532,7 @@ mod append_blob_client {
         // if_none_match Failure
         let err = append_blob_client
             .seal(Some(AppendBlobClientSealOptions {
-                if_none_match: Some(etag.clone().into()),
+                if_none_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await;
@@ -1565,7 +1565,7 @@ mod append_blob_client {
         // Seal Success
         append_blob_client
             .seal(Some(AppendBlobClientSealOptions {
-                if_match: Some(etag.into()),
+                if_match: Some(etag),
                 ..Default::default()
             }))
             .await?;
@@ -1598,7 +1598,7 @@ mod page_blob_client {
         // Create Initial Page Blob
         page_blob_client.create(BLOB_SIZE, None).await?;
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1622,7 +1622,7 @@ mod page_blob_client {
             .create(
                 BLOB_SIZE,
                 Some(PageBlobClientCreateOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -1678,7 +1678,7 @@ mod page_blob_client {
             .create(
                 BLOB_SIZE,
                 Some(PageBlobClientCreateOptions {
-                    if_match: Some(etag.into()),
+                    if_match: Some(etag),
                     blob_tags_string: Some("env=test".to_string()),
                     ..Default::default()
                 }),
@@ -1686,7 +1686,7 @@ mod page_blob_client {
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1694,7 +1694,7 @@ mod page_blob_client {
         // Upload Pages - PageBlobClientUploadPagesOptions
 
         let page_data = RequestContent::from(vec![1u8; PAGE_SIZE]);
-        let range = HttpRange::new(0, PAGE_SIZE as u64).to_string();
+        let range = HttpRange::new(0, PAGE_SIZE as u64);
 
         // if_match Failure
         let err = page_blob_client
@@ -1719,7 +1719,7 @@ mod page_blob_client {
                 PAGE_SIZE as u64,
                 range.clone(),
                 Some(PageBlobClientUploadPagesOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
@@ -1783,14 +1783,14 @@ mod page_blob_client {
                 PAGE_SIZE as u64,
                 range.clone(),
                 Some(PageBlobClientUploadPagesOptions {
-                    if_match: Some(etag.into()),
+                    if_match: Some(etag),
                     ..Default::default()
                 }),
             )
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
 
@@ -1843,14 +1843,14 @@ mod page_blob_client {
             .clear_pages(
                 range,
                 Some(PageBlobClientClearPagesOptions {
-                    if_match: Some(etag.into()),
+                    if_match: Some(etag),
                     ..Default::default()
                 }),
             )
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1893,7 +1893,7 @@ mod page_blob_client {
         // Get Page Ranges Success
         page_blob_client
             .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(etag.clone().into()),
+                if_match: Some(etag.clone()),
                 ..Default::default()
             }))
             .await?;
@@ -1947,14 +1947,14 @@ mod page_blob_client {
             .resize(
                 BLOB_SIZE * 2,
                 Some(PageBlobClientResizeOptions {
-                    if_match: Some(etag.clone().into()),
+                    if_match: Some(etag.clone()),
                     ..Default::default()
                 }),
             )
             .await?;
 
         let props = blob_client.get_properties(None).await?;
-        let etag = props.etag()?.unwrap().to_string();
+        let etag = props.etag()?.unwrap();
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
@@ -1981,7 +1981,7 @@ mod page_blob_client {
             .set_sequence_number(
                 SequenceNumberActionType::Update,
                 Some(PageBlobClientSetSequenceNumberOptions {
-                    if_none_match: Some(etag.clone().into()),
+                    if_none_match: Some(etag.clone()),
                     blob_sequence_number: Some(1),
                     ..Default::default()
                 }),
@@ -2041,7 +2041,7 @@ mod page_blob_client {
             .set_sequence_number(
                 SequenceNumberActionType::Update,
                 Some(PageBlobClientSetSequenceNumberOptions {
-                    if_match: Some(etag.into()),
+                    if_match: Some(etag),
                     blob_sequence_number: Some(42),
                     ..Default::default()
                 }),
