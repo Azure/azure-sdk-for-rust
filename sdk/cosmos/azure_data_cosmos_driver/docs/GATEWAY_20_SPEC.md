@@ -47,9 +47,7 @@ Today the Rust SDK only supports Gateway V1: a shared, stateless HTTP/REST proxy
 ### Key Benefits
 
 - **SLA latency guarantees** — Unlike Gateway V1, Gateway 2.0 plans to provide contractual latency commitments comparable to direct mode
-- **Simplified networking** — Clients connect to a single regional proxy endpoint over HTTP/2 on a non-443 port (e.g. 1125). The endpoint IP set is dynamic and may shift across Gateway 2.0 federations; firewall rules MUST scope by hostname/port, not by specific IPs.
 - **Reduced operational cost** — The proxy handles replica discovery, connection management, and replica-level routing within a partition; the client stays partition-aware (resolves PKRange, computes EPK) but is **never replica-aware**, avoiding the COGS and customer-side debugging burden of maintaining one connection per backend replica.
-- **HTTP/2 multiplexing** — Multiple concurrent operations share a single TCP connection. Note that Gateway V1 also supports HTTP/2 with multiplexing today; the connection-overhead win is relative to direct mode's per-replica TCP connections, not relative to Gateway V1.
 - **Transparent failover** — The proxy handles replica failover within a partition; the SDK handles regional failover across proxy endpoints
 
 ### Design Philosophy
@@ -76,18 +74,17 @@ Gateway 2.0 moves **replica-level** routing intelligence from the SDK into the s
 | --- | --- | --- | --- |
 | Latency SLA | No | **Yes** | Yes |
 | Simple Network | Yes | Yes | No |
-| Protocol | REST/HTTP, HTTP/2 + multiplexing supported | RNTBD message encoding over HTTP/2 | RNTBD over TCP |
+| Protocol | REST/HTTP over HTTP/2 | RNTBD message encoding over HTTP/2 | RNTBD over TCP |
 | Replica Mgmt | Gateway/Proxy | Proxy | SDK |
 | Partition Route | Gateway/Proxy | Proxy | SDK |
 | Regional Route | SDK | SDK | SDK |
 | Operational Cost (COGS + debug) | Low | Low | High |
-| Firewall Rules | 1 endpoint (443) | 1 endpoint (non-443, e.g. 1125; dynamic IPs) | N replicas |
 
 ---
 
 ## 3. Gating, Configuration & Override
 
-Gateway 2.0 routing is decided **once per request** in the driver's `resolve_endpoint` stage. After that, downstream pipeline stages MUST trust `RoutingDecision.transport_mode` and not re-derive eligibility.
+Gateway 2.0 routing is decided **once per logical operation** (a point operation, a single query-iteration page, a single batch, etc.) in the driver's `resolve_endpoint` stage. The resulting `RoutingDecision.transport_mode` is then attached to the operation context and **inherited by all retries and sub-requests** of that operation — downstream pipeline stages, retry policies, and hedged sub-requests MUST trust the attached decision and not re-derive eligibility. (Re-evaluating `gateway20_suppressed` mid-operation could route a retry through a different transport than the original attempt, fragmenting diagnostics and breaking session-token affinity.)
 
 ### 3.1 The `gateway20_suppressed` formula
 
@@ -128,14 +125,26 @@ Gateway 2.0 reuses the standard retry pipeline. Two status codes have Gateway-2.
 
 449 typically signals a server-side precondition failure (e.g. etag conflict on a single document being updated by many writers). Aggressive retry loops on 449 amplify pathological client patterns — for example, a numeric-ID generator where dozens or hundreds of threads patch the same document. The retry policy MUST optimize for the natural case (precondition failure that resolves with a brief wait) without amplifying abuse.
 
-- **Few attempts** (≤ 3) with **exponential backoff** between them (separate, looser schedule from the one used for 410/Gone).
+The 449 retry rules are expressed as a **new `ThrottleAction` variant** that this spec
+introduces. The existing `ThrottleAction` enum in `driver/pipeline/components.rs` (today:
+`Retry { delay, new_state: ThrottleRetryState } | Propagate`) gains a third variant —
+`RetryWith { delay, new_state: RetryWithState }` — and `decide_throttle_action` in
+`driver/transport/transport_pipeline.rs` is extended to emit that variant whenever the
+resolved `(status_code, sub_status)` pair is `(449, *)`. The new `RetryWithState` struct
+owns the 449-specific retry budget and is **distinct from** `ThrottleRetryState`, which
+guarantees structurally that 449 retries cannot consume the 410/Gone or 429 budget (and
+vice versa).
+
+- **Few attempts** (≤ 3) with **exponential backoff** between them.
 - Retry against the **same** endpoint; do not switch regions on 449.
-- **Do not** share the retry budget with 410/Gone — 449 has its own dedicated policy.
+- **Independent retry budget** — `RetryWithState` does not share counters with
+  `ThrottleRetryState` or the 410/Gone retry path. A 449 followed by a 410 on the same
+  logical operation gets fresh budget on the 410 side, and vice versa.
 - **Gateway V1 uses the identical 449 policy.** When the server-side adds a "suppress 449" capability (under design with the server team), the client negotiates it via the `SdkSupportedCapabilities` channel and treats 449 as a non-retryable terminal error. Until that capability ships, both transports retry per the policy above.
 
-### 4.2 HTTP 404 with sub-status `1002` (`PARTITION_KEY_RANGE_GONE`)
+### 4.2 HTTP 404 (Not Found) with sub-status `1002` (`READ_SESSION_NOT_AVAILABLE`)
 
-Refresh the PKRange cache, then retry. **Always prefer a remote region for the retry** when one is available in the client's preferred-region list — the local region is suspected of carrying the stale routing, so pinning the retry to the same Gateway 2.0 endpoint that just returned 1002 reproduces the bug. **PLF takes precedence**: if PLF (per `PARTITION_LEVEL_FAILOVER_SPEC.md`) has already pinned a region for this PKRangeId, the PLF region wins over the "prefer remote" hint.
+Follow the existing 404 / `READ_SESSION_NOT_AVAILABLE` retry path defined in `TRANSPORT_PIPELINE_SPEC.md` (re-read the session token from another replica, retry per the standard session-retry budget). The **only** Gateway-2.0-specific deviation: do **not** refresh the PKRange cache on a 404/1002 — the partition routing is not the suspected cause of the stale-session condition, so refreshing the routing map would be wasted churn. (Note that `1002` is reused with different meaning under parent status `410` (`PARTITION_KEY_RANGE_GONE`), which is handled by the existing 410/Gone retry path and is unchanged on Gateway 2.0.)
 
 These rules apply uniformly to V1 (HTTP) and V2 (RNTBD) — the retry policy operates on the resolved `(status_code, sub_status)` pair before the transport-specific deserializer ever sees the body.
 
@@ -543,6 +552,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | EPK computation | Yes | | | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count) |
 | Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts StoredProc Execute is rejected |
 | Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
+| HPK + Gateway 2.0: full vs partial PK | Yes | | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
 | Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
 | SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `(PartitionMerge \| IgnoreUnknownRntbdTokens)`, **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
@@ -562,7 +572,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Retry: 449 Retry-With | | Yes | | Dedicated 449 policy (≤ 3 attempts, exponential backoff, separate budget from 410/Gone), same Gateway 2.0 endpoint, no region switch, no fallback to Gateway V1 |
 | Retry: 503 | | Yes | | Regional failover via existing retry policies |
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
-| Retry: 404 / sub-status 1002 (PartitionKeyRangeGone) | | Yes | | PKRange cache refresh + retry against **remote-preferred** region; assert local-region retry only when no other region available; assert PLF region wins when PLF has pinned the PKRangeId |
+| Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Existing 404 / `READ_SESSION_NOT_AVAILABLE` retry path runs (re-read session token from another replica); assert that **no PKRange cache refresh** is triggered |
 | Operator override (`gateway20_disabled = true`) | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior |
 | Eligibility fallback | | Yes | | StoredProc Execute → standard gateway |
 | PLF precedence | | Yes | | Region without gw20_url + PLF override → standard gateway path |
