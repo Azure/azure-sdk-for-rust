@@ -90,9 +90,9 @@ async fn create_and_read_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "driver-item-1");
-                let op = CosmosOperation::create_item(item)
-                    .with_body(body_bytes.clone());
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "driver-item-1");
+                let op = CosmosOperation::create_item(item).with_body(body_bytes.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
@@ -281,9 +281,9 @@ async fn delete_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "delete-me");
-                let op = CosmosOperation::create_item(item)
-                    .with_body(body_bytes.clone());
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "delete-me");
+                let op = CosmosOperation::create_item(item).with_body(body_bytes.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
@@ -380,9 +380,9 @@ async fn replace_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "replace-me");
-                let op = CosmosOperation::create_item(item)
-                    .with_body(create_body.clone());
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "replace-me");
+                let op = CosmosOperation::create_item(item).with_body(create_body.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
@@ -476,8 +476,12 @@ async fn read_with_stale_session_token_returns_404_1002() {
         if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
             let seed_result = driver
                 .execute_operation(
-                    CosmosOperation::create_item(ItemReference::from_name(real_ctr, PartitionKey::from("pk1"), "seed-for-session"))
-                        .with_body(seed_body.clone()),
+                    CosmosOperation::create_item(ItemReference::from_name(
+                        real_ctr,
+                        PartitionKey::from("pk1"),
+                        "seed-for-session",
+                    ))
+                    .with_body(seed_body.clone()),
                     OperationOptions::default(),
                 )
                 .await
@@ -502,8 +506,12 @@ async fn read_with_stale_session_token_returns_404_1002() {
     let _ = backend
         .emulator_driver
         .execute_operation(
-            CosmosOperation::create_item(ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "seed-for-session"))
-                .with_body(seed_body),
+            CosmosOperation::create_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "seed-for-session",
+            ))
+            .with_body(seed_body),
             OperationOptions::default(),
         )
         .await;
@@ -604,9 +612,9 @@ async fn upsert_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
-                let op = CosmosOperation::upsert_item(item)
-                    .with_body(upsert_body.clone());
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
+                let op = CosmosOperation::upsert_item(item).with_body(upsert_body.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
@@ -637,9 +645,9 @@ async fn upsert_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
-                let op = CosmosOperation::upsert_item(item)
-                    .with_body(upsert_body2.clone());
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
+                let op = CosmosOperation::upsert_item(item).with_body(upsert_body2.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
@@ -780,10 +788,8 @@ async fn read_failover_on_503_via_fault_injection() {
         .unwrap(),
     );
 
-    let emu_account = AccountReference::with_master_key(
-        Url::parse(east_url).unwrap(),
-        "dGVzdGtleQ==",
-    );
+    let emu_account =
+        AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .build();

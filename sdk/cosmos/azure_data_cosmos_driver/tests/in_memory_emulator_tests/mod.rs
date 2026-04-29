@@ -116,8 +116,6 @@ pub static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 
-
-
 /// Helper to create a POST request to create a document.
 pub fn create_item_request(
     gateway_url: &str,

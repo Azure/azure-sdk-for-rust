@@ -55,7 +55,7 @@ impl EmulatorStore {
     ///
     /// The real Cosmos DB service tracks control plane metadata (databases,
     /// containers, throughput) in a special "MasterPartition" (pkrange -1).
-    /// This counter simulates that behaviour so that control plane responses
+    /// This counter simulates that behavior so that control plane responses
     /// carry a valid session token, matching what the real service returns.
     pub(crate) fn advance_master_partition_lsn(&self) -> String {
         let lsn = self.master_partition_lsn.fetch_add(1, Ordering::SeqCst) + 1;

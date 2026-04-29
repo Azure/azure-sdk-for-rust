@@ -188,10 +188,8 @@ async fn create_item_on_read_region_returns_403_3_with_correct_headers() {
         r#"["pk1"]"#,
         false,
     );
-    let (status, headers, body_json) = collect_response(
-        ctx.emulator.execute_request(&req).await.unwrap(),
-    )
-    .await;
+    let (status, headers, body_json) =
+        collect_response(ctx.emulator.execute_request(&req).await.unwrap()).await;
 
     // ── Status & substatus ───────────────────────────────────────
     assert_eq!(status, StatusCode::Forbidden, "HTTP status should be 403");
@@ -213,7 +211,9 @@ async fn create_item_on_read_region_returns_403_3_with_correct_headers() {
     let charge_str = headers
         .get_optional_str(&request_charge)
         .expect("x-ms-request-charge should be present");
-    let charge: f64 = charge_str.parse().expect("request charge should be a number");
+    let charge: f64 = charge_str
+        .parse()
+        .expect("request charge should be a number");
     assert!(
         charge >= 0.0,
         "x-ms-request-charge should be non-negative, got {charge}",
@@ -243,7 +243,9 @@ async fn create_item_on_read_region_returns_403_3_with_correct_headers() {
     let duration_str = headers
         .get_optional_str(&server_duration_ms)
         .expect("x-ms-request-duration-ms should be present");
-    let duration: f64 = duration_str.parse().expect("server duration should be a number");
+    let duration: f64 = duration_str
+        .parse()
+        .expect("server duration should be a number");
     assert!(
         duration >= 0.0,
         "x-ms-request-duration-ms should be non-negative, got {duration}",
