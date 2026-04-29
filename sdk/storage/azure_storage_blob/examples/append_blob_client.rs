@@ -48,8 +48,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_client = container_client.blob_client(blob_name);
     let append_blob_client = blob_client.append_blob_client();
 
-    // Create with `with_if_not_exists` so a repeated run does not conflict.
-    let create_options = AppendBlobClientCreateOptions::default().with_if_not_exists();
+    // Create with `if_not_exists` so a repeated run does not conflict.
+    let create_options = AppendBlobClientCreateOptions::default().if_not_exists();
     append_blob_client.create(Some(create_options)).await?;
     println!("Created append blob '{blob_name}'");
 

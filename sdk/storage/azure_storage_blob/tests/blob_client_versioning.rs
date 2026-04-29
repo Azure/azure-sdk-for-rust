@@ -245,7 +245,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     let mut list_response = container_client.list_blobs(None)?.into_pages();
     let page = list_response.try_next().await?;
     let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
+    let blob_items = segment.blob_items;
     // Only current versions
     assert_eq!(2, blob_items.len());
 
@@ -259,7 +259,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
         .into_pages();
     let page = list_response.try_next().await?;
     let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
+    let blob_items = segment.blob_items;
 
     // Verify all 5 versions (2 from blob_1 + 3 from blob_2) are present
     assert_eq!(5, blob_items.len());

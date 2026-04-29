@@ -140,7 +140,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client
         .upload(
             RequestContent::from(new_data.to_vec()),
-            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+            Some(BlockBlobClientUploadOptions::default().if_not_exists()),
         )
         .await;
 
@@ -630,7 +630,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
-    let blob_items = list_blob_segment_response.segment.blob_items;
+    let blob_items = list_blob_segment_response.blob_items;
 
     // Ensure we have the expected number of blobs
     assert_eq!(test_cases.len(), blob_items.len());
@@ -1316,7 +1316,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let err = blob_client
         .upload(
             RequestContent::from(b"duplicate".to_vec()),
-            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+            Some(BlockBlobClientUploadOptions::default().if_not_exists()),
         )
         .await
         .unwrap_err();

@@ -571,7 +571,7 @@ impl BlobClient {
     /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobClientDownloadInternalResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
-    /// ```no_run
+    /// ```ignore
     /// use azure_core::{Result, http::AsyncResponse};
     /// use azure_storage_blob::models::{BlobClientDownloadInternalResult, BlobClientDownloadInternalResultHeaders};
     /// async fn example() -> Result<()> {
@@ -632,7 +632,7 @@ impl BlobClient {
     ///
     /// [`BlobClientDownloadInternalResultHeaders`]: crate::generated::models::BlobClientDownloadInternalResultHeaders
     #[tracing::function("Storage.Blob.BlobClient.download")]
-    pub async fn download_internal(
+    pub(crate) async fn download_internal(
         &self,
         options: Option<BlobClientDownloadInternalOptions<'_>>,
     ) -> Result<AsyncResponse<BlobClientDownloadInternalResult>> {

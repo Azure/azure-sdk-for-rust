@@ -117,18 +117,18 @@ async fn staged_upload(
     Ok(())
 }
 
-/// Copies a blob from another URL and demonstrates the `with_if_not_exists`
+/// Copies a blob from another URL and demonstrates the `if_not_exists`
 /// guard that prevents clobbering an existing destination blob.
 async fn copy_from_url(
     container_client: &BlobContainerClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create a source blob to copy from, tagging it and guarding against accidental
-    // overwrites with `with_if_not_exists` + `with_tags`.
+    // overwrites with `if_not_exists` + `tags`.
     let source_blob_name = "copy-source.txt";
     let source_client = container_client.blob_client(source_blob_name);
     let upload_options = BlockBlobClientUploadOptions::default()
-        .with_if_not_exists()
-        .with_tags(HashMap::from([(
+        .if_not_exists()
+        .tags(HashMap::from([(
             "origin".to_string(),
             "sample".to_string(),
         )]));
@@ -153,9 +153,9 @@ async fn copy_from_url(
         .await?;
     println!("Copied '{source_blob_name}' → '{dest_blob_name}'");
 
-    // Second copy attempt with `with_if_not_exists`: destination already exists,
+    // Second copy attempt with `if_not_exists`: destination already exists,
     // so the service returns 409 Conflict.
-    let guard_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
+    let guard_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
     match dest_client
         .block_blob_client()
         .upload_blob_from_url(source_client.url().as_str().into(), Some(guard_options))

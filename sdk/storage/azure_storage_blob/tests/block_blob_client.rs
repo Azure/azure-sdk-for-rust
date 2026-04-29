@@ -157,7 +157,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
         .await?;
 
-    let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
+    let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
 
     // No Overwrite Existing Blob Scenario
     let response = blob_client

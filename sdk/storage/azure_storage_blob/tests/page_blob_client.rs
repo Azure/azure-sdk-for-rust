@@ -33,7 +33,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(BlobType::PageBlob, blob_type.unwrap());
 
     // Create If Not Exists Scenario
-    let create_options = PageBlobClientCreateOptions::default().with_if_not_exists();
+    let create_options = PageBlobClientCreateOptions::default().if_not_exists();
     let response = page_blob_client
         .create(1024, Some(create_options.clone()))
         .await;

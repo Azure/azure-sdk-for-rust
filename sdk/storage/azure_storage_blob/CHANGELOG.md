@@ -6,6 +6,13 @@
 
 ### Breaking Changes
 
+- Removed `BlobFlatListSegment`; use `ListBlobsResponse.blob_items` directly instead of `ListBlobsResponse.segment.blob_items`.
+- Removed `BlobMetadata` type; `BlobItem.metadata` is now `Option<HashMap<String, String>>`.
+- Renamed `ListContainersSegmentResponse` to `ListContainersResponse`.
+- Renamed `FilterBlobSegment` to `FilteredBlob`; `blobs` field changed from `Option<Vec<FilterBlobItem>>` to `Vec<FilterBlobItem>`.
+- Renamed `BlobProperties.customer_provided_key_sha256` to `encryption_key_sha256`.
+- Renamed `with_if_not_exists()` to `if_not_exists()` on `PageBlobClientCreateOptions`, `AppendBlobClientCreateOptions`, `BlockBlobClientUploadBlobFromUrlOptions`, and `BlockBlobClientUploadOptions`.
+
 ### Bugs Fixed
 
 ### Other Changes

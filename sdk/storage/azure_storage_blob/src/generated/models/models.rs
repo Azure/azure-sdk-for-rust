@@ -6,8 +6,8 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Committed_blocksBlock, Container_itemsContainer, CorsCorsRule,
-        Uncommitted_blocksBlock,
+        Blob_itemsBlob, Blob_tag_setTag, BlobsBlob, Committed_blocksBlock,
+        Container_itemsContainer, CorsCorsRule, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -77,7 +77,7 @@ pub struct BlobClientCreateSnapshotResult;
 
 /// Contains results for `BlobClient::download_internal()`
 #[derive(SafeDebug)]
-pub struct BlobClientDownloadInternalResult;
+pub(crate) struct BlobClientDownloadInternalResult;
 
 /// Contains results for `BlobClient::get_account_info()`
 #[derive(SafeDebug)]
@@ -123,15 +123,6 @@ pub struct BlobContainerClientReleaseLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
 
-/// The blob flat list segment.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct BlobFlatListSegment {
-    /// The blob items.
-    #[serde(default, rename = "Blob")]
-    pub blob_items: Vec<BlobItem>,
-}
-
 /// An Azure Storage Blob
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -155,7 +146,7 @@ pub struct BlobItem {
 
     /// The metadata of the blob.
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<BlobMetadata>,
+    pub metadata: Option<HashMap<String, String>>,
 
     /// The name of the blob.
     #[serde(
@@ -180,17 +171,6 @@ pub struct BlobItem {
     /// The version id of the blob.
     #[serde(rename = "VersionId", skip_serializing_if = "Option::is_none")]
     pub version_id: Option<String>,
-}
-
-/// The blob metadata.
-#[derive(Clone, Default, SafeDebug)]
-#[non_exhaustive]
-pub struct BlobMetadata {
-    /// Contains unnamed additional properties.
-    pub additional_properties: Option<HashMap<String, String>>,
-
-    /// Whether the blob metadata is encrypted.
-    pub encrypted: Option<String>,
 }
 
 /// Represents a blob name.
@@ -321,13 +301,6 @@ pub struct BlobProperties {
     )]
     pub creation_time: Option<OffsetDateTime>,
 
-    /// Customer provided key sha256
-    #[serde(
-        rename = "CustomerProvidedKeySha256",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub customer_provided_key_sha256: Option<String>,
-
     /// The time the blob was deleted.
     #[serde(
         default,
@@ -343,6 +316,13 @@ pub struct BlobProperties {
         skip_serializing_if = "Option::is_none"
     )]
     pub destination_snapshot: Option<String>,
+
+    /// Customer provided key sha256
+    #[serde(
+        rename = "CustomerProvidedKeySha256",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub encryption_key_sha256: Option<String>,
 
     /// The encryption scope of the blob.
     #[serde(rename = "EncryptionScope", skip_serializing_if = "Option::is_none")]
@@ -553,7 +533,7 @@ pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload_internal()`
 #[derive(SafeDebug)]
-pub struct BlockBlobClientUploadInternalResult;
+pub(crate) struct BlockBlobClientUploadInternalResult;
 
 /// Contains the committed and uncommitted blocks in a block blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -843,16 +823,15 @@ pub struct FilterBlobItem {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct FilterBlobSegment {
+pub struct FilteredBlob {
     /// The blob segment.
     #[serde(
         default,
         deserialize_with = "BlobsBlob::unwrap",
         rename = "Blobs",
-        serialize_with = "BlobsBlob::wrap",
-        skip_serializing_if = "Option::is_none"
+        serialize_with = "BlobsBlob::wrap"
     )]
-    pub blobs: Option<Vec<FilterBlobItem>>,
+    pub blobs: Vec<FilterBlobItem>,
 
     /// The next marker of the blobs.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
@@ -891,6 +870,15 @@ pub struct GeoReplication {
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 pub struct ListBlobsResponse {
+    /// The blob items.
+    #[serde(
+        default,
+        deserialize_with = "Blob_itemsBlob::unwrap",
+        rename = "Blobs",
+        serialize_with = "Blob_itemsBlob::wrap"
+    )]
+    pub blob_items: Vec<BlobItem>,
+
     /// The container name.
     #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
@@ -911,10 +899,6 @@ pub struct ListBlobsResponse {
     #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
 
-    /// The blob segment.
-    #[serde(default, rename = "Blobs")]
-    pub segment: BlobFlatListSegment,
-
     /// The service endpoint.
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
@@ -924,7 +908,7 @@ pub struct ListBlobsResponse {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct ListContainersSegmentResponse {
+pub struct ListContainersResponse {
     /// The container segment.
     #[serde(
         default,

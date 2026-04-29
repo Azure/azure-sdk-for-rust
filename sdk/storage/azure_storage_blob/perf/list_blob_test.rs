@@ -110,7 +110,7 @@ impl PerfTest for ListBlobTest {
         let mut iterator = self.client.get().unwrap().list_blobs(None)?.into_pages();
         while let Some(blob_segment) = iterator.try_next().await? {
             let body = blob_segment.into_model()?;
-            for blob in body.segment.blob_items.iter() {
+            for blob in body.blob_items.iter() {
                 std::hint::black_box(blob);
             }
         }

@@ -53,10 +53,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_client = container_client.blob_client(blob_name);
     let page_blob_client = blob_client.page_blob_client();
 
-    // Create with `with_if_not_exists` so a repeated run does not conflict.
+    // Create with `if_not_exists` so a repeated run does not conflict.
     // Page blob sizes must be a multiple of 512.
     let initial_size: u64 = 512;
-    let create_options = PageBlobClientCreateOptions::default().with_if_not_exists();
+    let create_options = PageBlobClientCreateOptions::default().if_not_exists();
     page_blob_client
         .create(initial_size, Some(create_options))
         .await?;

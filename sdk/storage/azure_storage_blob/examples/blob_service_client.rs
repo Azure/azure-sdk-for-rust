@@ -138,11 +138,13 @@ async fn find_blobs_by_tags(
 
     // Tag names must be in double-quotes and values in single-quotes.
     let filter = "\"sample\" = 'service-client'";
-    let segment = service_client
-        .find_blobs_by_tags(filter, None)
-        .await?
-        .into_model()?;
-    let blobs = segment.blobs.unwrap_or_default();
+    // TODO: Change to find_blobs_by_tags once the emitter support drops.
+    let mut pager = service_client
+        .list_find_blobs_by_tags(filter, None)?
+        .into_pages();
+    let page = pager.try_next().await?;
+    let segment = page.unwrap().into_model()?;
+    let blobs = segment.blobs;
     println!("find_blobs_by_tags: {} result(s)", blobs.len());
     for item in blobs {
         println!(
