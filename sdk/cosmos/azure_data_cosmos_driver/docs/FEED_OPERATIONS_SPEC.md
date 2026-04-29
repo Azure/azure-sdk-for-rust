@@ -1,7 +1,7 @@
 # Feed Operations Spec for `azure_data_cosmos_driver`
 
 **Status:** Draft / Iterating
-**Date:** 2026-04-21
+**Date:** 2026-04-28
 **Authors:** (team)
 **Crate:** `azure_data_cosmos_driver`
 
@@ -19,11 +19,8 @@
 8. [Diagnostics Structure](#8-diagnostics-structure)
 9. [Error Handling & Partition Splits](#9-error-handling--partition-splits)
 10. [API Semantics & Invariants](#10-api-semantics--invariants)
-11. [Configuration Surface](#11-configuration-surface)
-12. [Performance & Non-Regression](#12-performance--non-regression)
-13. [Migration Plan](#13-migration-plan)
-14. [Testing Strategy](#14-testing-strategy)
-15. [Future Work](#15-future-work)
+11. [Testing Strategy](#11-testing-strategy)
+12. [Future Work](#12-future-work)
 
 ---
 
@@ -36,10 +33,9 @@ and produce a single response. Operations like `ReadItem`, `UpsertItem`, and `De
 through `execute_operation`, which drives the operation pipeline (region failover, session tokens,
 transport retry) and returns a single `CosmosResponse`.
 
-**Feed operations** — queries, read-many, read-all-items, and change feed — are fundamentally
-different. They produce multiple pages of results, may fan out across partition key ranges, may
-require backend-provided query plans, and need pagination state that can be serialized across
-request boundaries.
+**Feed operations** — read-all-items, queries, read-many, and change feed — are fundamentally
+different. They produce multiple pages of results, may span multiple partition key ranges, and
+need pagination state that can be serialized across request boundaries.
 
 Today, feed operations are handled entirely in the higher-level `azure_data_cosmos` crate, bypassing
 the driver's operation pipeline. This means feed operations miss out on the driver's multi-region
@@ -48,8 +44,8 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
 ### Goals
 
 1. **Unified execution model** — Both point and feed operations flow through a common
-   Plan → Execute pipeline. Point operations produce a trivial single-step plan. Feed operations
-   produce multi-step plans that leverage the existing point-operation pipeline for individual
+   Plan → Execute pipeline. Point operations produce a trivial single-node plan. Feed operations
+   produce multi-node plans that leverage the existing point-operation pipeline for individual
    HTTP requests.
 
 2. **Resumable pagination** — Feed operations produce a typed continuation token that can be
@@ -57,9 +53,9 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
    Resuming with a valid continuation token and an equivalent operation descriptor continues
    where the previous execution left off.
 
-3. **Extensible operation model** — The plan model must support ReadMany (the initial target),
-   cross-partition queries, single-partition queries/reads, and change feed, even if some are
-   implemented later.
+3. **Extensible operation model** — The plan model must support ReadAll (the initial target),
+   cross-partition queries, single-partition queries/reads, read-many, and change feed, even if
+   some are implemented later.
 
 4. **Driver-level concerns** — Feed operations must integrate with multi-region failover,
    partition-level failover (PPAF/PPCB), throughput control, session consistency, and
@@ -67,32 +63,42 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
 
 5. **Schema-agnostic pages** — The driver returns response pages as raw bytes (`Vec<u8>`).
    The higher-level SDK handles deserialization, consistent with the existing `CosmosResponse`
-   model. Future work (sort, aggregate) will require the driver to understand feed envelopes,
-   but the initial design reserves space for this without requiring it.
+   model.
 
 6. **Performance non-regression** — Point operations must not pay measurable overhead for the
-   unified plan model. Trivial plans must be allocation-light.
+   unified plan model. Trivial plans must be allocation-light. No heap allocation for trivial
+   plans beyond what `execute_operation` does today. No additional async machinery (no spawning,
+   no channels) for single-node plans.
 
 ### Non-Goals (This Spec)
 
 - Full cross-partition query execution with ORDER BY merge-sort and aggregation (future work).
 - Change feed full design (future work; this spec reserves extension points).
+- ReadMany fan-out with concurrent partition fetching (future work).
 - Client-side query rewriting or optimization.
+- Concurrent partition fetching or merge steps.
 
 ### Primary Target
 
-**ReadMany** is the first feed operation to implement. It exercises:
+**ReadAll** is the first feed operation to implement. It reads all documents from a container by
+draining partitions sequentially in effective partition key (EPK) order. It exercises:
+
 - Partition key range resolution (via `PartitionKeyRangeCache`)
-- Fan-out across multiple partition key ranges
-- Merging results into a single response
+- Sequential traversal across partition key ranges in EPK order
+- EPK range filtering via `x-ms-documentdb-epk-min` and `x-ms-documentdb-epk-max` headers
+- Paginated reads within each partition
+- Continuation token serialization and resume across SDK versions
 - Integration with the operation pipeline for each sub-request
 
-This spec is **complete when ReadMany works end-to-end**. Sections covering cross-partition
-queries, ORDER BY merge-sort, continuation token resume strategies (`Drain`, `OrderBy`), and
-`resume_filter` on `PlanStep::Fetch` are included to validate the architecture's extensibility
-— they demonstrate that the core plan/execute model accommodates these future scenarios without
-redesign. However, their designs are **forward-looking and not locked**; cross-partition query
-execution will be specified and implemented in a separate effort.
+This spec is **complete when ReadAll works end-to-end** through the Plan → Execute pipeline.
+Sections on continuation tokens and the plan model are designed to be extensible for future
+operations (ReadMany, cross-partition query, change feed) without requiring a redesign.
+
+**Ordering semantics:** ReadAll drains partitions in EPK order as an implementation behavior.
+Within each partition, items are returned in (PartitionKey, ID) ascending order — the natural
+sort order of `SELECT *`. This is a driver-emitted ordering, **not** a service-level ordering
+guarantee. The service does not guarantee global cross-partition order without explicit
+`ORDER BY`.
 
 ---
 
@@ -111,7 +117,7 @@ execution will be specified and implemented in a separate effort.
 │                                                                                │
 │  Internally:                                                                   │
 │    1. Planner creates an OperationPlan                                         │
-│    2. PlanExecutor runs one turn of the plan                                   │
+│    2. PlanExecutor runs one page of the plan                                   │
 │    3. Returns CosmosResponse (with optional continuation token)                │
 │                                                                                │
 │  ┌──────────────────────────────────────────────────────────────────────────┐  │
@@ -122,10 +128,9 @@ execution will be specified and implemented in a separate effort.
 │  │                                                                          │  │
 │  │  Responsibilities:                                                       │  │
 │  │  ┌─ Determine targeting (point EPK, sub-range, full key space)         │  │
-│  │  ├─ For ReadMany: group items by PK range, create fan-out steps          │  │
-│  │  ├─ For cross-partition query: fetch backend query plan, create steps    │  │
-│  │  ├─ For single-partition ops: create single-step plan                    │  │
-│  │  └─ For point ops: create trivial single-step plan                       │  │
+│  │  ├─ For ReadAll: resolve PK ranges, create Drain over Fetch nodes       │  │
+│  │  ├─ For single-partition ops: create single-node plan                    │  │
+│  │  └─ For point ops: create trivial single-node plan                       │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                      │                                                         │
 │                      ▼                                                         │
@@ -133,15 +138,12 @@ execution will be specified and implemented in a separate effort.
 │  │                          PLAN EXECUTOR                                    │  │
 │  │                                                                          │  │
 │  │  Input:  OperationPlan                                                   │  │
-│  │  Output: CosmosResponse (single turn / single page)                      │  │
+│  │  Output: CosmosResponse (single page)                                    │  │
 │  │                                                                          │  │
 │  │  Responsibilities:                                                       │  │
-│  │  ┌─ Execute plan steps with configurable concurrency                     │  │
-│  │  ├─ Each step calls execute_single_operation() for HTTP                │  │
+│  │  ┌─ Execute one Fetch node via execute_single_operation()              │  │
 │  │  ├─ Handle partition splits (Fetch resolves EPK → PK ranges)             │  │
-│  │  ├─ Enforce concurrency caps for fan-out                                 │  │
-│  │  ├─ Integrate with throughput control                                    │  │
-│  │  ├─ Collect step-level diagnostics (timing, concurrency)                │  │
+│  │  ├─ Collect node-level diagnostics (timing)                             │  │
 │  │  └─ Produce continuation token in response (if more pages remain)        │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                      │                                                         │
@@ -167,31 +169,28 @@ individual HTTP request within a plan.
 | Concern | Component | Location |
 |---------|-----------|----------|
 | Operation intent & payload | `CosmosOperation` | `models/cosmos_operation.rs` |
-| Plan creation | `Planner` | `driver/feed/planner.rs` (new) |
-| Plan model | `OperationPlan`, `PlanStep` | `driver/feed/plan.rs` (new) |
-| Plan execution | `PlanExecutor` | `driver/feed/executor.rs` (new) |
+| Plan creation | `Planner` | `driver/plan/planner.rs` (new) |
+| Plan model | `OperationPlan`, `PlanNode` | `driver/plan/plan.rs` (new) |
+| Plan execution | `PlanExecutor` | `driver/plan/executor.rs` (new) |
 | Continuation state | `ContinuationToken` | `models/continuation_token.rs` (new) |
-| Per-step HTTP execution | `execute_single_operation` | `driver/pipeline/` (existing) |
+| Per-node HTTP execution | `execute_single_operation` | `driver/pipeline/` (existing) |
 
 ### Open Issue: Re-Planning on Every Page
 
 Because `execute_operation` is stateless, the driver must re-plan the operation on every
 call — including subsequent pages of a paginated feed. The Planner uses the continuation
 token to reconstruct the plan state, but still performs the full planning step (PK range
-resolution, and for cross-partition queries, potentially a backend query plan fetch) on each
-page.
+resolution) on each page.
 
 For in-process callers (the common case), this is wasteful: the SDK crate calls
 `execute_operation` in a loop, and the plan structure doesn't change between pages (Fetch
-steps handle partition splits internally by re-resolving EPK ranges). A future optimization
+nodes handle partition splits internally by re-resolving EPK ranges). A future optimization
 could allow `CosmosResponse` and/or `CosmosOperation` to carry a **cached `OperationPlan`**
 so that subsequent requests skip re-planning when the plan is still valid. The cached plan
 would be invalidated on account metadata changes, falling back to a full re-plan.
 
 This optimization is not required for correctness — the stateless model works correctly
 today — but should be considered for performance-sensitive workloads with many small pages.
-The cached operation plan subsumes the backend query plan (which the Planner consumes during
-planning and does not need afterward), so no separate query plan caching is needed.
 
 ---
 
@@ -216,28 +215,17 @@ would break `Copy` and mix operation semantics with operation payload — we spl
 /// Each variant carries exactly the data needed for its operation type.
 #[derive(Clone, Debug)]
 pub enum OperationPayload {
-    /// No payload needed (e.g., ReadItem, DeleteItem, ReadContainer).
+    /// No payload needed (e.g., ReadItem, DeleteItem, ReadContainer, ReadAllItems).
     None,
 
     /// Raw body bytes (e.g., CreateItem, UpsertItem, ReplaceItem).
     /// The caller provides pre-serialized JSON.
     Body(Vec<u8>),
 
-    /// SQL query text with optional parameters (e.g., QueryItems).
-    Query {
-        /// The SQL query text.
-        query: String,
-        /// Pre-serialized parameters JSON array, if any.
-        parameters: Option<Vec<u8>>,
-    },
-
-    /// ReadMany item descriptors: (item_id, partition_key) pairs.
-    ReadMany {
-        /// The items to read, as (id, partition_key) pairs.
-        items: Vec<(String, PartitionKey)>,
-    },
-
-    // Future: ChangeFeed { mode, start_from, ... }
+    // Future variants:
+    // Query { query: String, parameters: Option<Vec<u8>> },
+    // ReadMany { items: Vec<(String, PartitionKey)> },
+    // ChangeFeed { mode, start_from, ... },
 }
 ```
 
@@ -319,11 +307,6 @@ impl OperationTarget {
 }
 ```
 
-**Future optimization:** `EpkRange` could gain an optional PK range ID hint to skip the
-cache lookup when the mapping is already known (e.g., from a previous routing decision or a
-cached plan). The hint would be advisory — the pipeline would fall back to EPK-based
-resolution if the hint is stale after a partition split.
-
 ### 3.3 Factory Method Updates
 
 Existing factory methods are updated to use `OperationPayload` and `OperationTarget`:
@@ -350,50 +333,13 @@ impl CosmosOperation {
         // Caller attaches body via .with_payload(OperationPayload::Body(...))
     }
 
-    /// Queries items within a single partition.
-    pub fn query_items(
-        container: ContainerReference,
-        partition_key: PartitionKey,
-        query: impl Into<String>,
-    ) -> Self {
+    /// Reads all items across all partitions.
+    pub fn read_all_items(container: ContainerReference) -> Self {
         let resource_ref = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
-        Self::new(OperationType::Query, resource_ref)
-            .with_target(OperationTarget::PartitionKey(partition_key))
-            .with_payload(OperationPayload::Query {
-                query: query.into(),
-                parameters: None,
-            })
-    }
-
-    /// Queries items across all partitions.
-    pub fn query_items_cross_partition(
-        container: ContainerReference,
-        query: impl Into<String>,
-    ) -> Self {
-        let resource_ref = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Query, resource_ref)
+        Self::new(OperationType::ReadFeed, resource_ref)
             .with_target(OperationTarget::all_ranges())
-            .with_payload(OperationPayload::Query {
-                query: query.into(),
-                parameters: None,
-            })
-    }
-
-    /// Reads multiple items by their ID/partition-key pairs.
-    pub fn read_many(
-        container: ContainerReference,
-        items: Vec<(String, PartitionKey)>,
-    ) -> Self {
-        let resource_ref = CosmosResourceReference::from(container)
-            .with_resource_type(ResourceType::Document)
-            .into_feed_reference();
-        Self::new(OperationType::Query, resource_ref)
-            .with_target(OperationTarget::all_ranges())
-            .with_payload(OperationPayload::ReadMany { items })
     }
 }
 ```
@@ -406,9 +352,9 @@ method or via `.with_payload(...)`. A convenience method `with_body(Vec<u8>)` ca
 sugar for `with_payload(OperationPayload::Body(...))`.
 
 The transport pipeline's request builder must be updated to extract body bytes from
-`OperationPayload` when constructing the HTTP request. For `Body` and `Query` variants, this
-is straightforward serialization. For `ReadMany`, the Planner decomposes the operation before
-it reaches the transport pipeline, so the transport never sees a `ReadMany` payload directly.
+`OperationPayload` when constructing the HTTP request. For `Body` variants, this is
+straightforward. For `None`, no body is sent. Future payload variants (Query, ReadMany)
+will be handled by the Planner before reaching the transport pipeline.
 
 ---
 
@@ -416,167 +362,212 @@ it reaches the transport pipeline, so the transport never sees a `ReadMany` payl
 
 ### 4.1 Plan Model
 
-An `OperationPlan` describes the steps needed to execute an operation. It is an enum with
-two variants: `Trivial` for single-step plans (stack-allocated, no heap overhead) and
-`MultiStep` for fan-out plans.
+An `OperationPlan` describes the nodes needed to execute an operation. The Planner builds an
+Operation Plan which is made up of Nodes. Each Node represents an operation in the pipeline.
+
+Rust's ownership model does not lend itself well to owning tree structures with parent-child
+references. Instead, the plan uses a **flat list of nodes** with index-based references:
+
+- **`NodeId`** is an offset into the plan's node list, used for parent-child relationships.
+- **`NodeRange`** is a `[start, end)` pair of `NodeId` values representing a contiguous slice
+  of children, avoiding a separate `Vec<NodeId>` heap allocation.
+- Nodes are stored **bottom-up**: child nodes always appear before their parents in the list.
+  This makes `NodeId` values stable and deterministic — the same plan input always produces
+  the same node ordering.
+
+```rust
+/// Index of a node within an `OperationPlan::Graph`'s node list.
+///
+/// NodeIds are stable within a plan: the same inputs produce the same
+/// node ordering. Children always have lower NodeIds than their parents
+/// (bottom-up invariant).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct NodeId(u32);
+
+/// A contiguous range of node indices `[start, end)`.
+///
+/// Used to reference a slice of children without a separate heap allocation.
+/// Children in a NodeRange are always contiguous in the node list because
+/// they are built together by the planner.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct NodeRange {
+    pub start: NodeId,
+    pub end: NodeId,
+}
+
+impl NodeRange {
+    pub fn len(&self) -> usize {
+        (self.end.0 - self.start.0) as usize
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.start == self.end
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = NodeId> {
+        (self.start.0..self.end.0).map(NodeId)
+    }
+}
+```
 
 ```rust
 /// A plan for executing an operation.
 ///
-/// Plans range from trivial (single step for a point read) to complex
-/// (fan-out across partition key ranges with merge). The plan is created
+/// Plans range from trivial (single node for a point read) to multi-node
+/// (sequential drain across partition key ranges). The plan is created
 /// by the Planner and executed by the PlanExecutor.
 pub(crate) enum OperationPlan {
-    /// A single-step plan. Stack-allocated, no heap overhead.
+    /// A single-node plan, stored inline. No heap allocation.
     /// Used for point operations and single-partition feed operations.
-    Trivial(PlanStep),
+    SingleNode(PlanNode),
 
-    /// A multi-step plan. The last step in the Vec is the output step.
-    /// Used for fan-out operations (ReadMany, cross-partition queries).
-    MultiStep {
-        steps: Vec<PlanStep>,
+    /// A multi-node plan stored as a flat list of nodes.
+    /// Nodes are stored bottom-up: children appear before parents.
+    /// Used for cross-partition feed operations (e.g., ReadAll).
+    Graph {
+        /// The flat list of nodes. Children appear before parents.
+        nodes: Vec<PlanNode>,
+        /// The root node of the plan (always the last node in the list).
+        root: NodeId,
     },
-}
-
-/// A single step in an operation plan.
-pub(crate) enum PlanStep {
-    /// Execute a single HTTP request via the operation pipeline.
-    ///
-    /// Each Fetch step targets a specific **EPK range** (not a PK range ID).
-    /// At execution time, the step resolves its EPK range to the current PK
-    /// range ID(s) via the `PartitionKeyRangeCache`. If the EPK range maps
-    /// to multiple PK ranges (due to a partition split), the Fetch step
-    /// internally issues concurrent requests to all relevant PK ranges —
-    /// there is no requirement that the concurrency semaphore issues one
-    /// permit per step, and splits do not require mutating the plan graph.
-    ///
-    /// The `operation` carries the **unrewritten** query from the backend
-    /// query plan, which may contain the `{documentdb-formattableorderbyquery-filter}`
-    /// placeholder token. At execution time, the executor replaces this
-    /// token with the `resume_filter` (if present) via simple string
-    /// substitution before sending the request.
-    Fetch {
-        /// The operation to execute. Targeted to a specific PK range.
-        /// Wrapped in `Arc` so that fan-out steps can share the base
-        /// operation without cloning the full payload (headers, resource
-        /// reference, etc.). Each `Fetch` step holds a reference to
-        /// a retargeted `CosmosOperation` — for fan-out, these share
-        /// the immutable parts of the original operation.
-        /// For ORDER BY queries, the query text contains the
-        /// `{documentdb-formattableorderbyquery-filter}` placeholder.
-        operation: Arc<CosmosOperation>,
-        /// Options for this fetch.
-        options: OperationOptions,
-        /// Server-provided continuation token for this range, if resuming.
-        continuation: Option<String>,
-        /// A filter expression to inject into the query by replacing
-        /// `{documentdb-formattableorderbyquery-filter}` in the query text.
-        /// Set by the Planner when resuming from an `OrderBy` continuation.
-        /// For example: `"c.name > 'Baker'"` or `"c.name >= 'Baker'"`.
-        /// `None` for first-page execution or non-ORDER BY queries.
-        resume_filter: Option<String>,
-    },
-
-    /// Merge results from multiple upstream steps with no ordering guarantee.
-    ///
-    /// Results are concatenated in the order they complete. Used by ReadMany
-    /// to combine results from multiple PK ranges. For ReadMany, all upstream
-    /// fetches are driven to completion and their results are concatenated.
-    ///
-    /// Note: Cross-partition queries without an explicit ORDER BY still return
-    /// results in (PartitionKey, ID) ascending order within each partition.
-    /// The `UnorderedMerge` step concatenates partition results but does NOT
-    /// sort across partitions. For globally-ordered results, use `OrderedMerge`
-    /// (future).
-    UnorderedMerge {
-        /// Indices of the steps whose results are merged.
-        inputs: Vec<usize>,
-    },
-
-    // Future variants:
-    // OrderedMerge { inputs: Vec<usize>, order_by: ... },
-    // Aggregate { inputs: Vec<usize>, aggregation: ... },
 }
 ```
 
-### 4.2 Plan Examples
+```rust
+/// A node in an operation plan.
+///
+/// Nodes reference each other via `NodeId` and `NodeRange` within the
+/// flat node list. Composite nodes (Drain) reference child nodes;
+/// leaf nodes (Fetch) have no children.
+pub(crate) enum PlanNode {
+    /// Execute a single HTTP request via the operation pipeline.
+    ///
+    /// Each Fetch node targets a specific **EPK range** (not a PK range ID).
+    /// At execution time, the node resolves its EPK range to the current PK
+    /// range ID(s) via the `PartitionKeyRangeCache`. If the EPK range maps
+    /// to multiple PK ranges (due to a partition split), the Fetch node
+    /// internally re-resolves and issues requests to the appropriate child
+    /// PK ranges. The next time the plan is generated, the EPK ranges will
+    /// reflect the split, and the plan resumes with the new ranges.
+    Fetch {
+        /// The operation to execute, targeted to a specific EPK range.
+        /// Wrapped in `Arc` so that sibling Fetch nodes can share the base
+        /// operation without cloning the full payload (headers, resource
+        /// reference, etc.).
+        operation: Arc<CosmosOperation>,
+        /// Options for this fetch.
+        options: OperationOptions,
+        /// The EPK range this fetch targets.
+        epk_range: EpkRange<EffectivePartitionKey>,
+        /// Server-provided continuation token for this range, if resuming.
+        continuation: Option<String>,
+    },
+
+    /// Sequential cross-partition drain.
+    ///
+    /// Enumerates child Fetch nodes in EPK order, draining each partition
+    /// completely before moving to the next. Each page comes from exactly
+    /// one partition — pages do not span partition boundaries.
+    ///
+    /// Within each partition, items are returned in (PartitionKey, ID)
+    /// ascending order (the natural server sort order).
+    Drain {
+        /// Child Fetch nodes, ordered by EPK range.
+        /// References a contiguous range in the plan's node list.
+        children: NodeRange,
+    },
+
+    // Future variants:
+    // UnorderedMerge { children: NodeRange },
+    // OrderedMerge { children: NodeRange, order_by: ... },
+    // Aggregate { children: NodeRange, aggregation: ... },
+}
+```
+
+### 4.2 Bottom-Up Invariant
+
+The flat node list is always built **bottom-up**: leaf nodes (Fetch) are pushed first,
+then their parent (Drain) is pushed after them. This produces a deterministic layout where
+`NodeId` values are stable for a given set of inputs.
+
+For a ReadAll plan over 3 partitions, the node list looks like:
+
+```text
+Index  Node
+─────  ──────────────────────────────────────────
+  0    Fetch { epk_range: ["","55"), ... }
+  1    Fetch { epk_range: ["55","AA"), ... }
+  2    Fetch { epk_range: ["AA","FF"), ... }
+  3    Drain { children: NodeRange(0..3) }
+
+root = NodeId(3)
+```
+
+The `NodeRange(0..3)` for the Drain's children is a zero-cost reference to the contiguous
+slice of Fetch nodes. No `Vec<NodeId>` allocation is needed.
+
+### 4.3 Plan Examples
 
 #### Point Operation (ReadItem)
 
 ```text
-Trivial(Fetch(read_item operation)) → output
+SingleNode(Fetch { operation: read_item, epk_range: pk_epk, continuation: None })
 ```
 
-A `Trivial` plan with one `Fetch` step. The executor runs it directly, gets a
+A `SingleNode` plan with one `Fetch` node. The executor runs it directly, gets a
 `CosmosResponse`, done. No heap allocation.
 
-#### ReadMany
+#### ReadAll (Cross-Partition)
 
 ```text
-Step 0: Fetch(query to PK range "0", items [(pk_a, a), (pk_b, b)])
-Step 1: Fetch(query to PK range "1", items [(pk_c, c)])
-Step 2: Fetch(query to PK range "2", items [(pk_d, d), (pk_e, e), (pk_f, f)])
-Step 3: UnorderedMerge(inputs: [0, 1, 2]) → output
+Graph {
+  nodes: [
+    0: Fetch { epk_range: ["","55"), continuation: None },
+    1: Fetch { epk_range: ["55","AA"), continuation: None },
+    2: Fetch { epk_range: ["AA","FF"), continuation: None },
+    3: Drain { children: NodeRange(0..3) },
+  ],
+  root: NodeId(3),
+}
 ```
 
-The executor runs steps 0–2 concurrently (subject to concurrency cap), each driving all
-server-side pages to completion. Step 3 merges the fully-buffered results.
+The executor processes partitions sequentially:
+1. Fetch all pages from EPK range `["","55")` until that partition is drained.
+2. Move to EPK range `["55","AA")`, fetch all pages.
+3. Move to EPK range `["AA","FF")`, fetch all pages.
 
-**Optimization:** When a PK range contains only a single item, the Planner MAY optimize
-the `Fetch` step to a point read (`OperationType::Read` with a point EPK range target)
-instead of a query, avoiding the overhead of query parsing on the backend.
+Each `execute_operation` call produces exactly **one page** from the currently-active
+partition. When a partition is fully drained (server returns no continuation), the next
+call starts the next partition. A continuation token is returned after each page until
+all partitions are exhausted.
 
-#### Single-Partition Query
+#### ReadAll — Resumed from Continuation
+
+When resuming from a continuation token that says "active range is `["55","AA")` with
+server token `xyz`", the Planner skips already-drained ranges and rebuilds the plan
+starting from the active range:
 
 ```text
-Step 0: Fetch(query to PK "my-pk", continuation: None) → output
+Graph {
+  nodes: [
+    0: Fetch { epk_range: ["55","AA"), continuation: Some("xyz") },
+    1: Fetch { epk_range: ["AA","FF"), continuation: None },
+    2: Drain { children: NodeRange(0..2) },
+  ],
+  root: NodeId(2),
+}
 ```
 
-On subsequent turns, the executor updates the continuation in step 0 and re-executes.
-Each turn yields one page.
+Only the remaining partitions are in the plan. The first Fetch carries the server
+continuation from the token.
 
-#### Cross-Partition Query (Future)
-
-```text
-Step 0: Fetch(query to PK range "0")
-Step 1: Fetch(query to PK range "1")
-Step 2: Fetch(query to PK range "2")
-Step 3: UnorderedMerge(inputs: [0, 1, 2]) → output
-           (or Step 3: OrderedMerge for explicit ORDER BY)
-```
-
-Each turn, the executor advances whichever PK range steps have results available.
-
-**Ordering note:** Within each partition, results are always returned in
-(PartitionKey, ID) ascending order — even without an explicit `ORDER BY` clause.
-The `UnorderedMerge` step concatenates partition results without cross-partition
-sorting. For queries with an explicit `ORDER BY`, an `OrderedMerge` step (future)
-performs a k-way merge over partition heads to produce globally ordered results.
-
-### 4.3 Incremental Page Production
-
-Plans MUST support incremental page production. The executor does NOT wait for all partition
-steps to complete before emitting a page. Instead:
-
-- **Unordered fan-out** (ReadMany, cross-partition query without ORDER BY): Results are
-  buffered per partition step. For ReadMany, all partitions are driven to completion and
-  merged (single logical page). For queries, pages are emitted as partitions produce them.
-  Note that within each partition, results arrive in (PartitionKey, ID) ascending order;
-  only the cross-partition merge is unordered.
-
-- **Ordered fan-out** (cross-partition query with explicit ORDER BY, future): A k-way merge
-  streams items from partition heads. A page is emitted when enough items are available or
-  a partition produces a page boundary.
-
-- **Single-step plans**: Each turn is one HTTP request, one page.
-
-### 4.4 Trivial Plan Optimization
+### 4.4 SingleNode Optimization
 
 For point operations, the plan model MUST be zero or near-zero overhead compared to the current
-direct `execute_single_operation` call. The `OperationPlan::Trivial` variant ensures this:
+direct `execute_single_operation` call. The `OperationPlan::SingleNode` variant ensures this:
 
-- **No heap allocation**: The single `PlanStep` is stored inline in the enum, not in a `Vec`.
-- **No graph traversal**: The executor matches on `Trivial` and directly calls
+- **No heap allocation**: The single `PlanNode` is stored inline in the enum, not in a `Vec`.
+- **No graph traversal**: The executor matches on `SingleNode` and directly calls
   `execute_single_operation`.
 
 ---
@@ -585,9 +576,8 @@ direct `execute_single_operation` call. The `OperationPlan::Trivial` variant ens
 
 ### 5.1 Responsibilities
 
-The Planner transforms a `CosmosOperation` into an `OperationPlan`. It is a synchronous,
-deterministic function for most operations, but MAY need to perform async I/O for cross-partition
-queries (fetching a backend query plan).
+The Planner transforms a `CosmosOperation` into an `OperationPlan`. For ReadAll, this is
+synchronous: resolve partition key ranges and build a `Drain` node over `Fetch` children.
 
 ```rust
 pub(crate) struct Planner<'a> {
@@ -599,8 +589,7 @@ impl<'a> Planner<'a> {
     /// Creates an operation plan from a CosmosOperation.
     ///
     /// For point operations, this is synchronous and trivial.
-    /// For feed operations, this may need to resolve PK ranges
-    /// and (for cross-partition queries) fetch a backend query plan.
+    /// For ReadAll, this resolves PK ranges and builds a Drain plan.
     pub async fn plan(
         &self,
         operation: &CosmosOperation,
@@ -608,8 +597,6 @@ impl<'a> Planner<'a> {
         continuation: Option<&ContinuationToken>,
         // Callback for fetching PK ranges (keeps Planner transport-decoupled).
         fetch_pk_ranges: impl Fn(...) -> ...,
-        // Callback for fetching query plans (keeps Planner transport-decoupled).
-        fetch_query_plan: impl Fn(...) -> ...,
     ) -> azure_core::Result<OperationPlan> {
         // ...
     }
@@ -620,176 +607,119 @@ impl<'a> Planner<'a> {
 
 | Operation | Targeting | Plan Strategy |
 |-----------|-----------|---------------|
-| ReadItem, DeleteItem, etc. | `PartitionKey` | Single `Fetch` step. Trivial. |
-| CreateDatabase, ReadContainer, etc. | `None` | Single `Fetch` step. Trivial. |
-| QueryItems (single partition) | `PartitionKey` | Single `Fetch` step. Paginated. |
-| ReadAllItems (single partition) | `PartitionKey` | Single `Fetch` step. Paginated. |
-| QueryItems (cross-partition) | `EpkRange` (`all_ranges()`) | Resolve PK ranges → N `Fetch` steps + `UnorderedMerge`. May fetch query plan. |
-| ReadMany | `EpkRange` (`all_ranges()`) | Group items by PK range → N `Fetch` steps + `UnorderedMerge`. No pagination. |
-| ReadAllItems (cross-partition) | `EpkRange` (`all_ranges()`) | Resolve PK ranges → N `Fetch` steps + `UnorderedMerge`. Paginated. |
-| ChangeFeed (future) | varies | TBD |
+| ReadItem, DeleteItem, etc. | `PartitionKey` | Single `Fetch` node. SingleNode. |
+| CreateDatabase, ReadContainer, etc. | `None` | Single `Fetch` node. SingleNode. |
+| ReadAllItems (single partition) | `PartitionKey` | Single `Fetch` node. Paginated. |
+| ReadAllItems (cross-partition) | `EpkRange` (`all_ranges()`) | Resolve PK ranges → `Drain` over N `Fetch` nodes. Sequential. |
 
-### 5.3 Operation Decomposition: From One `CosmosOperation` to Many
+### 5.3 Pseudo-Code: Building a Trivial Plan
 
-A key responsibility of the Planner is decomposing a single caller-provided `CosmosOperation`
-into multiple targeted `CosmosOperation` instances — one per partition key range — that each
-flow through `execute_single_operation` independently. This section illustrates the full
-decomposition for two representative operations.
-
-#### Example: Cross-Partition Query
-
-The caller creates a single operation:
+The following pseudo-code illustrates how the Planner constructs a plan for a point
+operation or single-partition feed:
 
 ```rust
-let op = CosmosOperation::query_items_cross_partition(
-    container.clone(),
-    "SELECT * FROM c WHERE c.status = 'active'",
-);
-// op.target == OperationTarget::all_ranges() (full EPK range ["", "FF"))
-// op.payload == OperationPayload::Query { query: "SELECT ...", parameters: None }
-```
-
-The Planner first fetches a **backend query plan** from the service (see [§5.4](#54-query-plan-fetching))
-to determine how the query should be distributed across partitions — including whether
-client-side sort or aggregation is required. It then resolves the container's partition key
-ranges (say, ranges "0", "1", "2") and uses the backend query plan to assemble an
-`OperationPlan` with **three separate `CosmosOperation`** instances:
-
-```text
-Caller's CosmosOperation
-  target: EpkRange ["", "FF")  (all_ranges())
-  payload: Query { "SELECT * FROM c WHERE c.status = 'active'" }
-                │
-                ▼
-          ┌─── Planner ──────────────────────────────────┐
-          │  1. Fetch backend query plan (via §5.4)      │
-          │  2. Resolve PK ranges: 0, 1, 2               │
-          │  3. Assemble plan from query plan + PK ranges │
-          └───────┬──────────────────────────────────────┘
-      ┌───────────┼───────────┐
-      ▼           ▼           ▼
- CosmosOperation  CosmosOperation  CosmosOperation
-  type: Query      type: Query      type: Query
-  target:          target:          target:
-   EpkRange        EpkRange         EpkRange
-   ["","55")       ["55","AA")      ["AA","FF")
-  payload:         payload:         payload:
-   Query{rewritten}  Query{rewritten}  Query{rewritten}
-      │               │               │
-      ▼               ▼               ▼
- execute_single     execute_single     execute_single
- _operation()       _operation()       _operation()
-      │               │               │
-      ▼               ▼               ▼
- CosmosResponse    CosmosResponse    CosmosResponse
-      │               │               │
-      └───────────────┼───────────────┘
-                      ▼
-              UnorderedMerge
-                      │
-                      ▼
-              CosmosResponse
-```
-
-Each decomposed `CosmosOperation` is **retargeted** to a specific EPK range and wrapped in
-`Arc` so that fan-out steps share the immutable parts of the operation (headers, resource
-reference, etc.) without cloning. The Planner creates the retargeted operations and wraps
-each in an `Arc`; the executor passes `Arc<CosmosOperation>` to `execute_single_operation`.
-Note that the query payload may differ from the caller's original SQL: the backend query
-plan may **rewrite the query** (e.g., to push down aggregations, add internal projections,
-or restructure filters for per-partition execution), and the Planner uses the rewritten
-query text in the decomposed operations. The operation pipeline handles region failover,
-retry, and auth for each independently.
-
-#### Example: ReadMany
-
-The caller creates one operation with 5 items across 3 PK ranges:
-
-```rust
-let op = CosmosOperation::read_many(container.clone(), vec![
-    ("id_a".into(), PartitionKey::from("pk_a")),
-    ("id_b".into(), PartitionKey::from("pk_b")),
-    ("id_c".into(), PartitionKey::from("pk_c")),
-    ("id_d".into(), PartitionKey::from("pk_d")),
-    ("id_e".into(), PartitionKey::from("pk_e")),
-]);
-```
-
-The Planner computes EPKs for each partition key, groups by PK range, and produces:
-
-```text
-Caller's CosmosOperation
-  target: EpkRange ["", "FF")  (all_ranges())
-  payload: ReadMany { items: [(id_a,pk_a), (id_b,pk_b), (id_c,pk_c), (id_d,pk_d), (id_e,pk_e)] }
-                │
-                ▼
-          ┌─── Planner ──────────────────────────────────────────┐
-          │  EPK(pk_a),EPK(pk_b) → PK range "0"                 │
-          │  EPK(pk_c)           → PK range "1"  (single item!) │
-          │  EPK(pk_d),EPK(pk_e) → PK range "2"                 │
-          └───────┬──────────────────────────────────────────────┘
-      ┌───────────┼───────────┐
-      ▼           ▼           ▼
- CosmosOperation  CosmosOperation  CosmosOperation
-  type: Query      type: Read       type: Query
-  target:          target:          target:
-   EpkRange        EpkRange         EpkRange
-   ["","55")       [EPK(pk_c),      ["AA","FF")
-                   EPK(pk_c))
-  payload:         payload:         payload:
-   Body{query on    None (point     Body{query on
-   (pk_a,id_a),     read of id_c)   (pk_d,id_d),
-   (pk_b,id_b)}                     (pk_e,id_e)}
-```
-
-Note two things:
-1. The ReadMany query for each PK range filters on **both partition key and ID**, because
-   ID alone is not unique — only (PartitionKey, ID) is unique within a container.
-2. PK range "1" contains only a single item, so the Planner **optimizes it to a point read**
-   (`OperationType::Read` with a point EPK range), avoiding query overhead.
-
-Each decomposed operation then flows through `execute_single_operation` independently.
-
-### 5.4 Query Plan Fetching
-
-For cross-partition queries, the Planner may need a backend query plan to determine:
-- Which partitions to target
-- Whether the query requires client-side sort/aggregate
-- Optimized partition routing
-
-The Planner uses a **callback** to fetch the query plan, keeping it transport-decoupled. The
-callback internally calls `execute_single_operation` (not `execute_operation`), avoiding
-re-entry into the Planner. The `OperationType::QueryPlan` variant already exists for this.
-
-```rust
-// The Planner calls this callback, which the driver wires to
-// execute_single_operation directly (bypassing the Planner).
-async fn fetch_query_plan(
-    operation: &CosmosOperation,
-    options: &OperationOptions,
-) -> azure_core::Result<BackendQueryPlan> {
-    let query_plan_op = CosmosOperation::query_plan(
-        operation.container().unwrap().clone(),
-        /* query text from operation payload */
-    );
-    let response = execute_single_operation(query_plan_op, options, ...).await?;
-    BackendQueryPlan::from_response(response)
+// PSEUDO-CODE — illustrative, not compilable
+fn plan_trivial(operation: CosmosOperation, options: OperationOptions) -> OperationPlan {
+    OperationPlan::SingleNode(PlanNode::Fetch {
+        epk_range: operation.target().as_epk_range(),
+        operation: Arc::new(operation),
+        options,
+        continuation: None,
+    })
 }
 ```
 
-This avoids the recursion concern: `fetch_query_plan` calls `execute_single_operation`
-directly, which is the internal pipeline function, not the public `execute_operation` that
-goes through the Planner.
+No PK range resolution is needed. The operation is wrapped in a single `Fetch` node.
+
+### 5.4 Pseudo-Code: Building a ReadFeed Plan
+
+The following pseudo-code illustrates how the Planner constructs a cross-partition ReadAll
+plan, including resume from a continuation token:
+
+```rust
+// PSEUDO-CODE — illustrative, not compilable
+fn plan_read_feed(
+    operation: &CosmosOperation,
+    pk_ranges: &[PartitionKeyRange],
+    continuation: Option<&ContinuationToken>,
+) -> OperationPlan {
+    // Determine where to start: either from a continuation token or the beginning.
+    let (start_epk, server_token) = match continuation {
+        Some(token) => {
+            let state = token.resume_state();
+            (state.epk_min(), state.server_token().cloned())
+        }
+        None => (EffectivePartitionKey::MIN, None),
+    };
+
+    // Build Fetch nodes bottom-up, one per PK range that hasn't been drained.
+    let shared_op = Arc::new(create_fetch_from(operation));
+    let mut nodes = Vec::new();
+
+    let remaining_ranges = pk_ranges
+        .iter()
+        .filter(|r| r.max_epk() > start_epk);
+
+    let mut is_first_remaining = true;
+    for range in remaining_ranges {
+        let continuation = if is_first_remaining {
+            is_first_remaining = false;
+            server_token.clone()
+        } else {
+            None
+        };
+
+        nodes.push(PlanNode::Fetch {
+            operation: Arc::clone(&shared_op),
+            options: derive_fetch_options(range),
+            epk_range: range.epk_range(),
+            continuation,
+        });
+    }
+
+    // Push the Drain node after all its children (bottom-up invariant).
+    let children = NodeRange {
+        start: NodeId(0),
+        end: NodeId(nodes.len() as u32),
+    };
+    nodes.push(PlanNode::Drain { children });
+
+    let root = NodeId(nodes.len() as u32 - 1);
+    OperationPlan::Graph { nodes, root }
+}
+```
+
+Key points:
+- Fetch nodes are pushed first (children), then the Drain (parent) — maintaining the
+  bottom-up invariant.
+- On resume, ranges left of the continuation's EPK min are skipped entirely. The first
+  remaining Fetch carries the server token from the continuation.
+- All Fetch nodes share the base operation via `Arc`, avoiding clones of headers and
+  resource references.
 
 ### 5.5 Resuming from a Continuation Token
 
 When a `ContinuationToken` is provided, the Planner validates it (version, container RID,
-operation compatibility), resolves the current partition key ranges, and walks the nested
-`ResumeState` tree to reconstruct the plan with the correct per-step state.
+operation kind), resolves the current partition key ranges, and uses the token's resume
+state to reconstruct the plan at the correct position.
 
-The full resume algorithm — including left/target/right partition classification, filter
-generation for ORDER BY, and partition split handling — is described in
-[§7.3 Resume Strategy](#73-resume-strategy).
+The resume algorithm for `Drain` is described in [§7.3 Resume Strategy](#73-resume-strategy).
+
+### 5.6 Future Extensions
+
+The Planner architecture supports future operations without redesign:
+
+- **ReadMany**: Group items by PK range, create concurrent `Fetch` nodes with an
+  `UnorderedMerge` parent. Requires adding concurrency support to the PlanExecutor.
+- **Cross-partition query**: Fetch a backend query plan, create `Fetch` nodes per
+  partition, optionally with `OrderedMerge` for ORDER BY queries.
+- **Change feed**: Create `Fetch` nodes scoped to feed ranges with change-feed-specific
+  continuation state. Add a parent merge node based on change-feed merge semantics.
+- **Concurrency management**: All plan nodes receive a **concurrency permit** (semaphore
+  token) during execution. For ReadAll, the executor holds a single permit — sequential
+  by design. Future operations (ReadMany, cross-partition queries) will acquire multiple
+  permits from a shared semaphore, allowing the PlanExecutor to control the degree of
+  parallelism across nodes without changing the plan model.
 
 ---
 
@@ -797,119 +727,126 @@ generation for ORDER BY, and partition split handling — is described in
 
 ### 6.1 Core Execution Loop
 
-The Plan Executor runs an `OperationPlan` and produces pages of results.
+The Plan Executor runs an `OperationPlan` and produces one page of results per call.
 
 ```rust
-pub(crate) struct PlanExecutor {
-    plan: OperationPlan,
-    /// Per-step state (continuation, completion status).
-    step_states: Vec<StepState>,
-    /// Concurrency control for fan-out.
-    concurrency_limit: usize,
-    /// Diagnostics builder for collecting step-level timing.
-    diagnostics: DiagnosticsContextBuilder,
-}
+pub(crate) struct PlanExecutor;
 
 impl PlanExecutor {
-    /// Executes one turn of the plan, producing a `CosmosResponse`.
+    /// Executes one page of the plan, producing a `CosmosResponse`.
     ///
     /// The response includes a continuation token if more pages are available.
-    /// For non-paginating plans (ReadMany), this drives all steps to completion
-    /// and returns the merged result with no continuation token.
+    /// Each call executes exactly one HTTP request to one partition.
     pub async fn execute(
-        &mut self,
+        plan: &OperationPlan,
         driver_context: &DriverContext,
+        diagnostics: &mut DiagnosticsContextBuilder,
     ) -> azure_core::Result<CosmosResponse> {
         // ...
     }
 }
 ```
 
-### 6.2 Turn Execution
-
-Each call to `execute`:
-
-1. **Record step enqueue** — mark each step as enqueued for concurrency tracking.
-2. **Identify runnable steps** — steps whose dependencies are satisfied.
-3. **Execute runnable steps concurrently** (up to concurrency cap), each via
-   `execute_single_operation`.
-4. **Collect results** from completed steps.
-5. **Advance continuation state** for steps that returned server continuations.
-6. **Execute dependent steps** (e.g., `UnorderedMerge`) when their inputs are ready.
-7. **Produce the page** from the output step's result.
-8. **Update step states** for the next turn.
-
-### 6.3 Concurrency Control
-
-Fan-out steps are executed with a configurable concurrency cap:
+The following pseudo-code illustrates the core execution loop for a `Drain` plan.
+Function names are descriptive; their implementations are not shown.
 
 ```rust
-/// Maximum number of concurrent partition key range fetches.
-///
-/// Defaults to `min(num_pk_ranges, 10)`. Configurable via
-/// `OperationOptions::max_concurrency`.
-concurrency_limit: usize,
+// PSEUDO-CODE — illustrative, not compilable
+async fn execute_plan(
+    plan: &OperationPlan,
+    driver_context: &DriverContext,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> Result<CosmosResponse> {
+    match plan {
+        OperationPlan::SingleNode(fetch) => {
+            // Point ops and single-partition feeds: execute directly.
+            execute_fetch_node(fetch, driver_context, diagnostics).await
+        }
+        OperationPlan::Graph { nodes, root } => {
+            let root_node = &nodes[root.0 as usize];
+            execute_node(root_node, nodes, driver_context, diagnostics).await
+        }
+    }
+}
+
+async fn execute_node(
+    node: &PlanNode,
+    all_nodes: &[PlanNode],
+    driver_context: &DriverContext,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> Result<CosmosResponse> {
+    match node {
+        PlanNode::Fetch { .. } => {
+            execute_fetch_node(node, driver_context, diagnostics).await
+        }
+        PlanNode::Drain { children } => {
+            // Find the active child: the first Fetch that hasn't been drained.
+            // On a fresh plan, this is children.start. On resume, the Planner
+            // has already pruned drained partitions, so children.start is the
+            // active one.
+            let active_id = children.start;
+            let active_fetch = &all_nodes[active_id.0 as usize];
+
+            // Acquire a concurrency permit (sequential: only one permit).
+            let _permit = acquire_concurrency_permit(driver_context).await;
+
+            // Execute one page from the active partition.
+            let response = execute_fetch_node(
+                active_fetch, driver_context, diagnostics
+            ).await?;
+
+            // Build the continuation token based on what happened.
+            let continuation = build_drain_continuation(
+                &response, active_fetch, active_id, children, all_nodes
+            );
+
+            Ok(response.with_continuation(continuation))
+        }
+    }
+}
 ```
 
-The executor uses a semaphore or similar mechanism to limit concurrent
-`execute_single_operation` calls. Each concurrent call independently goes through the
-full operation pipeline (region failover, retry, etc.).
+### 6.2 Backpressure & Cancellation
 
-### 6.4 ReadMany Execution Details
-
-ReadMany is the initial target. Its execution:
-
-1. **Planner** groups `(id, partition_key)` pairs by PK range (via `PartitionKeyRangeCache`).
-2. **Plan** has N `Fetch` steps (one per PK range) + one `UnorderedMerge` step.
-3. **Executor** runs all `Fetch` steps concurrently (up to concurrency limit).
-4. Each `Fetch` step sends a query to its PK range. The query body encodes **both the item IDs
-   and the partition keys** for that range, because ID alone is not unique — only the
-   (PartitionKey, ID) pair is unique within a container. If the response includes a server
-   continuation, the executor continues fetching that range until all items are retrieved.
-5. **UnorderedMerge** step concatenates results from all ranges.
-6. Returns a single `CosmosResponse` containing all items (with no continuation token).
-7. Subsequent calls with the same operation (no continuation) would re-execute from scratch.
-
-**Optimization:** When a PK range contains only a single item, the Planner optimizes the
-`Fetch` step to a point read instead of a query (see §4.2).
-
-**Semantics:**
-- **Missing items**: Items not found are silently omitted from the result. The response does
-  not indicate which items were not found.
-- **Order**: Output order is NOT guaranteed to match input order. Items are grouped by
-  partition key range.
-- **Partial failure**: If any PK range fetch fails after exhausting retries, the entire
-  ReadMany operation fails. Partial results are not returned.
-
-### 6.5 Backpressure & Cancellation
-
-- **Caller drops the future**: In-flight `execute_single_operation` futures are
-  cancelled via standard Rust drop semantics. The executor does not buffer results beyond
-  what is needed for the current turn.
-- **Memory bounds**: The executor does not buffer more than `concurrency_limit` concurrent
-  page results. For ReadMany (which buffers all results), the total buffered data is bounded
-  by the total size of all items — the caller controls this by the size of the input list.
-- **Cancellation mid-turn**: If the caller cancels (drops the future) during a turn, any
-  in-flight HTTP requests are dropped. The continuation token from the *previous* completed
-  turn remains valid for resumption.
+- **Caller drops the future**: The in-flight `execute_single_operation` future is
+  cancelled via standard Rust drop semantics.
+- **Memory bounds**: Each call buffers at most one page of results.
+- **Cancellation mid-page**: If the caller cancels during a page fetch, the continuation
+  token from the *previous* completed call remains valid for resumption.
 
 ---
 
 ## 7. Continuation Tokens
 
-### 7.1 Design Principle: O(1) Token Size
+### 7.1 Design Principles
 
-A container may have many physical partitions. Storing per-range continuation state
-for every partition would make the token size linear in partition count — unacceptable for
-tokens that must cross HTTP request boundaries (e.g., sent to a browser in a URL or header).
+Continuation tokens must be:
 
-Instead, the continuation token stores the state of **exactly one partition key range** — the
-range where execution last yielded results. On resume, the Planner reconstructs the positions
-of all other partitions using **query filter rewriting** rather than stored server tokens.
+1. **Durable across SDK versions** — A token produced by SDK version N must be usable by
+   SDK version N+k. Tokens may be stored durably (e.g., in a database) or transiently
+   (e.g., in a URL parameter) and must survive SDK upgrades. Newer SDKs MUST support reading
+   tokens from older SDKs. Changing the token format dramatically increases complexity because
+   SDKs must support versions `current - x`.
 
-This follows the same pattern as the Java Cosmos SDK, which exploits the fact that Cosmos DB
-data has a composite sort order `(query_sort_order, partition_key_range_id)` to generate
-efficient range filters for partitions that don't have stored continuation tokens.
+2. **Versioned** — Tokens carry a version field. Revving the version is the option of last
+   resort. New `ResumeState` variants can be added without changing the version, because
+   `serde`'s tagged enum deserialization handles unknown variants gracefully (they fail to
+   parse, which is the correct behavior when an older SDK encounters a token from a newer one).
+
+3. **Aim for O(1) size** — Token size should ideally be constant regardless of partition
+   count. For ReadAll, only the state of the currently-active partition is stored, and other
+   partitions' positions are reconstructed from EPK bounds on resume. However, per-partition
+   state MAY become necessary for certain node types (e.g., change feed requires per-range
+   tokens). It is up to each node type to define its own resume state and thus determine
+   the size of that state.
+
+4. **Composable** — Each node type defines its own `ResumeState` variant. New node types
+   add new variants without breaking the token structure for existing node types. The resume
+   state is extensible via serde's tagged enum — unknown variants from newer SDKs fail to
+   deserialize correctly in older SDKs.
+
+5. **Operation-bound** — Tokens include an operation kind to prevent replaying a token from
+   one operation type against a different operation on the same container.
 
 ### 7.2 Token Structure
 
@@ -919,16 +856,6 @@ efficient range filters for partitions that don't have stored continuation token
 /// Opaque to callers. Serializes to a string via `Display` and
 /// deserializes via `FromStr`. The internal representation is
 /// versioned and validated on deserialization.
-///
-/// The token mirrors the plan's step graph as a **nested** structure:
-/// each pipeline stage wraps the continuation state of its children.
-/// This means each layer can interpret its children's state in context
-/// — for example, an `OrderBy` node knows how to generate filters for
-/// the `Fetch` nodes it wraps, without the Fetch nodes needing to be
-/// aware of ORDER BY semantics.
-///
-/// On resume, the Planner walks the nested token top-down, matching
-/// each layer to the corresponding step in the re-created plan.
 #[derive(Clone, Debug)]
 pub struct ContinuationToken {
     inner: ContinuationTokenInner,
@@ -936,93 +863,93 @@ pub struct ContinuationToken {
 
 /// Internal token representation (not public).
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ContinuationTokenInner {
     /// Token format version for forward/backward compatibility.
     version: u32,
 
     /// Container identity (RID, not name) to detect container recreation.
-    #[serde(rename = "containerRid")]
     container_rid: String,
 
-    /// The nested resume state, rooted at the plan's output step.
-    /// Each layer wraps the state of its child steps.
+    /// The operation kind this token was produced for.
+    /// Prevents replaying tokens across incompatible operations.
+    operation_kind: String,
+
+    /// The resume state, defined by the node type that produced it.
     resume: ResumeState,
-}
-
-/// Nested resume state for a plan step.
-///
-/// Each variant captures the state for one pipeline stage and embeds
-/// its children's state. This forms a tree that mirrors the plan DAG.
-/// New variants can be added as new pipeline stages are introduced.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-enum ResumeState {
-    /// A single partition fetch, mid-stream or just completed.
-    /// This is a leaf node — it has no children.
-    #[serde(rename = "fetch")]
-    Fetch {
-        /// EPK min inclusive of the target range.
-        min: String,
-
-        /// EPK max exclusive of the target range.
-        max: String,
-
-        /// Server-provided continuation token for this range.
-        /// Absent when this range was just completed and the cursor
-        /// is at the boundary to the next range.
-        #[serde(rename = "serverToken", skip_serializing_if = "Option::is_none")]
-        server_continuation: Option<String>,
-    },
-
-    /// An unordered (sequential-drain) merge over partitions.
-    /// Wraps the child `Fetch` that was active when the token was created.
-    /// On resume, partitions left of the child are skipped, the child
-    /// resumes from its state, and partitions to the right start fresh.
-    #[serde(rename = "drain")]
-    Drain {
-        /// The resume state of the active child Fetch step.
-        inner: Box<ResumeState>,
-    },
-
-    /// An ordered (k-way merge) over partitions.
-    /// Wraps the child `Fetch` that last produced results, plus the
-    /// ORDER BY values needed to generate filters for all other partitions.
-    #[serde(rename = "orderBy")]
-    OrderBy {
-        /// The ORDER BY values of the last document returned.
-        /// Used to generate range filters for non-target partitions.
-        #[serde(rename = "lastValues")]
-        last_order_by_values: Vec<serde_json::Value>,
-
-        /// The `_rid` of the last document returned.
-        /// Used for duplicate elimination on the target partition.
-        #[serde(rename = "lastRid")]
-        last_rid: String,
-
-        /// Whether to include documents matching the last ORDER BY values.
-        inclusive: bool,
-
-        /// The resume state of the target child Fetch step.
-        inner: Box<ResumeState>,
-    },
-
-    // Future variants:
-    //
-    // /// An offset/limit stage wrapping an inner pipeline.
-    // #[serde(rename = "offsetLimit")]
-    // OffsetLimit {
-    //     skipped: u64,
-    //     returned: u64,
-    //     inner: Box<ResumeState>,
-    // },
 }
 ```
 
-The nesting means each layer owns the interpretation of its children. An `OrderBy` node
-knows the `Fetch` inside it is the target partition, and uses `lastValues`/`lastRid` to
-generate filters for the other partitions. A `Drain` node knows the `Fetch` inside it is
-the cursor position, and partitions left/right of it are skipped/fresh. Neither the `Fetch`
-node nor the Planner need to cross-reference sibling state.
+```rust
+/// Resume state for a plan node.
+///
+/// Each variant captures the state for one node type. New variants
+/// can be added as new node types are introduced, without changing
+/// the token version.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+enum ResumeState {
+    /// Sequential cross-partition drain.
+    ///
+    /// Tracks the current feed range position: `epk_min` and `epk_max`
+    /// identify the active range, and `server_token` holds the server
+    /// continuation for that range (if mid-partition).
+    ///
+    /// On resume, ranges with max ≤ `epk_min` are skipped (already drained).
+    /// The range matching `[epk_min, epk_max)` resumes from `server_token`.
+    /// Ranges after `epk_max` start fresh.
+    #[serde(rename = "drain")]
+    Drain(DrainState),
+
+    /// A single partition fetch, mid-stream or just completed.
+    /// Used as the root resume state for single-partition feed operations.
+    #[serde(rename = "fetch")]
+    Fetch(FetchState),
+
+    // Future variants (added without changing token version):
+    //
+    // /// Change feed — per-range continuation tokens.
+    // #[serde(rename = "changeFeed")]
+    // ChangeFeed(ChangeFeedState),
+    //
+    // /// Ordered merge for ORDER BY queries.
+    // #[serde(rename = "orderedMerge")]
+    // OrderedMerge(OrderedMergeState),
+}
+
+/// Resume state for a Drain node.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DrainState {
+    /// EPK minimum of the current active feed range.
+    /// All ranges with max ≤ this value have been fully drained.
+    epk_min: String,
+
+    /// EPK maximum of the current active feed range.
+    epk_max: String,
+
+    /// Server-provided continuation token for this range.
+    /// `None` when this range was just completed and the cursor
+    /// is at the boundary to the next range.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    server_token: Option<String>,
+}
+
+/// Resume state for a single-partition Fetch node.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FetchState {
+    /// EPK min inclusive of the target range.
+    epk_min: String,
+
+    /// EPK max exclusive of the target range.
+    epk_max: String,
+
+    /// Server-provided continuation token for this range.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    server_token: Option<String>,
+}
+```
 
 #### Wire-format field reference
 
@@ -1030,95 +957,41 @@ node nor the Planner need to cross-reference sibling state.
 |-----------|-------|----------|---------|
 | `ContinuationTokenInner` | `version` | `version` | Format version (integer) |
 | | `container_rid` | `containerRid` | Container RID (string) |
-| | `resume` | `resume` | Nested `ResumeState` (root of tree) |
-| `ResumeState::Fetch` | *(tag)* | `type` | `"fetch"` |
-| | `min` | `min` | EPK min inclusive (hex string) |
-| | `max` | `max` | EPK max exclusive (hex string) |
-| | `server_continuation` | `serverToken` | Server continuation (omitted if null) |
-| `ResumeState::Drain` | *(tag)* | `type` | `"drain"` |
-| | `inner` | `inner` | Child `ResumeState` |
-| `ResumeState::OrderBy` | *(tag)* | `type` | `"orderBy"` |
-| | `last_order_by_values` | `lastValues` | Last ORDER BY values (array) |
-| | `last_rid` | `lastRid` | Last document `_rid` (string) |
-| | `inclusive` | `inclusive` | Include matching values (bool) |
-| | `inner` | `inner` | Child `ResumeState` |
+| | `operation_kind` | `operationKind` | Operation kind (e.g., `"readAll"`) |
+| | `resume` | `resume` | `ResumeState` (tagged union) |
+| `DrainState` | *(tag)* | `type` | `"drain"` |
+| | `epk_min` | `epkMin` | EPK min inclusive (hex string) |
+| | `epk_max` | `epkMax` | EPK max exclusive (hex string) |
+| | `server_token` | `serverToken` | Server continuation (omitted if null) |
+| `FetchState` | *(tag)* | `type` | `"fetch"` |
+| | `epk_min` | `epkMin` | EPK min inclusive (hex string) |
+| | `epk_max` | `epkMax` | EPK max exclusive (hex string) |
+| | `server_token` | `serverToken` | Server continuation (omitted if null) |
 
 ### 7.3 Resume Strategy
 
-On resume, the Planner walks the nested `ResumeState` tree top-down, matching each layer to
-the corresponding step in the re-created plan. Each layer interprets its own state and its
-child's state in context:
+On resume, the Planner validates the token and uses the resume state to reconstruct the
+plan at the correct position.
 
-#### `Drain` (unordered cross-partition)
+#### `Drain` (sequential cross-partition)
 
-The `Drain` node wraps a `Fetch` child representing the cursor position. On resume:
+The `DrainState` tracks the cursor position via EPK bounds. On resume:
 
 | Partition position | Action |
 |--------------------|--------|
-| **Left of child** (EPK max ≤ child's min) | Skip — already drained. |
-| **Child range** (matches child's EPK bounds) | Resume using child's `serverToken`. |
-| **Right of child** (EPK min ≥ child's max) | Start fresh (not yet visited). |
+| **Left of active** (range max ≤ `epk_min`) | Skip — already drained. |
+| **Active range** (matches `[epk_min, epk_max)`) | Resume using `server_token`. If `server_token` is `None`, the range is complete — skip it and start the next range fresh. |
+| **Right of active** (range min ≥ `epk_max`) | Start fresh (not yet visited). |
 
-If the child's range has split, `PartitionMapper` uses the EPK bounds to assign the server
-continuation to the appropriate child range(s).
-
-#### `OrderBy` (ordered cross-partition)
-
-The `OrderBy` node wraps a `Fetch` child (the target partition) and carries `lastValues` /
-`lastRid` for filter generation. On resume:
-
-| Partition position | Generated filter | Rationale |
-|--------------------|-----------------|-----------|
-| **Left of child** | ORDER BY values **strictly past** `lastValues` | May have remaining items, but only those after the resume point. |
-| **Child range** | Server continuation + ORDER BY values **at or past** `lastValues` | Resume exactly where we stopped. |
-| **Right of child** | ORDER BY values **at or past** `lastValues` | Haven't fully explored these yet. |
-
-Duplicate elimination: on the child partition, documents with the same ORDER BY values as
-`lastValues` but `_rid ≤ lastRid` have already been returned and are filtered out.
+If the active range has split since the token was created, the Planner uses the EPK bounds
+to assign the server continuation to the appropriate child range. The `server_token` applies
+to the first sub-range that overlaps the original EPK bounds; subsequent sub-ranges start
+fresh.
 
 #### `Fetch` (leaf — single partition)
 
-A bare `Fetch` at the root (no wrapping `Drain` or `OrderBy`) represents a single-partition
-operation. Resume uses `serverToken` directly.
-
-#### Nesting composes naturally
-
-Future pipeline stages wrap their children the same way:
-
-```text
-OffsetLimit { skipped: 50, returned: 20,
-  inner: OrderBy { lastValues: ["Baker"], lastRid: "abc", inclusive: true,
-    inner: Fetch { min: "55", max: "AA", serverToken: "..." }
-  }
-}
-```
-
-Each layer reads only its own fields plus `inner`. No layer needs to inspect sibling or
-grandchild state.
-
-#### Mapping `ResumeState` back to `PlanStep`
-
-The `ResumeState` tree does not map 1:1 to `PlanStep` variants — it maps to the **Planner's
-reconstruction logic**:
-
-| `ResumeState` | Effect on plan |
-|---------------|----------------|
-| `Fetch` | Sets `PlanStep::Fetch.continuation` to the stored `serverToken`. The EPK bounds identify which `Fetch` step in the plan to target. |
-| `Drain` | The Planner uses the child `Fetch`'s EPK bounds to determine which partition was active, skips partitions left of it, and starts right partitions fresh. The `UnorderedMerge` step itself is stateless. |
-| `OrderBy` | The Planner generates a `resume_filter` string from `lastValues` and sets it on each `Fetch` step. The child `Fetch`'s `continuation` is also restored. Duplicate elimination state (`lastRid`, `inclusive`) is applied at the executor level. |
-
-**Filter injection for ORDER BY queries:** The backend query plan provides a rewritten query
-containing the `{documentdb-formattableorderbyquery-filter}` placeholder token. The `Fetch`
-step's `operation` holds this **unrewritten** query text. At execution time, the executor
-replaces the placeholder with the `resume_filter` via simple string substitution. This means:
-
-- On **first page** (no continuation): the placeholder is replaced with `"true"` (no filter).
-- On **resume**: the Planner computes the filter expression from the `OrderBy` resume state
-  (e.g., `"c.name > 'Baker'"` for left-of-target partitions, `"c.name >= 'Baker'"` for the
-  target and right-of-target) and sets it as `resume_filter` on each `Fetch` step.
-
-This approach keeps the `Fetch` step generic — it doesn't need to understand ORDER BY
-semantics, just string substitution on a known placeholder.
+A bare `FetchState` at the root (no wrapping `Drain`) represents a single-partition operation.
+Resume uses `server_token` directly.
 
 ### 7.4 Serialization
 
@@ -1157,43 +1030,37 @@ impl FromStr for ContinuationToken {
 
 #### Sample Tokens
 
-**Unordered cross-partition query, mid-stream on partition ["55","AA")**
-
-A `Drain` wraps the active `Fetch`:
+**ReadAll, mid-stream on partition ["55","AA")**
 
 JSON (before base64 encoding):
 ```json
 {
-  "version": 2,
+  "version": 1,
   "containerRid": "dbs/abc/colls/def",
+  "operationKind": "readAll",
   "resume": {
     "type": "drain",
-    "inner": {
-      "type": "fetch",
-      "min": "55",
-      "max": "AA",
-      "serverToken": "+RID:~abc123#RT:1#TRC:10#ISV:2#IEO:65551"
-    }
+    "epkMin": "55",
+    "epkMax": "AA",
+    "serverToken": "+RID:~abc123#RT:1#TRC:10#ISV:2#IEO:65551"
   }
 }
 ```
 
-On resume, the `Drain` sees its child targets `["55","AA")`. Partitions left of `"55"` are
-skipped, the target resumes from `serverToken`, and partitions right of `"AA"` start fresh.
+On resume, the Planner sees the drain cursor at `["55","AA")`. Ranges with max ≤ `"55"` are
+skipped. The range `["55","AA")` resumes from `serverToken`. Ranges after `"AA"` start fresh.
 
-**Unordered query, target partition just completed (cursor at boundary)**
+**ReadAll, target partition just completed (cursor at boundary)**
 
 ```json
 {
-  "version": 2,
+  "version": 1,
   "containerRid": "dbs/abc/colls/def",
+  "operationKind": "readAll",
   "resume": {
     "type": "drain",
-    "inner": {
-      "type": "fetch",
-      "min": "55",
-      "max": "AA"
-    }
+    "epkMin": "55",
+    "epkMax": "AA"
   }
 }
 ```
@@ -1201,74 +1068,23 @@ skipped, the target resumes from `serverToken`, and partitions right of `"AA"` s
 `serverToken` is absent, meaning partition `["55","AA")` is fully drained. The Planner
 skips everything up to and including this range, and starts the next partition fresh.
 
-**Single-partition query, mid-stream**
+**Single-partition feed, mid-stream**
 
-A bare `Fetch` at the root (no wrapping layer):
+A bare `FetchState` at the root (no wrapping layer):
 
 ```json
 {
-  "version": 2,
+  "version": 1,
   "containerRid": "dbs/abc/colls/def",
+  "operationKind": "readAll",
   "resume": {
     "type": "fetch",
-    "min": "55",
-    "max": "AA",
+    "epkMin": "55",
+    "epkMax": "AA",
     "serverToken": "-RID:QmFzZTY0#RT:3#TRC:50"
   }
 }
 ```
-
-**ORDER BY cross-partition query, `ORDER BY c.name ASC`**
-
-An `OrderBy` wraps the target `Fetch`, carrying the last returned document's sort values:
-
-```json
-{
-  "version": 2,
-  "containerRid": "dbs/abc/colls/def",
-  "resume": {
-    "type": "orderBy",
-    "lastValues": ["Baker"],
-    "lastRid": "R3JlYXQ",
-    "inclusive": true,
-    "inner": {
-      "type": "fetch",
-      "min": "55",
-      "max": "AA",
-      "serverToken": "+RID:~abc456#RT:2#TRC:5#ISV:2#IEO:65551"
-    }
-  }
-}
-```
-
-On resume, the `OrderBy` layer generates partition filters from `lastValues`:
-- Partitions left of `"55"`: filter `c.name > 'Baker'` (strictly past).
-- Target `["55","AA")`: resume from `serverToken`, filter `c.name >= 'Baker'`,
-  deduplicate items with `_rid ≤ "R3JlYXQ"`.
-- Partitions right of `"AA"`: filter `c.name >= 'Baker'`.
-
-**Compound ORDER BY, `ORDER BY c.name ASC, c.age DESC`**
-
-```json
-{
-  "version": 2,
-  "containerRid": "dbs/abc/colls/def",
-  "resume": {
-    "type": "orderBy",
-    "lastValues": ["Baker", 42],
-    "lastRid": "UmVzdW1l",
-    "inclusive": true,
-    "inner": {
-      "type": "fetch",
-      "min": "AA",
-      "max": "FF",
-      "serverToken": "+RID:~abc789#RT:1#TRC:3#ISV:2"
-    }
-  }
-}
-```
-
-The `lastValues` array contains one entry per ORDER BY column, in declaration order.
 
 ### 7.5 Compatibility Contract
 
@@ -1276,30 +1092,33 @@ A continuation token is **invalidated** by:
 
 1. **Container recreation** — The token's `containerRid` won't match the new container's RID.
 2. **Token version mismatch** — A token produced by a newer SDK version may not be readable
-   by an older version.
-3. **Structure mismatch** — If the re-created plan produces a different step graph shape
-   than the token's nested `ResumeState` (e.g., the operation changed, or the plan type
-   differs), the token is rejected.
+   by an older version. Newer SDKs MUST support tokens from older versions (backward compat).
+3. **Operation kind mismatch** — The token's `operationKind` must match the operation being
+   resumed. A `readAll` token cannot be used with a query operation.
+4. **Structure mismatch** — If the re-created plan produces a different node type than the
+   token's `ResumeState` variant (e.g., a `drain` token for a single-partition operation),
+   the token is rejected.
 
 A continuation token **survives**:
 
-1. **Partition splits** — The token stores EPK bounds, not just PK range IDs. On resume, the
+1. **Partition splits** — The token stores EPK bounds, not PK range IDs. On resume, the
    Planner re-resolves EPK bounds to current PK range IDs.
 2. **SDK version upgrades** — The token is versioned. Older token versions are supported by
    newer SDKs (backward compatible deserialization).
 3. **Process boundaries** — The token is a self-contained string, safe to send to a browser
    and back.
+4. **Durable storage** — Tokens can be stored in databases and used across process restarts,
+   machine migrations, and SDK upgrades.
 
 ### 7.6 What the Token Does NOT Encode
 
-- **Per-range state for all partitions** — Only the active Fetch step's state is stored.
-  Other partitions' positions are reconstructed via query filter rewriting on resume.
+- **Per-range state for all partitions (for Drain)** — Only the active range's state is
+  stored. Other partitions' positions are reconstructed from the EPK bounds on resume. Other
+  node types may store per-range state if needed (see §12.3 Change Feed).
 - **Query text or parameters** — The caller must provide an equivalent `CosmosOperation`.
 - **Session tokens** — Session consistency is not preserved across process boundaries via
-  the continuation token. The driver resolves session tokens from the `SessionManager` cache
-  for each turn independently.
-- **Container name or database name** — Only the RID is stored. The caller provides routing
-  context via the `CosmosOperation`.
+  the continuation token.
+- **Container name or database name** — Only the RID is stored.
 - **PK range IDs** — Only EPK bounds are stored, which are stable across partition splits.
   PK range IDs are resolved dynamically from the `PartitionKeyRangeCache` on resume.
 
@@ -1311,259 +1130,257 @@ A continuation token **survives**:
 
 The driver does **not** create OpenTelemetry spans or any other telemetry artifacts. Instead,
 each call to `execute_operation` returns a `DiagnosticsContext` on the `CosmosResponse`
-containing a structured hierarchy of timing, concurrency, and request data. The higher-level
-SDK crate uses this data to create OTEL spans, log entries, or any other telemetry it chooses.
+containing a structured hierarchy of timing and request data. The higher-level SDK crate uses
+this data to create OTEL spans, log entries, or any other telemetry it chooses.
 
 This separation ensures the driver remains transport- and telemetry-agnostic while providing
 enough detail for the SDK to reconstruct the full execution timeline.
 
-### 8.2 Hierarchy: Turn → Step → Request
+### 8.2 Hierarchy: Plan → Node → Request
 
-Each `execute_operation` call executes one **Turn** of an operation plan. A Turn contains
-one or more **Steps** (one per plan step executed), and each Step contains zero or more
-**Requests** (the existing `RequestDiagnostics` type, unchanged).
+Each `execute_operation` call produces a `DiagnosticsContext` with a hierarchical view of the
+operation plan's execution. The hierarchy mirrors the plan graph: composite nodes (Drain)
+contain child node diagnostics, and leaf nodes (Fetch) contain HTTP request diagnostics.
 
 ```text
 DiagnosticsContext
-  └── TurnDiagnostics
-        ├── duration, total RU, concurrency metadata
+  ├── activityId, totalDurationMs, totalRequestCharge
+  │
+  └── operationPlan (NodeDiagnostics)
+        ├── nodeType: "drain"
+        ├── startedAt, completedAt, durationMs
         │
-        ├── StepDiagnostics [0]  (e.g., Fetch to PK range "0")
-        │     ├── enqueued_at, started_at, completed_at
-        │     ├── step type, EPK range
-        │     └── RequestDiagnostics [0]    (initial attempt)
-        │         RequestDiagnostics [1]    (retry, if any)
-        │
-        ├── StepDiagnostics [1]  (e.g., Fetch to PK range "1")
-        │     ├── enqueued_at, started_at, completed_at
-        │     └── RequestDiagnostics [0]
-        │
-        └── StepDiagnostics [2]  (e.g., UnorderedMerge)
-              ├── started_at, completed_at
-              └── (no requests — local computation only)
+        └── children[]
+              └── [0] NodeDiagnostics
+                    ├── nodeType: "fetch"
+                    ├── epkRange: { min, max }
+                    ├── startedAt, completedAt, durationMs
+                    ├── requestCharge
+                    ├── outcome: "success" | "failed"
+                    │
+                    ├── requests[]
+                    │     ├── [0] RequestDiagnostics (initial attempt)
+                    │     └── [1] RequestDiagnostics (retry, if any)
+                    │
+                    └── children[] (empty for Fetch)
 ```
 
-For point operations, the Turn has exactly one Step with one or more Requests (retries).
-The hierarchy is always present but trivially flat.
+Every node holds a list of diagnostics from the child nodes it triggered (`children`),
+as well as its own HTTP requests. This makes the diagnostics structure recursive and
+directly mirrors the plan graph.
 
-### 8.3 `TurnDiagnostics`
+For point operations (SingleNode plan), the hierarchy collapses: the `operationPlan`
+is a single Fetch node with its requests and no children. The existing flat `requests()`
+accessor is preserved for backward compatibility by flattening the tree.
 
-```rust
-/// Diagnostics for a single turn (one page) of an operation.
-///
-/// Each call to `execute_operation` produces exactly one `TurnDiagnostics`.
-/// For paginated feed operations, the SDK aggregates multiple turns' diagnostics
-/// across pages.
-pub struct TurnDiagnostics {
-    /// Wall-clock time when this turn started.
-    ///
-    /// Provides an anchor for converting `Instant` timestamps (used in
-    /// `StepDiagnostics`) to `SystemTime` for OTEL spans or other
-    /// wall-clock-based telemetry. The SDK can compute a step's wall-clock
-    /// start as `wall_clock_start + (step.started_at - start_instant)`.
-    wall_clock_start: SystemTime,
-
-    /// Monotonic timestamp when this turn started.
-    ///
-    /// Used as the reference point for computing wall-clock times from
-    /// step-level `Instant` timestamps: for any step `Instant` value `i`,
-    /// the wall-clock time is `wall_clock_start + (i - start_instant)`.
-    start_instant: Instant,
-
-    /// Wall-clock duration of the entire turn.
-    duration: Duration,
-
-    /// Total RU charge across all steps and requests in this turn.
-    total_request_charge: RequestCharge,
-
-    /// Per-step diagnostics, in execution order.
-    steps: Vec<StepDiagnostics>,
-
-    /// Concurrency metadata for this turn.
-    concurrency: TurnConcurrency,
-}
-
-/// Concurrency metadata for a turn.
-///
-/// Enables the SDK to observe how steps were parallelized and whether the
-/// concurrency cap was a bottleneck. Wait times and max concurrency can
-/// be computed from the step timestamps by the SDK if needed.
-pub struct TurnConcurrency {
-    /// Total number of steps executed in this turn.
-    steps_executed: usize,
-
-    /// The concurrency cap that was configured for this turn.
-    /// Steps beyond this limit waited for a permit before starting.
-    concurrency_cap: usize,
-}
-```
-
-### 8.4 `StepDiagnostics`
+### 8.3 Hierarchical Diagnostics Types
 
 ```rust
-/// Diagnostics for a single step within a turn.
+/// Diagnostics for a single plan node's execution.
 ///
-/// Captures three timestamps to distinguish **wait time** (waiting for a
-/// concurrency permit) from **execution time** (actually performing the
-/// step's work). These durations can be trivially computed by the SDK:
-///
-/// ```text
-///   enqueued_at          started_at          completed_at
-///       │── wait time ──│── execution time ──│
-///       (started_at -      (completed_at -
-///        enqueued_at)       started_at)
-/// ```
-///
-/// For steps that don't go through the concurrency semaphore (e.g., Merge),
-/// `enqueued_at == started_at` (zero wait time).
-pub struct StepDiagnostics {
-    /// What kind of step this was.
-    step_type: StepType,
+/// This type is recursive: composite nodes (Drain) contain child
+/// `NodeDiagnostics` entries, mirroring the plan graph structure.
+pub struct NodeDiagnostics {
+    /// What kind of node this was.
+    node_type: NodeType,
 
-    /// The EPK range targeted by this step (for Fetch steps).
-    /// `None` for non-fetch steps (Merge, etc.).
+    /// The EPK range targeted by this node (for Fetch nodes).
+    /// `None` for non-fetch nodes.
     epk_range: Option<EpkRange<EffectivePartitionKey>>,
 
-    /// When the step was enqueued for execution (requested a concurrency permit).
-    enqueued_at: Instant,
-
-    /// When the step started executing (acquired its concurrency permit).
+    /// When the node started executing.
     started_at: Instant,
 
-    /// When the step completed.
+    /// When the node completed.
     completed_at: Instant,
 
-    /// Total RU charge for this step.
+    /// Duration in milliseconds.
+    duration_ms: u64,
+
+    /// Total RU charge for this node (including children).
     request_charge: RequestCharge,
 
-    /// Individual HTTP request diagnostics for this step.
-    /// Empty for non-HTTP steps (e.g., Merge).
-    /// May contain multiple entries due to retries within the step.
+    /// Individual HTTP request diagnostics for this node.
+    /// Empty for non-leaf nodes that don't directly issue HTTP requests.
+    /// May contain multiple entries due to retries within the node.
     requests: Vec<RequestDiagnostics>,
 
-    /// Outcome of this step's execution.
-    ///
-    /// For Fetch steps, the outcome is typically captured in the
-    /// `RequestDiagnostics`. This field captures outcomes for non-HTTP
-    /// steps (e.g., Merge failures) and provides a summary for all
-    /// step types without requiring callers to inspect nested requests.
-    outcome: StepOutcome,
+    /// Child node diagnostics, for composite nodes (Drain, future merge nodes).
+    /// Empty for leaf nodes (Fetch).
+    /// For Drain, contains only the nodes that were executed in this call
+    /// (typically one Fetch node per page).
+    children: Vec<NodeDiagnostics>,
+
+    /// Outcome of this node's execution.
+    outcome: NodeOutcome,
 }
 
-/// Outcome of a plan step's execution.
+/// Outcome of a plan node's execution.
 #[derive(Clone, Debug)]
-pub enum StepOutcome {
-    /// The step completed successfully.
+pub enum NodeOutcome {
+    /// The node completed successfully.
     Success,
-    /// The step failed with an error.
-    /// The message is a brief summary (not a full stack trace).
+    /// The node failed with an error.
     Failed { message: String },
 }
 
-/// Identifies the kind of plan step for diagnostics purposes.
+/// Identifies the kind of plan node for diagnostics purposes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum StepType {
-    /// A Fetch step that executed an HTTP request via execute_single_operation.
+#[serde(rename_all = "camelCase")]
+pub enum NodeType {
+    /// A Fetch node that executed an HTTP request via execute_single_operation.
     Fetch,
-    /// An UnorderedMerge step that concatenated results from upstream steps.
-    UnorderedMerge,
-    // Future: OrderedMerge, OffsetLimit, etc.
+    /// A Drain node that sequentially processes partitions.
+    Drain,
+    // Future: UnorderedMerge, OrderedMerge, Aggregate, etc.
 }
 ```
 
-### 8.5 Collection Approach
+### 8.4 JSON Representation
 
-The `PlanExecutor` records timestamps at key points during execution:
+Diagnostics serialize to a hierarchical JSON structure with consistent camelCase property
+names:
 
-1. **Step enqueued** (`enqueued_at`): Recorded when the executor submits a step for
-   execution. For concurrent fan-out, this is when the step requests a permit from the
-   concurrency semaphore.
+```json
+{
+  "activityId": "e4b2c1d8-...",
+  "totalDurationMs": 42,
+  "totalRequestCharge": 5.23,
+  "requestCount": 1,
+  "operationPlan": {
+    "nodeType": "drain",
+    "startedAt": 0,
+    "completedAt": 42,
+    "durationMs": 42,
+    "requestCharge": 5.23,
+    "outcome": "success",
+    "requests": [],
+    "children": [
+      {
+        "nodeType": "fetch",
+        "epkRange": { "min": "00", "max": "55" },
+        "startedAt": 0,
+        "completedAt": 15,
+        "durationMs": 15,
+        "requestCharge": 5.23,
+        "outcome": "success",
+        "requests": [
+          {
+            "executionContext": "initial",
+            "pipelineType": "dataPlane",
+            "transportSecurity": "secure",
+            "transportKind": "gateway",
+            "transportHttpVersion": "http2",
+            "region": "westus2",
+            "endpoint": "https://myaccount.documents.azure.com/",
+            "status": "200",
+            "requestCharge": 5.23,
+            "activityId": "e4b2c1d8-...",
+            "serverDurationMs": 3.2,
+            "durationMs": 15,
+            "events": [
+              { "eventType": "transportStart", "durationMs": null },
+              { "eventType": "responseHeadersReceived", "durationMs": 12 },
+              { "eventType": "transportComplete", "durationMs": 15 }
+            ],
+            "timedOut": false,
+            "requestSent": "sent",
+            "error": null
+          }
+        ],
+        "children": []
+      }
+    ]
+  }
+}
+```
 
-2. **Step started** (`started_at`): Recorded when the step acquires its concurrency permit
-   and begins executing. For steps that don't use the semaphore (single-step plans, Merge
-   steps), this equals `enqueued_at`.
+For point operations, the structure is similar but with a single Fetch node and no wrapping
+Drain:
 
-3. **Step completed** (`completed_at`): Recorded when the step finishes (successfully or
-   with an error). For Fetch steps, this is after `execute_single_operation` returns
-   (including any retries it performs internally).
+```json
+{
+  "activityId": "a1b2c3d4-...",
+  "totalDurationMs": 8,
+  "totalRequestCharge": 1.0,
+  "requestCount": 1,
+  "operationPlan": {
+    "nodeType": "fetch",
+    "epkRange": null,
+    "durationMs": 8,
+    "requestCharge": 1.0,
+    "outcome": "success",
+    "requests": [{ "..." : "..." }],
+    "children": []
+  }
+}
+```
 
-4. **Derived values**: The SDK can compute wait time (`started_at - enqueued_at`),
-   execution time (`completed_at - started_at`), max concurrent steps (from overlapping
-   intervals), and total wait time (sum across steps) from the raw timestamps. The driver
-   stores only the timestamps to minimize memory.
+### 8.5 Alignment with Existing `DiagnosticsContext`
 
-All timestamps use `Instant::now()` — cheap and monotonic. No allocations beyond the
-`Vec<StepDiagnostics>` that is already needed for the diagnostics output. No derived
-`Duration` fields are stored — the SDK computes them on demand.
-
-### 8.6 `DiagnosticsContext` Changes
-
-The existing `DiagnosticsContext` gains a `TurnDiagnostics` field. The flat
-`requests: Arc<Vec<RequestDiagnostics>>` is replaced by the nested structure, but a
-backward-compatible `requests()` accessor is preserved by flattening the tree:
+The existing `DiagnosticsContext` type (in `diagnostics_context.rs`) currently uses a flat
+`requests: Arc<Vec<RequestDiagnostics>>` structure. The feed operations change adds the
+hierarchical `operationPlan` field while preserving backward compatibility:
 
 ```rust
 impl DiagnosticsContext {
-    /// Returns the turn diagnostics for this operation.
-    pub fn turn(&self) -> &TurnDiagnostics { ... }
+    /// Returns the plan diagnostics for this operation.
+    pub fn operation_plan(&self) -> &NodeDiagnostics { ... }
 
-    /// Returns all HTTP request diagnostics, flattened across steps.
+    /// Returns all HTTP request diagnostics, flattened across nodes.
     ///
     /// This is backward-compatible with the pre-feed-operations API.
     /// Requests are returned in the order they were executed.
     pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>> {
-        // Flatten: turn.steps.iter().flat_map(|s| s.requests.iter())
+        // Flatten: recursively collect requests from the node tree.
     }
 }
 ```
 
-The `DiagnosticsContextBuilder` gains step-tracking methods:
+The `DiagnosticsContextBuilder` gains node-tracking methods:
 
 ```rust
 impl DiagnosticsContextBuilder {
-    /// Records that a step has been enqueued for execution.
-    pub(crate) fn enqueue_step(&mut self, step_type: StepType) -> StepHandle { ... }
-
-    /// Records that a step has started executing (acquired concurrency permit).
-    pub(crate) fn start_step(&mut self, handle: &StepHandle) { ... }
-
-    /// Records that a step has completed, with its requests.
-    pub(crate) fn complete_step(
+    /// Records that a node has started executing.
+    pub(crate) fn start_node(
         &mut self,
-        handle: StepHandle,
+        node_type: NodeType,
+        epk_range: Option<EpkRange<EffectivePartitionKey>>,
+    ) -> NodeHandle { ... }
+
+    /// Records that a node has completed, with its requests and children.
+    pub(crate) fn complete_node(
+        &mut self,
+        handle: NodeHandle,
         requests: Vec<RequestDiagnostics>,
+        children: Vec<NodeDiagnostics>,
+        outcome: NodeOutcome,
     ) { ... }
 }
 ```
 
-### 8.7 Granularity Control
+### 8.6 Verbosity Control
 
-The existing `DiagnosticsVerbosity` enum (Summary / Detailed) controls how the Turn/Step
-tree is serialized:
+The existing `DiagnosticsVerbosity` enum (Summary / Detailed) controls serialization:
 
 | Verbosity | Behavior |
 |-----------|----------|
-| **Summary** | Step-level timing is included but per-step wait times may be omitted. Individual `RequestDiagnostics` are deduplicated/aggregated as they are today. Concurrency metadata is included (a few integers). |
-| **Detailed** | Full tree: all step timestamps (enqueued/started/completed), all individual `RequestDiagnostics` with events, and concurrency metadata. |
+| **Summary** | Node-level timing included. Individual `RequestDiagnostics` are deduplicated/aggregated as they are today. |
+| **Detailed** | Full tree: all node timestamps, all individual `RequestDiagnostics` with events, all children. |
 
-Point operations produce the same output as today at both verbosity levels — the Turn/Step
-nesting is transparent when there's only one step.
+Point operations produce the same output as today at both verbosity levels — the hierarchy
+is transparent when there's only one node.
 
-### 8.8 Pagination Context
+### 8.7 Pagination Context
 
-Each `execute_operation` call produces one `DiagnosticsContext` containing one Turn. The
-SDK layer manages pagination and can:
+Each `execute_operation` call produces one `DiagnosticsContext`. The SDK layer manages
+pagination and can:
 
-1. **Aggregate Turns** — collect `TurnDiagnostics` from multiple pages to produce a
-   summary of the full pagination operation (total RU, total duration, pages fetched).
+1. **Aggregate across pages** — collect diagnostics from multiple pages to produce a
+   summary of the full feed operation (total RU, total duration, pages fetched).
 
-2. **Correlate across pages** — the continuation token can optionally carry a
-   `feed_operation_id` (UUID) so the SDK can link diagnostics from different
-   `execute_operation` calls that belong to the same logical feed operation.
-
-3. **Create OTEL spans** — the SDK can create a parent span for the feed operation,
-   child spans for each Turn, and nested spans for each Step, using the timestamps
+2. **Create OTEL spans** — the SDK can create a parent span for the feed operation,
+   child spans for each page, and nested spans for each node, using the timestamps
    and metadata from the diagnostics tree. The driver does not prescribe span structure —
    it provides the data.
 
@@ -1573,45 +1390,35 @@ SDK layer manages pagination and can:
 
 ### 9.1 Partition Split During Execution
 
-Fetch steps target **EPK ranges**, not PK range IDs. When a Fetch step receives a 410/1002
-(Gone — PartitionKeyRangeGone) response:
+Fetch nodes target **EPK ranges**, not PK range IDs. When a Fetch node receives a 410/1002
+(Gone — PartitionKeyRangeGone) response, the Fetch node handles the split **internally**:
 
 1. **Invalidate** the `PartitionKeyRangeCache` for the affected container.
 2. **Re-fetch** the partition key ranges.
-3. **Re-resolve** the Fetch step's EPK range to the new child PK range IDs. The step's EPK
-   range now maps to multiple PK ranges.
-4. **Issue concurrent requests** to all child PK ranges within the step. The plan structure
-   does not change — the Fetch step internally fans out. There is no requirement that the
-   concurrency semaphore issues one permit per step; a single Fetch step may hold multiple
-   concurrent requests after a split.
-5. **Resume execution** with the child range results.
+3. **Re-resolve** the Fetch node's EPK range to the new child PK range IDs.
+4. **Internally split** — the single Fetch range issues requests to the appropriate
+   child PK ranges.
+5. **Resume execution** with the child range result.
 
-The plan graph remains stable across splits — no steps are added, removed, or rewired.
+The plan structure remains stable across splits. The Fetch node absorbs the split
+internally without changing the plan graph. The next time the plan is generated (on the
+next page), the Planner will see the new split ranges from the PK range cache and create
+separate Fetch nodes for each child range — the continuation token's EPK bounds guide
+the resume position correctly.
+
 The continuation token survives because it stores EPK bounds (not PK range IDs), and the
-Fetch step re-resolves those bounds to current PK range IDs on each execution.
+Planner re-resolves those bounds to current PK range IDs on each page.
 
 ### 9.2 Error Propagation
 
 | Error Scenario | Behavior |
 |----------------|----------|
-| 410/1002 (PartitionKeyRangeGone) | Fetch step re-resolves EPK range to child PK ranges, retries. |
+| 410/1002 (PartitionKeyRangeGone) | Fetch node internally re-resolves EPK range, retries. |
 | 429 (Throttled) | Handled by transport pipeline (backoff + retry). |
 | 503 (Service Unavailable) | Handled by operation pipeline (region failover). |
 | 404 (Not Found) — container | Fail the entire feed operation. |
-| 404 (Not Found) — item in ReadMany | Item omitted from results (not an error). |
 | Transient network error | Handled by transport pipeline (retry). |
 | Invalid continuation token | Fail with `ErrorKind::DataConversion`. |
-
-### 9.3 Partial Failure in Fan-Out
-
-For ReadMany and cross-partition queries, if one PK range fails after exhausting all retries
-(transport + operation pipeline), the entire feed operation fails. Partial results from
-successful ranges are NOT returned.
-
-**Rationale:** Returning partial results would require the caller to distinguish between
-"all items fetched" and "some items fetched, some failed" — a complex API that most callers
-don't want. If partial results are needed in the future, they can be exposed via a separate
-API or option.
 
 ---
 
@@ -1620,10 +1427,9 @@ API or option.
 ### 10.1 Public API
 
 The driver exposes a single `execute_operation` method for **all** operations — both point
-and feed. The driver is stateless across calls: each invocation runs one turn of the plan
+and feed. The driver is stateless across calls: each invocation runs one page of the plan
 and returns a `CosmosResponse`. The response optionally includes a continuation token when
-more pages are available. The higher-level SDK (e.g., `azure_data_cosmos`) decides which
-operations to surface as pagers from a UX perspective.
+more pages are available.
 
 ```rust
 impl CosmosDriver {
@@ -1632,20 +1438,16 @@ impl CosmosDriver {
     /// For point operations (read, create, delete, etc.), this returns the
     /// single response with no continuation token.
     ///
-    /// For feed operations (query, read-many, read-all), this executes one
-    /// turn of the plan and returns a page of results. If more pages are
-    /// available, the response includes a `ContinuationToken`. The caller
-    /// passes this token back in `OperationOptions` to fetch the next page.
-    ///
-    /// The driver does not manage pagination state — it acts as a stateless
-    /// service. The SDK layer is responsible for threading continuation tokens
-    /// across calls to implement pagers/streams.
+    /// For feed operations (read-all), this executes one page of the plan
+    /// and returns the result. If more pages are available, the response
+    /// includes a `ContinuationToken`. The caller passes this token back
+    /// in `OperationOptions` to fetch the next page.
     pub async fn execute_operation(
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<CosmosResponse> {
-        // Plan → Execute one turn → return CosmosResponse
+        // Plan → Execute one page → return CosmosResponse
     }
 }
 ```
@@ -1688,7 +1490,7 @@ impl CosmosResponse {
 
 ### 10.3 OperationOptions Changes
 
-`OperationOptions` gains feed-specific fields for continuation and concurrency:
+`OperationOptions` gains feed-specific fields:
 
 ```rust
 pub struct OperationOptions {
@@ -1697,10 +1499,6 @@ pub struct OperationOptions {
     /// Maximum number of items per page (feed operations only).
     /// If not set, the server default applies.
     max_item_count: Option<u32>,
-
-    /// Maximum number of concurrent partition key range fetches
-    /// (feed operations only). Default: min(num_pk_ranges, 10).
-    max_concurrency: Option<usize>,
 
     /// Continuation token for resuming a previous feed operation.
     /// Pass the token from a previous `CosmosResponse::continuation_token()`.
@@ -1714,200 +1512,142 @@ These fields are ignored for point operations.
 
 | Operation | Order Guarantee |
 |-----------|-----------------|
-| ReadMany | Unordered across partitions. Within each partition, (PartitionKey, ID) ascending. |
-| Single-partition query | Server-determined order: (PartitionKey, ID) ascending, or as specified by ORDER BY. |
-| Cross-partition query (no ORDER BY) | Within each partition, (PartitionKey, ID) ascending. Across partitions, unordered (partition results are concatenated by `UnorderedMerge`). |
-| Cross-partition query (ORDER BY) | Globally ordered per ORDER BY clause (future work: `OrderedMerge` k-way merge). |
-| ReadFeed (single partition) | (PartitionKey, ID) ascending. |
-| ReadFeed (cross-partition) | Within each partition, (PartitionKey, ID) ascending. Across partitions, unordered. |
+| ReadAll (single partition) | (PartitionKey, ID) ascending. |
+| ReadAll (cross-partition) | Within each partition, (PartitionKey, ID) ascending. Across partitions, items are yielded in EPK order (implementation behavior, not a service guarantee). |
 
 ### 10.5 Page Boundaries
 
-Page boundaries are determined by:
+Each `execute_operation` call for ReadAll returns exactly one page from exactly one partition:
+
 - **Server-side max item count**: The server may return fewer items than requested.
 - **Client-side max item count**: Configurable via `OperationOptions::max_item_count`.
 - **Server continuation**: A page boundary occurs whenever the server returns a continuation
   token.
+- **Partition boundary**: When a partition is fully drained (no server continuation), the
+  current page is returned. The next call starts the next partition.
 
-For ReadMany, there is exactly one logical page (the merged result), regardless of how many
-server-side pages were consumed internally.
-
----
-
-## 11. Configuration Surface
-
-### 11.1 OperationOptions Additions
-
-Feed-specific options are added to `OperationOptions` (see §10.3). They are ignored for
-point operations. The existing layered resolution applies:
-
-1. `OperationOptions` (per-call)
-2. `DriverOptions` (per-driver)
-3. `CosmosDriverRuntime` (global)
-4. Environment variables
-
-The `max_concurrency`, `max_item_count`, and `continuation` fields follow the same precedence.
+Pages never span partition boundaries.
 
 ---
 
-## 12. Performance & Non-Regression
+## 11. Testing Strategy
 
-### 12.1 Point Operation Overhead
-
-The plan model MUST NOT regress point operation performance. Requirements:
-
-- **No heap allocation** for trivial plans beyond what `execute_operation` does today.
-- **No additional async machinery** (no spawning, no channels) for single-step plans.
-- **Benchmark**: Point operation latency with the plan model must be within 1% of the
-  current direct `execute_single_operation` call.
-
-Implementation: For point operations and single-partition feeds, the Planner produces an
-`OperationPlan::Trivial` — a stack-allocated single step with no `Vec` overhead. The
-executor matches on `Trivial` and calls `execute_single_operation` directly with no
-graph traversal. The plan model is only heap-allocated for multi-step fan-out operations.
-
-### 12.2 Fan-Out Memory Bounds
-
-For ReadMany:
-- Buffered data is bounded by the total size of all items in the response.
-- The executor does not buffer more than `max_concurrency` in-flight requests.
-
-For paginated queries:
-- Each turn buffers at most one page per in-flight partition fetch.
-- Total buffer: `max_concurrency × max_page_size`.
-
----
-
-## 13. Migration Plan
-
-### Phase 1: OperationType / OperationPayload Refactor
-
-1. Add `OperationPayload` enum.
-2. Add `OperationTarget` enum.
-3. Update `CosmosOperation` to use `OperationPayload` and `OperationTarget`.
-4. Update factory methods.
-5. Update transport pipeline request builder to extract body from `OperationPayload`.
-6. Remove `body: Option<Vec<u8>>` from `CosmosOperation`.
-7. Update all callers (driver internals, tests, `azure_data_cosmos` bridge).
-
-**This is a breaking internal change.** The `body` field and `partition_key` field on
-`CosmosOperation` are replaced. All internal callers must be updated.
-
-### Phase 2: Plan Infrastructure
-
-1. Implement `OperationPlan`, `PlanStep`.
-2. Implement `Planner` with trivial single-step planning (point ops only).
-3. Implement `PlanExecutor` for single-step plans.
-4. Wire `execute_operation` through Plan → Execute path (with fast-path bypass).
-5. Validate no performance regression via benchmarks.
-
-### Phase 3: ReadMany
-
-1. Implement ReadMany planning in `Planner`:
-   - Group items by PK range (via `PartitionKeyRangeCache`).
-   - Create fan-out `Fetch` steps + `UnorderedMerge` step.
-2. Implement `UnorderedMerge` step execution in `PlanExecutor`.
-3. Wire `execute_operation` to use Plan → Execute for feed operations.
-4. Extend `CosmosResponse` with optional `continuation_token` field.
-5. Integration tests with partition splits.
-
-### Phase 4: Single-Partition Queries
-
-1. Implement single-partition query planning.
-2. Implement paginated execution (continuation threading).
-3. Implement `ContinuationToken` serialization.
-
-### Phase 5: Cross-Partition Queries
-
-1. Implement query plan fetching in `Planner`.
-2. Implement multi-range query planning.
-3. Implement incremental page production for unordered queries.
-
-### Phase 6: Advanced Query Features (Future)
-
-1. ORDER BY merge-sort.
-2. Aggregation.
-3. Change feed.
-
----
-
-## 14. Testing Strategy
-
-### 14.1 Unit Tests
+### 11.1 Unit Tests
 
 | Test Area | Cases |
 |-----------|-------|
-| Planner — point ops | Verify trivial single-step plan for each point operation type. |
-| Planner — ReadMany | Verify correct grouping by PK range. Items spread across ranges. |
-| Planner — single-partition query | Verify single `Fetch` step with correct targeting. |
-| PlanExecutor — single step | Execute trivial plan, verify result matches direct pipeline call. |
-| PlanExecutor — fan-out | Execute multi-step plan with mock pipeline, verify merge. |
-| PlanExecutor — concurrency | Verify concurrency cap is respected (at most N concurrent fetches). |
-| ContinuationToken — serialize | Serialize to string, verify output. |
+| Planner — point ops | Verify SingleNode plan for each point operation type. |
+| Planner — ReadAll | Verify Graph plan with Drain root, correct Fetch children per PK range. |
+| Planner — ReadAll resume | Verify resume skips drained partitions, resumes active, starts right fresh. |
+| Planner — bottom-up invariant | Verify children always have lower NodeIds than parents. |
+| PlanExecutor — single node | Execute SingleNode plan, verify result matches direct pipeline call. |
+| PlanExecutor — drain | Execute Drain plan with mock pipeline, verify sequential execution. |
+| PlanExecutor — drain page boundary | Verify pages don't span partition boundaries. |
+| ContinuationToken — serialize | Serialize to base64url string, verify roundtrip. |
 | ContinuationToken — deserialize | Deserialize from explicit string, verify result. |
 | ContinuationToken — version compat | Older version tokens deserialize correctly. |
+| ContinuationToken — future version | Token with version > current is rejected. |
+| ContinuationToken — operation kind | Token with wrong operation kind is rejected. |
 | ContinuationToken — split recovery | Token with EPK bounds spanning a split range maps to correct child ranges. |
-| ContinuationToken — O(1) size | Token size is constant regardless of partition count (only one Fetch leaf stored). |
-| ContinuationToken — Drain resume | Drain node correctly classifies partitions as left/target/right from nested Fetch. |
-| ContinuationToken — OrderBy resume | OrderBy node generates correct range filters and dedup state from nested Fetch + lastValues. |
-| ContinuationToken — nesting | Nested tokens (e.g., future OffsetLimit wrapping OrderBy wrapping Fetch) round-trip correctly. |
+| ContinuationToken — Drain resume | Drain node correctly classifies partitions as left/target/right. |
+| ContinuationToken — nesting | Nested tokens round-trip correctly through serialize/deserialize. |
+| ContinuationToken — unknown variant | Unknown `ResumeState` type fails gracefully on deserialize. |
+| NodeId/NodeRange | Verify range iteration, length, empty checks. |
 | OperationTarget — variants | Verify `PartitionKey`, `all_ranges()`, and custom `EpkRange` produce correct targets. |
+| Diagnostics — hierarchy | Verify recursive node tree structure appears in diagnostics JSON. |
+| Diagnostics — children | Verify composite nodes contain child node diagnostics. |
+| Diagnostics — backward compat | Verify `requests()` flattening returns all requests from nested nodes. |
 
-### 14.2 Integration Tests
+### 11.2 Integration Tests
 
 | Test Area | Cases |
 |-----------|-------|
-| ReadMany — basic | Read 10 items across 3 partitions, verify all returned. |
-| ReadMany — missing items | Read items where some don't exist, verify present items returned. |
-| ReadMany — single partition | All items in one partition, verify no unnecessary fan-out. |
-| ReadMany — partition split | Trigger split during ReadMany, verify Fetch step re-resolves and completes. |
-| ReadMany — large set | Read 1000 items, verify server-side pagination within each range works. |
-| Query — single partition | Execute paginated query, verify continuation threading. |
-| Query — resume | Execute query, get continuation, pass token back in next call, verify continues. |
-| Diagnostics | Verify RU charges are aggregated across fan-out steps. |
-| Throughput control | Verify fan-out respects throughput control group limits. |
+| ReadAll — basic | Read all items from a container, verify all returned in EPK order. |
+| ReadAll — empty container | ReadAll on empty container returns no results, no continuation. |
+| ReadAll — single partition | All items in one partition, verify SingleNode plan execution. |
+| ReadAll — multi partition | Items across multiple partitions, verify sequential drain. |
+| ReadAll — pagination | Verify continuation token threads correctly across pages. |
+| ReadAll — resume | Get continuation mid-stream, resume from it, verify continued results. |
+| ReadAll — resume across SDK versions | Serialize token, deserialize with newer SDK, verify resume works. |
+| ReadAll — partition split | Trigger split during ReadAll, verify Fetch node re-resolves and completes. |
+| ReadAll — large dataset | Read many items, verify all pages and partitions are drained. |
+| Diagnostics — RU aggregation | Verify total RU charge sums across all pages. |
+| Diagnostics — plan structure | Verify diagnostics JSON shows Drain/Fetch hierarchy with children. |
 
-### 14.3 Performance Tests
+### 11.3 Performance Tests
 
 | Test Area | Metric |
 |-----------|--------|
 | Point op overhead | Latency regression < 1% vs. direct `execute_single_operation`. |
-| ReadMany fan-out | Latency scales sub-linearly with partition count (concurrency works). |
-| Memory bounds | Peak memory for ReadMany of N items is O(N × item_size). |
+| ReadAll latency | Sequential partition drain does not introduce unnecessary overhead. |
 
 ---
 
-## 15. Future Work
+## 12. Future Work
 
-### 15.1 Change Feed
+### 12.1 ReadMany
 
-The change feed is a specialized feed operation with unique characteristics:
-- Start-from-beginning, start-from-now, or start-from-timestamp.
-- Lease-based partition assignment (for multi-consumer scenarios).
-- Scoped to feed ranges (EPK ranges).
-- Incremental mode vs. full-fidelity mode.
+ReadMany reads multiple items by (ID, PartitionKey) pairs. It requires grouping items by
+PK range, creating concurrent `Fetch` nodes, and merging results via an `UnorderedMerge`
+node. This adds concurrency control (semaphore-based) to the PlanExecutor and a new
+`PlanNode::UnorderedMerge` variant.
 
-The current spec reserves extension points in `OperationPayload`, `OperationTarget`,
-`PlanStep`, and `ResumeState` for change feed support.
+### 12.2 Cross-Partition Queries
 
-### 15.2 ORDER BY Merge-Sort
+Cross-partition queries require fetching a backend query plan, creating `Fetch` nodes per
+partition, and optionally performing client-side sort for ORDER BY queries via an
+`OrderedMerge` node. This adds query plan fetching callbacks to the Planner and k-way
+merge logic to the PlanExecutor.
 
-Cross-partition queries with ORDER BY require a k-way merge of sorted partition streams.
-This will be implemented as a `Sort` variant of `PlanStep` that consumes partition `Fetch`
-step heads and produces globally ordered pages.
+### 12.3 Change Feed
 
-### 15.3 Aggregation
+The change feed is a specialized feed operation with unique characteristics: start-from
+modes, lease-based partition assignment, and incremental/full-fidelity modes.
 
-Queries with aggregation functions (COUNT, SUM, AVG, etc.) require client-side accumulation
-across partitions. This will be implemented as an `Aggregate` variant of `PlanStep`.
+Unlike ReadAll's sequential drain (where only the active partition's state is needed),
+change feed requires **per-range continuation tokens**. Each feed range maintains its
+own server continuation, and the resume state is a list of per-range tokens:
 
-### 15.4 Payload Awareness
+```rust
+// Future ResumeState variant (illustrative)
+#[serde(rename = "changeFeed")]
+ChangeFeed(ChangeFeedState),
 
-For sort and aggregation, the driver must understand feed response envelopes (the JSON
-structure containing the items array, count, etc.). This will require a light JSON parsing
-layer in the executor, not full item deserialization.
+#[serde(rename_all = "camelCase")]
+struct ChangeFeedState {
+    /// Per-range continuation tokens.
+    /// Each entry tracks one feed range's EPK bounds and its
+    /// server-provided continuation token.
+    range_tokens: Vec<RangeToken>,
+}
 
-### 15.5 Hedging for Feed Operations
+#[serde(rename_all = "camelCase")]
+struct RangeToken {
+    epk_min: String,
+    epk_max: String,
+    server_token: Option<String>,
+}
+```
+
+This is an example where per-partition state is necessary (the token size is O(N) in
+range count), as noted in [§7.1 Design Principles](#71-design-principles). The plan
+model reserves extension points in `PlanNode` and `ResumeState` for change feed support.
+
+### 12.4 Concurrency
+
+Future operations (ReadMany, cross-partition queries) will require concurrent partition
+fetching. The concurrency permit model described in [§5.6](#56-future-extensions) provides
+the foundation: a shared semaphore limits the number of concurrent permits, and each plan
+node acquires a permit before executing. This will add `UnorderedMerge` / `OrderedMerge`
+nodes to the plan model.
+
+### 12.5 Cached Operation Plans
+
+For in-process callers that call `execute_operation` in a loop, caching the `OperationPlan`
+across pages (invalidating on metadata changes) would avoid re-planning on every page. This
+is a performance optimization, not a correctness concern.
+
+### 12.6 Hedging for Feed Operations
 
 The existing hedging mechanism (speculative execution in secondary regions) could be extended
-to individual plan steps, allowing fan-out fetches to hedge independently.
+to individual plan nodes, allowing feed fetches to hedge independently.
