@@ -4,7 +4,7 @@
 //! Multi-region integration tests.
 
 use super::*;
-use azure_core::http::HttpClient;
+use azure_core::http::{headers::HeaderName, HttpClient};
 
 #[tokio::test]
 async fn write_forbidden_403_3() {
@@ -161,4 +161,112 @@ async fn pause_resume_replication() {
 
     let doc = read_response_body(response).await;
     assert_eq!(doc["value"], 42);
+}
+
+/// Validates that a createItem sent to a read-only region returns 403 with
+/// substatus 3, and that all expected Cosmos headers and error body fields
+/// are present and correct.
+#[tokio::test]
+async fn create_item_on_read_region_returns_403_3_with_correct_headers() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+
+    // Header name constants for fields not in the shared test helpers.
+    let activity_id: HeaderName = HeaderName::from_static("x-ms-activity-id");
+    let request_charge: HeaderName = HeaderName::from_static("x-ms-request-charge");
+    let version: HeaderName = HeaderName::from_static("x-ms-version");
+    let content_type: HeaderName = HeaderName::from_static("content-type");
+    let date: HeaderName = HeaderName::from_static("date");
+    let server_duration_ms: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
+
+    // Attempt createItem against the read-only region (West US).
+    let body = serde_json::json!({"id": "forbidden-item", "pk": "pk1", "value": 1});
+    let req = create_item_request(
+        &ctx.west_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        false,
+    );
+    let (status, headers, body_json) = collect_response(
+        ctx.emulator.execute_request(&req).await.unwrap(),
+    )
+    .await;
+
+    // ── Status & substatus ───────────────────────────────────────
+    assert_eq!(status, StatusCode::Forbidden, "HTTP status should be 403");
+    let substatus_val = headers
+        .get_optional_str(&SUBSTATUS)
+        .expect("x-ms-substatus header should be present");
+    assert_eq!(substatus_val, "3", "substatus should be 3 (WriteForbidden)");
+
+    // ── Activity ID (unique per request) ─────────────────────────
+    let aid = headers
+        .get_optional_str(&activity_id)
+        .expect("x-ms-activity-id should be present");
+    assert!(
+        !aid.is_empty(),
+        "x-ms-activity-id should be a non-empty UUID",
+    );
+
+    // ── Request charge (should be 0 for rejected writes) ─────────
+    let charge_str = headers
+        .get_optional_str(&request_charge)
+        .expect("x-ms-request-charge should be present");
+    let charge: f64 = charge_str.parse().expect("request charge should be a number");
+    assert!(
+        charge >= 0.0,
+        "x-ms-request-charge should be non-negative, got {charge}",
+    );
+
+    // ── Session token (may be empty for rejected writes) ─────────
+    // The real service returns a session token header even on 403.3;
+    // the emulator should too.
+    assert!(
+        headers.get_optional_str(&SESSION_TOKEN).is_some(),
+        "x-ms-session-token header should be present (even if empty)",
+    );
+
+    // ── Standard Cosmos response headers ─────────────────────────
+    assert!(
+        headers.get_optional_str(&content_type).is_some(),
+        "content-type header should be present",
+    );
+    assert!(
+        headers.get_optional_str(&date).is_some(),
+        "date header should be present",
+    );
+    assert!(
+        headers.get_optional_str(&version).is_some(),
+        "x-ms-version header should be present",
+    );
+    let duration_str = headers
+        .get_optional_str(&server_duration_ms)
+        .expect("x-ms-request-duration-ms should be present");
+    let duration: f64 = duration_str.parse().expect("server duration should be a number");
+    assert!(
+        duration >= 0.0,
+        "x-ms-request-duration-ms should be non-negative, got {duration}",
+    );
+
+    // ── Error body structure ─────────────────────────────────────
+    assert!(body_json.is_object(), "Error body should be a JSON object");
+    let code = body_json["code"]
+        .as_str()
+        .expect("Error body should have a 'code' field");
+    assert_eq!(code, "Forbidden", "Error code should be 'Forbidden'");
+    let message = body_json["message"]
+        .as_str()
+        .expect("Error body should have a 'message' field");
+    assert!(
+        message.contains("not allowed") || message.contains("Write"),
+        "Error message should describe write-forbidden, got: {message}",
+    );
+
+    // ── No etag or lsn on error responses ────────────────────────
+    // The real service does not return etag or lsn for 403.3 errors.
+    assert!(
+        headers.get_optional_str(&ETAG).is_none(),
+        "etag should not be present on 403.3 error",
+    );
 }
