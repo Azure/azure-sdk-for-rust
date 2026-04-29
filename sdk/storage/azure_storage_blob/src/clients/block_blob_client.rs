@@ -111,7 +111,7 @@ impl BlockBlobClient {
 
     /// Uploads content to a block blob, overwriting any existing blob by default.
     ///
-    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::if_not_exists()`] to fail instead of overwriting.
     /// To perform a partial update of the content of a block blob, use [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
     ///
     /// # Arguments
