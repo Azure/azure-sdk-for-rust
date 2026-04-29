@@ -5,6 +5,7 @@
 
 use std::{
     collections::HashMap,
+    hash::{Hash, Hasher},
     sync::Arc,
     time::{Duration, Instant, SystemTime},
 };
@@ -262,27 +263,50 @@ pub(crate) fn can_circuit_breaker_trigger_failover(
     }
 }
 
-/// Samples a per-entry failback jitter in `[0, unavailability_duration / 2]`.
+/// Samples a per-entry failback jitter in `[0, unavailability_duration / 2)`.
 ///
 /// The jitter is added to `partition_unavailability_duration` before an
 /// `Unhealthy` PPCB entry is allowed to transition to `ProbeCandidate`. This
 /// spreads out the failback of partitions that all failed in the same
 /// burst, preventing a thundering-herd stampede on the recovering region.
 ///
-/// Sampled from `SystemTime` nanos to avoid pulling in a `rand` dependency
-/// for what is effectively a coarse spread function — full statistical
-/// randomness is not required, only enough variance to break correlation
-/// across many partitions failing within the same window.
-fn ppcb_failback_jitter(unavailability_duration: Duration) -> Duration {
+/// To remain dependency-free we avoid `rand` and instead seed a SplitMix64
+/// finalizer with two sources:
+///   * the **full** `SystemTime` epoch-nanosecond value (not just
+///     `subsec_nanos`, which caps the modulo at ~1 second and erases the
+///     upper half of the intended window whenever
+///     `unavailability_duration / 2 > 1 s`);
+///   * a hash of the partition key range ID, so that many entries created
+///     on the same coarse clock tick (e.g. ~15 ms wall-clock granularity on
+///     Windows during a burst) still receive different jitter values
+///     instead of all converging on the same fail-back deadline.
+///
+/// Full statistical randomness is not required — only enough variance to
+/// break correlation across many partitions failing within the same
+/// recovery window.
+fn ppcb_failback_jitter(
+    unavailability_duration: Duration,
+    pk_range_id: &PartitionKeyRangeId,
+) -> Duration {
     let max_jitter_nanos = (unavailability_duration / 2).as_nanos() as u64;
     if max_jitter_nanos == 0 {
         return Duration::ZERO;
     }
-    let seed = SystemTime::now()
+    let now_nanos = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|d| d.subsec_nanos())
+        .map(|d| d.as_nanos() as u64)
         .unwrap_or(0);
-    Duration::from_nanos(u64::from(seed) % max_jitter_nanos)
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    pk_range_id.as_str().hash(&mut hasher);
+    let pk_hash = hasher.finish();
+    // SplitMix64 finalizer scrambles the combined seed so adjacent inputs
+    // (e.g. two pk_range_ids hashed in the same nanosecond) produce
+    // uncorrelated outputs across the full [0, max_jitter_nanos) range.
+    let mut z = now_nanos ^ pk_hash;
+    z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    z ^= z >> 31;
+    Duration::from_nanos(z % max_jitter_nanos)
 }
 
 /// Marks a partition as unavailable, producing a new `PartitionEndpointState`.
@@ -344,6 +368,7 @@ pub(crate) fn mark_partition_unavailable(
                 health_status: HealthStatus::Unhealthy,
                 failback_jitter: ppcb_failback_jitter(
                     current_state.config.partition_unavailability_duration,
+                    pk_range_id,
                 ),
             });
 
@@ -362,8 +387,10 @@ pub(crate) fn mark_partition_unavailable(
             entry.last_failure_time = now;
             // Re-sample jitter so the next failback window is offset from
             // any other entries that may have failed on the same tick.
-            entry.failback_jitter =
-                ppcb_failback_jitter(current_state.config.partition_unavailability_duration);
+            entry.failback_jitter = ppcb_failback_jitter(
+                current_state.config.partition_unavailability_duration,
+                pk_range_id,
+            );
             return new_state;
         }
 
@@ -1110,16 +1137,64 @@ mod tests {
     fn ppcb_failback_jitter_stays_within_half_of_unavailability_duration() {
         let unavailability = Duration::from_secs(5);
         let max = unavailability / 2;
-        // Sample many times and assert all fall in [0, max).
-        for _ in 0..100 {
-            let j = ppcb_failback_jitter(unavailability);
+        // Sample many times across different partition keys and assert
+        // all fall in [0, max).
+        for i in 0..100 {
+            let pk: PartitionKeyRangeId = format!("pk-{i}").parse().unwrap();
+            let j = ppcb_failback_jitter(unavailability, &pk);
             assert!(j < max, "jitter {j:?} exceeded half-window {max:?}");
         }
     }
 
     #[test]
     fn ppcb_failback_jitter_is_zero_for_zero_duration() {
-        assert_eq!(ppcb_failback_jitter(Duration::ZERO), Duration::ZERO);
+        let pk: PartitionKeyRangeId = "pk-0".parse().unwrap();
+        assert_eq!(ppcb_failback_jitter(Duration::ZERO, &pk), Duration::ZERO);
+    }
+
+    #[test]
+    fn ppcb_failback_jitter_uses_full_window_above_one_second() {
+        // Regression: previously `subsec_nanos()` capped the modulo at ~1 s,
+        // so a 5 s unavailability_duration (half-window = 2.5 s) could never
+        // produce a jitter > 1 s. Sample many partitions and assert at least
+        // one lands above the 1 s ceiling that the old impl could never reach.
+        let unavailability = Duration::from_secs(10); // half-window = 5 s
+        let one_second = Duration::from_secs(1);
+        let mut saw_above_one_second = false;
+        for i in 0..1_000 {
+            let pk: PartitionKeyRangeId = format!("pk-{i}").parse().unwrap();
+            if ppcb_failback_jitter(unavailability, &pk) > one_second {
+                saw_above_one_second = true;
+                break;
+            }
+        }
+        assert!(
+            saw_above_one_second,
+            "jitter never exceeded 1 s across 1000 partitions — full window not in use"
+        );
+    }
+
+    #[test]
+    fn ppcb_failback_jitter_decorrelates_simultaneous_failures() {
+        // Regression: previously, partitions failing within the same coarse
+        // clock tick (e.g. ~15 ms on Windows wall-clock) all got the same
+        // `subsec_nanos` seed and therefore the same jitter — defeating the
+        // anti-thundering-herd purpose. The pk-hash mix-in must guarantee
+        // distinct values across distinct partition keys even within a single
+        // tight loop iteration.
+        let unavailability = Duration::from_secs(5);
+        let mut samples = std::collections::HashSet::new();
+        for i in 0..256 {
+            let pk: PartitionKeyRangeId = format!("pk-{i}").parse().unwrap();
+            samples.insert(ppcb_failback_jitter(unavailability, &pk));
+        }
+        // Allow a tiny number of collisions (modulo bucket clashes are
+        // possible by chance) but require the vast majority to be distinct.
+        assert!(
+            samples.len() >= 250,
+            "expected ≥250 distinct jitter values across 256 partition keys, got {}",
+            samples.len()
+        );
     }
 
     #[test]
