@@ -188,14 +188,14 @@ pub enum SqlSortOrder {
 ```
 
 Source mapping:
-| C++ File | Rust Module |
-|----------|-------------|
-| `SqlObjectKind.h` | `ast/mod.rs` — enum variants become struct/enum types |
-| `SqlQuery.h`, `SqlSelectClause.h`, `SqlFromClause.h`, `SqlWhereClause.h`, `SqlGroupByClause.h`, `SqlOrderByClause.h`, `SqlOffsetLimitClause.h` | `ast/mod.rs` |
-| `SqlScalarExpression.h`, `SqlBinaryScalarExpression.h`, `SqlUnaryScalarExpression.h`, `SqlLiteralScalarExpression.h`, `SqlFunctionCallScalarExpression.h`, etc. | `ast/scalar_expression.rs` |
-| `SqlBinaryScalarOperatorKind.h`, `SqlUnaryScalarOperatorKind.h`, `SqlSortOrder.h` | `ast/mod.rs` — enums |
-| `SqlCollectionExpression.h`, `SqlAliasedCollectionExpression.h`, `SqlArrayIteratorCollectionExpression.h`, `SqlJoinCollectionExpression.h`, `SqlInputPathCollection.h` | `ast/collection.rs` |
-| `SqlObjectVisitor.h` | `ast/visitor.rs` |
+| C++ File                                                                                                                                                               | Rust Module                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `SqlObjectKind.h`                                                                                                                                                      | `ast/mod.rs` — enum variants become struct/enum types |
+| `SqlQuery.h`, `SqlSelectClause.h`, `SqlFromClause.h`, `SqlWhereClause.h`, `SqlGroupByClause.h`, `SqlOrderByClause.h`, `SqlOffsetLimitClause.h`                         | `ast/mod.rs`                                          |
+| `SqlScalarExpression.h`, `SqlBinaryScalarExpression.h`, `SqlUnaryScalarExpression.h`, `SqlLiteralScalarExpression.h`, `SqlFunctionCallScalarExpression.h`, etc.        | `ast/scalar_expression.rs`                            |
+| `SqlBinaryScalarOperatorKind.h`, `SqlUnaryScalarOperatorKind.h`, `SqlSortOrder.h`                                                                                      | `ast/mod.rs` — enums                                  |
+| `SqlCollectionExpression.h`, `SqlAliasedCollectionExpression.h`, `SqlArrayIteratorCollectionExpression.h`, `SqlJoinCollectionExpression.h`, `SqlInputPathCollection.h` | `ast/collection.rs`                                   |
+| `SqlObjectVisitor.h`                                                                                                                                                   | `ast/visitor.rs`                                      |
 
 ### 1.2 Lexer (port from `SqlScanner.h/.cpp`)
 
@@ -224,13 +224,13 @@ pub enum TokenKind {
     IntegerLiteral,
     FloatLiteral,
     Parameter,         // @name
-    
+
     // Keywords (mapped from SqlStringTokens)
     Select, From, Where, And, Or, Not, As, In, Between, Like, Escape,
     Order, By, Asc, Desc, Top, Distinct, Value, Group, Having,
     Join, Cross, Inner, Exists, Array, Null, True, False, Undefined,
     Offset, Limit, Udf, Is, Let,
-    
+
     // Operators
     Plus, Minus, Star, Slash, Percent, Tilde,
     Ampersand, Pipe, Caret, Eq, NotEq, Lt, Gt, LtEq, GtEq,
@@ -238,11 +238,11 @@ pub enum TokenKind {
     StringConcat,    // ||
     Coalesce,        // ??
     Question, Colon,
-    
+
     // Punctuation
     LParen, RParen, LBracket, RBracket, LBrace, RBrace,
     Dot, Comma, Bang,
-    
+
     // Special
     Eof,
 }
@@ -284,10 +284,10 @@ This is the **critical business logic**. The algorithm:
 pub struct QueryPlanInfo {
     /// Whether the query targets a single partition
     pub is_single_partition: bool,
-    
+
     /// Extracted partition key filters (if any)
     pub pk_filters: Vec<PartitionKeyFilter>,
-    
+
     /// Query features detected
     pub features: QueryFeatures,
 }
@@ -295,13 +295,13 @@ pub struct QueryPlanInfo {
 pub enum PartitionKeyFilter {
     /// Exact equality: pk = <value>
     Equality(Vec<PartitionKeyValue>),
-    
-    /// IN list: pk IN (v1, v2, ...)  
+
+    /// IN list: pk IN (v1, v2, ...)
     InList(Vec<Vec<PartitionKeyValue>>),
-    
+
     /// Range: pk > X AND pk < Y — can't target single partition but can narrow FeedRanges
     Range { min: Option<PartitionKeyValue>, max: Option<PartitionKeyValue> },
-    
+
     /// Full scan needed (no PK filter found)
     None,
 }
@@ -337,12 +337,12 @@ The extraction walks the WHERE clause looking for patterns like:
 - Anything else on the PK path → falls back to cross-partition
 
 Source mapping:
-| C++ | Rust |
-|-----|------|
-| `FilterExpressionPredicateExtractor` | `plan/pk_extractor.rs` |
-| `FilterExpressionPartitionKeyRangeTranslator` | `plan/pk_extractor.rs` (simplified, no logical plan intermediary) |
-| `FilterExpressionPartitionKeyRangeOptimizer` | Not needed (optimization for backend execution) |
-| `DistributedQueryCompiler` | Not needed (that's the Gateway's job; we replicate only the PK extraction part) |
+| C++                                           | Rust                                                                            |
+| --------------------------------------------- | ------------------------------------------------------------------------------- |
+| `FilterExpressionPredicateExtractor`          | `plan/pk_extractor.rs`                                                          |
+| `FilterExpressionPartitionKeyRangeTranslator` | `plan/pk_extractor.rs` (simplified, no logical plan intermediary)               |
+| `FilterExpressionPartitionKeyRangeOptimizer`  | Not needed (optimization for backend execution)                                 |
+| `DistributedQueryCompiler`                    | Not needed (that's the Gateway's job; we replicate only the PK extraction part) |
 
 ### 1.5 Integration with azure_data_cosmos
 
@@ -360,10 +360,10 @@ pub fn try_extract_target_ranges(
 ) -> Option<Vec<FeedRange>> {
     let program = azure_data_cosmos_query::parse(&query.text).ok()?;
     let plan = azure_data_cosmos_query::analyze(&program, &partition_key_definition.paths)?;
-    
+
     // Resolve parameters in PK filters
     let resolved_plan = plan.resolve_parameters(&query.parameters)?;
-    
+
     match &resolved_plan.pk_filters {
         PartitionKeyFilter::Equality(values) => {
             // Hash the PK values → effective partition key → find FeedRange
@@ -404,20 +404,20 @@ pub fn matches(
 
 The evaluator recursively evaluates `SqlScalarExpression` against the document:
 
-| Expression Type | Evaluation |
-|----------------|------------|
-| `PropertyRef("c")` | Returns the document root |
-| `MemberRef(source, "name")` | `source["name"]` |
-| `MemberIndexer(source, idx)` | `source[idx]` (array index) |
-| `Literal(...)` | Returns the literal value |
-| `Binary(op, l, r)` | Evaluate both sides, apply operator with Cosmos comparison semantics |
-| `Unary(Not, expr)` | `!evaluate(expr)` |
-| `FunctionCall("CONTAINS", [s, sub])` | `s.contains(sub)` |
-| `In(expr, items)` | `items.any(|i| evaluate(expr) == evaluate(i))` |
-| `Between(expr, low, high)` | `low <= expr && expr <= high` |
-| `Like(expr, pattern)` | SQL LIKE pattern matching |
-| `Exists(subquery)` | Evaluate subquery, check non-empty |
-| `ParameterRef("@p")` | Look up in parameter map |
+| Expression Type                      | Evaluation                                                           |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| `PropertyRef("c")`                   | Returns the document root                                            |
+| `MemberRef(source, "name")`          | `source["name"]`                                                     |
+| `MemberIndexer(source, idx)`         | `source[idx]` (array index)                                          |
+| `Literal(...)`                       | Returns the literal value                                            |
+| `Binary(op, l, r)`                   | Evaluate both sides, apply operator with Cosmos comparison semantics |
+| `Unary(Not, expr)`                   | `!evaluate(expr)`                                                    |
+| `FunctionCall("CONTAINS", [s, sub])` | `s.contains(sub)`                                                    |
+| `In(expr, items)`                    | `items.any(                                                          | i | evaluate(expr) == evaluate(i))` |
+| `Between(expr, low, high)`           | `low <= expr && expr <= high`                                        |
+| `Like(expr, pattern)`                | SQL LIKE pattern matching                                            |
+| `Exists(subquery)`                   | Evaluate subquery, check non-empty                                   |
+| `ParameterRef("@p")`                 | Look up in parameter map                                             |
 
 **Cosmos-specific comparison semantics** (important, from the C++ `VMVariantUtils`):
 - Type ordering: `null < boolean < number < string < array < object < undefined`
@@ -437,13 +437,13 @@ pub fn project(
 ) -> Result<serde_json::Value, EvalError>
 ```
 
-| SELECT Form | Behavior |
-|-------------|----------|
-| `SELECT *` | Return full document |
+| SELECT Form            | Behavior                           |
+| ---------------------- | ---------------------------------- |
+| `SELECT *`             | Return full document               |
 | `SELECT c.name, c.age` | Return `{"name": ..., "age": ...}` |
-| `SELECT VALUE c.name` | Return the scalar value directly |
-| `SELECT c.name AS n` | Return `{"n": ...}` |
-| `SELECT { "x": c.a }` | Construct object from expressions |
+| `SELECT VALUE c.name`  | Return the scalar value directly   |
+| `SELECT c.name AS n`   | Return `{"n": ...}`                |
+| `SELECT { "x": c.a }`  | Construct object from expressions  |
 
 ### 2.3 Combined Query Function
 
@@ -457,7 +457,7 @@ pub fn query_documents(
 ) -> Result<Vec<serde_json::Value>, QueryError> {
     let program = parse(sql)?;
     let query = &program.query;
-    
+
     let mut results = Vec::new();
     for doc in documents {
         // 1. Evaluate WHERE
@@ -466,15 +466,15 @@ pub fn query_documents(
                 continue;
             }
         }
-        
+
         // 2. Apply SELECT projection
         let projected = project(doc, &query.select, "c", parameters)?;
         results.push(projected);
     }
-    
+
     // 3. Apply TOP/OFFSET/LIMIT (simple truncation)
     apply_top_offset_limit(&mut results, &query);
-    
+
     Ok(results)
 }
 ```
@@ -483,34 +483,34 @@ pub fn query_documents(
 
 Initially support the most commonly used functions:
 
-| Category | Functions |
-|----------|-----------|
-| Type checking | `IS_DEFINED`, `IS_NULL`, `IS_BOOL`, `IS_NUMBER`, `IS_STRING`, `IS_ARRAY`, `IS_OBJECT` |
-| String | `CONTAINS`, `STARTSWITH`, `ENDSWITH`, `UPPER`, `LOWER`, `LENGTH`, `LTRIM`, `RTRIM`, `TRIM`, `CONCAT`, `SUBSTRING`, `REPLACE`, `LEFT`, `RIGHT`, `ToString` |
-| Math | `ABS`, `CEILING`, `FLOOR`, `ROUND`, `POWER`, `SQRT`, `LOG`, `LOG10`, `EXP`, `SIGN` |
-| Array | `ARRAY_CONTAINS`, `ARRAY_LENGTH`, `ARRAY_SLICE` |
-| Conversion | `ToString`, `ToNumber` |
+| Category      | Functions                                                                                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type checking | `IS_DEFINED`, `IS_NULL`, `IS_BOOL`, `IS_NUMBER`, `IS_STRING`, `IS_ARRAY`, `IS_OBJECT`                                                                     |
+| String        | `CONTAINS`, `STARTSWITH`, `ENDSWITH`, `UPPER`, `LOWER`, `LENGTH`, `LTRIM`, `RTRIM`, `TRIM`, `CONCAT`, `SUBSTRING`, `REPLACE`, `LEFT`, `RIGHT`, `ToString` |
+| Math          | `ABS`, `CEILING`, `FLOOR`, `ROUND`, `POWER`, `SQRT`, `LOG`, `LOG10`, `EXP`, `SIGN`                                                                        |
+| Array         | `ARRAY_CONTAINS`, `ARRAY_LENGTH`, `ARRAY_SLICE`                                                                                                           |
+| Conversion    | `ToString`, `ToNumber`                                                                                                                                    |
 
 ---
 
 ## What We Explicitly Skip
 
-| C++ Component | Why Skipped |
-|--------------|-------------|
-| `queryIL/` (IL representation) | We interpret the AST directly; no need for bytecode |
-| `queryRuntime/VM*` (VM execution engine) | Only needed for backend index execution |
-| `queryRuntime/IndexPlan*` | Index-level execution plans (backend only) |
-| `queryRuntime/QueryPhysicalPlan*` | Physical plan generation (backend only) |
-| `queryDistribution/` (most of it) | Distribution planning is Gateway's responsibility |
-| `queryEngine/QueryEngine.cpp` | Backend query execution orchestration |
-| `queryRuntime/CompilerIL*` | IL → backend assembly compilation |
-| `queryLanguages/kql/` | KQL support not needed |
-| `queryLanguages/JavaScript/` | JavaScript query support not needed |
-| `pgQueryInterop/` | PostgreSQL interop not needed |
-| `Tools/` | Query engine tooling not needed |
-| ORDER BY evaluation | Phase 2 skip (simple `sort_by` if needed later) |
-| GROUP BY / aggregates evaluation | Phase 2 skip (add later if emulator needs it) |
-| JOIN evaluation | Phase 2 skip (complex, add later) |
+| C++ Component                            | Why Skipped                                         |
+| ---------------------------------------- | --------------------------------------------------- |
+| `queryIL/` (IL representation)           | We interpret the AST directly; no need for bytecode |
+| `queryRuntime/VM*` (VM execution engine) | Only needed for backend index execution             |
+| `queryRuntime/IndexPlan*`                | Index-level execution plans (backend only)          |
+| `queryRuntime/QueryPhysicalPlan*`        | Physical plan generation (backend only)             |
+| `queryDistribution/` (most of it)        | Distribution planning is Gateway's responsibility   |
+| `queryEngine/QueryEngine.cpp`            | Backend query execution orchestration               |
+| `queryRuntime/CompilerIL*`               | IL → backend assembly compilation                   |
+| `queryLanguages/kql/`                    | KQL support not needed                              |
+| `queryLanguages/JavaScript/`             | JavaScript query support not needed                 |
+| `pgQueryInterop/`                        | PostgreSQL interop not needed                       |
+| `Tools/`                                 | Query engine tooling not needed                     |
+| ORDER BY evaluation                      | Phase 2 skip (simple `sort_by` if needed later)     |
+| GROUP BY / aggregates evaluation         | Phase 2 skip (add later if emulator needs it)       |
+| JOIN evaluation                          | Phase 2 skip (complex, add later)                   |
 
 ---
 
@@ -528,7 +528,7 @@ thiserror = "2"
 
 1. **Parser tests**: Port representative SQL strings from C++ test suites, verify AST structure
 2. **Roundtrip tests**: `parse(sql).to_string() ≈ sql` (normalized whitespace/case)
-3. **PK extraction tests**: 
+3. **PK extraction tests**:
    - `SELECT * FROM c WHERE c.pk = "hello"` → single partition
    - `SELECT * FROM c WHERE c.pk IN ("a", "b")` → two partitions
    - `SELECT * FROM c WHERE c.pk = "x" AND c.other > 5` → single partition
@@ -554,13 +554,13 @@ thiserror = "2"
 
 ## Estimated Scope
 
-| Component | Estimated LoC | Complexity |
-|-----------|--------------|------------|
-| AST types | ~400 | Low (data definitions) |
-| Lexer | ~500 | Medium (hand-crafted, thorough) |
-| Parser | ~800 | Medium-High (recursive descent, all grammar rules) |
-| PK Extractor | ~300 | Medium (AST walking, pattern matching) |
-| Value/Comparison | ~200 | Medium (Cosmos type ordering) |
-| Evaluator (matcher + projector + scalar + functions) | ~800 | Medium |
-| Tests | ~600 | — |
-| **Total** | **~3,600** | — |
+| Component                                            | Estimated LoC | Complexity                                         |
+| ---------------------------------------------------- | ------------- | -------------------------------------------------- |
+| AST types                                            | ~400          | Low (data definitions)                             |
+| Lexer                                                | ~500          | Medium (hand-crafted, thorough)                    |
+| Parser                                               | ~800          | Medium-High (recursive descent, all grammar rules) |
+| PK Extractor                                         | ~300          | Medium (AST walking, pattern matching)             |
+| Value/Comparison                                     | ~200          | Medium (Cosmos type ordering)                      |
+| Evaluator (matcher + projector + scalar + functions) | ~800          | Medium                                             |
+| Tests                                                | ~600          | —                                                  |
+| **Total**                                            | **~3,600**    | —                                                  |

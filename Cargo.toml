@@ -17,6 +17,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos_driver",
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_perf",
+  "sdk/cosmos/azure_data_cosmos_query",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
@@ -100,6 +101,10 @@ version = "0.3.0"
 path = "sdk/cosmos/azure_data_cosmos_driver"
 
 [workspace.dependencies.azure_data_cosmos_macros]
+version = "0.1.0"
+
+[workspace.dependencies.azure_data_cosmos_query]
+path = "sdk/cosmos/azure_data_cosmos_query"
 version = "0.1.0"
 
 [workspace.dependencies]
