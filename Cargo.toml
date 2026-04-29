@@ -14,6 +14,7 @@ members = [
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
   "sdk/cosmos/azure_data_cosmos_driver",
+  "sdk/cosmos/azure_data_cosmos_query",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
@@ -85,6 +86,10 @@ path = "sdk/identity/azure_identity"
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
 version = "0.13.0"
+
+[workspace.dependencies.azure_data_cosmos_query]
+path = "sdk/cosmos/azure_data_cosmos_query"
+version = "0.1.0"
 
 [workspace.dependencies]
 async-lock = "3.4"

@@ -6,6 +6,7 @@
 use serde::Serialize;
 
 pub(crate) mod executor;
+pub(crate) mod plan;
 
 pub use executor::QueryExecutor;
 

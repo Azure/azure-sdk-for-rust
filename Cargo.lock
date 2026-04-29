@@ -351,6 +351,7 @@ dependencies = [
  "async-trait",
  "azure_core",
  "azure_core_test",
+ "azure_data_cosmos_query",
  "azure_identity",
  "clap",
  "futures",
@@ -382,6 +383,15 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "azure_data_cosmos_query"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
