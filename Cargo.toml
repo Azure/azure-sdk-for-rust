@@ -13,10 +13,8 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
-  "sdk/cosmos/azure_data_cosmos_benchmarks",
   "sdk/cosmos/azure_data_cosmos_driver",
-  "sdk/cosmos/azure_data_cosmos_macros",
-  "sdk/cosmos/azure_data_cosmos_perf",
+  "sdk/cosmos/azure_data_cosmos_query",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
@@ -72,7 +70,6 @@ path = "sdk/eventhubs/azure_messaging_eventhubs"
 [workspace.dependencies.azure_core_opentelemetry]
 # azure_core_opentelemetry should only ever be in dev-dependencies herein
 path = "sdk/core/azure_core_opentelemetry"
-version = "0.10.0"
 
 [workspace.dependencies.azure_core_test]
 # azure_core_test is not published and only ever a dev-dependency
@@ -90,16 +87,8 @@ path = "sdk/identity/azure_identity"
 path = "sdk/storage/azure_storage_blob"
 version = "0.13.0"
 
-[workspace.dependencies.azure_data_cosmos]
-version = "0.34.0"
-path = "sdk/cosmos/azure_data_cosmos"
-
-[workspace.dependencies.azure_data_cosmos_driver]
-default-features = false
-version = "0.3.0"
-path = "sdk/cosmos/azure_data_cosmos_driver"
-
-[workspace.dependencies.azure_data_cosmos_macros]
+[workspace.dependencies.azure_data_cosmos_query]
+path = "sdk/cosmos/azure_data_cosmos_query"
 version = "0.1.0"
 
 [workspace.dependencies]
@@ -107,14 +96,10 @@ async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
 base64 = "0.22"
-arc-swap = "1.7"
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
-console-subscriber = "0.4"
 criterion = { version = "0.8", features = ["async_tokio"] }
-crossbeam = { version = "0.8", default-features = false }
-crossbeam-epoch = { version = "0.9", default-features = false }
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.14", features = ["uuid"] }
 fe2o3-amqp-ext = { version = "0.14" }
@@ -125,9 +110,6 @@ flate2 = "1.1.9"
 futures = "0.3"
 getrandom = { version = "0.4" }
 gloo-timers = { version = "0.3" }
-h2 = "0.4.13"
-hdrhistogram = "7.5"
-hostname = "0.4"
 hmac = { version = "0.12" }
 include-file = { version = "0.5.1", default-features = false }
 openssl = { version = "0.10.75" }
@@ -155,7 +137,6 @@ serde_test = "1"
 serial_test = "3.3"
 sha2 = { version = "0.10" }
 syn = { version = "2.0.115", features = ["full"] }
-sysinfo = "0.33"
 tar = { version = "0.4.45", default-features = false }
 thiserror = "2.0"
 time = { version = "0.3.47", features = [
@@ -166,20 +147,11 @@ tokio = { version = "1.49", default-features = false, features = [
   "macros",
   "time",
 ] }
-tokio-metrics = "0.4"
 tracing = "0.1.44"
 tracing-subscriber = "0.3"
 url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
-windows = { version = "0.62", default-features = false }
 zip = { version = "8.2", default-features = false, features = ["deflate"] }
-
-# Profile for running benchmarks
-# Inherits release optimizations but keeps debug symbols so that tools
-# can produce annotated output.
-[profile.bench]
-inherits = "release"
-debug = 1
 
 [workspace.lints.clippy]
 large_futures = "deny"
