@@ -1,6 +1,7 @@
 # Hub-Region Processing-Only Header Spec for `azure_data_cosmos`
 
 **Status:** Draft / Iterating
+**Confidence:** Medium — call graph for `ClientRetryPolicy` (single-master read budget, `before_send_request`/`should_retry_on_session_not_available` flow, `GlobalEndpointManager` → `LocationCache` mutex layering) is traced and verified against `main`; the backend's case-sensitivity for the `x-ms-cosmos-hub-region-processing-only` header value is **assumed** to match .NET's `bool.TrueString` (`"True"`) and is not verified against a backend contract reference.
 **Date:** 2026-04-29
 **Authors:** (team)
 **Crate:** `azure_data_cosmos`
@@ -371,7 +372,7 @@ block above it.
 |--------|-----------------|-------------|------------|
 | SE-001 | 🟡 Potential    | Backend rollout asymmetry — older regions ignore the header; behavior reverts to today's baseline (no recovery during failback). | Forward-compatible by design. Document graceful degradation in CHANGELOG. No code mitigation required. |
 | SE-002 | 🟡 Potential    | Future backend mis-routing if header were honored on multi-master accounts. | Latch is gated by the **account-level** check `LocationCache::can_use_multiple_write_locations()`; the per-request fields are explicitly avoided. Asserted in unit test ([§7.1](#71-unit-tests) AC-4). |
-| SE-003 | 🔴 Foundational | Latch correctness depends on `ClientRetryPolicy` being constructed fresh per top-level operation. If the policy is ever pooled or reused across operations, the latch leaks and the header attaches to unrelated requests. | **Promoted to a hard acceptance gate** for the implementation PR — see [§7.4](#74-acceptance-gates-implementation-pr). The plain `bool` field choice ([§3.1](#31-trigger)) further depends on `&mut self`-only access being preserved by future refactors. |
+| SE-003 | 🔴 Breaking — accepted via AG-1..AG-4 | Latch correctness depends on `ClientRetryPolicy` being constructed fresh per top-level operation. If the policy is ever pooled or reused across operations, the latch leaks and the header attaches to unrelated requests. | **Promoted to a hard acceptance gate** for the implementation PR — see [§7.4](#74-acceptance-gates-implementation-pr). The plain `bool` field choice ([§3.1](#31-trigger)) further depends on `&mut self`-only access being preserved by future refactors. |
 | SE-004 | 🟢 Minor        | Spec deviation: the issue text describes a 403/3 "skip-set rotation" flow. The .NET PR did not implement it; we mirror .NET. | Documented in [§6](#6-alternatives-considered) (ALT-4) and [§8](#8-open-questions--future-work) (OQ-1). Existing `should_retry_on_endpoint_failure` already rotates on 403/3 and the latched header rides along. |
 | SE-005 | 🟢 Minor        | Pre-existing inline doc-comment typo `404.1022 → 404.1002 (READ_SESSION_NOT_AVAILABLE)`. | Fixed opportunistically in §4.2(d). |
 
