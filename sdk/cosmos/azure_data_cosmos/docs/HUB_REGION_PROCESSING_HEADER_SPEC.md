@@ -98,28 +98,15 @@ inside `should_retry_on_session_not_available` and consumed inside `before_send_
 retry handler (`BackOffRetryHandler`) re-enters `before_send_request` for every attempt, which
 is the property that lets the latched flag persist onto subsequent retries automatically.
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                       BackOffRetryHandler::send (loop)                        │
-│                                                                              │
-│  ┌────────────────────────────────────────┐                                  │
-│  │  ClientRetryPolicy::before_send_request │   ◀── runs on EVERY attempt    │
-│  │  ──────────────────────────────────────  │                                  │
-│  │  if self.add_hub_region_processing_only_│                                  │
-│  │      header { request.headers.insert(.) }│                                  │
-│  └────────────────────────────────────────┘                                  │
-│                       │                                                      │
-│                       ▼                                                      │
-│            (HTTP send → response)                                            │
-│                       │                                                      │
-│                       ▼                                                      │
-│  ┌────────────────────────────────────────┐                                  │
-│  │  ClientRetryPolicy::should_retry_on_*   │                                  │
-│  │  ──────────────────────────────────────  │                                  │
-│  │  on 404/1002 + single-master + count==1: │                                │
-│  │     self.add_hub_region_..._header=true │   ◀── latches the flag          │
-│  └────────────────────────────────────────┘                                  │
-└──────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Loop["BackOffRetryHandler::send (loop, per attempt)"]
+        BSR["ClientRetryPolicy::before_send_request<br/><i>runs on EVERY attempt</i><br/>if self.add_hub_region_processing_only_header<br/>&nbsp;&nbsp;&nbsp;&nbsp;{ request.headers.insert(...) }"]
+        SEND[("HTTP send → response")]
+        SR["ClientRetryPolicy::should_retry_on_*<br/>on 404/1002 + single-master + count==1:<br/>&nbsp;&nbsp;&nbsp;&nbsp;self.add_hub_region_..._header = true<br/><i>← latches the flag</i>"]
+        BSR --> SEND --> SR
+        SR -. "Retry → next iteration" .-> BSR
+    end
 ```
 
 `ClientRetryPolicy` is constructed once per top-level operation by
