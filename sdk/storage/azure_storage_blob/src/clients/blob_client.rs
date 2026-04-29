@@ -24,7 +24,7 @@ use azure_core::{
     },
     tracing, Bytes, Result,
 };
-use std::{num::NonZero, ops::Range, sync::Arc};
+use std::{ops::Range, sync::Arc};
 
 impl BlobClient {
     /// Creates a new BlobClient, using Entra ID authentication.
@@ -210,7 +210,7 @@ impl BlobClient {
             .unwrap_or_else(crate::partitioned_transfer::defaults::default_concurrency);
         let partition_size = options
             .partition_size
-            .unwrap_or(DEFAULT_DOWNLOAD_PARTITION_SIZE);
+            .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
         // Construct exhaustively to catch new options.
         let get_range_options = BlobClientDownloadInternalOptions {
             encryption_algorithm: options.encryption_algorithm,
@@ -290,9 +290,6 @@ impl BlobClient {
         }
     }
 }
-
-// unwrap evaluated at compile time
-const DEFAULT_DOWNLOAD_PARTITION_SIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlobClientDownloadBehavior<'a> {
     client: GeneratedBlobClient,
