@@ -16,7 +16,7 @@ pub mod validation;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
-    AsyncRawResponse, HttpClient, Method, Request, StatusCode, Url,
+    AsyncRawResponse, Method, Request, StatusCode, Url,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
@@ -109,22 +109,14 @@ pub static ETAG: HeaderName = HeaderName::from_static("etag");
 pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
 pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
-pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
+
 pub static PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
 pub static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-upsert");
 pub static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 
-/// Sends a request and collects the response body.
-pub async fn send_request(
-    client: &Arc<InMemoryEmulatorHttpClient>,
-    request: Request,
-) -> (AsyncRawResponse, Vec<u8>) {
-    let response = client.execute_request(&request).await.unwrap();
-    // Collect the body by reading the raw response
-    (response, vec![])
-}
+
 
 /// Helper to create a POST request to create a document.
 pub fn create_item_request(

@@ -87,7 +87,8 @@ async fn create_and_read_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let op = CosmosOperation::create_item(container.clone(), PartitionKey::from("pk1"))
+                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "driver-item-1");
+                let op = CosmosOperation::create_item(item)
                     .with_body(body_bytes.clone());
                 (op, OperationOptions::default())
             },
@@ -277,7 +278,8 @@ async fn delete_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let op = CosmosOperation::create_item(container.clone(), PartitionKey::from("pk1"))
+                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "delete-me");
+                let op = CosmosOperation::create_item(item)
                     .with_body(body_bytes.clone());
                 (op, OperationOptions::default())
             },
@@ -375,7 +377,8 @@ async fn replace_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let op = CosmosOperation::create_item(container.clone(), PartitionKey::from("pk1"))
+                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "replace-me");
+                let op = CosmosOperation::create_item(item)
                     .with_body(create_body.clone());
                 (op, OperationOptions::default())
             },
@@ -466,38 +469,37 @@ async fn read_with_stale_session_token_returns_404_1002() {
     }))
     .unwrap();
 
-    let real_stale_token = if let (Some(ref driver), Some(ref real_ctr)) =
-        (&backend.real_driver, &real_container)
-    {
-        let seed_result = driver
-            .execute_operation(
-                CosmosOperation::create_item(real_ctr.clone(), PartitionKey::from("pk1"))
-                    .with_body(seed_body.clone()),
-                OperationOptions::default(),
-            )
-            .await
-            .expect("Real seed create should succeed");
-        let token = seed_result
-            .headers()
-            .session_token
-            .as_ref()
-            .expect("Real create should return session token")
-            .as_str()
-            .to_string();
-        // Replace the LSN in the token with a very large value.
-        // Token format: "pkrangeId:version#globalLSN#regionId=localLSN" or "pkrangeId:-1#lsn"
-        // We replace everything after the first '#' with a huge LSN.
-        let prefix = token.split('#').next().unwrap_or("0:-1");
-        Some(format!("{prefix}#9999999999"))
-    } else {
-        None
-    };
+    let real_stale_token =
+        if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
+            let seed_result = driver
+                .execute_operation(
+                    CosmosOperation::create_item(ItemReference::from_name(real_ctr, PartitionKey::from("pk1"), "seed-for-session"))
+                        .with_body(seed_body.clone()),
+                    OperationOptions::default(),
+                )
+                .await
+                .expect("Real seed create should succeed");
+            let token = seed_result
+                .headers()
+                .session_token
+                .as_ref()
+                .expect("Real create should return session token")
+                .as_str()
+                .to_string();
+            // Replace the LSN in the token with a very large value.
+            // Token format: "pkrangeId:version#globalLSN#regionId=localLSN" or "pkrangeId:-1#lsn"
+            // We replace everything after the first '#' with a huge LSN.
+            let prefix = token.split('#').next().unwrap_or("0:-1");
+            Some(format!("{prefix}#9999999999"))
+        } else {
+            None
+        };
 
     // Also create the seed in the emulator (keeps state consistent).
     let _ = backend
         .emulator_driver
         .execute_operation(
-            CosmosOperation::create_item(emu_container.clone(), PartitionKey::from("pk1"))
+            CosmosOperation::create_item(ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "seed-for-session"))
                 .with_body(seed_body),
             OperationOptions::default(),
         )
@@ -582,13 +584,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     backend.cleanup_real_database(&db_name).await;
 }
 
-// TODO: upsert_item_through_driver is disabled because `CosmosOperation::upsert_item`
-// currently sends POST to /dbs/{db}/colls/{coll}/docs/{doc_id} (the item-level path),
-// but the Cosmos REST API and the emulator expect POST to the collection feed endpoint
-// /dbs/{db}/colls/{coll}/docs with the `x-ms-documentdb-is-upsert: True` header.
-// Re-enable once the driver or emulator upsert routing is fixed.
 #[tokio::test]
-#[ignore = "upsert routing mismatch between driver and emulator — see TODO above"]
 async fn upsert_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -605,7 +601,8 @@ async fn upsert_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let op = CosmosOperation::upsert_item(container.clone(), PartitionKey::from("pk1"))
+                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
+                let op = CosmosOperation::upsert_item(item)
                     .with_body(upsert_body.clone());
                 (op, OperationOptions::default())
             },
@@ -637,7 +634,8 @@ async fn upsert_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let op = CosmosOperation::upsert_item(container.clone(), PartitionKey::from("pk1"))
+                let item = ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
+                let op = CosmosOperation::upsert_item(item)
                     .with_body(upsert_body2.clone());
                 (op, OperationOptions::default())
             },

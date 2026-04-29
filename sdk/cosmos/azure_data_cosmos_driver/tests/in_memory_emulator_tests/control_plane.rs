@@ -4,7 +4,7 @@
 //! Control-plane integration tests (database/container/PKRanges CRUD).
 
 use super::*;
-use azure_core::http::{headers::HeaderValue, HttpClient, Method, Request, StatusCode, Url};
+use azure_core::http::{HttpClient, Method, Request, StatusCode, Url};
 
 #[tokio::test]
 async fn create_database() {

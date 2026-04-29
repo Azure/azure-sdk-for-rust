@@ -284,14 +284,14 @@ async fn sdk_create_and_read_item() {
 
     // ── Create item ──────────────────────────────────────────────
     let emu_create = emu_container
-        .create_item("pk1", &item, Some(write_options_with_content()))
+        .create_item("pk1", "sdk-item-1", &item, Some(write_options_with_content()))
         .await
         .unwrap();
     assert_emulator_item_response(&emu_create, StatusCode::Created);
 
     if let Some(ref real) = real_container {
         let real_create = real
-            .create_item("pk1", &item, Some(write_options_with_content()))
+            .create_item("pk1", "sdk-item-1", &item, Some(write_options_with_content()))
             .await
             .unwrap();
         compare_item_responses(&real_create, &emu_create);
@@ -334,11 +334,11 @@ async fn sdk_create_multiple_items_and_read_back() {
             pk: "pk1".into(),
             value: i,
         };
-        let emu_resp = emu_container.create_item("pk1", &item, None).await.unwrap();
+        let emu_resp = emu_container.create_item("pk1", &item.id, &item, None).await.unwrap();
         assert_emulator_item_response(&emu_resp, StatusCode::Created);
 
         if let Some(ref real) = real_container {
-            let real_resp = real.create_item("pk1", &item, None).await.unwrap();
+            let real_resp = real.create_item("pk1", &item.id, &item, None).await.unwrap();
             compare_item_responses(&real_resp, &emu_resp);
         }
     }
@@ -374,13 +374,13 @@ async fn sdk_create_duplicate_item_returns_conflict() {
         value: 1,
     };
 
-    emu_container.create_item("pk1", &item, None).await.unwrap();
+    emu_container.create_item("pk1", "dup-item", &item, None).await.unwrap();
     if let Some(ref real) = real_container {
-        real.create_item("pk1", &item, None).await.unwrap();
+        real.create_item("pk1", "dup-item", &item, None).await.unwrap();
     }
 
     let emu_err = emu_container
-        .create_item("pk1", &item, None)
+        .create_item("pk1", "dup-item", &item, None)
         .await
         .expect_err("emulator: duplicate create should fail");
     assert_eq!(
@@ -391,7 +391,7 @@ async fn sdk_create_duplicate_item_returns_conflict() {
 
     if let Some(ref real) = real_container {
         let real_err = real
-            .create_item("pk1", &item, None)
+            .create_item("pk1", "dup-item", &item, None)
             .await
             .expect_err("real: duplicate create should fail");
         compare_sdk_errors(&real_err, &emu_err);

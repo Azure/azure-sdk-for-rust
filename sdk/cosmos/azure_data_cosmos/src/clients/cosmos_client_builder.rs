@@ -425,8 +425,7 @@ impl CosmosClientBuilder {
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
         #[allow(unused_mut)]
-        let mut driver_runtime_builder =
-            self.driver_runtime_builder.unwrap_or_default();
+        let mut driver_runtime_builder = self.driver_runtime_builder.unwrap_or_default();
 
         // Forward SDK connection settings to the driver's connection pool.
         let mut pool_builder = ConnectionPoolOptions::builder();

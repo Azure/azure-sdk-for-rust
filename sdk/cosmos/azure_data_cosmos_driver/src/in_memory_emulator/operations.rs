@@ -177,13 +177,15 @@ fn handle_create_database(
 
     let meta = store.create_database_internal(&db_id);
     let response_body = database_to_json(&meta);
+    let token = store.advance_master_partition_lsn();
     if parsed.content_response_on_write {
-        success_response(StatusCode::Created, &response_body, 1.0, "", start)
+        success_response(StatusCode::Created, &response_body, 1.0, &token, start)
             .with_etag(&meta.etag)
             .build()
     } else {
         ResponseBuilder::new(StatusCode::Created, start)
             .with_request_charge(1.0)
+            .with_session_token(&token)
             .with_etag(&meta.etag)
             .build()
     }
@@ -258,9 +260,10 @@ fn handle_delete_database(
         }
     }
 
+    let token = store.advance_master_partition_lsn();
     ResponseBuilder::new(StatusCode::NoContent, start)
         .with_request_charge(1.0)
-        .with_session_token("")
+        .with_session_token(&token)
         .build()
 }
 
@@ -375,13 +378,15 @@ fn handle_create_container(
         ContainerConfig::default(),
     );
     let response_body = container_to_json(&meta);
+    let token = store.advance_master_partition_lsn();
     if parsed.content_response_on_write {
-        success_response(StatusCode::Created, &response_body, 1.0, "", start)
+        success_response(StatusCode::Created, &response_body, 1.0, &token, start)
             .with_etag(&meta.etag)
             .build()
     } else {
         ResponseBuilder::new(StatusCode::Created, start)
             .with_request_charge(1.0)
+            .with_session_token(&token)
             .with_etag(&meta.etag)
             .build()
     }
@@ -464,9 +469,10 @@ fn handle_delete_container(
         }
     }
 
+    let token = store.advance_master_partition_lsn();
     ResponseBuilder::new(StatusCode::NoContent, start)
         .with_request_charge(1.0)
-        .with_session_token("")
+        .with_session_token(&token)
         .build()
 }
 

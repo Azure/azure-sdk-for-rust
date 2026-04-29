@@ -65,6 +65,7 @@ pub(crate) mod response_header_names {
     pub const RESOURCE_USAGE: &str = "x-ms-resource-usage";
     pub const HAS_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
+    pub const INTERNAL_PARTITION_ID: &str = "x-ms-cosmos-internal-partition-id";
     pub const LOG_RESULTS: &str = "x-ms-documentdb-script-log-results";
     pub const COLLECTION_INDEX_TRANSFORMATION_PROGRESS: &str =
         "x-ms-documentdb-collection-index-transformation-progress";
@@ -340,6 +341,9 @@ pub struct CosmosResponseHeaders {
     /// Partition key range ID for the responding partition (`x-ms-documentdb-partitionkeyrangeid`).
     pub partition_key_range_id: Option<String>,
 
+    /// Internal partition ID (`x-ms-cosmos-internal-partition-id`).
+    pub internal_partition_id: Option<String>,
+
     /// Stored procedure log output (`x-ms-documentdb-script-log-results`).
     pub log_results: Option<String>,
 
@@ -496,12 +500,14 @@ impl CosmosResponseHeaders {
                 response_header_names::PARTITION_KEY_RANGE_ID => {
                     result.partition_key_range_id = Some(value.as_str().to_owned());
                 }
+                response_header_names::INTERNAL_PARTITION_ID => {
+                    result.internal_partition_id = Some(value.as_str().to_owned());
+                }
                 response_header_names::LOG_RESULTS => {
                     result.log_results = Some(value.as_str().to_owned());
                 }
                 response_header_names::COLLECTION_INDEX_TRANSFORMATION_PROGRESS => {
-                    result.collection_index_transformation_progress =
-                        value.as_str().parse().ok();
+                    result.collection_index_transformation_progress = value.as_str().parse().ok();
                 }
                 response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
@@ -567,10 +573,7 @@ mod tests {
             "x-ms-documentdb-collection-index-transformation-progress",
             "100",
         );
-        headers.insert(
-            "x-ms-documentdb-collection-lazy-indexing-progress",
-            "75",
-        );
+        headers.insert("x-ms-documentdb-collection-lazy-indexing-progress", "75");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -641,10 +644,7 @@ mod tests {
             Some("documentSize=0;")
         );
         assert_eq!(cosmos_headers.has_tentative_writes, Some(true));
-        assert_eq!(
-            cosmos_headers.partition_key_range_id.as_deref(),
-            Some("0")
-        );
+        assert_eq!(cosmos_headers.partition_key_range_id.as_deref(), Some("0"));
         assert_eq!(
             cosmos_headers.log_results.as_deref(),
             // cspell:disable-next-line
@@ -654,10 +654,7 @@ mod tests {
             cosmos_headers.collection_index_transformation_progress,
             Some(100)
         );
-        assert_eq!(
-            cosmos_headers.collection_lazy_indexing_progress,
-            Some(75)
-        );
+        assert_eq!(cosmos_headers.collection_lazy_indexing_progress, Some(75));
     }
 
     #[test]

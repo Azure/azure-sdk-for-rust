@@ -68,9 +68,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // Check the explicit header first; if absent, check the `Prefer` header
     // (the driver pipeline sends `Prefer: return=minimal` to suppress bodies).
     // Default to true (service returns body when neither header is present).
-    let content_response_on_write = if let Some(val) =
-        headers.get_optional_str(&CONTENT_RESPONSE)
-    {
+    let content_response_on_write = if let Some(val) = headers.get_optional_str(&CONTENT_RESPONSE) {
         val.eq_ignore_ascii_case("true")
     } else if let Some(prefer) = headers.get_optional_str(&PREFER) {
         !prefer.contains("return=minimal")

@@ -19,6 +19,12 @@ pub struct EmulatorStore {
     config: VirtualAccountConfig,
     rid_generator: RidGenerator,
     regions: RwLock<HashMap<String, RegionStore>>,
+    /// LSN counter for the "master partition" that tracks control plane operations
+    /// (database/container CRUD, throughput changes). The real Cosmos DB service
+    /// stores metadata in a special MasterPartition and replicates it similarly
+    /// to user documents, producing LSN and session tokens for control plane
+    /// responses.
+    master_partition_lsn: AtomicU64,
 }
 
 impl EmulatorStore {
@@ -33,6 +39,7 @@ impl EmulatorStore {
             config,
             rid_generator: RidGenerator::new(),
             regions: RwLock::new(regions),
+            master_partition_lsn: AtomicU64::new(0),
         })
     }
 
@@ -42,6 +49,18 @@ impl EmulatorStore {
 
     pub(crate) fn rid_generator(&self) -> &RidGenerator {
         &self.rid_generator
+    }
+
+    /// Advances the master partition LSN and returns a V1 session token.
+    ///
+    /// The real Cosmos DB service tracks control plane metadata (databases,
+    /// containers, throughput) in a special "MasterPartition" (pkrange -1).
+    /// This counter simulates that behaviour so that control plane responses
+    /// carry a valid session token, matching what the real service returns.
+    pub(crate) fn advance_master_partition_lsn(&self) -> String {
+        let lsn = self.master_partition_lsn.fetch_add(1, Ordering::SeqCst) + 1;
+        // Master partition uses pkrange id 0 with V1 format in the real service
+        super::session::SessionToken::format(0, lsn)
     }
 
     /// Returns a reference to the region store for the given region name.
