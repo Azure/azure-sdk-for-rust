@@ -92,6 +92,15 @@ pub(crate) struct PartitionFailoverEntry {
 
     /// Health status for gradual failback (probe-based recovery).
     pub health_status: HealthStatus,
+
+    /// Per-entry random delay added to `partition_unavailability_duration` before
+    /// this entry becomes a `ProbeCandidate`. Spreads simultaneously-failed
+    /// partitions across the failback window so they don't all stampede the
+    /// recovering region on the same sweep tick (thundering-herd mitigation).
+    /// Sampled once when the entry is created (and re-sampled on probe failure)
+    /// from `[0, partition_unavailability_duration / 2]`. PPAF entries always
+    /// use `Duration::ZERO` since they don't participate in background failback.
+    pub failback_jitter: Duration,
 }
 
 /// Configuration for partition-level failover, read once at construction.

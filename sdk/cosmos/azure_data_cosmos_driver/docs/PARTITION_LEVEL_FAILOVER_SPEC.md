@@ -192,10 +192,14 @@ same lock-free pattern.
 3. **Failure evaluation** (Stage 5 — `evaluate_transport_result`):
    - Classify the response status code.
    - Emit `LocationEffect::MarkPartitionUnavailable` for eligible status codes
-     (403/3, 503, 429/3092, 410). This effect carries the `partition_key_range_id`,
-     the failed endpoint's region, and whether the request was read-only.
+     (403/3, 503, 429/3092, 410, 408, 5xx server errors). This effect carries
+     the `partition_key_range_id`, the failed endpoint's region, and whether
+     the request was read-only.
    - Return `OperationAction::FailoverRetry` so the loop re-enters Stage 1,
      acquiring a fresh `LocationSnapshot` with the updated partition state.
+     When the failover retry budget is already exhausted the action becomes
+     `OperationAction::Abort` instead, but the same effects are still emitted
+     so PPCB observes the final failure (see §10).
 
 3. **Effect application** (Stage 6 — `location_state_store.apply`):
    - `MarkPartitionUnavailable` → CAS loop on `PartitionEndpointState`:
@@ -450,6 +454,19 @@ pub(crate) struct PartitionFailoverEntry {
     pub first_failure_time: Instant,
     /// When the most recent failure occurred (for counter reset).
     pub last_failure_time: Instant,
+
+    // ── Failback ───────────────────────────────────────────────
+    /// Lifecycle state for gradual failback (probe-based recovery). See §9.4.
+    pub health_status: HealthStatus,
+    /// Per-entry random delay added to `partition_unavailability_duration`
+    /// before this entry becomes a `ProbeCandidate`. Spreads simultaneously-
+    /// failed partitions across the failback window so they don't all stampede
+    /// the recovering region on the same sweep tick (thundering-herd
+    /// mitigation). Sampled once when the entry is created (and re-sampled on
+    /// probe failure) from `[0, partition_unavailability_duration / 2)`. PPAF
+    /// entries always use `Duration::ZERO` since they do not participate in
+    /// background failback. See §9.3.
+    pub failback_jitter: Duration,
 }
 ```
 
@@ -1226,7 +1243,8 @@ expire_partition_overrides(state, now, unavailability_duration) → PartitionEnd
   ├─ Clone state → new_state
   │
   ├─ Scan new_state.circuit_breaker_overrides:
-  │   └─ For entries where (now - entry.first_failure_time) > unavailability_duration
+  │   └─ For entries where
+  │       (now - entry.first_failure_time) >= unavailability_duration + entry.failback_jitter
   │       AND entry.health_status == Unhealthy:
   │       └─ Transition entry.health_status → ProbeCandidate
   │
@@ -1234,6 +1252,16 @@ expire_partition_overrides(state, now, unavailability_duration) → PartitionEnd
   │
   └─ Return new_state
 ```
+
+**Per-entry jitter.** Each PPCB entry carries a `failback_jitter: Duration`
+sampled once at creation (and re-sampled on probe failure) from
+`[0, partition_unavailability_duration / 2)`. Adding it to the eligibility
+deadline staggers entries that all failed at the same instant — without it,
+a sweep tick following a region-wide outage would transition every affected
+partition into `ProbeCandidate` simultaneously and let the next operations
+stampede the still-recovering region. The jitter source is `SystemTime`
+nanoseconds (no `rand` dependency); PPAF entries always use `Duration::ZERO`
+because they are not swept here at all (see §9.5).
 
 **Note**: The failback loop only sweeps `circuit_breaker_overrides` (PPCB). PPAF
 entries in `failover_overrides` are **not** swept — see §9.5 for rationale.
@@ -1245,9 +1273,13 @@ entries in `failover_overrides` are **not** swept — see §9.5 for rationale.
 | Unavailability duration before failback | 5 seconds | `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` |
 | Background sweep interval | 300 seconds | `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` |
 
-**Interaction**: A partition must have been unavailable for at least 5 seconds
-before the failback loop considers it. However, since the loop only runs every
-300 seconds by default, the effective failback time is between 5 and 305 seconds.
+**Interaction**: A partition must have been unavailable for at least
+`partition_unavailability_duration + failback_jitter` (where `failback_jitter`
+is sampled per entry from `[0, partition_unavailability_duration / 2)`) before
+the failback loop considers it. With defaults that lower bound is between 5
+and 7.5 seconds per entry; combined with the 300-second sweep interval, the
+effective failback time falls between 5 and ~308 seconds, with simultaneously-
+failed partitions naturally spread across the window.
 
 ### 9.4 Gradual Failback (Probe-Based Recovery)
 
@@ -1360,24 +1392,27 @@ list for the request type.
 | 408 | Any (RequestTimeout) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(RequestTimeout)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
 | 410 | Any (Gone) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
 | 429 | 3092 (SystemResourceUnavailable) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
-| 500 | Any (reads only) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(InternalServerError)` | `FailoverRetry` | N/A (reads use immediate path). |
-| 503 | Any | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
+| 500-599 | Any | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(InternalServerError)` | `FailoverRetry` if budget allows, else `Abort` (effects still emitted) | Reads / multi-master writes apply immediately; PPAF SM writes defer (discarded on subsequent non-confirming abort). |
 | 404 | 1002 (ReadSessionNotAvailable) | None | `SessionRetry` | — |
 | Transport error (not sent) | — | None | `FailoverRetry` | — |
 | Transport error (sent, idempotent) | — | `MarkEndpointUnavailable(TransportError)` | `FailoverRetry` | Effect deferred; discarded on subsequent abort. |
 | 2xx (Success: 200, 201, 202, 204, 207, …) | — | None | `Complete` | **Deferred effects flushed**, registering the override on the prior failed regions. |
 | 4xx — region-confirming (400, 401, 404/0, 409, 412, 413, …) | Any non-1002 | None | `Abort` | **Deferred effects flushed**: the server processed and rejected the request, so the prior failed regions are confirmed unhealthy. |
-| 5xx after retry budget exhausted | Any | None | `Abort` | **Deferred effects flushed**: any non-retry-trigger 5xx (501, 504, 505, …) is treated as a region-confirming response per `is_region_confirming_status`. |
+| Non-retry-trigger 5xx (501, 502, …) after PPAF SM retry budget exhausted | Any | None | `Abort` | **Deferred effects flushed**: treated as a region-confirming response per `is_region_confirming_status`. |
 | Other | — | None | `Abort` | Deferred effects discarded. |
 
-> **Note**: 408 (RequestTimeout) and 5xx server errors also emit
+> **Note**: 408 (RequestTimeout) and all 5xx server errors (500-599) emit
 > `MarkPartitionUnavailable` from `evaluate_transport_result`, matching the
 > Java SDK's `handleLocationExceptionForPartitionKeyRange` behavior. As with
 > the other write-path entries above, those effects are **deferred** for
 > writes via `partition_effects_for_deferral` and applied only when a later
 > attempt produces a region-confirming status (see §6.4); on reads they are
-> applied immediately. For non-idempotent writes without PPAF, the 5xx/408
-> branch falls through to `Abort` with no effects emitted at all, since
+> applied immediately. The PPCB-eligible immediate path emits the marks even
+> when the failover retry budget is exhausted and the action becomes `Abort`,
+> so the final retry that pushed the operation over the budget is still
+> recorded against PPCB rather than silently dropped. For non-idempotent
+> writes without PPAF, the 5xx/408 branch falls through to `Abort` with no
+> effects emitted at all, since
 > `can_retry_failover()` and idempotency are both required to enter that
 > branch.
 

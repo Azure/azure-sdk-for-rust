@@ -2038,6 +2038,7 @@ mod tests {
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
@@ -2115,6 +2116,7 @@ mod tests {
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
@@ -2276,6 +2278,7 @@ mod tests {
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
 
@@ -2333,6 +2336,7 @@ mod tests {
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
 

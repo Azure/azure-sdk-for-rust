@@ -6,7 +6,7 @@
 use std::{
     collections::HashMap,
     sync::Arc,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 
 use tracing::warn;
@@ -262,6 +262,29 @@ pub(crate) fn can_circuit_breaker_trigger_failover(
     }
 }
 
+/// Samples a per-entry failback jitter in `[0, unavailability_duration / 2]`.
+///
+/// The jitter is added to `partition_unavailability_duration` before an
+/// `Unhealthy` PPCB entry is allowed to transition to `ProbeCandidate`. This
+/// desynchronizes the failback of partitions that all failed in the same
+/// burst, preventing a thundering-herd stampede on the recovering region.
+///
+/// Sampled from `SystemTime` nanos to avoid pulling in a `rand` dependency
+/// for what is effectively a coarse spread function — full statistical
+/// randomness is not required, only enough variance to break correlation
+/// across many partitions failing within the same window.
+fn ppcb_failback_jitter(unavailability_duration: Duration) -> Duration {
+    let max_jitter_nanos = (unavailability_duration / 2).as_nanos() as u64;
+    if max_jitter_nanos == 0 {
+        return Duration::ZERO;
+    }
+    let seed = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.subsec_nanos())
+        .unwrap_or(0);
+    Duration::from_nanos(u64::from(seed) % max_jitter_nanos)
+}
+
 /// Marks a partition as unavailable, producing a new `PartitionEndpointState`.
 ///
 /// This is a pure function: it takes the current state and produces a new one.
@@ -319,6 +342,9 @@ pub(crate) fn mark_partition_unavailable(
                 first_failure_time: now,
                 last_failure_time: now,
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: ppcb_failback_jitter(
+                    current_state.config.partition_unavailability_duration,
+                ),
             });
 
         // If probe failed, transition back to Unhealthy and fully reset
@@ -334,6 +360,10 @@ pub(crate) fn mark_partition_unavailable(
             entry.failed_endpoints.clear();
             entry.first_failure_time = now;
             entry.last_failure_time = now;
+            // Re-sample jitter so the next failback window is desynchronized
+            // from any other entries that may have failed on the same tick.
+            entry.failback_jitter =
+                ppcb_failback_jitter(current_state.config.partition_unavailability_duration);
             return new_state;
         }
 
@@ -383,6 +413,9 @@ pub(crate) fn mark_partition_unavailable(
                 first_failure_time: now,
                 last_failure_time: now,
                 health_status: HealthStatus::Unhealthy,
+                // PPAF entries don't participate in background failback,
+                // so jitter is unused.
+                failback_jitter: Duration::ZERO,
             });
 
         entry.last_failure_time = now;
@@ -431,6 +464,10 @@ fn try_move_next_endpoint(
 /// Transitions expired partition entries from `Unhealthy` to `ProbeCandidate`,
 /// producing a new `PartitionEndpointState`.
 ///
+/// Each entry uses its own `failback_jitter` to spread the transition across
+/// the failback window, mitigating a thundering-herd effect on the recovering
+/// region when many partitions failed at the same time.
+///
 /// Entries already in `ProbeCandidate` state are not re-transitioned.
 /// This is a pure function called by the failback sweep.
 pub(crate) fn expire_partition_overrides(
@@ -442,7 +479,8 @@ pub(crate) fn expire_partition_overrides(
 
     for entry in new_state.circuit_breaker_overrides.values_mut() {
         if entry.health_status == HealthStatus::Unhealthy
-            && now.saturating_duration_since(entry.first_failure_time) >= unavailability_duration
+            && now.saturating_duration_since(entry.first_failure_time)
+                >= unavailability_duration + entry.failback_jitter
         {
             entry.health_status = HealthStatus::ProbeCandidate;
         }
@@ -763,6 +801,7 @@ mod tests {
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
             health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
         };
         assert!(!can_circuit_breaker_trigger_failover(&entry, true, &config));
     }
@@ -779,6 +818,7 @@ mod tests {
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
             health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
         };
         assert!(can_circuit_breaker_trigger_failover(&entry, true, &config));
     }
@@ -795,6 +835,7 @@ mod tests {
             first_failure_time: Instant::now(),
             last_failure_time: Instant::now(),
             health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
         };
         assert!(can_circuit_breaker_trigger_failover(&entry, false, &config));
     }
@@ -855,6 +896,7 @@ mod tests {
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
@@ -885,6 +927,7 @@ mod tests {
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", false);
@@ -924,6 +967,7 @@ mod tests {
                 first_failure_time: stale_time,
                 last_failure_time: stale_time,
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
@@ -955,6 +999,7 @@ mod tests {
                 first_failure_time: old_time,
                 last_failure_time: old_time,
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         state.failover_overrides.insert(
@@ -968,6 +1013,7 @@ mod tests {
                 first_failure_time: recent_time,
                 last_failure_time: recent_time,
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
         state.circuit_breaker_overrides.insert(
@@ -981,6 +1027,7 @@ mod tests {
                 first_failure_time: old_time,
                 last_failure_time: old_time,
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
 
@@ -1020,6 +1067,7 @@ mod tests {
                 first_failure_time: recent,
                 last_failure_time: recent,
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
 
@@ -1043,6 +1091,7 @@ mod tests {
                 first_failure_time: old_time,
                 last_failure_time: old_time,
                 health_status: HealthStatus::ProbeCandidate,
+                failback_jitter: Duration::ZERO,
             },
         );
 
@@ -1055,6 +1104,103 @@ mod tests {
         );
     }
 
+    // ── Failback jitter tests (thundering-herd mitigation) ───────────────
+
+    #[test]
+    fn ppcb_failback_jitter_stays_within_half_of_unavailability_duration() {
+        let unavailability = Duration::from_secs(5);
+        let max = unavailability / 2;
+        // Sample many times and assert all fall in [0, max).
+        for _ in 0..100 {
+            let j = ppcb_failback_jitter(unavailability);
+            assert!(j < max, "jitter {j:?} exceeded half-window {max:?}");
+        }
+    }
+
+    #[test]
+    fn ppcb_failback_jitter_is_zero_for_zero_duration() {
+        assert_eq!(ppcb_failback_jitter(Duration::ZERO), Duration::ZERO);
+    }
+
+    #[test]
+    fn expire_partition_overrides_respects_failback_jitter() {
+        // An entry whose `first_failure_time + unavailability_duration` has just
+        // elapsed must NOT transition while the jitter portion is still pending.
+        let unavailability = Duration::from_secs(5);
+        let jitter = Duration::from_secs(2);
+        let first_failure = Instant::now() - unavailability;
+
+        let mut state = partition_state_with_ppaf_ppcb_enabled();
+        state.circuit_breaker_overrides.insert(
+            pk("jittered-pk"),
+            PartitionFailoverEntry {
+                current_endpoint: regional_endpoint("westus"),
+                first_failed_endpoint: regional_endpoint("eastus"),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: first_failure,
+                last_failure_time: first_failure,
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: jitter,
+            },
+        );
+
+        // Sweep at exactly `first_failure + unavailability` — jitter not yet elapsed.
+        let expired =
+            expire_partition_overrides(&state, first_failure + unavailability, unavailability);
+        assert_eq!(
+            expired.circuit_breaker_overrides["jittered-pk"].health_status,
+            HealthStatus::Unhealthy,
+            "entry must remain Unhealthy until unavailability + jitter has elapsed"
+        );
+
+        // Sweep at `first_failure + unavailability + jitter` — should now flip.
+        let expired = expire_partition_overrides(
+            &state,
+            first_failure + unavailability + jitter,
+            unavailability,
+        );
+        assert_eq!(
+            expired.circuit_breaker_overrides["jittered-pk"].health_status,
+            HealthStatus::ProbeCandidate,
+        );
+    }
+
+    #[test]
+    fn mark_partition_unavailable_ppcb_samples_jitter() {
+        // A new PPCB entry must be created with a non-default jitter that lies
+        // within `[0, partition_unavailability_duration / 2)`. This is best-effort:
+        // the helper is seeded from `SystemTime` nanos, so we sample multiple
+        // times to assert the field is actually populated and bounded.
+        let ps = partition_state_with_ppaf_ppcb_enabled();
+        let account = single_master_account();
+        let unavail = unavailable_partition("pk-1", "eastus", true);
+
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let entry = &result.circuit_breaker_overrides["pk-1"];
+        let max = ps.config.partition_unavailability_duration / 2;
+        assert!(
+            entry.failback_jitter < max,
+            "jitter {:?} must be < half of unavailability window {:?}",
+            entry.failback_jitter,
+            max
+        );
+    }
+
+    #[test]
+    fn mark_partition_unavailable_ppaf_uses_zero_jitter() {
+        // PPAF entries don't participate in background failback, so they must
+        // always have zero jitter (no need to randomize a window that's never
+        // consulted).
+        let ps = partition_state_with_ppaf_ppcb_enabled();
+        let account = single_master_account();
+        let unavail = unavailable_partition("pk-1", "eastus", false);
+
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let entry = &result.failover_overrides["pk-1"];
+        assert_eq!(entry.failback_jitter, Duration::ZERO);
+    }
     #[test]
     fn probe_failure_transitions_back_to_unhealthy() {
         let mut ps = partition_state_with_ppaf_ppcb_enabled();
@@ -1072,6 +1218,7 @@ mod tests {
                 first_failure_time: Instant::now() - Duration::from_secs(10),
                 last_failure_time: Instant::now() - Duration::from_secs(10),
                 health_status: HealthStatus::ProbeCandidate,
+                failback_jitter: Duration::ZERO,
             },
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
@@ -1163,6 +1310,7 @@ mod tests {
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
                 health_status: HealthStatus::ProbeCandidate,
+                failback_jitter: Duration::ZERO,
             },
         );
         state.failover_overrides.insert(
@@ -1176,6 +1324,7 @@ mod tests {
                 first_failure_time: Instant::now(),
                 last_failure_time: Instant::now(),
                 health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
             },
         );
 
