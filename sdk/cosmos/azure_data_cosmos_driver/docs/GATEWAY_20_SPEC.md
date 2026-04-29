@@ -144,7 +144,7 @@ vice versa).
 
 ### 4.2 HTTP 404 (Not Found) with sub-status `1002` (`READ_SESSION_NOT_AVAILABLE`)
 
-Follow the existing 404 / `READ_SESSION_NOT_AVAILABLE` retry path defined in `TRANSPORT_PIPELINE_SPEC.md` (re-read the session token from another replica, retry per the standard session-retry budget). The **only** Gateway-2.0-specific deviation: do **not** refresh the PKRange cache on a 404/1002 — the partition routing is not the suspected cause of the stale-session condition, so refreshing the routing map would be wasted churn. (Note that `1002` is reused with different meaning under parent status `410` (`PARTITION_KEY_RANGE_GONE`), which is handled by the existing 410/Gone retry path and is unchanged on Gateway 2.0.)
+**Always prefer a remote region for the retry** when one is available in the client's preferred-region list — the local region is suspected of carrying the stale routing, so pinning the retry to the same Gateway 2.0 endpoint that just returned 1002 reproduces the bug. **PLF takes precedence**: if PLF (per `PARTITION_LEVEL_FAILOVER_SPEC.md`) has already pinned a region for this PKRangeId, the PLF region wins over the "prefer remote" hint.
 
 These rules apply uniformly to V1 (HTTP) and V2 (RNTBD) — the retry policy operates on the resolved `(status_code, sub_status)` pair before the transport-specific deserializer ever sees the body.
 
@@ -572,7 +572,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Retry: 449 Retry-With | | Yes | | Dedicated 449 policy (≤ 3 attempts, exponential backoff, separate budget from 410/Gone), same Gateway 2.0 endpoint, no region switch, no fallback to Gateway V1 |
 | Retry: 503 | | Yes | | Regional failover via existing retry policies |
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
-| Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Existing 404 / `READ_SESSION_NOT_AVAILABLE` retry path runs (re-read session token from another replica); assert that **no PKRange cache refresh** is triggered |
+| Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Retry routes to a **remote-preferred** region (assert local-region retry only when no other region is available); assert PLF region wins when PLF has pinned the PKRangeId; assert that **no PKRange cache refresh** is triggered |
 | Operator override (`gateway20_disabled = true`) | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior |
 | Eligibility fallback | | Yes | | StoredProc Execute → standard gateway |
 | PLF precedence | | Yes | | Region without gw20_url + PLF override → standard gateway path |
