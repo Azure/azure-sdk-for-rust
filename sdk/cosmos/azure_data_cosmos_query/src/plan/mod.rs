@@ -472,10 +472,8 @@ fn extract_single_pk(
             right,
         } => {
             let left_pk = extract_single_pk(left, pk_path, root_alias);
-            if left_pk != PartitionKeyFilter::None {
-                return left_pk;
-            }
-            extract_single_pk(right, pk_path, root_alias)
+            let right_pk = extract_single_pk(right, pk_path, root_alias);
+            intersect_pk_filters(left_pk, right_pk)
         }
         SqlScalarExpression::Binary {
             op: SqlBinaryOp::Or,
@@ -504,6 +502,51 @@ fn extract_single_pk(
     }
 }
 
+/// Intersect two PK filters from the two sides of an AND expression.
+///
+/// - `None AND X` → `X` (no constraint on one side, keep the other)
+/// - `Equality(a) AND Equality(b)` → `Equality(a)` if a == b, else `None` (contradiction)
+/// - `Equality(a) AND InList(list)` → `Equality(a)` if a is in list, else `None`
+/// - `InList(a) AND InList(b)` → `InList(intersection)`, or `None` if empty
+fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKeyFilter {
+    match (a, b) {
+        // One side has no PK constraint — the other side's constraint stands.
+        (PartitionKeyFilter::None, other) | (other, PartitionKeyFilter::None) => other,
+
+        // Both sides have equality — they must agree.
+        (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
+            if a == b {
+                PartitionKeyFilter::Equality(a)
+            } else {
+                // Contradictory: c.pk = 'a' AND c.pk = 'b' — logically empty result set.
+                // Return None because no single partition can be targeted.
+                PartitionKeyFilter::None
+            }
+        }
+
+        // Equality AND InList — narrow the IN list to just the equality value if present.
+        (PartitionKeyFilter::Equality(eq), PartitionKeyFilter::InList(list))
+        | (PartitionKeyFilter::InList(list), PartitionKeyFilter::Equality(eq)) => {
+            if list.contains(&eq) {
+                PartitionKeyFilter::Equality(eq)
+            } else {
+                PartitionKeyFilter::None
+            }
+        }
+
+        // InList AND InList — compute intersection.
+        (PartitionKeyFilter::InList(a), PartitionKeyFilter::InList(b)) => {
+            let intersection: Vec<Vec<PartitionKeyValue>> =
+                a.into_iter().filter(|item| b.contains(item)).collect();
+            match intersection.len() {
+                0 => PartitionKeyFilter::None,
+                1 => PartitionKeyFilter::Equality(intersection.into_iter().next().unwrap()),
+                _ => PartitionKeyFilter::InList(intersection),
+            }
+        }
+    }
+}
+
 fn extract_hierarchical_pk(
     expr: &SqlScalarExpression,
     pk_segments: &[Vec<&str>],
@@ -513,7 +556,9 @@ fn extract_hierarchical_pk(
     flatten_and(expr, &mut conjuncts);
     let mut pk_values = Vec::with_capacity(pk_segments.len());
     for pk_path in pk_segments {
-        let mut found = false;
+        // Collect ALL equality constraints for this PK component across all conjuncts.
+        let mut component_value: Option<PartitionKeyValue> = None;
+        let mut conflict = false;
         for conjunct in &conjuncts {
             if let SqlScalarExpression::Binary {
                 op: SqlBinaryOp::Equal,
@@ -521,24 +566,34 @@ fn extract_hierarchical_pk(
                 right,
             } = conjunct
             {
-                if is_pk_reference(left, pk_path, root_alias) {
-                    if let Some(val) = extract_literal_value(right) {
-                        pk_values.push(val);
-                        found = true;
-                        break;
-                    }
-                }
-                if is_pk_reference(right, pk_path, root_alias) {
-                    if let Some(val) = extract_literal_value(left) {
-                        pk_values.push(val);
-                        found = true;
-                        break;
+                let val = if is_pk_reference(left, pk_path, root_alias) {
+                    extract_literal_value(right)
+                } else if is_pk_reference(right, pk_path, root_alias) {
+                    extract_literal_value(left)
+                } else {
+                    None
+                };
+                if let Some(v) = val {
+                    match &component_value {
+                        None => component_value = Some(v),
+                        Some(existing) => {
+                            if *existing != v {
+                                // Contradictory constraints on same component
+                                conflict = true;
+                                break;
+                            }
+                            // Same value — redundant but consistent, skip.
+                        }
                     }
                 }
             }
         }
-        if !found {
+        if conflict {
             return PartitionKeyFilter::None;
+        }
+        match component_value {
+            Some(v) => pk_values.push(v),
+            None => return PartitionKeyFilter::None,
         }
     }
     PartitionKeyFilter::Equality(pk_values)
@@ -893,5 +948,160 @@ mod tests {
         assert!(!qp.query_info.group_by_expressions.is_empty());
         assert!(!qp.query_info.order_by.is_empty());
         assert!(!qp.query_info.aggregates.is_empty());
+    }
+
+    // ── AND intersection logic ───────────────────────────────────────────
+
+    #[test]
+    fn and_contradictory_equality_is_none() {
+        // c.pk = 'a' AND c.pk = 'b' — contradiction, no partition can match
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'").pk_filters,
+            PartitionKeyFilter::None
+        );
+    }
+
+    #[test]
+    fn and_redundant_equality_is_ok() {
+        // c.pk = 'a' AND c.pk = 'a' — redundant but consistent
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'a'").pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())])
+        );
+    }
+
+    #[test]
+    fn and_equality_narrows_in_list() {
+        // c.pk = 'a' AND c.pk IN ('a', 'b') — narrows to 'a'
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk IN ('a', 'b')").pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())])
+        );
+    }
+
+    #[test]
+    fn and_equality_not_in_list_is_none() {
+        // c.pk = 'c' AND c.pk IN ('a', 'b') — contradiction
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'c' AND c.pk IN ('a', 'b')").pk_filters,
+            PartitionKeyFilter::None
+        );
+    }
+
+    #[test]
+    fn and_in_list_narrows_in_list() {
+        // c.pk IN ('a', 'b', 'c') AND c.pk IN ('b', 'c', 'd') — intersection is ('b', 'c')
+        let qp = plan("SELECT * FROM c WHERE c.pk IN ('a', 'b', 'c') AND c.pk IN ('b', 'c', 'd')");
+        match qp.pk_filters {
+            PartitionKeyFilter::InList(ref list) => {
+                assert_eq!(list.len(), 2);
+                assert!(list.contains(&vec![PartitionKeyValue::String("b".into())]));
+                assert!(list.contains(&vec![PartitionKeyValue::String("c".into())]));
+            }
+            _ => panic!("expected InList, got {:?}", qp.pk_filters),
+        }
+    }
+
+    #[test]
+    fn and_in_list_intersection_single_becomes_equality() {
+        // c.pk IN ('a', 'b') AND c.pk IN ('b', 'c') — intersection is just 'b'
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('b', 'c')").pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("b".into())])
+        );
+    }
+
+    #[test]
+    fn and_in_list_empty_intersection_is_none() {
+        // c.pk IN ('a', 'b') AND c.pk IN ('c', 'd') — empty intersection
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('c', 'd')").pk_filters,
+            PartitionKeyFilter::None
+        );
+    }
+
+    #[test]
+    fn and_pk_with_non_pk_keeps_pk() {
+        // c.pk = 'a' AND c.other > 5 — non-PK side is None, keep PK side
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.other > 5").pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())])
+        );
+    }
+
+    #[test]
+    fn and_non_pk_with_pk_keeps_pk() {
+        // c.other > 5 AND c.pk = 'a' — reversed order
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.other > 5 AND c.pk = 'a'").pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())])
+        );
+    }
+
+    #[test]
+    fn and_chain_multiple_consistent() {
+        // c.pk = 'a' AND c.x > 1 AND c.pk = 'a' AND c.y < 10 — consistent
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'a' AND c.y < 10")
+                .pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())])
+        );
+    }
+
+    #[test]
+    fn and_chain_contradictory() {
+        // c.pk = 'a' AND c.x > 1 AND c.pk = 'b' — contradiction deep in chain
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'b'").pk_filters,
+            PartitionKeyFilter::None
+        );
+    }
+
+    #[test]
+    fn and_in_list_with_non_pk() {
+        // c.pk IN ('a', 'b') AND c.other > 5 — non-PK on one side
+        match plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.other > 5").pk_filters {
+            PartitionKeyFilter::InList(list) => assert_eq!(list.len(), 2),
+            other => panic!("expected InList, got {other:?}"),
+        }
+    }
+
+    // ── Hierarchical PK AND conflict detection ──────────────────────────
+
+    fn plan_hpk(sql: &str) -> QueryPlan {
+        let p = parse(sql).unwrap();
+        generate_query_plan(&p.query, &["/tenant", "/userId"])
+    }
+
+    #[test]
+    fn hpk_contradictory_first_component() {
+        assert_eq!(
+            plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1'")
+                .pk_filters,
+            PartitionKeyFilter::None
+        );
+    }
+
+    #[test]
+    fn hpk_contradictory_second_component() {
+        assert_eq!(
+            plan_hpk(
+                "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.userId = 'u2'"
+            )
+            .pk_filters,
+            PartitionKeyFilter::None
+        );
+    }
+
+    #[test]
+    fn hpk_redundant_constraints_ok() {
+        assert_eq!(
+            plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.tenant = 'a'")
+                .pk_filters,
+            PartitionKeyFilter::Equality(vec![
+                PartitionKeyValue::String("a".into()),
+                PartitionKeyValue::String("u1".into()),
+            ])
+        );
     }
 }

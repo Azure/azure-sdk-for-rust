@@ -71,11 +71,7 @@ pub(crate) fn generate_query_plan(
         }
     })?;
 
-    let pk_paths: Vec<&str> = pk_definition
-        .paths()
-        .iter()
-        .map(|p| p.as_ref())
-        .collect();
+    let pk_paths: Vec<&str> = pk_definition.paths().iter().map(|p| p.as_ref()).collect();
     let raw_plan = azure_data_cosmos_query::plan::generate_query_plan(&program.query, &pk_paths);
 
     let targeting = build_targeting(&raw_plan.pk_filters, query)?;

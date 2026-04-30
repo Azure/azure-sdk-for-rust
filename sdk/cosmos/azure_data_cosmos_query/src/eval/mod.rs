@@ -139,7 +139,7 @@ pub fn query_documents(
     if let Some(top) = &query.select.top {
         let n = match top {
             SqlTopSpec::Literal(n) => *n as usize,
-            SqlTopSpec::Parameter(_) => results.len(), // can't resolve params for TOP here
+            SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name)? as usize,
         };
         results.truncate(n);
     }
@@ -148,11 +148,11 @@ pub fn query_documents(
     if let Some(ol) = &query.offset_limit {
         let offset = match &ol.offset {
             SqlOffsetSpec::Literal(n) => *n as usize,
-            SqlOffsetSpec::Parameter(_) => 0,
+            SqlOffsetSpec::Parameter(name) => resolve_integer_param(parameters, name)? as usize,
         };
         let limit = match &ol.limit {
             SqlLimitSpec::Literal(n) => *n as usize,
-            SqlLimitSpec::Parameter(_) => results.len(),
+            SqlLimitSpec::Parameter(name) => resolve_integer_param(parameters, name)? as usize,
         };
         if offset < results.len() {
             results = results[offset..].to_vec();
@@ -163,6 +163,33 @@ pub fn query_documents(
     }
 
     Ok(results)
+}
+
+/// Resolve a parameter to an integer value for TOP/OFFSET/LIMIT.
+fn resolve_integer_param(parameters: &Params, name: &str) -> Result<i64, EvalError> {
+    for (pname, pval) in parameters {
+        let clean = pname.strip_prefix('@').unwrap_or(pname);
+        if clean == name || pname == name {
+            return match pval {
+                serde_json::Value::Number(n) => {
+                    if let Some(i) = n.as_i64() {
+                        Ok(i)
+                    } else if let Some(f) = n.as_f64() {
+                        Ok(f as i64)
+                    } else {
+                        Err(EvalError::TypeError(format!(
+                            "parameter @{name} is not a valid integer"
+                        )))
+                    }
+                }
+                _ => Err(EvalError::TypeError(format!(
+                    "parameter @{name} must be a number, got {}",
+                    pval
+                ))),
+            };
+        }
+    }
+    Err(EvalError::ParameterNotFound(name.to_string()))
 }
 
 /// Evaluate a scalar expression against a document.
@@ -992,5 +1019,96 @@ mod tests {
         let doc = serde_json::json!({"name": "Alice"});
         let result = project(&doc, &p.query, &[]).unwrap();
         assert_eq!(result, serde_json::json!("Alice"));
+    }
+
+    // ── TOP / OFFSET / LIMIT with parameters ────────────────────────────
+
+    #[test]
+    fn top_parameter_resolved() {
+        let docs = vec![
+            serde_json::json!({"x": 1}),
+            serde_json::json!({"x": 2}),
+            serde_json::json!({"x": 3}),
+        ];
+        let params = vec![("n".to_string(), serde_json::json!(2))];
+        let results = query_documents("SELECT TOP @n * FROM c", &params, &docs).unwrap();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn top_parameter_zero() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let params = vec![("n".to_string(), serde_json::json!(0))];
+        let results = query_documents("SELECT TOP @n * FROM c", &params, &docs).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn top_parameter_missing_is_error() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let result = query_documents("SELECT TOP @n * FROM c", &[], &docs);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn top_parameter_non_numeric_is_error() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let params = vec![("n".to_string(), serde_json::json!("not a number"))];
+        let result = query_documents("SELECT TOP @n * FROM c", &params, &docs);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn offset_limit_parameters_resolved() {
+        let docs: Vec<serde_json::Value> = (0..10).map(|i| serde_json::json!({"x": i})).collect();
+        let params = vec![
+            ("off".to_string(), serde_json::json!(3)),
+            ("lim".to_string(), serde_json::json!(2)),
+        ];
+        let results =
+            query_documents("SELECT * FROM c OFFSET @off LIMIT @lim", &params, &docs).unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0]["x"], 3);
+        assert_eq!(results[1]["x"], 4);
+    }
+
+    #[test]
+    fn offset_parameter_missing_is_error() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let params = vec![("lim".to_string(), serde_json::json!(10))];
+        let result = query_documents("SELECT * FROM c OFFSET @off LIMIT @lim", &params, &docs);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn limit_parameter_missing_is_error() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let params = vec![("off".to_string(), serde_json::json!(0))];
+        let result = query_documents("SELECT * FROM c OFFSET @off LIMIT @lim", &params, &docs);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn top_parameter_with_at_prefix() {
+        let docs = vec![
+            serde_json::json!({"x": 1}),
+            serde_json::json!({"x": 2}),
+            serde_json::json!({"x": 3}),
+        ];
+        let params = vec![("@n".to_string(), serde_json::json!(1))];
+        let results = query_documents("SELECT TOP @n * FROM c", &params, &docs).unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn top_parameter_float_truncated() {
+        let docs = vec![
+            serde_json::json!({"x": 1}),
+            serde_json::json!({"x": 2}),
+            serde_json::json!({"x": 3}),
+        ];
+        let params = vec![("n".to_string(), serde_json::json!(2.7))];
+        let results = query_documents("SELECT TOP @n * FROM c", &params, &docs).unwrap();
+        assert_eq!(results.len(), 2);
     }
 }

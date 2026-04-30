@@ -1033,3 +1033,136 @@ fn mixed_case() {
         }
     );
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AND INTERSECTION — full structural comparison
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn and_contradictory_equality() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn and_redundant_equality() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'a'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn and_equality_narrows_in_list() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk IN ('a', 'b')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn and_equality_not_in_list() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'c' AND c.pk IN ('a', 'b')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn and_in_list_intersection_narrows_to_single() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('b', 'c')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("b".into())]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn and_in_list_empty_intersection() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('c', 'd')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn and_contradictory_deep_in_chain() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'b'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn hpk_contradictory_component() {
+    assert_eq!(
+        plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn hpk_redundant_ok() {
+    assert_eq!(
+        plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.tenant = 'a'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![
+                PartitionKeyValue::String("a".into()),
+                PartitionKeyValue::String("u1".into()),
+            ]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
