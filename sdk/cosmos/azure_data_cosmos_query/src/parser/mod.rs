@@ -1407,7 +1407,7 @@ mod tests {
         let p = parse("SELECT [] FROM c").unwrap();
         match &p.query.select.spec {
             SqlSelectSpec::List(items) => match &items[0].expression {
-                SqlScalarExpression::ArrayCreate(elems) => assert!(elems.is_empty()),
+                SqlScalarExpression::ArrayCreate(elements) => assert!(elements.is_empty()),
                 _ => panic!("expected empty ArrayCreate"),
             },
             _ => panic!("expected select list"),
@@ -1625,7 +1625,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unary_bitnot() {
+    fn parse_unary_bitwise_not() {
         let p = parse("SELECT ~c.x FROM c").unwrap();
         match &p.query.select.spec {
             SqlSelectSpec::List(items) => match &items[0].expression {

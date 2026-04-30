@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore STARTSWITH ENDSWITH LTRIM RTRIM TOSTRING multibyte
+
 //! In-memory query evaluation: match documents against WHERE clauses and apply projections.
 //!
 //! This evaluator interprets the SQL AST directly against `serde_json::Value` documents.
@@ -209,7 +211,7 @@ fn expand_from(
 
 // ─── Aggregate helpers ───────────────────────────────────────────────────────
 
-/// Returns `true` if `name` is a recognised aggregate function.
+/// Returns `true` if `name` is a recognized aggregate function.
 fn is_aggregate_function(name: &str) -> bool {
     matches!(
         name.to_ascii_uppercase().as_str(),
@@ -744,10 +746,10 @@ pub fn query_documents(
 
 /// Resolve a parameter to an integer value for TOP/OFFSET/LIMIT.
 fn resolve_integer_param(parameters: &Params, name: &str) -> Result<i64, EvalError> {
-    for (pname, pval) in parameters {
-        let clean = pname.strip_prefix('@').unwrap_or(pname);
-        if clean == name || pname == name {
-            return match pval {
+    for (param_name, param_value) in parameters {
+        let clean = param_name.strip_prefix('@').unwrap_or(param_name);
+        if clean == name || param_name == name {
+            return match param_value {
                 serde_json::Value::Number(n) => {
                     if let Some(i) = n.as_i64() {
                         Ok(i)
@@ -761,7 +763,7 @@ fn resolve_integer_param(parameters: &Params, name: &str) -> Result<i64, EvalErr
                 }
                 _ => Err(EvalError::TypeError(format!(
                     "parameter @{name} must be a number, got {}",
-                    pval
+                    param_value
                 ))),
             };
         }
@@ -924,9 +926,9 @@ fn eval_scalar(
         }
 
         SqlScalarExpression::ParameterRef(name) => {
-            for (pname, pval) in params {
-                if pname == name {
-                    return Ok(CosmosValue::from_json(pval));
+            for (param_name, param_value) in params {
+                if param_name == name {
+                    return Ok(CosmosValue::from_json(param_value));
                 }
             }
             Err(EvalError::ParameterNotFound(name.clone()))

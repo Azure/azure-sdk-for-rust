@@ -1,3 +1,4 @@
+<!-- cspell:ignore queryengines LALR WCHAR bitflags STARTSWITH ENDSWITH LTRIM RTRIM -->
 # Cosmos DB Query Engine — Rust Porting Plan
 
 ## Executive Summary

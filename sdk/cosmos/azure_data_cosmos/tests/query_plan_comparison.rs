@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore nopk startswith
+
 //! Exhaustive structural comparison tests for the client-side query plan generator.
 //!
 //! Every test asserts the **entire** `QueryPlan` struct — both `pk_filters` and
@@ -63,7 +65,7 @@ mod gateway {
     use tokio::sync::OnceCell;
 
     /// Returns `(endpoint, key)` from env vars, or `None` if not set.
-    fn creds() -> Option<(String, String)> {
+    fn credentials() -> Option<(String, String)> {
         if let Ok(conn) = std::env::var("AZURE_COSMOS_CONNECTION_STRING") {
             // Parse "AccountEndpoint=...;AccountKey=..."
             let parsed: azure_data_cosmos::ConnectionString = conn.parse().ok()?;
@@ -82,7 +84,7 @@ mod gateway {
     }
 
     async fn client() -> Option<CosmosClient> {
-        let (endpoint, key) = creds()?;
+        let (endpoint, key) = credentials()?;
         let endpoint: CosmosAccountEndpoint = endpoint
             .trim_end_matches('/')
             .parse()
@@ -102,7 +104,7 @@ mod gateway {
 
             pub async fn $fn_name() -> Option<&'static azure_data_cosmos::clients::ContainerClient>
             {
-                creds()?;
+                credentials()?;
                 Some(
                     $static_name
                         .get_or_init(|| async {
@@ -247,7 +249,7 @@ mod gateway {
         // ── aggregates ──
         // When Gateway has rewrittenQuery, aggregates move to groupByAliasToAggregateType
         if gw.rewritten_query.is_none() {
-            let gw_aggs: Vec<AggregateKind> = gw
+            let gw_aggregates: Vec<AggregateKind> = gw
                 .aggregates
                 .iter()
                 .map(|s| match s.as_str() {
@@ -259,7 +261,7 @@ mod gateway {
                     other => panic!("unknown aggregate: {other}"),
                 })
                 .collect();
-            if local.aggregates != gw_aggs {
+            if local.aggregates != gw_aggregates {
                 panic!(
                     "[aggregates] sql={sql}\n  local={:?}  gw={:?}",
                     local.aggregates, gw.aggregates

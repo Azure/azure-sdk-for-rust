@@ -58,7 +58,7 @@ impl std::error::Error for QueryPlanError {}
 /// Generate a complete client-side query plan from the query text and parameters.
 ///
 /// Returns both partition targeting and full structural query info.
-/// The only error case is an unparseable SQL text.
+/// The only error case is an unparsable SQL text.
 #[allow(dead_code)]
 pub(crate) fn generate_query_plan(
     query: &Query,
