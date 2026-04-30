@@ -93,6 +93,12 @@ pub struct CosmosClientBuilder {
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
+    /// When `true` (the default pre-GA), the Gateway 2.0 ("thin client")
+    /// transport is suppressed and the SDK uses only the standard gateway.
+    /// Set to `false` via [`with_gateway20_disabled`](Self::with_gateway20_disabled)
+    /// to opt in to Gateway 2.0 routing once the account advertises a
+    /// thin-client endpoint.
+    gateway20_disabled: Option<bool>,
 }
 
 impl CosmosClientBuilder {
@@ -165,6 +171,36 @@ impl CosmosClientBuilder {
     /// * `allow` - Whether to allow proxy usage.
     pub fn with_proxy_allowed(mut self, allow: bool) -> Self {
         self.allow_proxy = allow;
+        self
+    }
+
+    /// Controls whether the Gateway 2.0 ("thin client") transport is
+    /// suppressed for this client.
+    ///
+    /// The Gateway 2.0 transport is the next-generation Cosmos DB dataplane
+    /// transport — it terminates SDK connections at a regional thin-client
+    /// proxy that forwards RNTBD-over-HTTP/2 to the backend. Today it is
+    /// **disabled by default** while the implementation is still being
+    /// rolled out; this default will flip before GA.
+    ///
+    /// * Pass `true` to keep the standard gateway path (current default).
+    /// * Pass `false` to opt in to Gateway 2.0 when the account advertises
+    ///   a thin-client endpoint. The standard gateway remains as the
+    ///   automatic fallback transport for any request that cannot use
+    ///   Gateway 2.0 (e.g., metadata requests, accounts without a
+    ///   thin-client endpoint).
+    ///
+    /// The negative-term name (`gateway20_disabled`) is intentional and
+    /// follows the SDK's negative-term policy for behaviour-disabling
+    /// flags (see `GATEWAY_20_SPEC.md` §3): the operator's intent on the
+    /// wire reads as "disable this thing" rather than "do not allow this
+    /// thing", which composes cleanly with future features.
+    ///
+    /// # Arguments
+    ///
+    /// * `disabled` - `true` to suppress Gateway 2.0; `false` to opt in.
+    pub fn with_gateway20_disabled(mut self, disabled: bool) -> Self {
+        self.gateway20_disabled = Some(disabled);
         self
     }
 
@@ -424,6 +460,9 @@ impl CosmosClientBuilder {
             pool_builder = pool_builder.with_emulator_server_cert_validation(
                 EmulatorServerCertValidation::DangerousDisabled,
             );
+        }
+        if let Some(disabled) = self.gateway20_disabled {
+            pool_builder = pool_builder.with_gateway20_disabled(disabled);
         }
         driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
 
