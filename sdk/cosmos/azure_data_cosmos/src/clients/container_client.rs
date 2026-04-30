@@ -52,7 +52,6 @@ impl ContainerClient {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
-        let items_link = link.feed(ResourceType::Documents);
 
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
@@ -272,6 +271,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the new item.
+    /// * `item_id` - The id of the new item.
     /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///
@@ -294,7 +294,7 @@ impl ContainerClient {
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
-    ///     .create_item("category1", p, None)
+    ///     .create_item("category1", "product1", p, None)
     ///     .await?;
     /// # }
     /// ```
@@ -326,7 +326,7 @@ impl ContainerClient {
     /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let created_item = container_client
-    ///     .create_item("category1", p, Some(options))
+    ///     .create_item("category1", "product1", p, Some(options))
     ///     .await?
     ///     .into_body().json::<Product>();
     /// # Ok(())
@@ -335,16 +335,22 @@ impl ContainerClient {
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
+        item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
-        let driver_pk = partition_key.into().into_driver_partition_key();
+
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let operation =
-            CosmosOperation::create_item(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = CosmosOperation::create_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -465,6 +471,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the item to create or replace.
+    /// * `item_id` - The id of the item to create or replace.
     /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///
@@ -487,7 +494,7 @@ impl ContainerClient {
     /// };
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
-    ///     .upsert_item("category1", p, None)
+    ///     .upsert_item("category1", "product1", p, None)
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -520,7 +527,7 @@ impl ContainerClient {
     /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     /// let options = ItemWriteOptions::default().with_operation_options(operation);
     /// let updated_product = container_client
-    ///     .upsert_item("category1", p, Some(options))
+    ///     .upsert_item("category1", "product1", p, Some(options))
     ///     .await?
     ///     .into_body().json::<Product>()?;
     /// Ok(())
@@ -528,16 +535,22 @@ impl ContainerClient {
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
+        item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> azure_core::Result<ItemResponse<()>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
-        let driver_pk = partition_key.into().into_driver_partition_key();
+
+        // Build the driver's item reference from our stored container metadata.
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
 
         // Create the driver operation and apply ItemWriteOptions fields.
-        let operation =
-            CosmosOperation::upsert_item(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -796,19 +809,22 @@ impl ContainerClient {
         options: Option<BatchOptions>,
     ) -> azure_core::Result<BatchResponse> {
         let options = options.unwrap_or_default();
-        let partition_key = batch.partition_key().clone();
+        let body = serde_json::to_vec(batch.operations())?;
+        let driver_pk = batch.partition_key().clone().into_driver_partition_key();
 
-        let mut cosmos_request =
-            CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
-                .partition_key(partition_key)
-                .json(batch.operations())
-                .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let operation =
+            CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = apply_batch_options(operation, &options);
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(BatchResponse::new)
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        Ok(BatchResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Gets the feed ranges for this container.
@@ -938,6 +954,53 @@ impl ContainerClient {
             }
         }
     }
+
+    /// Gets the most up-to-date session token from a list of feed range and session token pairs
+    /// for a specific target feed range.
+    ///
+    /// This method merges session tokens from feed ranges that overlap with the target,
+    /// handling partition split and merge scenarios automatically. It is useful when
+    /// maintaining your own session token cache across multiple clients.
+    ///
+    /// Session tokens and feed ranges are scoped to a single container. Only pass session
+    /// tokens and feed ranges obtained from this container.
+    ///
+    /// # Arguments
+    ///
+    /// * `feed_ranges_to_session_tokens` - Pairs of feed ranges and their associated session tokens.
+    /// * `target_feed_range` - The feed range to get the most up-to-date session token for.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if no input feed ranges overlap with the target feed range,
+    /// or if any session token string is malformed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
+    /// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+    /// let feed_range = FeedRange::full();
+    /// let token_a: SessionToken = "0:1#100#3=50".into();
+    /// let token_b: SessionToken = "0:1#200#3=60".into();
+    ///
+    /// let latest = container.get_latest_session_token(
+    ///     &[(feed_range.clone(), token_a), (feed_range, token_b)],
+    ///     &FeedRange::full(),
+    /// )?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_latest_session_token(
+        &self,
+        feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)],
+        target_feed_range: &FeedRange,
+    ) -> azure_core::Result<SessionToken> {
+        crate::session_helpers::get_latest_session_token(
+            feed_ranges_to_session_tokens,
+            target_feed_range,
+        )
+    }
 }
 
 /// Applies optional `session_token` and `precondition` to a [`CosmosOperation`].
@@ -958,6 +1021,17 @@ fn apply_item_options(
     operation
 }
 
+/// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
+///
+/// [`BatchOptions`] carries a session token but no precondition (ETag-based
+/// conditions are specified per-operation within the batch itself).
+fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -> CosmosOperation {
+    if let Some(session_token) = &options.session_token {
+        operation = operation.with_session_token(session_token.clone());
+    }
+    operation
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -972,9 +1046,9 @@ mod tests {
         assert_send(client.read_throughput(todo!()));
         assert_send(client.begin_replace_throughput(todo!(), todo!()));
         assert_send(client.delete(todo!()));
-        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
         assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!()));
+        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
         assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
         assert_send(client.delete_item("", todo!(), todo!()));
         assert_send(client.execute_transactional_batch(todo!(), todo!()));

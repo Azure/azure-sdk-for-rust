@@ -103,7 +103,7 @@ pub async fn seed_container(
                 };
 
                 let result = container
-                    .upsert_item(&item.partition_key, &item, None)
+                    .upsert_item(&item.partition_key, &item.id, &item, None)
                     .await;
 
                 if result.is_ok() {

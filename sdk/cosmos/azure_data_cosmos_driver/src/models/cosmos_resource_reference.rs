@@ -35,8 +35,8 @@ pub(crate) struct ResourcePaths {
     buf: String,
     /// Byte index in `buf` where the signing link ends (exclusive).
     ///
-    /// For non-feed:  `buf.len()` → signing link = `buf[1..]`  
-    /// For feed:      `parent.len()` → signing link = `buf[1..signing_end]`  
+    /// For non-feed:  `buf.len()` → signing link = `buf[1..]`
+    /// For feed:      `parent.len()` → signing link = `buf[1..signing_end]`
     /// Always `>= 1` when `buf` is non-empty (skips the leading `/`).
     signing_end: usize,
     /// Signing link override for offer resources.
@@ -156,6 +156,28 @@ impl CosmosResourceReference {
         self.id = None;
         self.is_feed = true;
         self
+    }
+
+    /// Computes paths treating this reference as a feed operation.
+    ///
+    /// Used by Create and Upsert which carry an [`ItemReference`] (with an
+    /// item id) but still POST to the parent (collection) URL and sign
+    /// against the parent resource.
+    pub(crate) fn compute_feed_paths(&self) -> ResourcePaths {
+        // Temporarily treat the reference as a feed for path computation.
+        let parent = self.parent_link_cow();
+        let segment = self.resource_type.path_segment();
+        let buf = if parent.is_empty() {
+            format!("/{}", segment)
+        } else {
+            format!("{}/{}", parent, segment)
+        };
+        let signing_end = if parent.is_empty() { 1 } else { parent.len() };
+        ResourcePaths {
+            buf,
+            signing_end,
+            signing_override: None,
+        }
     }
 
     /// Returns the resource link used for authorization signing.
@@ -760,6 +782,35 @@ mod tests {
         assert_eq!(paths.request_path(), "/dbs/testdb/colls/testcontainer/docs");
         assert_eq!(paths.signing_link(), "dbs/testdb/colls/testcontainer");
         assert_compute_paths_consistent(&r);
+    }
+
+    #[test]
+    fn compute_feed_paths_item_reference() {
+        // An ItemReference carries the document id, but compute_feed_paths
+        // must produce the same feed-style paths as compute_paths on a
+        // feed reference (without the item id in the URL).
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let r: CosmosResourceReference = item.into();
+
+        let feed_paths = r.compute_feed_paths();
+        assert_eq!(
+            feed_paths.request_path(),
+            "/dbs/testdb/colls/testcontainer/docs",
+            "request path should target the collection feed, not the individual document"
+        );
+        assert_eq!(
+            feed_paths.signing_link(),
+            "dbs/testdb/colls/testcontainer",
+            "signing link should be the parent container path"
+        );
+
+        // Verify consistency with compute_paths on an equivalent feed reference.
+        let feed_ref = CosmosResourceReference::from(test_container())
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let expected = feed_ref.compute_paths();
+        assert_eq!(feed_paths.request_path(), expected.request_path());
+        assert_eq!(feed_paths.signing_link(), expected.signing_link());
     }
 
     #[test]
