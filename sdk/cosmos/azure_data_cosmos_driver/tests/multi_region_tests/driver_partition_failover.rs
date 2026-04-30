@@ -26,7 +26,7 @@ use std::sync::Arc;
 
 /// The primary region where the account's hub is located.
 /// Must match the first preferred write region of the test account.
-const HUB_REGION: Region = Region::NORTH_CENTRAL_US;
+const HUB_REGION: Region = Region::EAST_US_2;
 
 // ────────────────────────────────────────────────────────────────────────────
 // Test 1: PPAF enabled — 503 on CreateItem from region 1 → partition fails
