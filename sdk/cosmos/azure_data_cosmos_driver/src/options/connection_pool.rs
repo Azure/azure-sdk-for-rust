@@ -208,12 +208,10 @@ impl ConnectionPoolOptions {
 
     /// Returns whether Gateway 2.0 is disabled for this pool.
     ///
-    /// Gateway 2.0 is enabled by default; this flag is the single supported
-    /// disablement mechanism (per `GATEWAY_20_SPEC.md` §3, all Gateway 2.0
-    /// flags use a negative-term name so that defaults mean Gateway 2.0 is
-    /// enabled). When `true`, the driver routes every request through the
-    /// standard gateway transport even when the account advertises a
-    /// thin-client endpoint.
+    /// Gateway 2.0 is enabled by default whenever the account advertises a
+    /// thin-client endpoint and HTTP/2 is allowed. When this method returns
+    /// `true` the driver routes every request through the standard gateway
+    /// transport, regardless of the account advertisement.
     ///
     /// Gateway 2.0 also requires HTTP/2: when HTTP/2 is disabled, this method
     /// returns `true` regardless of how the builder was configured.
@@ -507,9 +505,16 @@ impl ConnectionPoolOptionsBuilder {
     /// request through the standard gateway transport regardless of the
     /// account advertisement (operator override).
     ///
-    /// This is the single supported disablement mechanism per
-    /// `GATEWAY_20_SPEC.md` §3 — there is intentionally no
-    /// `AZURE_COSMOS_*` environment variable that toggles Gateway 2.0.
+    /// There is intentionally no `AZURE_COSMOS_*` environment variable that
+    /// toggles Gateway 2.0 — the override must be applied programmatically
+    /// via this method.
+    ///
+    /// # Latency caveat
+    ///
+    /// Gateway 2.0 traffic flows through a thin-client proxy that is **not
+    /// currently covered by the regional Cosmos DB latency SLA**. Workloads
+    /// with strict P99 latency requirements should call this method with
+    /// `true` until the proxy reaches general availability.
     pub fn with_gateway20_disabled(mut self, value: bool) -> Self {
         self.gateway20_disabled = Some(value);
         self
@@ -551,15 +556,13 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::none(),
         )?;
 
-        // Gateway 2.0 is currently disabled by default while the implementation
-        // is still in pre-GA. Per `GATEWAY_20_SPEC.md` §3, the field uses a
-        // negative-term name (`gateway20_disabled`) so that the default state
-        // can be flipped to "enabled" by changing only the literal below; no
-        // call sites or environment variables need to change. There is
-        // intentionally no `AZURE_COSMOS_*` env var that toggles Gateway 2.0.
-        //
-        // TODO: Change to `false` (Gateway 2.0 enabled by default) before GA.
-        let explicit_disabled = self.gateway20_disabled.unwrap_or(true);
+        // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed and
+        // the account advertises a thin-client endpoint. The flag uses a
+        // negative-term name so that the absence of an opt-in is the on
+        // state; operators disable Gateway 2.0 by setting this to `true`.
+        // There is intentionally no `AZURE_COSMOS_*` env var that toggles
+        // Gateway 2.0 — the override must be applied programmatically.
+        let explicit_disabled = self.gateway20_disabled.unwrap_or(false);
         // HTTP/2 is a hard prerequisite for Gateway 2.0 — when HTTP/2 is off
         // the pool is effectively gateway20-disabled regardless of the flag.
         let effective_gateway20_disabled = explicit_disabled || !effective_is_http2_allowed;
@@ -834,7 +837,8 @@ mod tests {
             Duration::from_millis(65_000)
         );
         assert!(options.is_http2_allowed());
-        assert!(options.gateway20_disabled());
+        // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed.
+        assert!(!options.gateway20_disabled());
         assert_eq!(
             options.emulator_server_cert_validation(),
             EmulatorServerCertValidation::Enabled
