@@ -131,13 +131,11 @@ fn resolve_pk_values(
 }
 
 fn find_parameter_value(query: &Query, name: &str) -> Option<serde_json::Value> {
-    let serialized = serde_json::to_value(query).ok()?;
-    let params = serialized.get("parameters")?.as_array()?;
-    for param in params {
-        let param_name = param.get("name")?.as_str()?;
+    for param in &query.parameters {
+        let param_name = param.name.as_str();
         let clean_name = param_name.strip_prefix('@').unwrap_or(param_name);
         if clean_name == name || param_name == name {
-            return param.get("value").cloned();
+            return Some(param.value.clone());
         }
     }
     None

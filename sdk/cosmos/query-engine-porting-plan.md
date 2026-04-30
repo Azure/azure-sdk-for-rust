@@ -526,8 +526,8 @@ thiserror = "2"
 
 ## Testing Strategy
 
-1. **Parser tests**: Port representative SQL strings from C++ test suites, verify AST structure
-2. **Roundtrip tests**: `parse(sql).to_string() ≈ sql` (normalized whitespace/case)
+1. **Parser tests**: Port representative SQL strings from C++ test suites and assert against hardcoded expected AST structures
+2. **Formatter tests**: Assert hardcoded expected SQL strings for representative AST inputs and normalized formatting cases; do not use `parse(sql).to_string() ≈ sql` round-trip tests
 3. **PK extraction tests**: 
    - `SELECT * FROM c WHERE c.pk = "hello"` → single partition
    - `SELECT * FROM c WHERE c.pk IN ("a", "b")` → two partitions
