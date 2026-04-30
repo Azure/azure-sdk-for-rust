@@ -6,11 +6,7 @@
 
 //! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
 
-use azure_core::http::{
-    headers::{HeaderName, HeaderValue},
-    request::options::ContentType,
-    StatusCode,
-};
+use azure_core::http::{headers::HeaderName, request::options::ContentType, StatusCode};
 
 /// Macro to define Cosmos DB header constants and the allowed headers list in one place.
 macro_rules! cosmos_headers {
@@ -200,8 +196,6 @@ cosmos_headers! {
 }
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
-
-pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
