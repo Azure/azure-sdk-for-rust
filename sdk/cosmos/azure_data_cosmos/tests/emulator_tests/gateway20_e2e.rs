@@ -225,7 +225,95 @@ pub async fn gateway20_query_streams_through_thin_client() -> Result<(), Box<dyn
     Ok(())
 }
 
-/// Runs a transactional batch through Gateway 2.0.
+/// Forces multi-page query pagination on Gateway 2.0 by setting
+/// `x-ms-max-item-count: 2` and inserting more rows than fit on a single
+/// page, then asserts that:
+///
+/// * the query produces strictly more than one page,
+/// * every row is returned exactly once with no cross-page duplicates, and
+/// * pages chain via continuation tokens (the SDK's `Pager` plumbs the
+///   response continuation header back as a request continuation header,
+///   which the Gateway 2.0 wrap path serializes into RNTBD token `0x0006`).
+///
+/// This is the end-to-end regression test for the request-side continuation
+/// propagation bug fix: without it the proxy would always restart from page
+/// one and return duplicates instead of advancing.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+)]
+pub async fn gateway20_query_paginates_via_continuation_tokens(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use azure_core::http::headers::{HeaderName, HeaderValue};
+    use azure_data_cosmos::options::{OperationOptions, QueryOptions};
+    use std::collections::{HashMap, HashSet};
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key, false).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let total_items: usize = 7;
+    for i in 0..total_items {
+        let item = Gw20TestItem {
+            id: format!("page-item-{i}"),
+            pk: pk_value.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        container.create_item(&pk_value, &item, None).await?;
+    }
+
+    let mut custom_headers: HashMap<HeaderName, HeaderValue> = HashMap::new();
+    custom_headers.insert(
+        HeaderName::from_static("x-ms-max-item-count"),
+        HeaderValue::from_static("2"),
+    );
+    let query_options = QueryOptions::default()
+        .with_operation_options(OperationOptions::default().with_custom_headers(custom_headers));
+
+    let query = Query::from("SELECT * FROM c ORDER BY c.value");
+    let mut pages = container
+        .query_items::<Gw20TestItem>(query, pk_value.clone(), Some(query_options))?
+        .into_pages();
+
+    let mut pages_seen = 0_usize;
+    let mut ids_seen: HashSet<String> = HashSet::new();
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        pages_seen += 1;
+        assert!(
+            page.diagnostics().activity_id().is_some(),
+            "every Gateway 2.0 page must surface an activity-id",
+        );
+        for item in page.items() {
+            assert!(
+                ids_seen.insert(item.id.clone()),
+                "item {} returned twice — pagination did not advance (continuation token not propagated)",
+                item.id,
+            );
+        }
+    }
+
+    assert!(
+        pages_seen > 1,
+        "expected continuation-driven pagination to produce more than one page (got {pages_seen})",
+    );
+    assert_eq!(
+        ids_seen.len(),
+        total_items,
+        "expected all {total_items} inserted rows; saw {} unique ids across {pages_seen} pages",
+        ids_seen.len(),
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
 ///
 /// TODO: tighten the diagnostics check to assert `TransportKind::Gateway20`
 /// once the SDK surfaces the driver transport kind on batch diagnostics.

@@ -341,6 +341,17 @@ impl Token {
         )
     }
 
+    /// Pagination cursor echoed back to the proxy on subsequent feed/query
+    /// requests. Wire format matches Java's `RntbdRequestHeader.ContinuationToken`
+    /// (ID 0x0006, string) — the SDK passes the value through unchanged so
+    /// the backend can resume from the previous offset.
+    pub(crate) fn continuation_token(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::ContinuationToken.into(),
+            TokenValue::String(value),
+        )
+    }
+
     /// Returns the number of bytes this token occupies on the wire.
     pub(super) fn encoded_len(&self) -> usize {
         2 + 1 + self.value.encoded_len()
@@ -371,6 +382,7 @@ pub(crate) enum RntbdRequestToken {
     AuthorizationToken,
     PayloadPresent,
     Date,
+    ContinuationToken,
     ConsistencyLevel,
     DatabaseName,
     CollectionName,
@@ -389,6 +401,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0001 => Ok(Self::AuthorizationToken),
             0x0002 => Ok(Self::PayloadPresent),
             0x0003 => Ok(Self::Date),
+            0x0006 => Ok(Self::ContinuationToken),
             0x0010 => Ok(Self::ConsistencyLevel),
             0x0015 => Ok(Self::DatabaseName),
             0x0016 => Ok(Self::CollectionName),
@@ -408,6 +421,7 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::AuthorizationToken => 0x0001,
             RntbdRequestToken::PayloadPresent => 0x0002,
             RntbdRequestToken::Date => 0x0003,
+            RntbdRequestToken::ContinuationToken => 0x0006,
             RntbdRequestToken::ConsistencyLevel => 0x0010,
             RntbdRequestToken::DatabaseName => 0x0015,
             RntbdRequestToken::CollectionName => 0x0016,

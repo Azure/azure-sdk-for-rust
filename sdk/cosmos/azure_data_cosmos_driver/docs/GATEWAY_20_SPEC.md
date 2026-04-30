@@ -205,6 +205,15 @@ The Rust deserializer **must** treat the RNTBD response metadata-token stream as
 - **Unknown token type IDs MUST be silently skipped** (consume `length` bytes and continue) — the deserializer must NOT panic, return an error, or fail the response, and must NOT log per-token (silent skip is the contract). The proxy is free to add new metadata tokens at any time and the driver must remain forward-compatible across proxy upgrades that ship before the corresponding Rust release. This silent-tolerance behavior is the *implementation* of the `IgnoreUnknownRntbdTokens` capability bit advertised over the `x-ms-cosmos-sdk-supportedcapabilities` header (see "SDK-supported-capabilities advertisement" below) — the proxy/backend assumes the SDK will not surface or warn on unknown tokens, so per-token logging is unnecessary noise.
 - **Inverse contract on the request side**: the request serializer drops headers that appear in `thinClientProxyExcludedSet` (see §"RNTBD Request Wire Format" Notes column). That set enumerates headers the proxy does not understand on the inbound RNTBD frame; emitting them would be either ignored or rejected.
 
+##### Continuation-token format (request and response)
+
+Continuation tokens are **opaque server-issued strings** in both directions; the SDK never parses, validates, or rewrites them. The wire format is a length-prefixed UTF-8 string token mirroring Java's RNTBD encoding:
+
+- **Request side** — `RntbdRequestToken::ContinuationToken` (ID `0x0006`, `TokenType::String`). When the inbound HTTP request carries `x-ms-continuation`, the wrap path serializes the value verbatim into the RNTBD metadata stream and **strips** the header from the outer HTTP request (the outer body is the RNTBD frame; metadata never duplicates onto outer headers). Empty values are passed through as zero-length string tokens — the wrap path does not infer intent from emptiness, matching the unwrap side and the .NET/Java behavior.
+- **Response side** — `RntbdResponseToken::ContinuationToken` (ID `0x0003`, `TokenType::String`). The unwrap path forwards the token value verbatim into the synthetic HTTP response's `x-ms-continuation` header.
+
+Identical semantics to .NET (`ThinClientStoreClient.cs` / `ThinClientTransportSerializer.cs`, which contain no continuation-specific logic and rely on the standard gateway path) and Java (`RntbdRequestHeader.ContinuationToken` is *not* in `thinClientProxyExcludedSet`, so it traverses the same encode/decode path as standard direct-mode RNTBD). There is no Gateway-2.0-specific token format, base64 wrapper, or version prefix; pagination cursors round-trip byte-for-byte.
+
 Phase 6's "RNTBD unknown-token tolerance" unit test pins this behavior: a hand-crafted response frame containing a synthetic unrecognized token ID must round-trip without error and surface every recognized token correctly.
 
 #### SDK-supported-capabilities advertisement

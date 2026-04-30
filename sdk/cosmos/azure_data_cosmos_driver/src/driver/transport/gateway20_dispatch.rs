@@ -33,6 +33,7 @@ const X_MS_ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id")
 const X_MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 const X_MS_LSN: HeaderName = HeaderName::from_static("x-ms-lsn");
 const X_MS_GLOBAL_COMMITTED_LSN: HeaderName = HeaderName::from_static("x-ms-global-committed-lsn");
+const X_MS_CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
 static TRANSPORT_REQUEST_ID: AtomicU32 = AtomicU32::new(0);
 
 /// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
@@ -88,6 +89,9 @@ pub(crate) fn wrap_request_for_gateway20(
     metadata.push(Token::sdk_supported_capabilities(
         SUPPORTED_CAPABILITIES_BITS,
     ));
+    if let Some(continuation) = request.headers.get_optional_str(&X_MS_CONTINUATION) {
+        metadata.push(Token::continuation_token(continuation.to_owned()));
+    }
 
     let frame = RntbdRequestFrame {
         resource_type: inputs.resource_type,
@@ -721,6 +725,103 @@ mod tests {
         .unwrap_err();
 
         assert_eq!(error.kind(), &ErrorKind::DataConversion);
+    }
+
+    #[test]
+    fn wrap_propagates_continuation_token_into_rntbd_metadata() {
+        let mut request = signed_request(None);
+        request.headers.insert(X_MS_CONTINUATION, "page-token-1");
+        let auth_context =
+            AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &WrapInputs {
+                auth_context: &auth_context,
+                operation_type: OperationType::Query,
+                resource_type: ResourceType::Document,
+                partition_key: None,
+                partition_key_definition: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                account_name: Some("account"),
+            },
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 10);
+
+        assert_eq!(
+            parsed.tokens[&0x0006],
+            ParsedTokenValue::String("page-token-1".into()),
+            "continuation token should be encoded as string token 0x0006",
+        );
+        assert!(
+            wrapped
+                .headers
+                .get_optional_str(&X_MS_CONTINUATION)
+                .is_none(),
+            "x-ms-continuation header should not be forwarded on the outer HTTP request",
+        );
+    }
+
+    #[test]
+    fn wrap_omits_continuation_token_when_header_absent() {
+        let request = signed_request(None);
+        let auth_context =
+            AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &WrapInputs {
+                auth_context: &auth_context,
+                operation_type: OperationType::Query,
+                resource_type: ResourceType::Document,
+                partition_key: None,
+                partition_key_definition: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                account_name: Some("account"),
+            },
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 9);
+
+        assert!(
+            !parsed.tokens.contains_key(&0x0006),
+            "continuation token should be absent when no x-ms-continuation header is present",
+        );
+    }
+
+    #[test]
+    fn wrap_emits_empty_continuation_token_when_header_value_empty() {
+        // Symmetry with .NET (`ThinClientStoreClient.PrepareRequestForProxyAsync`),
+        // Java (`RntbdRequestHeader.ContinuationToken` is *not* in
+        // `thinClientProxyExcludedSet`), and the unwrap side which forwards
+        // empty continuation strings verbatim. Continuation is opaque on the
+        // wire — the wrap path does not infer intent from emptiness.
+        let mut request = signed_request(None);
+        request.headers.insert(X_MS_CONTINUATION, "");
+        let auth_context =
+            AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &WrapInputs {
+                auth_context: &auth_context,
+                operation_type: OperationType::Query,
+                resource_type: ResourceType::Document,
+                partition_key: None,
+                partition_key_definition: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                account_name: Some("account"),
+            },
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 10);
+
+        assert_eq!(
+            parsed.tokens[&0x0006],
+            ParsedTokenValue::String(String::new()),
+            "empty continuation header should be emitted as a zero-length string token",
+        );
     }
 
     #[test]
