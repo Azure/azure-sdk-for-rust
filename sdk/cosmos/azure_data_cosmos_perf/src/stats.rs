@@ -88,7 +88,7 @@ impl OperationStats {
             self.max = latency;
         }
 
-        let micros = latency.as_micros() as u64;
+        let micros = latency.as_micros().min(u64::MAX as u128) as u64;
         // Clamp to histogram bounds; values above MAX_LATENCY_US are recorded
         // at the max and still counted.
         let _ = self.histogram.record(micros.clamp(1, MAX_LATENCY_US));
@@ -102,7 +102,7 @@ impl OperationStats {
             if b > self.backend_max {
                 self.backend_max = b;
             }
-            let bm = b.as_micros() as u64;
+            let bm = b.as_micros().min(u64::MAX as u128) as u64;
             let _ = self.backend_histogram.record(bm.clamp(1, MAX_LATENCY_US));
         }
     }
@@ -359,8 +359,14 @@ fn read_cgroup_cpu_percent() -> Option<f32> {
     let quota_usec: u64 = quota_str.parse().ok()?;
     let period_usec: u64 = parts.next().and_then(|v| v.parse().ok()).unwrap_or(100_000);
 
+    if period_usec == 0 {
+        return None;
+    }
     // cores_allocated = quota / period (e.g., 400000/100000 = 4.0 cores)
     let cores = quota_usec as f64 / period_usec as f64;
+    if cores <= 0.0 {
+        return None;
+    }
 
     let now = Instant::now();
     let mut prev = PREV_CGROUP_USAGE.lock().ok()?;
