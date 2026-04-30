@@ -210,10 +210,8 @@ pub(crate) async fn execute_operation_pipeline(
 
         // Capture partition key range ID from response headers (first time only).
         if retry_state.partition_key_range_id.is_none() {
-            if let Some(headers) = result.response_headers() {
-                if let Some(pk_range_id) = headers.get_optional_string(&HeaderName::from_static(
-                    "x-ms-documentdb-partitionkeyrangeid",
-                )) {
+            if let Some(headers) = result.cosmos_headers() {
+                if let Some(pk_range_id) = headers.partition_key_range_id.as_deref() {
                     retry_state.partition_key_range_id =
                         Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
                 }
