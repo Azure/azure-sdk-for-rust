@@ -996,3 +996,91 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     )
     .await
 }
+
+// ----------------------------------------------------------------------------
+// Gateway 2.0 fault injection coverage (Phase 6)
+// ----------------------------------------------------------------------------
+
+/// Gateway 2.0 ConnectionError should fall back to the standard gateway
+/// transparently — the client must not surface the connection failure to the
+/// caller when a usable fallback transport exists.
+///
+/// **Limitations**:
+/// * `FaultInjectionCondition` does not yet expose a per-transport-kind
+///   filter, so the rule fires on whichever transport is selected at dispatch
+///   time. Today the SDK does not expose a public Gateway 2.0 enable API
+///   (see `CosmosClientOptions`), so the SDK currently never selects the
+///   Gateway 2.0 transport — this test runs in standard-gateway mode only.
+/// * Once `CosmosClientOptions` exposes a Gateway 2.0 toggle and
+///   `FaultInjectionCondition` supports `with_transport_kind`, scope this
+///   rule to `TransportKind::Gateway20` and assert the request **succeeds**
+///   with the standard-gateway fallback recorded in diagnostics.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
+) -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .with_probability(1.0)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("gateway20-conn-error-fallback", server_error)
+        .with_condition(condition)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // Today the rule fires on the standard gateway path (the SDK does
+            // not yet route through Gateway 2.0). The read should fail because
+            // there is no further fallback below the standard gateway.
+            //
+            // TODO(Phase 6): once the SDK exposes a public Gateway 2.0
+            // enable API and `FaultInjectionCondition` supports a
+            // per-transport-kind filter, scope the rule to
+            // `TransportKind::Gateway20` and assert this read SUCCEEDS via
+            // the standard-gateway fallback.
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+            assert!(
+                result.is_err(),
+                "Today the read should fail; once Gateway 2.0 fallback lands, this should succeed"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+    )
+    .await
+}

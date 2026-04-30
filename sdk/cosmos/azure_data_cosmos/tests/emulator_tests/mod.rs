@@ -10,6 +10,7 @@ mod cosmos_items;
 mod cosmos_offers;
 mod cosmos_proxy;
 mod cosmos_query;
+mod gateway20_e2e;
 
 #[path = "../framework/mod.rs"]
 mod framework;

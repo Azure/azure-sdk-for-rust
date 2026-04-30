@@ -1,0 +1,52 @@
+# NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
+#
+# Gateway 2.0 live-test pipeline.
+#
+# This pipeline runs the Cosmos client tests against a pre-provisioned Gateway 2.0
+# (a.k.a. "thin client") account. It is a sibling of `ci.yml` and shares the same
+# template (`archetype-sdk-client.yml`) but uses a separate matrix
+# (`live-gateway20-matrix.json`) so that the matrix entries map onto the dedicated
+# test categories `gateway20` and `gateway20_multi_region`.
+#
+# The Gateway 2.0 account is **not** provisioned per-pipeline-run — it must be
+# created out-of-band by the engineering system. The pipeline reads its endpoint
+# and key from these pipeline secrets:
+#
+#   AZURE_COSMOS_GW20_ENDPOINT   — endpoint URL
+#   AZURE_COSMOS_GW20_KEY        — primary master key
+#
+# The pipeline triggers only on PRs and manual / scheduled dispatch (no `branches`
+# trigger). This avoids accidental runs on every main push while still allowing
+# developers to validate Gateway 2.0 changes from a PR.
+
+trigger: none
+
+pr:
+  branches:
+    include:
+    - main
+    - hotfix/*
+    - release/*
+  paths:
+    include:
+    - sdk/cosmos/
+
+parameters:
+- name: RunLiveTests
+  displayName: Run live tests
+  type: boolean
+  default: true
+
+extends:
+  template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
+  parameters:
+    ServiceDirectory: cosmos
+    RunLiveTests: ${{ parameters.RunLiveTests }}
+    CloudConfig:
+      Public:
+        ServiceConnection: azure-sdk-tests-cosmos
+    LiveTestMatrixConfigs:
+      - Name: Cosmos_gateway20_live_test
+        Path: sdk/cosmos/live-gateway20-matrix.json
+        Selection: sparse
+        GenerateVMJobs: true

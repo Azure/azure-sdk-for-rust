@@ -1,0 +1,21 @@
+{
+  "displayNames": {},
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "Gateway20 Settings": {
+      "Session SingleRegion": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; testCategory = 'gateway20' }"
+      },
+      "Session MultiRegion": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway20_multi_region' }"
+      }
+    }
+  },
+  "include": []
+}

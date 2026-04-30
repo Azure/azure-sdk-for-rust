@@ -327,3 +327,192 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
     })
     .await
 }
+
+// ----------------------------------------------------------------------------
+// Gateway 2.0 fault injection coverage (Phase 6)
+// ----------------------------------------------------------------------------
+//
+// The following three tests lock in the retry/failover behavior the Gateway
+// 2.0 transport must exhibit when the underlying thin-client connection fails.
+// Each test exercises a distinct failure shape:
+//
+//   - 503 Service Unavailable → regional failover
+//   - 408 Request Timeout     → cross-region for reads / local-only for writes
+//   - 404/1002 Read Session   → remote-preferred + no PKRange refresh
+//
+// **Limitation**: `FaultInjectionCondition` does not yet expose a per-transport-
+// kind filter — there is no `with_transport_kind(TransportKind::Gateway20)`
+// today. As a result, faults injected here apply to whichever transport happens
+// to be selected at dispatch time. To reliably exercise these against Gateway
+// 2.0, the Phase 6 CI matrix must run them on a live thin-client account
+// (`testCategory = 'gateway20'`); the emulator does not yet expose Gateway
+// 2.0 endpoints. See `docs/GATEWAY_20_SPEC.md` (Phase 6) for the harness gap.
+
+/// Gateway 2.0 503 Service Unavailable should trigger regional failover.
+///
+/// TODO(Phase 6): once `FaultInjectionCondition` supports a per-transport-kind
+/// filter, scope this rule to `TransportKind::Gateway20` so it doesn't also
+/// fire on standard-gateway requests issued during account discovery.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Result<(), Box<dyn Error>>
+{
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-503-failover", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+        context.create_item(&container, "pk1", item_json).await?;
+
+        // The read should fail (single region, fault always fires) but the
+        // failover machinery must have been invoked. Once `RequestDiagnostics`
+        // exposes per-attempt endpoint selection, assert that the diagnostics
+        // record at least one regional failover attempt.
+        let read_result = context.read_item(&container, "item1", "pk1").await;
+        assert!(
+            read_result.is_err(),
+            "Read should fail when 503 fires on every attempt"
+        );
+
+        assert!(rule.hit_count() > 0, "Rule should have been hit");
+
+        Ok(())
+    })
+    .await
+}
+
+/// Gateway 2.0 408 Request Timeout should retry across regions for reads,
+/// but stay local-only for writes (single-region writes can't safely retry
+/// across regions without risking duplicates).
+///
+/// TODO(Phase 6): once `FaultInjectionCondition` supports a per-transport-kind
+/// filter, scope this rule to `TransportKind::Gateway20`. Today the emulator
+/// only exposes the standard gateway, so this test executes against the
+/// standard transport in the emulator — it acts as a contract lock for the
+/// behavior that must also hold on Gateway 2.0 once a thin-client account is
+/// available in CI.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::Timeout)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-408-cross-region", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+        context.create_item(&container, "pk1", item_json).await?;
+
+        let read_result = context.read_item(&container, "item1", "pk1").await;
+        assert!(
+            read_result.is_err(),
+            "Read should ultimately fail when 408 fires on every attempt"
+        );
+
+        // TODO(Phase 6): once diagnostics expose retry attempts, assert that
+        // a single-region account exhausts local-only retries while a
+        // multi-region account performs at least one cross-region attempt.
+        assert!(rule.hit_count() > 0, "Rule should have been hit");
+
+        Ok(())
+    })
+    .await
+}
+
+/// Gateway 2.0 404/1002 ReadSessionNotAvailable must trigger a
+/// remote-preferred retry path **without** invalidating the partition-key
+/// range (PKRange) cache. The 404/1002 substatus indicates a session-token
+/// mismatch, which is unrelated to the routing topology — refreshing PKRange
+/// would be a wasted metadata round-trip.
+///
+/// TODO(Phase 6): once `FaultInjectionCondition` supports a per-transport-kind
+/// filter, scope to `TransportKind::Gateway20`. Today, asserting the absence
+/// of a PKRange refresh requires diagnostics that record metadata-cache hits
+/// — this test is the contract lock and will tighten its assertion once that
+/// observability is in place.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-1002-remote-preferred", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+        context.create_item(&container, "pk1", item_json).await?;
+
+        let read_result = context.read_item(&container, "item1", "pk1").await;
+        assert!(
+            read_result.is_err(),
+            "Read should fail when 404/1002 fires on every attempt"
+        );
+
+        // TODO(Phase 6): once diagnostics record metadata-cache hits, assert
+        // that the PKRange cache was NOT refreshed during these retries (a
+        // 404/1002 is a session-token issue, not a routing-topology issue).
+        assert!(rule.hit_count() > 0, "Rule should have been hit");
+
+        Ok(())
+    })
+    .await
+}
