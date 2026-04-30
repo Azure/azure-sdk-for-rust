@@ -180,6 +180,23 @@ pub fn generate_query_plan(query: &SqlQuery, pk_paths: &[&str]) -> QueryPlan {
 
 // ─── Query Analysis ──────────────────────────────────────────────────────────
 
+/// Returns true if the expression is a constant (literal) that doesn't reference
+/// any collection variable. Used to detect cases where DISTINCT is a no-op.
+fn is_constant_expression(expr: &SqlScalarExpression) -> bool {
+    match expr {
+        SqlScalarExpression::Literal(_) => true,
+        SqlScalarExpression::ArrayCreate(items) => items.iter().all(is_constant_expression),
+        SqlScalarExpression::ObjectCreate(props) => {
+            props.iter().all(|p| is_constant_expression(&p.expression))
+        }
+        SqlScalarExpression::Unary { operand, .. } => is_constant_expression(operand),
+        SqlScalarExpression::Binary { left, right, .. } => {
+            is_constant_expression(left) && is_constant_expression(right)
+        }
+        _ => false,
+    }
+}
+
 fn analyze_query(query: &SqlQuery) -> QueryInfo {
     let mut info = QueryInfo {
         has_select_value: matches!(query.select.spec, SqlSelectSpec::Value(_)),
@@ -187,13 +204,22 @@ fn analyze_query(query: &SqlQuery) -> QueryInfo {
         ..Default::default()
     };
 
-    // DISTINCT
+    // DISTINCT — Gateway optimizes away DISTINCT when the SELECT expression is a
+    // constant (literal) that doesn't reference any collection variable, because
+    // a single constant value is always distinct by definition.
     if query.select.distinct {
-        info.distinct_type = if query.order_by.is_some() {
-            DistinctType::Ordered
-        } else {
-            DistinctType::Unordered
+        let is_constant_select = match &query.select.spec {
+            SqlSelectSpec::Value(expr) => is_constant_expression(expr),
+            _ => false,
         };
+        if is_constant_select {
+            // Gateway reports distinctType: "None" for constant expressions
+            info.distinct_type = DistinctType::None;
+        } else if query.order_by.is_some() {
+            info.distinct_type = DistinctType::Ordered;
+        } else {
+            info.distinct_type = DistinctType::Unordered;
+        }
     }
 
     // TOP

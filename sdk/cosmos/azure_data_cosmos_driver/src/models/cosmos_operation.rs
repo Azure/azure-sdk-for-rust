@@ -553,6 +553,22 @@ impl CosmosOperation {
         Self::query_items(container, PartitionKey::EMPTY)
     }
 
+    /// Retrieves a query plan from the Gateway for the given container.
+    ///
+    /// Use `with_body()` to provide the query JSON (same format as `query_items`).
+    /// The caller must also set the required query-plan headers via
+    /// `OperationOptions::with_custom_headers()`:
+    /// - `x-ms-cosmos-is-query-plan-request: True`
+    /// - `x-ms-cosmos-supported-query-features: <feature-list>`
+    /// - `Content-Type: application/query+json`
+    /// - `x-ms-documentdb-isquery: True`
+    pub fn query_plan(container: ContainerReference) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::QueryPlan, resource_ref)
+    }
+
     /// Returns true if this is a read-only operation.
     pub fn is_read_only(&self) -> bool {
         self.operation_type.is_read_only()
