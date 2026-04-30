@@ -272,6 +272,7 @@ fn expr_to_path_string(expr: &SqlScalarExpression) -> String {
     }
 }
 
+#[allow(clippy::collapsible_match)] // clippy suggests a match guard, but that won't compile with &mut
 fn collect_path_parts(expr: &SqlScalarExpression, parts: &mut Vec<String>) -> bool {
     match expr {
         SqlScalarExpression::PropertyRef(name) => {
@@ -630,6 +631,7 @@ fn is_pk_reference(expr: &SqlScalarExpression, pk_path: &[&str], root_alias: Opt
     resolved_path.iter().map(String::as_str).collect::<Vec<_>>() == pk_path
 }
 
+#[allow(clippy::collapsible_match)] // clippy suggests a match guard, but that won't compile with &mut
 fn resolve_property_path(expr: &SqlScalarExpression, path: &mut Vec<String>) -> bool {
     match expr {
         SqlScalarExpression::PropertyRef(name) => {
