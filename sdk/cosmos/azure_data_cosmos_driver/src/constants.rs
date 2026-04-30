@@ -43,7 +43,7 @@ pub const GATEWAY20_RANGE_MAX: HeaderName = HeaderName::from_static("x-ms-thincl
 
 /// Account-metadata fetch hint.
 ///
-/// Instructs the response to advertise thin-client endpoints.
+/// Instructs the response to advertise Gateway 2.0 endpoints.
 pub const GATEWAY20_USE_THINCLIENT: HeaderName =
     HeaderName::from_static("x-ms-cosmos-use-thinclient");
 

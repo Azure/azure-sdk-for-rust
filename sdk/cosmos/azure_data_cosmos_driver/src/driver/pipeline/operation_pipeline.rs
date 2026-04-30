@@ -1348,7 +1348,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let gateway20_url = Url::parse("https://central.thinclient.azure.com:444/").unwrap();
+        let gateway20_url = Url::parse("https://central.gateway20.azure.com:444/").unwrap();
         let endpoint = CosmosEndpoint::regional_with_gateway20(
             "centralus".into(),
             Url::parse("https://central.documents.azure.com:443/").unwrap(),
@@ -1384,7 +1384,7 @@ mod tests {
         assert_eq!(routing.transport_mode, TransportMode::Gateway20);
         assert_eq!(
             routing.selected_url.host_str(),
-            Some("central.thinclient.azure.com")
+            Some("central.gateway20.azure.com")
         );
         assert_eq!(
             routing.endpoint_key,

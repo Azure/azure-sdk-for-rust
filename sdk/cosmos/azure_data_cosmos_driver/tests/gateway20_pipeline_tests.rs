@@ -11,7 +11,7 @@
 //! ## Categories
 //!
 //! 1. **Operator override** — the operator can opt out of Gateway 2.0 even when
-//!    the account advertises a thin-client endpoint. Verified via the public
+//!    the account advertises a Gateway 2.0 endpoint. Verified via the public
 //!    [`ConnectionPoolOptions::with_gateway20_disabled`] toggle.
 //!
 //! 2. **Operation eligibility** — operations that Gateway 2.0 does not yet
@@ -188,7 +188,7 @@ async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
 /// Verifies that the operator override flag (`with_gateway20_disabled(true)`)
 /// is honored end-to-end at the connection-pool level. When the flag is set,
 /// the runtime must not select the Gateway 2.0 transport even if account
-/// metadata advertises a thin-client endpoint.
+/// metadata advertises a Gateway 2.0 endpoint.
 ///
 /// We assert the contract structurally via `ConnectionPoolOptions`: when the
 /// flag is `true`, `gateway20_disabled()` reports `true`, and the
@@ -288,7 +288,7 @@ async fn stored_proc_execute_falls_back_to_standard_gateway() {
 /// Once Gateway 2.0 has dispatched a request, the recorded
 /// `RequestDiagnostics` for that request must indicate `TransportKind::Gateway20`.
 ///
-/// This contract requires a live thin-client account. The inside-crate test
+/// This contract requires a live Gateway 2.0 account. The inside-crate test
 /// `transport_pipeline::tests::gateway20_pipeline_records_transport_kind`
 /// already covers the wiring at the unit-test level; this standalone test is
 /// the live-account companion.

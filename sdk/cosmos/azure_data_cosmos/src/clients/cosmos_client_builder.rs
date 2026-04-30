@@ -93,11 +93,11 @@ pub struct CosmosClientBuilder {
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
-    /// Operator override for the Gateway 2.0 ("thin client") transport.
+    /// Operator override for the Gateway 2.0 transport.
     ///
     /// `None` (the default) leaves the underlying driver in charge of
     /// routing — Gateway 2.0 is selected automatically whenever the
-    /// account advertises a thin-client endpoint and HTTP/2 is allowed.
+    /// account advertises a Gateway 2.0 endpoint and HTTP/2 is allowed.
     /// `Some(true)` forces every request through the standard gateway
     /// transport via [`with_gateway20_disabled`](Self::with_gateway20_disabled);
     /// `Some(false)` explicitly opts in (matching the default behaviour).
@@ -177,16 +177,16 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Disables the Gateway 2.0 ("thin client") transport for this client.
+    /// Disables the Gateway 2.0 transport for this client.
     ///
     /// Gateway 2.0 is the next-generation Cosmos DB dataplane transport:
-    /// SDK connections terminate at a regional thin-client proxy that
+    /// SDK connections terminate at a regional Gateway 2.0 proxy that
     /// forwards RNTBD-over-HTTP/2 to the backend. **Gateway 2.0 is enabled
-    /// by default** — whenever the account advertises a thin-client endpoint
+    /// by default** — whenever the account advertises a Gateway 2.0 endpoint
     /// the SDK routes eligible dataplane operations through it and falls
     /// back to the standard gateway only for operations Gateway 2.0 cannot
     /// serve (e.g. metadata requests or accounts that do not advertise a
-    /// thin-client endpoint).
+    /// Gateway 2.0 endpoint).
     ///
     /// Pass `true` to opt out and force every request through the standard
     /// gateway transport. The standard gateway path remains supported and
@@ -195,7 +195,7 @@ impl CosmosClientBuilder {
     ///
     /// # Latency caveat
     ///
-    /// Gateway 2.0 traffic flows through a thin-client proxy that is
+    /// Gateway 2.0 traffic flows through a proxy that is
     /// **not currently covered by the regional Cosmos DB latency SLA**.
     /// Workloads with strict P99 latency requirements should opt out via
     /// `with_gateway20_disabled(true)` until the proxy reaches general

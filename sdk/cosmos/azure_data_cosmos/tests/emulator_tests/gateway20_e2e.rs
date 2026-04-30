@@ -4,8 +4,8 @@
 //! End-to-end tests for the Gateway 2.0 transport, exercised through the
 //! `azure_data_cosmos` SDK surface (not the underlying driver crate).
 //!
-//! These tests run against a pre-provisioned Gateway 2.0 ("thin client")
-//! account. The endpoint and primary key are read from the
+//! These tests run against a pre-provisioned Gateway 2.0 account. The
+//! endpoint and primary key are read from the
 //! `AZURE_COSMOS_GW20_ENDPOINT` and `AZURE_COSMOS_GW20_KEY` environment
 //! variables and gated by the `gateway20` test category. They are skipped by
 //! default; the main Cosmos Rust pipeline (`sdk/cosmos/ci.yml`) injects those
@@ -73,7 +73,7 @@ fn live_credentials() -> Option<(String, String)> {
 ///
 /// `gateway20_disabled = false` opts the client in to Gateway 2.0; passing
 /// `true` exercises the operator-override path that pins the client to the
-/// standard gateway even when the account advertises a thin-client endpoint.
+/// standard gateway even when the account advertises a Gateway 2.0 endpoint.
 async fn build_client(
     endpoint: &str,
     key: &str,
@@ -179,7 +179,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
 }
 
 /// Runs a SQL query through Gateway 2.0 and asserts the streamed pages all
-/// route through the thin-client transport.
+/// route through the Gateway 2.0 transport.
 ///
 /// TODO: tighten the per-page diagnostics check to assert
 /// `TransportKind::Gateway20` once the SDK exposes the driver transport
@@ -189,8 +189,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     not(test_category = "gateway20"),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_query_streams_through_thin_client() -> Result<(), Box<dyn std::error::Error>>
-{
+pub async fn gateway20_query_streams() -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -443,7 +442,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
 /// Verifies the operator override at the SDK boundary: when the operator
 /// disables Gateway 2.0 via [`CosmosClientBuilder::with_gateway20_disabled`],
 /// every request must route through the standard gateway even though the
-/// account advertises a thin-client endpoint.
+/// account advertises a Gateway 2.0 endpoint.
 ///
 /// TODO: tighten the assertion to inspect `TransportKind::StandardGateway`
 /// in the diagnostics once the SDK exposes the driver transport kind.

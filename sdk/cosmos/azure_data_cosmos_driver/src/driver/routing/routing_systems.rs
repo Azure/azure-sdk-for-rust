@@ -69,11 +69,11 @@ pub(crate) fn build_account_endpoint_state(
 
 fn build_preferred_endpoints(
     standard_locations: &[crate::driver::cache::AccountRegion],
-    thin_client_locations: &[crate::driver::cache::AccountRegion],
+    gateway20_locations: &[crate::driver::cache::AccountRegion],
     gateway20_enabled: bool,
 ) -> Vec<CosmosEndpoint> {
-    let thin_client_urls = if gateway20_enabled {
-        parse_thin_client_locations(thin_client_locations)
+    let gateway20_urls = if gateway20_enabled {
+        parse_gateway20_locations(gateway20_locations)
     } else {
         HashMap::new()
     };
@@ -82,7 +82,7 @@ fn build_preferred_endpoints(
     for region in standard_locations {
         let url = region.database_account_endpoint.url().clone();
 
-        let endpoint = thin_client_urls
+        let endpoint = gateway20_urls
             .get(&region.name)
             .cloned()
             .map(|gateway20_url| {
@@ -100,12 +100,12 @@ fn build_preferred_endpoints(
     endpoints
 }
 
-fn parse_thin_client_locations(
-    thin_client_locations: &[crate::driver::cache::AccountRegion],
+fn parse_gateway20_locations(
+    gateway20_locations: &[crate::driver::cache::AccountRegion],
 ) -> HashMap<crate::options::Region, url::Url> {
     let mut urls = HashMap::new();
 
-    for region in thin_client_locations {
+    for region in gateway20_locations {
         let url = region.database_account_endpoint.url().clone();
 
         if url.scheme() != "https" {
@@ -113,7 +113,7 @@ fn parse_thin_client_locations(
                 region = %region.name,
                 endpoint = %region.database_account_endpoint,
                 scheme = url.scheme(),
-                "Ignoring non-HTTPS thin-client endpoint URL"
+                "Ignoring non-HTTPS Gateway 2.0 endpoint URL"
             );
             continue;
         }
@@ -125,7 +125,7 @@ fn parse_thin_client_locations(
                         region = %region.name,
                         existing_url = %existing,
                         new_url = %url,
-                        "Duplicate thin-client region with conflicting URL; keeping first entry"
+                        "Duplicate Gateway 2.0 region with conflicting URL; keeping first entry"
                     );
                 }
             })

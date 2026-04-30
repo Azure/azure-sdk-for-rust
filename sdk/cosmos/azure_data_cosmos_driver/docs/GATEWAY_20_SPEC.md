@@ -90,10 +90,10 @@ Gateway 2.0 routing is decided **once per logical operation** (a point operation
 
 ```text
 gateway20_suppressed = options.gateway20_disabled
-                    || !account.has_thin_client_endpoints()
+                    || !account.has_gateway20_endpoints()
 ```
 
-When `gateway20_suppressed` is `false` (the default whenever the account advertises Gateway 2.0 endpoints and the operator has not flipped the override), the request routes through Gateway 2.0. When it is `true`, the request falls through to Gateway V1. The account-side check (`has_thin_client_endpoints()`) reads the cached account metadata. The client-side check (`gateway20_disabled`) is the only public toggle.
+When `gateway20_suppressed` is `false` (the default whenever the account advertises Gateway 2.0 endpoints and the operator has not flipped the override), the request routes through Gateway 2.0. When it is `true`, the request falls through to Gateway V1. The account-side check (`has_gateway20_endpoints()`) reads the cached account metadata. The client-side check (`gateway20_disabled`) is the only public toggle.
 
 ### 3.2 Operator override: `CosmosClientOptions::gateway20_disabled`
 
@@ -252,7 +252,7 @@ RntbdUUID.encode(activityId, out);  // two longs
 | Offset | Size | Field | Encoding | Notes |
 | --- | --- | --- | --- | --- |
 | 0 | 4 | Total message length | uint32 LE | **Inclusive** of the 4 length bytes themselves (matches Java `writeIntLE` semantics). |
-| 4 | 2 | Resource type | uint16 LE | `writeShortLE(resourceType.id())` — narrower than direct-mode RNTBD's uint32 because thin-client IDs fit in 16 bits. |
+| 4 | 2 | Resource type | uint16 LE | `writeShortLE(resourceType.id())` — narrower than direct-mode RNTBD's uint32 because Gateway 2.0 IDs fit in 16 bits. |
 | 6 | 2 | Operation type | uint16 LE | `writeShortLE(operationType.id())` — same rationale. |
 | 8 | 16 | Activity ID | UUID, two uint64 LE | Java writes `(mostSignificantBits, leastSignificantBits)` as two little-endian `long`s — **this is not RFC 4122 byte order**. Worked example for UUID `0a1b2c3d-4e5f-6789-abcd-ef0123456789`: `mostSignificantBits = 0x0a1b2c3d_4e5f_6789` → LE bytes `89 67 5f 4e 3d 2c 1b 0a`; `leastSignificantBits = 0xabcd_ef01_2345_6789` → LE bytes `89 67 45 23 01 ef cd ab`. The on-the-wire 16-byte sequence is the MSB bytes followed by the LSB bytes. |
 | 24 | var | Metadata tokens | Token stream | Filtered by `thinClientProxyExcludedSet` (see §Phase 2 header naming). |
@@ -331,7 +331,7 @@ These are wire-level HTTP/2 request headers on the outer POST to the proxy. They
 | `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
 | `x-ms-thinclient-range-min` | **NEW** — `GATEWAY20_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
 | `x-ms-thinclient-range-max` | **NEW** — `GATEWAY20_RANGE_MAX` (driver) | Upper bound of EPK range | Feed / cross-partition ops only |
-| `x-ms-cosmos-use-thinclient` | **NEW** — `GATEWAY20_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only |
+| `x-ms-cosmos-use-thinclient` | **NEW** — `GATEWAY20_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise Gateway 2.0 endpoints | Account metadata fetches only |
 
 > Wire-header strings (`x-ms-thinclient-*`) are server-defined and unchanged; the Rust-side identifiers use the `GATEWAY20_*` prefix.
 
@@ -433,7 +433,7 @@ EDIT  sdk/cosmos/azure_data_cosmos/src/...        — Replace SDK-side get_hashe
 
 - **Verify** account metadata cache parses `thinClientReadableLocations` / `thinClientWritableLocations` into `CosmosEndpoint::gateway20_url`
 - **Confirm** `build_account_endpoint_state()` constructs `CosmosEndpoint::regional_with_gateway20()` correctly in multi-region accounts (existing tests at `routing_systems.rs:218–289` already cover this)
-- **Verify** `AccountProperties::has_thin_client_endpoints()` is used as the gating signal per §3.1
+- **Verify** `AccountProperties::has_gateway20_endpoints()` is used as the gating signal per §3.1
 - **Add** `x-ms-cosmos-use-thinclient` request header on account metadata fetches (new code)
 - **Test** endpoint discovery with live account that has gateway 2.0 enabled (handled by Phase 6 live pipeline)
 
@@ -455,7 +455,7 @@ Account metadata response includes:
 #### Files Changed
 
 ```
-EDIT  src/driver/cache/account_metadata_cache.rs   — Verify thin client endpoint parsing (audit only)
+EDIT  src/driver/cache/account_metadata_cache.rs   — Verify Gateway 2.0 endpoint parsing (audit only)
 EDIT  src/driver/transport/cosmos_headers.rs       — Add x-ms-cosmos-use-thinclient header (NEW)
 TEST  src/driver/routing/routing_systems.rs        — Add tests for read/write pairing edge cases
 ```

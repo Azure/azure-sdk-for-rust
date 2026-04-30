@@ -338,7 +338,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 // ----------------------------------------------------------------------------
 //
 // The following three tests lock in the retry/failover behavior the Gateway
-// 2.0 transport must exhibit when the underlying thin-client connection fails.
+// 2.0 transport must exhibit when the underlying Gateway 2.0 connection fails.
 // Each test exercises a distinct failure shape:
 //
 //   - 503 Service Unavailable → regional failover
@@ -349,7 +349,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 // kind filter — there is no `with_transport_kind(TransportKind::Gateway20)`
 // today. As a result, faults injected here apply to whichever transport happens
 // to be selected at dispatch time. To reliably exercise these against Gateway
-// 2.0, the Phase 6 CI matrix must run them on a live thin-client account
+// 2.0, the Phase 6 CI matrix must run them on a live Gateway 2.0 account
 // (`testCategory = 'gateway20'`); the emulator does not yet expose Gateway
 // 2.0 endpoints. See `docs/GATEWAY_20_SPEC.md` (Phase 6) for the harness gap.
 
@@ -358,7 +358,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 /// The rule is scoped to [`TransportKind::Gateway20`] so it does not also
 /// fire on standard-gateway requests issued during account discovery. The
 /// emulator does not yet expose Gateway 2.0 endpoints, so this test is
-/// gated behind the `gateway20` test category until CI gains a thin-client
+/// gated behind the `gateway20` test category until CI gains a Gateway 2.0
 /// account; see `docs/GATEWAY_20_SPEC.md` (Phase 6).
 #[tokio::test]
 #[cfg_attr(
@@ -478,7 +478,7 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
 /// The rule is scoped to [`TransportKind::Gateway20`] so it does not also
 /// fire on standard-gateway requests. The emulator does not yet expose
 /// Gateway 2.0 endpoints, so this test is gated behind the `gateway20`
-/// test category until CI gains a thin-client account.
+/// test category until CI gains a Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "gateway20"),

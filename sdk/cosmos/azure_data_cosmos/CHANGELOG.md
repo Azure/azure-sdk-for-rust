@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `CosmosClientBuilder::with_gateway20_disabled(bool)` to opt out of the new Gateway 2.0 ("thin client") transport, which is now enabled by default. Gateway 2.0 routes data-plane requests through a regional thin-client proxy that forwards RNTBD-over-HTTP/2 to the backend. Set this to `true` to fall back to the direct gateway transport — useful for workloads that depend on the published gateway latency SLAs (Gateway 2.0 is not currently covered by them) or that need the direct-gateway behavior for diagnostics. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Added `CosmosClientBuilder::with_gateway20_disabled(bool)` to opt out of the new Gateway 2.0 transport, which is now enabled by default. Gateway 2.0 routes data-plane requests through a regional proxy that forwards RNTBD-over-HTTP/2 to the backend. Set this to `true` to fall back to the direct gateway transport — useful for workloads that depend on the published gateway latency SLAs (Gateway 2.0 is not currently covered by them) or that need the direct-gateway behavior for diagnostics. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 
 ### Breaking Changes
 

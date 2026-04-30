@@ -145,15 +145,23 @@ pub(crate) struct AccountProperties {
     /// Raw JSON string containing query engine feature/configuration flags.
     pub query_engine_configuration: String,
 
-    /// Regional Gateway 2.0 endpoints accepting writes (thin client mode).
+    /// Regional Gateway 2.0 endpoints accepting writes.
     /// When present, indicates that Gateway 2.0 should be used for the
     /// dataplane transport instead of the standard gateway endpoint.
+    ///
+    /// The Rust field name retains the `thin_client_*` prefix because the
+    /// struct uses `#[serde(rename_all = "camelCase")]` to deserialize from
+    /// the wire-defined property `thinClientWritableLocations`. Renaming the
+    /// field would break the serde mapping.
     #[serde(default)]
     pub thin_client_writable_locations: Vec<AccountRegion>,
 
-    /// Regional Gateway 2.0 endpoints for reads (thin client mode).
+    /// Regional Gateway 2.0 endpoints for reads.
     /// When present, indicates that Gateway 2.0 should be used for the
     /// dataplane transport instead of the standard gateway endpoint.
+    ///
+    /// See note on `thin_client_writable_locations` for why the field name
+    /// retains the `thin_client_*` prefix.
     #[serde(default)]
     pub thin_client_readable_locations: Vec<AccountRegion>,
 
@@ -184,25 +192,25 @@ impl AccountProperties {
             .collect()
     }
 
-    /// Returns `true` if Gateway 2.0 (thin client) endpoints are available.
+    /// Returns `true` if Gateway 2.0 endpoints are available.
     ///
-    /// When thin client locations are present in the account properties,
+    /// When Gateway 2.0 locations are present in the account properties,
     /// the driver should use Gateway 2.0 for the dataplane transport.
-    pub(crate) fn has_thin_client_endpoints(&self) -> bool {
+    pub(crate) fn has_gateway20_endpoints(&self) -> bool {
         !self.thin_client_writable_locations.is_empty()
             || !self.thin_client_readable_locations.is_empty()
     }
 
-    /// Returns thin client (Gateway 2.0) writable locations, if any.
-    pub(crate) fn thin_client_writable_regions(&self) -> Vec<Region> {
+    /// Returns Gateway 2.0 writable locations, if any.
+    pub(crate) fn gateway20_writable_regions(&self) -> Vec<Region> {
         self.thin_client_writable_locations
             .iter()
             .map(|loc| loc.name.clone())
             .collect()
     }
 
-    /// Returns thin client (Gateway 2.0) readable locations, if any.
-    pub(crate) fn thin_client_readable_regions(&self) -> Vec<Region> {
+    /// Returns Gateway 2.0 readable locations, if any.
+    pub(crate) fn gateway20_readable_regions(&self) -> Vec<Region> {
         self.thin_client_readable_locations
             .iter()
             .map(|loc| loc.name.clone())

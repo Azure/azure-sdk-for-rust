@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added Gateway 2.0 ("thin client") transport support, enabled by default. The new transport routes data-plane requests through a regional thin-client proxy that forwards RNTBD-over-HTTP/2 to the backend. Set `ConnectionPoolOptionsBuilder::with_gateway20_disabled(true)` to fall back to the direct gateway transport. Note that Gateway 2.0 is **not currently covered by latency SLAs** and may impose higher per-request latency. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Added Gateway 2.0 transport support, enabled by default. The new transport routes data-plane requests through a regional Gateway 2.0 proxy that forwards RNTBD-over-HTTP/2 to the backend. Set `ConnectionPoolOptionsBuilder::with_gateway20_disabled(true)` to fall back to the direct gateway transport. Note that Gateway 2.0 is **not currently covered by latency SLAs** and may impose higher per-request latency. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 
 ### Breaking Changes
 

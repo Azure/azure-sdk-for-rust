@@ -209,7 +209,7 @@ impl ConnectionPoolOptions {
     /// Returns whether Gateway 2.0 is disabled for this pool.
     ///
     /// Gateway 2.0 is enabled by default whenever the account advertises a
-    /// thin-client endpoint and HTTP/2 is allowed. When this method returns
+    /// Gateway 2.0 endpoint and HTTP/2 is allowed. When this method returns
     /// `true` the driver routes every request through the standard gateway
     /// transport, regardless of the account advertisement.
     ///
@@ -501,7 +501,7 @@ impl ConnectionPoolOptionsBuilder {
     /// Disables Gateway 2.0 for this pool.
     ///
     /// Gateway 2.0 is enabled by default whenever the account advertises a
-    /// thin-client endpoint and HTTP/2 is allowed. Pass `true` to force every
+    /// Gateway 2.0 endpoint and HTTP/2 is allowed. Pass `true` to force every
     /// request through the standard gateway transport regardless of the
     /// account advertisement (operator override).
     ///
@@ -511,7 +511,7 @@ impl ConnectionPoolOptionsBuilder {
     ///
     /// # Latency caveat
     ///
-    /// Gateway 2.0 traffic flows through a thin-client proxy that is **not
+    /// Gateway 2.0 traffic flows through a Gateway 2.0 proxy that is **not
     /// currently covered by the regional Cosmos DB latency SLA**. Workloads
     /// with strict P99 latency requirements should call this method with
     /// `true` until the proxy reaches general availability.
@@ -557,7 +557,7 @@ impl ConnectionPoolOptionsBuilder {
         )?;
 
         // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed and
-        // the account advertises a thin-client endpoint. The flag uses a
+        // the account advertises a Gateway 2.0 endpoint. The flag uses a
         // negative-term name so that the absence of an opt-in is the on
         // state; operators disable Gateway 2.0 by setting this to `true`.
         // There is intentionally no `AZURE_COSMOS_*` env var that toggles

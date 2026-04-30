@@ -19,7 +19,7 @@ use crate::options::ConnectionPoolOptions;
 /// `Gateway` is an unsharded HTTP/1.1 transport used when the gateway does not
 /// support HTTP/2. `ShardedGateway` is a per-endpoint sharded HTTP/2 transport
 /// used when HTTP/2 has been confirmed via the initialization probe.
-/// `ShardedGateway20` is reserved for Gateway 2.0 thin-client requests and
+/// `ShardedGateway20` is reserved for Gateway 2.0 requests and
 /// always uses HTTP/2 prior knowledge.
 #[derive(Clone)]
 pub(crate) enum AdaptiveTransport {
