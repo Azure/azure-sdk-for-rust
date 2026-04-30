@@ -1166,3 +1166,306 @@ fn hpk_redundant_ok() {
         }
     );
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FUNCTIONS IN WHERE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn function_contains_no_pk() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE CONTAINS(c.name, 'test')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn function_startswith_with_pk() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'x' AND STARTSWITH(c.name, 'A')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn function_is_defined() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE IS_DEFINED(c.optional)"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPLEX EXPRESSIONS IN SELECT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn ternary_in_select() {
+    assert_eq!(
+        plan("SELECT c.age > 18 ? 'adult' : 'child' AS label FROM c"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: qi(),
+        }
+    );
+}
+
+#[test]
+fn coalesce_in_select() {
+    assert_eq!(
+        plan("SELECT c.name ?? 'unknown' AS name FROM c"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: qi(),
+        }
+    );
+}
+
+#[test]
+fn computed_in_select() {
+    assert_eq!(
+        plan("SELECT c.price * c.qty AS total FROM c"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: qi(),
+        }
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NOT VARIANTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn pk_not_in() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk NOT IN ('a', 'b')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn not_between_no_pk() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.x NOT BETWEEN 1 AND 10"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MULTIPLE AGGREGATE TYPES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn aggregate_array_agg() {
+    assert_eq!(
+        plan("SELECT c.city, ARRAY_AGG(c.name) FROM c GROUP BY c.city"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                group_by_expressions: vec!["c.city".into()],
+                aggregates: vec![AggregateKind::ArrayAgg],
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn aggregate_min_max_combined() {
+    assert_eq!(
+        plan("SELECT MIN(c.age), MAX(c.age) FROM c"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                aggregates: vec![AggregateKind::Min, AggregateKind::Max],
+                ..qi()
+            },
+        }
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PARAMETERIZED PLANS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn top_parameter_plan() {
+    assert_eq!(
+        plan("SELECT TOP @n * FROM c"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo { top: None, ..qi() },
+        }
+    );
+}
+
+#[test]
+fn offset_limit_parameter_plan() {
+    assert_eq!(
+        plan("SELECT * FROM c OFFSET @off LIMIT @lim"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                offset: None,
+                limit: None,
+                ..qi()
+            },
+        }
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NESTED PATHS IN VARIOUS CLAUSES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn nested_path_in_where() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.address.city = 'Seattle'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn nested_path_in_group_by() {
+    assert_eq!(
+        plan("SELECT c.address.city, COUNT(1) FROM c GROUP BY c.address.city"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                group_by_expressions: vec!["c.address.city".into()],
+                aggregates: vec![AggregateKind::Count],
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn nested_path_in_select() {
+    assert_eq!(
+        plan("SELECT c.address.city AS city FROM c"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: qi(),
+        }
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPLEX COMBINED QUERIES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn complex_where_or_union() {
+    let qp = plan("SELECT * FROM c WHERE c.pk = 'a' OR c.pk = 'b' ORDER BY c.name");
+    assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 2));
+    assert_eq!(
+        qp.query_info,
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.name".into()],
+            has_where: true,
+            ..qi()
+        }
+    );
+}
+
+#[test]
+fn complex_in_with_order_by() {
+    let qp = plan("SELECT * FROM c WHERE c.pk IN ('a', 'b', 'c') ORDER BY c.pk ASC");
+    assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 3));
+    assert_eq!(
+        qp.query_info,
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.pk".into()],
+            has_where: true,
+            ..qi()
+        }
+    );
+}
+
+#[test]
+fn complex_distinct_group_by() {
+    assert_eq!(
+        plan("SELECT DISTINCT c.city FROM c GROUP BY c.city"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                distinct_type: DistinctType::Unordered,
+                group_by_expressions: vec!["c.city".into()],
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn complex_all_clauses() {
+    assert_eq!(
+        plan(
+            "SELECT DISTINCT TOP 50 c.city, COUNT(1), SUM(c.revenue) \
+             FROM c \
+             JOIN t IN c.tags \
+             WHERE c.pk = 'x' AND c.active = true \
+             GROUP BY c.city \
+             ORDER BY c.city ASC"
+        ),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
+            query_info: QueryInfo {
+                distinct_type: DistinctType::Ordered,
+                top: Some(50),
+                offset: None,
+                limit: None,
+                order_by: vec![SortOrder::Ascending],
+                order_by_expressions: vec!["c.city".into()],
+                group_by_expressions: vec!["c.city".into()],
+                aggregates: vec![AggregateKind::Count, AggregateKind::Sum],
+                has_select_value: false,
+                has_join: true,
+                has_subquery: false,
+                has_where: true,
+                has_udf: false,
+            },
+        }
+    );
+}

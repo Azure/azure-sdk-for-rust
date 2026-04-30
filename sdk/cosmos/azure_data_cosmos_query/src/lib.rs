@@ -34,6 +34,7 @@
 //! ```
 
 pub mod ast;
+pub(crate) mod common;
 pub mod eval;
 pub mod lexer;
 pub mod parser;
@@ -41,4 +42,3 @@ pub mod plan;
 mod value;
 
 pub use parser::parse;
-pub use value::CosmosValue;

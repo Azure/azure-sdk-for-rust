@@ -14,7 +14,14 @@ categories = ["parser-implementations"]
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-thiserror.workspace = true
+azure_core = { workspace = true, default-features = false }
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "query_bench"
+harness = false
 
 [lints]
 workspace = true

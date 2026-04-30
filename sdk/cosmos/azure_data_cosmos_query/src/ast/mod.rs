@@ -7,6 +7,7 @@ use std::fmt;
 
 /// Top-level parsed SQL program.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlProgram {
     pub query: SqlQuery,
 }
@@ -14,25 +15,28 @@ pub struct SqlProgram {
 /// A complete SQL query:
 /// `SELECT ... FROM ... WHERE ... GROUP BY ... ORDER BY ... OFFSET ... LIMIT`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlQuery {
-    pub select: SqlSelectClause,
-    pub from: Option<SqlFromClause>,
-    pub where_clause: Option<SqlWhereClause>,
-    pub group_by: Option<SqlGroupByClause>,
-    pub order_by: Option<SqlOrderByClause>,
-    pub offset_limit: Option<SqlOffsetLimitClause>,
+    pub(crate) select: SqlSelectClause,
+    pub(crate) from: Option<SqlFromClause>,
+    pub(crate) where_clause: Option<SqlWhereClause>,
+    pub(crate) group_by: Option<SqlGroupByClause>,
+    pub(crate) order_by: Option<SqlOrderByClause>,
+    pub(crate) offset_limit: Option<SqlOffsetLimitClause>,
 }
 
 /// The SELECT clause: `SELECT [DISTINCT] [TOP n] <spec>`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlSelectClause {
-    pub distinct: bool,
-    pub top: Option<SqlTopSpec>,
-    pub spec: SqlSelectSpec,
+    pub(crate) distinct: bool,
+    pub(crate) top: Option<SqlTopSpec>,
+    pub(crate) spec: SqlSelectSpec,
 }
 
 /// What the SELECT clause selects.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlSelectSpec {
     /// `SELECT *`
     Star,
@@ -44,13 +48,15 @@ pub enum SqlSelectSpec {
 
 /// A single item in a SELECT list: `expr [AS alias]`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlSelectItem {
-    pub expression: SqlScalarExpression,
-    pub alias: Option<String>,
+    pub(crate) expression: SqlScalarExpression,
+    pub(crate) alias: Option<String>,
 }
 
 /// `TOP n`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlTopSpec {
     Literal(i64),
     Parameter(String),
@@ -58,37 +64,43 @@ pub enum SqlTopSpec {
 
 /// `FROM <collection_expression>`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlFromClause {
-    pub collection: SqlCollectionExpression,
+    pub(crate) collection: SqlCollectionExpression,
 }
 
 /// `WHERE <expression>`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlWhereClause {
-    pub expression: SqlScalarExpression,
+    pub(crate) expression: SqlScalarExpression,
 }
 
 /// `GROUP BY expr1, expr2, ...`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlGroupByClause {
-    pub expressions: Vec<SqlScalarExpression>,
+    pub(crate) expressions: Vec<SqlScalarExpression>,
 }
 
 /// `ORDER BY item1, item2, ...`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlOrderByClause {
-    pub items: Vec<SqlOrderByItem>,
+    pub(crate) items: Vec<SqlOrderByItem>,
 }
 
 /// A single ORDER BY item: `expr [ASC|DESC]`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlOrderByItem {
-    pub expression: SqlScalarExpression,
-    pub order: SqlSortOrder,
+    pub(crate) expression: SqlScalarExpression,
+    pub(crate) order: SqlSortOrder,
 }
 
 /// Sort order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SqlSortOrder {
     Unspecified,
     Ascending,
@@ -97,13 +109,15 @@ pub enum SqlSortOrder {
 
 /// `OFFSET n LIMIT m`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlOffsetLimitClause {
-    pub offset: SqlOffsetSpec,
-    pub limit: SqlLimitSpec,
+    pub(crate) offset: SqlOffsetSpec,
+    pub(crate) limit: SqlLimitSpec,
 }
 
 /// `OFFSET n` or `OFFSET @param`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlOffsetSpec {
     Literal(i64),
     Parameter(String),
@@ -111,6 +125,7 @@ pub enum SqlOffsetSpec {
 
 /// `LIMIT m` or `LIMIT @param`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlLimitSpec {
     Literal(i64),
     Parameter(String),
@@ -118,6 +133,7 @@ pub enum SqlLimitSpec {
 
 /// Collection expressions used in FROM clauses.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlCollectionExpression {
     /// `<collection> [AS <alias>]` or `<collection> <alias>`
     Aliased {
@@ -150,6 +166,7 @@ pub enum SqlCollection {
 
 /// A segment of a property path.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlPathSegment {
     /// `.identifier`
     Identifier(String),
@@ -161,6 +178,7 @@ pub enum SqlPathSegment {
 
 /// All scalar expression variants — the core of the AST.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlScalarExpression {
     /// A literal value: `42`, `'hello'`, `true`, `null`, `undefined`
     Literal(SqlLiteral),
@@ -245,13 +263,15 @@ pub enum SqlScalarExpression {
 
 /// A property in an object literal: `name: expression`
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct SqlObjectProperty {
-    pub name: String,
-    pub expression: SqlScalarExpression,
+    pub(crate) name: String,
+    pub(crate) expression: SqlScalarExpression,
 }
 
 /// Literal values.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum SqlLiteral {
     String(String),
     Number(f64),
@@ -263,6 +283,7 @@ pub enum SqlLiteral {
 
 /// Binary operators.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SqlBinaryOp {
     Add,
     Subtract,
@@ -288,6 +309,7 @@ pub enum SqlBinaryOp {
 
 /// Unary operators.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SqlUnaryOp {
     Not,
     Minus,

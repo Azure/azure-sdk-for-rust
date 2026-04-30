@@ -10,21 +10,24 @@ use std::fmt;
 
 /// A single token produced by the lexer.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct Token<'a> {
-    pub kind: TokenKind,
-    pub text: &'a str,
-    pub span: Span,
+    pub(crate) kind: TokenKind,
+    pub(crate) text: &'a str,
+    pub(crate) span: Span,
 }
 
 /// Byte offset span in the source text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Span {
-    pub start: usize,
-    pub end: usize,
+    pub(crate) start: usize,
+    pub(crate) end: usize,
 }
 
 /// Token types produced by the lexer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum TokenKind {
     // Literals
     Identifier,
@@ -208,7 +211,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     /// Create a new lexer for the given SQL source text.
-    pub fn new(source: &'a str) -> Self {
+    pub(crate) fn new(source: &'a str) -> Self {
         Self {
             source,
             bytes: source.as_bytes(),
@@ -217,7 +220,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Produce the next token. Returns `Eof` when the input is exhausted.
-    pub fn next_token(&mut self) -> Token<'a> {
+    pub(crate) fn next_token(&mut self) -> Token<'a> {
         self.skip_whitespace_and_comments();
 
         if self.pos >= self.bytes.len() {
@@ -531,58 +534,163 @@ fn is_ident_char(b: u8) -> bool {
 }
 
 /// Case-insensitive keyword lookup. Returns `Identifier` if not a keyword.
+///
+/// Uses `eq_ignore_ascii_case` to avoid heap allocation on every token.
 fn keyword_lookup(text: &str) -> TokenKind {
-    // Match case-insensitively
-    match text.to_ascii_uppercase().as_str() {
-        "SELECT" => TokenKind::Select,
-        "FROM" => TokenKind::From,
-        "WHERE" => TokenKind::Where,
-        "AND" => TokenKind::And,
-        "OR" => TokenKind::Or,
-        "NOT" => TokenKind::Not,
-        "AS" => TokenKind::As,
-        "IN" => TokenKind::In,
-        "BETWEEN" => TokenKind::Between,
-        "LIKE" => TokenKind::Like,
-        "ESCAPE" => TokenKind::Escape,
-        "ORDER" => TokenKind::Order,
-        "BY" => TokenKind::By,
-        "ASC" => TokenKind::Asc,
-        "DESC" => TokenKind::Desc,
-        "TOP" => TokenKind::Top,
-        "DISTINCT" => TokenKind::Distinct,
-        "VALUE" => TokenKind::Value,
-        "GROUP" => TokenKind::Group,
-        "HAVING" => TokenKind::Having,
-        "JOIN" => TokenKind::Join,
-        "CROSS" => TokenKind::Cross,
-        "INNER" => TokenKind::Inner,
-        "EXISTS" => TokenKind::Exists,
-        "ARRAY" => TokenKind::Array,
-        "NULL" => TokenKind::Null,
-        "TRUE" => TokenKind::True,
-        "FALSE" => TokenKind::False,
-        "UNDEFINED" => TokenKind::Undefined,
-        "OFFSET" => TokenKind::Offset,
-        "LIMIT" => TokenKind::Limit,
-        "UDF" => TokenKind::Udf,
-        "IS" => TokenKind::Is,
-        "LET" => TokenKind::Let,
-        "LEFT" => TokenKind::Left,
-        "RIGHT" => TokenKind::Right,
-        "SET" => TokenKind::Set,
-        "OVER" => TokenKind::Over,
-        "RANK" => TokenKind::Rank,
-        "FOR" => TokenKind::For,
-        _ => TokenKind::Identifier,
+    // Short-circuit on length for the most common keywords
+    match text.len() {
+        2 => {
+            if text.eq_ignore_ascii_case("AS") {
+                return TokenKind::As;
+            }
+            if text.eq_ignore_ascii_case("BY") {
+                return TokenKind::By;
+            }
+            if text.eq_ignore_ascii_case("IN") {
+                return TokenKind::In;
+            }
+            if text.eq_ignore_ascii_case("IS") {
+                return TokenKind::Is;
+            }
+            if text.eq_ignore_ascii_case("OR") {
+                return TokenKind::Or;
+            }
+        }
+        3 => {
+            if text.eq_ignore_ascii_case("AND") {
+                return TokenKind::And;
+            }
+            if text.eq_ignore_ascii_case("ASC") {
+                return TokenKind::Asc;
+            }
+            if text.eq_ignore_ascii_case("FOR") {
+                return TokenKind::For;
+            }
+            if text.eq_ignore_ascii_case("LET") {
+                return TokenKind::Let;
+            }
+            if text.eq_ignore_ascii_case("NOT") {
+                return TokenKind::Not;
+            }
+            if text.eq_ignore_ascii_case("SET") {
+                return TokenKind::Set;
+            }
+            if text.eq_ignore_ascii_case("TOP") {
+                return TokenKind::Top;
+            }
+            if text.eq_ignore_ascii_case("UDF") {
+                return TokenKind::Udf;
+            }
+        }
+        4 => {
+            if text.eq_ignore_ascii_case("DESC") {
+                return TokenKind::Desc;
+            }
+            if text.eq_ignore_ascii_case("FROM") {
+                return TokenKind::From;
+            }
+            if text.eq_ignore_ascii_case("JOIN") {
+                return TokenKind::Join;
+            }
+            if text.eq_ignore_ascii_case("LEFT") {
+                return TokenKind::Left;
+            }
+            if text.eq_ignore_ascii_case("LIKE") {
+                return TokenKind::Like;
+            }
+            if text.eq_ignore_ascii_case("NULL") {
+                return TokenKind::Null;
+            }
+            if text.eq_ignore_ascii_case("OVER") {
+                return TokenKind::Over;
+            }
+            if text.eq_ignore_ascii_case("RANK") {
+                return TokenKind::Rank;
+            }
+            if text.eq_ignore_ascii_case("TRUE") {
+                return TokenKind::True;
+            }
+        }
+        5 => {
+            if text.eq_ignore_ascii_case("ARRAY") {
+                return TokenKind::Array;
+            }
+            if text.eq_ignore_ascii_case("CROSS") {
+                return TokenKind::Cross;
+            }
+            if text.eq_ignore_ascii_case("FALSE") {
+                return TokenKind::False;
+            }
+            if text.eq_ignore_ascii_case("GROUP") {
+                return TokenKind::Group;
+            }
+            if text.eq_ignore_ascii_case("INNER") {
+                return TokenKind::Inner;
+            }
+            if text.eq_ignore_ascii_case("LIMIT") {
+                return TokenKind::Limit;
+            }
+            if text.eq_ignore_ascii_case("ORDER") {
+                return TokenKind::Order;
+            }
+            if text.eq_ignore_ascii_case("RIGHT") {
+                return TokenKind::Right;
+            }
+            if text.eq_ignore_ascii_case("VALUE") {
+                return TokenKind::Value;
+            }
+            if text.eq_ignore_ascii_case("WHERE") {
+                return TokenKind::Where;
+            }
+        }
+        6 => {
+            if text.eq_ignore_ascii_case("ESCAPE") {
+                return TokenKind::Escape;
+            }
+            if text.eq_ignore_ascii_case("EXISTS") {
+                return TokenKind::Exists;
+            }
+            if text.eq_ignore_ascii_case("HAVING") {
+                return TokenKind::Having;
+            }
+            if text.eq_ignore_ascii_case("OFFSET") {
+                return TokenKind::Offset;
+            }
+            if text.eq_ignore_ascii_case("SELECT") {
+                return TokenKind::Select;
+            }
+        }
+        7 => {
+            if text.eq_ignore_ascii_case("BETWEEN") {
+                return TokenKind::Between;
+            }
+        }
+        8 => {
+            if text.eq_ignore_ascii_case("DISTINCT") {
+                return TokenKind::Distinct;
+            }
+        }
+        9 => {
+            if text.eq_ignore_ascii_case("UNDEFINED") {
+                return TokenKind::Undefined;
+            }
+        }
+        _ => {}
     }
+    TokenKind::Identifier
 }
 
 /// Extract the string content from a string literal token text (strip quotes, unescape).
-pub fn extract_string_content(token_text: &str) -> String {
-    // Remove surrounding quotes
-    let inner = if token_text.len() >= 2 {
+pub(crate) fn extract_string_content(token_text: &str) -> String {
+    // Remove surrounding quotes — handle unterminated strings gracefully
+    let inner = if token_text.len() >= 2
+        && token_text.starts_with(char::from(b'\''))
+        && token_text.ends_with(char::from(b'\''))
+    {
         &token_text[1..token_text.len() - 1]
+    } else if !token_text.is_empty() && token_text.starts_with(char::from(b'\'')) {
+        // Unterminated string: strip leading quote only
+        &token_text[1..]
     } else {
         token_text
     };
@@ -591,7 +699,7 @@ pub fn extract_string_content(token_text: &str) -> String {
 }
 
 /// Extract the identifier name from a possibly-quoted identifier token text.
-pub fn extract_identifier(token_text: &str) -> &str {
+pub(crate) fn extract_identifier(token_text: &str) -> &str {
     if token_text.starts_with('"') && token_text.ends_with('"') && token_text.len() >= 2 {
         &token_text[1..token_text.len() - 1]
     } else {
@@ -600,7 +708,7 @@ pub fn extract_identifier(token_text: &str) -> &str {
 }
 
 /// Extract the parameter name from a parameter token text (strip the @).
-pub fn extract_parameter_name(token_text: &str) -> &str {
+pub(crate) fn extract_parameter_name(token_text: &str) -> &str {
     if let Some(stripped) = token_text.strip_prefix('@') {
         stripped
     } else {

@@ -103,6 +103,7 @@ fn build_targeting(
             })
         }
         PartitionKeyFilter::None => Ok(PartitionTargeting::CrossPartition),
+        _ => Ok(PartitionTargeting::CrossPartition),
     }
 }
 
@@ -125,6 +126,7 @@ fn resolve_pk_values(
                     reason: format!("query references parameter @{name} but it was not provided"),
                 })?
             }
+            _ => serde_json::Value::Null,
         });
     }
     Ok(resolved)

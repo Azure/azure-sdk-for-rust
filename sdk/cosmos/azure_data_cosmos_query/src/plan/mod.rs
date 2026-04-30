@@ -8,6 +8,7 @@
 //! and pipeline decisions without a Gateway roundtrip.
 
 use crate::ast::*;
+use crate::common::get_root_alias;
 
 // ─── Query Plan (top-level, mirrors Gateway response) ────────────────────────
 
@@ -72,6 +73,7 @@ pub struct QueryInfo {
 
 /// The kind of DISTINCT operator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub enum DistinctType {
     /// No DISTINCT.
     #[default]
@@ -84,6 +86,7 @@ pub enum DistinctType {
 
 /// Sort order for ORDER BY items (mirrors the Gateway's representation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SortOrder {
     Ascending,
     Descending,
@@ -91,6 +94,7 @@ pub enum SortOrder {
 
 /// Recognized aggregate function kinds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum AggregateKind {
     Count,
     Sum,
@@ -104,6 +108,7 @@ pub enum AggregateKind {
 
 /// Partition key filter extracted from a WHERE clause.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum PartitionKeyFilter {
     /// Exact equality on all PK components: `pk = <value>`.
     Equality(Vec<PartitionKeyValue>),
@@ -117,6 +122,7 @@ pub enum PartitionKeyFilter {
 
 /// A single partition key component value.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum PartitionKeyValue {
     String(String),
     Number(f64),
@@ -127,14 +133,6 @@ pub enum PartitionKeyValue {
     /// A reference to a query parameter that must be resolved at runtime.
     Parameter(String),
 }
-
-// ─── Backward-compatible alias ───────────────────────────────────────────────
-
-/// Legacy alias — use [`QueryPlan`] instead.
-pub type QueryPlanInfo = QueryPlan;
-
-/// Legacy alias — use [`QueryInfo`] instead.
-pub type QueryFeatures = QueryInfo;
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -178,11 +176,6 @@ pub fn generate_query_plan(query: &SqlQuery, pk_paths: &[&str]) -> QueryPlan {
         pk_filters,
         query_info,
     }
-}
-
-/// Backward-compatible alias for [`generate_query_plan`].
-pub fn extract_partition_key_filters(query: &SqlQuery, pk_paths: &[&str]) -> QueryPlan {
-    generate_query_plan(query, pk_paths)
 }
 
 // ─── Query Analysis ──────────────────────────────────────────────────────────
@@ -396,26 +389,6 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut QueryInfo) {
 }
 
 // ─── PK Extraction (unchanged logic) ────────────────────────────────────────
-
-fn get_root_alias(query: &SqlQuery) -> Option<String> {
-    match &query.from {
-        Some(from) => get_alias_from_collection(&from.collection),
-        None => None,
-    }
-}
-
-fn get_alias_from_collection(coll: &SqlCollectionExpression) -> Option<String> {
-    match coll {
-        SqlCollectionExpression::Aliased { collection, alias } => {
-            alias.clone().or_else(|| match collection {
-                SqlCollection::Path { root, .. } => Some(root.clone()),
-                _ => None,
-            })
-        }
-        SqlCollectionExpression::Join { left, .. } => get_alias_from_collection(left),
-        SqlCollectionExpression::ArrayIterator { .. } => None,
-    }
-}
 
 fn extract_pk_from_expression(
     expr: &SqlScalarExpression,

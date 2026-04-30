@@ -536,9 +536,10 @@ dependencies = [
 name = "azure_data_cosmos_query"
 version = "0.1.0"
 dependencies = [
+ "azure_core 0.36.0",
+ "criterion",
  "serde",
  "serde_json",
- "thiserror 2.0.18",
 ]
 
 [[package]]

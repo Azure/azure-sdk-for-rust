@@ -6,23 +6,38 @@
 //! This evaluator interprets the SQL AST directly against `serde_json::Value` documents.
 //! It supports the most commonly used scalar expressions, comparisons, and built-in functions.
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::HashMap};
 
 use crate::ast::*;
+use crate::common::get_root_alias;
 use crate::value::CosmosValue;
 
 /// Error during query evaluation.
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum EvalError {
-    #[error("unsupported expression: {0}")]
+    /// An expression type that is not supported by the in-memory evaluator.
     Unsupported(String),
-    #[error("unknown function: {0}")]
+    /// An unknown built-in function was called.
     UnknownFunction(String),
-    #[error("type error: {0}")]
+    /// A type error occurred during evaluation.
     TypeError(String),
-    #[error("parameter not found: @{0}")]
+    /// A query parameter was referenced but not provided.
     ParameterNotFound(String),
 }
+
+impl std::fmt::Display for EvalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unsupported(s) => write!(f, "unsupported expression: {s}"),
+            Self::UnknownFunction(s) => write!(f, "unknown function: {s}"),
+            Self::TypeError(s) => write!(f, "type error: {s}"),
+            Self::ParameterNotFound(s) => write!(f, "parameter not found: @{s}"),
+        }
+    }
+}
+
+impl std::error::Error for EvalError {}
 
 type Params = [(String, serde_json::Value)];
 
@@ -98,10 +113,461 @@ pub fn project(
     }
 }
 
+// ─── JOIN expansion ──────────────────────────────────────────────────────────
+
+/// Check whether a FROM clause contains JOINs.
+fn has_join(collection: &SqlCollectionExpression) -> bool {
+    matches!(collection, SqlCollectionExpression::Join { .. })
+}
+
+/// Resolve a `SqlCollection::Path` against a set of variable bindings.
+fn resolve_collection_path(
+    collection: &SqlCollection,
+    bindings: &serde_json::Map<String, serde_json::Value>,
+) -> serde_json::Value {
+    match collection {
+        SqlCollection::Path { root, path } => {
+            let mut val = bindings
+                .get(root)
+                .cloned()
+                .unwrap_or(serde_json::Value::Null);
+            for segment in path {
+                val = match segment {
+                    SqlPathSegment::Identifier(name) => {
+                        val.get(name).cloned().unwrap_or(serde_json::Value::Null)
+                    }
+                    SqlPathSegment::Index(i) => val
+                        .get(*i as usize)
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null),
+                    SqlPathSegment::StringIndex(s) => val
+                        .get(s.as_str())
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null),
+                };
+            }
+            val
+        }
+        SqlCollection::Subquery(_) => serde_json::Value::Null,
+    }
+}
+
+/// Expand a FROM clause (potentially with JOINs) into binding contexts.
+///
+/// Each returned map binds variable names to their values. For example,
+/// `FROM c JOIN t IN c.tags` produces one binding context per tag element:
+/// `{"c": <doc>, "t": <tag_element>}`.
+fn expand_from(
+    doc: &serde_json::Value,
+    collection: &SqlCollectionExpression,
+    bindings: &serde_json::Map<String, serde_json::Value>,
+) -> Result<Vec<serde_json::Map<String, serde_json::Value>>, EvalError> {
+    match collection {
+        SqlCollectionExpression::Aliased { collection, alias } => {
+            let alias_name = alias.clone().unwrap_or_else(|| match collection {
+                SqlCollection::Path { root, .. } => root.clone(),
+                SqlCollection::Subquery(_) => "c".to_string(),
+            });
+            let mut map = serde_json::Map::new();
+            map.insert(alias_name, doc.clone());
+            Ok(vec![map])
+        }
+        SqlCollectionExpression::Join { left, right } => {
+            let left_bindings = expand_from(doc, left, bindings)?;
+            let mut result = Vec::new();
+            for left_ctx in &left_bindings {
+                let mut merged = bindings.clone();
+                merged.extend(left_ctx.clone());
+                let right_bindings = expand_from(doc, right, &merged)?;
+                for right_ctx in right_bindings {
+                    let mut combined = left_ctx.clone();
+                    combined.extend(right_ctx);
+                    result.push(combined);
+                }
+            }
+            Ok(result)
+        }
+        SqlCollectionExpression::ArrayIterator {
+            identifier,
+            collection,
+        } => {
+            let arr = resolve_collection_path(collection, bindings);
+            match arr {
+                serde_json::Value::Array(items) => Ok(items
+                    .into_iter()
+                    .map(|item| {
+                        let mut map = serde_json::Map::new();
+                        map.insert(identifier.clone(), item);
+                        map
+                    })
+                    .collect()),
+                _ => Ok(Vec::new()),
+            }
+        }
+    }
+}
+
+// ─── Aggregate helpers ───────────────────────────────────────────────────────
+
+/// Returns `true` if `name` is a recognised aggregate function.
+fn is_aggregate_function(name: &str) -> bool {
+    matches!(
+        name.to_ascii_uppercase().as_str(),
+        "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
+    )
+}
+
+/// Walk an expression tree and return `true` if any aggregate function call is found.
+fn contains_aggregate(expr: &SqlScalarExpression) -> bool {
+    match expr {
+        SqlScalarExpression::FunctionCall {
+            name, is_udf, args, ..
+        } => (!is_udf && is_aggregate_function(name)) || args.iter().any(contains_aggregate),
+        SqlScalarExpression::Binary { left, right, .. } => {
+            contains_aggregate(left) || contains_aggregate(right)
+        }
+        SqlScalarExpression::Unary { operand, .. } => contains_aggregate(operand),
+        SqlScalarExpression::Conditional {
+            condition,
+            if_true,
+            if_false,
+        } => {
+            contains_aggregate(condition)
+                || contains_aggregate(if_true)
+                || contains_aggregate(if_false)
+        }
+        SqlScalarExpression::Coalesce { left, right } => {
+            contains_aggregate(left) || contains_aggregate(right)
+        }
+        SqlScalarExpression::ArrayCreate(items) => items.iter().any(contains_aggregate),
+        SqlScalarExpression::ObjectCreate(props) => {
+            props.iter().any(|p| contains_aggregate(&p.expression))
+        }
+        _ => false,
+    }
+}
+
+/// Check whether the SELECT clause references any aggregate functions.
+fn select_has_aggregates(query: &SqlQuery) -> bool {
+    match &query.select.spec {
+        SqlSelectSpec::Star => false,
+        SqlSelectSpec::Value(expr) => contains_aggregate(expr),
+        SqlSelectSpec::List(items) => items.iter().any(|i| contains_aggregate(&i.expression)),
+    }
+}
+
+/// Evaluate an aggregate function over a group of documents.
+fn eval_aggregate(
+    name: &str,
+    args: &[SqlScalarExpression],
+    group: &[serde_json::Value],
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Result<CosmosValue, EvalError> {
+    match name.to_ascii_uppercase().as_str() {
+        "COUNT" => {
+            let mut count = 0i64;
+            for doc in group {
+                if let Some(arg) = args.first() {
+                    let val = eval_scalar(arg, doc, root_alias, params)?;
+                    if !val.is_undefined() {
+                        count += 1;
+                    }
+                } else {
+                    count += 1;
+                }
+            }
+            Ok(CosmosValue::Integer(count))
+        }
+        "SUM" => {
+            let arg = args
+                .first()
+                .ok_or_else(|| EvalError::TypeError("SUM requires an argument".into()))?;
+            let mut sum = 0.0f64;
+            let mut has_value = false;
+            for doc in group {
+                match eval_scalar(arg, doc, root_alias, params)? {
+                    CosmosValue::Number(n) => {
+                        sum += n;
+                        has_value = true;
+                    }
+                    CosmosValue::Integer(n) => {
+                        sum += n as f64;
+                        has_value = true;
+                    }
+                    _ => {}
+                }
+            }
+            if has_value {
+                Ok(CosmosValue::Number(sum))
+            } else {
+                Ok(CosmosValue::Undefined)
+            }
+        }
+        "AVG" => {
+            let arg = args
+                .first()
+                .ok_or_else(|| EvalError::TypeError("AVG requires an argument".into()))?;
+            let mut sum = 0.0f64;
+            let mut count = 0i64;
+            for doc in group {
+                match eval_scalar(arg, doc, root_alias, params)? {
+                    CosmosValue::Number(n) => {
+                        sum += n;
+                        count += 1;
+                    }
+                    CosmosValue::Integer(n) => {
+                        sum += n as f64;
+                        count += 1;
+                    }
+                    _ => {}
+                }
+            }
+            if count > 0 {
+                Ok(CosmosValue::Number(sum / count as f64))
+            } else {
+                Ok(CosmosValue::Undefined)
+            }
+        }
+        "MIN" => {
+            let arg = args
+                .first()
+                .ok_or_else(|| EvalError::TypeError("MIN requires an argument".into()))?;
+            let mut min_val: Option<CosmosValue> = None;
+            for doc in group {
+                let val = eval_scalar(arg, doc, root_alias, params)?;
+                if val.is_undefined() {
+                    continue;
+                }
+                min_val = Some(match min_val {
+                    None => val,
+                    Some(current) => match val.cosmos_cmp(&current) {
+                        Some(Ordering::Less) => val,
+                        _ => current,
+                    },
+                });
+            }
+            Ok(min_val.unwrap_or(CosmosValue::Undefined))
+        }
+        "MAX" => {
+            let arg = args
+                .first()
+                .ok_or_else(|| EvalError::TypeError("MAX requires an argument".into()))?;
+            let mut max_val: Option<CosmosValue> = None;
+            for doc in group {
+                let val = eval_scalar(arg, doc, root_alias, params)?;
+                if val.is_undefined() {
+                    continue;
+                }
+                max_val = Some(match max_val {
+                    None => val,
+                    Some(current) => match val.cosmos_cmp(&current) {
+                        Some(Ordering::Greater) => val,
+                        _ => current,
+                    },
+                });
+            }
+            Ok(max_val.unwrap_or(CosmosValue::Undefined))
+        }
+        _ => Err(EvalError::UnknownFunction(name.to_string())),
+    }
+}
+
+/// Evaluate a scalar expression with aggregate awareness.
+///
+/// Aggregate function calls (COUNT, SUM, etc.) are evaluated over the entire
+/// group. All other expressions are evaluated against the representative document.
+fn eval_scalar_with_group(
+    expr: &SqlScalarExpression,
+    representative: &serde_json::Value,
+    root_alias: Option<&str>,
+    params: &Params,
+    group: &[serde_json::Value],
+) -> Result<CosmosValue, EvalError> {
+    match expr {
+        SqlScalarExpression::FunctionCall { name, args, is_udf }
+            if !is_udf && is_aggregate_function(name) =>
+        {
+            eval_aggregate(name, args, group, root_alias, params)
+        }
+        SqlScalarExpression::FunctionCall { name, args, is_udf } => {
+            if *is_udf {
+                return Err(EvalError::Unsupported("UDF calls".into()));
+            }
+            let arg_vals: Result<Vec<CosmosValue>, _> = args
+                .iter()
+                .map(|a| eval_scalar_with_group(a, representative, root_alias, params, group))
+                .collect();
+            eval_function(name, &arg_vals?)
+        }
+        SqlScalarExpression::Binary { op, left, right } => {
+            let l = eval_scalar_with_group(left, representative, root_alias, params, group)?;
+            let r = eval_scalar_with_group(right, representative, root_alias, params, group)?;
+            Ok(eval_binary(*op, &l, &r))
+        }
+        SqlScalarExpression::Unary { op, operand } => {
+            let val = eval_scalar_with_group(operand, representative, root_alias, params, group)?;
+            Ok(eval_unary(*op, &val))
+        }
+        SqlScalarExpression::Conditional {
+            condition,
+            if_true,
+            if_false,
+        } => {
+            let cond =
+                eval_scalar_with_group(condition, representative, root_alias, params, group)?;
+            if cond.is_truthy() {
+                eval_scalar_with_group(if_true, representative, root_alias, params, group)
+            } else {
+                eval_scalar_with_group(if_false, representative, root_alias, params, group)
+            }
+        }
+        SqlScalarExpression::Coalesce { left, right } => {
+            let val = eval_scalar_with_group(left, representative, root_alias, params, group)?;
+            if val.is_undefined() {
+                eval_scalar_with_group(right, representative, root_alias, params, group)
+            } else {
+                Ok(val)
+            }
+        }
+        _ => eval_scalar(expr, representative, root_alias, params),
+    }
+}
+
+// ─── Projection helpers ──────────────────────────────────────────────────────
+
+/// Project a single row with an explicit root alias (supports JOIN binding contexts).
+fn project_row(
+    doc: &serde_json::Value,
+    query: &SqlQuery,
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Result<serde_json::Value, EvalError> {
+    match &query.select.spec {
+        SqlSelectSpec::Star => Ok(doc.clone()),
+        SqlSelectSpec::Value(expr) => {
+            let val = eval_scalar(expr, doc, root_alias, params)?;
+            Ok(val.to_json())
+        }
+        SqlSelectSpec::List(items) => {
+            let mut obj = serde_json::Map::new();
+            for item in items {
+                let val = eval_scalar(&item.expression, doc, root_alias, params)?;
+                let key = item
+                    .alias
+                    .clone()
+                    .unwrap_or_else(|| infer_property_name(&item.expression));
+                if !val.is_undefined() {
+                    obj.insert(key, val.to_json());
+                }
+            }
+            Ok(serde_json::Value::Object(obj))
+        }
+    }
+}
+
+/// Project an aggregated group of rows.
+fn project_group(
+    group: &[serde_json::Value],
+    query: &SqlQuery,
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Result<serde_json::Value, EvalError> {
+    let empty_obj = serde_json::Value::Object(serde_json::Map::new());
+    let representative = group.first().unwrap_or(&empty_obj);
+    match &query.select.spec {
+        SqlSelectSpec::Star => Ok(representative.clone()),
+        SqlSelectSpec::Value(expr) => {
+            let val = eval_scalar_with_group(expr, representative, root_alias, params, group)?;
+            Ok(val.to_json())
+        }
+        SqlSelectSpec::List(items) => {
+            let mut obj = serde_json::Map::new();
+            for item in items {
+                let val = eval_scalar_with_group(
+                    &item.expression,
+                    representative,
+                    root_alias,
+                    params,
+                    group,
+                )?;
+                let key = item
+                    .alias
+                    .clone()
+                    .unwrap_or_else(|| infer_property_name(&item.expression));
+                if !val.is_undefined() {
+                    obj.insert(key, val.to_json());
+                }
+            }
+            Ok(serde_json::Value::Object(obj))
+        }
+    }
+}
+
+// ─── ORDER BY helpers ────────────────────────────────────────────────────────
+
+/// Type ordering for cross-type ORDER BY comparisons.
+fn sort_type_order(v: &CosmosValue) -> u8 {
+    match v {
+        CosmosValue::Null => 0,
+        CosmosValue::Boolean(_) => 1,
+        CosmosValue::Number(_) | CosmosValue::Integer(_) => 2,
+        CosmosValue::String(_) => 3,
+        CosmosValue::Array(_) => 4,
+        CosmosValue::Object(_) => 5,
+        CosmosValue::Undefined => 6,
+    }
+}
+
+/// Total comparison for ORDER BY (handles cross-type and undefined).
+fn total_cmp_for_sort(a: &CosmosValue, b: &CosmosValue) -> Ordering {
+    a.cosmos_cmp(b)
+        .unwrap_or_else(|| sort_type_order(a).cmp(&sort_type_order(b)))
+}
+
+/// Compare two documents according to an ORDER BY clause.
+fn compare_for_order_by(
+    a: &serde_json::Value,
+    b: &serde_json::Value,
+    order_by: &SqlOrderByClause,
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Ordering {
+    for item in &order_by.items {
+        let va =
+            eval_scalar(&item.expression, a, root_alias, params).unwrap_or(CosmosValue::Undefined);
+        let vb =
+            eval_scalar(&item.expression, b, root_alias, params).unwrap_or(CosmosValue::Undefined);
+        let cmp = match item.order {
+            SqlSortOrder::Descending => total_cmp_for_sort(&va, &vb).reverse(),
+            _ => total_cmp_for_sort(&va, &vb),
+        };
+        if cmp != Ordering::Equal {
+            return cmp;
+        }
+    }
+    Ordering::Equal
+}
+
+/// Evaluate a WHERE clause against a document with an explicit root alias.
+fn eval_where(
+    doc: &serde_json::Value,
+    where_clause: &Option<SqlWhereClause>,
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Result<bool, EvalError> {
+    if let Some(wc) = where_clause {
+        let result = eval_scalar(&wc.expression, doc, root_alias, params)?;
+        Ok(matches!(result, CosmosValue::Boolean(true)))
+    } else {
+        Ok(true)
+    }
+}
+
 /// Execute a full query against an in-memory collection of documents.
 ///
-/// Supports WHERE filtering, SELECT projection, and TOP/OFFSET/LIMIT.
-/// Does NOT support ORDER BY, GROUP BY, aggregates, or JOINs.
+/// Supports WHERE filtering, SELECT projection, TOP/OFFSET/LIMIT,
+/// ORDER BY, GROUP BY with aggregates, and intra-document JOINs.
 ///
 /// # Examples
 ///
@@ -123,36 +589,147 @@ pub fn query_documents(
     sql: &str,
     parameters: &Params,
     documents: &[serde_json::Value],
-) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
-    let program = crate::parse(sql)?;
+) -> azure_core::Result<Vec<serde_json::Value>> {
+    let program = crate::parse(sql)
+        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
     let query = &program.query;
+    let root_alias = get_root_alias(query);
 
-    let mut results = Vec::new();
+    // Determine whether the FROM clause contains JOINs.
+    let use_join = query.from.as_ref().is_some_and(|f| has_join(&f.collection));
+
+    // With JOINs, PropertyRef looks up bindings by name in the context object,
+    // so root_alias must be None. Without JOINs, use the FROM alias as before.
+    let eval_alias = if use_join {
+        None
+    } else {
+        root_alias.as_deref()
+    };
+
+    // ── Step 1: expand JOINs + apply WHERE filter ────────────────────────
+    let mut filtered_rows: Vec<serde_json::Value> = Vec::new();
+
     for doc in documents {
-        if matches_query(doc, query, parameters)? {
-            let projected = project(doc, query, parameters)?;
-            results.push(projected);
+        if use_join {
+            let from = &query.from.as_ref().unwrap().collection;
+            let bindings_list = expand_from(doc, from, &serde_json::Map::new())
+                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+            for bindings in bindings_list {
+                let ctx = serde_json::Value::Object(bindings);
+                if eval_where(&ctx, &query.where_clause, None, parameters)
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                {
+                    filtered_rows.push(ctx);
+                }
+            }
+        } else if eval_where(doc, &query.where_clause, eval_alias, parameters)
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+        {
+            filtered_rows.push(doc.clone());
         }
     }
 
-    // Apply TOP
+    // ── Step 2: GROUP BY / aggregates, or plain projection ───────────────
+    let use_aggregates = query.group_by.is_some() || select_has_aggregates(query);
+
+    let (mut results, originals): (Vec<serde_json::Value>, Vec<serde_json::Value>) =
+        if use_aggregates {
+            if let Some(group_by) = &query.group_by {
+                // Explicit GROUP BY — partition rows into groups by key.
+                let mut groups: Vec<Vec<serde_json::Value>> = Vec::new();
+                let mut key_map: HashMap<String, usize> = HashMap::new();
+
+                for row in &filtered_rows {
+                    let key_parts: Result<Vec<serde_json::Value>, _> = group_by
+                        .expressions
+                        .iter()
+                        .map(|e| eval_scalar(e, row, eval_alias, parameters).map(|v| v.to_json()))
+                        .collect();
+                    let key = serde_json::to_string(&key_parts.map_err(|e| {
+                        azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
+                    })?)
+                    .unwrap_or_default();
+
+                    if let Some(&idx) = key_map.get(&key) {
+                        groups[idx].push(row.clone());
+                    } else {
+                        key_map.insert(key, groups.len());
+                        groups.push(vec![row.clone()]);
+                    }
+                }
+
+                let mut projected = Vec::new();
+                let mut reps = Vec::new();
+                for group in &groups {
+                    projected.push(project_group(group, query, eval_alias, parameters).map_err(
+                        |e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e),
+                    )?);
+                    reps.push(group[0].clone());
+                }
+                (projected, reps)
+            } else {
+                // Aggregates without GROUP BY → implicit single group over all rows.
+                let projected = project_group(&filtered_rows, query, eval_alias, parameters)
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+                let rep = filtered_rows
+                    .first()
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                (vec![projected], vec![rep])
+            }
+        } else {
+            // No aggregates — project each row individually.
+            let mut projected = Vec::new();
+            let originals = filtered_rows.clone();
+            for row in &filtered_rows {
+                projected.push(
+                    project_row(row, query, eval_alias, parameters).map_err(|e| {
+                        azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
+                    })?,
+                );
+            }
+            (projected, originals)
+        };
+
+    // ── Step 3: ORDER BY ─────────────────────────────────────────────────
+    if let Some(order_by) = &query.order_by {
+        let mut indices: Vec<usize> = (0..results.len()).collect();
+        indices.sort_by(|&a, &b| {
+            compare_for_order_by(
+                &originals[a],
+                &originals[b],
+                order_by,
+                eval_alias,
+                parameters,
+            )
+        });
+        results = indices.iter().map(|&i| results[i].clone()).collect();
+    }
+
+    // ── Step 4: TOP ──────────────────────────────────────────────────────
     if let Some(top) = &query.select.top {
         let n = match top {
             SqlTopSpec::Literal(n) => *n as usize,
-            SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name)? as usize,
+            SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name)
+                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                as usize,
         };
         results.truncate(n);
     }
 
-    // Apply OFFSET / LIMIT
+    // ── Step 5: OFFSET / LIMIT ───────────────────────────────────────────
     if let Some(ol) = &query.offset_limit {
         let offset = match &ol.offset {
             SqlOffsetSpec::Literal(n) => *n as usize,
-            SqlOffsetSpec::Parameter(name) => resolve_integer_param(parameters, name)? as usize,
+            SqlOffsetSpec::Parameter(name) => resolve_integer_param(parameters, name)
+                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                as usize,
         };
         let limit = match &ol.limit {
             SqlLimitSpec::Literal(n) => *n as usize,
-            SqlLimitSpec::Parameter(name) => resolve_integer_param(parameters, name)? as usize,
+            SqlLimitSpec::Parameter(name) => resolve_integer_param(parameters, name)
+                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                as usize,
         };
         if offset < results.len() {
             results = results[offset..].to_vec();
@@ -371,7 +948,7 @@ fn eval_literal(lit: &SqlLiteral) -> CosmosValue {
     match lit {
         SqlLiteral::String(s) => CosmosValue::String(s.clone()),
         SqlLiteral::Number(n) => CosmosValue::Number(*n),
-        SqlLiteral::Integer(n) => CosmosValue::Number(*n as f64),
+        SqlLiteral::Integer(n) => CosmosValue::Integer(*n),
         SqlLiteral::Boolean(b) => CosmosValue::Boolean(*b),
         SqlLiteral::Null => CosmosValue::Null,
         SqlLiteral::Undefined => CosmosValue::Undefined,
@@ -395,6 +972,16 @@ fn member_access(source: &CosmosValue, member: &str) -> CosmosValue {
 fn indexer_access(source: &CosmosValue, index: &CosmosValue) -> CosmosValue {
     match (source, index) {
         (CosmosValue::Array(arr), CosmosValue::Number(n)) => {
+            if *n < 0.0 || n.fract() != 0.0 {
+                return CosmosValue::Undefined;
+            }
+            let idx = *n as usize;
+            arr.get(idx).cloned().unwrap_or(CosmosValue::Undefined)
+        }
+        (CosmosValue::Array(arr), CosmosValue::Integer(n)) => {
+            if *n < 0 {
+                return CosmosValue::Undefined;
+            }
             let idx = *n as usize;
             arr.get(idx).cloned().unwrap_or(CosmosValue::Undefined)
         }
@@ -437,16 +1024,8 @@ fn eval_binary(op: SqlBinaryOp, left: &CosmosValue, right: &CosmosValue) -> Cosm
             Some(_) => CosmosValue::Boolean(false),
             None => CosmosValue::Undefined,
         },
-        SqlBinaryOp::And => {
-            let l = left.is_truthy();
-            let r = right.is_truthy();
-            CosmosValue::Boolean(l && r)
-        }
-        SqlBinaryOp::Or => {
-            let l = left.is_truthy();
-            let r = right.is_truthy();
-            CosmosValue::Boolean(l || r)
-        }
+        SqlBinaryOp::And => eval_and(left, right),
+        SqlBinaryOp::Or => eval_or(left, right),
         SqlBinaryOp::Add => numeric_op(left, right, |a, b| a + b),
         SqlBinaryOp::Subtract => numeric_op(left, right, |a, b| a - b),
         SqlBinaryOp::Multiply => numeric_op(left, right, |a, b| a * b),
@@ -473,6 +1052,50 @@ fn eval_binary(op: SqlBinaryOp, left: &CosmosValue, right: &CosmosValue) -> Cosm
     }
 }
 
+/// Three-valued AND: `undefined AND false` = `false`, `undefined AND true` = `undefined`.
+fn eval_and(left: &CosmosValue, right: &CosmosValue) -> CosmosValue {
+    match (left.is_undefined(), right.is_undefined()) {
+        (true, true) => CosmosValue::Undefined,
+        (true, false) => {
+            if !right.is_truthy() {
+                CosmosValue::Boolean(false)
+            } else {
+                CosmosValue::Undefined
+            }
+        }
+        (false, true) => {
+            if !left.is_truthy() {
+                CosmosValue::Boolean(false)
+            } else {
+                CosmosValue::Undefined
+            }
+        }
+        (false, false) => CosmosValue::Boolean(left.is_truthy() && right.is_truthy()),
+    }
+}
+
+/// Three-valued OR: `undefined OR true` = `true`, `undefined OR false` = `undefined`.
+fn eval_or(left: &CosmosValue, right: &CosmosValue) -> CosmosValue {
+    match (left.is_undefined(), right.is_undefined()) {
+        (true, true) => CosmosValue::Undefined,
+        (true, false) => {
+            if right.is_truthy() {
+                CosmosValue::Boolean(true)
+            } else {
+                CosmosValue::Undefined
+            }
+        }
+        (false, true) => {
+            if left.is_truthy() {
+                CosmosValue::Boolean(true)
+            } else {
+                CosmosValue::Undefined
+            }
+        }
+        (false, false) => CosmosValue::Boolean(left.is_truthy() || right.is_truthy()),
+    }
+}
+
 fn eval_unary(op: SqlUnaryOp, val: &CosmosValue) -> CosmosValue {
     match op {
         SqlUnaryOp::Not => match val {
@@ -481,14 +1104,17 @@ fn eval_unary(op: SqlUnaryOp, val: &CosmosValue) -> CosmosValue {
         },
         SqlUnaryOp::Minus => match val {
             CosmosValue::Number(n) => CosmosValue::Number(-n),
+            CosmosValue::Integer(n) => CosmosValue::Integer(-n),
             _ => CosmosValue::Undefined,
         },
         SqlUnaryOp::Plus => match val {
             CosmosValue::Number(n) => CosmosValue::Number(*n),
+            CosmosValue::Integer(n) => CosmosValue::Integer(*n),
             _ => CosmosValue::Undefined,
         },
         SqlUnaryOp::BitwiseNot => match val {
-            CosmosValue::Number(n) => CosmosValue::Number((!(*n as i64)) as f64),
+            CosmosValue::Number(n) => CosmosValue::Integer(!(*n as i64)),
+            CosmosValue::Integer(n) => CosmosValue::Integer(!n),
             _ => CosmosValue::Undefined,
         },
     }
@@ -497,15 +1123,25 @@ fn eval_unary(op: SqlUnaryOp, val: &CosmosValue) -> CosmosValue {
 fn numeric_op(left: &CosmosValue, right: &CosmosValue, f: fn(f64, f64) -> f64) -> CosmosValue {
     match (left, right) {
         (CosmosValue::Number(a), CosmosValue::Number(b)) => CosmosValue::Number(f(*a, *b)),
+        (CosmosValue::Integer(a), CosmosValue::Integer(b)) => {
+            CosmosValue::Number(f(*a as f64, *b as f64))
+        }
+        (CosmosValue::Number(a), CosmosValue::Integer(b)) => CosmosValue::Number(f(*a, *b as f64)),
+        (CosmosValue::Integer(a), CosmosValue::Number(b)) => CosmosValue::Number(f(*a as f64, *b)),
         _ => CosmosValue::Undefined,
     }
 }
 
 fn int_op(left: &CosmosValue, right: &CosmosValue, f: fn(i64, i64) -> i64) -> CosmosValue {
-    match (left, right) {
-        (CosmosValue::Number(a), CosmosValue::Number(b)) => {
-            CosmosValue::Number(f(*a as i64, *b as i64) as f64)
+    let to_i64 = |v: &CosmosValue| -> Option<i64> {
+        match v {
+            CosmosValue::Number(n) => Some(*n as i64),
+            CosmosValue::Integer(n) => Some(*n),
+            _ => None,
         }
+    };
+    match (to_i64(left), to_i64(right)) {
+        (Some(a), Some(b)) => CosmosValue::Integer(f(a, b)),
         _ => CosmosValue::Undefined,
     }
 }
@@ -529,7 +1165,7 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
         ))),
         "IS_NUMBER" => Ok(CosmosValue::Boolean(matches!(
             args.first(),
-            Some(CosmosValue::Number(_))
+            Some(CosmosValue::Number(_) | CosmosValue::Integer(_))
         ))),
         "IS_STRING" => Ok(CosmosValue::Boolean(matches!(
             args.first(),
@@ -593,7 +1229,7 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
             _ => Ok(CosmosValue::Undefined),
         },
         "LENGTH" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::Number(s.len() as f64)),
+            Some(CosmosValue::String(s)) => Ok(CosmosValue::Integer(s.chars().count() as i64)),
             _ => Ok(CosmosValue::Undefined),
         },
         "LTRIM" => match args.first() {
@@ -619,19 +1255,25 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
             }
             Ok(CosmosValue::String(result))
         }
-        "SUBSTRING" => match args {
-            [CosmosValue::String(s), CosmosValue::Number(start), CosmosValue::Number(len)] => {
-                let start = *start as usize;
-                let len = *len as usize;
-                if start >= s.len() {
-                    Ok(CosmosValue::String(String::new()))
-                } else {
-                    let end = (start + len).min(s.len());
-                    Ok(CosmosValue::String(s[start..end].to_string()))
-                }
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
+        "SUBSTRING" => {
+            let s = match args.first() {
+                Some(CosmosValue::String(s)) => s,
+                _ => return Ok(CosmosValue::Undefined),
+            };
+            let start = match args.get(1) {
+                Some(CosmosValue::Number(n)) => *n as usize,
+                Some(CosmosValue::Integer(n)) => *n as usize,
+                _ => return Ok(CosmosValue::Undefined),
+            };
+            let len = match args.get(2) {
+                Some(CosmosValue::Number(n)) => *n as usize,
+                Some(CosmosValue::Integer(n)) => *n as usize,
+                _ => return Ok(CosmosValue::Undefined),
+            };
+            Ok(CosmosValue::String(
+                s.chars().skip(start).take(len).collect(),
+            ))
+        }
         "REPLACE" => match args {
             [CosmosValue::String(s), CosmosValue::String(old), CosmosValue::String(new)] => {
                 Ok(CosmosValue::String(s.replace(old.as_str(), new.as_str())))
@@ -640,6 +1282,10 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
         },
         "LEFT" => match args {
             [CosmosValue::String(s), CosmosValue::Number(n)] => {
+                let n = *n as usize;
+                Ok(CosmosValue::String(s.chars().take(n).collect()))
+            }
+            [CosmosValue::String(s), CosmosValue::Integer(n)] => {
                 let n = *n as usize;
                 Ok(CosmosValue::String(s.chars().take(n).collect()))
             }
@@ -652,10 +1298,17 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
                 let start = chars.len().saturating_sub(n);
                 Ok(CosmosValue::String(chars[start..].iter().collect()))
             }
+            [CosmosValue::String(s), CosmosValue::Integer(n)] => {
+                let n = *n as usize;
+                let chars: Vec<char> = s.chars().collect();
+                let start = chars.len().saturating_sub(n);
+                Ok(CosmosValue::String(chars[start..].iter().collect()))
+            }
             _ => Ok(CosmosValue::Undefined),
         },
         "TOSTRING" => match args.first() {
             Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.clone())),
+            Some(CosmosValue::Integer(n)) => Ok(CosmosValue::String(format!("{n}"))),
             Some(CosmosValue::Number(n)) => Ok(CosmosValue::String(format!("{n}"))),
             Some(CosmosValue::Boolean(b)) => Ok(CosmosValue::String(
                 if *b { "true" } else { "false" }.into(),
@@ -695,7 +1348,7 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
             _ => Ok(CosmosValue::Undefined),
         },
         "ARRAY_LENGTH" => match args.first() {
-            Some(CosmosValue::Array(arr)) => Ok(CosmosValue::Number(arr.len() as f64)),
+            Some(CosmosValue::Array(arr)) => Ok(CosmosValue::Integer(arr.len() as i64)),
             _ => Ok(CosmosValue::Undefined),
         },
         "ARRAY_SLICE" => match args {
@@ -751,57 +1404,39 @@ fn sql_like_match(text: &str, pattern: &str, escape: Option<&str>) -> bool {
     let escape_char = escape.and_then(|e| e.chars().next());
     let text_chars: Vec<char> = text.chars().collect();
     let pattern_chars: Vec<char> = pattern.chars().collect();
-    like_match_recursive(&text_chars, 0, &pattern_chars, 0, escape_char)
+    like_match_dp(&text_chars, &pattern_chars, escape_char)
 }
 
-fn like_match_recursive(
-    text: &[char],
-    ti: usize,
-    pattern: &[char],
-    pi: usize,
-    escape: Option<char>,
-) -> bool {
-    if pi == pattern.len() {
-        return ti == text.len();
-    }
+fn like_match_dp(text: &[char], pattern: &[char], escape: Option<char>) -> bool {
+    let n = text.len();
+    let m = pattern.len();
+    // dp[i][j] = true means text[i..] matches pattern[j..]
+    let mut dp = vec![vec![false; m + 1]; n + 1];
+    dp[n][m] = true;
 
-    let pc = pattern[pi];
+    // Fill backwards
+    for pi in (0..m).rev() {
+        for ti in (0..=n).rev() {
+            let pc = pattern[pi];
 
-    // Check for escape character
-    if Some(pc) == escape && pi + 1 < pattern.len() {
-        // Next character is literal
-        if ti < text.len() && text[ti] == pattern[pi + 1] {
-            return like_match_recursive(text, ti + 1, pattern, pi + 2, escape);
-        }
-        return false;
-    }
+            // Check for escape character
+            if Some(pc) == escape && pi + 1 < m {
+                // Next character is literal
+                dp[ti][pi] = ti < n && text[ti] == pattern[pi + 1] && dp[ti + 1][pi + 2];
+                continue;
+            }
 
-    match pc {
-        '%' => {
-            // Match zero or more characters
-            for i in ti..=text.len() {
-                if like_match_recursive(text, i, pattern, pi + 1, escape) {
-                    return true;
+            dp[ti][pi] = match pc {
+                '%' => {
+                    // Match zero or more: either skip % or consume one char
+                    dp[ti][pi + 1] || (ti < n && dp[ti + 1][pi])
                 }
-            }
-            false
-        }
-        '_' => {
-            // Match exactly one character
-            if ti < text.len() {
-                like_match_recursive(text, ti + 1, pattern, pi + 1, escape)
-            } else {
-                false
-            }
-        }
-        _ => {
-            if ti < text.len() && text[ti] == pc {
-                like_match_recursive(text, ti + 1, pattern, pi + 1, escape)
-            } else {
-                false
-            }
+                '_' => ti < n && dp[ti + 1][pi + 1],
+                _ => ti < n && text[ti] == pc && dp[ti + 1][pi + 1],
+            };
         }
     }
+    dp[0][0]
 }
 
 /// Infer a property name from a select expression for unnamed columns.
@@ -811,30 +1446,6 @@ fn infer_property_name(expr: &SqlScalarExpression) -> String {
         SqlScalarExpression::MemberRef { member, .. } => member.clone(),
         SqlScalarExpression::FunctionCall { name, .. } => name.clone(),
         _ => "$1".to_string(),
-    }
-}
-
-fn get_root_alias(query: &SqlQuery) -> Option<String> {
-    match &query.from {
-        Some(from) => match &from.collection {
-            SqlCollectionExpression::Aliased { collection, alias } => {
-                alias.clone().or_else(|| match collection {
-                    SqlCollection::Path { root, .. } => Some(root.clone()),
-                    _ => None,
-                })
-            }
-            SqlCollectionExpression::Join { left, .. } => match left.as_ref() {
-                SqlCollectionExpression::Aliased { collection, alias } => {
-                    alias.clone().or_else(|| match collection {
-                        SqlCollection::Path { root, .. } => Some(root.clone()),
-                        _ => None,
-                    })
-                }
-                _ => None,
-            },
-            _ => None,
-        },
-        None => None,
     }
 }
 
@@ -1110,5 +1721,599 @@ mod tests {
         let params = vec![("n".to_string(), serde_json::json!(2.7))];
         let results = query_documents("SELECT TOP @n * FROM c", &params, &docs).unwrap();
         assert_eq!(results.len(), 2);
+    }
+
+    // ── Bug fix tests: SUBSTRING character indexing ─────────────────────
+
+    #[test]
+    fn substring_multibyte_characters() {
+        let p = crate::parse("SELECT VALUE SUBSTRING(c.name, 0, 2) FROM c").unwrap();
+        let doc = serde_json::json!({"name": "日本語"});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!("日本"));
+    }
+
+    #[test]
+    fn substring_emoji() {
+        let p = crate::parse("SELECT VALUE SUBSTRING(c.name, 1, 2) FROM c").unwrap();
+        let doc = serde_json::json!({"name": "A😀B😀C"});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!("😀B"));
+    }
+
+    #[test]
+    fn substring_past_end() {
+        let p = crate::parse("SELECT VALUE SUBSTRING(c.name, 10, 5) FROM c").unwrap();
+        let doc = serde_json::json!({"name": "short"});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!(""));
+    }
+
+    // ── Bug fix tests: LENGTH character count ───────────────────────────
+
+    #[test]
+    fn length_multibyte_characters() {
+        let p = crate::parse("SELECT VALUE LENGTH(c.name) FROM c").unwrap();
+        let doc = serde_json::json!({"name": "日本語"});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!(3));
+    }
+
+    #[test]
+    fn length_emoji() {
+        let p = crate::parse("SELECT VALUE LENGTH(c.name) FROM c").unwrap();
+        let doc = serde_json::json!({"name": "A😀B"});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!(3));
+    }
+
+    // ── Bug fix tests: negative array indexer ───────────────────────────
+
+    #[test]
+    fn negative_array_index_returns_undefined() {
+        let p = crate::parse("SELECT VALUE c.items[-1] FROM c").unwrap();
+        let doc = serde_json::json!({"items": [10, 20, 30]});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn fractional_array_index_returns_undefined() {
+        let p = crate::parse("SELECT VALUE c.items[1.5] FROM c").unwrap();
+        let doc = serde_json::json!({"items": [10, 20, 30]});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::Value::Null);
+    }
+
+    // ── Bug fix tests: AND/OR three-valued logic ────────────────────────
+
+    #[test]
+    fn and_undefined_and_true_is_not_matching() {
+        let p = crate::parse("SELECT * FROM c WHERE c.missing > 5 AND c.present = true").unwrap();
+        let doc = serde_json::json!({"present": true});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn or_undefined_or_true_matches() {
+        let p = crate::parse("SELECT * FROM c WHERE c.missing > 5 OR c.present = true").unwrap();
+        let doc = serde_json::json!({"present": true});
+        assert!(matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn or_both_undefined_does_not_match() {
+        let p = crate::parse("SELECT * FROM c WHERE c.missing1 > 5 OR c.missing2 > 5").unwrap();
+        let doc = serde_json::json!({"x": 1});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn and_both_undefined_does_not_match() {
+        let p = crate::parse("SELECT * FROM c WHERE c.missing1 > 5 AND c.missing2 > 5").unwrap();
+        let doc = serde_json::json!({"x": 1});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    // ── Bug fix tests: LIKE pattern performance ─────────────────────────
+
+    #[test]
+    fn like_worst_case_pattern_completes_quickly() {
+        let p = crate::parse("SELECT * FROM c WHERE c.name LIKE '%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a%'")
+            .unwrap();
+        let doc = serde_json::json!({"name": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn like_still_matches_correctly() {
+        let p = crate::parse("SELECT * FROM c WHERE c.name LIKE '%Al%ce%'").unwrap();
+        let doc = serde_json::json!({"name": "Alice"});
+        assert!(matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    // ── Bug fix tests: Integer precision ────────────────────────────────
+
+    #[test]
+    fn integer_literal_preserved() {
+        let p = crate::parse("SELECT VALUE c.id FROM c WHERE c.id = 9007199254740993").unwrap();
+        let doc = serde_json::json!({"id": 9007199254740993_i64});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!(9007199254740993_i64));
+    }
+
+    #[test]
+    fn integer_equality_exact() {
+        let p = crate::parse("SELECT * FROM c WHERE c.x = 42").unwrap();
+        let doc = serde_json::json!({"x": 42});
+        assert!(matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    // ── ORDER BY tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn order_by_asc() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob", "age": 25}),
+            serde_json::json!({"name": "Charlie", "age": 35}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.age ASC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0]["age"], 25);
+        assert_eq!(results[1]["age"], 30);
+        assert_eq!(results[2]["age"], 35);
+    }
+
+    #[test]
+    fn order_by_desc() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob", "age": 25}),
+            serde_json::json!({"name": "Charlie", "age": 35}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.age DESC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0]["age"], 35);
+        assert_eq!(results[1]["age"], 30);
+        assert_eq!(results[2]["age"], 25);
+    }
+
+    #[test]
+    fn order_by_default_asc() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob", "age": 25}),
+            serde_json::json!({"name": "Charlie", "age": 35}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.age", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0]["age"], 25);
+        assert_eq!(results[1]["age"], 30);
+        assert_eq!(results[2]["age"], 35);
+    }
+
+    #[test]
+    fn order_by_multiple_keys() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30, "city": "Seattle"}),
+            serde_json::json!({"name": "Bob", "age": 25, "city": "Portland"}),
+            serde_json::json!({"name": "Charlie", "age": 35, "city": "Seattle"}),
+            serde_json::json!({"name": "Diana", "age": 28, "city": "Portland"}),
+        ];
+        let results = query_documents(
+            "SELECT * FROM c ORDER BY c.city ASC, c.age DESC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 4);
+        // Portland group first (ASC), age DESC within
+        assert_eq!(results[0]["name"], "Diana"); // Portland, 28
+        assert_eq!(results[1]["name"], "Bob"); // Portland, 25
+                                               // Seattle group second, age DESC within
+        assert_eq!(results[2]["name"], "Charlie"); // Seattle, 35
+        assert_eq!(results[3]["name"], "Alice"); // Seattle, 30
+    }
+
+    #[test]
+    fn order_by_string() {
+        let docs = vec![
+            serde_json::json!({"name": "Charlie"}),
+            serde_json::json!({"name": "Alice"}),
+            serde_json::json!({"name": "Bob"}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.name ASC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0]["name"], "Alice");
+        assert_eq!(results[1]["name"], "Bob");
+        assert_eq!(results[2]["name"], "Charlie");
+    }
+
+    #[test]
+    fn order_by_with_where() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30, "city": "Seattle"}),
+            serde_json::json!({"name": "Bob", "age": 25, "city": "Portland"}),
+            serde_json::json!({"name": "Charlie", "age": 35, "city": "Seattle"}),
+            serde_json::json!({"name": "Diana", "age": 28, "city": "Portland"}),
+        ];
+        let results = query_documents(
+            "SELECT * FROM c WHERE c.city = 'Seattle' ORDER BY c.age ASC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0]["name"], "Alice");
+        assert_eq!(results[1]["name"], "Charlie");
+    }
+
+    #[test]
+    fn order_by_with_top() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob", "age": 25}),
+            serde_json::json!({"name": "Charlie", "age": 35}),
+            serde_json::json!({"name": "Diana", "age": 28}),
+        ];
+        let results =
+            query_documents("SELECT TOP 2 * FROM c ORDER BY c.age ASC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0]["age"], 25);
+        assert_eq!(results[1]["age"], 28);
+    }
+
+    #[test]
+    fn order_by_missing_field() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob"}),
+            serde_json::json!({"name": "Charlie", "age": 25}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.age ASC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        // Documents with defined age sort first in ASC
+        assert_eq!(results[0]["age"], 25);
+        assert_eq!(results[1]["age"], 30);
+        // Document missing age sorts last
+        assert_eq!(results[2]["name"], "Bob");
+    }
+
+    #[test]
+    fn order_by_mixed_types() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "val": 10}),
+            serde_json::json!({"name": "Bob", "val": "hello"}),
+            serde_json::json!({"name": "Charlie", "val": 5}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.val ASC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        // Numbers sort before strings in Cosmos type ordering
+        assert_eq!(results[0]["val"], 5);
+        assert_eq!(results[1]["val"], 10);
+        assert_eq!(results[2]["val"], "hello");
+    }
+
+    #[test]
+    fn order_by_nested_path() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "address": {"city": "Seattle"}}),
+            serde_json::json!({"name": "Bob", "address": {"city": "Portland"}}),
+            serde_json::json!({"name": "Charlie", "address": {"city": "Austin"}}),
+        ];
+        let results =
+            query_documents("SELECT * FROM c ORDER BY c.address.city ASC", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0]["address"]["city"], "Austin");
+        assert_eq!(results[1]["address"]["city"], "Portland");
+        assert_eq!(results[2]["address"]["city"], "Seattle");
+    }
+
+    // ── GROUP BY + Aggregates tests ─────────────────────────────────────
+
+    #[test]
+    fn group_by_count() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, COUNT(1) AS cnt FROM c GROUP BY c.city",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["cnt"], 2);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["cnt"], 2);
+    }
+
+    #[test]
+    fn group_by_sum() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, SUM(c.revenue) AS total_revenue FROM c GROUP BY c.city",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["total_revenue"], 500.0);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["total_revenue"], 250.0);
+    }
+
+    #[test]
+    fn group_by_avg() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, AVG(c.score) AS avg_score FROM c GROUP BY c.city",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["avg_score"], 86.5);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["avg_score"], 92.5);
+    }
+
+    #[test]
+    fn group_by_min_max() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, MIN(c.age) AS min_age, MAX(c.age) AS max_age FROM c GROUP BY c.city",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["min_age"], 25);
+        assert_eq!(results[0]["max_age"], 28);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["min_age"], 30);
+        assert_eq!(results[1]["max_age"], 35);
+    }
+
+    #[test]
+    fn group_by_multiple_aggregates() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, COUNT(1) AS cnt, SUM(c.revenue) AS total, AVG(c.score) AS avg_score FROM c GROUP BY c.city",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["cnt"], 2);
+        assert_eq!(results[0]["total"], 500.0);
+        assert_eq!(results[0]["avg_score"], 86.5);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["cnt"], 2);
+        assert_eq!(results[1]["total"], 250.0);
+        assert_eq!(results[1]["avg_score"], 92.5);
+    }
+
+    #[test]
+    fn group_by_multiple_keys() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, c.state, COUNT(1) AS cnt FROM c GROUP BY c.city, c.state",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["state"], "OR");
+        assert_eq!(results[0]["cnt"], 2);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["state"], "WA");
+        assert_eq!(results[1]["cnt"], 2);
+    }
+
+    #[test]
+    fn group_by_with_where() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "city": "Seattle", "state": "WA", "age": 30, "score": 90, "revenue": 100}),
+            serde_json::json!({"name": "Bob", "city": "Portland", "state": "OR", "age": 25, "score": 85, "revenue": 200}),
+            serde_json::json!({"name": "Charlie", "city": "Seattle", "state": "WA", "age": 35, "score": 95, "revenue": 150}),
+            serde_json::json!({"name": "Diana", "city": "Portland", "state": "OR", "age": 28, "score": 88, "revenue": 300}),
+        ];
+        let mut results = query_documents(
+            "SELECT c.city, COUNT(1) AS cnt FROM c WHERE c.age >= 28 GROUP BY c.city",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        results.sort_by(|a, b| a["city"].as_str().cmp(&b["city"].as_str()));
+        assert_eq!(results[0]["city"], "Portland");
+        assert_eq!(results[0]["cnt"], 1);
+        assert_eq!(results[1]["city"], "Seattle");
+        assert_eq!(results[1]["cnt"], 2);
+    }
+
+    #[test]
+    fn aggregate_without_group_by() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob", "age": 25}),
+            serde_json::json!({"name": "Charlie", "age": 35}),
+        ];
+        let results = query_documents("SELECT COUNT(1) AS cnt FROM c", &[], &docs).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["cnt"], 3);
+    }
+
+    #[test]
+    fn aggregate_sum_without_group_by() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "age": 30}),
+            serde_json::json!({"name": "Bob", "age": 25}),
+            serde_json::json!({"name": "Charlie", "age": 35}),
+        ];
+        let results = query_documents("SELECT SUM(c.age) AS total_age FROM c", &[], &docs).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["total_age"], 90.0);
+    }
+
+    #[test]
+    fn aggregate_avg_empty() {
+        let docs: Vec<serde_json::Value> = vec![];
+        let results = query_documents("SELECT AVG(c.age) AS avg_age FROM c", &[], &docs).unwrap();
+        assert_eq!(results.len(), 1);
+        // AVG on empty set produces undefined (null in JSON)
+        assert_eq!(results[0]["avg_age"], serde_json::Value::Null);
+    }
+
+    // ── JOIN tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn join_simple() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "tags": ["rust", "azure"]}),
+            serde_json::json!({"name": "Bob", "tags": ["python"]}),
+        ];
+        let results = query_documents("SELECT * FROM c JOIN t IN c.tags", &[], &docs).unwrap();
+        // Alice expands to 2 rows, Bob to 1 row
+        assert_eq!(results.len(), 3);
+    }
+
+    #[test]
+    fn join_with_where() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "tags": ["rust", "azure"]}),
+            serde_json::json!({"name": "Bob", "tags": ["python"]}),
+            serde_json::json!({"name": "Charlie", "tags": ["rust", "python", "go"]}),
+        ];
+        let results = query_documents(
+            "SELECT * FROM c JOIN t IN c.tags WHERE t = 'rust'",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn join_select_both() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "tags": ["rust", "azure"]}),
+            serde_json::json!({"name": "Bob", "tags": ["python"]}),
+        ];
+        let results =
+            query_documents("SELECT c.name, t FROM c JOIN t IN c.tags", &[], &docs).unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0]["name"], "Alice");
+        assert_eq!(results[0]["t"], "rust");
+        assert_eq!(results[1]["name"], "Alice");
+        assert_eq!(results[1]["t"], "azure");
+        assert_eq!(results[2]["name"], "Bob");
+        assert_eq!(results[2]["t"], "python");
+    }
+
+    #[test]
+    fn join_empty_array() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "tags": ["rust"]}),
+            serde_json::json!({"name": "Diana", "tags": []}),
+        ];
+        let results =
+            query_documents("SELECT c.name, t FROM c JOIN t IN c.tags", &[], &docs).unwrap();
+        // Diana's empty array produces no rows
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["name"], "Alice");
+        assert_eq!(results[0]["t"], "rust");
+    }
+
+    #[test]
+    fn join_missing_array() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "tags": ["rust"]}),
+            serde_json::json!({"name": "Eve"}),
+        ];
+        let results =
+            query_documents("SELECT c.name, t FROM c JOIN t IN c.tags", &[], &docs).unwrap();
+        // Eve has no tags property — produces no rows
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["name"], "Alice");
+        assert_eq!(results[0]["t"], "rust");
+    }
+
+    #[test]
+    fn join_multiple() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "tags": ["rust", "azure"], "skills": ["coding", "design"]}),
+            serde_json::json!({"name": "Bob", "tags": ["python"], "skills": ["data"]}),
+        ];
+        let results = query_documents(
+            "SELECT c.name, t, s FROM c JOIN t IN c.tags JOIN s IN c.skills",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        // Alice: 2 tags * 2 skills = 4 rows; Bob: 1 tag * 1 skill = 1 row
+        assert_eq!(results.len(), 5);
+    }
+
+    #[test]
+    fn join_with_filter_on_parent() {
+        let docs = vec![
+            serde_json::json!({"name": "Alice", "active": true, "tags": ["rust", "azure"]}),
+            serde_json::json!({"name": "Bob", "active": false, "tags": ["rust", "python"]}),
+            serde_json::json!({"name": "Charlie", "active": true, "tags": ["go", "rust"]}),
+        ];
+        let results = query_documents(
+            "SELECT c.name, t FROM c JOIN t IN c.tags WHERE c.active = true AND t = 'rust'",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0]["name"], "Alice");
+        assert_eq!(results[0]["t"], "rust");
+        assert_eq!(results[1]["name"], "Charlie");
+        assert_eq!(results[1]["t"], "rust");
     }
 }

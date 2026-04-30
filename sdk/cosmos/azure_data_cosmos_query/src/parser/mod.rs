@@ -13,19 +13,28 @@ use crate::lexer::{
 };
 
 /// Parse error with location information.
-#[derive(Debug, Clone, thiserror::Error)]
-#[error("{message} at offset {}", span.start)]
+#[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct ParseError {
-    pub message: String,
-    pub span: Span,
+    pub(crate) message: String,
+    pub(crate) span: Span,
 }
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} at offset {}", self.message, self.span.start)
+    }
+}
+
+impl std::error::Error for ParseError {}
 
 /// Parse a SQL string into an AST.
 ///
 /// # Examples
 /// ```
 /// let program = azure_data_cosmos_query::parse("SELECT * FROM c WHERE c.id = '1'").unwrap();
-/// assert!(program.query.where_clause.is_some());
+/// // The returned SqlProgram contains the parsed AST.
+/// // Use plan::generate_query_plan() or eval::matches_query() to work with it.
 /// ```
 pub fn parse(sql: &str) -> Result<SqlProgram, ParseError> {
     let mut parser = Parser::new(sql);
@@ -1350,5 +1359,454 @@ mod tests {
             },
             _ => panic!("expected binary"),
         }
+    }
+
+    // ── Expression parsing ──────────────────────────────────────────────
+
+    #[test]
+    fn parse_string_concat() {
+        let p = parse("SELECT c.first || ' ' || c.last FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Binary {
+                    op: SqlBinaryOp::StringConcat,
+                    ..
+                } => {}
+                _ => panic!("expected StringConcat"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_coalesce() {
+        let p = parse("SELECT c.name ?? 'unknown' FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Coalesce { .. } => {}
+                _ => panic!("expected Coalesce"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_ternary() {
+        let p = parse("SELECT c.age > 18 ? 'adult' : 'child' FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Conditional { .. } => {}
+                _ => panic!("expected Conditional"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_array_create_empty() {
+        let p = parse("SELECT [] FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::ArrayCreate(elems) => assert!(elems.is_empty()),
+                _ => panic!("expected empty ArrayCreate"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_object_create_complex() {
+        let p = parse("SELECT {'name': c.name, 'info': {'age': c.age}} FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::ObjectCreate(props) => {
+                    assert_eq!(props.len(), 2);
+                    assert_eq!(props[0].name, "name");
+                    assert_eq!(props[1].name, "info");
+                    // nested object
+                    match &props[1].expression {
+                        SqlScalarExpression::ObjectCreate(inner) => {
+                            assert_eq!(inner.len(), 1);
+                            assert_eq!(inner[0].name, "age");
+                        }
+                        _ => panic!("expected nested ObjectCreate"),
+                    }
+                }
+                _ => panic!("expected ObjectCreate"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_not_in() {
+        let p = parse("SELECT * FROM c WHERE c.x NOT IN (1, 2)").unwrap();
+        let w = p.query.where_clause.unwrap();
+        match &w.expression {
+            SqlScalarExpression::In { not, items, .. } => {
+                assert!(*not);
+                assert_eq!(items.len(), 2);
+            }
+            _ => panic!("expected NOT IN"),
+        }
+    }
+
+    #[test]
+    fn parse_not_between() {
+        let p = parse("SELECT * FROM c WHERE c.x NOT BETWEEN 1 AND 10").unwrap();
+        let w = p.query.where_clause.unwrap();
+        match &w.expression {
+            SqlScalarExpression::Between { not, .. } => assert!(*not),
+            _ => panic!("expected NOT BETWEEN"),
+        }
+    }
+
+    #[test]
+    fn parse_not_like() {
+        let p = parse("SELECT * FROM c WHERE c.name NOT LIKE '%test%'").unwrap();
+        let w = p.query.where_clause.unwrap();
+        match &w.expression {
+            SqlScalarExpression::Like { not, .. } => assert!(*not),
+            _ => panic!("expected NOT LIKE"),
+        }
+    }
+
+    #[test]
+    fn parse_like_with_escape() {
+        let p = parse(r"SELECT * FROM c WHERE c.name LIKE '%\_%' ESCAPE '\'").unwrap();
+        let w = p.query.where_clause.unwrap();
+        match &w.expression {
+            SqlScalarExpression::Like { escape, not, .. } => {
+                assert!(!*not);
+                assert_eq!(escape.as_deref(), Some("\\"));
+            }
+            _ => panic!("expected LIKE with ESCAPE"),
+        }
+    }
+
+    #[test]
+    fn parse_exists_subquery() {
+        let p = parse("SELECT * FROM c WHERE EXISTS(SELECT VALUE 1 FROM c)").unwrap();
+        let w = p.query.where_clause.unwrap();
+        match &w.expression {
+            SqlScalarExpression::Exists(q) => {
+                assert!(matches!(q.select.spec, SqlSelectSpec::Value(_)));
+            }
+            _ => panic!("expected EXISTS subquery"),
+        }
+    }
+
+    #[test]
+    fn parse_array_subquery() {
+        let p = parse("SELECT ARRAY(SELECT t FROM t IN c.tags) FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Array(q) => {
+                    assert!(q.from.is_some());
+                }
+                _ => panic!("expected ARRAY subquery"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_scalar_subquery_in_where() {
+        let p = parse("SELECT * FROM c WHERE c.x = (SELECT VALUE MAX(t.id) FROM t IN c.items)")
+            .unwrap();
+        let w = p.query.where_clause.unwrap();
+        match &w.expression {
+            SqlScalarExpression::Binary {
+                op: SqlBinaryOp::Equal,
+                right,
+                ..
+            } => {
+                assert!(matches!(right.as_ref(), SqlScalarExpression::Subquery(_)));
+            }
+            _ => panic!("expected binary equal with subquery"),
+        }
+    }
+
+    #[test]
+    fn parse_multiple_joins() {
+        let p = parse("SELECT * FROM c JOIN t IN c.tags JOIN s IN c.skills").unwrap();
+        let from = p.query.from.unwrap();
+        match &from.collection {
+            SqlCollectionExpression::Join { left, right } => {
+                // right is the second JOIN (s IN c.skills)
+                assert!(matches!(
+                    right.as_ref(),
+                    SqlCollectionExpression::ArrayIterator { .. }
+                ));
+                // left is the first JOIN (c JOIN t IN c.tags)
+                assert!(matches!(
+                    left.as_ref(),
+                    SqlCollectionExpression::Join { .. }
+                ));
+            }
+            _ => panic!("expected Join"),
+        }
+    }
+
+    #[test]
+    fn parse_offset_limit_params() {
+        let p = parse("SELECT * FROM c OFFSET @off LIMIT @lim").unwrap();
+        let ol = p.query.offset_limit.unwrap();
+        assert_eq!(ol.offset, SqlOffsetSpec::Parameter("off".into()));
+        assert_eq!(ol.limit, SqlLimitSpec::Parameter("lim".into()));
+    }
+
+    #[test]
+    fn parse_top_parameter() {
+        let p = parse("SELECT TOP @n * FROM c").unwrap();
+        assert_eq!(p.query.select.top, Some(SqlTopSpec::Parameter("n".into())));
+    }
+
+    #[test]
+    fn parse_bitwise_and_operator() {
+        let p = parse("SELECT c.x & 255 FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Binary {
+                    op: SqlBinaryOp::BitwiseAnd,
+                    ..
+                } => {}
+                _ => panic!("expected BitwiseAnd"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_shift_operators() {
+        let p = parse("SELECT c.x << 2, c.x >> 1, c.x >>> 3 FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => {
+                assert_eq!(items.len(), 3);
+                match &items[0].expression {
+                    SqlScalarExpression::Binary {
+                        op: SqlBinaryOp::LeftShift,
+                        ..
+                    } => {}
+                    _ => panic!("expected LeftShift"),
+                }
+                match &items[1].expression {
+                    SqlScalarExpression::Binary {
+                        op: SqlBinaryOp::RightShift,
+                        ..
+                    } => {}
+                    _ => panic!("expected RightShift"),
+                }
+                match &items[2].expression {
+                    SqlScalarExpression::Binary {
+                        op: SqlBinaryOp::ZeroFillRightShift,
+                        ..
+                    } => {}
+                    _ => panic!("expected ZeroFillRightShift"),
+                }
+            }
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_unary_plus() {
+        let p = parse("SELECT +c.x FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Unary {
+                    op: SqlUnaryOp::Plus,
+                    ..
+                } => {}
+                _ => panic!("expected unary Plus"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_unary_bitnot() {
+        let p = parse("SELECT ~c.x FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::Unary {
+                    op: SqlUnaryOp::BitwiseNot,
+                    ..
+                } => {}
+                _ => panic!("expected unary BitwiseNot"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_nested_function() {
+        let p = parse("SELECT UPPER(CONCAT(c.first, ' ', c.last)) FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::FunctionCall { name, args, .. } => {
+                    assert_eq!(name, "UPPER");
+                    assert_eq!(args.len(), 1);
+                    match &args[0] {
+                        SqlScalarExpression::FunctionCall {
+                            name: inner_name,
+                            args: inner_args,
+                            ..
+                        } => {
+                            assert_eq!(inner_name, "CONCAT");
+                            assert_eq!(inner_args.len(), 3);
+                        }
+                        _ => panic!("expected inner CONCAT"),
+                    }
+                }
+                _ => panic!("expected FunctionCall"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_case_insensitive_keywords() {
+        let p = parse("select * from c where c.x = 1 order by c.x").unwrap();
+        assert_eq!(p.query.select.spec, SqlSelectSpec::Star);
+        assert!(p.query.from.is_some());
+        assert!(p.query.where_clause.is_some());
+        assert!(p.query.order_by.is_some());
+    }
+
+    #[test]
+    fn parse_multiple_select_items() {
+        let p = parse("SELECT c.a, c.b AS beta, c.c FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => {
+                assert_eq!(items.len(), 3);
+                assert_eq!(items[0].alias, None);
+                assert_eq!(items[1].alias.as_deref(), Some("beta"));
+                assert_eq!(items[2].alias, None);
+            }
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_select_with_computation() {
+        let p = parse("SELECT c.price * c.qty AS total FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => {
+                assert_eq!(items.len(), 1);
+                assert_eq!(items[0].alias.as_deref(), Some("total"));
+                match &items[0].expression {
+                    SqlScalarExpression::Binary {
+                        op: SqlBinaryOp::Multiply,
+                        ..
+                    } => {}
+                    _ => panic!("expected Multiply"),
+                }
+            }
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_deeply_nested_members() {
+        let p = parse("SELECT c.a.b.c.d.e FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => {
+                // Traverse: MemberRef("e") -> MemberRef("d") -> MemberRef("c") -> MemberRef("b") -> MemberRef("a") -> PropertyRef("c")
+                let mut expr = &items[0].expression;
+                let expected = ["e", "d", "c", "b", "a"];
+                for name in &expected {
+                    match expr {
+                        SqlScalarExpression::MemberRef { source, member } => {
+                            assert_eq!(member, name);
+                            expr = source.as_ref();
+                        }
+                        _ => panic!("expected MemberRef for {name}"),
+                    }
+                }
+                match expr {
+                    SqlScalarExpression::PropertyRef(root) => assert_eq!(root, "c"),
+                    _ => panic!("expected root PropertyRef"),
+                }
+            }
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_empty_array_literal_in_value() {
+        let p = parse("SELECT VALUE [] FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::Value(expr) => match expr.as_ref() {
+                SqlScalarExpression::ArrayCreate(items) => assert!(items.is_empty()),
+                _ => panic!("expected ArrayCreate"),
+            },
+            _ => panic!("expected SELECT VALUE"),
+        }
+    }
+
+    #[test]
+    fn parse_empty_object_literal_in_value() {
+        let p = parse("SELECT VALUE {} FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::Value(expr) => match expr.as_ref() {
+                SqlScalarExpression::ObjectCreate(props) => assert!(props.is_empty()),
+                _ => panic!("expected ObjectCreate"),
+            },
+            _ => panic!("expected SELECT VALUE"),
+        }
+    }
+
+    #[test]
+    fn parse_member_indexer() {
+        let p = parse("SELECT c.items[0] FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::MemberIndexer { source, index } => {
+                    match source.as_ref() {
+                        SqlScalarExpression::MemberRef { member, .. } => {
+                            assert_eq!(member, "items");
+                        }
+                        _ => panic!("expected MemberRef source"),
+                    }
+                    match index.as_ref() {
+                        SqlScalarExpression::Literal(SqlLiteral::Integer(0)) => {}
+                        _ => panic!("expected integer 0 index"),
+                    }
+                }
+                _ => panic!("expected MemberIndexer"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_string_member_indexer() {
+        let p = parse("SELECT c['name'] FROM c").unwrap();
+        match &p.query.select.spec {
+            SqlSelectSpec::List(items) => match &items[0].expression {
+                SqlScalarExpression::MemberIndexer { source, index } => {
+                    match source.as_ref() {
+                        SqlScalarExpression::PropertyRef(name) => assert_eq!(name, "c"),
+                        _ => panic!("expected PropertyRef source"),
+                    }
+                    match index.as_ref() {
+                        SqlScalarExpression::Literal(SqlLiteral::String(s)) => {
+                            assert_eq!(s, "name");
+                        }
+                        _ => panic!("expected string index"),
+                    }
+                }
+                _ => panic!("expected MemberIndexer"),
+            },
+            _ => panic!("expected select list"),
+        }
+    }
+
+    #[test]
+    fn parse_group_by_multiple() {
+        let p = parse("SELECT c.city, c.state, COUNT(1) FROM c GROUP BY c.city, c.state").unwrap();
+        let gb = p.query.group_by.unwrap();
+        assert_eq!(gb.expressions.len(), 2);
     }
 }

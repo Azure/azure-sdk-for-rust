@@ -13,10 +13,12 @@ use std::cmp::Ordering;
 
 /// A runtime value used during query evaluation, with Cosmos DB comparison semantics.
 #[derive(Debug, Clone)]
-pub enum CosmosValue {
+#[non_exhaustive]
+pub(crate) enum CosmosValue {
     Null,
     Boolean(bool),
     Number(f64),
+    Integer(i64),
     String(String),
     Array(Vec<CosmosValue>),
     Object(Vec<(String, CosmosValue)>),
@@ -39,7 +41,7 @@ impl CosmosValue {
         match self {
             Self::Null => Some(TypeOrder::Null),
             Self::Boolean(_) => Some(TypeOrder::Boolean),
-            Self::Number(_) => Some(TypeOrder::Number),
+            Self::Number(_) | Self::Integer(_) => Some(TypeOrder::Number),
             Self::String(_) => Some(TypeOrder::String),
             Self::Array(_) => Some(TypeOrder::Array),
             Self::Object(_) => Some(TypeOrder::Object),
@@ -50,23 +52,27 @@ impl CosmosValue {
     /// Returns true if this value is "truthy" in Cosmos DB semantics.
     /// `null`, `undefined`, `false`, `0`, and `""` are falsy; everything else is truthy.
     /// However, Cosmos DB WHERE clauses only accept boolean true as "matches".
-    pub fn is_truthy(&self) -> bool {
+    pub(crate) fn is_truthy(&self) -> bool {
         match self {
             Self::Boolean(b) => *b,
             Self::Null | Self::Undefined => false,
             Self::Number(n) => *n != 0.0,
+            Self::Integer(n) => *n != 0,
             Self::String(s) => !s.is_empty(),
             Self::Array(_) | Self::Object(_) => true,
         }
     }
 
     /// Cosmos DB equality: returns `Undefined` for cross-type, `true`/`false` for same-type.
-    pub fn cosmos_eq(&self, other: &Self) -> CosmosValue {
+    pub(crate) fn cosmos_eq(&self, other: &Self) -> CosmosValue {
         match (self, other) {
             (Self::Undefined, _) | (_, Self::Undefined) => Self::Undefined,
             (Self::Null, Self::Null) => Self::Boolean(true),
             (Self::Boolean(a), Self::Boolean(b)) => Self::Boolean(a == b),
             (Self::Number(a), Self::Number(b)) => Self::Boolean(float_eq(*a, *b)),
+            (Self::Integer(a), Self::Integer(b)) => Self::Boolean(a == b),
+            (Self::Number(a), Self::Integer(b)) => Self::Boolean(float_eq(*a, *b as f64)),
+            (Self::Integer(a), Self::Number(b)) => Self::Boolean(float_eq(*a as f64, *b)),
             (Self::String(a), Self::String(b)) => Self::Boolean(a == b),
             _ => {
                 // Cross-type comparison
@@ -81,12 +87,15 @@ impl CosmosValue {
     }
 
     /// Cosmos DB ordering comparison. Returns None for cross-type or undefined.
-    pub fn cosmos_cmp(&self, other: &Self) -> Option<Ordering> {
+    pub(crate) fn cosmos_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (Self::Undefined, _) | (_, Self::Undefined) => None,
             (Self::Null, Self::Null) => Some(Ordering::Equal),
             (Self::Boolean(a), Self::Boolean(b)) => Some(a.cmp(b)),
             (Self::Number(a), Self::Number(b)) => float_cmp(*a, *b),
+            (Self::Integer(a), Self::Integer(b)) => Some(a.cmp(b)),
+            (Self::Number(a), Self::Integer(b)) => float_cmp(*a, *b as f64),
+            (Self::Integer(a), Self::Number(b)) => float_cmp(*a as f64, *b),
             (Self::String(a), Self::String(b)) => Some(a.cmp(b)),
             _ => {
                 if self.type_order() == other.type_order() {
@@ -131,11 +140,17 @@ impl CosmosValue {
     }
 
     /// Convert from `serde_json::Value`.
-    pub fn from_json(value: &serde_json::Value) -> Self {
+    pub(crate) fn from_json(value: &serde_json::Value) -> Self {
         match value {
             serde_json::Value::Null => Self::Null,
             serde_json::Value::Bool(b) => Self::Boolean(*b),
-            serde_json::Value::Number(n) => Self::Number(n.as_f64().unwrap_or(0.0)),
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    Self::Integer(i)
+                } else {
+                    Self::Number(n.as_f64().unwrap_or(0.0))
+                }
+            }
             serde_json::Value::String(s) => Self::String(s.clone()),
             serde_json::Value::Array(arr) => Self::Array(arr.iter().map(Self::from_json).collect()),
             serde_json::Value::Object(obj) => Self::Object(
@@ -147,20 +162,14 @@ impl CosmosValue {
     }
 
     /// Convert to `serde_json::Value`.
-    pub fn to_json(&self) -> serde_json::Value {
+    pub(crate) fn to_json(&self) -> serde_json::Value {
         match self {
             Self::Null | Self::Undefined => serde_json::Value::Null,
             Self::Boolean(b) => serde_json::Value::Bool(*b),
-            Self::Number(n) => {
-                // Preserve integer representation when the value is a whole number
-                if n.fract() == 0.0 && *n >= i64::MIN as f64 && *n <= i64::MAX as f64 {
-                    serde_json::Value::Number((*n as i64).into())
-                } else {
-                    serde_json::Number::from_f64(*n)
-                        .map(serde_json::Value::Number)
-                        .unwrap_or(serde_json::Value::Null)
-                }
-            }
+            Self::Integer(n) => serde_json::Value::Number((*n).into()),
+            Self::Number(n) => serde_json::Number::from_f64(*n)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
             Self::String(s) => serde_json::Value::String(s.clone()),
             Self::Array(arr) => serde_json::Value::Array(arr.iter().map(|v| v.to_json()).collect()),
             Self::Object(props) => {
@@ -174,7 +183,7 @@ impl CosmosValue {
     }
 
     /// Check if this value is undefined.
-    pub fn is_undefined(&self) -> bool {
+    pub(crate) fn is_undefined(&self) -> bool {
         matches!(self, Self::Undefined)
     }
 }
