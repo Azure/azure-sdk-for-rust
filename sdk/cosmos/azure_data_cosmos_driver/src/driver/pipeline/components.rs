@@ -17,7 +17,7 @@ use crate::{
     driver::{
         jitter::with_jitter,
         routing::{CosmosEndpoint, LocationIndex},
-        transport::AuthorizationContext,
+        transport::{AuthorizationContext, EndpointKey},
     },
     models::{CosmosResponseHeaders, CosmosStatus},
     options::Region,
@@ -47,6 +47,8 @@ pub(crate) struct RoutingDecision {
     pub endpoint: CosmosEndpoint,
     /// The concrete URL selected for this attempt.
     pub selected_url: Url,
+    /// The connection-pool key matching the selected URL's authority.
+    pub endpoint_key: EndpointKey,
     /// The transport mode for this attempt.
     pub transport_mode: TransportMode,
 }

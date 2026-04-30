@@ -22,6 +22,7 @@ pub(crate) mod cosmos_transport_client;
 mod emulator;
 /// Gateway 2.0 operation eligibility filter.
 pub(crate) mod gateway20_eligibility;
+pub(crate) use gateway20_eligibility::is_operation_supported_by_gateway20;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
 #[cfg(feature = "reqwest")]

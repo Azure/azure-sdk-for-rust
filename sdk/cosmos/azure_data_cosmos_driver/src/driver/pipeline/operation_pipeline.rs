@@ -34,8 +34,9 @@ use super::{
 };
 
 use crate::driver::transport::{
+    is_operation_supported_by_gateway20,
     transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext, CosmosTransport,
+    AuthorizationContext, CosmosTransport, EndpointKey,
 };
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
@@ -117,6 +118,7 @@ pub(crate) async fn execute_operation_pipeline(
             &retry_state,
             &location,
             pipeline_type == PipelineType::DataPlane,
+            account_endpoint.global_database_account_name().is_some(),
             location_state_store.endpoint_unavailability_ttl(),
         );
 
@@ -199,7 +201,7 @@ pub(crate) async fn execute_operation_pipeline(
                 user_agent,
                 pipeline_type,
                 transport_security,
-                endpoint_key: routing.endpoint.endpoint_key(),
+                endpoint_key: routing.endpoint_key.clone(),
             },
             &mut diagnostics,
         )
@@ -337,6 +339,7 @@ fn resolve_endpoint(
     retry_state: &OperationRetryState,
     location: &LocationSnapshot,
     prefer_gateway20: bool,
+    account_name_present: bool,
     endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
@@ -373,16 +376,28 @@ fn resolve_endpoint(
     }
 
     let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
-    let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
+    let use_gateway20 = selected.uses_gateway20(prefer_gateway20)
+        && account_name_present
+        && is_operation_supported_by_gateway20(
+            operation.resource_type(),
+            operation.operation_type(),
+        );
     let transport_mode = if use_gateway20 {
         TransportMode::Gateway20
     } else {
         TransportMode::Gateway
     };
+    let selected_url = selected.selected_url(use_gateway20).clone();
+    let endpoint_key = if use_gateway20 {
+        EndpointKey::try_from(&selected_url).expect("selected URL must have a valid host and port")
+    } else {
+        selected.endpoint_key()
+    };
 
     RoutingDecision {
-        selected_url: selected.selected_url(use_gateway20).clone(),
+        selected_url,
         endpoint: selected,
+        endpoint_key,
         transport_mode,
     }
 }
@@ -632,6 +647,7 @@ mod tests {
         driver::{
             pipeline::components::{RoutingDecision, TransportMode},
             routing::{AccountEndpointState, CosmosEndpoint, LocationIndex, LocationSnapshot},
+            transport::EndpointKey,
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
@@ -676,6 +692,7 @@ mod tests {
             CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         RoutingDecision {
             selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
             endpoint,
             transport_mode: TransportMode::Gateway,
         }
@@ -777,13 +794,16 @@ mod tests {
     fn build_transport_request_uses_routed_endpoint_url_directly() {
         let operation =
             CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let selected_url =
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap();
         let routing = RoutingDecision {
             endpoint: CosmosEndpoint::regional_with_gateway20(
                 "westus2".into(),
                 Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
-                Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+                selected_url.clone(),
             ),
-            selected_url: Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+            endpoint_key: EndpointKey::try_from(&selected_url).unwrap(),
+            selected_url,
             transport_mode: TransportMode::Gateway20,
         };
 
@@ -809,11 +829,12 @@ mod tests {
     fn build_transport_request_uses_default_url_for_global_endpoint() {
         let operation =
             CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         let routing = RoutingDecision {
-            endpoint: CosmosEndpoint::global(
-                Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            ),
-            selected_url: Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
+            endpoint,
             transport_mode: TransportMode::Gateway,
         };
 
@@ -873,6 +894,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, write_endpoint);
@@ -923,6 +945,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, default_endpoint);
@@ -971,6 +994,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, read_endpoint);
@@ -1028,6 +1052,7 @@ mod tests {
             &stale_retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(first_routing.endpoint, endpoint_a);
@@ -1041,6 +1066,7 @@ mod tests {
             &advanced_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(second_routing.endpoint, endpoint_b);
@@ -1184,6 +1210,7 @@ mod tests {
             &retry_state,
             &location,
             true,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, endpoint);
@@ -1191,6 +1218,139 @@ mod tests {
         assert_eq!(
             routing.selected_url.as_str(),
             "https://test-westus2-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_gateway_when_op_ineligible_for_gateway20() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let endpoint = CosmosEndpoint::regional_with_gateway20(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(routing.selected_url, *endpoint.url());
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_gateway_when_account_name_unparseable() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let endpoint = CosmosEndpoint::regional_with_gateway20(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(routing.selected_url, *endpoint.url());
+    }
+
+    #[test]
+    fn resolve_endpoint_uses_gateway20_authority_for_endpoint_key() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let gateway20_url = Url::parse("https://central.thinclient.azure.com:444/").unwrap();
+        let endpoint = CosmosEndpoint::regional_with_gateway20(
+            "centralus".into(),
+            Url::parse("https://central.documents.azure.com:443/").unwrap(),
+            gateway20_url.clone(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint,
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.transport_mode, TransportMode::Gateway20);
+        assert_eq!(
+            routing.selected_url.host_str(),
+            Some("central.thinclient.azure.com")
+        );
+        assert_eq!(
+            routing.endpoint_key,
+            EndpointKey::try_from(&gateway20_url).unwrap()
         );
     }
 
@@ -1241,6 +1401,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            true,
             true,
             Duration::from_secs(60),
         );
