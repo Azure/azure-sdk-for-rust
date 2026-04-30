@@ -22,7 +22,10 @@ use crate::{
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
-    options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
+    options::{
+        resolve_effective_consistency, OperationOptionsView, ReadConsistencyStrategy,
+        ThroughputControlGroupSnapshot,
+    },
 };
 
 use super::{
@@ -74,6 +77,8 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
+    let effective_consistency =
+        resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
     let max_session_retries = options
@@ -113,12 +118,13 @@ pub(crate) async fn execute_operation_pipeline(
         let location = location_state_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
+        let account_name = account_endpoint.global_database_account_name();
         let routing = resolve_endpoint(
             operation,
             &retry_state,
             &location,
             pipeline_type == PipelineType::DataPlane,
-            account_endpoint.global_database_account_name().is_some(),
+            account_name.is_some(),
             location_state_store.endpoint_unavailability_ttl(),
         );
 
@@ -139,6 +145,7 @@ pub(crate) async fn execute_operation_pipeline(
             activity_id,
             execution_context,
             deadline,
+            effective_consistency,
             resolved_session_token: session_consistency_active
                 .then(|| {
                     session_manager.resolve_session_token(
@@ -202,6 +209,7 @@ pub(crate) async fn execute_operation_pipeline(
                 pipeline_type,
                 transport_security,
                 endpoint_key: routing.endpoint_key.clone(),
+                account_name: account_name.clone(),
             },
             &mut diagnostics,
         )
@@ -447,6 +455,7 @@ struct TransportRequestContext<'a> {
     activity_id: &'a ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
+    effective_consistency: DefaultConsistencyLevel,
     resolved_session_token: Option<SessionToken>,
     throughput_control: Option<&'a ThroughputControlGroupSnapshot>,
 }
@@ -560,6 +569,13 @@ fn build_transport_request(
     Ok(TransportRequest {
         method,
         endpoint: ctx.routing.endpoint.clone(),
+        transport_mode: ctx.routing.transport_mode,
+        operation_type: operation.operation_type(),
+        partition_key: operation.partition_key().cloned(),
+        partition_key_definition: operation
+            .container()
+            .map(|container| container.partition_key_definition().clone()),
+        effective_consistency: ctx.effective_consistency,
         url,
         headers,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
@@ -651,8 +667,9 @@ mod tests {
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
-            ContainerReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
-            PartitionKeyDefinition, SystemProperties, ThroughputControlGroupName,
+            ContainerReference, CosmosOperation, DatabaseReference, DefaultConsistencyLevel,
+            ItemReference, PartitionKey, PartitionKeyDefinition, SystemProperties,
+            ThroughputControlGroupName,
         },
         options::{PriorityLevel, ThroughputControlGroupSnapshot},
     };
@@ -709,6 +726,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -730,6 +748,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -751,6 +770,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -777,6 +797,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -813,6 +834,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -844,6 +866,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1420,6 +1443,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1445,6 +1469,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1483,6 +1508,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
@@ -1526,6 +1552,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
@@ -1570,6 +1597,7 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };

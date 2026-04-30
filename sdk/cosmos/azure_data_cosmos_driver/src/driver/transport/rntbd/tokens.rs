@@ -6,7 +6,7 @@
 use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
-use crate::models::{OperationType, ResourceType};
+use crate::models::{DefaultConsistencyLevel, OperationType, ResourceType};
 
 /// The token type byte used by RNTBD metadata tokens.
 ///
@@ -257,6 +257,90 @@ impl Token {
         Self { id, value }
     }
 
+    pub(crate) fn authorization_token(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::AuthorizationToken.into(),
+            TokenValue::String(value),
+        )
+    }
+
+    pub(crate) fn payload_present(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::PayloadPresent.into(),
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
+    pub(crate) fn date(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::Date.into(),
+            TokenValue::SmallString(value),
+        )
+    }
+
+    pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
+        let value = match value {
+            DefaultConsistencyLevel::Strong => 0x00,
+            DefaultConsistencyLevel::BoundedStaleness => 0x01,
+            DefaultConsistencyLevel::Session => 0x02,
+            DefaultConsistencyLevel::Eventual => 0x03,
+            DefaultConsistencyLevel::ConsistentPrefix => 0x04,
+        };
+        Self::new(
+            RntbdRequestToken::ConsistencyLevel.into(),
+            TokenValue::Byte(value),
+        )
+    }
+
+    pub(crate) fn database_name(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::DatabaseName.into(),
+            TokenValue::String(value),
+        )
+    }
+
+    pub(crate) fn collection_name(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::CollectionName.into(),
+            TokenValue::String(value),
+        )
+    }
+
+    pub(crate) fn document_name(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::DocumentName.into(),
+            TokenValue::String(value),
+        )
+    }
+
+    pub(crate) fn transport_request_id(value: u32) -> Self {
+        Self::new(
+            RntbdRequestToken::TransportRequestId.into(),
+            TokenValue::ULong(value),
+        )
+    }
+
+    pub(crate) fn effective_partition_key(value: Vec<u8>) -> Self {
+        Self::new(
+            RntbdRequestToken::EffectivePartitionKey.into(),
+            TokenValue::Bytes(value),
+        )
+    }
+
+    pub(crate) fn sdk_supported_capabilities(value: u32) -> Self {
+        Self::new(
+            RntbdRequestToken::SDKSupportedCapabilities.into(),
+            TokenValue::ULong(value),
+        )
+    }
+
+    pub(crate) fn global_database_account_name(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::GlobalDatabaseAccountName.into(),
+            TokenValue::String(value),
+        )
+    }
+
     /// Returns the number of bytes this token occupies on the wire.
     pub(super) fn encoded_len(&self) -> usize {
         2 + 1 + self.value.encoded_len()
@@ -278,6 +362,61 @@ impl Token {
         let token_type = TokenType::try_from(read_u8(src)?)?;
         let value = TokenValue::read_from(token_type, src)?;
         Ok(Self { id, value })
+    }
+}
+
+/// RNTBD request metadata token IDs used by Gateway 2.0 dispatch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum RntbdRequestToken {
+    AuthorizationToken,
+    PayloadPresent,
+    Date,
+    ConsistencyLevel,
+    DatabaseName,
+    CollectionName,
+    DocumentName,
+    TransportRequestId,
+    EffectivePartitionKey,
+    SDKSupportedCapabilities,
+    GlobalDatabaseAccountName,
+}
+
+impl TryFrom<u16> for RntbdRequestToken {
+    type Error = ();
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        match value {
+            0x0001 => Ok(Self::AuthorizationToken),
+            0x0002 => Ok(Self::PayloadPresent),
+            0x0003 => Ok(Self::Date),
+            0x0010 => Ok(Self::ConsistencyLevel),
+            0x0015 => Ok(Self::DatabaseName),
+            0x0016 => Ok(Self::CollectionName),
+            0x0017 => Ok(Self::DocumentName),
+            0x004D => Ok(Self::TransportRequestId),
+            0x005A => Ok(Self::EffectivePartitionKey),
+            0x00A2 => Ok(Self::SDKSupportedCapabilities),
+            0x00CE => Ok(Self::GlobalDatabaseAccountName),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<RntbdRequestToken> for u16 {
+    fn from(value: RntbdRequestToken) -> Self {
+        match value {
+            RntbdRequestToken::AuthorizationToken => 0x0001,
+            RntbdRequestToken::PayloadPresent => 0x0002,
+            RntbdRequestToken::Date => 0x0003,
+            RntbdRequestToken::ConsistencyLevel => 0x0010,
+            RntbdRequestToken::DatabaseName => 0x0015,
+            RntbdRequestToken::CollectionName => 0x0016,
+            RntbdRequestToken::DocumentName => 0x0017,
+            RntbdRequestToken::TransportRequestId => 0x004D,
+            RntbdRequestToken::EffectivePartitionKey => 0x005A,
+            RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
+            RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
+        }
     }
 }
 

@@ -20,6 +20,7 @@ pub(crate) mod background_task_manager;
 pub(crate) mod cosmos_headers;
 pub(crate) mod cosmos_transport_client;
 mod emulator;
+mod gateway20_dispatch;
 /// Gateway 2.0 operation eligibility filter.
 pub(crate) mod gateway20_eligibility;
 pub(crate) use gateway20_eligibility::is_operation_supported_by_gateway20;
@@ -52,6 +53,9 @@ use self::http_client_factory::DefaultHttpClientFactory;
 pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
+pub(crate) use gateway20_dispatch::{
+    unwrap_response_for_gateway20, wrap_request_for_gateway20, WrapInputs,
+};
 pub(crate) use tracked_transport::infer_request_sent_status;
 
 /// Cosmos DB REST API version.

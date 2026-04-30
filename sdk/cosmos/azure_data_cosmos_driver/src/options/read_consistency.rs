@@ -98,6 +98,19 @@ impl ReadConsistencyStrategy {
     }
 }
 
+/// Resolves the effective consistency level for a read consistency strategy.
+pub(crate) fn resolve_effective_consistency(
+    strategy: ReadConsistencyStrategy,
+    account_default: DefaultConsistencyLevel,
+) -> DefaultConsistencyLevel {
+    match strategy {
+        ReadConsistencyStrategy::Default => account_default,
+        ReadConsistencyStrategy::Eventual => DefaultConsistencyLevel::Eventual,
+        ReadConsistencyStrategy::Session => DefaultConsistencyLevel::Session,
+        ReadConsistencyStrategy::GlobalStrong => DefaultConsistencyLevel::Strong,
+    }
+}
+
 impl std::fmt::Display for ReadConsistencyStrategy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
@@ -203,5 +216,38 @@ mod tests {
             .is_session_effective(DefaultConsistencyLevel::Session));
         assert!(!ReadConsistencyStrategy::GlobalStrong
             .is_session_effective(DefaultConsistencyLevel::Session));
+    }
+
+    #[test]
+    fn resolve_effective_consistency_table() {
+        let account_defaults = [
+            DefaultConsistencyLevel::Strong,
+            DefaultConsistencyLevel::BoundedStaleness,
+            DefaultConsistencyLevel::Session,
+            DefaultConsistencyLevel::ConsistentPrefix,
+            DefaultConsistencyLevel::Eventual,
+        ];
+
+        for account_default in account_defaults {
+            assert_eq!(
+                resolve_effective_consistency(ReadConsistencyStrategy::Default, account_default),
+                account_default
+            );
+            assert_eq!(
+                resolve_effective_consistency(ReadConsistencyStrategy::Eventual, account_default),
+                DefaultConsistencyLevel::Eventual
+            );
+            assert_eq!(
+                resolve_effective_consistency(ReadConsistencyStrategy::Session, account_default),
+                DefaultConsistencyLevel::Session
+            );
+            assert_eq!(
+                resolve_effective_consistency(
+                    ReadConsistencyStrategy::GlobalStrong,
+                    account_default
+                ),
+                DefaultConsistencyLevel::Strong
+            );
+        }
     }
 }

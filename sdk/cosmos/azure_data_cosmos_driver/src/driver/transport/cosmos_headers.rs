@@ -15,7 +15,8 @@ const SDK_SUPPORTED_CAPABILITIES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
 const PARTITION_MERGE_BIT: u32 = 1;
 const IGNORE_UNKNOWN_RNTBD_TOKENS_BIT: u32 = 8;
-const SUPPORTED_CAPABILITIES_BITS: u32 = PARTITION_MERGE_BIT | IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
+pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 =
+    PARTITION_MERGE_BIT | IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
 const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 9);
 /// String-encoded SDK capabilities bitmask.
 ///

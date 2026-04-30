@@ -31,11 +31,13 @@ use crate::{
 use super::{
     adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
     cosmos_transport_client::HttpRequest, infer_request_sent_status, request_signing::sign_request,
-    sharded_transport::EndpointKey,
+    sharded_transport::EndpointKey, unwrap_response_for_gateway20, wrap_request_for_gateway20,
+    WrapInputs,
 };
 
 use crate::driver::pipeline::components::{
-    ThrottleAction, ThrottleRetryState, TransportOutcome, TransportRequest, TransportResult,
+    ThrottleAction, ThrottleRetryState, TransportMode, TransportOutcome, TransportRequest,
+    TransportResult,
 };
 
 /// Cosmos DB retry-after header (milliseconds).
@@ -153,6 +155,8 @@ pub(crate) struct TransportPipelineContext<'a> {
     /// Computed once by the operation pipeline from the routing-level endpoint
     /// so the transport pipeline doesn't need to allocate a `String` per attempt.
     pub endpoint_key: EndpointKey,
+    /// Global database account name used by Gateway 2.0 request wrapping.
+    pub account_name: Option<String>,
 }
 
 /// Executes a single transport attempt.
@@ -251,6 +255,25 @@ pub(crate) async fn execute_transport_pipeline(
             };
         }
 
+        let should_unwrap_gateway20 = request.transport_mode == TransportMode::Gateway20;
+        if should_unwrap_gateway20 {
+            let wrap_inputs = WrapInputs {
+                auth_context: &request.auth_context,
+                operation_type: request.operation_type,
+                resource_type: request.auth_context.resource_type,
+                partition_key: request.partition_key.as_ref(),
+                partition_key_definition: request.partition_key_definition.as_ref(),
+                effective_consistency: request.effective_consistency,
+                account_name: ctx.account_name.as_deref(),
+            };
+            match wrap_request_for_gateway20(&http_request, &wrap_inputs) {
+                Ok(wrapped_request) => http_request = wrapped_request,
+                Err(e) => {
+                    return gateway20_wrap_error_result(e, request_handle, diagnostics);
+                }
+            }
+        }
+
         // Record transport start event
         diagnostics.add_event(
             request_handle,
@@ -274,6 +297,7 @@ pub(crate) async fn execute_transport_pipeline(
             diagnostics,
             excluded_shard_id.take(),
             endpoint_key,
+            should_unwrap_gateway20,
         )
         .await;
 
@@ -369,6 +393,7 @@ fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult 
     TransportResult::deadline_exceeded(request_sent)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn execute_http_attempt(
     http_request: &HttpRequest,
     transport: &AdaptiveTransport,
@@ -377,6 +402,7 @@ async fn execute_http_attempt(
     diagnostics: &mut DiagnosticsContextBuilder,
     excluded_shard_id: Option<u64>,
     endpoint_key: &EndpointKey,
+    should_unwrap_gateway20: bool,
 ) -> ExecutedTransportAttempt {
     if let Some(timeout_duration) = per_request_timeout {
         // Pre-select the shard so we know which shard the request was dispatched
@@ -405,9 +431,12 @@ async fn execute_http_attempt(
         pin_mut!(timeout_future);
 
         return match futures::future::select(transport_future, timeout_future).await {
-            Either::Left((attempt_result, _)) => {
-                finalize_http_attempt(attempt_result, request_handle, diagnostics)
-            }
+            Either::Left((attempt_result, _)) => finalize_http_attempt(
+                attempt_result,
+                request_handle,
+                diagnostics,
+                should_unwrap_gateway20,
+            ),
             Either::Right((_, _remaining_transport_future)) => {
                 diagnostics.add_event(
                     request_handle,
@@ -432,7 +461,12 @@ async fn execute_http_attempt(
         None,
     )
     .await;
-    finalize_http_attempt(attempt_result, request_handle, diagnostics)
+    finalize_http_attempt(
+        attempt_result,
+        request_handle,
+        diagnostics,
+        should_unwrap_gateway20,
+    )
 }
 
 async fn execute_http_attempt_future(
@@ -472,6 +506,7 @@ fn finalize_http_attempt(
     attempt_result: HttpAttemptResult,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
+    should_unwrap_gateway20: bool,
 ) -> ExecutedTransportAttempt {
     match attempt_result {
         HttpAttemptResult::Response {
@@ -488,6 +523,36 @@ fn finalize_http_attempt(
             if let Some(shard_diagnostics) = shard_diagnostics.clone() {
                 diagnostics.set_transport_shard(request_handle, shard_diagnostics);
             }
+
+            let (status_code, headers, body) = if should_unwrap_gateway20
+                && status_code == azure_core::http::StatusCode::Ok
+            {
+                match unwrap_response_for_gateway20(super::cosmos_transport_client::HttpResponse {
+                    status: u16::from(status_code),
+                    headers,
+                    body,
+                }) {
+                    Ok(response) => (
+                        azure_core::http::StatusCode::from(response.status),
+                        response.headers,
+                        response.body,
+                    ),
+                    Err(error) => {
+                        return ExecutedTransportAttempt {
+                            result: gateway20_unwrap_error_result(
+                                error,
+                                request_handle,
+                                diagnostics,
+                            ),
+                            shard_id,
+                            shard_diagnostics,
+                        };
+                    }
+                }
+            } else {
+                (status_code, headers, body)
+            };
+
             ExecutedTransportAttempt {
                 result: map_http_response_payload(
                     status_code,
@@ -546,6 +611,56 @@ fn is_connectivity_error(error: &azure_core::Error) -> bool {
 
 fn format_transport_error_details(error: &azure_core::Error) -> String {
     crate::driver::error_chain_summary(error)
+}
+
+fn gateway20_wrap_error_result(
+    error: azure_core::Error,
+    request_handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
+    let status = CosmosStatus::CLIENT_GENERATED_400;
+    let error_details = format_transport_error_details(&error);
+    diagnostics.fail_transport_request(
+        request_handle,
+        error_details,
+        RequestSentStatus::NotSent,
+        status,
+    );
+
+    TransportResult {
+        outcome: TransportOutcome::TransportError {
+            status,
+            error,
+            request_sent: RequestSentStatus::NotSent,
+        },
+    }
+}
+
+fn gateway20_unwrap_error_result(
+    error: azure_core::Error,
+    request_handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
+    let status = CosmosStatus::TRANSPORT_GENERATED_503;
+    let error_details = format_transport_error_details(&error);
+    diagnostics.add_event(
+        request_handle,
+        RequestEvent::new(RequestEventType::TransportFailed).with_details(error_details.clone()),
+    );
+    diagnostics.fail_transport_request(
+        request_handle,
+        error_details,
+        RequestSentStatus::Sent,
+        status,
+    );
+
+    TransportResult {
+        outcome: TransportOutcome::TransportError {
+            status,
+            error,
+            request_sent: RequestSentStatus::Sent,
+        },
+    }
 }
 
 fn transport_error_result(
@@ -660,6 +775,7 @@ fn map_http_response_payload(
 mod tests {
     use super::*;
     use std::{
+        collections::VecDeque,
         sync::{Arc, Mutex},
         time::Duration,
     };
@@ -667,7 +783,7 @@ mod tests {
     use async_trait::async_trait;
 
     use crate::{
-        diagnostics::DiagnosticsContextBuilder,
+        diagnostics::{DiagnosticsContextBuilder, RequestSentStatus},
         driver::{
             routing::CosmosEndpoint,
             transport::{
@@ -678,7 +794,7 @@ mod tests {
                 http_client_factory::{HttpClientConfig, HttpClientFactory},
             },
         },
-        models::{ActivityId, Credential, ResourceType},
+        models::{ActivityId, Credential, DefaultConsistencyLevel, OperationType, ResourceType},
         options::DiagnosticsOptions,
     };
 
@@ -889,6 +1005,11 @@ mod tests {
         let request = TransportRequest {
             method: azure_core::http::Method::Get,
             endpoint: endpoint.clone(),
+            transport_mode: TransportMode::Gateway,
+            operation_type: OperationType::Read,
+            partition_key: None,
+            partition_key_definition: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
             body: None,
@@ -918,6 +1039,7 @@ mod tests {
                 pipeline_type: PipelineType::Metadata,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
+                account_name: None,
             },
             &mut diagnostics,
         )
@@ -1027,6 +1149,11 @@ mod tests {
         TransportRequest {
             method: azure_core::http::Method::Get,
             endpoint: endpoint.clone(),
+            transport_mode: TransportMode::Gateway,
+            operation_type: OperationType::Read,
+            partition_key: None,
+            partition_key_definition: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
             body: None,
@@ -1063,6 +1190,7 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                account_name: None,
             },
             &mut diagnostics,
         )
@@ -1111,6 +1239,7 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                account_name: None,
             },
             &mut diagnostics,
         )
@@ -1148,6 +1277,7 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                account_name: None,
             },
             &mut diagnostics,
         )
@@ -1183,6 +1313,7 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                account_name: None,
             },
             &mut diagnostics,
         )
@@ -1205,6 +1336,382 @@ mod tests {
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].status(), &CosmosStatus::CLIENT_GENERATED_401);
         assert_eq!(requests[0].request_sent(), RequestSentStatus::NotSent);
+    }
+
+    #[derive(Debug)]
+    struct Gateway20MockTransportClient {
+        responses: Mutex<VecDeque<HttpResponse>>,
+        requests: Mutex<Vec<HttpRequest>>,
+    }
+
+    impl Gateway20MockTransportClient {
+        fn new(responses: Vec<HttpResponse>) -> Self {
+            Self {
+                responses: Mutex::new(responses.into()),
+                requests: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn requests(&self) -> Vec<HttpRequest> {
+            self.requests.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl TransportClient for Gateway20MockTransportClient {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.requests.lock().unwrap().push(request.clone());
+            self.responses.lock().unwrap().pop_front().ok_or_else(|| {
+                TransportError::new(
+                    azure_core::Error::with_message(ErrorKind::Other, "no response queued"),
+                    RequestSentStatus::Unknown,
+                )
+            })
+        }
+    }
+
+    const GATEWAY20_ACTIVITY_ID: &str = "00112233-4455-6677-8899-aabbccddeeff";
+
+    fn gateway20_transport_request(transport_mode: TransportMode) -> TransportRequest {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test-thin.documents.azure.com:444/").unwrap(),
+        );
+        let mut headers = azure_core::http::headers::Headers::new();
+        headers.insert("x-ms-activity-id", GATEWAY20_ACTIVITY_ID);
+        TransportRequest {
+            method: azure_core::http::Method::Get,
+            endpoint: endpoint.clone(),
+            transport_mode,
+            operation_type: OperationType::Read,
+            partition_key: None,
+            partition_key_definition: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            url: endpoint.url().clone(),
+            headers,
+            body: None,
+            auth_context: super::super::AuthorizationContext::new(
+                azure_core::http::Method::Get,
+                ResourceType::Document,
+                "dbs/db1/colls/coll1/docs/doc1",
+            ),
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+        }
+    }
+
+    fn gateway20_context<'a>(
+        client: &'a AdaptiveTransport,
+        endpoint_key: EndpointKey,
+        account_name: Option<String>,
+        credential: &'a Credential,
+        user_agent: &'a azure_core::http::headers::HeaderValue,
+    ) -> TransportPipelineContext<'a> {
+        TransportPipelineContext {
+            transport: client,
+            allow_sent_transport_retry: false,
+            credential,
+            user_agent,
+            pipeline_type: PipelineType::DataPlane,
+            transport_security: TransportSecurity::Secure,
+            endpoint_key,
+            account_name,
+        }
+    }
+
+    fn gateway20_diagnostics() -> DiagnosticsContextBuilder {
+        DiagnosticsContextBuilder::new(
+            ActivityId::from_string(GATEWAY20_ACTIVITY_ID.to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        )
+    }
+
+    #[tokio::test]
+    async fn gateway20_pipeline_wraps_request_and_unwraps_success_response() {
+        let mock = Arc::new(Gateway20MockTransportClient::new(vec![gateway20_response(
+            200,
+            |_| {},
+            b"{}",
+        )]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = gateway20_transport_request(TransportMode::Gateway20);
+        let endpoint_key = request.endpoint.endpoint_key();
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut diagnostics = gateway20_diagnostics();
+
+        let result = execute_transport_pipeline(
+            request,
+            &gateway20_context(
+                &client,
+                endpoint_key,
+                Some("account".to_owned()),
+                &credential,
+                &user_agent,
+            ),
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::Success { status, body, .. } => {
+                assert_eq!(status.status_code(), azure_core::http::StatusCode::Ok);
+                assert_eq!(body, b"{}".to_vec());
+            }
+            other => panic!("expected success, got {other:?}"),
+        }
+        let captured = mock.requests();
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0].method, azure_core::http::Method::Post);
+        assert_eq!(
+            captured[0]
+                .headers
+                .get_optional_str(&azure_core::http::headers::AUTHORIZATION),
+            None
+        );
+        assert_eq!(
+            captured[0]
+                .headers
+                .get_optional_str(&azure_core::http::headers::USER_AGENT),
+            Some("test-agent")
+        );
+        assert!(captured[0]
+            .body
+            .as_ref()
+            .is_some_and(|body| !body.is_empty()));
+    }
+
+    #[tokio::test]
+    async fn gateway20_pipeline_leaves_standard_gateway_request_unwrapped() {
+        let mock = Arc::new(Gateway20MockTransportClient::new(vec![HttpResponse {
+            status: 200,
+            headers: azure_core::http::headers::Headers::new(),
+            body: b"plain".to_vec(),
+        }]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = gateway20_transport_request(TransportMode::Gateway);
+        let endpoint_key = request.endpoint.endpoint_key();
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut diagnostics = gateway20_diagnostics();
+
+        let result = execute_transport_pipeline(
+            request,
+            &gateway20_context(&client, endpoint_key, None, &credential, &user_agent),
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::Success { body, .. } => assert_eq!(body, b"plain".to_vec()),
+            other => panic!("expected success, got {other:?}"),
+        }
+        let captured = mock.requests();
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0].method, azure_core::http::Method::Get);
+        assert!(captured[0]
+            .headers
+            .get_optional_str(&azure_core::http::headers::AUTHORIZATION)
+            .is_some());
+    }
+
+    #[tokio::test]
+    async fn gateway20_pipeline_decode_failure_is_sent_transport_error() {
+        let mock = Arc::new(Gateway20MockTransportClient::new(vec![HttpResponse {
+            status: 200,
+            headers: azure_core::http::headers::Headers::new(),
+            body: vec![1, 2, 3],
+        }]));
+        let client = AdaptiveTransport::Gateway(mock);
+        let request = gateway20_transport_request(TransportMode::Gateway20);
+        let endpoint_key = request.endpoint.endpoint_key();
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut diagnostics = gateway20_diagnostics();
+
+        let result = execute_transport_pipeline(
+            request,
+            &gateway20_context(
+                &client,
+                endpoint_key,
+                Some("account".to_owned()),
+                &credential,
+                &user_agent,
+            ),
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::TransportError {
+                status,
+                request_sent,
+                ..
+            } => {
+                assert_eq!(status, CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(request_sent, RequestSentStatus::Sent);
+            }
+            other => panic!("expected transport error, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn gateway20_pipeline_outer_502_propagates_unchanged_without_unwrap() {
+        let mock = Arc::new(Gateway20MockTransportClient::new(vec![HttpResponse {
+            status: 502,
+            headers: azure_core::http::headers::Headers::new(),
+            body: vec![],
+        }]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = gateway20_transport_request(TransportMode::Gateway20);
+        let endpoint_key = request.endpoint.endpoint_key();
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut diagnostics = gateway20_diagnostics();
+
+        let result = execute_transport_pipeline(
+            request,
+            &gateway20_context(
+                &client,
+                endpoint_key,
+                Some("account".to_owned()),
+                &credential,
+                &user_agent,
+            ),
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::HttpError {
+                status,
+                body,
+                request_sent,
+                ..
+            } => {
+                assert_eq!(u16::from(status.status_code()), 502);
+                assert_eq!(status.sub_status(), None);
+                assert_eq!(body, Vec::<u8>::new());
+                assert_eq!(request_sent, RequestSentStatus::Sent);
+            }
+            other => panic!("expected HTTP error, got {other:?}"),
+        }
+        assert_eq!(mock.requests().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn gateway20_pipeline_inner_401_surfaces_as_inner_status() {
+        let mock = Arc::new(Gateway20MockTransportClient::new(vec![gateway20_response(
+            401,
+            |_| {},
+            b"",
+        )]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = gateway20_transport_request(TransportMode::Gateway20);
+        let endpoint_key = request.endpoint.endpoint_key();
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut diagnostics = gateway20_diagnostics();
+
+        let result = execute_transport_pipeline(
+            request,
+            &gateway20_context(
+                &client,
+                endpoint_key,
+                Some("account".to_owned()),
+                &credential,
+                &user_agent,
+            ),
+            &mut diagnostics,
+        )
+        .await;
+
+        match result.outcome {
+            TransportOutcome::HttpError {
+                status,
+                body,
+                request_sent,
+                ..
+            } => {
+                assert_eq!(
+                    status.status_code(),
+                    azure_core::http::StatusCode::Unauthorized
+                );
+                assert_eq!(status.sub_status(), None);
+                assert_eq!(body, Vec::<u8>::new());
+                assert_eq!(request_sent, RequestSentStatus::Sent);
+            }
+            other => panic!("expected HTTP error, got {other:?}"),
+        }
+        assert_eq!(mock.requests().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn gateway20_pipeline_uses_inner_retry_after_for_throttle_retry() {
+        let mock = Arc::new(Gateway20MockTransportClient::new(vec![
+            gateway20_response(
+                429,
+                |bytes| write_gateway20_u32_token(bytes, 0x000C, 0),
+                b"",
+            ),
+            gateway20_response(200, |_| {}, b"{}"),
+        ]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = gateway20_transport_request(TransportMode::Gateway20);
+        let endpoint_key = request.endpoint.endpoint_key();
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut diagnostics = gateway20_diagnostics();
+
+        let result = execute_transport_pipeline(
+            request,
+            &gateway20_context(
+                &client,
+                endpoint_key,
+                Some("account".to_owned()),
+                &credential,
+                &user_agent,
+            ),
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(result.outcome, TransportOutcome::Success { .. }));
+        assert_eq!(mock.requests().len(), 2);
+    }
+
+    fn gateway20_response(
+        status: u32,
+        write_tokens: impl FnOnce(&mut Vec<u8>),
+        body: &[u8],
+    ) -> HttpResponse {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&0_u32.to_le_bytes());
+        bytes.extend_from_slice(&status.to_le_bytes());
+        write_gateway20_uuid(
+            &mut bytes,
+            uuid::Uuid::parse_str(GATEWAY20_ACTIVITY_ID).unwrap(),
+        );
+        write_tokens(&mut bytes);
+        bytes.extend_from_slice(body);
+        let total_len = u32::try_from(bytes.len()).unwrap();
+        bytes[0..4].copy_from_slice(&total_len.to_le_bytes());
+        HttpResponse {
+            status: 200,
+            headers: azure_core::http::headers::Headers::new(),
+            body: bytes,
+        }
+    }
+
+    fn write_gateway20_u32_token(bytes: &mut Vec<u8>, id: u16, value: u32) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x02);
+        bytes.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn write_gateway20_uuid(bytes: &mut Vec<u8>, value: uuid::Uuid) {
+        let value = value.as_u128();
+        bytes.extend_from_slice(&((value >> 64) as u64).to_le_bytes());
+        bytes.extend_from_slice(&(value as u64).to_le_bytes());
     }
 
     #[test]

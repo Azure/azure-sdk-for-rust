@@ -19,7 +19,10 @@ use crate::{
         routing::{CosmosEndpoint, LocationIndex},
         transport::{AuthorizationContext, EndpointKey},
     },
-    models::{CosmosResponseHeaders, CosmosStatus},
+    models::{
+        CosmosResponseHeaders, CosmosStatus, DefaultConsistencyLevel, OperationType, PartitionKey,
+        PartitionKeyDefinition,
+    },
     options::Region,
 };
 
@@ -179,6 +182,16 @@ pub(crate) struct TransportRequest {
     pub method: Method,
     /// The endpoint selected for this attempt.
     pub endpoint: CosmosEndpoint,
+    /// The routed transport mode for this attempt.
+    pub transport_mode: TransportMode,
+    /// The operation type being dispatched.
+    pub operation_type: OperationType,
+    /// Partition key for item-scoped Gateway 2.0 dispatch.
+    pub partition_key: Option<PartitionKey>,
+    /// Partition key definition for effective partition key computation.
+    pub partition_key_definition: Option<PartitionKeyDefinition>,
+    /// Effective consistency resolved from account default and read options.
+    pub effective_consistency: DefaultConsistencyLevel,
     /// The fully resolved URL for this attempt.
     pub url: Url,
     /// Headers to send (includes operation-specific and attempt-specific headers).
