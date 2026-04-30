@@ -385,3 +385,150 @@ pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn
     drop_database(&client, &db_name).await;
     Ok(())
 }
+
+/// Provisions a fresh database + 3-component HPK container and returns the
+/// db name (for cleanup) and a container client. Mirrors
+/// [`provision_database_and_container`] but uses
+/// `(/tenantId, /userId, /sessionId)` as the partition key paths so the
+/// container exercises hierarchical partitioning end-to-end.
+async fn provision_database_and_hpk_container(
+    client: &CosmosClient,
+) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw20-test-db-{unique}");
+    let container_name = format!("gw20-test-hpk-container-{unique}");
+
+    client.create_database(&db_name, None).await?;
+    let db_client = client.database_client(&db_name);
+
+    let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    db_client.create_container(properties, None).await?;
+    let container_client = db_client.container_client(&container_name).await?;
+
+    Ok((db_name, container_client))
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
+struct Gw20HpkItem {
+    id: String,
+    #[serde(rename = "tenantId")]
+    tenant_id: String,
+    #[serde(rename = "userId")]
+    user_id: String,
+    #[serde(rename = "sessionId")]
+    session_id: String,
+    value: i64,
+}
+
+/// Round-trip exercises Gateway 2.0 against a 3-component hierarchical
+/// partition key container, asserting both the **full PK** point-op path
+/// and the **partial PK** range-dispatch path (`x-ms-thinclient-range-min`
+/// / `-max`) discussed in the Gateway 2.0 spec test matrix
+/// ("HPK + Gateway 2.0: full vs partial PK").
+///
+/// 1. Inserts items spread across two tenants × two users.
+/// 2. Reads each item back via its full 3-component PK (point op → EPK token).
+/// 3. Queries with a **1-component prefix** (`tenantId` only) and asserts
+///    the items for that tenant come back across however many pages the
+///    proxy fans out into.
+///
+/// The point-vs-range header emission is asserted at unit level in
+/// `gateway20_dispatch::tests`; this E2E test guards the SDK-public surface
+/// against regressions where partial-PK queries silently degrade to
+/// single-partition or fail.
+///
+/// TODO: tighten the diagnostics check to assert `TransportKind::Gateway20`
+/// once the SDK surfaces the driver transport kind.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+)]
+pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use azure_data_cosmos::{PartitionKey, PartitionKeyValue};
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key, false).await?;
+    let (db_name, container) = provision_database_and_hpk_container(&client).await?;
+
+    let target_tenant = format!("tenant-{}", azure_core::Uuid::new_v4());
+    let other_tenant = format!("tenant-{}", azure_core::Uuid::new_v4());
+
+    // Two users × two sessions per tenant => 4 items per tenant.
+    let mut expected_target_ids = Vec::new();
+    for tenant in [target_tenant.as_str(), other_tenant.as_str()] {
+        for user_idx in 0..2 {
+            for session_idx in 0..2 {
+                let user_id = format!("user-{user_idx}");
+                let session_id = format!("session-{session_idx}");
+                let id = format!("{tenant}-{user_id}-{session_id}");
+                if tenant == target_tenant {
+                    expected_target_ids.push(id.clone());
+                }
+                let item = Gw20HpkItem {
+                    id: id.clone(),
+                    tenant_id: tenant.to_string(),
+                    user_id: user_id.clone(),
+                    session_id: session_id.clone(),
+                    value: i64::from(user_idx * 10 + session_idx),
+                };
+                // PartitionKey tuple impls require owned types (the underlying
+                // `PartitionKeyValue: From<&'static str>` impl is the only
+                // borrow-friendly one) — clone strings into the tuple.
+                let pk = PartitionKey::from((tenant.to_string(), user_id, session_id));
+                container.create_item(pk, &item, None).await?;
+            }
+        }
+    }
+
+    // Full HPK point read (3-of-3 components → EPK token path).
+    let full_pk = PartitionKey::from((
+        target_tenant.clone(),
+        "user-0".to_string(),
+        "session-0".to_string(),
+    ));
+    let full_id = format!("{target_tenant}-user-0-session-0");
+    let read_resp = container
+        .read_item::<Gw20HpkItem>(full_pk, &full_id, None)
+        .await?;
+    let item: Gw20HpkItem = read_resp.into_model()?;
+    assert_eq!(item.id, full_id);
+    assert_eq!(item.tenant_id, target_tenant);
+
+    // Partial HPK query (1-of-3 components → range header path).
+    // PartitionKey only has tuple From-impls for 2 and 3 components; for a
+    // single-component prefix, construct it from a Vec<PartitionKeyValue> so
+    // the dispatcher sees a 1-component value against a 3-path container.
+    let partial_pk = PartitionKey::from(vec![PartitionKeyValue::from(target_tenant.clone())]);
+    let query = Query::from("SELECT * FROM c");
+    let mut pages = container
+        .query_items::<Gw20HpkItem>(query, partial_pk, None)?
+        .into_pages();
+
+    let mut returned_ids: Vec<String> = Vec::new();
+    let mut pages_seen = 0_usize;
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        pages_seen += 1;
+        assert!(page.diagnostics().activity_id().is_some());
+        for it in page.items() {
+            assert_eq!(
+                it.tenant_id, target_tenant,
+                "partial-PK query must not bleed across tenants"
+            );
+            returned_ids.push(it.id.clone());
+        }
+    }
+    assert!(pages_seen >= 1, "expected at least one query page");
+    expected_target_ids.sort();
+    returned_ids.sort();
+    assert_eq!(returned_ids, expected_target_ids);
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
