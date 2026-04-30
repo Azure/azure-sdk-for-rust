@@ -12,7 +12,7 @@ use super::framework;
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
     FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType, TransportKind,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use framework::{get_effective_hub_endpoint, TestClient, TestOptions};
@@ -1005,20 +1005,20 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 /// transparently — the client must not surface the connection failure to the
 /// caller when a usable fallback transport exists.
 ///
-/// **Limitations**:
-/// * `FaultInjectionCondition` does not yet expose a per-transport-kind
-///   filter, so the rule fires on whichever transport is selected at dispatch
-///   time. Today the SDK does not expose a public Gateway 2.0 enable API
-///   (see `CosmosClientOptions`), so the SDK currently never selects the
-///   Gateway 2.0 transport — this test runs in standard-gateway mode only.
-/// * Once `CosmosClientOptions` exposes a Gateway 2.0 toggle and
-///   `FaultInjectionCondition` supports `with_transport_kind`, scope this
-///   rule to `TransportKind::Gateway20` and assert the request **succeeds**
-///   with the standard-gateway fallback recorded in diagnostics.
+/// The rule is scoped to [`TransportKind::Gateway20`] via
+/// `with_transport_kind`, so it only fires on Gateway 2.0 traffic and never
+/// on standard-gateway requests.
+///
+/// **Limitation**: the SDK does not yet expose a public Gateway 2.0 enable
+/// API on `CosmosClientOptions`, so the SDK currently never selects the
+/// Gateway 2.0 transport. Until that toggle lands, this test is gated behind
+/// the `gateway20` test category. Once the SDK toggle ships, the assertion
+/// should change from "rule never fires" to "read SUCCEEDS via the
+/// standard-gateway fallback".
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
 ) -> Result<(), Box<dyn Error>> {
@@ -1029,6 +1029,7 @@ pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
 
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
         .build();
 
     let rule = FaultInjectionRuleBuilder::new("gateway20-conn-error-fallback", server_error)
@@ -1061,21 +1062,17 @@ pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            // Today the rule fires on the standard gateway path (the SDK does
-            // not yet route through Gateway 2.0). The read should fail because
-            // there is no further fallback below the standard gateway.
-            //
-            // TODO(Phase 6): once the SDK exposes a public Gateway 2.0
-            // enable API and `FaultInjectionCondition` supports a
-            // per-transport-kind filter, scope the rule to
-            // `TransportKind::Gateway20` and assert this read SUCCEEDS via
-            // the standard-gateway fallback.
+            // Once the SDK exposes a public Gateway 2.0 enable API, this read
+            // should SUCCEED via the standard-gateway fallback (the rule
+            // fires only on Gateway 2.0, leaving the fallback transport
+            // untouched).
             let result = fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
             assert!(
-                result.is_err(),
-                "Today the read should fail; once Gateway 2.0 fallback lands, this should succeed"
+                result.is_ok(),
+                "Read should succeed via the standard-gateway fallback when \
+                 the rule is scoped to Gateway 2.0"
             );
 
             Ok(())

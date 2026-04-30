@@ -6,6 +6,7 @@
 #![cfg(feature = "fault_injection")]
 
 use crate::framework::DriverTestClient;
+use azure_data_cosmos_driver::diagnostics::TransportKind;
 use azure_data_cosmos_driver::fault_injection::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -350,18 +351,21 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 
 /// Gateway 2.0 503 Service Unavailable should trigger regional failover.
 ///
-/// TODO(Phase 6): once `FaultInjectionCondition` supports a per-transport-kind
-/// filter, scope this rule to `TransportKind::Gateway20` so it doesn't also
-/// fire on standard-gateway requests issued during account discovery.
+/// The rule is scoped to [`TransportKind::Gateway20`] so it does not also
+/// fire on standard-gateway requests issued during account discovery. The
+/// emulator does not yet expose Gateway 2.0 endpoints, so this test is
+/// gated behind the `gateway20` test category until CI gains a thin-client
+/// account; see `docs/GATEWAY_20_SPEC.md` (Phase 6).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Result<(), Box<dyn Error>>
 {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -406,20 +410,18 @@ pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Resul
 /// but stay local-only for writes (single-region writes can't safely retry
 /// across regions without risking duplicates).
 ///
-/// TODO(Phase 6): once `FaultInjectionCondition` supports a per-transport-kind
-/// filter, scope this rule to `TransportKind::Gateway20`. Today the emulator
-/// only exposes the standard gateway, so this test executes against the
-/// standard transport in the emulator — it acts as a contract lock for the
-/// behavior that must also hold on Gateway 2.0 once a thin-client account is
-/// available in CI.
+/// The rule is scoped to [`TransportKind::Gateway20`] so it does not affect
+/// standard-gateway traffic. The emulator does not yet expose Gateway 2.0
+/// endpoints, so this test is gated behind the `gateway20` test category.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -465,19 +467,19 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
 /// mismatch, which is unrelated to the routing topology — refreshing PKRange
 /// would be a wasted metadata round-trip.
 ///
-/// TODO(Phase 6): once `FaultInjectionCondition` supports a per-transport-kind
-/// filter, scope to `TransportKind::Gateway20`. Today, asserting the absence
-/// of a PKRange refresh requires diagnostics that record metadata-cache hits
-/// — this test is the contract lock and will tighten its assertion once that
-/// observability is in place.
+/// The rule is scoped to [`TransportKind::Gateway20`] so it does not also
+/// fire on standard-gateway requests. The emulator does not yet expose
+/// Gateway 2.0 endpoints, so this test is gated behind the `gateway20`
+/// test category until CI gains a thin-client account.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
         .build();
 
     let result = FaultInjectionResultBuilder::new()

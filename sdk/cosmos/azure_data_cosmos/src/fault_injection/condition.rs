@@ -3,7 +3,7 @@
 
 //! Defines conditions for when fault injection rules should be applied.
 
-use super::FaultOperationType;
+use super::{FaultOperationType, TransportKind};
 use crate::regions::Region;
 
 /// Defines the condition under which a fault injection rule should be applied.
@@ -15,6 +15,12 @@ pub struct FaultInjectionCondition {
     pub region: Option<Region>,
     /// The container ID to which the fault injection applies.
     pub container_id: Option<String>,
+    /// Restricts the rule to a specific transport kind (Gateway 1.x vs
+    /// Gateway 2.0). When `None`, the rule applies regardless of which
+    /// dataplane transport carries the request. When `Some`, the rule
+    /// only applies to clients bound to that transport — metadata
+    /// clients always skip the rule.
+    pub transport_kind: Option<TransportKind>,
 }
 
 /// Builder for creating a FaultInjectionCondition.
@@ -23,6 +29,7 @@ pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
     region: Option<Region>,
     container_id: Option<String>,
+    transport_kind: Option<TransportKind>,
 }
 
 impl FaultInjectionConditionBuilder {
@@ -32,6 +39,7 @@ impl FaultInjectionConditionBuilder {
             operation_type: None,
             region: None,
             container_id: None,
+            transport_kind: None,
         }
     }
 
@@ -53,19 +61,28 @@ impl FaultInjectionConditionBuilder {
         self
     }
 
+    /// Restricts the rule to a specific transport kind (e.g.,
+    /// [`TransportKind::Gateway20`]). When set, the rule only matches
+    /// requests carried by the matching transport.
+    pub fn with_transport_kind(mut self, transport_kind: TransportKind) -> Self {
+        self.transport_kind = Some(transport_kind);
+        self
+    }
+
     /// Builds the FaultInjectionCondition.
     pub fn build(self) -> FaultInjectionCondition {
         FaultInjectionCondition {
             operation_type: self.operation_type,
             region: self.region,
             container_id: self.container_id,
+            transport_kind: self.transport_kind,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::FaultInjectionConditionBuilder;
+    use super::{FaultInjectionConditionBuilder, TransportKind};
 
     #[test]
     fn builder_default() {
@@ -74,5 +91,14 @@ mod tests {
         assert!(condition.operation_type.is_none());
         assert!(condition.region.is_none());
         assert!(condition.container_id.is_none());
+        assert!(condition.transport_kind.is_none());
+    }
+
+    #[test]
+    fn with_transport_kind_sets_field() {
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_transport_kind(TransportKind::Gateway20)
+            .build();
+        assert_eq!(condition.transport_kind, Some(TransportKind::Gateway20));
     }
 }

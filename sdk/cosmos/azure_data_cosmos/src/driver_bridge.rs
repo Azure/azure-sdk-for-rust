@@ -142,6 +142,12 @@ pub(crate) fn sdk_fi_rules_to_driver_fi_rules(
             if let Some(container_id) = &sdk_rule.condition.container_id {
                 cond_builder = cond_builder.with_container_id(container_id.clone());
             }
+            if let Some(transport_kind) = sdk_rule.condition.transport_kind {
+                // SDK and driver share the same `TransportKind` type
+                // (the SDK re-exports it from the driver), so no enum
+                // conversion is required.
+                cond_builder = cond_builder.with_transport_kind(transport_kind);
+            }
 
             // Translate result
             let mut result_builder = DriverResultBuilder::new();
