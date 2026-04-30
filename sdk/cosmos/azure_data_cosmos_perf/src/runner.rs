@@ -71,6 +71,8 @@ struct PerfResult {
     system_cpu_percent: f32,
     system_total_memory_bytes: u64,
     system_used_memory_bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cgroup_cpu_percent: Option<f32>,
     // Tokio runtime metrics (present only when tokio-metrics feature is enabled)
     #[serde(skip_serializing_if = "Option::is_none")]
     tokio_workers: Option<u64>,
@@ -360,7 +362,7 @@ async fn upsert_results(
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
         .expect("RFC 3339 formatting should never fail");
-    let (cpu, mem, sys_cpu, sys_total, sys_used) = metrics
+    let (cpu, mem, sys_cpu, sys_total, sys_used, cgroup_cpu) = metrics
         .map(|m| {
             (
                 m.cpu_percent,
@@ -368,9 +370,10 @@ async fn upsert_results(
                 m.system_cpu_percent,
                 m.system_total_memory_bytes,
                 m.system_used_memory_bytes,
+                m.cgroup_cpu_percent,
             )
         })
-        .unwrap_or((0.0, 0, 0.0, 0, 0));
+        .unwrap_or((0.0, 0, 0.0, 0, 0, None));
 
     for s in summaries {
         let result = PerfResult {
@@ -400,6 +403,7 @@ async fn upsert_results(
             system_cpu_percent: sys_cpu,
             system_total_memory_bytes: sys_total,
             system_used_memory_bytes: sys_used,
+            cgroup_cpu_percent: cgroup_cpu,
             tokio_workers: tokio_fields.map(|t| t.workers),
             tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
             tokio_park_count: tokio_fields.map(|t| t.park_count),

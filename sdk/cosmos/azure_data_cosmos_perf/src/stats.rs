@@ -305,6 +305,9 @@ pub struct ProcessMetrics {
     pub system_total_memory_bytes: u64,
     /// Used physical memory in bytes.
     pub system_used_memory_bytes: u64,
+    /// Cgroup CPU usage as a percentage of the cgroup's CPU quota.
+    /// This matches what `kubectl top` reports. Only available on cgroupv2.
+    pub cgroup_cpu_percent: Option<f32>,
 }
 
 /// Captures process-level and system-level CPU and memory metrics.
@@ -324,7 +327,58 @@ pub fn refresh_process_metrics(sys: &mut System) -> Option<ProcessMetrics> {
         system_cpu_percent: sys.global_cpu_usage(),
         system_total_memory_bytes: sys.total_memory(),
         system_used_memory_bytes: sys.used_memory(),
+        cgroup_cpu_percent: read_cgroup_cpu_percent(),
     })
+}
+
+/// Previous cgroup usage snapshot for delta computation.
+static PREV_CGROUP_USAGE: std::sync::Mutex<Option<(u64, std::time::Instant)>> =
+    std::sync::Mutex::new(None);
+
+/// Reads cgroupv2 CPU usage and computes utilization as a percentage of the
+/// cgroup's CPU quota. This matches what `kubectl top pods` reports.
+fn read_cgroup_cpu_percent() -> Option<f32> {
+    use std::fs;
+    use std::time::Instant;
+
+    // Read current usage_usec from cgroup
+    let stat = fs::read_to_string("/sys/fs/cgroup/cpu.stat").ok()?;
+    let usage_usec: u64 = stat
+        .lines()
+        .find(|l| l.starts_with("usage_usec"))
+        .and_then(|l| l.split_whitespace().nth(1))
+        .and_then(|v| v.parse().ok())?;
+
+    // Read quota: "max 100000" means unlimited, "400000 100000" means 4 cores
+    let max_content = fs::read_to_string("/sys/fs/cgroup/cpu.max").ok()?;
+    let mut parts = max_content.split_whitespace();
+    let quota_str = parts.next()?;
+    if quota_str == "max" {
+        return None; // unlimited, can't compute percentage
+    }
+    let quota_usec: u64 = quota_str.parse().ok()?;
+    let period_usec: u64 = parts.next().and_then(|v| v.parse().ok()).unwrap_or(100_000);
+
+    // cores_allocated = quota / period (e.g., 400000/100000 = 4.0 cores)
+    let cores = quota_usec as f64 / period_usec as f64;
+
+    let now = Instant::now();
+    let mut prev = PREV_CGROUP_USAGE.lock().ok()?;
+    let result = if let Some((prev_usage, prev_time)) = *prev {
+        let delta_usec = usage_usec.saturating_sub(prev_usage);
+        let delta_time = now.duration_since(prev_time);
+        let wall_usec = delta_time.as_micros() as f64;
+        if wall_usec > 0.0 {
+            // (cpu_usec_used / wall_usec) / cores * 100
+            Some((delta_usec as f64 / wall_usec / cores * 100.0) as f32)
+        } else {
+            None
+        }
+    } else {
+        None // first call, no delta available yet
+    };
+    *prev = Some((usage_usec, now));
+    result
 }
 
 fn format_bytes(bytes: u64) -> String {
@@ -355,6 +409,9 @@ pub fn print_process_metrics(metrics: &ProcessMetrics) {
         format_bytes(metrics.system_used_memory_bytes),
         format_bytes(metrics.system_total_memory_bytes),
     );
+    if let Some(cgroup) = metrics.cgroup_cpu_percent {
+        println!("  Cgroup:  CPU {:.1}% (kubectl-equivalent)", cgroup);
+    }
 }
 
 #[cfg(test)]
