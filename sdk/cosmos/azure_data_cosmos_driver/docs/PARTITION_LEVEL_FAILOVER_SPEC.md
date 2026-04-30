@@ -96,59 +96,27 @@ The partition-level failover state lives in `PartitionEndpointState`, which is
 managed alongside `AccountEndpointState` inside `LocationStateStore` using the
 same lock-free pattern.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                  execute_operation_pipeline (7-stage loop)                  │
-│                                                                             │
-│  STAGE 1: Acquire LocationSnapshot (account + partition state)              │
-│  STAGE 2: resolve_endpoint()                                                │
-│           ├─ Account-level endpoint selection (existing)                    │
-│           └─ Partition-level override (NEW: consult PartitionEndpointState) │
-│  STAGE 3: Build TransportRequest                                            │
-│  STAGE 4: Execute via transport pipeline → TransportResult                  │
-│  STAGE 5: evaluate_transport_result() → (OperationAction, Vec<Effect>)      │
-│           ├─ 403/3 → FailoverRetry + MarkPartitionUnavailable (PPAF/PPCB)   │
-│           ├─ 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavailable│
-│           └─ Eligibility encoded in OperationRetryState + snapshot flags    │
-│  STAGE 6: location_state_store.apply(effects)                               │
-│           ├─ MarkEndpointUnavailable → CAS on AccountEndpointState          │
-│           ├─ MarkPartitionUnavailable → CAS on PartitionEndpointState (NEW) │
-│           └─ RefreshAccountProperties → async refresh                       │
-│  STAGE 7: Act on OperationAction (Complete / FailoverRetry / Abort)         │
-│                                                                             │
-└──────────────────────┬──────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         LocationStateStore                                  │
-│                                                                             │
-│  Lock-free CAS via crossbeam_epoch::Atomic<T>                               │
-│                                                                             │
-│  ┌─ AccountEndpointState (existing) ────────────────────────────────────┐   │
-│  │  preferred_read_endpoints: Vec<CosmosEndpoint>                       │   │
-│  │  preferred_write_endpoints: Vec<CosmosEndpoint>                      │   │
-│  │  unavailable_endpoints: HashMap<CosmosEndpoint, (Instant, Reason)>   │   │
-│  │  multiple_write_locations_enabled: bool                              │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─ PartitionEndpointState (NEW — replaces empty placeholder) ──────────┐   │
-│  │  failover_overrides: HashMap<PartitionKeyRangeId, ...>               │   │
-│  │  circuit_breaker_overrides: HashMap<PartitionKeyRangeId, ...>        │   │
-│  │  per_partition_automatic_failover_enabled: bool (AccountProperties)  │   │
-│  │  per_partition_circuit_breaker_enabled: bool (options + AccountProps)│   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  Methods:                                                                   │
-│  ├─ snapshot() → LocationSnapshot { account, partitions }                   │
-│  ├─ apply(effects) → CAS on account and/or partition state                  │
-│  ├─ apply_partition(f) → CAS loop on PartitionEndpointState                 │
-│  └─ sync_account_properties() → also updates PPAF/PPCB flags                │
-│                                                                             │
-│  Background:                                                                │
-│  └─ Failback task spawned via BackgroundTaskManager (Weak ref, periodic     │
-|     sweep)                                                                  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Pipeline["execute_operation_pipeline (7-stage loop)"]
+        direction TB
+        S1["<b>STAGE 1</b>: Acquire LocationSnapshot (account + partition state)"]
+        S2["<b>STAGE 2</b>: resolve_endpoint()<br/>• Account-level endpoint selection (existing)<br/>• Partition-level override (NEW: consult PartitionEndpointState)"]
+        S3["<b>STAGE 3</b>: Build TransportRequest"]
+        S4["<b>STAGE 4</b>: Execute via transport pipeline → TransportResult"]
+        S5["<b>STAGE 5</b>: evaluate_transport_result() → (OperationAction, Vec&lt;Effect&gt;)<br/>• 403/3 → FailoverRetry + MarkPartitionUnavailable (PPAF/PPCB)<br/>• 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavailable<br/>• Eligibility encoded in OperationRetryState + snapshot flags"]
+        S6["<b>STAGE 6</b>: location_state_store.apply(effects)<br/>• MarkEndpointUnavailable → CAS on AccountEndpointState<br/>• MarkPartitionUnavailable → CAS on PartitionEndpointState (NEW)<br/>• RefreshAccountProperties → async refresh"]
+        S7["<b>STAGE 7</b>: Act on OperationAction (Complete / FailoverRetry / Abort)"]
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+    end
+    subgraph Store["LocationStateStore — Lock-free CAS via crossbeam_epoch::Atomic&lt;T&gt;"]
+        direction TB
+        Acct["<b>AccountEndpointState (existing)</b><br/>preferred_read_endpoints: Vec&lt;CosmosEndpoint&gt;<br/>preferred_write_endpoints: Vec&lt;CosmosEndpoint&gt;<br/>unavailable_endpoints: HashMap&lt;CosmosEndpoint, (Instant, Reason)&gt;<br/>multiple_write_locations_enabled: bool"]
+        Part["<b>PartitionEndpointState (NEW — replaces empty placeholder)</b><br/>failover_overrides: HashMap&lt;PartitionKeyRangeId, ...&gt;<br/>circuit_breaker_overrides: HashMap&lt;PartitionKeyRangeId, ...&gt;<br/>per_partition_automatic_failover_enabled: bool (AccountProperties)<br/>per_partition_circuit_breaker_enabled: bool (options + AccountProps)"]
+        Methods["<b>Methods</b><br/>• snapshot() → LocationSnapshot { account, partitions }<br/>• apply(effects) → CAS on account and/or partition state<br/>• apply_partition(f) → CAS loop on PartitionEndpointState<br/>• sync_account_properties() → also updates PPAF/PPCB flags"]
+        BG["<b>Background</b><br/>Failback task spawned via BackgroundTaskManager<br/>(Weak ref, periodic sweep)"]
+    end
+    Pipeline --> Store
 ```
 
 ### Request Flow Summary
@@ -522,28 +490,32 @@ The following existing driver types require modifications for PPAF/PPCB:
 On every loop iteration, `resolve_endpoint()` checks for existing partition-level
 overrides after selecting the account-level endpoint:
 
-```
-resolve_endpoint(operation, retry_state, location_snapshot, ttl)
-  │
-  ├─ Select account-level endpoint (existing logic:
-  │   preferred_endpoints → skip excluded/unavailable → fallback to default)
-  │
-  └─ if partition_key_range_id is available on retry_state:
-      │
-      ├─ let partitions = &location_snapshot.partitions
-      │
-      ├─ if eligible for PPCB (is_eligible_for_ppcb):
-      │   └─ lookup in partitions.circuit_breaker_overrides[pk_range_id]
-      │       ├─ if entry found AND threshold exceeded
-      │       │   (can_circuit_breaker_trigger_failover):
-      │       │   └─ override endpoint → entry.current_endpoint
-      │       └─ if entry found BUT threshold NOT exceeded:
-      │           └─ no override (continue to account-level endpoint)
-      │
-      └─ else if eligible for PPAF (is_eligible_for_ppaf):
-          └─ lookup in partitions.failover_overrides[pk_range_id]
-              └─ if entry found:
-                  └─ override endpoint → entry.current_endpoint
+```mermaid
+flowchart TD
+    Start["resolve_endpoint(operation, retry_state, location_snapshot, ttl)"]
+    Acct["Select account-level endpoint<br/>(existing logic: preferred_endpoints → skip excluded/unavailable → fallback to default)"]
+    Q1{"partition_key_range_id<br/>available on retry_state?"}
+    Q2{"eligible for PPCB<br/>(is_eligible_for_ppcb)?"}
+    Cb["lookup in partitions.circuit_breaker_overrides[pk_range_id]"]
+    CbT{"entry found AND<br/>threshold exceeded<br/>(can_circuit_breaker_trigger_failover)?"}
+    CbOver["override endpoint → entry.current_endpoint"]
+    CbNo["no override<br/>(continue to account-level endpoint)"]
+    Q3{"eligible for PPAF<br/>(is_eligible_for_ppaf)?"}
+    Pa["lookup in partitions.failover_overrides[pk_range_id]"]
+    PaT{"entry found?"}
+    PaOver["override endpoint → entry.current_endpoint"]
+    Done["use account-level endpoint"]
+    Start --> Acct --> Q1
+    Q1 -- no --> Done
+    Q1 -- yes --> Q2
+    Q2 -- yes --> Cb --> CbT
+    CbT -- yes --> CbOver
+    CbT -- no --> CbNo --> Done
+    Q2 -- no --> Q3
+    Q3 -- yes --> Pa --> PaT
+    PaT -- yes --> PaOver
+    PaT -- no --> Done
+    Q3 -- no --> Done
 ```
 
 **Key difference**: PPAF overrides unconditionally when an entry exists. PPCB
@@ -557,65 +529,38 @@ even if a failover entry already exists.
 When `evaluate_transport_result()` emits `LocationEffect::MarkPartitionUnavailable`,
 `LocationStateStore::apply()` processes it via a CAS loop on `PartitionEndpointState`:
 
-```
-apply(effects):
-  │
-  ├─ for each MarkPartitionUnavailable(unavailable_partition):
-  │   │
-  │   └─ apply_partition(|current_state, account_state| {
-  │         mark_partition_unavailable(
-  │             current_state,
-  │             account_state,
-  │             &unavailable_partition,
-  │         )
-  │       })
-  │
-  └─ [other effects: MarkEndpointUnavailable, RefreshAccountProperties]
+```mermaid
+flowchart TD
+    Start["apply(effects)"]
+    Loop["for each MarkPartitionUnavailable(unavailable_partition):"]
+    Apply["apply_partition(|current_state, account_state| {<br/>&nbsp;&nbsp;mark_partition_unavailable(<br/>&nbsp;&nbsp;&nbsp;&nbsp;current_state,<br/>&nbsp;&nbsp;&nbsp;&nbsp;account_state,<br/>&nbsp;&nbsp;&nbsp;&nbsp;&amp;unavailable_partition,<br/>&nbsp;&nbsp;)<br/>})"]
+    Other["[other effects:<br/>MarkEndpointUnavailable,<br/>RefreshAccountProperties]"]
+    Start --> Loop --> Apply
+    Start --> Other
 ```
 
 ### 6.3 `mark_partition_unavailable` (Pure Routing System Function)
 
 A pure function in `routing_systems.rs` that produces a new `PartitionEndpointState`:
 
-```
-mark_partition_unavailable(
-    current_state, account_state, unavailable_partition)
-  │
-  ├─ Determine mechanism and target map:
-  │   ├─ if eligible for PPCB → use circuit_breaker_overrides
-  │   │   next_endpoints = account_state.preferred_read_endpoints
-  │   └─ else if eligible for PPAF → use failover_overrides
-  │       next_endpoints = account_state.preferred_read_endpoints
-  │       (full account read list for single-master write failover)
-  │
-  ├─ Clone current_state → new_state
-  │
-  ├─ Get or insert PartitionFailoverEntry in target map:
-  │   (new entry: current = failed_endpoint, first_failed = failed_endpoint)
-  │
-  ├─ For PPCB: increment failure counter + check reset window:
-  │   ├─ if (now - last_failure_time) > counter_reset_window:
-  │   │   └─ reset both counters to 0
-  │   ├─ increment read or write counter
-  │   └─ if threshold NOT exceeded → return new_state (no endpoint move)
-  │
-  ├─ try_move_next_endpoint(entry, next_endpoints, failed_endpoint):
-  │   │
-  │   ├─ if failed_endpoint != entry.current_endpoint:
-  │   │   └─ return true (concurrent CAS already moved it)
-  │   │
-  │   ├─ for each endpoint in next_endpoints:
-  │   │   ├─ skip if endpoint == current
-  │   │   ├─ skip if endpoint already in failed_endpoints set
-  │   │   └─ found! → add current to failed_endpoints,
-  │   │              set current_endpoint = new endpoint, return true
-  │   │
-  │   └─ return false (all endpoints exhausted)
-  │
-  ├─ if moved → return new_state with updated entry
-  │
-  └─ if all exhausted → remove entry from map, return new_state
-     (partition returns to default routing on next snapshot)
+```mermaid
+flowchart TD
+    Start["mark_partition_unavailable(current_state, account_state, unavailable_partition)"]
+    Decide["Determine mechanism and target map:<br/>• if eligible for PPCB → use circuit_breaker_overrides<br/>&nbsp;&nbsp;next_endpoints = account_state.preferred_read_endpoints<br/>• else if eligible for PPAF → use failover_overrides<br/>&nbsp;&nbsp;next_endpoints = account_state.preferred_read_endpoints<br/>&nbsp;&nbsp;(full account read list for single-master write failover)"]
+    Clone["Clone current_state → new_state"]
+    Insert["Get or insert PartitionFailoverEntry in target map<br/>(new entry: current = failed_endpoint, first_failed = failed_endpoint)"]
+    Counters["For PPCB: increment failure counter + check reset window:<br/>• if (now - last_failure_time) &gt; counter_reset_window → reset both counters to 0<br/>• increment read or write counter"]
+    ThreshGate{"PPCB threshold exceeded?"}
+    NoMove["return new_state (no endpoint move)"]
+    Move["try_move_next_endpoint(entry, next_endpoints, failed_endpoint):<br/>• if failed_endpoint != entry.current_endpoint → return true (concurrent CAS already moved it)<br/>• for each endpoint in next_endpoints:<br/>&nbsp;&nbsp;– skip if endpoint == current<br/>&nbsp;&nbsp;– skip if endpoint already in failed_endpoints set<br/>&nbsp;&nbsp;– found! → add current to failed_endpoints, set current_endpoint = new endpoint, return true<br/>• return false (all endpoints exhausted)"]
+    MoveQ{"moved?"}
+    Updated["return new_state with updated entry"]
+    Exhausted["remove entry from map, return new_state<br/>(partition returns to default routing on next snapshot)"]
+    Start --> Decide --> Clone --> Insert --> Counters --> ThreshGate
+    ThreshGate -- "PPCB,<br/>not exceeded" --> NoMove
+    ThreshGate -- "exceeded /<br/>PPAF" --> Move --> MoveQ
+    MoveQ -- yes --> Updated
+    MoveQ -- no --> Exhausted
 ```
 
 ---
@@ -633,30 +578,14 @@ are incremented on each failure and checked against configurable thresholds.
 > counter increment to be dropped (see §13.2), and successful requests between
 > failures do not reset the counter. Only the timeout window (§7.3) resets counters.
 
-```
-increment_request_failure_counter_and_check_if_partition_can_failover(request)
-  │
-  ├─ Validate eligibility and extract partition key range + failed location
-  │
-  ├─ Get or insert PartitionKeyRangeFailoverInfo in the appropriate map
-  │
-  ├─ increment_request_failure_counts(is_read_only, current_time):
-  │   │
-  │   ├─ if (current_time - last_failure_time) > timeout_counter_reset_window:
-  │   │   └─ reset both read and write counters to 0
-  │   │
-  │   ├─ if is_read_only:
-  │   │   └─ read_failure_count += 1
-  │   └─ else:
-  │       └─ write_failure_count += 1
-  │   │
-  │   └─ update last_request_failure_time = current_time
-  │
-  └─ can_circuit_breaker_trigger_partition_failover(is_read_only):
-      ├─ if is_read_only:
-      │   └─ return read_count > read_threshold  (default: 2)
-      └─ else:
-          └─ return write_count > write_threshold  (default: 5)
+```mermaid
+flowchart TD
+    Start["increment_request_failure_counter_and_check_if_partition_can_failover(request)"]
+    Validate["Validate eligibility and extract partition key range + failed location"]
+    GetOrInsert["Get or insert PartitionKeyRangeFailoverInfo in the appropriate map"]
+    IncCounts["increment_request_failure_counts(is_read_only, current_time):<br/>• if (current_time - last_failure_time) &gt; timeout_counter_reset_window → reset both read and write counters to 0<br/>• if is_read_only → read_failure_count += 1<br/>• else → write_failure_count += 1<br/>• update last_request_failure_time = current_time"]
+    Check["can_circuit_breaker_trigger_partition_failover(is_read_only):<br/>• if is_read_only → return read_count &gt; read_threshold (default: 2)<br/>• else → return write_count &gt; write_threshold (default: 5)"]
+    Start --> Validate --> GetOrInsert --> IncCounts --> Check
 ```
 
 ### 7.2 Threshold Configuration
@@ -682,34 +611,22 @@ the counter fresh.
 
 ### 7.4 Circuit Breaker State Transitions
 
-```
-                              ┌───────────────────┐
-                              │     HEALTHY       │
-           ┌──────────────────│  (no entry in     │◄────────────────────────────┐
-           │  (1) first       │   failover map)   │                             │
-           │      failure     └──▲────────────▲───┘                        (5a) │
-           │                     │            │                      probe      │
-           ▼                (3)  │       (4)  │                      succeeds   │
-  ┌──────────────────┐  failback │  all locs  │                     ┌───────────┴──────────┐
-  │   COUNTING       │  removes  │  exhausted │                     │  PROBE_CANDIDATE     │
-  │ (entry exists,   │  entry    │  → entry   │          (5)        │  (single request     │
-  │  threshold NOT   │────────── ┘  removed   │     unavailable. dur│   probes original    │
-  │  exceeded)       │                        │     exceeded        │   region)            │
-  │  counter++       │                        │                     └──────────▲───────────┘
-  └────────┬─────────┘                        │                                │
-           │                                  │                         (5b)   │
-           │ (2) failure count                │                      probe     │
-           │     > threshold                  │                      fails →   │
-           ▼                                  │                      reset     │
-  ┌──────────────────┐                        │                                │
-  │   TRIPPED        │────────────────────────┘                                │
-  │ (entry.current   │                                                         │
-  │  = next region,  │─────────────────────────────────────────────────────────┘
-  │  override        │
-  │  applied)        │
-  │                  │◄──┐  (6) next region also fails:
-  └──────────────────┘   │      move to subsequent region
-           └─────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> HEALTHY
+    state "HEALTHY\n(no entry in failover map)" as HEALTHY
+    state "COUNTING\n(entry exists, threshold NOT exceeded, counter++)" as COUNTING
+    state "TRIPPED\n(entry.current = next region, override applied)" as TRIPPED
+    state "PROBE_CANDIDATE\n(single request probes original region)" as PROBE_CANDIDATE
+
+    HEALTHY --> COUNTING: (1) first failure
+    COUNTING --> TRIPPED: (2) failure count > threshold
+    COUNTING --> HEALTHY: (3) failback removes entry
+    TRIPPED --> HEALTHY: (4) all locations exhausted → entry removed
+    TRIPPED --> PROBE_CANDIDATE: (5) unavailable duration exceeded
+    PROBE_CANDIDATE --> HEALTHY: (5a) probe succeeds
+    PROBE_CANDIDATE --> TRIPPED: (5b) probe fails → reset
+    TRIPPED --> TRIPPED: (6) next region also fails: move to subsequent region
 ```
 
 **Transitions:**
@@ -971,22 +888,14 @@ loop will exit on the next iteration when `Weak::upgrade()` returns `None`.
 
 A pure function in `routing_systems.rs`:
 
-```
-expire_partition_overrides(state, now, unavailability_duration) → PartitionEndpointState
-  │
-  ├─ Clone state → new_state
-  │
-  ├─ Scan new_state.circuit_breaker_overrides:
-  │   └─ For entries where (now - entry.first_failure_time) > unavailability_duration
-  │       AND entry.health_status == Unhealthy:
-  │       └─ Transition entry.health_status → ProbeCandidate
-  │
-  ├─ Scan new_state.failover_overrides:
-  │   └─ For entries where (now - entry.first_failure_time) > unavailability_duration
-  │       AND entry.health_status == Unhealthy:
-  │       └─ Transition entry.health_status → ProbeCandidate
-  │
-  └─ Return new_state
+```mermaid
+flowchart TD
+    Start["expire_partition_overrides(state, now, unavailability_duration) → PartitionEndpointState"]
+    Clone["Clone state → new_state"]
+    Cb["Scan new_state.circuit_breaker_overrides:<br/>For entries where (now - entry.first_failure_time) &gt; unavailability_duration<br/>AND entry.health_status == Unhealthy:<br/>→ Transition entry.health_status → ProbeCandidate"]
+    Pa["Scan new_state.failover_overrides:<br/>For entries where (now - entry.first_failure_time) &gt; unavailability_duration<br/>AND entry.health_status == Unhealthy:<br/>→ Transition entry.health_status → ProbeCandidate"]
+    Done["Return new_state"]
+    Start --> Clone --> Cb --> Pa --> Done
 ```
 
 **Note**: Unlike the SDK, the driver's failback loop scans **both** maps (PPAF and
@@ -1035,30 +944,24 @@ Each `PartitionFailoverEntry` tracks a `health_status` field:
 
 #### Failback Flow
 
-```
-Background failback sweep:
-  │
-  ├─ For each entry where status == Unhealthy:
-  │   └─ if (now - first_failure_time) > unavailability_duration:
-  │       └─ Transition to ProbeCandidate
-  │
-  └─ [ProbeCandidate entries are left in the map for resolve_endpoint to act on]
-
-resolve_endpoint():
-  │
-  └─ if entry exists and entry.health_status == ProbeCandidate:
-      └─ Route this ONE request to the original region (first_failed_endpoint)
-         (subsequent requests continue to the override endpoint until the
-          probe result is known)
-
-evaluate_transport_result() → apply():
-  │
-  ├─ if probe request SUCCEEDED:
-  │   └─ Remove entry from map → partition returns to Healthy
-  │
-  └─ if probe request FAILED:
-      └─ Transition back to Unhealthy, reset first_failure_time
-         (will be probed again after the next unavailability window)
+```mermaid
+flowchart TD
+    subgraph Sweep["Background failback sweep"]
+        S1["For each entry where status == Unhealthy:<br/>if (now - first_failure_time) &gt; unavailability_duration<br/>→ Transition to ProbeCandidate"]
+        S2["ProbeCandidate entries are left in the map<br/>for resolve_endpoint to act on"]
+        S1 --> S2
+    end
+    subgraph Resolve["resolve_endpoint()"]
+        R1["if entry exists and entry.health_status == ProbeCandidate:<br/>Route this ONE request to the original region (first_failed_endpoint)<br/>(subsequent requests continue to the override endpoint until the probe result is known)"]
+    end
+    subgraph Apply["evaluate_transport_result() → apply()"]
+        A1{"probe request result?"}
+        A2["SUCCEEDED:<br/>Remove entry from map → partition returns to Healthy"]
+        A3["FAILED:<br/>Transition back to Unhealthy, reset first_failure_time<br/>(will be probed again after the next unavailability window)"]
+        A1 -- success --> A2
+        A1 -- failure --> A3
+    end
+    Sweep --> Resolve --> Apply
 ```
 
 #### Rationale
@@ -1160,16 +1063,13 @@ routing for all requests to that region.
 Partition-level and account-level failover operate as complementary layers managed
 by the same `LocationStateStore`:
 
-```
-evaluate_transport_result() emits effects
-  │
-  ├─ MarkPartitionUnavailable → CAS on PartitionEndpointState
-  │   Route THIS partition to alternate region
-  │   Other partitions in the same region are unaffected
-  │
-  └─ MarkEndpointUnavailable → CAS on AccountEndpointState
-      Route ALL requests for the account to alternate region
-      Marks entire endpoint as unavailable for reads/writes
+```mermaid
+flowchart TD
+    Start["evaluate_transport_result() emits effects"]
+    Part["MarkPartitionUnavailable → CAS on PartitionEndpointState<br/>Route THIS partition to alternate region<br/>Other partitions in the same region are unaffected"]
+    Acct["MarkEndpointUnavailable → CAS on AccountEndpointState<br/>Route ALL requests for the account to alternate region<br/>Marks entire endpoint as unavailable for reads/writes"]
+    Start --> Part
+    Start --> Acct
 ```
 
 ### 12.2 Priority
@@ -1459,74 +1359,31 @@ self.apply_partition(|current| {
 
 ## Appendix: Data Flow Sequence Diagram
 
-```
-CosmosDriver        execute_operation_pipeline       LocationStateStore         Transport
-  │                           │                           │                        │
-  │  execute_operation()      │                           │                        │
-  │ ─────────────────────►    │                           │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 1: snapshot()       │                        │
-  │                           │ ─────────────────────►    │                        │
-  │                           │    LocationSnapshot       │                        │
-  │                           │    {account, partitions}  │                        │
-  │                           │ ◄─────────────────────    │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 2: resolve_endpoint()                        │
-  │                           │──┐ account-level select   │                        │
-  │                           │  │ partition override?    │                        │
-  │                           │  │ (check partitions map) │                        │
-  │                           │◄─┘ → RoutingDecision      │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 3: build_transport_request                   │
-  │                           │                           │                        │
-  │                           │ STAGE 4: execute          │                        │
-  │                           │ ────────────────────────────────────────────────►  │
-  │                           │                           │   HTTP request         │
-  │                           │                           │                        │
-  │                           │   TransportResult (503)   │   HTTP response        │
-  │                           │ ◄────────────────────────────────────────────────  │
-  │                           │                           │                        │
-  │                           │ [capture pk_range_id from response headers]        │
-  │                           │                           │                        │
-  │                           │ STAGE 5: evaluate_transport_result()               │
-  │                           │──┐ → FailoverRetry        │                        │
-  │                           │  │   + [MarkPartitionUnavailable,                  │
-  │                           │  │      MarkEndpointUnavailable]                   │
-  │                           │◄─┘                        │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 6: apply(effects)   │                        │
-  │                           │ ─────────────────────►    │                        │
-  │                           │                           │──┐ CAS partition       │
-  │                           │                           │  │ state: insert/      │
-  │                           │                           │  │ update failover     │
-  │                           │                           │  │ entry               │
-  │                           │                           │◄─┘                     │
-  │                           │                           │──┐ CAS account         │
-  │                           │                           │  │ state: mark         │
-  │                           │                           │  │ endpoint            │
-  │                           │                           │  │ unavailable         │
-  │                           │                           │◄─┘                     │
-  │                           │         applied           │                        │
-  │                           │ ◄─────────────────────    │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 7: FailoverRetry → loop back to STAGE 1      │
-  │                           │                           │                        │
-  │                           │ STAGE 1: snapshot()       │                        │
-  │                           │ ─────────────────────►    │                        │
-  │                           │    (updated partitions    │                        │
-  │                           │     with override)        │                        │
-  │                           │ ◄─────────────────────    │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 2: resolve_endpoint()                        │
-  │                           │──┐ partition override     │                        │
-  │                           │  │ found → alternate      │                        │
-  │                           │  │ region endpoint        │                        │
-  │                           │◄─┘                        │                        │
-  │                           │                           │                        │
-  │                           │ STAGE 3-4: retry to alternate region               │
-  │                           │ ────────────────────────────────────────────────►  │
-  │                           │                           │                        │
-  │  CosmosResponse           │   TransportResult (200)   │                        │
-  │ ◄─────────────────────    │ ◄────────────────────────────────────────────────  │
-  │                           │                           │                        │
+```mermaid
+sequenceDiagram
+    participant CD as CosmosDriver
+    participant EOP as execute_operation_pipeline
+    participant LSS as LocationStateStore
+    participant T as Transport
+
+    CD->>EOP: execute_operation()
+    EOP->>LSS: STAGE 1: snapshot()
+    LSS-->>EOP: LocationSnapshot {account, partitions}
+    Note over EOP: STAGE 2: resolve_endpoint()<br/>account-level select<br/>partition override? (check partitions map)<br/>→ RoutingDecision
+    Note over EOP: STAGE 3: build_transport_request
+    EOP->>T: STAGE 4: execute (HTTP request)
+    T-->>EOP: TransportResult (503) — HTTP response
+    Note over EOP: capture pk_range_id from response headers
+    Note over EOP: STAGE 5: evaluate_transport_result()<br/>→ FailoverRetry<br/>+ [MarkPartitionUnavailable, MarkEndpointUnavailable]
+    EOP->>LSS: STAGE 6: apply(effects)
+    Note over LSS: CAS partition state:<br/>insert/update failover entry
+    Note over LSS: CAS account state:<br/>mark endpoint unavailable
+    LSS-->>EOP: applied
+    Note over EOP: STAGE 7: FailoverRetry → loop back to STAGE 1
+    EOP->>LSS: STAGE 1: snapshot()
+    LSS-->>EOP: updated partitions with override
+    Note over EOP: STAGE 2: resolve_endpoint()<br/>partition override found → alternate region endpoint
+    EOP->>T: STAGE 3-4: retry to alternate region
+    T-->>EOP: TransportResult (200)
+    EOP-->>CD: CosmosResponse
 ```
