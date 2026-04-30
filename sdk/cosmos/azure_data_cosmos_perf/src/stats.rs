@@ -213,7 +213,7 @@ fn compute_summary(name: String, stats: OperationStats) -> Summary {
 
     let (backend_min, backend_max, backend_mean, backend_p50, backend_p90, backend_p99) =
         if stats.backend_count > 0 {
-            let bmean = Duration::from_secs_f64(
+            let backend_mean_dur = Duration::from_secs_f64(
                 stats.backend_sum.as_secs_f64() / stats.backend_count as f64,
             );
             let bp50 = Duration::from_micros(stats.backend_histogram.value_at_quantile(0.50));
@@ -222,7 +222,7 @@ fn compute_summary(name: String, stats: OperationStats) -> Summary {
             (
                 Some(stats.backend_min),
                 Some(stats.backend_max),
-                Some(bmean),
+                Some(backend_mean_dur),
                 Some(bp50),
                 Some(bp90),
                 Some(bp99),
@@ -471,11 +471,11 @@ mod tests {
         assert_eq!(s.min, Duration::from_millis(10));
         assert_eq!(s.max, Duration::from_millis(30));
 
-        let bmin = s.backend_min.expect("3 backend samples were recorded");
-        let bmax = s.backend_max.expect("3 backend samples were recorded");
+        let back_min = s.backend_min.expect("3 backend samples were recorded");
+        let back_max = s.backend_max.expect("3 backend samples were recorded");
         let bp99 = s.backend_p99.expect("3 backend samples were recorded");
-        assert_eq!(bmin, Duration::from_millis(5));
-        assert_eq!(bmax, Duration::from_millis(15));
+        assert_eq!(back_min, Duration::from_millis(5));
+        assert_eq!(back_max, Duration::from_millis(15));
         // p99 of {5,10,15} is the max (15ms), within hdrhistogram tolerance.
         let bp99_ms = bp99.as_millis();
         assert!((14..=16).contains(&bp99_ms), "backend p99 was {bp99_ms}ms");
