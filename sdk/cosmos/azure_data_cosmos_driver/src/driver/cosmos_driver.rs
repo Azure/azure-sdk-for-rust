@@ -750,7 +750,7 @@ impl CosmosDriver {
             account_endpoint,
             default_endpoint,
             refresh_callback,
-            runtime.connection_pool().is_gateway20_allowed(),
+            !runtime.connection_pool().gateway20_disabled(),
             endpoint_unavailability_ttl,
             options.preferred_regions().to_vec(),
         ));

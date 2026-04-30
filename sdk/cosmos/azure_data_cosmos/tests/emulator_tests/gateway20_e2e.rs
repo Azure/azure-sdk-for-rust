@@ -21,7 +21,7 @@
 //!   SDK cannot deterministically opt a client into Gateway 2.0 from outside
 //!   the crate.
 //! * The driver-level toggle
-//!   (`ConnectionPoolOptions::with_is_gateway20_allowed`) is not wired through
+//!   (`ConnectionPoolOptions::with_gateway20_disabled`) is not wired through
 //!   to `CosmosClientOptions`.
 //!
 //! Once the SDK exposes a public `with_gateway20_disabled` (or equivalent)

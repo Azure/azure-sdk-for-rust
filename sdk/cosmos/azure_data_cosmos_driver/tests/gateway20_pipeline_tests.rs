@@ -12,7 +12,7 @@
 //!
 //! 1. **Operator override** — the operator can opt out of Gateway 2.0 even when
 //!    the account advertises a thin-client endpoint. Verified via the public
-//!    [`ConnectionPoolOptions::with_is_gateway20_allowed`] toggle.
+//!    [`ConnectionPoolOptions::with_gateway20_disabled`] toggle.
 //!
 //! 2. **Operation eligibility** — operations that Gateway 2.0 does not yet
 //!    support (e.g., stored procedure execution) must transparently fall back
@@ -151,14 +151,15 @@ fn live_account_from_env() -> Option<AccountReference> {
 }
 
 /// Builds a runtime with the capturing factory and the requested
-/// gateway-20 toggle. The two flags reflect the operator override exposed via
-/// `ConnectionPoolOptions`.
+/// gateway-20 toggle. The flag reflects the operator override exposed via
+/// `ConnectionPoolOptions` — passing `true` forces every request through the
+/// standard gateway transport.
 async fn capturing_runtime(
-    is_gateway20_allowed: bool,
+    gateway20_disabled: bool,
 ) -> (Arc<CosmosDriverRuntime>, Arc<CapturingTransport>) {
     let (factory, transport) = CapturingFactory::new();
     let pool = ConnectionPoolOptions::builder()
-        .with_is_gateway20_allowed(is_gateway20_allowed)
+        .with_gateway20_disabled(gateway20_disabled)
         .build()
         .expect("connection pool builds");
     let runtime = CosmosDriverRuntime::builder()
@@ -184,34 +185,34 @@ async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
 // (a) Operator override forces standard gateway routing
 // ----------------------------------------------------------------------------
 
-/// Verifies that the operator override flag (`with_is_gateway20_allowed(false)`)
-/// is honored end-to-end at the connection-pool level. When the flag is off,
+/// Verifies that the operator override flag (`with_gateway20_disabled(true)`)
+/// is honored end-to-end at the connection-pool level. When the flag is set,
 /// the runtime must not select the Gateway 2.0 transport even if account
 /// metadata advertises a thin-client endpoint.
 ///
 /// We assert the contract structurally via `ConnectionPoolOptions`: when the
-/// flag is `false`, `is_gateway20_allowed()` reports `false`, and the
+/// flag is `true`, `gateway20_disabled()` reports `true`, and the
 /// transport-layer dispatcher branches to the standard gateway (this branching
 /// is covered by the inside-crate tests in
 /// `driver::transport::tests::dataplane_transport_*`).
 #[tokio::test]
 async fn operator_override_disables_gateway20_at_pool_level() {
     let off = ConnectionPoolOptions::builder()
-        .with_is_gateway20_allowed(false)
+        .with_gateway20_disabled(true)
         .build()
         .expect("pool builds");
     assert!(
-        !off.is_gateway20_allowed(),
-        "operator-disabled pool must report is_gateway20_allowed = false"
+        off.gateway20_disabled(),
+        "operator-disabled pool must report gateway20_disabled = true"
     );
 
     let on = ConnectionPoolOptions::builder()
-        .with_is_gateway20_allowed(true)
+        .with_gateway20_disabled(false)
         .build()
         .expect("pool builds");
     assert!(
-        on.is_gateway20_allowed(),
-        "operator-enabled pool must report is_gateway20_allowed = true"
+        !on.gateway20_disabled(),
+        "operator-enabled pool must report gateway20_disabled = false"
     );
 }
 
@@ -229,7 +230,7 @@ async fn operator_override_routes_reads_to_standard_gateway() {
     // TODO(Phase 6): once diagnostics expose `TransportKind` per request,
     // assert that every request used `TransportKind::StandardGateway`.
     let pool = ConnectionPoolOptions::builder()
-        .with_is_gateway20_allowed(false)
+        .with_gateway20_disabled(true)
         .build()
         .expect("pool builds");
     let runtime = CosmosDriverRuntime::builder()
@@ -319,7 +320,7 @@ async fn v1_http_never_emits_both_consistency_headers() {
     const LEGACY: &str = "x-ms-consistency-level";
     const STRATEGY: &str = "x-ms-cosmos-read-consistency-strategy";
 
-    let (runtime, transport) = capturing_runtime(false).await;
+    let (runtime, transport) = capturing_runtime(true).await;
     probe(&runtime).await;
 
     let captured = transport.requests();
@@ -371,7 +372,7 @@ async fn v1_http_never_emits_both_consistency_headers() {
 /// the V2 transport boundary moves.
 #[tokio::test]
 async fn v2_rntbd_never_emits_both_consistency_tokens() {
-    let (runtime, transport) = capturing_runtime(true).await;
+    let (runtime, transport) = capturing_runtime(false).await;
     probe(&runtime).await;
 
     let captured = transport.requests();
@@ -421,7 +422,7 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
 async fn capabilities_header_value_is_pinned_to_nine() {
     const CAPABILITIES: &str = "x-ms-cosmos-sdk-supportedcapabilities";
 
-    let (runtime, transport) = capturing_runtime(true).await;
+    let (runtime, transport) = capturing_runtime(false).await;
     probe(&runtime).await;
 
     let captured = transport.requests();

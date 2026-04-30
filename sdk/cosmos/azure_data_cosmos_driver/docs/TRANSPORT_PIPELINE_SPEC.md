@@ -2242,7 +2242,7 @@ HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
 
 > **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses configuration flags
-> (`is_http2_allowed`, `is_gateway20_allowed`) and `AccountProperties` metadata
+> (`is_http2_allowed`, `gateway20_disabled`) and `AccountProperties` metadata
 > (`thinClient*Locations`) to determine the transport strategy, rather than runtime ALPN
 > negotiation against the gateway. This is sufficient because:
 > (1) reqwest with `http2` feature already performs ALPN automatically for `Http2Preferred`,

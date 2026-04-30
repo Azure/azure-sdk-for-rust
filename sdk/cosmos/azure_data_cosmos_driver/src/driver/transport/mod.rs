@@ -291,7 +291,7 @@ impl CosmosTransport {
         }
 
         match transport_mode {
-            TransportMode::Gateway20 if self.connection_pool.is_gateway20_allowed() => {
+            TransportMode::Gateway20 if !self.connection_pool.gateway20_disabled() => {
                 let transport = match self.dataplane_gateway20_transport.get() {
                     Some(t) => t.clone(),
                     None => {
@@ -398,7 +398,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_uses_gateway20_when_selected() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(true)
+            .with_gateway20_disabled(false)
             .build()
             .unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
@@ -414,7 +414,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(true)
+            .with_gateway20_disabled(false)
             .build()
             .unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
@@ -430,7 +430,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_ignores_gateway20_when_gateway20_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(false)
+            .with_gateway20_disabled(true)
             .build()
             .unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();

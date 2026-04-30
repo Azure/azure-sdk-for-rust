@@ -282,10 +282,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok()
             .and_then(|v| v.parse::<bool>().ok())
             .unwrap_or(true),
-        gateway20_allowed: std::env::var("AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")
-            .ok()
-            .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(false),
+        // Gateway 2.0 is intentionally not toggled via env var (see
+        // GATEWAY_20_SPEC.md §3). Until the perf binary wires through the
+        // public SDK toggle (`CosmosClientOptions::with_gateway20_disabled`),
+        // it inherits whatever default the SDK ships with — currently
+        // disabled (pre-GA).
+        // TODO: Read the actual configured value from the SDK once the
+        // public toggle lands.
+        gateway20_disabled: true,
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())
             .unwrap_or(false),
