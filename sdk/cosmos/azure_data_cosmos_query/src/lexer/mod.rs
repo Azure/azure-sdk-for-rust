@@ -660,20 +660,14 @@ fn keyword_lookup(text: &str) -> TokenKind {
                 return TokenKind::Select;
             }
         }
-        7 => {
-            if text.eq_ignore_ascii_case("BETWEEN") {
-                return TokenKind::Between;
-            }
+        7 if text.eq_ignore_ascii_case("BETWEEN") => {
+            return TokenKind::Between;
         }
-        8 => {
-            if text.eq_ignore_ascii_case("DISTINCT") {
-                return TokenKind::Distinct;
-            }
+        8 if text.eq_ignore_ascii_case("DISTINCT") => {
+            return TokenKind::Distinct;
         }
-        9 => {
-            if text.eq_ignore_ascii_case("UNDEFINED") {
-                return TokenKind::Undefined;
-            }
+        9 if text.eq_ignore_ascii_case("UNDEFINED") => {
+            return TokenKind::Undefined;
         }
         _ => {}
     }
