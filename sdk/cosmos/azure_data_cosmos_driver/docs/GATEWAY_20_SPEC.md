@@ -215,6 +215,18 @@ Phase 1 must change the emitted value to the bitmask `(PartitionMerge | IgnoreUn
 
 The `IgnoreUnknownRntbdTokens` bit is the contract that backs the silent-skip behavior in "Metadata token filtering" above: the proxy/backend uses this advertisement to decide whether it is safe to add new RNTBD tokens without coordinating with this SDK release. Advertising the bit while *also* failing or warning on unknown tokens would be a contract violation; advertising `"0"` while silently skipping unknown tokens is "merely conservative" but causes the proxy to assume zero forward-compat tolerance — both are wrong. Phase 1 must reconcile both ends.
 
+##### Capability bit composition (Rust = `9`, Java = `11`)
+
+The bitmask the Rust driver advertises is **`9`** (`PartitionMerge | IgnoreUnknownRntbdTokens`). Pinned in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:16-25` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 9);` invariant. The bits are sourced from .NET `SDKSupportedCapabilities.cs` and the C++ proxy enum:
+
+| Bit  | Decimal | Capability             | Rust advertises | Java advertises | Notes                                                                                                                                |
+| ---- | ------- | ---------------------- | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 0    | 1       | `PartitionMerge`       | yes             | yes             | Forward-compat with merged partition-key ranges; required for Gateway 2.0 because the proxy may surface merged ranges in routing.    |
+| 1    | 2       | (Java-only capability; name per Java `SDKSupportedCapabilities`) | **no**   | yes             | Java opts in to an additional capability the Rust driver does not yet consume. Unilaterally advertising it without honoring the corresponding behavior could cause mis-framing or unexpected proxy behavior. Verify the exact capability name against Java/.NET source before adding. Track in a follow-up if/when the driver grows the corresponding support. |
+| 3    | 8       | `IgnoreUnknownRntbdTokens` | yes          | yes             | Forward-compat with new RNTBD response tokens added by future proxy/backend versions; backed by the silent-skip behavior in "Metadata token filtering" above.                                            |
+
+Total: Rust `1 | 8 = 9`; Java `1 | 2 | 8 = 11`. The two-bit gap is intentional and conservative — the Rust driver only advertises capabilities it actually implements end-to-end. Adding bit 1 (or any future bit) requires implementing the corresponding behavior first, then incrementing the constant in `cosmos_headers.rs` and re-pinning `Phase 6`'s header-value test.
+
 Phase 6 test coverage: assert the header value emitted on Gateway 2.0 (and standard Gateway) requests is the expected bitmask string, not `"0"`.
 
 #### RNTBD Request Wire Format
