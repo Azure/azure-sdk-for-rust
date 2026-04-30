@@ -331,9 +331,10 @@ impl CosmosClientBuilder {
             Option<azure_core::http::Transport>,
             Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
         ) = if let Some(fault_builder) = self.fault_injection_builder {
-            // Translate rules for the driver before the builder is consumed.
-            let driver_rules =
-                crate::driver_bridge::sdk_fi_rules_to_driver_fi_rules(fault_builder.rules());
+            // SDK fault-injection rules are now driver `FaultInjectionRule`s
+            // (re-exported through `crate::fault_injection`), so the driver
+            // can consume them directly without a translation step.
+            let driver_rules = fault_builder.rules().to_vec();
             let fault_builder = match base_client {
                 Some(client) => fault_builder.with_inner_client(client),
                 None => fault_builder,

@@ -8,7 +8,7 @@ use std::sync::Arc;
 use azure_core::http::Transport;
 
 use super::http_client::FaultClient;
-use super::rule::FaultInjectionRule;
+use super::FaultInjectionRule;
 
 /// Builder for creating a fault injection client.
 ///

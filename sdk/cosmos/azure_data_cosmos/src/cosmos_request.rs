@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 #[cfg(feature = "fault_injection")]
-use crate::fault_injection::FaultOperationType;
+use crate::fault_injection::fault_operation_for_sdk;
 use crate::operation_context::OperationType;
 use crate::options::ExcludedRegions;
 use crate::request_context::RequestContext;
@@ -153,10 +153,7 @@ impl CosmosRequest {
 
     #[cfg(feature = "fault_injection")]
     pub fn add_fault_injection_headers(&mut self) {
-        let fault_op = FaultOperationType::from_operation_and_resource(
-            &self.operation_type,
-            &self.resource_type,
-        );
+        let fault_op = fault_operation_for_sdk(&self.operation_type, &self.resource_type);
 
         if let Some(op) = fault_op {
             self.headers.insert(

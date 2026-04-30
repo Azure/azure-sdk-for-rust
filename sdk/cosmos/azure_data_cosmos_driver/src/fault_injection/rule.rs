@@ -61,7 +61,11 @@ impl FaultInjectionRule {
     }
 
     /// Increments the hit count by one.
-    pub(crate) fn increment_hit_count(&self) {
+    ///
+    /// This is intended to be called by fault-injection HTTP clients (in the
+    /// driver and in the Cosmos SDK) when they decide to apply this rule to
+    /// an in-flight request, so that `hit_limit` can be honoured.
+    pub fn increment_hit_count(&self) {
         self.hit_count.fetch_add(1, Ordering::SeqCst);
     }
 

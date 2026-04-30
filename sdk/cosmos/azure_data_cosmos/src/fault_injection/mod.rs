@@ -3,9 +3,18 @@
 
 //! Fault injection framework for testing Cosmos DB client behavior under error conditions.
 //!
-//! This module provides a fault injection framework that intercepts HTTP requests at the
-//! transport layer, below the retry policy. When a fault is injected, it triggers the same
-//! retry and failover behavior as a real service error. This enables testing of:
+//! This module wraps the driver's fault-injection primitives — every type
+//! except [`FaultInjectionClientBuilder`] is re-exported directly from
+//! [`azure_data_cosmos_driver::fault_injection`]. The SDK only owns the
+//! [`FaultInjectionClientBuilder`] (which produces an [`azure_core::http::Transport`]
+//! that the SDK pipeline plugs in) and a small adapter for translating SDK-side
+//! [`OperationType`](crate::operation_context::OperationType) /
+//! [`ResourceType`](crate::resource_context::ResourceType) pairs into the
+//! driver's [`FaultOperationType`].
+//!
+//! Below the transport layer, fault injection intercepts HTTP requests and
+//! triggers the same retry and failover behavior as a real service error.
+//! It enables testing of:
 //!
 //! - Error handling for various HTTP status codes (503, 500, 429, 408, etc.)
 //! - Retry logic and backoff behavior
@@ -27,7 +36,7 @@
 //!   configured builder to [`CosmosClientBuilder::with_fault_injection()`](crate::CosmosClientBuilder::with_fault_injection)
 //!   to enable fault injection and wrap the HTTP transport with a fault-injecting client.
 //! - [`FaultInjectionCondition`] — Defines when a fault should be applied, filtering by
-//!   operation type, region, or container ID.
+//!   operation type, region, container ID, or transport kind.
 //! - [`FaultInjectionResult`] — Defines what error to inject, including error type, delay,
 //!   and probability.
 //! - [`FaultInjectionRule`] — Combines a condition with a result and additional controls
@@ -92,26 +101,18 @@
 //! Rules are evaluated in the order they were added. The first matching rule is applied.
 //! All specified conditions in a [`FaultInjectionCondition`] must match (AND logic):
 //! if no conditions are specified, the rule matches all requests.
-//!
 
 mod client_builder;
-mod condition;
 mod http_client;
-mod result;
-mod rule;
-
-use std::fmt;
-use std::str::FromStr;
-
-use crate::operation_context::OperationType;
-use crate::resource_context::ResourceType;
 
 pub use client_builder::FaultInjectionClientBuilder;
-pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
-pub use result::{
-    CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
+
+#[doc(inline)]
+pub use azure_data_cosmos_driver::fault_injection::{
+    CustomResponse, CustomResponseBuilder, FaultInjectionCondition, FaultInjectionConditionBuilder,
+    FaultInjectionErrorType, FaultInjectionResult, FaultInjectionResultBuilder, FaultInjectionRule,
+    FaultInjectionRuleBuilder, FaultOperationType,
 };
-pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Re-export of the driver's [`TransportKind`](azure_data_cosmos_driver::diagnostics::TransportKind)
 /// enum so SDK consumers can scope fault-injection rules to a specific
@@ -119,156 +120,58 @@ pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 /// driver crate directly.
 pub use azure_data_cosmos_driver::diagnostics::TransportKind;
 
-/// Represents different server error types that can be injected for fault testing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FaultInjectionErrorType {
-    /// 500 from server.
-    InternalServerError,
-    /// 429 from server.
-    TooManyRequests,
-    /// 404-1002 from server.
-    ReadSessionNotAvailable,
-    /// 408 from server.
-    Timeout,
-    /// Simulate service unavailable (503).
-    ServiceUnavailable,
-    /// 410-1002 from server.
-    PartitionIsGone,
-    /// 403-3 Forbidden from server.
-    WriteForbidden,
-    /// 403-1008 Forbidden from server.
-    DatabaseAccountNotFound,
-    /// Simulates a connection failure (e.g., connection refused, DNS failure).
-    /// Produces an `ErrorKind::Io` error, not an HTTP response error.
-    ConnectionError,
-    /// Simulates a response timeout (request sent but no response received).
-    /// Produces an `ErrorKind::Io` error, not an HTTP response error.
-    ResponseTimeout,
-}
+use crate::operation_context::OperationType as SdkOperationType;
+use crate::resource_context::ResourceType as SdkResourceType;
 
-/// The type of operation to which the fault injection applies.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FaultOperationType {
-    /// Read items.
-    ReadItem,
-    /// Query items.
-    QueryItem,
-    /// Create item.
-    CreateItem,
-    /// Upsert item.
-    UpsertItem,
-    /// Replace item.
-    ReplaceItem,
-    /// Delete item.
-    DeleteItem,
-    /// Patch item.
-    PatchItem,
-    /// Batch item.
-    BatchItem,
-    /// Read change feed items.
-    ChangeFeedItem,
-    /// Read container request.
-    MetadataReadContainer,
-    /// Read database account request.
-    MetadataReadDatabaseAccount,
-    /// Query query plan request.
-    MetadataQueryPlan,
-    /// Partition key ranges request.
-    MetadataPartitionKeyRanges,
-}
-
-impl FaultOperationType {
-    /// Returns the string representation of this operation type.
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            FaultOperationType::ReadItem => "ReadItem",
-            FaultOperationType::QueryItem => "QueryItem",
-            FaultOperationType::CreateItem => "CreateItem",
-            FaultOperationType::UpsertItem => "UpsertItem",
-            FaultOperationType::ReplaceItem => "ReplaceItem",
-            FaultOperationType::DeleteItem => "DeleteItem",
-            FaultOperationType::PatchItem => "PatchItem",
-            FaultOperationType::BatchItem => "BatchItem",
-            FaultOperationType::ChangeFeedItem => "ChangeFeedItem",
-            FaultOperationType::MetadataReadContainer => "MetadataReadContainer",
-            FaultOperationType::MetadataReadDatabaseAccount => "MetadataReadDatabaseAccount",
-            FaultOperationType::MetadataQueryPlan => "MetadataQueryPlan",
-            FaultOperationType::MetadataPartitionKeyRanges => "MetadataPartitionKeyRanges",
+/// Maps an SDK-side `(OperationType, ResourceType)` pair to the driver's
+/// [`FaultOperationType`].
+///
+/// This mirrors `FaultOperationType::from_operation_and_resource` on the
+/// driver, but takes SDK enums directly so SDK callers don't need to convert
+/// to driver enums first. Returns `None` if the combination doesn't map to a
+/// known fault operation type.
+pub(crate) fn fault_operation_for_sdk(
+    operation_type: &SdkOperationType,
+    resource_type: &SdkResourceType,
+) -> Option<FaultOperationType> {
+    match (operation_type, resource_type) {
+        (SdkOperationType::Read, SdkResourceType::Documents) => Some(FaultOperationType::ReadItem),
+        (SdkOperationType::Query, SdkResourceType::Documents) => {
+            Some(FaultOperationType::QueryItem)
         }
-    }
-
-    /// Converts an operation type and resource type pair into a fault injection operation type.
-    ///
-    /// Returns `None` if the combination does not map to a known fault operation type.
-    pub fn from_operation_and_resource(
-        operation_type: &OperationType,
-        resource_type: &ResourceType,
-    ) -> Option<Self> {
-        match (operation_type, resource_type) {
-            (OperationType::Read, ResourceType::Documents) => Some(FaultOperationType::ReadItem),
-            (OperationType::Query, ResourceType::Documents) => Some(FaultOperationType::QueryItem),
-            (OperationType::Create, ResourceType::Documents) => {
-                Some(FaultOperationType::CreateItem)
-            }
-            (OperationType::Upsert, ResourceType::Documents) => {
-                Some(FaultOperationType::UpsertItem)
-            }
-            (OperationType::Replace, ResourceType::Documents) => {
-                Some(FaultOperationType::ReplaceItem)
-            }
-            (OperationType::Delete, ResourceType::Documents) => {
-                Some(FaultOperationType::DeleteItem)
-            }
-            (OperationType::Patch, ResourceType::Documents) => Some(FaultOperationType::PatchItem),
-            (OperationType::Batch, ResourceType::Documents) => Some(FaultOperationType::BatchItem),
-            (OperationType::ReadFeed, ResourceType::Documents) => {
-                Some(FaultOperationType::ChangeFeedItem)
-            }
-            (OperationType::Read, ResourceType::Containers) => {
-                Some(FaultOperationType::MetadataReadContainer)
-            }
-            (OperationType::Read, ResourceType::DatabaseAccount) => {
-                Some(FaultOperationType::MetadataReadDatabaseAccount)
-            }
-            (OperationType::QueryPlan, ResourceType::Documents) => {
-                Some(FaultOperationType::MetadataQueryPlan)
-            }
-            (OperationType::ReadFeed, ResourceType::PartitionKeyRanges) => {
-                Some(FaultOperationType::MetadataPartitionKeyRanges)
-            }
-            _ => None,
+        (SdkOperationType::Create, SdkResourceType::Documents) => {
+            Some(FaultOperationType::CreateItem)
         }
-    }
-}
-
-impl fmt::Display for FaultOperationType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl FromStr for FaultOperationType {
-    type Err = ();
-
-    /// Parses a string into a `FaultOperationType`.
-    ///
-    /// Returns `Err(())` if the string is not a recognized operation type.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "ReadItem" => Ok(FaultOperationType::ReadItem),
-            "QueryItem" => Ok(FaultOperationType::QueryItem),
-            "CreateItem" => Ok(FaultOperationType::CreateItem),
-            "UpsertItem" => Ok(FaultOperationType::UpsertItem),
-            "ReplaceItem" => Ok(FaultOperationType::ReplaceItem),
-            "DeleteItem" => Ok(FaultOperationType::DeleteItem),
-            "PatchItem" => Ok(FaultOperationType::PatchItem),
-            "BatchItem" => Ok(FaultOperationType::BatchItem),
-            "ChangeFeedItem" => Ok(FaultOperationType::ChangeFeedItem),
-            "MetadataReadContainer" => Ok(FaultOperationType::MetadataReadContainer),
-            "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
-            "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
-            "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(()),
+        (SdkOperationType::Upsert, SdkResourceType::Documents) => {
+            Some(FaultOperationType::UpsertItem)
         }
+        (SdkOperationType::Replace, SdkResourceType::Documents) => {
+            Some(FaultOperationType::ReplaceItem)
+        }
+        (SdkOperationType::Delete, SdkResourceType::Documents) => {
+            Some(FaultOperationType::DeleteItem)
+        }
+        (SdkOperationType::Patch, SdkResourceType::Documents) => {
+            Some(FaultOperationType::PatchItem)
+        }
+        (SdkOperationType::Batch, SdkResourceType::Documents) => {
+            Some(FaultOperationType::BatchItem)
+        }
+        (SdkOperationType::ReadFeed, SdkResourceType::Documents) => {
+            Some(FaultOperationType::ChangeFeedItem)
+        }
+        (SdkOperationType::Read, SdkResourceType::Containers) => {
+            Some(FaultOperationType::MetadataReadContainer)
+        }
+        (SdkOperationType::Read, SdkResourceType::DatabaseAccount) => {
+            Some(FaultOperationType::MetadataReadDatabaseAccount)
+        }
+        (SdkOperationType::QueryPlan, SdkResourceType::Documents) => {
+            Some(FaultOperationType::MetadataQueryPlan)
+        }
+        (SdkOperationType::ReadFeed, SdkResourceType::PartitionKeyRanges) => {
+            Some(FaultOperationType::MetadataPartitionKeyRanges)
+        }
+        _ => None,
     }
 }
