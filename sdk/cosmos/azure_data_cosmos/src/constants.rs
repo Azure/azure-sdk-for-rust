@@ -198,26 +198,6 @@ cosmos_headers! {
     FAULT_INJECTION_CONTAINER_ID => "x-ms-fault-injection-container-id",
 }
 
-/// Deprecated alias for the Gateway 2.0 proxy operation-type header.
-///
-/// Use the driver-level `GATEWAY20_OPERATION_TYPE` constant for new code.
-#[deprecated(
-    since = "0.33.0",
-    note = "Use `azure_data_cosmos_driver::constants::GATEWAY20_OPERATION_TYPE` instead."
-)]
-pub const THINCLIENT_PROXY_OPERATION_TYPE: HeaderName =
-    azure_data_cosmos_driver::constants::GATEWAY20_OPERATION_TYPE;
-
-/// Deprecated alias for the Gateway 2.0 proxy resource-type header.
-///
-/// Use the driver-level `GATEWAY20_RESOURCE_TYPE` constant for new code.
-#[deprecated(
-    since = "0.33.0",
-    note = "Use `azure_data_cosmos_driver::constants::GATEWAY20_RESOURCE_TYPE` instead."
-)]
-pub const THINCLIENT_PROXY_RESOURCE_TYPE: HeaderName =
-    azure_data_cosmos_driver::constants::GATEWAY20_RESOURCE_TYPE;
-
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 
 pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");
