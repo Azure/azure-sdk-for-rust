@@ -76,8 +76,7 @@ must therefore land in the driver's operation pipeline. See §1.5 and [ALT-6](#a
 
 #### 1.6 Gateway-mode interaction (GW v1 vs GW v2)
 
-Rust always uses Gateway mode (GW v1 today; GW v2 when available); there is no Direct
-mode in the Rust SDK. This affects how quickly a 404/1002 propagates back to the client
+The gateway version affects how quickly a 404/1002 propagates back to the client
 retry layer, which in turn affects how quickly the latch (set in
 `evaluate_transport_result`'s 404/1002 arm) fires:
 
