@@ -8,9 +8,8 @@
 //! [`azure_data_cosmos_driver::fault_injection`]. The SDK only owns the
 //! [`FaultInjectionClientBuilder`] (which produces an [`azure_core::http::Transport`]
 //! that the SDK pipeline plugs in) and a small adapter for translating SDK-side
-//! [`OperationType`](crate::operation_context::OperationType) /
-//! [`ResourceType`](crate::resource_context::ResourceType) pairs into the
-//! driver's [`FaultOperationType`].
+//! `OperationType` / `ResourceType` pairs into the driver's
+//! [`FaultOperationType`].
 //!
 //! Below the transport layer, fault injection intercepts HTTP requests and
 //! triggers the same retry and failover behavior as a real service error.
@@ -114,10 +113,9 @@ pub use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 
-/// Re-export of the driver's [`TransportKind`](azure_data_cosmos_driver::diagnostics::TransportKind)
-/// enum so SDK consumers can scope fault-injection rules to a specific
-/// transport (Gateway 1.x vs Gateway 2.0) without depending on the
-/// driver crate directly.
+/// Re-export of the driver's [`TransportKind`] enum so SDK consumers can
+/// scope fault-injection rules to a specific transport (Gateway 1.x vs
+/// Gateway 2.0) without depending on the driver crate directly.
 pub use azure_data_cosmos_driver::diagnostics::TransportKind;
 
 use crate::operation_context::OperationType as SdkOperationType;
