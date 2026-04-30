@@ -293,8 +293,8 @@ async fn resolve_real_account(
     }
 
     let conn_str_raw = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-        Ok(val) => val,
-        Err(_) => {
+        Ok(val) if !val.is_empty() => val,
+        _ => {
             if mode == "required" {
                 panic!(
                     "{} is not set but test mode is 'required'",
@@ -304,6 +304,13 @@ async fn resolve_real_account(
             return Ok(None);
         }
     };
+
+    // The CI test-setup script sets the value to "emulator" as a sentinel
+    // when the Docker Cosmos DB Emulator is running. That is not a real
+    // connection string — treat it as "not configured" for dual-backend.
+    if conn_str_raw.eq_ignore_ascii_case("emulator") {
+        return Ok(None);
+    }
 
     let conn_str: ConnectionString = conn_str_raw.parse()?;
     let endpoint: Url = conn_str.account_endpoint().parse()?;
