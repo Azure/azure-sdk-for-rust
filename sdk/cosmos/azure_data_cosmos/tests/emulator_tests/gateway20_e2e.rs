@@ -395,7 +395,7 @@ pub async fn gateway20_change_feed_latest_version() {
 /// TODO: extend this test to assert `TransportKind::Gateway20` once
 /// `CosmosDiagnostics` surfaces the driver transport kind. Today the SDK
 /// `CosmosDiagnostics` only carries `activity_id` and `server_duration_ms`,
-/// so the strongest behavioural assertion we can make is that those fields
+/// so the strongest behavioral assertion we can make is that those fields
 /// are populated when the request was routed through the Gateway 2.0
 /// pipeline.
 #[tokio::test]

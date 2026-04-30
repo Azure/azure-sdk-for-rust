@@ -100,7 +100,7 @@ pub struct CosmosClientBuilder {
     /// account advertises a Gateway 2.0 endpoint and HTTP/2 is allowed.
     /// `Some(true)` forces every request through the standard gateway
     /// transport via [`with_gateway20_disabled`](Self::with_gateway20_disabled);
-    /// `Some(false)` explicitly opts in (matching the default behaviour).
+    /// `Some(false)` explicitly opts in (matching the default behavior).
     gateway20_disabled: Option<bool>,
 }
 
@@ -206,7 +206,7 @@ impl CosmosClientBuilder {
     ///
     /// * `disabled` - `true` to suppress Gateway 2.0 and force the standard
     ///   gateway transport; `false` (or leaving the builder untouched) keeps
-    ///   the default Gateway 2.0 behaviour.
+    ///   the default Gateway 2.0 behavior.
     pub fn with_gateway20_disabled(mut self, disabled: bool) -> Self {
         self.gateway20_disabled = Some(disabled);
         self

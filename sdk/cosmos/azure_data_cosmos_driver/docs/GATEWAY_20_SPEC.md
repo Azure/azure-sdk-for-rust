@@ -1,4 +1,3 @@
-<!-- cspell:ignore THINCLIENT thinclient Mgmt cutover directconnectivity cooldown ALPN myacct pushdown -->
 # Gateway 2.0 Design Spec for Rust Driver & SDK
 
 **Status**: Draft / Iterating
