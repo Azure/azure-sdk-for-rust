@@ -14,9 +14,12 @@ use azure_core::{
 };
 use uuid::Uuid;
 
-use crate::models::{
-    cosmos_headers::response_header_names, effective_partition_key::EffectivePartitionKey,
-    DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition, ResourceType,
+use crate::{
+    constants::{GATEWAY20_RANGE_MAX, GATEWAY20_RANGE_MIN},
+    models::{
+        cosmos_headers::response_header_names, effective_partition_key::EffectivePartitionKey,
+        DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition, ResourceType,
+    },
 };
 
 use super::{
@@ -61,9 +64,11 @@ pub(crate) fn wrap_request_for_gateway20(
     let resource_names = parse_resource_names(inputs.auth_context.resource_link.as_str())?;
     let has_payload = request.body.as_ref().is_some_and(|body| !body.is_empty());
 
+    let epk_payload = effective_partition_key_payload(inputs)?;
+
     let mut metadata = Vec::with_capacity(11);
-    if let Some(epk) = effective_partition_key_bytes(inputs)? {
-        metadata.push(Token::effective_partition_key(epk));
+    if let Some(EpkPayload::Point(epk)) = epk_payload.as_ref() {
+        metadata.push(Token::effective_partition_key(epk.clone()));
     }
     metadata.push(Token::global_database_account_name(account_name.to_owned()));
     metadata.push(Token::database_name(resource_names.database));
@@ -102,6 +107,10 @@ pub(crate) fn wrap_request_for_gateway20(
         headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
     }
     headers.insert(X_MS_ACTIVITY_ID, HeaderValue::from(activity_id.to_string()));
+    if let Some(EpkPayload::Range { min, max }) = epk_payload.as_ref() {
+        headers.insert(GATEWAY20_RANGE_MIN, HeaderValue::from(min.clone()));
+        headers.insert(GATEWAY20_RANGE_MAX, HeaderValue::from(max.clone()));
+    }
 
     Ok(HttpRequest {
         url: request.url.clone(),
@@ -193,17 +202,52 @@ fn next_transport_request_id() -> u32 {
     TRANSPORT_REQUEST_ID.fetch_add(1, Ordering::AcqRel)
 }
 
-fn effective_partition_key_bytes(inputs: &WrapInputs<'_>) -> azure_core::Result<Option<Vec<u8>>> {
-    match (inputs.partition_key, inputs.partition_key_definition) {
-        (Some(partition_key), Some(partition_key_definition)) => {
-            let epk = EffectivePartitionKey::compute(
-                partition_key.values(),
-                partition_key_definition.kind(),
-                partition_key_definition.version(),
-            );
-            hex_to_bytes(epk.as_str()).map(Some)
-        }
-        _ => Ok(None),
+/// Wire-form payload derived from the partition key + definition for a
+/// Gateway 2.0 dispatch.
+///
+/// `Point` represents a single-logical-partition operation and is emitted as
+/// the `EffectivePartitionKey` RNTBD metadata token (binary EPK bytes).
+/// `Range` represents an EPK range — either a hierarchical-PK prefix that
+/// fans out across multiple physical partitions, or a feed/cross-partition
+/// operation scoped to a sub-range — and is emitted as the
+/// `x-ms-thinclient-range-min` / `-max` outer HTTP headers carrying the
+/// canonical, un-padded hex EPK string per `GATEWAY_20_SPEC §"Range header
+/// wire format"`.
+///
+/// The two arms are mutually exclusive; the proxy must never see both an
+/// EPK token and EPK range headers on the same request.
+enum EpkPayload {
+    Point(Vec<u8>),
+    Range { min: String, max: String },
+}
+
+fn effective_partition_key_payload(
+    inputs: &WrapInputs<'_>,
+) -> azure_core::Result<Option<EpkPayload>> {
+    let (Some(partition_key), Some(partition_key_definition)) =
+        (inputs.partition_key, inputs.partition_key_definition)
+    else {
+        return Ok(None);
+    };
+
+    if partition_key.is_empty() {
+        return Ok(None);
+    }
+
+    let range =
+        EffectivePartitionKey::compute_range(partition_key.values(), partition_key_definition)
+            .map_err(|err| {
+                data_conversion_error(format!("Gateway 2.0 EPK range computation failed: {err}"))
+            })?;
+
+    if range.start == range.end {
+        let bytes = hex_to_bytes(range.start.as_str())?;
+        Ok(Some(EpkPayload::Point(bytes)))
+    } else {
+        Ok(Some(EpkPayload::Range {
+            min: range.start.as_str().to_owned(),
+            max: range.end.as_str().to_owned(),
+        }))
     }
 }
 
@@ -289,7 +333,7 @@ mod tests {
     use azure_core::http::headers::{ACCEPT, CONTENT_TYPE};
 
     use super::*;
-    use crate::models::{PartitionKeyKind, PartitionKeyVersion};
+    use crate::models::{PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
 
     const ACTIVITY_ID: &str = "00112233-4455-6677-8899-aabbccddeeff";
 
@@ -546,6 +590,137 @@ mod tests {
         let parsed = parse_wrapped_request(&wrapped, 11);
 
         assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
+    }
+
+    /// HPK partial-PK (prefix on a MultiHash container) is dispatched as an
+    /// EPK *range* via the outer `x-ms-thinclient-range-min`/`-max` HTTP
+    /// headers, not as an `EffectivePartitionKey` RNTBD token. The two
+    /// emission paths must be mutually exclusive.
+    #[test]
+    fn wrap_emits_range_headers_for_hpk_prefix_partition_key() {
+        let request = signed_request(None);
+        let auth_context =
+            AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
+        let partition_key =
+            PartitionKey::from(vec![PartitionKeyValue::from("tenant1".to_string())]);
+        let partition_key_definition =
+            PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+        let expected_range =
+            EffectivePartitionKey::compute_range(partition_key.values(), &partition_key_definition)
+                .unwrap();
+        assert_ne!(
+            expected_range.start, expected_range.end,
+            "HPK prefix must produce a non-point range — sanity check"
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Query,
+                Some(&partition_key),
+                Some(&partition_key_definition),
+            ),
+        )
+        .unwrap();
+
+        // Range headers on the outer HTTP request, carrying canonical un-padded hex.
+        assert_eq!(
+            wrapped.headers.get_optional_str(&GATEWAY20_RANGE_MIN),
+            Some(expected_range.start.as_str())
+        );
+        assert_eq!(
+            wrapped.headers.get_optional_str(&GATEWAY20_RANGE_MAX),
+            Some(expected_range.end.as_str())
+        );
+
+        // No EPK token in the inner RNTBD frame for the range path.
+        // Token layout: 9 base tokens (account, db, coll, payload_present,
+        // auth, date, consistency, transport_request_id, capabilities) — no
+        // document_name (resource link omits /docs/...) and no EPK token.
+        let parsed = parse_wrapped_request(&wrapped, 9);
+        assert!(
+            !parsed.tokens.contains_key(&0x005A),
+            "EffectivePartitionKey token must not be emitted alongside range headers"
+        );
+    }
+
+    /// Full HPK key (component count == definition path count) collapses to a
+    /// point op: emit the EPK token, no range headers.
+    #[test]
+    fn wrap_emits_token_only_for_full_hpk_partition_key() {
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let partition_key = PartitionKey::from(vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::from("user1".to_string()),
+            PartitionKeyValue::from("session1".to_string()),
+        ]);
+        let partition_key_definition =
+            PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Read,
+                Some(&partition_key),
+                Some(&partition_key_definition),
+            ),
+        )
+        .unwrap();
+
+        // Range headers must NOT be present on the point path.
+        assert!(wrapped
+            .headers
+            .get_optional_str(&GATEWAY20_RANGE_MIN)
+            .is_none());
+        assert!(wrapped
+            .headers
+            .get_optional_str(&GATEWAY20_RANGE_MAX)
+            .is_none());
+
+        // EPK token present in the inner RNTBD frame.
+        let parsed = parse_wrapped_request(&wrapped, 11);
+        assert!(
+            parsed.tokens.contains_key(&0x005A),
+            "EffectivePartitionKey token must be emitted for full HPK partition key"
+        );
+    }
+
+    /// `compute_range` error cases (e.g., more PK components supplied than the
+    /// container's definition declares) must surface as a wrap error, mapped
+    /// to `BadRequest` upstream — never silently emit broken EPK metadata.
+    #[test]
+    fn wrap_rejects_partition_key_with_too_many_components() {
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let partition_key = PartitionKey::from(vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::from("extra".to_string()),
+        ]);
+        let partition_key_definition = PartitionKeyDefinition::from("/tenantId");
+
+        let error = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Read,
+                Some(&partition_key),
+                Some(&partition_key_definition),
+            ),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind(), &ErrorKind::DataConversion);
     }
 
     #[test]
