@@ -481,6 +481,18 @@ impl CosmosOperation {
         Self::new(OperationType::Delete, item).with_partition_key(partition_key)
     }
 
+    /// Executes a transactional batch of operations against a single partition.
+    ///
+    /// All operations in the batch target the same `partition_key` and are
+    /// committed atomically. Use `with_body()` to provide the JSON-encoded
+    /// array of batch operations.
+    pub fn batch(container: ContainerReference, partition_key: PartitionKey) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::Batch, resource_ref).with_partition_key(partition_key)
+    }
+
     /// Upserts (creates or replaces) an item (document) in a container.
     ///
     /// The `ItemReference` contains the container, partition key, and item identifier,

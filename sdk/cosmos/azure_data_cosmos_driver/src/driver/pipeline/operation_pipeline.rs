@@ -756,6 +756,23 @@ fn build_transport_request(
         );
     }
 
+    // Cosmos DB uses POST for batch (same endpoint as create/upsert);
+    // the service requires these headers to process the request as a batch.
+    if operation.operation_type() == OperationType::Batch {
+        headers.insert(
+            HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
+            HeaderValue::from_static("True"),
+        );
+        headers.insert(
+            HeaderName::from_static(request_header_names::BATCH_ATOMIC),
+            HeaderValue::from_static("True"),
+        );
+        headers.insert(
+            HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
+            HeaderValue::from_static("False"),
+        );
+    }
+
     // Add operation type header for fault injection rule matching
     #[cfg(feature = "fault_injection")]
     {
@@ -2457,6 +2474,79 @@ mod tests {
             request.url.path(),
             "/dbs/testdb/colls/testcontainer/docs",
             "create should POST to the collection feed, not /docs/doc1"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_sets_batch_headers() {
+        let operation = CosmosOperation::batch(test_container(), PartitionKey::from("pk1"))
+            .with_body(b"[]".to_vec());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static("x-ms-cosmos-is-batch-request")),
+            Some("True"),
+            "is-batch-request header should be set"
+        );
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static("x-ms-cosmos-batch-atomic")),
+            Some("True"),
+            "batch-atomic header should be set"
+        );
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-batch-continue-on-error"
+            )),
+            Some("False"),
+            "batch-continue-on-error header should be set"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_omits_batch_headers_for_create() {
+        let container = test_container();
+        let operation = CosmosOperation::create_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(b"{}".to_vec());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, None, &ctx).expect("request should build");
+
+        assert!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static("x-ms-cosmos-is-batch-request"))
+                .is_none(),
+            "batch headers should not be set for create"
         );
     }
 
