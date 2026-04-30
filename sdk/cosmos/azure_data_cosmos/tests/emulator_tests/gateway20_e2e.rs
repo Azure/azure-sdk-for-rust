@@ -149,7 +149,9 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
         label: "initial".into(),
     };
 
-    let create_resp = container.create_item(&pk_value, &item, None).await?;
+    let create_resp = container
+        .create_item(&pk_value, &item_id, &item, None)
+        .await?;
     assert!(create_resp.diagnostics().activity_id().is_some());
     assert!(create_resp.diagnostics().server_duration_ms().is_some());
 
@@ -202,7 +204,8 @@ pub async fn gateway20_query_streams_through_thin_client() -> Result<(), Box<dyn
             value: i64::from(i),
             label: format!("row-{i}"),
         };
-        container.create_item(&pk_value, &item, None).await?;
+        let id = item.id.clone();
+        container.create_item(&pk_value, &id, &item, None).await?;
     }
 
     let query = Query::from("SELECT * FROM c ORDER BY c.value");
@@ -265,7 +268,8 @@ pub async fn gateway20_query_paginates_via_continuation_tokens(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk_value, &item, None).await?;
+        let id = item.id.clone();
+        container.create_item(&pk_value, &id, &item, None).await?;
     }
 
     let mut custom_headers: HashMap<HeaderName, HeaderValue> = HashMap::new();
@@ -413,7 +417,9 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
         value: 99,
         label: "diag".into(),
     };
-    container.create_item(&pk_value, &item, None).await?;
+    container
+        .create_item(&pk_value, "diag-item", &item, None)
+        .await?;
 
     let read_resp = container
         .read_item::<Gw20TestItem>(&pk_value, "diag-item", None)
@@ -462,7 +468,9 @@ pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn
         value: 7,
         label: "override".into(),
     };
-    container.create_item(&pk_value, &item, None).await?;
+    container
+        .create_item(&pk_value, "override-item", &item, None)
+        .await?;
 
     let read_resp = container
         .read_item::<Gw20TestItem>(&pk_value, "override-item", None)
@@ -569,7 +577,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
                 // `PartitionKeyValue: From<&'static str>` impl is the only
                 // borrow-friendly one) — clone strings into the tuple.
                 let pk = PartitionKey::from((tenant.to_string(), user_id, session_id));
-                container.create_item(pk, &item, None).await?;
+                container.create_item(pk, &id, &item, None).await?;
             }
         }
     }
