@@ -5,7 +5,6 @@ use std::{
     cmp::min,
     collections::VecDeque,
     ops::Range,
-    pin::pin,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -23,21 +22,20 @@ use bytes::Bytes;
 use futures::{
     channel::mpsc::{self, UnboundedReceiver, UnboundedSender},
     future::{self, Either},
-    stream, SinkExt, StreamExt,
+    SinkExt,
 };
 
-use crate::models::{
-    drains::{SequentialBoundedDrain, UnorderedFuturesDrain},
-    http_ranges::ContentRange,
-    response_ext::AsyncResponseBodyExt,
-    slice::SendSlice,
-};
+use crate::models::{drains::SequentialBoundedDrain, http_ranges::ContentRange};
 
 use super::*;
 
 #[async_trait]
 pub(crate) trait PartitionedDownloadBehavior {
-    async fn transfer_range(&self, range: Option<Range<usize>>) -> AzureResult<AsyncRawResponse>;
+    async fn transfer_range(
+        &self,
+        range: Option<Range<usize>>,
+        etag_lock: Option<String>,
+    ) -> AzureResult<AsyncRawResponse>;
 }
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
@@ -68,6 +66,7 @@ where
 
     let status = initial_response.status();
     let headers = initial_response.headers().clone();
+    let etag_lock = headers.get_optional_str(&"etag".into()).map(str::to_string);
 
     let mut remaining_ranges = stats
         .map(|s| s.remaining_download_ranges)
@@ -112,9 +111,8 @@ where
                         let i = next_task_index;
                         next_task_index += 1;
                         active_tasks_counter.fetch_add(1, Ordering::Relaxed);
-
                         let t = tx_opt.as_ref().ok_or_else(||Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?.clone();
-                        task_bucket.push(start_download_task(client.clone(), range, t, active_tasks_counter.clone(), i));
+                        task_bucket.push(start_download_task(client.clone(), range, etag_lock.clone(), t, active_tasks_counter.clone(), i));
                     }
                     None => {
                         // if ranges are finished, we'll never need to clone the transmitter again.
@@ -125,197 +123,20 @@ where
                 }
             }
 
-            // return next readied bytes, if any
-            while let Some(bytes) = drain.pop() {
-                yield bytes;
-            }
-
-            // early break if finished
-            if drain.position() >= total_chunks {
-                break;
-            }
-
-            // max tasks are spawned and sequential ready bytes already returned
-            // this will not change until either:
-            //   1. a task sends a message through this channel
-            //   2. a task fails
+            // await the next completed download
             let channel_message;
             (channel_message, task_bucket) = await_message_while_joining_workers(&mut rx, task_bucket).await?;
             let (idx, bytes) = channel_message?;
             drain.push(idx, bytes)?;
+
+            // return next readied bytes, if any
+            while let Some(bytes) = drain.pop() {
+                yield bytes;
+            }
         }
     };
 
     Ok(AsyncRawResponse::new(status, headers, Box::pin(stream)))
-}
-
-pub(crate) async fn download_into<Behavior>(
-    mut buffer: &mut [u8],
-    range: Option<Range<usize>>,
-    parallel: NonZero<usize>,
-    partition_size: NonZero<usize>,
-    client: Arc<Behavior>,
-) -> AzureResult<usize>
-where
-    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
-{
-    let parallel = parallel.get();
-    let partition_size = partition_size.get();
-    let mut tasks = UnorderedFuturesDrain::with_capacity(parallel);
-
-    // SAFETY: This function includes unsafe code that sends slices of `buffer` to other worker threads.
-    // Those threads MUST ALL terminate before this function returns.
-    // We accomplish this by emulating a try-finally block. The ENTIRE implementation is wrapped in a
-    // closure and it's awaited result stored, allowing idiomatic `?` error returns to be assigned to
-    // that result, rather than exit this whole function. Before returning that result, ensure ALL
-    // tasks in `tasks` are joined.
-    let overall_result = async {
-        let (initial_response, stats_opt) =
-            get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
-
-        let mut stats = match stats_opt {
-            Some(s) => s,
-            // If no information on ranges, no subsequent ranges to get.
-            // Write whatever we have and return.
-            None => return initial_response.into_body().collect_into(buffer).await,
-        };
-
-        // fail fast if we know we'll receive too much data
-        if stats.overall_download_range.len() > buffer.len() {
-            return Err(Error::with_message(
-                ErrorKind::Other,
-                format!(
-                    "Buffer with length {} cannot fit payload with length {}.",
-                    buffer.len(),
-                    stats.overall_download_range.len()
-                ),
-            ));
-        }
-
-        let total_ranges = stats.remaining_download_ranges.len() + 1;
-
-        // if no real parallelism, take the simple option of executing downloads sequentially.
-        // no worker spawning.
-        if parallel == 1 || stats.remaining_download_ranges.is_empty() {
-            // sequence the initial response with a stream that fetches responses for each subsequent range
-            let mut all_responses = pin!(stream::once(future::ready(Ok(initial_response))).chain(
-                stream::iter(stats.remaining_download_ranges).then(|range| {
-                    let client = client.clone();
-                    async move { client.transfer_range(Some(range)).await }
-                }),
-            ));
-
-            let mut total_written = 0;
-            while let Some(response) = all_responses.try_next().await? {
-                let written = response.into_body().collect_into(buffer).await?;
-                buffer = &mut buffer[written..];
-                total_written += written;
-            }
-            return Ok(total_written);
-        }
-
-        // channel for download workers to send results to their coordinator.
-        let (tx, mut rx) = mpsc::unbounded();
-
-        // Start collecting the body of the initial download.
-        // Special-cased since we already have the response for it.
-
-        // SAFETY: Ensure mutable reference safety for the SendSlice created from `buffer`.
-        // This memory address is being sent to a separate worker thread. That worker thread CANNOT
-        // live longer than the lifetime of `buffer`, and therefore MUST be cleaned up before
-        // this function returns. Storing those worker references in `tasks` allows this function
-        // to guarantee that cleanup at the end.
-        unsafe {
-            let init_dst;
-            (init_dst, buffer) = buffer.split_at_mut(stats.initial_download_range.len());
-            let init_dst = SendSlice::from_raw(init_dst.as_mut_ptr(), init_dst.len());
-            tasks.push(start_initial_download_into_task(
-                initial_response,
-                init_dst,
-                tx.clone(),
-            ));
-        }
-
-        // tracking of completed work
-        let mut received_result_count = 0;
-        let mut bytes_copied = 0;
-        let mut consume_available_messages = || {
-            while received_result_count < total_ranges {
-                match rx.try_recv() {
-                    Ok(worker_result) => {
-                        bytes_copied += worker_result?;
-                        received_result_count += 1;
-                    }
-                    Err(mpsc::TryRecvError::Empty) => break,
-                    Err(mpsc::TryRecvError::Closed) => Err(Error::with_message(
-                        ErrorKind::Other,
-                        "Download incomplete. Premature channel close.",
-                    ))?,
-                }
-            }
-            Ok::<(), Error>(())
-        };
-
-        // Download all remaining ranges, parallel-many at a time
-        while let Some(range) = stats.remaining_download_ranges.pop_front() {
-            // If at parallel limit, wait for a slot to open
-            while tasks.len() >= parallel {
-                if let Some(result) = tasks.next().await {
-                    result.map_err(map_spawned_task_error)?;
-                } else {
-                    break;
-                }
-            }
-            consume_available_messages()?;
-
-            // SAFETY: Ensure mutable reference safety for the SendSlice created from `buffer`.
-            // This memory address is being sent to a separate worker thread. That worker thread CANNOT
-            // live longer than the lifetime of `buffer`, and therefore MUST be cleaned up before
-            // this function returns. Storing those worker references in `tasks` allows this function
-            // to guarantee that cleanup at the end.
-            unsafe {
-                let dst;
-                (dst, buffer) = buffer.split_at_mut(range.len());
-                let dst = SendSlice::from_raw(dst.as_mut_ptr(), dst.len());
-                tasks.push(start_download_into_task(
-                    client.clone(),
-                    dst,
-                    range,
-                    tx.clone(),
-                ));
-            }
-        }
-
-        // wait on all remaining tasks, failing fast on error
-        while let Some(join_result) = tasks.next().await {
-            join_result.map_err(map_spawned_task_error)?;
-            consume_available_messages()?;
-        }
-
-        // final validation of work done
-        if tasks.total_completed() != received_result_count {
-            Err(Error::with_message(
-                ErrorKind::Other,
-                format!(
-                    "download completion count mismatch: tasks_completed={} messages_received={}",
-                    tasks.total_completed(),
-                    received_result_count
-                ),
-            ))
-        } else {
-            Ok(bytes_copied)
-        }
-    }
-    .await;
-
-    // SAFETY: This is where we prevent any tasks from living beyond this method return,
-    // guaranteeing no references to `buffer` exist.
-    // TODO: Implement aborting spawned runtime workers.
-    while let Some(worker_result) = tasks.next().await {
-        worker_result.map_err(map_spawned_task_error)?;
-    }
-
-    overall_result
 }
 
 async fn get_initial_response_and_analyze<Behavior>(
@@ -373,7 +194,7 @@ async fn await_message_while_joining_workers<T>(
     };
 
     let mut message_fut = receiver.recv();
-    // `task_bucket`` may be empty. `select_all` cannot handle that.
+    // `task_bucket` may be empty. `select_all` cannot handle that.
     while !task_bucket.is_empty() {
         match future::select(message_fut, future::select_all(task_bucket)).await {
             Either::Left((message, task_select)) => {
@@ -411,33 +232,12 @@ fn start_initial_download_task(
     }))
 }
 
-/// Spawns a worker to take the given raw response and stream it into the given buffer.
-/// A result of the number of bytes written is then sent through sender.
-///
-/// If the body does not *exactly* fill the buffer, an error will be sent instead.
-///
-/// # Safety
-/// Caller must ensure the slice represented by `buffer` is unused elsewhere until the returned future completes.
-unsafe fn start_initial_download_into_task(
-    initial_response: AsyncRawResponse,
-    mut buffer: SendSlice<u8>,
-    mut sender: UnboundedSender<Result<usize, Error>>,
-) -> SpawnedTask {
-    get_async_runtime().spawn(Box::pin(async move {
-        let res = initial_response
-            .into_body()
-            .collect_into_exact(buffer.as_mut_slice())
-            .await
-            .map(|_| buffer.len());
-        let _send_res = sender.send(res).await;
-    }))
-}
-
 /// Spawns a worker to request the given range and stream it into a buffer.
 /// That buffer result is then sent through sender with the given chunk index.
 fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'static>(
     client: Arc<Behavior>,
     range: Range<usize>,
+    etag_lock: Option<String>,
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
     active_tasks_counter: Arc<AtomicUsize>,
     chunk_idx: usize,
@@ -446,7 +246,7 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
         let mut dst = vec![0u8; range.len()];
         let res = async {
             client
-                .transfer_range(Some(range))
+                .transfer_range(Some(range), etag_lock)
                 .await?
                 .into_body()
                 .collect_into(&mut dst)
@@ -458,36 +258,6 @@ fn start_download_task<Behavior: PartitionedDownloadBehavior + Send + Sync + 'st
         }
         active_tasks_counter.fetch_sub(1, Ordering::Relaxed);
         let _send_res = sender.send(res.map(|_| (chunk_idx, dst.into()))).await;
-    }))
-}
-
-/// Spawns a worker to request the given range and stream it into the given buffer.
-/// The success result is then sent through sender.
-///
-/// If the body does not *exactly* fill the buffer, an error will be sent instead.
-///
-/// # Safety
-/// Caller must ensure the slice represented by `buffer` is unused elsewhere until the returned future completes.
-unsafe fn start_download_into_task<
-    Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
->(
-    client: Arc<Behavior>,
-    mut buffer: SendSlice<u8>,
-    range: Range<usize>,
-    mut sender: UnboundedSender<Result<usize, Error>>,
-) -> SpawnedTask {
-    get_async_runtime().spawn(Box::pin(async move {
-        let res = async {
-            client
-                .transfer_range(Some(range))
-                .await?
-                .into_body()
-                .collect_into_exact(buffer.as_mut_slice())
-                .await
-        }
-        .await
-        .map(|_| buffer.len());
-        let _send_res = sender.send(res).await;
     }))
 }
 
@@ -505,11 +275,11 @@ where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
     let range_start = range.start;
-    match client.transfer_range(Some(range)).await {
+    match client.transfer_range(Some(range), None).await {
         Ok(response) => Ok(response),
         Err(err) => match (err.http_status(), range_start) {
             (Some(StatusCode::RequestedRangeNotSatisfiable), 0) => {
-                client.transfer_range(None).await
+                client.transfer_range(None, None).await
             }
             _ => Err(err),
         },
@@ -589,23 +359,34 @@ mod tests {
     pub const MB: usize = KB * 1024;
     pub const GB: usize = MB * 1024;
 
-    #[derive(Debug)]
+    #[derive(Clone, Debug)]
     enum MockPartitionedDownloadBehaviorInvocation {
-        TransferRange(Option<Range<usize>>),
+        TransferRange(Option<Range<usize>>, Option<String>),
     }
 
     struct MockPartitionedDownloadBehavior {
         pub invocations: Mutex<Vec<MockPartitionedDownloadBehaviorInvocation>>,
         pub data: Bytes,
         pub delay_millis: Option<Range<u64>>,
+        pub etag: Mutex<Option<String>>,
+    }
+
+    #[derive(Clone, Default)]
+    struct MockOptions {
+        /// When provided, will select a random sleep time in milliseconds within the given range.
+        delay_millis_range: Option<Range<u64>>,
+
+        /// Sets the initial ETag to match against and return in responses.
+        etag: Option<String>,
     }
 
     impl MockPartitionedDownloadBehavior {
-        pub fn new(data: impl Into<Bytes>, delay_millis: Option<Range<u64>>) -> Self {
+        pub fn new(data: impl Into<Bytes>, options: Option<MockOptions>) -> Self {
             Self {
                 invocations: Mutex::new(vec![]),
                 data: data.into(),
-                delay_millis,
+                delay_millis: options.clone().and_then(|o| o.delay_millis_range),
+                etag: Mutex::new(options.clone().and_then(|o| o.etag)),
             }
         }
     }
@@ -615,13 +396,24 @@ mod tests {
         async fn transfer_range(
             &self,
             requested_range: Option<Range<usize>>,
+            etag_lock: Option<String>,
         ) -> AzureResult<AsyncRawResponse> {
             {
                 self.invocations.lock().await.push(
                     MockPartitionedDownloadBehaviorInvocation::TransferRange(
                         requested_range.clone(),
+                        etag_lock.clone(),
                     ),
                 );
+            }
+
+            // if etag lock AND if the mock is configured to use it, error if mismatch
+            if let Some(etag) = etag_lock {
+                if let Some(mock_etag) = self.etag.lock().await.as_ref() {
+                    if etag != *mock_etag {
+                        return Err(Error::with_message(ErrorKind::Other, "Mismatched etag"));
+                    }
+                }
             }
 
             if let Some(delay_millis_range) = self.delay_millis.clone() {
@@ -639,6 +431,9 @@ mod tests {
                 }
             }
             let mut headers = Headers::new();
+            if let Some(etag) = self.etag.lock().await.as_ref() {
+                headers.insert("etag", etag.clone());
+            }
             match (requested_range, self.data.len()) {
                 (Some(range), data_len) => {
                     if range.start >= data_len {
@@ -782,47 +577,6 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn download_into_single_range() -> AzureResult<()> {
-        const DATA_LEN: usize = 1024;
-        const PARALLEL: usize = 2;
-
-        let data = get_random_data(DATA_LEN);
-
-        for args in single_range_args(DATA_LEN) {
-            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
-            let mut destination = vec![
-                0u8;
-                if let Some((start, end)) = args.download_range {
-                    end - start
-                } else {
-                    DATA_LEN
-                }
-            ];
-
-            let written = download_into(
-                &mut destination,
-                args.download_range.map(|r| r.0..r.1),
-                PARALLEL.try_into().unwrap(),
-                args.partition_len.try_into().unwrap(),
-                mock.clone(),
-            )
-            .await?;
-
-            assert_eq!(destination.len(), written);
-            assert_eq!(
-                &destination,
-                match args.download_range {
-                    Some(r) => &data[r.0..r.1],
-                    None => &data[..],
-                }
-            );
-            assert_eq!(mock.invocations.lock().await.len(), 1);
-        }
-
-        Ok(())
-    }
-
     struct MultiRangeArgSet {
         pub parallel: usize,
         pub partition_len: usize,
@@ -917,64 +671,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn download_into_multi_range() -> AzureResult<()> {
-        const DATA_LEN: usize = 4096;
-
-        let data = get_random_data(DATA_LEN);
-
-        for args in multi_range_args(DATA_LEN) {
-            let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
-            let mut downloaded_data = vec![
-                0u8;
-                if let Some((start, end)) = args.download_range {
-                    end - start
-                } else {
-                    DATA_LEN
-                }
-            ];
-
-            let written = download_into(
-                &mut downloaded_data,
-                args.download_range.map(|r| r.0..r.1),
-                args.parallel.try_into().unwrap(),
-                args.partition_len.try_into().unwrap(),
-                mock.clone(),
-            )
-            .await?;
-
-            assert_eq!(
-                written,
-                args.download_range
-                    .map_or(DATA_LEN, |range| range.1 - range.0),
-                "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
-                args.partition_len,
-                args.download_range,
-                args.expected_parts
-            );
-            assert_eq!(
-                &downloaded_data,
-                match args.download_range {
-                    Some(r) => &data[r.0..r.1],
-                    None => &data,
-                },
-                "Data mismatch. partition_len={}. download_range={:?}, expected_parts={}",
-                args.partition_len,
-                args.download_range,
-                args.expected_parts
-            );
-            assert_eq!(
-                mock.invocations.lock().await.len(),
-                args.expected_parts,
-                "Unexpected invocation count. partition_len={}. download_range={:?}, expected_parts={}",
-                args.partition_len,
-                args.download_range,
-                args.expected_parts);
-        }
-
-        Ok(())
-    }
-
-    #[tokio::test]
     async fn download_ranges_parallel_maintain_order() -> AzureResult<()> {
         let segments: usize = 20;
         let partition_size = NonZero::new(3).unwrap();
@@ -984,7 +680,10 @@ mod tests {
         let data = get_random_data(data_size);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(
             data.clone(),
-            Some(1..5),
+            Some(MockOptions {
+                delay_millis_range: Some(1..5),
+                ..Default::default()
+            }),
         ));
 
         let mut body = download(None, parallel, partition_size, mock.clone())
@@ -993,36 +692,6 @@ mod tests {
         let downloaded_data = body.buffer_all().await?;
 
         assert_eq!(downloaded_data[..], data[..]);
-        assert_eq!(mock.invocations.lock().await.len(), segments);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn download_into_ranges_parallel_maintain_order() -> AzureResult<()> {
-        let segments: usize = 20;
-        let partition_size = NonZero::new(3).unwrap();
-        let parallel = NonZero::new(16).unwrap();
-        let data_size: usize = partition_size.get() * segments;
-
-        let data = get_random_data(data_size);
-        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
-            data.clone(),
-            Some(1..5),
-        ));
-
-        let mut destination = vec![0u8; data.len()];
-        let written = download_into(
-            &mut destination,
-            None,
-            parallel,
-            partition_size,
-            mock.clone(),
-        )
-        .await?;
-
-        assert_eq!(written, data_size);
-        assert_eq!(&destination, &data);
         assert_eq!(mock.invocations.lock().await.len(), segments);
 
         Ok(())
@@ -1046,57 +715,86 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn download_into_empty_resource() -> AzureResult<()> {
-        let parallel = NonZero::new(1).unwrap();
-        let partition_len = NonZero::new(MB).unwrap();
-        let data = get_random_data(0);
-        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+    async fn download_etag_lock() -> AzureResult<()> {
+        let configured_etag = Some("some_etag".to_string());
+        let data_len: usize = 1024;
+        let partition_len = NonZero::new(data_len / 4).unwrap();
+        let parallel = NonZero::new(2).unwrap();
 
-        let mut destination = Vec::new();
-        let written = download_into(
-            &mut destination,
-            None,
-            parallel,
-            partition_len,
-            mock.clone(),
-        )
-        .await?;
+        let data = get_random_data(data_len);
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
+            data.clone(),
+            Some(MockOptions {
+                etag: configured_etag.clone(),
+                ..Default::default()
+            }),
+        ));
 
-        assert_eq!(written, 0);
+        download(None, parallel, partition_len, mock.clone())
+            .await?
+            .into_body()
+            .collect()
+            .await?;
+
+        let mut invocations: VecDeque<_> = mock.invocations.lock().await.iter().cloned().collect();
+
+        // Assert first request doesn't supply a lock, as it hasn't received a tag to lock on yet.
+        match invocations.pop_front().unwrap() {
+            MockPartitionedDownloadBehaviorInvocation::TransferRange(_, received_etag) => {
+                assert_eq!(received_etag, None)
+            }
+        };
+
+        // Assert subsequent requests supply the correct lock.
+        assert!(!invocations.is_empty());
+        match invocations.pop_front().unwrap() {
+            MockPartitionedDownloadBehaviorInvocation::TransferRange(_, received_etag) => {
+                assert_eq!(received_etag, configured_etag)
+            }
+        };
 
         Ok(())
     }
 
     #[tokio::test]
-    async fn download_into_insufficient_buffer() -> AzureResult<()> {
-        let partition_len = NonZero::new(3).unwrap();
-        let parallel = NonZero::new(2).unwrap();
-        let data_len = 1024;
+    async fn download_fails_on_etag_update() -> AzureResult<()> {
+        let configured_etag_1 = Some("some_etag".to_string());
+        let configured_etag_2 = Some("another_etag".to_string());
+        let data_len: usize = 2048;
+        let total_partitions = 8;
+        let partition_len = NonZero::new(data_len / total_partitions).unwrap();
+        let parallel = NonZero::new(1).unwrap();
+
+        let individual_request_delay_ms = 5;
+        let etag_edit_delay_ms = individual_request_delay_ms * total_partitions as u64 / 2;
 
         let data = get_random_data(data_len);
-        let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
+        let mock = Arc::new(MockPartitionedDownloadBehavior::new(
+            data.clone(),
+            Some(MockOptions {
+                etag: configured_etag_1.clone(),
+                delay_millis_range: Some(
+                    individual_request_delay_ms..individual_request_delay_ms + 1,
+                ),
+            }),
+        ));
 
-        for buffer_len in [0, data_len - 1, data_len / 2] {
-            let mut buffer = vec![0; buffer_len];
-            assert!(
-                download_into(&mut buffer, None, parallel, partition_len, mock.clone())
+        let (download_result, _) = futures::future::join(
+            async {
+                download(None, parallel, partition_len, mock.clone())
+                    .await?
+                    .into_body()
+                    .collect()
                     .await
-                    .is_err()
-            );
-        }
+            },
+            async {
+                sleep(Duration::from_millis(etag_edit_delay_ms)).await;
+                *mock.clone().etag.lock().await = configured_etag_2;
+            },
+        )
+        .await;
 
-        for range_len in [1, data_len, data_len / 2] {
-            let mut buffer = vec![0; range_len - 1];
-            assert!(download_into(
-                &mut buffer,
-                Some(0..range_len),
-                parallel,
-                partition_len,
-                mock.clone()
-            )
-            .await
-            .is_err());
-        }
+        assert!(download_result.is_err());
 
         Ok(())
     }

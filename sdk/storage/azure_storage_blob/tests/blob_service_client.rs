@@ -217,8 +217,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     .await?;
 
     // Sleep in live and record modes to allow tags to be indexed on the service
-    if recording.test_mode() != TestMode::Playback {
-        time::sleep(Duration::from_secs(5)).await;
+    if ctx.recording().test_mode() == TestMode::Live
+        || ctx.recording().test_mode() == TestMode::Record
+    {
+        time::sleep(Duration::from_secs(15)).await;
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
@@ -226,7 +228,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"foo\"='bar'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -239,7 +241,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags("\"fizz\"='buzz'", None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -252,7 +254,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
         .await?;
     let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap();
+    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -301,7 +303,6 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_with_metadata_include(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -337,7 +338,6 @@ async fn test_list_containers_with_metadata_include(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -378,7 +378,6 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_set_service_properties_cors_and_metrics(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -441,7 +440,6 @@ async fn test_set_service_properties_cors_and_metrics(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

@@ -5,7 +5,10 @@
 
 use std::sync::Arc;
 
-use crate::{models::AccountReference, options::OperationOptions};
+use crate::{
+    models::AccountReference,
+    options::{OperationOptions, Region},
+};
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -43,6 +46,12 @@ pub struct DriverOptions {
     account: AccountReference,
     /// Driver-level operation options (e.g., consistency, excluded regions, failover, session retry).
     operation_options: Arc<OperationOptions>,
+    /// Preferred regions for routing, ordered by proximity to the application.
+    ///
+    /// When non-empty, read and write endpoint lists are reordered so that
+    /// endpoints matching these regions appear first. Regions that don't match
+    /// any account endpoint are silently skipped.
+    preferred_regions: Vec<Region>,
 }
 
 impl DriverOptions {
@@ -62,6 +71,11 @@ impl DriverOptions {
     pub fn operation_options(&self) -> &Arc<OperationOptions> {
         &self.operation_options
     }
+
+    /// Returns the preferred regions for routing.
+    pub fn preferred_regions(&self) -> &[Region] {
+        &self.preferred_regions
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -73,6 +87,7 @@ impl DriverOptions {
 pub struct DriverOptionsBuilder {
     account: AccountReference,
     operation_options: Option<OperationOptions>,
+    preferred_regions: Vec<Region>,
 }
 
 impl DriverOptionsBuilder {
@@ -81,6 +96,7 @@ impl DriverOptionsBuilder {
         Self {
             account,
             operation_options: None,
+            preferred_regions: Vec::new(),
         }
     }
 
@@ -90,11 +106,22 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets the preferred regions for routing.
+    ///
+    /// Regions should be ordered by proximity to the application (closest first).
+    /// The driver reorders endpoint lists to prefer these regions for both reads
+    /// and writes. Regions not present in the account are silently skipped.
+    pub fn with_preferred_regions(mut self, regions: Vec<Region>) -> Self {
+        self.preferred_regions = regions;
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
+            preferred_regions: self.preferred_regions,
         }
     }
 }
@@ -170,5 +197,17 @@ mod tests {
             .operation_options()
             .read_consistency_strategy
             .is_none());
+        assert!(options.preferred_regions().is_empty());
+    }
+
+    #[test]
+    fn builder_sets_preferred_regions() {
+        let regions = vec![Region::WEST_US_2, Region::EAST_US];
+
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_preferred_regions(regions.clone())
+            .build();
+
+        assert_eq!(options.preferred_regions(), &regions);
     }
 }

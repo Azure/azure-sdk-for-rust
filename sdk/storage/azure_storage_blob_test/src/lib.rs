@@ -5,6 +5,7 @@ use std::{
     slice,
     sync::{
         atomic::{AtomicUsize, Ordering},
+        mpsc::Sender,
         Arc,
     },
 };
@@ -12,10 +13,10 @@ use std::{
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    http::StatusCode,
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
+        StatusCode,
     },
     Bytes, Result,
 };
@@ -349,16 +350,40 @@ pub struct TestPolicy {
     on_response: Check<AsyncRawResponse>,
 }
 
+impl Default for TestPolicy {
+    fn default() -> Self {
+        Self {
+            request_scope_counter: Default::default(),
+            response_scope_counter: Default::default(),
+            on_request: Arc::new(|_| Ok(())),
+            on_response: Arc::new(|_| Ok(())),
+        }
+    }
+}
+
 impl TestPolicy {
     pub fn new(
         on_request: Option<Check<Request>>,
         on_response: Option<Check<AsyncRawResponse>>,
     ) -> Self {
         TestPolicy {
-            request_scope_counter: Arc::new(AtomicUsize::new(0)),
-            response_scope_counter: Arc::new(AtomicUsize::new(0)),
             on_request: on_request.unwrap_or(Arc::new(|_| Ok(()))),
             on_response: on_response.unwrap_or(Arc::new(|_| Ok(()))),
+            ..Self::default()
+        }
+    }
+
+    pub fn capture(request_sender: Option<Sender<Request>>) -> Self {
+        TestPolicy {
+            on_request: match request_sender {
+                Some(sender) => Arc::new(move |req| {
+                    sender.send(req.clone()).map_err(|e| {
+                        azure_core::Error::with_error(ErrorKind::Other, e, "Capture failure.")
+                    })
+                }),
+                None => Arc::new(|_| Ok(())),
+            },
+            ..Self::default()
         }
     }
 

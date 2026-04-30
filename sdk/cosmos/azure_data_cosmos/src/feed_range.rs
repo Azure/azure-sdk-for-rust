@@ -19,14 +19,6 @@
 //! let ranges = container.read_feed_ranges(None).await?;
 //! println!("Container has {} physical partitions", ranges.len());
 //!
-//! // Check if one range contains another
-//! let pk_ranges = container.feed_range_from_partition_key("my_partition_key", None).await?;
-//! for range in &ranges {
-//!     if range.contains(&pk_ranges[0]) {
-//!         println!("Partition key falls within this feed range");
-//!     }
-//! }
-//!
 //! // Serialize/deserialize for storage or transfer
 //! let serialized = ranges[0].to_string();
 //! let restored: azure_data_cosmos::FeedRange = serialized.parse()?;
@@ -65,12 +57,6 @@ use crate::routing::range::Range;
 /// - **[`Serialize`]/[`Deserialize`]** — structured JSON (`{"Range": {...}}`), intended for embedding in JSON documents.
 ///
 /// These formats are **not interchangeable**: a value serialized with one cannot be deserialized with the other.
-///
-/// # Comparison Methods
-///
-/// Feed ranges support containment and overlap checks:
-/// - [`contains()`](FeedRange::contains) — checks if another feed range is entirely within this one
-/// - [`overlaps()`](FeedRange::overlaps) — checks if two feed ranges share any portion of the EPK space
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct FeedRange {
@@ -112,28 +98,36 @@ impl FeedRange {
         }
     }
 
-    /// Returns `true` if `other` is entirely contained within this feed range.
-    ///
-    /// A feed range A contains feed range B when A's minimum is less than or equal to B's minimum
-    /// and A's maximum is greater than or equal to B's maximum.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use azure_data_cosmos::FeedRange;
-    /// let full = FeedRange::full();
-    /// let sub: FeedRange = "eyJSYW5nZSI6eyJtaW4iOiIiLCJtYXgiOiIzRkZGRkZGRkZGRkYiLCJpc01pbkluY2x1c2l2ZSI6dHJ1ZSwiaXNNYXhJbmNsdXNpdmUiOmZhbHNlfX0=".parse().unwrap();
-    /// assert!(full.contains(&sub));
-    /// ```
-    pub fn contains(&self, other: &FeedRange) -> bool {
-        self.min_inclusive <= other.min_inclusive && self.max_exclusive >= other.max_exclusive
+    /// Returns `true` if this feed range is entirely contained within `other`.
+    pub(crate) fn is_subset_of(&self, other: &FeedRange) -> bool {
+        other.min_inclusive <= self.min_inclusive && other.max_exclusive >= self.max_exclusive
     }
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
     ///
     /// Two feed ranges overlap when one starts before the other ends and vice versa.
-    pub fn overlaps(&self, other: &FeedRange) -> bool {
+    pub(crate) fn overlaps(&self, other: &FeedRange) -> bool {
         self.min_inclusive < other.max_exclusive && other.min_inclusive < self.max_exclusive
+    }
+
+    /// Returns `true` if this feed range can be combined with `other`.
+    ///
+    /// Two ranges can be combined when they overlap or are adjacent
+    /// (one's max equals the other's min).
+    pub(crate) fn can_merge(&self, other: &FeedRange) -> bool {
+        self.max_exclusive >= other.min_inclusive && other.max_exclusive >= self.min_inclusive
+    }
+
+    /// Combines this feed range with `other` into a bounding range.
+    pub(crate) fn merge_with(&self, other: &FeedRange) -> FeedRange {
+        debug_assert!(
+            self.can_merge(other),
+            "merge_with called on disjoint ranges"
+        );
+        FeedRange {
+            min_inclusive: std::cmp::min(self.min_inclusive.clone(), other.min_inclusive.clone()),
+            max_exclusive: std::cmp::max(self.max_exclusive.clone(), other.max_exclusive.clone()),
+        }
     }
 
     /// Creates a `FeedRange` from an internal `Range<String>`.
@@ -309,23 +303,23 @@ mod tests {
     }
 
     #[test]
-    fn contains_full_contains_sub() {
+    fn is_subset_of_full() {
         let full = FeedRange::full();
         let sub = FeedRange {
             min_inclusive: EffectivePartitionKey::from("00"),
             max_exclusive: EffectivePartitionKey::from("80"),
         };
-        assert!(full.contains(&sub));
-        assert!(!sub.contains(&full));
+        assert!(sub.is_subset_of(&full));
+        assert!(!full.is_subset_of(&sub));
     }
 
     #[test]
-    fn contains_self() {
+    fn is_subset_of_self() {
         let range = FeedRange {
             min_inclusive: EffectivePartitionKey::from("20"),
             max_exclusive: EffectivePartitionKey::from("80"),
         };
-        assert!(range.contains(&range));
+        assert!(range.is_subset_of(&range));
     }
 
     #[test]

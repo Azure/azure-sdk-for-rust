@@ -174,7 +174,6 @@ async fn test_create_append_blob_content_headers(ctx: TestContext) -> Result<(),
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_append_block_position_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -221,7 +220,6 @@ async fn test_append_block_position_condition(ctx: TestContext) -> Result<(), Bo
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_append_block_max_size_condition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -268,7 +266,6 @@ async fn test_append_block_max_size_condition(ctx: TestContext) -> Result<(), Bo
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -348,7 +345,6 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_create_append_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -374,7 +370,6 @@ async fn test_create_append_blob_with_tags(ctx: TestContext) -> Result<(), Box<d
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -408,7 +403,6 @@ async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), B
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_append_block_from_url_source_if_match(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {

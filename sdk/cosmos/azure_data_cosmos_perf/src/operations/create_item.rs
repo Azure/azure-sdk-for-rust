@@ -50,7 +50,7 @@ impl Operation for CreateItemOperation {
         };
 
         let response = container
-            .create_item(&item.partition_key, &item, self.options.clone())
+            .create_item(&item.partition_key, &id, &item, self.options.clone())
             .await?;
         let backend = extract_backend_duration(response.headers());
 
