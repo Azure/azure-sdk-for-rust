@@ -55,6 +55,49 @@ one ride. This spec brings header-emission parity within Rust's current budget; 
 budget for full retry-count parity is captured under [Future Work](#future-work). Issue
 [#4303](https://github.com/Azure/azure-sdk-for-rust/issues/4303) tracks the parity work.
 
+### Primary Target
+
+Single-master Session-consistency reads during a region failover or failback catch-up window.
+Specifically: any `read_item` / `query` / point-read on a single-master account where a
+satellite region briefly lags behind the hub. The same gate applies to all
+read-shaped customer operations on single-master accounts that flow through the
+driver's status-code retry hook — including (but not limited to) `read_item`,
+point-reads, `query` (single-partition and cross-partition), `read_many_*` (when added),
+and change-feed reads — because they share the same 404/1002 → `SessionRetry` evaluation
+in `evaluate_transport_result`. **`read_many_*` and change-feed are not implemented in
+the driver today**; when they land, the latch fires automatically because the trigger
+is centralized in `evaluate_transport_result`'s 404/1002 arm — no per-operation wiring
+is required. Writes are out of scope (writes do not encounter 404/1002 the same way and
+.NET also does not emit the header on write retries).
+
+On `release/azure_data_cosmos-previews`, every such call dispatches through
+`CosmosDriver::execute_operation` (`driver/cosmos_driver.rs`); the latch and header emission
+must therefore land in the driver's operation pipeline. See §1.5 and [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy).
+
+#### 1.6 Gateway-mode interaction (GW v1 vs GW v2)
+
+Rust always uses Gateway mode (GW v1 today; GW v2 when available); there is no Direct
+mode in the Rust SDK. This affects how quickly a 404/1002 propagates back to the client
+retry layer, which in turn affects how quickly the latch (set in
+`evaluate_transport_result`'s 404/1002 arm) fires:
+
+- **GW v2** — service iterates over replicas in the local region exactly once and
+  returns failure to the SDK promptly. The cross-region retry (and therefore the latched
+  hub-region-processing-only header) fires faster, which is the desired behavior for
+  failover/failback latency.
+- **GW v1** — service performs extensive intra-region retries before returning
+  failure. Until Gateway offers an opt-in to `RemoteRegionPreferred` handling on GW v1,
+  customers on GW v1 will see longer time-to-first-cross-region-retry and therefore a
+  larger window during which the header is not yet emitted. This is a known service-side
+  gap and is **not** addressable in this client-side change; it is called out here so
+  that the SDK's observed failover-latency telemetry is interpretable. Latency-sensitive
+  workloads on GW v1 will benefit most when the Gateway side ships
+  `RemoteRegionPreferred`.
+
+This client-side spec is correct for both GW v1 and GW v2 — the trigger boundary,
+gate, and header value are unchanged. What changes is *when* the trigger fires
+relative to the original request.
+
 ### Goals
 
 1. **Header-emission parity with .NET, within Rust's existing retry budget.** Mirror .NET's
@@ -77,16 +120,21 @@ budget for full retry-count parity is captured under [Future Work](#future-work)
   single-master" contract.
 - Backend rollout coordination. The header is forward-compatible; older backends ignore it.
 - Multi-master account behavior. Multi-master accounts never emit the header.
-
-### Primary Target
-
-Single-master Session-consistency reads during a region failover or failback catch-up window.
-Specifically: any `read_item` / `query` / point-read on a single-master account where a
-satellite region briefly lags behind the hub.
-
-On `release/azure_data_cosmos-previews`, every such call dispatches through
-`CosmosDriver::execute_operation` (`driver/cosmos_driver.rs`); the latch and header emission
-must therefore land in the driver's operation pipeline. See §1.5 and [ALT-6](#alt-6--implement-the-latch--header-as-a-driver-side-policy).
+- **Per-partition automatic failover (PPAD) integration.** When PPAD is enabled, the
+  effective "hub region" is a *per-partition* concept rather than an account-wide one
+  (each partition has its own current write region, which can shift independently). This
+  spec emits a single account-scoped header value because (a) the .NET PR
+  ([Azure/azure-cosmos-dotnet-v3#5447](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5447))
+  also emits it account-scoped — partition-scoped routing happens server-side via
+  PartitionKeyRange-level state — and (b) the driver's `AccountMetadataCache` exposes
+  account-level write-region topology, not partition-scoped routing. **Validation:** the
+  implementation PR's tests must include at least one PPAD-enabled single-master account
+  scenario to confirm the backend correctly routes the latched retry to the
+  per-partition hub region (i.e. the server is the source of truth for partition→hub
+  mapping, and emitting the account-scoped header is sufficient). If post-rollout
+  telemetry shows misrouting on PPAD accounts, file a follow-up to plumb partition-scoped
+  hub-region resolution through `PartitionKeyRangeCache` and emit a partition-aware
+  variant of the header.
 
 ### 1.5 Two-crate landscape (SDK vs Driver) — previews architecture
 
