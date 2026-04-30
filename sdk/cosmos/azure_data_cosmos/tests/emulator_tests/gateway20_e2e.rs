@@ -8,7 +8,9 @@
 //! account. The endpoint and primary key are read from the
 //! `AZURE_COSMOS_GW20_ENDPOINT` and `AZURE_COSMOS_GW20_KEY` environment
 //! variables and gated by the `gateway20` test category. They are skipped by
-//! default; the dedicated `ci-gateway20.yml` pipeline sets the matrix entry's
+//! default; the main Cosmos Rust pipeline (`sdk/cosmos/ci.yml`) injects those
+//! env vars from the `azure-sdk-tests-cosmos` service connection's secret
+//! variable group, and the `Cosmos_gateway20_live_test` matrix entry sets the
 //! `testCategory` to `gateway20` (or `gateway20_multi_region`) so the tests
 //! run in CI against the live account.
 //!

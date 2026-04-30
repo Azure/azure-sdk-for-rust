@@ -43,6 +43,21 @@ extends:
     CloudConfig:
       Public:
         ServiceConnection: azure-sdk-tests-cosmos
+    # Endpoint + master key for the pre-provisioned Gateway 2.0 ("thin client")
+    # account, surfaced from the `azure-sdk-tests-cosmos` service connection's
+    # secret variable group. Both `LiveTestMatrixConfigs` entries below see
+    # these env vars at job time; the standard Cosmos live tests ignore them
+    # while the Gateway 2.0 matrix entry consumes them via the `gateway20`
+    # test-category scaffolding (see
+    # `azure_data_cosmos/tests/emulator_tests/gateway20_e2e.rs`).
+    #
+    # This mirrors the Java Cosmos SDK's thin-client live-test setup
+    # (`sdk/cosmos/tests.yml` in `Azure/azure-sdk-for-java`), which adds a
+    # second matrix entry pointing at a pre-provisioned thin-client account
+    # rather than spinning up a dedicated pipeline.
+    EnvVars:
+      AZURE_COSMOS_GW20_ENDPOINT: $(thinclient-test-endpoint)
+      AZURE_COSMOS_GW20_KEY: $(thinclient-test-key)
     MatrixConfigs:
       - Name: Cosmos_release
         Path: sdk/cosmos/release-platform-matrix.json
@@ -52,5 +67,16 @@ extends:
     LiveTestMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json
+        Selection: sparse
+        GenerateVMJobs: true
+      # Gateway 2.0 ("thin client") live tests run against a pre-provisioned
+      # account that is NOT created per-pipeline-run. The
+      # `ArmTemplateParameters` block in `live-gateway20-matrix.json` is kept
+      # so the deploy step still fires (the matrix machinery requires it),
+      # but the provisioned account is unused — tests connect to the dedicated
+      # thin-client account via the `AZURE_COSMOS_GW20_ENDPOINT/_KEY` env
+      # vars wired above.
+      - Name: Cosmos_gateway20_live_test
+        Path: sdk/cosmos/live-gateway20-matrix.json
         Selection: sparse
         GenerateVMJobs: true

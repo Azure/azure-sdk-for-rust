@@ -561,7 +561,8 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 | Action | File | Purpose |
 | --- | --- | --- |
-| NEW | `sdk/cosmos/ci-gateway20.yml` | Gateway 2.0 live tests pipeline definition (uses pre-provisioned account) |
+| EDIT | `sdk/cosmos/ci.yml` | Add a second `LiveTestMatrixConfigs` entry (`Cosmos_gateway20_live_test`) that points at `live-gateway20-matrix.json`, plus an `EnvVars` block that injects `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` from the `azure-sdk-tests-cosmos` service connection. Mirrors Java's `sdk/cosmos/tests.yml` thin-client setup. |
+| NEW  | `sdk/cosmos/live-gateway20-matrix.json` | Gateway 2.0 live test matrix (single-region + multi-region; `testCategory` = `gateway20` / `gateway20_multi_region`). The pre-provisioned account is supplied via the env vars above; the matrix's `ArmTemplateParameters` block is preserved so the deploy step still runs even though the per-run account is unused. |
 | EDIT | `sdk/cosmos/live-platform-matrix.json` | Add gateway 2.0 test matrix entry |
 
 #### Test Coverage Matrix
