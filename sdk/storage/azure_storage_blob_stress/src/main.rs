@@ -7,7 +7,9 @@ mod roundtrip_blobs_test;
 
 use std::process::exit;
 
-use azure_storage_blob_test::stress::{Result, StressRunner, StressTest, StressTestFactory};
+use azure_storage_blob_test::stress::{
+    args::StressRunnerOptions, Result, StressRunner, StressTest, StressTestFactory,
+};
 use clap::Subcommand;
 
 use crate::{
@@ -34,10 +36,12 @@ enum StressTests {
 }
 
 impl StressTestFactory for StressTests {
-    fn build_test(&self) -> Result<Box<dyn StressTest>> {
-        match self {
-            StressTests::Download(args) => args.as_test(),
-            StressTests::Roundtrip(args) => args.as_test(),
+    fn build_test(options: &StressRunnerOptions<Self>) -> Result<Box<dyn StressTest>> {
+        match &options.command {
+            StressTests::Download(download_args) => download_args.as_test(options.fault_options()),
+            StressTests::Roundtrip(roundtrip_args) => {
+                roundtrip_args.as_test(options.fault_options())
+            }
         }
     }
 }
