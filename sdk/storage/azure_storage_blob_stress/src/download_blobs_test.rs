@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use azure_core::{error::ErrorKind, http::Body, Error, Result};
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobClient, BlobContainerClient};
 use azure_storage_blob_test::{
+    fault_injection::FaultInjectionProbabilities,
     stress::{
         data,
         value_parsers::{non_zero_usize, simple_non_zero_len_u64, simple_non_zero_len_usize},
@@ -41,9 +42,12 @@ pub(crate) struct DownloadBlobsTestArgs {
 }
 
 impl DownloadBlobsTestArgs {
-    pub fn as_test(&self) -> Result<Box<dyn StressTest>> {
+    pub fn as_test(
+        &self,
+        fault_options: &FaultInjectionProbabilities,
+    ) -> Result<Box<dyn StressTest>> {
         Ok(Box::new(DownloadBlobsTest {
-            container_client: crate::clients::get_container_client()?,
+            container_client: crate::clients::get_container_client(fault_options)?,
             download_targets: self.targets,
             download_targets_len: self.data_len,
             download_target_name_queue: Arc::new(Mutex::new(VecDeque::with_capacity(self.targets))),

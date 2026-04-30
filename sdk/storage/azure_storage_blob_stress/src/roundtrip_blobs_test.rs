@@ -10,6 +10,7 @@ use azure_storage_blob::{
     BlobClient, BlobContainerClient,
 };
 use azure_storage_blob_test::{
+    fault_injection::FaultInjectionProbabilities,
     stress::{
         data,
         value_parsers::{non_zero_usize, simple_non_zero_len_u64},
@@ -53,9 +54,12 @@ enum DataSourceType {
 }
 
 impl RoundtripBlobsTestArgs {
-    pub fn as_test(&self) -> Result<Box<dyn StressTest>> {
+    pub fn as_test(
+        &self,
+        fault_options: &FaultInjectionProbabilities,
+    ) -> Result<Box<dyn StressTest>> {
         Ok(Box::new(RoundtripBlobsTest {
-            container_client: crate::clients::get_container_client()?,
+            container_client: crate::clients::get_container_client(fault_options)?,
             data_len: self.data_len,
             data_type: self.data_source,
             parallel: NonZero::new(self.concurrency).ok_or_else(non_zero_err)?,
