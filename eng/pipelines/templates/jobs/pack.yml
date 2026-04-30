@@ -80,7 +80,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '1.92'
 
     - task: Powershell@2
       displayName: Pack Crates
@@ -126,7 +126,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageNames $(PackageNames)
+        arguments: -PackageNames $(PackageNames) -Toolchain '1.92'
 
     - task: Powershell@2
       displayName: Pack Crates
