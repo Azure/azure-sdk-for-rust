@@ -284,6 +284,11 @@ impl EmulatorStore {
             if region_store.paused.load(Ordering::SeqCst) {
                 // Enqueue to buffer
                 let mut buffer = region_store.replication_buffer.write().unwrap();
+                // Backpressure: drop oldest entries when buffer exceeds capacity.
+                const MAX_REPLICATION_BUFFER: usize = 10_000;
+                while buffer.len() >= MAX_REPLICATION_BUFFER {
+                    buffer.pop_front();
+                }
                 buffer.push_back(PendingReplication {
                     db_id: db_id.to_string(),
                     coll_id: coll_id.to_string(),
@@ -326,11 +331,6 @@ pub(crate) struct RegionStoreRef<'a> {
 }
 
 impl<'a> RegionStoreRef<'a> {
-    #[allow(dead_code)]
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
     /// Reads a database metadata.
     pub fn get_database(&self, db_id: &str) -> Option<DatabaseMetadata> {
         let regions = self.store.regions.read().unwrap();
@@ -347,7 +347,6 @@ impl<'a> RegionStoreRef<'a> {
         let key = (db_id.to_string(), coll_id.to_string());
         containers.get(&key).map(|s| ContainerStateSnapshot {
             metadata: s.metadata.clone(),
-            partitions_ref: s as *const ContainerState,
         })
     }
 
@@ -363,26 +362,6 @@ impl<'a> RegionStoreRef<'a> {
         let containers = region.containers.read().unwrap();
         let key = (db_id.to_string(), coll_id.to_string());
         containers.get(&key).map(f)
-    }
-
-    /// Creates a database in this region only (for HTTP-based creation).
-    #[allow(dead_code)]
-    pub fn create_database_local(&self, meta: &DatabaseMetadata) {
-        let regions = self.store.regions.read().unwrap();
-        if let Some(region) = regions.get(&self.name) {
-            let mut dbs = region.databases.write().unwrap();
-            dbs.insert(meta.id.clone(), meta.clone());
-        }
-    }
-
-    /// Creates a container in this region only.
-    #[allow(dead_code)]
-    pub fn create_container_local(&self, db_id: &str, state: ContainerState) {
-        let regions = self.store.regions.read().unwrap();
-        if let Some(region) = regions.get(&self.name) {
-            let mut containers = region.containers.write().unwrap();
-            containers.insert((db_id.to_string(), state.metadata.id.clone()), state);
-        }
     }
 
     /// Checks if a database exists.
@@ -510,13 +489,7 @@ pub(crate) struct ContainerState {
 #[allow(dead_code)]
 pub(crate) struct ContainerStateSnapshot {
     pub metadata: ContainerMetadata,
-    partitions_ref: *const ContainerState,
 }
-
-// Safety: ContainerStateSnapshot only stores metadata (Clone) and a pointer
-// that is only used while the parent lock is held.
-unsafe impl Send for ContainerStateSnapshot {}
-unsafe impl Sync for ContainerStateSnapshot {}
 
 impl ContainerState {
     pub(crate) fn new(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Self {
@@ -566,7 +539,7 @@ pub(crate) struct PhysicalPartition {
     pub rid_prefix: u32,
     pub throughput_fraction: f64,
     pub parents: Vec<u32>,
-    pub locked_until: RwLock<Option<tokio::time::Instant>>,
+    pub locked: AtomicBool,
     pub throughput_tracker: Option<ThroughputTracker>,
 }
 
@@ -593,11 +566,7 @@ impl PhysicalPartition {
 
     /// Returns whether this partition is currently locked (split/merge in progress).
     pub fn is_locked(&self) -> bool {
-        let guard = self.locked_until.read().unwrap();
-        match *guard {
-            Some(until) => tokio::time::Instant::now() < until,
-            None => false,
-        }
+        self.locked.load(Ordering::SeqCst)
     }
 }
 
@@ -612,24 +581,6 @@ pub(crate) struct StoredDocument {
     pub self_link: String,
     pub lsn: u64,
     pub epk: Epk,
-}
-
-/// Partition key range metadata (exposed via PKRanges feed).
-#[derive(Clone, Debug)]
-#[allow(dead_code)]
-pub(crate) struct PartitionKeyRangeMetadata {
-    pub id: String,
-    pub rid: String,
-    pub self_link: String,
-    pub etag: String,
-    pub ts: u64,
-    pub lsn: u64,
-    pub min_inclusive: String,
-    pub max_exclusive: String,
-    pub status: String,
-    pub parents: Vec<String>,
-    pub rid_prefix: u32,
-    pub throughput_fraction: f64,
 }
 
 /// Creates physical partitions for a container by dividing the EPK space equally.
@@ -670,7 +621,7 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
             rid_prefix: i,
             throughput_fraction: 1.0 / n as f64,
             parents: Vec::new(),
-            locked_until: RwLock::new(None),
+            locked: AtomicBool::new(false),
             throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
         });
     }
@@ -739,10 +690,15 @@ impl ThroughputTracker {
         let now = current_timestamp();
         let window = self.window_start.load(Ordering::SeqCst);
 
-        // Reset window if we've moved to a new second
-        if now > window {
+        // Reset window if we've moved to a new second. Only one thread wins
+        // the compare_exchange; losers proceed with the already-reset counter.
+        if now > window
+            && self
+                .window_start
+                .compare_exchange(window, now, Ordering::SeqCst, Ordering::SeqCst)
+                .is_ok()
+        {
             self.consumed_centiru.store(0, Ordering::SeqCst);
-            self.window_start.store(now, Ordering::SeqCst);
         }
 
         let charge_centiru = (charge * 100.0) as u64;
@@ -790,12 +746,7 @@ impl EmulatorStore {
                         .iter()
                         .find(|p| p.id == partition_id)
                     {
-                        let mut lock = p.locked_until.write().unwrap();
-                        *lock = Some(
-                            tokio::time::Instant::now()
-                                + min_lock_duration
-                                + Duration::from_secs(3600),
-                        );
+                        p.locked.store(true, Ordering::SeqCst);
                     }
                 }
             }
@@ -810,7 +761,7 @@ impl EmulatorStore {
                 tokio::time::sleep(min_lock_duration).await;
             }
             // execute_split does the actual doc redistribution under the lock,
-            // then clears locked_until when done
+            // then unlocks partitions when done
             store.execute_split(&db, &coll, partition_id);
         });
     }
@@ -889,7 +840,7 @@ impl EmulatorStore {
                     rid_prefix: child_id_1,
                     throughput_fraction: 1.0 / n,
                     parents: vec![partition_id],
-                    locked_until: RwLock::new(None),
+                    locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                 };
 
@@ -905,7 +856,7 @@ impl EmulatorStore {
                     rid_prefix: child_id_2,
                     throughput_fraction: 1.0 / n,
                     parents: vec![partition_id],
-                    locked_until: RwLock::new(None),
+                    locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                 };
 
@@ -940,12 +891,7 @@ impl EmulatorStore {
                 if let Some(state) = containers.get(&key) {
                     for p in &state.physical_partitions {
                         if p.id == partition_id_a || p.id == partition_id_b {
-                            let mut lock = p.locked_until.write().unwrap();
-                            *lock = Some(
-                                tokio::time::Instant::now()
-                                    + min_lock_duration
-                                    + Duration::from_secs(3600),
-                            );
+                            p.locked.store(true, Ordering::SeqCst);
                         }
                     }
                 }
@@ -1044,7 +990,7 @@ impl EmulatorStore {
                     rid_prefix: child_id,
                     throughput_fraction: 1.0 / n.max(1.0),
                     parents: vec![partition_id_a, partition_id_b],
-                    locked_until: RwLock::new(None),
+                    locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                 };
 

@@ -700,6 +700,17 @@ async fn handle_create(
             }
         }
 
+        // Compute RU charge and check throttle BEFORE mutating the store.
+        let num_props = RuChargingModel::count_properties(&body);
+        let charge = store
+            .config()
+            .ru_model()
+            .compute_create_ru(request_body.len(), num_props);
+
+        if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled(), start) {
+            return Err(response);
+        }
+
         // Generate system properties
         let lsn = partition.advance_lsn();
         let (_, doc_rid) = store.rid_generator().next_document_rid(
@@ -737,16 +748,6 @@ async fn handle_create(
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
-        let num_props = RuChargingModel::count_properties(&body);
-        let charge = store
-            .config()
-            .ru_model()
-            .compute_create_ru(request_body.len(), num_props);
-
-        // Check throttle
-        if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled(), start) {
-            return Err(response);
-        }
 
         Ok((stored_doc, token, charge, body))
     });
@@ -1025,6 +1026,22 @@ async fn handle_replace(
             }
         }
 
+        // Compute RU charge and check throttle BEFORE mutating the store.
+        let num_props = RuChargingModel::count_properties(&body);
+        let charge = store
+            .config()
+            .ru_model()
+            .compute_replace_ru(request_body.len(), num_props);
+
+        if let Some(response) = check_throttle(
+            partition,
+            charge,
+            store.config().throttling_enabled(),
+            start,
+        ) {
+            return Err(response);
+        }
+
         // Replace
         let lsn = partition.advance_lsn();
         let ts = current_timestamp();
@@ -1048,22 +1065,6 @@ async fn handle_replace(
         };
 
         logical.insert(doc_id.to_string(), new_doc.clone());
-
-        let num_props = RuChargingModel::count_properties(&body);
-        let charge = store
-            .config()
-            .ru_model()
-            .compute_replace_ru(request_body.len(), num_props);
-
-        // Check throttle
-        if let Some(response) = check_throttle(
-            partition,
-            charge,
-            store.config().throttling_enabled(),
-            start,
-        ) {
-            return Err(response);
-        }
 
         Ok((new_doc, token, charge, body))
     });
@@ -1162,6 +1163,25 @@ async fn handle_upsert(
             return Err(response);
         }
 
+        // Compute RU charge upfront. For upsert we use the create charge as
+        // a conservative estimate; the actual status (201 vs 200) is determined
+        // after checking existence, but the charge difference is small and the
+        // throttle gate must fire before any mutation.
+        let num_props = RuChargingModel::count_properties(&body);
+        let charge = store
+            .config()
+            .ru_model()
+            .compute_create_ru(request_body.len(), num_props);
+
+        if let Some(response) = check_throttle(
+            partition,
+            charge,
+            store.config().throttling_enabled(),
+            start,
+        ) {
+            return Err(response);
+        }
+
         let lsn = partition.advance_lsn();
         let ts = current_timestamp();
         let etag = new_etag();
@@ -1204,7 +1224,7 @@ async fn handle_upsert(
 
         logical.insert(doc_id, new_doc.clone());
 
-        let num_props = RuChargingModel::count_properties(&body);
+        // Refine charge based on actual status (create vs replace).
         let charge = if status == StatusCode::Created {
             store
                 .config()
@@ -1216,16 +1236,6 @@ async fn handle_upsert(
                 .ru_model()
                 .compute_replace_ru(request_body.len(), num_props)
         };
-
-        // Check throttle
-        if let Some(response) = check_throttle(
-            partition,
-            charge,
-            store.config().throttling_enabled(),
-            start,
-        ) {
-            return Err(response);
-        }
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
@@ -1353,6 +1363,23 @@ async fn handle_delete(
             }
         }
 
+        // Compute RU charge and check throttle BEFORE mutating the store.
+        let num_props = RuChargingModel::count_properties(&existing.body);
+        let body_size = serde_json::to_vec(&existing.body).unwrap_or_default().len();
+        let charge = store
+            .config()
+            .ru_model()
+            .compute_replace_ru(body_size, num_props);
+
+        if let Some(response) = check_throttle(
+            partition,
+            charge,
+            store.config().throttling_enabled(),
+            start,
+        ) {
+            return Err(response);
+        }
+
         let lsn = partition.advance_lsn();
         logical.remove(doc_id);
 
@@ -1367,23 +1394,6 @@ async fn handle_delete(
             lsn,
             epk,
         };
-
-        let num_props = RuChargingModel::count_properties(&existing.body);
-        let body_size = serde_json::to_vec(&existing.body).unwrap_or_default().len();
-        let charge = store
-            .config()
-            .ru_model()
-            .compute_replace_ru(body_size, num_props);
-
-        // Check throttle
-        if let Some(response) = check_throttle(
-            partition,
-            charge,
-            store.config().throttling_enabled(),
-            start,
-        ) {
-            return Err(response);
-        }
 
         Ok((tombstone, token, charge))
     });

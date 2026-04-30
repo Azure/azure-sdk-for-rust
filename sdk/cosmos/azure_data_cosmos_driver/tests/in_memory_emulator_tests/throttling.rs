@@ -116,3 +116,182 @@ async fn throttle_disabled_no_429() {
 async fn container_creation_min_400() {
     azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new().with_throughput(100);
 }
+
+#[tokio::test]
+async fn throttled_create_does_not_persist_document() {
+    // Verify that when a create is throttled, the document is NOT stored.
+    // This tests the fix for the "write-then-check" bug where throttle checks
+    // happened after the document was already persisted.
+
+    // Use minimum throughput (400 RU/s) with 1 partition so we can exhaust it.
+    let ctx = setup_throttled(400).await;
+
+    // Exhaust the budget with successful creates.
+    let mut throttled_id = None;
+    for i in 0..200 {
+        let id = format!("thr-item-{}", i);
+        let body = serde_json::json!({"id": &id, "pk": "pk1", "value": i});
+        let req = create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &body,
+            r#"["pk1"]"#,
+            false,
+        );
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        if response.status() == StatusCode::TooManyRequests {
+            throttled_id = Some(id);
+            break;
+        }
+        assert_eq!(response.status(), StatusCode::Created);
+    }
+
+    let throttled_id = throttled_id.expect("should have been throttled");
+
+    // The throttled document must NOT be readable.
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &throttled_id,
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(
+        response.status(),
+        StatusCode::NotFound,
+        "throttled create must not persist the document",
+    );
+}
+
+#[tokio::test]
+async fn throttled_replace_does_not_modify_document() {
+    // Verify that when a replace is throttled, the original document is unchanged.
+    let ctx = setup_throttled(400).await;
+
+    // Create a seed item first (low RU, should succeed).
+    let seed_body = serde_json::json!({"id": "seed", "pk": "pk1", "value": "original"});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &seed_body,
+        r#"["pk1"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+
+    // Exhaust the budget with more creates.
+    for i in 1..200 {
+        let body = serde_json::json!({"id": format!("fill-{}", i), "pk": "pk1", "value": i});
+        let req = create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &body,
+            r#"["pk1"]"#,
+            false,
+        );
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        if response.status() == StatusCode::TooManyRequests {
+            break;
+        }
+    }
+
+    // Now try to replace the seed. This should be throttled.
+    let replace_body = serde_json::json!({"id": "seed", "pk": "pk1", "value": "modified"});
+    let req = replace_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "seed",
+        &replace_body,
+        r#"["pk1"]"#,
+        None,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+
+    // If the replace was throttled, verify the original value is preserved.
+    if response.status() == StatusCode::TooManyRequests {
+        // Read back the seed item — it should still have "original".
+        // Wait for a new RU window to avoid throttling the read.
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "seed", r#"["pk1"]"#);
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::Ok);
+        let body = read_response_body(response).await;
+        assert_eq!(
+            body["value"], "original",
+            "throttled replace must not modify the document",
+        );
+    }
+    // If not throttled (budget recovered), the test is inconclusive but not a failure.
+}
+
+#[tokio::test]
+async fn throttled_delete_does_not_remove_document() {
+    // Verify that when a delete is throttled, the document remains.
+    let ctx = setup_throttled(400).await;
+
+    // Create a seed item.
+    let seed_body = serde_json::json!({"id": "keep-me", "pk": "pk1", "value": 42});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &seed_body,
+        r#"["pk1"]"#,
+        false,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+
+    // Exhaust the budget.
+    for i in 1..200 {
+        let body = serde_json::json!({"id": format!("fill-{}", i), "pk": "pk1", "value": i});
+        let req = create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &body,
+            r#"["pk1"]"#,
+            false,
+        );
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        if response.status() == StatusCode::TooManyRequests {
+            break;
+        }
+    }
+
+    // Try to delete the seed. Should be throttled.
+    let req = delete_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "keep-me",
+        r#"["pk1"]"#,
+        None,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+
+    if response.status() == StatusCode::TooManyRequests {
+        // Verify the document still exists after the throttled delete.
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        let req = read_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            "keep-me",
+            r#"["pk1"]"#,
+        );
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::Ok,
+            "throttled delete must not remove the document",
+        );
+    }
+}

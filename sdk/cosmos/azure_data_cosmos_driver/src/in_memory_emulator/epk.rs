@@ -72,6 +72,8 @@ pub(crate) enum PartitionKeyComponent {
     Infinity,
 }
 
+// In the Cosmos DB domain, partition key numbers are always finite, non-NaN
+// values (the service rejects NaN/Infinity), so total equality holds.
 impl Eq for PartitionKeyComponent {}
 
 // --- Component type markers ---
@@ -464,7 +466,10 @@ pub(crate) fn parse_partition_key_header(header: &str) -> Vec<PartitionKeyCompon
             serde_json::Value::Null => PartitionKeyComponent::Null,
             serde_json::Value::Bool(b) => PartitionKeyComponent::Bool(*b),
             serde_json::Value::Number(n) => {
-                PartitionKeyComponent::Number(n.as_f64().unwrap_or(0.0))
+                let f = n.as_f64().unwrap_or(0.0);
+                // Cosmos DB rejects NaN/Infinity partition keys; normalize to 0.0
+                // to maintain the Eq invariant.
+                PartitionKeyComponent::Number(if f.is_finite() { f } else { 0.0 })
             }
             serde_json::Value::String(s) => PartitionKeyComponent::String(s.clone()),
             _ => PartitionKeyComponent::Null,
@@ -489,7 +494,8 @@ pub(crate) fn extract_pk_from_body(
                 Some(serde_json::Value::Null) | None => PartitionKeyComponent::Null,
                 Some(serde_json::Value::Bool(b)) => PartitionKeyComponent::Bool(*b),
                 Some(serde_json::Value::Number(n)) => {
-                    PartitionKeyComponent::Number(n.as_f64().unwrap_or(0.0))
+                    let f = n.as_f64().unwrap_or(0.0);
+                    PartitionKeyComponent::Number(if f.is_finite() { f } else { 0.0 })
                 }
                 Some(serde_json::Value::String(s)) => PartitionKeyComponent::String(s.clone()),
                 Some(_) => PartitionKeyComponent::Null,

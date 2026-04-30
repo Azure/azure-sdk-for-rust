@@ -91,16 +91,6 @@ pub(crate) fn parse_composite_session_token(s: &str) -> Vec<SessionToken> {
         .collect()
 }
 
-/// Formats a composite V2 session token from partition state.
-#[allow(dead_code)]
-pub(crate) fn format_composite_session_token(pairs: &[(u32, u64)]) -> String {
-    pairs
-        .iter()
-        .map(|(id, lsn)| SessionToken::format(*id, *lsn))
-        .collect::<Vec<_>>()
-        .join(",")
-}
-
 /// Per-partition session state, tracking forced unavailability.
 pub(crate) struct SessionState {
     force_unavailable: AtomicBool,
