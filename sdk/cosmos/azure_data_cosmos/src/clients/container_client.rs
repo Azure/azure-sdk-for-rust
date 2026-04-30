@@ -11,7 +11,7 @@ use crate::{
         BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         SessionToken,
     },
-    resource_context::{ResourceLink, ResourceType},
+    resource_context::ResourceLink,
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
     Query, ReplaceContainerOptions, ThroughputOptions,
@@ -19,11 +19,8 @@ use crate::{
 use std::sync::Arc;
 
 use super::ThroughputPoller;
-use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
-use crate::operation_context::OperationType;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{
     effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
     CosmosOperation, ItemReference, PartitionKeyKind,
@@ -36,7 +33,6 @@ use serde::{de::DeserializeOwned, Serialize};
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
-    items_link: ResourceLink,
     container_connection: Arc<ContainerConnection>,
     container_ref: ContainerReference,
     context: ClientContext,
@@ -49,10 +45,6 @@ impl ContainerClient {
         container_id: &str,
         database_id: &str,
     ) -> azure_core::Result<Self> {
-        let link = database_link
-            .feed(ResourceType::Containers)
-            .item(container_id);
-
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
             .driver
@@ -77,7 +69,6 @@ impl ContainerClient {
         ));
 
         Ok(Self {
-            items_link,
             container_connection,
             container_ref,
             context,
