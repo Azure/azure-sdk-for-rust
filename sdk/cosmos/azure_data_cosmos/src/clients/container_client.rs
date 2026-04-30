@@ -37,7 +37,6 @@ use serde::{de::DeserializeOwned, Serialize};
 #[derive(Clone)]
 pub struct ContainerClient {
     link: ResourceLink,
-    items_link: ResourceLink,
     container_connection: Arc<ContainerConnection>,
     container_ref: ContainerReference,
     context: ClientContext,
@@ -53,7 +52,6 @@ impl ContainerClient {
         let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
-        let items_link = link.feed(ResourceType::Documents);
 
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
@@ -80,7 +78,6 @@ impl ContainerClient {
 
         Ok(Self {
             link,
-            items_link,
             container_connection,
             container_ref,
             context,
@@ -792,19 +789,22 @@ impl ContainerClient {
         options: Option<BatchOptions>,
     ) -> azure_core::Result<BatchResponse> {
         let options = options.unwrap_or_default();
-        let partition_key = batch.partition_key().clone();
+        let body = serde_json::to_vec(batch.operations())?;
+        let driver_pk = batch.partition_key().clone().into_driver_partition_key();
 
-        let mut cosmos_request =
-            CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
-                .partition_key(partition_key)
-                .json(batch.operations())
-                .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let operation =
+            CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = apply_batch_options(operation, &options);
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(BatchResponse::new)
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        Ok(BatchResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Gets the feed ranges for this container.
@@ -997,6 +997,17 @@ fn apply_item_options(
     }
     if let Some(precondition) = precondition {
         operation = operation.with_precondition(precondition);
+    }
+    operation
+}
+
+/// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
+///
+/// [`BatchOptions`] carries a session token but no precondition (ETag-based
+/// conditions are specified per-operation within the batch itself).
+fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -> CosmosOperation {
+    if let Some(session_token) = &options.session_token {
+        operation = operation.with_session_token(session_token.clone());
     }
     operation
 }
