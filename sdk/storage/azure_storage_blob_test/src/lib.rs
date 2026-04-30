@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 pub mod data_streams;
+pub mod fault_injection;
 pub mod stress;
 
 use std::{

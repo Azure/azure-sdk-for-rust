@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+pub mod args;
 pub mod data;
 pub mod value_parsers;
 
@@ -17,13 +18,13 @@ use futures::{
 use serde::Serialize;
 use std::{fmt::Debug, future::Future, mem, pin::Pin, time::Duration};
 
-use crate::{stress::value_parsers::simple_duration, OptionalTimeoutFutureExt};
+use crate::{stress::args::StressRunnerOptions, OptionalTimeoutFutureExt};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// A [Subcommand] specifier capable of instancing the code for the selected subcommand.
 pub trait StressTestFactory: Subcommand + Debug + std::fmt::Display {
-    fn build_test(&self) -> Result<Box<dyn StressTest>>;
+    fn build_test(options: &StressRunnerOptions<Self>) -> Result<Box<dyn StressTest>>;
 }
 
 #[async_trait::async_trait]
@@ -43,56 +44,6 @@ pub trait StressTestOperation: Send + Sync {
         timeout: Option<Duration>,
         result_sender: UnboundedSender<StressRunOutput>,
     );
-}
-
-#[derive(Debug, Clone, Parser)]
-pub(crate) struct StressRunnerOptions<T: StressTestFactory> {
-    /// Parallel operations to run.
-    #[arg(long, default_value_t = 1)]
-    pub parallel: usize,
-
-    /// Duration of the stress test, excluding setup and cleanup.
-    #[arg(long, default_value = "10", value_parser = simple_duration, value_name = "SECONDS")]
-    duration: Duration,
-
-    /// Optional timeout for one-time test setup.
-    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
-    setup_timeout: Option<Duration>,
-
-    /// Optional timeout for individual operations during the test.
-    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
-    operation_timeout: Option<Duration>,
-
-    /// Optional timeout for one-time test cleanup.
-    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
-    cleanup_timeout: Option<Duration>,
-
-    #[command(subcommand)]
-    pub command: T,
-}
-
-impl<T: StressTestFactory> std::fmt::Display for StressRunnerOptions<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "=== Stress Runner Configuration ===")?;
-        writeln!(f, "duration: {}", self.duration.as_secs())?;
-        writeln!(f, "parallel: {}", self.parallel)?;
-        writeln!(
-            f,
-            "operation_timeout: {:?}",
-            self.operation_timeout.map(|t| t.as_secs())
-        )?;
-        writeln!(
-            f,
-            "setup_timeout: {:?}",
-            self.setup_timeout.map(|t| t.as_secs())
-        )?;
-        writeln!(
-            f,
-            "cleanup_timeout: {:?}",
-            self.cleanup_timeout.map(|t| t.as_secs())
-        )?;
-        std::fmt::Display::fmt(&self.command, f)
-    }
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -184,7 +135,7 @@ impl<T: StressTestFactory> StressRunner<T> {
     }
 
     pub async fn run(&self) -> Result<()> {
-        let stress_test = self.options.command.build_test()?;
+        let stress_test = self.options.build_test()?;
         let mut totals = StressRunCounts::default();
 
         println!("{}", self.options);
