@@ -1,162 +1,160 @@
 {
-    "version": "0.2",
-    "language": "en",
-    "useGitignore": true,
-    "ignorePaths": [
-        "**/test-resources.bicep",
-        "**/test-resources.json",
-        "**/test-resources-post.ps1",
-        "**/assets.json",
-        "**/*.pfx",
-        ".cargo/",
-        ".config",
-        ".devcontainer/devcontainer.json",
-        ".devcontainer/Dockerfile",
-        ".devcontainer/oncreate",
-        ".github/",
-        ".vscode/",
-        "NOTICE.txt",
-        "deny.toml",
-        "eng/",
-        "rust-toolchain.toml"
-    ],
-    "words": [
-        "aarch",
-        "accountendpoint",
-        "accountkey",
-        "agentic",
-        "amqp",
-        "asyncoperation",
-        "azsdk",
-        "azurecli",
-        "bugbug",
-        "cgroupv",
-        "checkpointstore",
-        "clippy",
-        "codeowners",
-        "contoso",
-        "cplusplus",
-        "cpptools",
-        "cppvsdbg",
-        "datalake",
-        "datetime",
-        "deserializers",
-        "devicecode",
-        "docsrs",
-        "doctest",
-        "dotenv",
-        "downcasted",
-        "downcasting",
-        "entra",
-        "etag",
-        "eventhub",
-        "eventhubs",
-        "execdir",
-        "fips",
-        "headerless",
-        "hmac",
-        "iothub",
-        "keyvault",
-        "lastexitcode",
-        "linuxpool",
-        "linuxvmimage",
-        "lldb",
-        "macpool",
-        "macvmimage",
-        "markdownlintrc",
-        "maxresults",
-        "maxsize",
-        "msrc",
-        "msrv",
-        "newtonsoft",
-        "nocapture",
-        "oidc",
-        "opentelemetry",
-        "otel",
-        "pageable",
-        "pageables",
-        "pkce",
-        "pkcs",
-        "posix",
-        "pullrequest",
-        "pwsh",
-        "reqwest",
-        "resourcemanager",
-        "rngs",
-        "rsplit",
-        "runtimes",
-        "rustfmt",
-        "rustfmt",
-        "rustls",
-        "rustup",
-        "schannel",
-        "seekable",
-        "servicebus",
-        "spector",
-        "splitmix",
-        "stylesheet",
-        "subclient",
-        "symcrypt",
-        "telemetered",
-        "typespec",
-        "undelete",
-        "uninlined",
-        "upvote",
-        "usec",
-        "userdelegationkey",
-        "vcpkg",
-        "versionid",
-        "virtualmachine",
-        "webpki",
-        "windowspool",
-        "windowsvmimage",
-        "worktree"
-    ],
-    "dictionaryDefinitions": [
-        {
-            "name": "crates",
-            "path": "../eng/dict/crates.txt",
-            "noSuggest": true,
-            "useCompounds": false
-        },
-        {
-            "name": "rust-custom",
-            "path": "../eng/dict/rust-custom.txt",
-            "noSuggest": true
-        }
-    ],
-    "overrides": [
-        {
-            "filename": "**/Cargo.toml",
-            "dictionaries": [
-                "crates",
-                "rust-custom"
-            ]
-        },
-        {
-            "filename": "**/*.md",
-            "dictionaries": [
-                "crates",
-                "rust",
-                "rust-custom"
-            ],
-            "ignoreRegExpList": [
-                "@\\w+"
-            ]
-        },
-        {
-            "filename": "**/*.rs",
-            "dictionaries": [
-                "crates",
-                "rust-custom"
-            ]
-        },
-        {
-            "filename": "sdk/core/typespec*/**",
-            "flagWords": [
-                "azure",
-                "azurite"
-            ]
-        }
-    ]
+  "version": "0.2",
+  "language": "en",
+  "useGitignore": true,
+  "ignorePaths": [
+    "**/test-resources.bicep",
+    "**/test-resources.json",
+    "**/test-resources-post.ps1",
+    "**/assets.json",
+    "**/*.pfx",
+    ".cargo/",
+    ".config",
+    ".devcontainer/devcontainer.json",
+    ".devcontainer/Dockerfile",
+    ".devcontainer/oncreate",
+    ".github/",
+    ".vscode/",
+    "NOTICE.txt",
+    "deny.toml",
+    "eng/",
+    "rust-toolchain.toml"
+  ],
+  "words": [
+    "aarch",
+    "accountendpoint",
+    "accountkey",
+    "agentic",
+    "amqp",
+    "asyncoperation",
+    "azsdk",
+    "azurecli",
+    "bugbug",
+    "checkpointstore",
+    "clippy",
+    "codeowners",
+    "contoso",
+    "cplusplus",
+    "cpptools",
+    "cppvsdbg",
+    "datalake",
+    "datetime",
+    "deserializers",
+    "devicecode",
+    "docsrs",
+    "doctest",
+    "dotenv",
+    "downcasted",
+    "downcasting",
+    "entra",
+    "etag",
+    "eventhub",
+    "eventhubs",
+    "execdir",
+    "fips",
+    "headerless",
+    "hmac",
+    "iothub",
+    "keyvault",
+    "lastexitcode",
+    "linuxpool",
+    "linuxvmimage",
+    "lldb",
+    "macpool",
+    "macvmimage",
+    "markdownlintrc",
+    "maxresults",
+    "maxsize",
+    "msrc",
+    "msrv",
+    "nocapture",
+    "newtonsoft",
+    "oidc",
+    "opentelemetry",
+    "otel",
+    "pageable",
+    "pageables",
+    "pkce",
+    "pkcs",
+    "posix",
+    "pullrequest",
+    "pwsh",
+    "reqwest",
+    "resourcemanager",
+    "rngs",
+    "rsplit",
+    "rustfmt",
+    "runtimes",
+    "rustfmt",
+    "rustls",
+    "rustup",
+    "schannel",
+    "seekable",
+    "servicebus",
+    "splitmix",
+    "spector",
+    "stylesheet",
+    "subclient",
+    "symcrypt",
+    "telemetered",
+    "typespec",
+    "undelete",
+    "uninlined",
+    "upvote",
+    "userdelegationkey",
+    "vcpkg",
+    "versionid",
+    "virtualmachine",
+    "windowspool",
+    "windowsvmimage",
+    "webpki",
+    "worktree"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "crates",
+      "path": "../eng/dict/crates.txt",
+      "noSuggest": true,
+      "useCompounds": false
+    },
+    {
+      "name": "rust-custom",
+      "path": "../eng/dict/rust-custom.txt",
+      "noSuggest": true
+    }
+  ],
+  "overrides": [
+    {
+      "filename": "**/Cargo.toml",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": "**/*.md",
+      "dictionaries": [
+        "crates",
+        "rust",
+        "rust-custom"
+      ],
+      "ignoreRegExpList": [
+        "@\\w+"
+      ]
+    },
+    {
+      "filename": "**/*.rs",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": "sdk/core/typespec*/**",
+      "flagWords": [
+        "azure",
+        "azurite"
+      ]
+    }
+  ]
 }
