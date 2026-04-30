@@ -157,6 +157,7 @@ pub fn read_item_request(
 }
 
 /// Helper to create a PUT request to replace a document.
+#[allow(clippy::too_many_arguments)]
 pub fn replace_item_request(
     gateway_url: &str,
     db: &str,

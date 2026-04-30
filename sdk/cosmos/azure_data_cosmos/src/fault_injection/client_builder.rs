@@ -102,7 +102,7 @@ impl FaultInjectionClientBuilder {
     pub fn build(self) -> Transport {
         let inner_client = self
             .inner_client
-            .unwrap_or_else(|| azure_core::http::new_http_client());
+            .unwrap_or_else(|| azure_core::http::new_http_client(None));
 
         let fault_client = FaultClient::new(inner_client, self.rules);
         Transport::new(Arc::new(fault_client))

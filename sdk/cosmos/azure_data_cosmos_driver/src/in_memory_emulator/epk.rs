@@ -587,7 +587,7 @@ mod tests {
 
         for (component, expected) in cases {
             let epk = compute_epk(
-                &[component.clone()],
+                std::slice::from_ref(&component),
                 PartitionKeyKind::Hash,
                 PartitionKeyVersion::V2,
             );
@@ -634,7 +634,7 @@ mod tests {
 
         for (component, expected) in cases {
             let epk = compute_epk(
-                &[component.clone()],
+                std::slice::from_ref(&component),
                 PartitionKeyKind::Hash,
                 PartitionKeyVersion::V1,
             );
@@ -665,12 +665,12 @@ mod tests {
         let c2 = PartitionKeyComponent::String("user1".to_string());
 
         let epk_c1 = compute_epk(
-            &[c1.clone()],
+            std::slice::from_ref(&c1),
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
         let epk_c2 = compute_epk(
-            &[c2.clone()],
+            std::slice::from_ref(&c2),
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
