@@ -187,7 +187,10 @@ fn required_header(
 }
 
 fn next_transport_request_id() -> u32 {
-    TRANSPORT_REQUEST_ID.fetch_add(1, Ordering::Relaxed)
+    // AcqRel ensures the increment is globally visible. Relaxed would also produce
+    // unique values across threads (fetch_add is atomic regardless of ordering),
+    // but AcqRel is preferred here for diagnostic clarity in concurrent traces.
+    TRANSPORT_REQUEST_ID.fetch_add(1, Ordering::AcqRel)
 }
 
 fn effective_partition_key_bytes(inputs: &WrapInputs<'_>) -> azure_core::Result<Option<Vec<u8>>> {
