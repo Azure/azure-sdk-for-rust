@@ -1508,9 +1508,10 @@ impl CosmosDriver {
 ### 10.2 CosmosResponse Changes
 
 `CosmosResponse` gains an optional continuation token, and its `body` field becomes a
-`ResponseBody` enum to support both single-document responses (point operations) and
-multi-document responses (feed operations) without forcing every caller to parse a feed
-envelope:
+`ResponseBody` enum to support both unparsed response bodies (point operations and
+single-page feeds the driver passes through verbatim) and pre-parsed item lists
+(feeds the driver had to aggregate or whose envelopes it had to crack open),
+without forcing every caller to parse a feed envelope:
 
 ```rust
 /// The body of a Cosmos DB response.
@@ -1523,16 +1524,21 @@ pub enum ResponseBody {
     /// No body (e.g., 204 No Content).
     None,
 
-    /// A single document body — raw serialized bytes.
-    /// Used for point operations (read, create, upsert, replace) and for
-    /// resource reads (database, container).
-    Single(Vec<u8>),
+    /// A response body the driver did not need to parse — raw serialized bytes.
+    /// Used for any operation where the driver passes the server response through
+    /// verbatim. Depending on the operation, the caller (the SDK) knows whether
+    /// these bytes represent a single item (point reads, create/upsert/replace,
+    /// resource reads like database/container) or a page of feed data (feed
+    /// operations whose envelope the driver did not need to crack open).
+    Bytes(Vec<u8>),
 
     /// A list of document bodies — one entry per item, each entry being
     /// the raw serialized bytes of one item.
-    /// Used for feed operations (ReadAll, future query/read-many).
-    /// The driver parses the response envelope to split items into a
-    /// `Vec<Vec<u8>>` but does not deserialize the items themselves.
+    /// Used for feed operations (ReadAll, future query/read-many) when the
+    /// driver had to aggregate results across partitions or otherwise parse
+    /// the feed envelope. Exists so the driver does not have to re-serialize
+    /// the parsed items just to hand them back to the SDK. The driver does
+    /// not deserialize the items themselves.
     Items(Vec<Vec<u8>>),
 }
 
