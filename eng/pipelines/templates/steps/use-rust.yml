@@ -2,7 +2,7 @@ parameters:
   - name: Toolchain
     type: string
     default: active
-    # Expexted values: 'stable', 'nightly', 'msrv', 'active' or a specific toolchain version
+    # Expected values: 'stable', 'nightly', 'msrv', 'active' or a specific toolchain version
     # 'msrv' will read the MSRV from azure_core
     # 'active' will use the active toolchain for the working directory, which will be from rust-toolchain.toml, from a
     #   folder override or the rustup default toolchain
