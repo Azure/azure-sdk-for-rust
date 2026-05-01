@@ -5,7 +5,7 @@ use std::num::NonZero;
 
 /// Default partition size for partitioned downloads (4 MiB).
 // unwrap evaluated at compile time
-pub(crate) const DEFAULT_DOWNLOAD_PARTITION_SIZE: NonZero<u64> =
+pub(crate) const DEFAULT_DOWNLOAD_PARTITION_SIZE: NonZero<usize> =
     NonZero::new(4 * 1024 * 1024).unwrap();
 
 /// Default partition size for partitioned uploads (4 MiB).
