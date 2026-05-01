@@ -1,16 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{num::NonZero, time::Duration};
+use std::{num::NonZero, sync::LazyLock, time::Duration};
 
 use async_trait::async_trait;
-use azure_core::{error::ErrorKind, http::Body, Error, Result};
+use azure_core::{
+    error::ErrorKind,
+    http::{Body, ClientMethodOptions, Context},
+    Error, Result,
+};
 use azure_storage_blob::{
-    models::{BlobClientDownloadOptions, BlobClientUploadOptions},
+    models::{
+        BlobClientDownloadOptions, BlobClientUploadOptions, BlobContainerClientCreateOptions,
+        BlobContainerClientDeleteOptions,
+    },
     BlobClient, BlobContainerClient,
 };
 use azure_storage_blob_test::{
-    fault_injection::FaultInjectionProbabilities,
+    fault_injection::{self, FaultInjectionProbabilities},
     stress::{
         data,
         value_parsers::{non_zero_usize, simple_non_zero_len_u64},
@@ -91,11 +98,24 @@ struct RoundtripBlobsTest {
     chunk_len: NonZero<usize>,
 }
 
+static NO_FAULT: LazyLock<Context> = LazyLock::new(|| {
+    let mut c = Context::new();
+    c.insert(fault_injection::NoFault);
+    c
+});
+
 #[async_trait]
 impl StressTest for RoundtripBlobsTest {
     async fn global_setup(&self) -> Result<()> {
         println!("Creating container...");
-        self.container_client.create(None).await?;
+        self.container_client
+            .create(Some(BlobContainerClientCreateOptions {
+                method_options: ClientMethodOptions {
+                    context: NO_FAULT.clone(),
+                },
+                ..Default::default()
+            }))
+            .await?;
         println!("Container created.");
         Ok(())
     }
@@ -132,7 +152,14 @@ impl StressTest for RoundtripBlobsTest {
 
     async fn global_cleanup(&self) -> Result<()> {
         println!("Deleting container...");
-        self.container_client.delete(None).await?;
+        self.container_client
+            .delete(Some(BlobContainerClientDeleteOptions {
+                method_options: ClientMethodOptions {
+                    context: NO_FAULT.clone(),
+                },
+                ..Default::default()
+            }))
+            .await?;
         println!("Deleting created.");
         Ok(())
     }

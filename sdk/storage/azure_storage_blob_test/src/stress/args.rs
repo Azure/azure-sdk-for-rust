@@ -3,6 +3,7 @@
 
 use std::time::Duration;
 
+use azure_core::Result;
 use clap::{Args, Parser};
 
 use crate::{
@@ -41,7 +42,7 @@ pub struct StressRunnerOptions<T: StressTestFactory> {
     pub use_default_fault_injection: bool,
 
     #[command(flatten)]
-    pub fault_injection_inline_overrides: FaultInjectionOverrideOptions,
+    pub fault_overrides: FaultInjectionOverrideOptions,
 
     #[command(subcommand)]
     pub command: T,
@@ -52,8 +53,51 @@ impl<T: StressTestFactory> StressRunnerOptions<T> {
         T::build_test(self)
     }
 
-    pub fn fault_options(&self) -> &FaultInjectionProbabilities {
-        todo!()
+    pub fn fault_options(&self) -> Result<FaultInjectionProbabilities> {
+        let mut base_probabilities = if let Some(file) = &self.fault_injection_file {
+            let json = std::fs::read_to_string(file).map_err(|e| {
+                azure_core::Error::with_error(
+                    azure_core_test::ErrorKind::Io,
+                    e,
+                    "Failed to read file.",
+                )
+            })?;
+            serde_json::from_str(&json).map_err(|e| {
+                azure_core::Error::with_error(
+                    azure_core_test::ErrorKind::DataConversion,
+                    e,
+                    "Failed to serialize file contents.",
+                )
+            })?
+        } else if self.use_default_fault_injection {
+            STD_FAULT_PROBABILITIES
+        } else {
+            Default::default()
+        };
+
+        if let Some(prob) = self.fault_overrides.partial_response_hang {
+            base_probabilities.partial_response_hang = prob;
+        }
+        if let Some(prob) = self.fault_overrides.partial_response_close {
+            base_probabilities.partial_response_close = prob;
+        }
+        if let Some(prob) = self.fault_overrides.partial_response_abort {
+            base_probabilities.partial_response_abort = prob;
+        }
+        if let Some(prob) = self.fault_overrides.partial_response_normal {
+            base_probabilities.partial_response_normal = prob;
+        }
+        if let Some(prob) = self.fault_overrides.no_response_hang {
+            base_probabilities.no_response_hang = prob;
+        }
+        if let Some(prob) = self.fault_overrides.no_response_close {
+            base_probabilities.no_response_close = prob;
+        }
+        if let Some(prob) = self.fault_overrides.no_response_abort {
+            base_probabilities.no_response_abort = prob;
+        }
+
+        Ok(base_probabilities)
     }
 }
 
@@ -126,3 +170,13 @@ impl From<FaultInjectionOverrideOptions> for crate::fault_injection::FaultInject
         }
     }
 }
+
+const STD_FAULT_PROBABILITIES: FaultInjectionProbabilities = FaultInjectionProbabilities {
+    partial_response_hang: 0.03,
+    partial_response_close: 0.03,
+    partial_response_abort: 0.03,
+    partial_response_normal: 0.03,
+    no_response_hang: 0.03,
+    no_response_close: 0.03,
+    no_response_abort: 0.03,
+};

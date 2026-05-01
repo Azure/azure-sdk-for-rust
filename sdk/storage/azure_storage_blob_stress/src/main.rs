@@ -38,9 +38,11 @@ enum StressTests {
 impl StressTestFactory for StressTests {
     fn build_test(options: &StressRunnerOptions<Self>) -> Result<Box<dyn StressTest>> {
         match &options.command {
-            StressTests::Download(download_args) => download_args.as_test(options.fault_options()),
+            StressTests::Download(download_args) => {
+                download_args.as_test(&options.fault_options()?)
+            }
             StressTests::Roundtrip(roundtrip_args) => {
-                roundtrip_args.as_test(options.fault_options())
+                roundtrip_args.as_test(&options.fault_options()?)
             }
         }
     }
