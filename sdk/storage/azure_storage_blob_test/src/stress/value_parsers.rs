@@ -47,13 +47,21 @@ pub fn non_zero_u64(s: &str) -> Result<u64, String> {
 /// - "10.2a" - Error.
 pub fn simple_duration(s: &str) -> Result<Duration, String> {
     if let Some(s) = s.strip_suffix("s") {
-        Ok(Duration::from_secs_f64(s.parse().map_err(map_float_parse)?))
+        Ok(Duration::from_secs_f64(
+            s.parse::<f64>().map_err(map_float_parse)?,
+        ))
     } else if let Some(s) = s.strip_suffix("m") {
-        Ok(Duration::from_secs_f64(s.parse().map_err(map_float_parse)?))
+        Ok(Duration::from_secs_f64(
+            60.0 * s.parse::<f64>().map_err(map_float_parse)?,
+        ))
     } else if let Some(s) = s.strip_suffix("h") {
-        Ok(Duration::from_secs_f64(s.parse().map_err(map_float_parse)?))
+        Ok(Duration::from_secs_f64(
+            60.0 * 60.0 * s.parse::<f64>().map_err(map_float_parse)?,
+        ))
     } else {
-        Ok(Duration::from_secs_f64(s.parse().map_err(map_float_parse)?))
+        Ok(Duration::from_secs_f64(
+            s.parse::<f64>().map_err(map_float_parse)?,
+        ))
     }
 }
 
