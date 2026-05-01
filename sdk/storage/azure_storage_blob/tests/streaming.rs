@@ -186,7 +186,7 @@ async fn stream_upload_pages(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             request_content_from_bytes(&data),
             512,
-            HttpRange::new(0, 512).to_string(),
+            HttpRange::new(0, 512),
             None,
         )
         .await?;

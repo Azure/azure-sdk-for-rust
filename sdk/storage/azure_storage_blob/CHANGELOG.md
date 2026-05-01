@@ -15,6 +15,7 @@
 ### Features Added
 
 - Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+- Added `From` implementations on `HttpRange` for standard Rust range types: `Range<u64>`, `RangeFrom<u64>`, `RangeInclusive<u64>`, `RangeTo<u64>`, `RangeToInclusive<u64>`, and their `usize` equivalents. This allows `(0..100u64).into()`, `(100u64..).into()`, etc.
 
 ### Breaking Changes
 
@@ -22,6 +23,13 @@
 - Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
 - Responses are no longer automatically decompressed.
 - Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
+- Changed `BlobClientDownloadOptions.range` from `Option<Range<usize>>` to `Option<HttpRange>`.
+- Changed `BlobClientDownloadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
+- Changed `PageBlobClient::upload_pages()` and `clear_pages()` `range` parameter from `String` to `HttpRange`.
+- Changed `PageBlobClient::upload_pages_from_url()` `range` and `source_range` parameters from `String` to `HttpRange`.
+- Changed `PageBlobClientGetPageRangesOptions.range` from `Option<String>` to `Option<HttpRange>`.
+- Changed `AppendBlobClientAppendBlockFromUrlOptions.source_range` from `Option<String>` to `Option<HttpRange>`.
+- Changed `BlockBlobClientUploadBlobFromUrlOptions.source_range` from `Option<String>` to `Option<HttpRange>`.
 
 ### Other Changes
 

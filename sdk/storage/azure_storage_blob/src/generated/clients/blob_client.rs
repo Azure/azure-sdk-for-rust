@@ -652,20 +652,20 @@ impl BlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/octet-stream");
-        if let Some(if_match) = options.if_match.as_ref() {
-            request.insert_header("if-match", if_match);
+        if let Some(if_match) = options.if_match {
+            request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match.as_ref() {
-            request.insert_header("if-none-match", if_none_match);
+        if let Some(if_none_match) = options.if_none_match {
+            request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(range) = options.range.as_ref() {
-            request.insert_header("range", range);
+            request.insert_header("range", range.to_string());
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
             request.insert_header(
