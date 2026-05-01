@@ -18,10 +18,10 @@ enum MockStressTestFactory {
 }
 
 impl StressTestFactory for MockStressTestFactory {
-    fn build_test(&self) -> Result<Box<dyn StressTest>> {
-        Ok(match self {
-            Self::TestOne(_args) => Box::new(MockStressTestOne {}),
-            Self::TestTwo(_args) => Box::new(MockStressTestTwo {}),
+    fn build_test(options: &StressRunnerOptions<Self>) -> Result<Box<dyn StressTest>> {
+        Ok(match &options.command {
+            MockStressTestFactory::TestOne(_args_one) => Box::new(MockStressTestOne {}),
+            MockStressTestFactory::TestTwo(_args_two) => Box::new(MockStressTestTwo {}),
         })
     }
 }

@@ -11,6 +11,7 @@ use azure_core::http::{
 };
 use futures::lock::Mutex;
 use rand::{distr::StandardUniform, RngExt};
+use serde::Deserialize;
 
 const FAULT_INJECTION_HEADER: HeaderName =
     HeaderName::from_static("x-ms-faultinjector-response-option");
@@ -31,6 +32,8 @@ pub struct FaultInjectionPolicy<Rng> {
     injector: Arc<Mutex<ProbabilityHeaderInjector<Rng>>>,
 }
 
+pub struct NoFault;
+
 impl<Rng: rand::SeedableRng + Debug + Send + Sync> FaultInjectionPolicy<Rng> {
     pub fn new(
         fault_injector_endpoint: Url,
@@ -47,14 +50,8 @@ impl<Rng: rand::SeedableRng + Debug + Send + Sync> FaultInjectionPolicy<Rng> {
     }
 }
 
-#[async_trait]
-impl<Rng: rand::Rng + Debug + Send + Sync> Policy for FaultInjectionPolicy<Rng> {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
-    ) -> PolicyResult {
+impl<Rng: rand::Rng> FaultInjectionPolicy<Rng> {
+    async fn inject_fault(&self, request: &mut Request) -> azure_core::Result<()> {
         if request.headers().get_str(&UPSTREAM_HEADER).is_err() {
             let f = Url::parse(&format!(
                 "{}://{}{}",
@@ -84,11 +81,28 @@ impl<Rng: rand::Rng + Debug + Send + Sync> Policy for FaultInjectionPolicy<Rng> 
 
         self.injector.lock().await.inject(request);
 
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl<Rng: rand::Rng + Debug + Send + Sync> Policy for FaultInjectionPolicy<Rng> {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        // If caller didn't make an exception, perform fault injection.
+        if ctx.value::<NoFault>().is_none() {
+            self.inject_fault(request).await?;
+        }
+
         next[0].send(ctx, request, &next[1..]).await
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct FaultInjectionProbabilities {
     pub partial_response_hang: f32,
     pub partial_response_close: f32,
