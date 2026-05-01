@@ -1,7 +1,7 @@
 # Feed Operations Spec for `azure_data_cosmos_driver`
 
 **Status:** Draft / Iterating
-**Date:** 2026-04-28
+**Date:** 2026-05-05
 **Authors:** (team)
 **Crate:** `azure_data_cosmos_driver`
 
@@ -33,7 +33,7 @@ and produce a single response. Operations like `ReadItem`, `UpsertItem`, and `De
 through `execute_operation`, which drives the operation pipeline (region failover, session tokens,
 transport retry) and returns a single `CosmosResponse`.
 
-**Feed operations** — read-all-items, queries, read-many, and change feed — are fundamentally
+**Feed operations** — queries, read-many, and change feed — are fundamentally
 different. They produce multiple pages of results, may span multiple partition key ranges, and
 need pagination state that can be serialized across request boundaries.
 
@@ -53,9 +53,9 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
    Resuming with a valid continuation token and an equivalent operation descriptor continues
    where the previous execution left off.
 
-3. **Extensible operation model** — The plan model must support ReadAll (the initial target),
-   cross-partition queries, single-partition queries/reads, read-many, and change feed, even if
-   some are implemented later.
+3. **Extensible operation model** — The plan model must support `SELECT * [WHERE …]` queries
+   (the initial target), cross-partition queries with `ORDER BY` / aggregates, single-partition
+   queries/reads, read-many, and change feed, even if some are implemented later.
 
 4. **Driver-level concerns** — Feed operations must integrate with multi-region failover,
    partition-level failover (PPAF/PPCB), throughput control, session consistency, and
@@ -75,9 +75,12 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
 
 ### Non-Goals (This Spec)
 
-- Full cross-partition query execution with ORDER BY merge-sort and aggregation (future work).
+- Cross-partition query execution with cross-partition `ORDER BY` merge-sort, `GROUP BY`, or
+  cross-partition aggregation (future work). Single-partition queries with `ORDER BY` / `GROUP BY`
+  / aggregates *are* in scope and pass through verbatim (see [§5.2](#52-planning-logic-by-operation-type)).
 - Backend query plan retrieval and interpretation (future work; required for cross-partition
-  queries but not for ReadAll).
+  queries with `ORDER BY` / aggregates and for vector / hybrid queries, but not for the
+  in-scope cases).
 - Change feed full design (future work; this spec reserves extension points).
 - ReadMany fan-out with concurrent partition fetching (future work).
 - Client-side query rewriting or optimization.
@@ -85,11 +88,20 @@ failover, partition-level circuit breaker, throughput control, and diagnostics i
 
 ### Primary Target
 
-**ReadAll** is the first feed operation to implement. It reads all documents from a container by
-draining partitions sequentially in effective partition key (EPK) order. Items are returned in
-their **natural order**: ascending by `(EffectivePartitionKey, RID)`. Within each partition the
-server returns items in ascending RID order; across partitions the driver iterates partitions
-in ascending EPK order. ReadAll exercises:
+**`SELECT * [WHERE <predicate>]` queries** are the first feed operations to implement. The
+unfiltered form (`SELECT * FROM c`) is the simplest case; with an optional `WHERE` clause
+the same code path supports server-side filtering. Both forms drain
+partitions sequentially in effective partition key (EPK) order. Items are returned in their
+**natural order**: ascending by `(EffectivePartitionKey, RID)`. Within each partition the server
+returns items in ascending RID order; across partitions the driver iterates partitions in
+ascending EPK order.
+
+This first target deliberately excludes any query feature that requires a backend query plan
+to execute correctly across partitions — `ORDER BY` (cross-partition), `GROUP BY`, `DISTINCT`,
+aggregates (`COUNT`, `SUM`, …), `OFFSET / LIMIT`, vector search, hybrid search, etc. Those are
+covered separately under cross-partition queries in [§12.2](#122-cross-partition-queries).
+
+The in-scope shape exercises:
 
 - Partition key range resolution (via `PartitionKeyRangeCache`)
 - Sequential traversal across partition key ranges in EPK order
@@ -97,16 +109,23 @@ in ascending EPK order. ReadAll exercises:
 - Paginated reads within each partition
 - Continuation token serialization and resume across SDK versions
 - Integration with the operation pipeline for each sub-request
+- Per-fetch header overrides (EPK bounds, server continuation, page size) applied without
+  rebuilding the base `CosmosOperation` — see [§6.3 OperationOverrides](#63-operationoverrides)
 
-This spec is **complete when ReadAll works end-to-end** through the Plan → Execute pipeline.
-Sections on continuation tokens and the plan model are designed to be extensible for future
-operations (ReadMany, cross-partition query, change feed) without requiring a redesign.
+This spec is **complete when `SELECT * [WHERE …]` works end-to-end** through the Plan → Execute
+pipeline, both as a cross-partition operation (`OperationTarget::FeedRange`) and as a
+single-partition operation (`OperationTarget::PartitionKey`). Sections on continuation tokens
+and the plan model are designed to be extensible for future operations (ReadMany,
+cross-partition query, change feed) without requiring a redesign.
 
-**Ordering semantics:** ReadAll drains partitions in EPK order as an implementation behavior.
-Within each partition, items are returned in ascending RID order — the natural sort order of
-`SELECT *`. The combined output is therefore ascending by `(EffectivePartitionKey, RID)`. This
-is a driver-emitted ordering, **not** a service-level ordering guarantee. The service does not
-guarantee global cross-partition order without explicit `ORDER BY`.
+**Ordering semantics:** Cross-partition `SELECT *` drains partitions in EPK order as an
+implementation behavior. Within each partition, items are returned in ascending RID order —
+the natural sort order of `SELECT *`. The combined output is therefore ascending by
+`(EffectivePartitionKey, RID)`. This is a driver-emitted ordering, **not** a service-level
+ordering guarantee. The service does not guarantee global cross-partition order without
+explicit `ORDER BY`. Single-partition queries (targeted via
+`OperationTarget::PartitionKey`) preserve whatever order the server returns, including
+`ORDER BY` results.
 
 ---
 
@@ -126,7 +145,7 @@ flowchart TB
     subgraph Driver["CosmosDriver"]
         direction TB
 
-        Planner["<b>Planner</b><br/>──────────<br/>Input: CosmosOperation + OperationOptions<br/>Output: OperationPlan<br/><br/>• Determines targeting (point PK, FeedRange, full key space)<br/>• ReadAll: resolves PK ranges → SequentialDrain over Request nodes<br/>• Single-partition ops: single-node plan<br/>• Point ops: trivial single-node plan"]
+        Planner["<b>Planner</b><br/>──────────<br/>Input: CosmosOperation + OperationOptions<br/>Output: OperationPlan<br/><br/>• Determines targeting (point PK, FeedRange, full key space)<br/>• Cross-partition SELECT *: resolves PK ranges → SequentialDrain over Request nodes<br/>• Single-partition ops: single-node plan<br/>• Point ops: trivial single-node plan"]
 
         Executor["<b>PlanExecutor</b><br/>──────────<br/>Input: OperationPlan<br/>Output: CosmosResponse (single page)<br/><br/>• Executes one Request node per call<br/>• Handles partition splits / merges (Request re-resolves EPK → PK)<br/>• Collects node-level diagnostics<br/>• Builds continuation token if more pages remain"]
 
@@ -212,15 +231,22 @@ would break `Copy` and mix operation semantics with operation payload — we spl
 /// Each variant carries exactly the data needed for its operation type.
 #[derive(Clone, Debug)]
 pub enum OperationPayload {
-    /// No payload needed (e.g., ReadItem, DeleteItem, ReadContainer, ReadAllItems).
+    /// No payload needed (e.g., ReadItem, DeleteItem, ReadContainer).
     None,
 
     /// Raw body bytes (e.g., CreateItem, UpsertItem, ReplaceItem).
     /// The caller provides pre-serialized JSON.
     Body(Vec<u8>),
 
+    /// A SQL query against documents (`SELECT * [WHERE …]`, etc.).
+    /// The driver wraps this in the `application/query+json` envelope on
+    /// the wire; the caller does not pre-serialize it.
+    Query {
+        query: String,
+        parameters: Vec<QueryParameter>,
+    },
+
     // Future variants:
-    // Query { query: String, parameters: Option<Vec<u8>> },
     // ReadMany { items: Vec<(String, PartitionKey)> },
     // ChangeFeed { mode, start_from, ... },
 }
@@ -255,12 +281,25 @@ pub struct CosmosOperation {
 ### 3.2 OperationTarget
 
 Partition targeting is currently a single `Option<PartitionKey>` field. Feed operations require
-richer targeting. The targeting enum has three modes: no partition scope, a specific logical
-partition key (needed for point reads where the raw partition key value must be sent to the
-backend), or an EPK range for feed operations spanning one or more partitions.
+richer targeting. The targeting enum has three **mutually exclusive** modes: no partition scope,
+a specific logical partition key, or an EPK range. An operation chooses exactly one of these —
+it never combines a logical partition key with a feed range.
+
+| Variant | When the SDK picks it | What the driver does |
+|---------|----------------------|----------------------|
+| `None` | Account-/database-level operations (`CreateDatabase`, `ReadContainer`). | No PK routing; no EPK headers. |
+| `PartitionKey(pk)` | Point operations and any single-partition feed operation (queries, change feed scoped to one logical partition). | Sends the raw PK header (`x-ms-documentdb-partitionkey`); routes to that PK's owning physical partition. **Bypasses query plan** for SQL queries — see [§5.2](#52-planning-logic-by-operation-type). |
+| `FeedRange(fr)` | Cross-partition feed operations, including the default "whole container" case via `OperationTarget::all_ranges()`. | Resolves the FeedRange to one or more PK range IDs via `PartitionKeyRangeCache`; sets `x-ms-documentdb-epk-min` / `x-ms-documentdb-epk-max` headers per fetch. |
+
+Logical partition key targeting and feed range targeting are mutually exclusive at the type
+level. A caller that wants to target a single logical partition uses
+`OperationTarget::PartitionKey`. A caller that wants to target a slice of EPK space (one
+physical partition, several adjacent ones, or the whole container) uses
+`OperationTarget::FeedRange`. The SDK surface enforces the same exclusivity (see
+[§10.6 SDK Option Plumbing](#106-sdk-option-plumbing)).
 
 ```rust
-/// How the operation is targeted to partitions.
+/// How the operation is targeted to partitions. Variants are mutually exclusive.
 #[derive(Clone, Debug)]
 pub enum OperationTarget {
     /// No partition targeting (account-level or database-level operations,
@@ -269,17 +308,20 @@ pub enum OperationTarget {
 
     /// Target a specific logical partition key.
     ///
-    /// Used for point operations (read, create, delete, upsert, replace)
-    /// and single-partition feed operations where the raw partition key
-    /// value must be included in the request headers.
+    /// Used for point operations (read, create, delete, upsert, replace) and
+    /// for single-partition feed operations (queries scoped to one logical
+    /// partition, single-partition change feed, etc.). The raw partition key
+    /// value is included in request headers and the request goes straight to
+    /// the gateway for the owning physical partition. No FeedRange / EPK
+    /// header is set.
     PartitionKey(PartitionKey),
 
     /// Target a specific feed range.
     ///
-    /// Used for feed operations that span one or more partitions.
-    /// Uses the `FeedRange` type, which represents a contiguous span
-    /// of effective partition key (EPK) space. See §3.2.1 below for
-    /// the type's origin.
+    /// Used for feed operations that span one or more partitions. Uses the
+    /// `FeedRange` type, which represents a contiguous span of effective
+    /// partition key (EPK) space. See §3.2.1 below for the type's origin.
+    /// Use `OperationTarget::all_ranges()` for the whole container.
     ///
     /// The pipeline resolves the FeedRange to the owning PK range ID(s) via
     /// the `PartitionKeyRangeCache` at execution time.
@@ -347,13 +389,28 @@ impl CosmosOperation {
         // Caller attaches body via .with_payload(OperationPayload::Body(...))
     }
 
-    /// Reads all items across all partitions.
-    pub fn read_all_items(container: ContainerReference) -> Self {
+    /// Runs a SQL query (`SELECT * [WHERE …]`, etc.).
+    ///
+    /// Without an explicit `with_target(...)`, the query targets the entire
+    /// container (`OperationTarget::all_ranges()`). To scope the query to a
+    /// single logical partition (which unlocks `ORDER BY` and other clauses
+    /// without a query plan — see §5.2), call
+    /// `.with_target(OperationTarget::PartitionKey(pk))`. To scope it to a
+    /// specific FeedRange, call `.with_target(OperationTarget::FeedRange(fr))`.
+    pub fn query(
+        container: ContainerReference,
+        query: impl Into<String>,
+        parameters: Vec<QueryParameter>,
+    ) -> Self {
         let resource_ref = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
-        Self::new(OperationType::ReadFeed, resource_ref)
+        Self::new(OperationType::Query, resource_ref)
             .with_target(OperationTarget::all_ranges())
+            .with_payload(OperationPayload::Query {
+                query: query.into(),
+                parameters,
+            })
     }
 }
 ```
@@ -437,7 +494,7 @@ pub(crate) enum OperationPlan {
 
     /// A multi-node plan stored as a flat list of nodes.
     /// Nodes are stored bottom-up: children appear before parents.
-    /// Used for cross-partition feed operations (e.g., ReadAll).
+    /// Used for cross-partition feed operations (e.g., a cross-partition `SELECT *` query).
     Graph {
         /// The flat list of nodes. Children appear before parents.
         nodes: Vec<PlanNode>,
@@ -507,7 +564,7 @@ The flat node list is always built **bottom-up**: leaf nodes (Request) are pushe
 then their parent (SequentialDrain) is pushed after them. This produces a deterministic layout where
 `NodeId` values are stable for a given set of inputs.
 
-For a ReadAll plan over 3 partitions, the node list looks like:
+For a cross-partition `SELECT *` plan over 3 partitions, the node list looks like:
 
 ```text
 Index  Node
@@ -534,7 +591,7 @@ SingleNode(Request { operation: read_item, feed_range: pk_epk, continuation: Non
 A `SingleNode` plan with one `Request` node. The executor runs it directly, gets a
 `CosmosResponse`, done. No heap allocation.
 
-#### ReadAll (Cross-Partition)
+#### Cross-Partition `SELECT *` Query
 
 ```text
 Graph {
@@ -558,7 +615,7 @@ partition. When a partition is fully drained (server returns no continuation), t
 call starts the next partition. A continuation token is returned after each page until
 all partitions are exhausted.
 
-#### ReadAll — Resumed from Continuation
+#### Cross-Partition `SELECT *` — Resumed from Continuation
 
 When resuming from a continuation token that says "active range is `["55","AA")` with
 server token `xyz`", the Planner skips already-drained ranges and rebuilds the plan
@@ -593,8 +650,9 @@ direct `execute_single_operation` call. The `OperationPlan::SingleNode` variant 
 
 ### 5.1 Responsibilities
 
-The Planner transforms a `CosmosOperation` into an `OperationPlan`. For ReadAll, this is
-synchronous: resolve partition key ranges and build a `SequentialDrain` node over `Request` children.
+The Planner transforms a `CosmosOperation` into an `OperationPlan`. For a cross-partition
+`SELECT *` query, this is synchronous: resolve partition key ranges and build a
+`SequentialDrain` node over `Request` children.
 
 ```rust
 pub(crate) struct Planner<'a> {
@@ -606,7 +664,7 @@ impl<'a> Planner<'a> {
     /// Creates an operation plan from a CosmosOperation.
     ///
     /// For point operations, this is synchronous and trivial.
-    /// For ReadAll, this resolves PK ranges and builds a SequentialDrain plan.
+    /// For cross-partition `SELECT *`, this resolves PK ranges and builds a SequentialDrain plan.
     pub async fn plan(
         &self,
         operation: &CosmosOperation,
@@ -626,8 +684,42 @@ impl<'a> Planner<'a> {
 |-----------|-----------|---------------|
 | ReadItem, DeleteItem, etc. | `PartitionKey` | Single `Request` node. SingleNode. |
 | CreateDatabase, ReadContainer, etc. | `None` | Single `Request` node. SingleNode. |
-| ReadAllItems (single partition) | `PartitionKey` | Single `Request` node. Paginated. |
-| ReadAllItems (cross-partition) | `FeedRange` (`all_ranges()`) | Resolve PK ranges → `SequentialDrain` over N `Request` nodes. Sequential. |
+| `SELECT * [WHERE …]`, single partition | `PartitionKey` | Single `Request` node. Paginated. **Fast-path: no query plan fetch.** See [§5.2.1](#521-single-partition-query-fast-path). |
+| Single-partition query with `ORDER BY` / `GROUP BY` / aggregates / `OFFSET LIMIT` / etc. | `PartitionKey` | Same as above — pass through verbatim. |
+| `SELECT * [WHERE …]`, cross-partition | `FeedRange` (`all_ranges()` or a caller-supplied range) | Resolve PK ranges → `SequentialDrain` over N `Request` nodes. Sequential. No query plan needed for `SELECT * [WHERE …]`. |
+| Cross-partition query with `ORDER BY` / aggregates / vector / hybrid | `FeedRange` | **Out of scope for this spec.** Requires backend query plan retrieval — see [§12.2](#122-cross-partition-queries). |
+
+#### 5.2.1 Single-Partition Query Fast-Path
+
+When an operation has `OperationTarget::PartitionKey(pk)` *and* an `OperationPayload::Query`,
+the Planner produces a trivial `SingleNode` plan and the executor sends the request directly
+to the gateway against the owning physical partition. **No query plan is fetched** and **no
+client-side rewriting** is performed:
+
+- The query body is forwarded as-is in the `application/query+json` envelope.
+- Arbitrary single-partition SQL is supported, including `ORDER BY`, `GROUP BY`, `DISTINCT`,
+  aggregates (`COUNT`, `SUM`, …), `OFFSET / LIMIT`, and `TOP` — the gateway evaluates them
+  inside the single physical partition and the result page is correct as returned.
+- Vector search (`VectorDistance`) and hybrid search clauses are *also* accepted on this
+  path today because they collapse to a single-partition execution. They produce correct
+  results when the entire vector / hybrid evaluation fits in one partition, but see the
+  caveat below.
+- The continuation token, if any, is the server's opaque continuation for that one partition
+  (a `ResumeState::Request`).
+
+**Why this is safe.** A query whose data set is bounded to a single logical partition is
+already evaluated in a single backend execution context. Aggregates and ordering operators
+are correct without a client-side merge step, so the driver does not need a query plan to
+drive correctness.
+
+**Future change — query plan fetched even for single-partition queries.** Vector and hybrid
+queries can become incorrect on the single-partition fast-path in edge cases (e.g., the
+backend returning per-partition truncated candidate lists where the global merge requires
+the query plan's score-rewriting hints). To keep the fast-path correct as new query
+features ship, the driver will eventually start **fetching a query plan** for
+single-partition queries too. The plan will be cached, and for queries the plan classifies
+as "passthrough" the execution path is unchanged. This is a future change and is not
+required to ship the in-scope `SELECT * [WHERE …]` work.
 
 ### 5.3 Pseudo-Code: Building a Trivial Plan
 
@@ -648,10 +740,10 @@ fn plan_trivial(operation: CosmosOperation, options: OperationOptions) -> Operat
 
 No PK range resolution is needed. The operation is wrapped in a single `Request` node.
 
-### 5.4 Pseudo-Code: Building a ReadFeed Plan
+### 5.4 Pseudo-Code: Building a Cross-Partition `SELECT *` Plan
 
-The following pseudo-code illustrates how the Planner constructs a cross-partition ReadAll
-plan, including resume from a continuation token:
+The following pseudo-code illustrates how the Planner constructs a cross-partition
+`SELECT *` plan, including resume from a continuation token:
 
 ```rust
 // PSEUDO-CODE — illustrative, not compilable
@@ -733,8 +825,8 @@ The Planner architecture supports future operations without redesign:
 - **Change feed**: Create `Request` nodes scoped to feed ranges with change-feed-specific
   continuation state. Add a parent merge node based on change-feed merge semantics.
 - **Concurrency management**: All plan nodes receive a **concurrency permit** (semaphore
-  token) during execution. For ReadAll, the executor holds a single permit — sequential
-  by design. Future operations (ReadMany, cross-partition queries) will acquire multiple
+  token) during execution. For a cross-partition `SELECT *`, the executor holds a single
+  permit — sequential by design. Future operations (ReadMany, cross-partition queries) will acquire multiple
   permits from a shared semaphore, allowing the PlanExecutor to control the degree of
   parallelism across nodes without changing the plan model.
 
@@ -831,6 +923,126 @@ async fn execute_node(
 - **Cancellation mid-page**: If the caller cancels during a page fetch, the continuation
   token from the *previous* completed call remains valid for resumption.
 
+### 6.3 OperationOverrides
+
+A `CosmosOperation` represents the **stable, fetch-independent** part of a Cosmos request:
+operation type, resource reference, partition targeting, payload, and any caller-supplied
+headers. For a feed operation, the same `CosmosOperation` is reused across every page and
+every EPK range — only a small set of headers and parameters differ from one fetch to the
+next.
+
+To avoid cloning the full `CosmosOperation` per fetch (and to avoid holding
+`PlanNode::Request` open after a single fetch is done), the executor passes an
+`OperationOverrides` struct to `execute_single_operation` alongside an
+`&CosmosOperation` reference. Each invocation produces a fresh request by composing the
+shared base operation with the per-fetch overrides.
+
+```rust
+/// Per-fetch overrides applied on top of a shared `CosmosOperation`.
+///
+/// Strictly limited to the headers / parameters that legitimately differ
+/// between successive fetches against the same logical operation. Anything
+/// not on this list belongs on the `CosmosOperation` itself.
+#[derive(Clone, Debug, Default)]
+pub struct OperationOverrides {
+    /// EPK range the request is scoped to. When set, the transport layer
+    /// emits `x-ms-documentdb-epk-min` / `x-ms-documentdb-epk-max` headers
+    /// and routes to the PK range(s) currently owning that EPK slice.
+    ///
+    /// Only valid when the base operation's target is `OperationTarget::FeedRange`
+    /// or `OperationTarget::all_ranges()`. Ignored for `OperationTarget::PartitionKey`
+    /// (a logical PK already pins the request to one physical partition).
+    pub feed_range: Option<FeedRange>,
+
+    /// Server-provided continuation token from the previous page of the
+    /// same fetch loop. Emitted as `x-ms-continuation`. `None` for the
+    /// first page.
+    pub continuation: Option<String>,
+
+    /// Per-fetch override for the maximum item count hint
+    /// (`x-ms-max-item-count`). Falls back to the value carried by
+    /// `OperationOptions::max_item_count` when unset.
+    pub max_item_count: Option<u32>,
+}
+```
+
+The `execute_single_operation` entry point therefore becomes:
+
+```rust
+pub(crate) async fn execute_single_operation(
+    &self,
+    operation: &CosmosOperation,
+    options: &OperationOptions,
+    overrides: &OperationOverrides,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> azure_core::Result<CosmosResponse> {
+    // Apply overrides to the request being built from `operation`.
+    // Run the existing pipeline (region failover, session, retry, transport).
+}
+```
+
+#### What overrides MAY carry
+
+The set is deliberately small and frozen by this spec:
+
+| Field | Purpose | Header / wire effect |
+|-------|---------|----------------------|
+| `feed_range` | Per-fetch EPK targeting (split / merge handling, drain progression) | `x-ms-documentdb-epk-min`, `x-ms-documentdb-epk-max`, PK-range routing |
+| `continuation` | Resume the same partition mid-stream | `x-ms-continuation` |
+| `max_item_count` | Per-fetch page-size hint | `x-ms-max-item-count` |
+
+#### What overrides MUST NOT carry
+
+To keep `OperationOverrides` predictable and cheap to validate, it explicitly does NOT
+carry anything that changes operation identity, semantics, or auth. The following stay on
+the base `CosmosOperation` (or on `OperationOptions`) and are an error to put on overrides:
+
+- Operation type, resource type, resource reference.
+- Partition key value (the logical PK is part of the operation's target).
+- Request body / payload (`OperationPayload`).
+- Consistency level, session token, throughput control group, retry policy.
+- Authentication or any other header that affects request signing.
+
+#### Plan-node integration
+
+`PlanNode::Request` stores the per-fetch *intent* (the EPK range that this leaf is
+responsible for, plus any server continuation it was resumed with). At execution time, the
+executor materializes that into an `OperationOverrides` and runs:
+
+```rust
+// PSEUDO-CODE
+async fn execute_request_node(
+    node: &PlanNode,                       // PlanNode::Request
+    driver_context: &DriverContext,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> Result<CosmosResponse> {
+    let PlanNode::Request { operation, options, feed_range, continuation } = node else {
+        unreachable!()
+    };
+    let overrides = OperationOverrides {
+        feed_range: Some(feed_range.clone()),
+        continuation: continuation.clone(),
+        max_item_count: options.max_item_count,
+    };
+    driver_context
+        .execute_single_operation(operation.as_ref(), options, &overrides, diagnostics)
+        .await
+}
+```
+
+Because `operation` is an `Arc<CosmosOperation>` shared across every Request leaf in the
+plan (see §5.4), and because the executor only synthesizes a tiny `OperationOverrides`
+per fetch, the same `CosmosOperation` can drive an arbitrary number of EPK-range fetches
+without being cloned, mutated, or re-built. The base operation outlives the entire feed
+operation; overrides are scratch state owned by a single fetch and thrown away after the
+response is returned.
+
+This is also what makes splits / merges cheap: when the Request leaf re-resolves its EPK
+range to new PK range IDs (see [§9.1](#91-partition-split-during-execution)), it issues
+follow-up calls to `execute_single_operation` against the **same** `CosmosOperation`,
+varying only the `feed_range` (and where applicable the `continuation`) inside the
+`OperationOverrides`.
+
 ---
 
 ## 7. Continuation Tokens
@@ -858,7 +1070,8 @@ Continuation tokens must be:
    higher version. The SDK only emits the latest version when no input token is provided.
 
 3. **Aim for O(1) size** — Token size should ideally be constant regardless of partition
-   count. For ReadAll, only the state of the currently-active partition is stored, and other
+   count. For cross-partition `SELECT *`, only the state of the currently-active partition is
+   stored, and other
    partitions' positions are reconstructed from EPK bounds on resume. However, per-partition
    state MAY become necessary for certain node types (e.g., change feed requires per-range
    tokens). It is up to each node type to define its own resume state and thus determine
@@ -981,7 +1194,7 @@ struct RequestState {
 |-----------|-------|----------|---------|
 | `ContinuationTokenInner` | `version` | `version` | Format version (integer) |
 | | `container_rid` | `containerRid` | Container RID (string) |
-| | `operation_kind` | `operationKind` | Operation kind (e.g., `"readAll"`) |
+| | `operation_kind` | `operationKind` | Operation kind (e.g., `"query"`) |
 | | `resume` | `resume` | `ResumeState` (tagged union) |
 | `SequentialDrainState` | *(tag)* | `type` | `"sequentialDrain"` |
 | | `epk_min` | `epkMin` | EPK min inclusive (hex string) |
@@ -1054,14 +1267,14 @@ impl FromStr for ContinuationToken {
 
 #### Sample Tokens
 
-**ReadAll, mid-stream on partition ["55","AA")**
+**Cross-partition `SELECT *`, mid-stream on partition ["55","AA")**
 
 JSON (before base64 encoding):
 ```json
 {
   "version": 1,
   "containerRid": "dbs/abc/colls/def",
-  "operationKind": "readAll",
+  "operationKind": "query",
   "resume": {
     "type": "sequentialDrain",
     "epkMin": "55",
@@ -1074,13 +1287,13 @@ JSON (before base64 encoding):
 On resume, the Planner sees the drain cursor at `["55","AA")`. Ranges with max ≤ `"55"` are
 skipped. The range `["55","AA")` resumes from `serverToken`. Ranges after `"AA"` start fresh.
 
-**ReadAll, target partition just completed (cursor at boundary)**
+**Cross-partition `SELECT *`, target partition just completed (cursor at boundary)**
 
 ```json
 {
   "version": 1,
   "containerRid": "dbs/abc/colls/def",
-  "operationKind": "readAll",
+  "operationKind": "query",
   "resume": {
     "type": "sequentialDrain",
     "epkMin": "55",
@@ -1100,7 +1313,7 @@ A bare `RequestState` at the root (no wrapping layer):
 {
   "version": 1,
   "containerRid": "dbs/abc/colls/def",
-  "operationKind": "readAll",
+  "operationKind": "query",
   "resume": {
     "type": "request",
     "epkMin": "55",
@@ -1118,7 +1331,7 @@ A continuation token is **invalidated** by:
 2. **Token version mismatch** — A token produced by a newer SDK version may not be readable
    by an older version. Newer SDKs MUST support tokens from older versions (backward compat).
 3. **Operation kind mismatch** — The token's `operationKind` must match the operation being
-   resumed. A `readAll` token cannot be used with a query operation.
+   resumed. A `query` token cannot be used with a query operation.
 4. **Structure mismatch** — If the re-created plan produces a different node type than the
    token's `ResumeState` variant (e.g., a `drain` token for a single-partition operation),
    the token is rejected.
@@ -1491,7 +1704,7 @@ impl CosmosDriver {
     /// For point operations (read, create, delete, etc.), this returns the
     /// single response with no continuation token.
     ///
-    /// For feed operations (read-all), this executes one page of the plan
+    /// For feed operations (queries), this executes one page of the plan
     /// and returns the result. If more pages are available, the response
     /// includes a `ContinuationToken`. The caller passes this token back
     /// in `OperationOptions` to fetch the next page.
@@ -1508,9 +1721,10 @@ impl CosmosDriver {
 ### 10.2 CosmosResponse Changes
 
 `CosmosResponse` gains an optional continuation token, and its `body` field becomes a
-`ResponseBody` enum to support both single-document responses (point operations) and
-multi-document responses (feed operations) without forcing every caller to parse a feed
-envelope:
+`ResponseBody` enum to support both unparsed response bodies (point operations and
+single-page feeds the driver passes through verbatim) and pre-parsed item lists
+(feeds the driver had to aggregate or whose envelopes it had to crack open),
+without forcing every caller to parse a feed envelope:
 
 ```rust
 /// The body of a Cosmos DB response.
@@ -1523,16 +1737,21 @@ pub enum ResponseBody {
     /// No body (e.g., 204 No Content).
     None,
 
-    /// A single document body — raw serialized bytes.
-    /// Used for point operations (read, create, upsert, replace) and for
-    /// resource reads (database, container).
-    Single(Vec<u8>),
+    /// A response body the driver did not need to parse — raw serialized bytes.
+    /// Used for any operation where the driver passes the server response through
+    /// verbatim. Depending on the operation, the caller (the SDK) knows whether
+    /// these bytes represent a single item (point reads, create/upsert/replace,
+    /// resource reads like database/container) or a page of feed data (feed
+    /// operations whose envelope the driver did not need to crack open).
+    Bytes(Vec<u8>),
 
     /// A list of document bodies — one entry per item, each entry being
     /// the raw serialized bytes of one item.
-    /// Used for feed operations (ReadAll, future query/read-many).
-    /// The driver parses the response envelope to split items into a
-    /// `Vec<Vec<u8>>` but does not deserialize the items themselves.
+    /// Used for feed operations (queries, future read-many) when the
+    /// driver had to aggregate results across partitions or otherwise parse
+    /// the feed envelope. Exists so the driver does not have to re-serialize
+    /// the parsed items just to hand them back to the SDK. The driver does
+    /// not deserialize the items themselves.
     Items(Vec<Vec<u8>>),
 }
 
@@ -1595,7 +1814,7 @@ pub struct OperationOptions {
     ///   even if that group exceeds `max_item_count`. The most prominent case
     ///   is the change feed, where all documents sharing the same LSN
     ///   (logical sequence number) are returned in the same page to preserve
-    ///   atomicity. ReadAll does not have this constraint today, but the
+    ///   atomicity. `SELECT *` queries do not have this constraint today, but the
     ///   contract is the same: callers MUST treat `max_item_count` as a hint,
     ///   not a hard cap.
     ///
@@ -1614,12 +1833,13 @@ These fields are ignored for point operations.
 
 | Operation | Order Guarantee |
 |-----------|-----------------|
-| ReadAll (single partition) | (PartitionKey, ID) ascending. |
-| ReadAll (cross-partition) | Within each partition, (PartitionKey, ID) ascending. Across partitions, items are yielded in EPK order (implementation behavior, not a service guarantee). |
+| `SELECT *` (single partition) | (PartitionKey, ID) ascending. |
+| `SELECT *` (cross-partition) | Within each partition, (PartitionKey, ID) ascending. Across partitions, items are yielded in EPK order (implementation behavior, not a service guarantee). |
 
 ### 10.5 Page Boundaries
 
-Each `execute_operation` call for ReadAll returns exactly one page from exactly one partition:
+Each `execute_operation` call for a cross-partition `SELECT *` returns exactly one page from
+exactly one partition:
 
 - **Server-side max item count**: The server may return fewer items than requested.
 - **Client-side max item count**: Configurable via `OperationOptions::max_item_count`.
@@ -1633,6 +1853,167 @@ Each `execute_operation` call for ReadAll returns exactly one page from exactly 
 
 Pages never span partition boundaries.
 
+### 10.6 SDK Option Plumbing
+
+The driver-level `OperationOptions` type is **not** what the SDK exposes to user code
+verbatim. Each public SDK method has its own options struct whose fields are a curated
+subset (and occasionally a superset) of the driver's `OperationOptions` and the
+operation-specific knobs.
+
+`OperationTarget` is the one driver type that the SDK **re-exports verbatim** (the same
+way the SDK already re-exports `PartitionKey`, `FeedRange`, consistency-level enums, etc.
+from the driver). Because the variants are mutually exclusive at the type level, the SDK
+takes a single `target` argument on its feed-operation methods rather than a pair of
+optional `partition_key` / `feed_range` fields. This pushes the "exactly one of"
+invariant down to the type system and removes a runtime validation step.
+
+#### Constructors for `OperationTarget`
+
+`OperationTarget` exposes named factories rather than `From` impls. Callers explicitly
+say which targeting mode they want, but they do not have to wrap their argument in the
+enum variant by hand:
+
+```rust
+impl OperationTarget {
+    /// Targets a single logical partition key.
+    pub fn partition(pk: impl Into<PartitionKey>) -> Self {
+        OperationTarget::PartitionKey(pk.into())
+    }
+
+    /// Targets a specific feed range (one physical partition, several adjacent ones,
+    /// etc.). Use `OperationTarget::all_ranges()` for the whole container.
+    pub fn feed_range(fr: impl Into<FeedRange>) -> Self {
+        OperationTarget::FeedRange(fr.into())
+    }
+
+    /// The full key space: targets all partition key ranges.
+    pub fn all_ranges() -> Self {
+        OperationTarget::FeedRange(FeedRange::all_ranges())
+    }
+}
+```
+
+There are deliberately no `From<PartitionKey>` / `From<FeedRange>` impls — picking
+between a single-partition and a feed-range query is a real decision and should be
+visible at the call site, not silently inferred from a parameter type.
+
+#### Method signature change for `query_items`
+
+Today `query_items` takes a `partition_key: impl Into<QueryPartitionStrategy>` (or
+similar) parameter. As part of this work it changes to take a single
+`target: OperationTarget` parameter. The old `partition_key` parameter is removed
+entirely — there is no compatibility shim, since this lands together with the broader
+feed-operations refactor:
+
+```rust
+impl ContainerClient {
+    pub async fn query_items(
+        &self,
+        query: impl Into<String>,
+        parameters: impl IntoIterator<Item = QueryParameter>,
+        target: OperationTarget,
+        options: Option<QueryOptions>,
+    ) -> azure_core::Result<Pager<FeedPage<T>>>;
+}
+```
+
+Call-site shapes:
+
+```rust
+// Single logical partition (was: .partition_key(pk))
+container.query_items(sql, [], OperationTarget::partition(pk), None).await?;
+
+// Specific FeedRange (e.g., from a previous split-aware iteration)
+container.query_items(sql, [], OperationTarget::feed_range(fr), None).await?;
+
+// Whole container — the most common case
+container.query_items(sql, [], OperationTarget::all_ranges(), None).await?;
+```
+
+`target` is a required positional argument rather than an option on `QueryOptions`,
+because every query has to declare its scope and we want that decision visible at the
+call site. Callers that want "the whole container" pass `OperationTarget::all_ranges()`
+explicitly. `QueryOptions` therefore does **not** carry a `target` field:
+
+```rust
+// Re-exported from the driver.
+pub use azure_data_cosmos_driver::OperationTarget;
+
+#[derive(Clone, Debug, Default)]
+#[non_exhaustive]
+pub struct QueryOptions {
+    /// Page-size hint forwarded as `x-ms-max-item-count`.
+    pub max_item_count: Option<u32>,
+
+    /// Continuation token from a prior `FeedPage::continuation_token()`.
+    pub continuation: Option<ContinuationToken>,
+
+    /// Standard cross-cutting knobs (consistency, session, retry, timeout, etc.).
+    pub consistency_level: Option<ConsistencyLevel>,
+    pub session_token: Option<String>,
+    // ...
+}
+```
+
+The flow, for queries specifically, is:
+
+```text
+user code
+  │  query, parameters, target: OperationTarget,
+  │  QueryOptions { max_item_count?, continuation?,
+  │                 consistency_level?, session_token?, ... }
+  ▼
+ContainerClient::query_items(query, parameters, target, options)
+  │  builds:
+  │    op = CosmosOperation::query(container, query, parameters)
+  │             .with_target(target)
+  │    opts = OperationOptions {
+  │             max_item_count: options.max_item_count,
+  │             continuation:   options.continuation,
+  │             consistency_level, session_token, retry, timeout, ...
+  │           }
+  ▼
+CosmosDriver::execute_operation(op, opts)
+  │  Planner → OperationPlan
+  │  PlanExecutor walks the plan, per fetch builds an OperationOverrides
+  │  and calls execute_single_operation(&op, &opts, &overrides, ...)
+  ▼
+CosmosResponse { body, headers, status, diagnostics, continuation_token }
+  │  SDK converts ResponseBody::Items into FeedPage<T> via T: DeserializeOwned
+  ▼
+user code
+```
+
+Two consequences of this layering:
+
+1. **Mutual exclusivity is a property of the type, not a runtime check.** A
+   `target: OperationTarget` parameter cannot express "both a partition key and a feed
+   range" — the user picks one constructor (`OperationTarget::partition(pk)`,
+   `OperationTarget::feed_range(fr)`, or `OperationTarget::all_ranges()`). The SDK does
+   not need a runtime guard, and the driver-side `OperationTarget` enum carries the
+   same guarantee all the way down.
+
+2. **Options that the driver ignores for a given operation are still allowed at the SDK
+   layer.** For example, `max_item_count` on a point-read SDK call is silently dropped by
+   the driver (point ops produce one response). This keeps the SDK option structs ergonomic
+   and consistent, with the driver as the single point that decides which knobs are
+   meaningful for which operation.
+
+#### Per-operation SDK option structs (sketch)
+
+| SDK method | Options struct | Notable fields it injects into `CosmosOperation` / `OperationOptions` |
+|------------|----------------|----------------------------------------------------------------------|
+| `read_item` | `ReadItemOptions` | consistency, session, retry → `OperationOptions` |
+| `create_item` / `upsert_item` / `replace_item` | `ItemOptions` | indexing directive, pre/post triggers → request headers; consistency → options |
+| `delete_item` | `DeleteItemOptions` | consistency → options |
+| `query_items` | `QueryOptions` (+ required `target: OperationTarget` positional arg) | `target` → `OperationTarget`; `max_item_count`, `continuation`, consistency → `OperationOptions` |
+
+The SDK does not expose `OperationOverrides` to user code at all — it is purely an
+internal type used by the driver to thread per-fetch state through
+`execute_single_operation`. Users control per-fetch behavior indirectly: they set
+`max_item_count` once on the SDK options struct, and the driver applies it to every
+fetch unless a specific plan node has a reason to override (none today).
+
 ---
 
 ## 11. Testing Strategy
@@ -1642,8 +2023,8 @@ Pages never span partition boundaries.
 | Test Area | Cases |
 |-----------|-------|
 | Planner — point ops | Verify SingleNode plan for each point operation type. |
-| Planner — ReadAll | Verify Graph plan with SequentialDrain root, correct Request children per PK range. |
-| Planner — ReadAll resume | Verify resume skips drained partitions, resumes active, starts right fresh. |
+| Planner — cross-partition `SELECT *` | Verify Graph plan with SequentialDrain root, correct Request children per PK range. |
+| Planner — cross-partition `SELECT *` resume | Verify resume skips drained partitions, resumes active, starts right fresh. |
 | Planner — bottom-up invariant | Verify children always have lower NodeIds than parents. |
 | PlanExecutor — single node | Execute SingleNode plan, verify result matches direct pipeline call. |
 | PlanExecutor — drain | Execute SequentialDrain plan with mock pipeline, verify sequential execution. |
@@ -1659,6 +2040,11 @@ Pages never span partition boundaries.
 | ContinuationToken — unknown variant | Unknown `ResumeState` type fails gracefully on deserialize. |
 | NodeId/NodeRange | Verify range iteration, length, empty checks. |
 | OperationTarget — variants | Verify `PartitionKey`, `all_ranges()`, and custom `FeedRange` produce correct targets. |
+| OperationTarget — mutual exclusivity | SDK rejects requests that supply both `partition_key` and `feed_range`. |
+| OperationOverrides — feed_range / continuation / max_item_count | Verify overrides translate to `x-ms-documentdb-epk-min/max`, `x-ms-continuation`, `x-ms-max-item-count` headers. |
+| OperationOverrides — base op reuse | One `Arc<CosmosOperation>` drives multiple fetches with distinct overrides; base op is never cloned. |
+| Single-partition query fast-path | `OperationTarget::PartitionKey` + `OperationPayload::Query` produces a SingleNode plan, no PK range cache lookup, no query-plan fetch. |
+| Single-partition query — ORDER BY / aggregates | Verify `ORDER BY`, `GROUP BY`, `COUNT(*)` queries are forwarded verbatim and pass through. |
 | Diagnostics — hierarchy | Verify recursive node tree structure appears in diagnostics JSON. |
 | Diagnostics — children | Verify composite nodes contain child node diagnostics. |
 | Diagnostics — backward compat | Verify `requests()` flattening returns all requests from nested nodes. |
@@ -1667,15 +2053,16 @@ Pages never span partition boundaries.
 
 | Test Area | Cases |
 |-----------|-------|
-| ReadAll — basic | Read all items from a container, verify all returned in EPK order. |
-| ReadAll — empty container | ReadAll on empty container returns no results, no continuation. |
-| ReadAll — single partition | All items in one partition, verify SingleNode plan execution. |
-| ReadAll — multi partition | Items across multiple partitions, verify sequential drain. |
-| ReadAll — pagination | Verify continuation token threads correctly across pages. |
-| ReadAll — resume | Get continuation mid-stream, resume from it, verify continued results. |
-| ReadAll — resume across SDK versions | Serialize token, deserialize with newer SDK, verify resume works. |
-| ReadAll — partition split | Trigger split during ReadAll, verify Request node re-resolves and completes. |
-| ReadAll — large dataset | Read many items, verify all pages and partitions are drained. |
+| `SELECT *` — basic | Read all items from a container, verify all returned in EPK order. |
+| `SELECT *` — empty container | `SELECT *` on empty container returns no results, no continuation. |
+| `SELECT *` — single partition | All items in one partition, verify SingleNode plan execution. |
+| `SELECT *` — multi partition | Items across multiple partitions, verify sequential drain. |
+| `SELECT *` — pagination | Verify continuation token threads correctly across pages. |
+| `SELECT *` — resume | Get continuation mid-stream, resume from it, verify continued results. |
+| `SELECT *` — resume across SDK versions | Serialize token, deserialize with newer SDK, verify resume works. |
+| `SELECT *` — partition split | Trigger split during cross-partition `SELECT *`, verify Request node re-resolves and completes. |
+| `SELECT *` — large dataset | Read many items, verify all pages and partitions are drained. |
+| `SELECT * WHERE` — server-side filter | Verify `WHERE` predicate is applied server-side, only matching items returned. |
 | Diagnostics — RU aggregation | Verify total RU charge sums across all pages. |
 | Diagnostics — plan structure | Verify diagnostics JSON shows SequentialDrain/Request hierarchy with children. |
 
@@ -1684,7 +2071,7 @@ Pages never span partition boundaries.
 | Test Area | Metric |
 |-----------|--------|
 | Point op overhead | Latency regression < 1% vs. direct `execute_single_operation`. |
-| ReadAll latency | Sequential partition drain does not introduce unnecessary overhead. |
+| Cross-partition `SELECT *` latency | Sequential partition drain does not introduce unnecessary overhead. |
 
 ---
 
@@ -1699,17 +2086,24 @@ node. This adds concurrency control (semaphore-based) to the PlanExecutor and a 
 
 ### 12.2 Cross-Partition Queries
 
-Cross-partition queries require fetching a backend query plan, creating `Request` nodes per
-partition, and optionally performing client-side sort for ORDER BY queries via an
-`OrderedMerge` node. This adds query plan fetching callbacks to the Planner and k-way
-merge logic to the PlanExecutor.
+Cross-partition queries with `ORDER BY`, `GROUP BY`, aggregates (`COUNT`, `SUM`, …),
+`OFFSET / LIMIT`, vector search, or hybrid search require fetching a backend query plan,
+creating `Request` nodes per partition, and optionally performing client-side sort / merge
+via an `OrderedMerge` node. This adds query-plan fetching callbacks to the Planner and
+k-way merge logic to the PlanExecutor.
+
+The same query-plan path is also planned to back single-partition vector / hybrid queries
+(see [§5.2.1](#521-single-partition-query-fast-path)) so the driver can apply score
+normalization and other plan-driven hints uniformly. For non-vector single-partition
+queries the fast-path remains.
 
 ### 12.3 Change Feed
 
 The change feed is a specialized feed operation with unique characteristics: start-from
 modes, lease-based partition assignment, and incremental/full-fidelity modes.
 
-Unlike ReadAll's sequential drain (where only the active partition's state is needed),
+Unlike a cross-partition `SELECT *`'s sequential drain (where only the active partition's
+state is needed),
 change feed requires **per-range continuation tokens**. Each feed range maintains its
 own server continuation, and the resume state is a list of per-range tokens:
 
@@ -1756,3 +2150,14 @@ is a performance optimization, not a correctness concern.
 
 The existing hedging mechanism (speculative execution in secondary regions) could be extended
 to individual plan nodes, allowing feed fetches to hedge independently.
+
+### 12.7 Dedicated `ReadAllItems` Convenience Operation
+
+Today the unfiltered "read every document in the container" case is expressed as a
+`SELECT * FROM c` query. A future revision may add a dedicated `read_all_items` SDK method
+and a corresponding `CosmosOperation::read_all_items(...)` factory backed by the existing
+`OperationType::ReadFeed` (point-read-feed) wire path. That path avoids the
+`application/query+json` envelope and reads at the gateway as a feed read rather than a
+query, which can be cheaper RU-wise on large containers. The plan model and continuation
+token format above already accommodate this — only the payload variant and the chosen
+wire shape differ — so this is purely additive.
