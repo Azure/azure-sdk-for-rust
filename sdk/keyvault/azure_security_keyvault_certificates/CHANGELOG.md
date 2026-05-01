@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Renamed `CertificateClient::create_certificate` to `begin_create_certificate` per [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html#rust-lro-prefix).
+
 ### Bugs Fixed
 
 ### Other Changes
