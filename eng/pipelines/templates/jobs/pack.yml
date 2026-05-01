@@ -49,8 +49,7 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      # 1.93 just came out and bumped the doc version to v57, which cargo-semver-checks does not yet support.
-      Toolchain: '1.92'
+      Toolchain: $(PackToolchain)
 
   - ${{ if eq(parameters.TestPipeline, 'true') }}:
     - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
@@ -80,7 +79,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(PackToolchain)'
 
     - task: Powershell@2
       displayName: Pack Crates
@@ -126,7 +125,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageNames $(PackageNames)
+        arguments: -PackageNames $(PackageNames) -Toolchain '$(PackToolchain)'
 
     - task: Powershell@2
       displayName: Pack Crates

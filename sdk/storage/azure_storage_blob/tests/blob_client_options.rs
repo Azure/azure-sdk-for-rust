@@ -42,7 +42,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Bounded Range Download (first 5 bytes: "hello")
     let response = blob_client
         .download(Some(BlobClientDownloadOptions {
-            range: Some(0..5),
+            range: Some((0..5usize).into()),
             ..Default::default()
         }))
         .await?;
@@ -53,7 +53,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Bounded Range Download (middle 6 bytes: " rusty")
     let response = blob_client
         .download(Some(BlobClientDownloadOptions {
-            range: Some(5..11),
+            range: Some((5..11usize).into()),
             ..Default::default()
         }))
         .await?;
@@ -64,7 +64,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Bounded Range Download (last 6 bytes: " world")
     let response = blob_client
         .download(Some(BlobClientDownloadOptions {
-            range: Some(11..17),
+            range: Some((11..17usize).into()),
             ..Default::default()
         }))
         .await?;
@@ -77,7 +77,6 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -113,7 +112,6 @@ async fn test_per_call_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let request_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
@@ -150,7 +148,6 @@ async fn test_per_try_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let per_try_count = Arc::new(AtomicUsize::new(0));
     let count_policy = Arc::new(TestPolicy::count_requests(per_try_count.clone(), None));
@@ -204,7 +201,6 @@ async fn test_retry_options_none(ctx: TestContext) -> Result<(), Box<dyn Error>>
 }
 
 #[recorded::test]
-#[ignore = "need to investigate live test pipeline failures"]
 async fn test_retry_fires_on_transient_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let call_count = Arc::new(AtomicUsize::new(0));
     // Fail one time, then succeed - requires at least 1 retry

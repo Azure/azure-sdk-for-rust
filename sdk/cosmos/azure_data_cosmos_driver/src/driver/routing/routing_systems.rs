@@ -12,22 +12,22 @@ use std::{
 use tracing::warn;
 
 use crate::driver::cache::AccountProperties;
+use crate::options::Region;
 
 use super::{AccountEndpointState, CosmosEndpoint, UnavailableReason};
 
 /// Builds account endpoint state from account metadata.
 ///
-/// TODO: Accept `preferred_locations: &[Region]` to reorder endpoint lists
-/// based on user configuration (derived from `application_region` via
-/// `generate_preferred_region_list` in `azure_data_cosmos`). Wire this when
-/// operations in `azure_data_cosmos` are migrated to the driver's
-/// `execute_operation` API — that cross-crate change is the natural point
-/// to thread preferred regions through `DriverOptions` → `LocationStateStore`.
+/// When `preferred_regions` is non-empty, read and write endpoint lists are
+/// reordered so that endpoints matching the preferred regions appear first
+/// (in preference order). Endpoints whose region is not in the preferred
+/// list are appended in their original account-metadata order.
 pub(crate) fn build_account_endpoint_state(
     properties: &AccountProperties,
     default_endpoint: CosmosEndpoint,
     previous_generation: Option<u64>,
     gateway20_enabled: bool,
+    preferred_regions: &[Region],
 ) -> AccountEndpointState {
     let generation = previous_generation.map_or(0, |g| g.saturating_add(1));
 
@@ -42,6 +42,13 @@ pub(crate) fn build_account_endpoint_state(
         &properties.thin_client_writable_locations,
         gateway20_enabled,
     );
+
+    if !preferred_regions.is_empty() {
+        preferred_read_endpoints =
+            reorder_by_preferred_regions(preferred_read_endpoints, preferred_regions);
+        preferred_write_endpoints =
+            reorder_by_preferred_regions(preferred_write_endpoints, preferred_regions);
+    }
 
     if preferred_read_endpoints.is_empty() {
         preferred_read_endpoints.push(default_endpoint.clone());
@@ -128,6 +135,36 @@ fn parse_thin_client_locations(
     urls
 }
 
+/// Reorders endpoints so that those matching `preferred_regions` appear first,
+/// in the same order as the preference list. Endpoints whose region is not in
+/// the preference list (or that have no region, e.g. global endpoints) are
+/// appended in their original order.
+fn reorder_by_preferred_regions(
+    endpoints: Vec<CosmosEndpoint>,
+    preferred_regions: &[Region],
+) -> Vec<CosmosEndpoint> {
+    let mut ordered = Vec::with_capacity(endpoints.len());
+    let mut remaining: Vec<Option<CosmosEndpoint>> = endpoints.into_iter().map(Some).collect();
+
+    for region in preferred_regions {
+        for slot in remaining.iter_mut() {
+            if let Some(ep) = slot {
+                if ep.region().is_some_and(|r| r == region) {
+                    ordered.push(slot.take().unwrap());
+                    break;
+                }
+            }
+        }
+    }
+
+    // Append any endpoints not matched by the preferred list.
+    for ep in remaining.into_iter().flatten() {
+        ordered.push(ep);
+    }
+
+    ordered
+}
+
 /// Returns a new state with an endpoint marked unavailable.
 pub(crate) fn mark_endpoint_unavailable(
     state: &AccountEndpointState,
@@ -176,6 +213,7 @@ pub(crate) fn expire_unavailable_endpoints(
 mod tests {
     use super::*;
     use crate::driver::cache::AccountProperties;
+    use crate::options::Region;
 
     fn default_endpoint() -> CosmosEndpoint {
         CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com:443/").unwrap())
@@ -204,7 +242,7 @@ mod tests {
     #[test]
     fn build_state_uses_metadata_locations() {
         let state =
-            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
+            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false, &[]);
         assert_eq!(state.generation, 0);
         assert_eq!(state.preferred_write_endpoints.len(), 1);
         assert_eq!(state.preferred_read_endpoints.len(), 1);
@@ -232,7 +270,7 @@ mod tests {
         }))
         .unwrap();
 
-        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true);
+        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true, &[]);
 
         assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
         assert!(state.preferred_write_endpoints[0].gateway20_url().is_none());
@@ -260,7 +298,7 @@ mod tests {
         }))
         .unwrap();
 
-        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true);
+        let state = build_account_endpoint_state(&properties, default_endpoint(), None, true, &[]);
 
         assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
         assert!(state.preferred_write_endpoints[0].gateway20_url().is_some());
@@ -269,7 +307,7 @@ mod tests {
     #[test]
     fn mark_and_expire_unavailable_endpoint() {
         let state =
-            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false);
+            build_account_endpoint_state(&test_properties(), default_endpoint(), None, false, &[]);
         let endpoint = state.preferred_read_endpoints[0].clone();
         let marked =
             mark_endpoint_unavailable(&state, &endpoint, UnavailableReason::TransportError);
@@ -281,5 +319,136 @@ mod tests {
             Duration::from_secs(60),
         );
         assert!(expired.unavailable_endpoints.is_empty());
+    }
+
+    fn multi_region_properties() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [
+                { "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" },
+                { "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" },
+                { "name": "westus3", "databaseAccountEndpoint": "https://test-westus3.documents.azure.com:443/" }
+            ],
+            "readableLocations": [
+                { "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" },
+                { "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" },
+                { "name": "westus3", "databaseAccountEndpoint": "https://test-westus3.documents.azure.com:443/" }
+            ],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn preferred_regions_reorder_write_endpoints() {
+        let preferred = vec![Region::WEST_US_3, Region::EAST_US];
+        let state = build_account_endpoint_state(
+            &multi_region_properties(),
+            default_endpoint(),
+            None,
+            false,
+            &preferred,
+        );
+
+        assert_eq!(state.preferred_write_endpoints.len(), 3);
+        assert_eq!(
+            state.preferred_write_endpoints[0].region().unwrap(),
+            &Region::WEST_US_3
+        );
+        assert_eq!(
+            state.preferred_write_endpoints[1].region().unwrap(),
+            &Region::EAST_US
+        );
+        assert_eq!(
+            state.preferred_write_endpoints[2].region().unwrap(),
+            &Region::WEST_US_2
+        );
+    }
+
+    #[test]
+    fn preferred_regions_reorder_read_endpoints() {
+        let preferred = vec![Region::WEST_US_2, Region::WEST_US_3];
+        let state = build_account_endpoint_state(
+            &multi_region_properties(),
+            default_endpoint(),
+            None,
+            false,
+            &preferred,
+        );
+
+        assert_eq!(state.preferred_read_endpoints.len(), 3);
+        assert_eq!(
+            state.preferred_read_endpoints[0].region().unwrap(),
+            &Region::WEST_US_2
+        );
+        assert_eq!(
+            state.preferred_read_endpoints[1].region().unwrap(),
+            &Region::WEST_US_3
+        );
+        assert_eq!(
+            state.preferred_read_endpoints[2].region().unwrap(),
+            &Region::EAST_US
+        );
+    }
+
+    #[test]
+    fn preferred_regions_unknown_regions_are_skipped() {
+        let preferred = vec![Region::new("nonexistent"), Region::WEST_US_3];
+        let state = build_account_endpoint_state(
+            &multi_region_properties(),
+            default_endpoint(),
+            None,
+            false,
+            &preferred,
+        );
+
+        // westus3 should be first; the nonexistent region is skipped.
+        assert_eq!(
+            state.preferred_write_endpoints[0].region().unwrap(),
+            &Region::WEST_US_3
+        );
+        assert_eq!(
+            state.preferred_write_endpoints[1].region().unwrap(),
+            &Region::EAST_US
+        );
+        assert_eq!(
+            state.preferred_write_endpoints[2].region().unwrap(),
+            &Region::WEST_US_2
+        );
+    }
+
+    #[test]
+    fn empty_preferred_regions_preserves_original_order() {
+        let state = build_account_endpoint_state(
+            &multi_region_properties(),
+            default_endpoint(),
+            None,
+            false,
+            &[],
+        );
+
+        // Original account-metadata order: eastus, westus2, westus3.
+        assert_eq!(
+            state.preferred_write_endpoints[0].region().unwrap(),
+            &Region::EAST_US
+        );
+        assert_eq!(
+            state.preferred_write_endpoints[1].region().unwrap(),
+            &Region::WEST_US_2
+        );
+        assert_eq!(
+            state.preferred_write_endpoints[2].region().unwrap(),
+            &Region::WEST_US_3
+        );
     }
 }

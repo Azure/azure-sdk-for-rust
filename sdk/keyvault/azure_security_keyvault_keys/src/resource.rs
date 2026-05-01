@@ -123,7 +123,7 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
 }
 
 mod private {
-    use crate::models::{DeletedKey, DeletedKeyProperties, Key, KeyProperties};
+    use crate::models::{DeletedKey, DeletedKeyProperties, Key, KeyOperationResult, KeyProperties};
 
     pub trait AsId {
         fn as_id(&self) -> Option<&String>;
@@ -148,6 +148,12 @@ mod private {
     }
 
     impl AsId for DeletedKeyProperties {
+        fn as_id(&self) -> Option<&String> {
+            self.kid.as_ref()
+        }
+    }
+
+    impl AsId for KeyOperationResult {
         fn as_id(&self) -> Option<&String> {
             self.kid.as_ref()
         }

@@ -15,6 +15,7 @@ use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccoun
 use futures::TryStreamExt as _;
 use std::error::Error;
 
+// This test generates a large recording, so marking as live-only.
 #[recorded::test(live)]
 async fn stream(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Setup
@@ -185,7 +186,7 @@ async fn stream_upload_pages(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_pages(
             request_content_from_bytes(&data),
             512,
-            HttpRange::new(0, 512).to_string(),
+            HttpRange::new(0, 512),
             None,
         )
         .await?;

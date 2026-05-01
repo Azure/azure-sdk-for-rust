@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::constants;
 use crate::models::ThroughputProperties;
-use azure_core::http::headers::{self, Headers};
+use azure_core::http::headers::Headers;
 use std::fmt;
 use std::fmt::Display;
 
@@ -18,35 +17,6 @@ pub use azure_data_cosmos_driver::options::{
     OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
     ThroughputControlGroupOptions,
 };
-
-// Temporary: these helpers allow the SDK pipeline to apply OperationOptions values
-// as HTTP headers. They will be removed when individual operations use the internal
-// pipeline directly.
-fn apply_precondition_headers(precondition: &Precondition, headers: &mut Headers) {
-    match precondition {
-        Precondition::IfMatch(etag) => {
-            headers.insert(headers::IF_MATCH, etag.to_string());
-        }
-        Precondition::IfNoneMatch(etag) => {
-            headers.insert(constants::IF_NONE_MATCH, etag.to_string());
-        }
-        _ => {}
-    }
-}
-
-// Temporary: applies the prefer header based on the content_response_on_write option.
-// Will be removed when write operations use the internal pipeline directly.
-fn apply_content_response_on_write_header(
-    content_response_on_write: Option<&ContentResponseOnWrite>,
-    headers: &mut Headers,
-) {
-    match content_response_on_write {
-        Some(ContentResponseOnWrite::Enabled) => {}
-        _ => {
-            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
-        }
-    }
-}
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 ///
@@ -238,31 +208,6 @@ impl ItemWriteOptions {
     }
 }
 
-impl ItemWriteOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when write operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-        if let Some(precondition) = &self.precondition {
-            apply_precondition_headers(precondition, headers);
-        }
-        apply_content_response_on_write_header(
-            self.operation.content_response_on_write.as_ref(),
-            headers,
-        );
-    }
-}
-
 /// Options for transactional batch operations.
 ///
 /// Used by [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
@@ -293,28 +238,6 @@ impl BatchOptions {
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
-    }
-}
-
-impl BatchOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when batch operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-        apply_content_response_on_write_header(
-            self.operation.content_response_on_write.as_ref(),
-            headers,
-        );
     }
 }
 
@@ -356,24 +279,6 @@ impl QueryOptions {
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
-    }
-}
-
-impl QueryOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when query operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
     }
 }
 
@@ -426,69 +331,6 @@ mod tests {
     }
 
     #[test]
-    fn item_write_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("SessionToken".to_string())
-        .with_precondition(Precondition::IfMatch(ETag::from("etag_value")));
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "SessionToken".into()),
-            (headers::IF_MATCH, "etag_value".into()),
-            (headers::PREFER, constants::PREFER_MINIMAL),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn custom_headers_should_not_override_sdk_set_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            constants::SESSION_TOKEN,
-            HeaderValue::from_static("CustomSession"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("RealSessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (constants::SESSION_TOKEN, "RealSessionToken".into()),
-            (headers::PREFER, constants::PREFER_MINIMAL),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
     fn client_options_as_headers() {
         let mut custom_headers = HashMap::new();
         custom_headers.insert(
@@ -513,179 +355,5 @@ mod tests {
             headers_to_map(headers_result),
             headers_to_map(headers_expected)
         );
-    }
-
-    #[test]
-    fn query_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let query_options = QueryOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("QuerySessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        query_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "QuerySessionToken".into()),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn item_write_options_default_as_headers() {
-        let options = ItemWriteOptions::default();
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn item_write_options_with_content_response_enabled() {
-        let mut operation = OperationOptions::default();
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let options = ItemWriteOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn batch_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let mut operation = OperationOptions::default().with_custom_headers(custom_headers);
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let batch_options = BatchOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("BatchSessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "BatchSessionToken".into()),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn batch_options_custom_headers_should_not_override_sdk_set_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            constants::SESSION_TOKEN,
-            HeaderValue::from_static("CustomSession"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let batch_options = BatchOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("RealSessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (constants::SESSION_TOKEN, "RealSessionToken".into()),
-            (headers::PREFER, constants::PREFER_MINIMAL),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn batch_options_default_as_headers() {
-        let batch_options = BatchOptions::default();
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn batch_options_with_content_response_enabled() {
-        let mut operation = OperationOptions::default();
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let batch_options = BatchOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn no_throughput_control_headers_from_apply_headers_alone() {
-        // apply_headers() does not set throughput control headers — those are
-        // applied by the driver pipeline. Verify that priority and bucket
-        // headers are absent after apply_headers() only.
-        let options = ItemWriteOptions::default();
-        let mut headers = Headers::new();
-        options.apply_headers(&mut headers);
-
-        assert!(headers
-            .get_optional_str(&constants::PRIORITY_LEVEL)
-            .is_none());
-        assert!(headers
-            .get_optional_str(&constants::THROUGHPUT_BUCKET)
-            .is_none());
     }
 }

@@ -15,7 +15,7 @@ harness = false
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { workspace = true }
+azure_core = { version = "0.35.0" }
 azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
   "__internal_mocking",
 ] }

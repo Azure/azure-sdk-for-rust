@@ -17,6 +17,7 @@ use futures::future::BoxFuture;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
+    options::Region,
 };
 
 use super::{
@@ -62,6 +63,7 @@ pub(crate) struct LocationStateStore {
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
+    preferred_regions: Vec<Region>,
     gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -126,6 +128,7 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
+        preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
 
@@ -141,6 +144,7 @@ impl LocationStateStore {
             account_endpoint,
             account_refresh_fn,
             default_endpoint,
+            preferred_regions,
             gateway20_enabled,
             endpoint_unavailability_ttl,
             // TODO(refresh-config): Make refresh interval configurable.
@@ -342,6 +346,7 @@ impl LocationStateStore {
                 default_endpoint.clone(),
                 Some(current.generation),
                 self.gateway20_enabled,
+                &self.preferred_regions,
             );
             // Carry forward unavailability marks from the current state,
             // filtering out entries that have expired past the configured TTL.
@@ -437,6 +442,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            Vec::new(),
         );
 
         store
@@ -473,6 +479,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            Vec::new(),
         );
 
         store
@@ -503,6 +510,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            Vec::new(),
         );
 
         let properties = Arc::new(test_refresh_payload());

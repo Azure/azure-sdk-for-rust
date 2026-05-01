@@ -404,7 +404,7 @@ async fn upsert_results(
         };
 
         if let Err(e) = container
-            .upsert_item(&result.partition_key, &result, None)
+            .upsert_item(&result.partition_key, &result.id, &result, None)
             .await
         {
             eprintln!("Warning: failed to upsert perf result: {e}");
@@ -439,7 +439,10 @@ async fn upsert_error(
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
     };
-    if let Err(e) = container.upsert_item(&doc.partition_key, &doc, None).await {
+    if let Err(e) = container
+        .upsert_item(&doc.partition_key, &id, &doc, None)
+        .await
+    {
         eprintln!("Warning: failed to upsert error result: {e}");
     }
 }

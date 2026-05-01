@@ -5,7 +5,8 @@ use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{
     models::{
-        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyClientGetKeyOptions,
+        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyClientEncryptOptions,
+        KeyClientGetKeyOptions, KeyClientSignOptions, KeyClientWrapKeyOptions,
         KeyOperationParameters, KeyType, SignParameters, SignatureAlgorithm,
         UpdateKeyPropertiesParameters, VerifyParameters,
     },
@@ -247,7 +248,14 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let encrypted = client
-        .encrypt(NAME, &key_version, parameters.clone().try_into()?, None)
+        .encrypt(
+            NAME,
+            parameters.clone().try_into()?,
+            Some(KeyClientEncryptOptions {
+                key_version: Some(key_version.clone()),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_model()?;
     assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
@@ -306,7 +314,7 @@ async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let encrypted = client
-        .encrypt(NAME, "", parameters.clone().try_into()?, None)
+        .encrypt(NAME, parameters.clone().try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
@@ -362,7 +370,14 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         value: Some(digest.clone()),
     };
     let signed = client
-        .sign(NAME, &key_version, parameters.try_into()?, None)
+        .sign(
+            NAME,
+            parameters.try_into()?,
+            Some(KeyClientSignOptions {
+                key_version: Some(key_version.clone()),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_model()?;
     assert!(matches!(signed.result.as_ref(), Some(signature) if !signature.is_empty()));
@@ -421,7 +436,14 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let wrapped = client
-        .wrap_key(NAME, &key_version, parameters.clone().try_into()?, None)
+        .wrap_key(
+            NAME,
+            parameters.clone().try_into()?,
+            Some(KeyClientWrapKeyOptions {
+                key_version: Some(key_version.clone()),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_model()?;
     assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
