@@ -27,7 +27,7 @@ async fn example_poller() -> Result<(), Box<dyn std::error::Error>> {
     // Minimal create parameters (empty policy for mock)
     let params = CreateCertificateParameters::default();
 
-    // Start a create_certificate long-running operation.
+    // Start a long-running certificate creation operation.
     let certificate = client
         .begin_create_certificate("my-cert", params.try_into()?, None)?
         .await?
@@ -63,7 +63,7 @@ async fn example_poller_stream() -> Result<(), Box<dyn std::error::Error>> {
     // Minimal create parameters (empty policy for mock)
     let params = CreateCertificateParameters::default();
 
-    // Start a create_certificate long-running operation and manually poll status.
+    // Starts a long-running certificate creation operation and manually polls status.
     let mut poller = client.begin_create_certificate("my-cert", params.try_into()?, None)?;
 
     // Manually poll status updates until completion
