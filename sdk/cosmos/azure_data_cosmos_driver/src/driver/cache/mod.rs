@@ -15,6 +15,8 @@ mod account_metadata_cache;
 mod async_cache;
 mod async_lazy;
 mod container_cache;
+// Some methods/fields in the routing map and PK range cache are not yet called
+// from wired-in code paths but exist for the full PPAF/PPCB feature set.
 #[allow(dead_code)]
 mod container_routing_map;
 #[allow(dead_code)]
@@ -24,6 +26,6 @@ pub(crate) use account_metadata_cache::{AccountMetadataCache, AccountProperties,
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
 pub(crate) use container_cache::ContainerCache;
-// Standalone cache — will be wired in when pre-flight PK range resolution lands.
-#[allow(unused_imports)]
-pub(crate) use partition_key_range_cache::{PartitionKeyRangeCache, PkRangeFetchResult};
+pub(crate) use partition_key_range_cache::{
+    parse_pk_ranges_response, PartitionKeyRangeCache, PkRangeFetchResult,
+};

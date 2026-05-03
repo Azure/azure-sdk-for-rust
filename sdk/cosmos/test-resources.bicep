@@ -1,5 +1,8 @@
 param baseName string
 
+@description('Flag to enable or disable automatic failover on CosmosDB Account')
+param enableAutomaticFailover bool = false
+
 @description('Flag to enable or disable multiple write locations on CosmosDB Account')
 param enableMultipleWriteLocations bool = false
 
@@ -57,7 +60,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
   kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
-    enableAutomaticFailover: false
+    enableAutomaticFailover: enableAutomaticFailover
     enableMultipleWriteLocations: enableMultipleWriteLocations
     isVirtualNetworkFilterEnabled: false
     disableKeyBasedMetadataWriteAccess: false
