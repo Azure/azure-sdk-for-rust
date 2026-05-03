@@ -106,31 +106,36 @@ pub(crate) struct OperationRetryState {
     /// Write-path location effects deferred until the write definitively
     /// reaches a region.
     ///
-    /// On the write path we cannot tell from a single failed response (503,
-    /// 429/3092, 410, 408, 403/3, transport error) whether the failure was a
-    /// real per-region outage or a transient blip we'll never see again.
-    /// Applying `MarkPartitionUnavailable` (and, for PPAF on single-master,
-    /// `MarkEndpointUnavailable`) immediately on every such failure pollutes
-    /// the routing state with unverified failures and makes failover behave
-    /// non-deterministically across retries.
+    /// On the **single-master** write path we cannot tell from a single
+    /// failed response (503, 429/3092, 410, 408, 403/3, transport error)
+    /// whether the failure was a real per-region outage or a transient blip
+    /// we'll never see again. Applying `MarkPartitionUnavailable` (and, for
+    /// PPAF, `MarkEndpointUnavailable`) immediately on every such failure
+    /// pollutes the routing state with unverified failures and makes
+    /// failover behave non-deterministically across retries.
     ///
-    /// Instead, we accumulate the would-be effects here as the operation
-    /// retries. They are flushed only when the write definitively reaches a
-    /// region — either `OperationAction::Complete` (HTTP 2xx) or
+    /// **Multi-master** writes do NOT defer: the per-partition circuit
+    /// breaker is the source of truth for failover, and it must observe
+    /// every failure as it happens (otherwise the breaker can never trip
+    /// for non-idempotent writes that abort).
+    ///
+    /// Deferred effects are flushed only when the write definitively
+    /// reaches a region — either `OperationAction::Complete` (HTTP 2xx) or
     /// `OperationAction::Abort` with a region-confirming status such as 409
     /// Conflict or 412 Precondition Failed (statuses that prove the server
     /// processed the request). On any other abort path the buffer is
     /// discarded.
     ///
     /// **What gets deferred** is decided by `partition_effects_for_deferral`:
-    /// - Always: `MarkPartitionUnavailable` for writes (per-partition state
-    ///   should never be polluted by unverified retries).
+    /// - For single-master writes: `MarkPartitionUnavailable` (per-partition
+    ///   state should never be polluted by unverified retries).
     /// - Additionally for PPAF on single-master writes
     ///   (`ppaf_write_retry_allowed`): `MarkEndpointUnavailable` is also
     ///   deferred so a transient retry doesn't darken the only write region.
     ///
-    /// Read-path effects are NOT deferred — PPCB read counters drive
-    /// threshold-based failover and need the failure signal immediately.
+    /// Read-path and multi-master write effects are NOT deferred — PPCB
+    /// counters drive threshold-based failover and need the failure signal
+    /// immediately.
     pub pending_write_effects: Vec<LocationEffect>,
 }
 

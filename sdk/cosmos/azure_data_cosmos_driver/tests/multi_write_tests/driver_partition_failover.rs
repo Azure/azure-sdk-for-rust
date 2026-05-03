@@ -47,6 +47,7 @@ const HUB_REGION: Region = Region::EAST_US_2;
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
+#[ignore = "Requires the fault injection http client bug to be fixed."]
 pub async fn ppcb_enabled_503_on_create_fails_over_after_threshold() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::CreateItem)
@@ -170,6 +171,7 @@ pub async fn ppcb_enabled_503_on_create_fails_over_after_threshold() -> Result<(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
+#[ignore = "Requires the fault injection http client bug to be fixed."]
 pub async fn ppcb_failback_to_hub_region_after_write_fault_clears() -> Result<(), Box<dyn Error>> {
     use std::time::Duration;
     use tokio::time::sleep;

@@ -133,20 +133,27 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
 /// Splits a list of location effects into immediate effects and deferred
 /// write-path effects.
 ///
-/// For writes, `MarkPartitionUnavailable` effects are always deferred (returned
-/// in the second tuple element) until the write definitively reaches a region.
-/// When `ppaf_write_retry_allowed` is also true (PPAF on a single-master
-/// account), `MarkEndpointUnavailable` effects are likewise deferred so a
-/// transient retry against the only known write region cannot pollute the
-/// endpoint-unavailability state with an unverified failure.
+/// PPCB-managed operations — reads, and writes on a multi-master account —
+/// always apply effects immediately. The per-partition failure counter is
+/// what drives threshold-based failover, and it must see every failure
+/// signal at the moment it is observed; deferring would prevent the breaker
+/// from ever tripping for non-idempotent writes that abort.
 ///
-/// For reads, all effects are immediate and the deferred list is empty.
+/// Single-master writes (where the per-partition circuit breaker is not
+/// applicable) defer `MarkPartitionUnavailable` until the write definitively
+/// reaches a region. When PPAF is additionally enabled
+/// (`ppaf_write_retry_allowed`), `MarkEndpointUnavailable` is also deferred
+/// so a transient retry against the only known write region cannot pollute
+/// the endpoint-unavailability state with an unverified failure.
 pub(crate) fn partition_effects_for_deferral(
     is_read_only: bool,
+    can_use_multiple_write_locations: bool,
     ppaf_write_retry_allowed: bool,
     effects: Vec<LocationEffect>,
 ) -> (Vec<LocationEffect>, Vec<LocationEffect>) {
-    if is_read_only {
+    // PPCB-managed paths (reads and multi-master writes) bypass deferral so
+    // the partition failure counter increments immediately on every 503.
+    if is_read_only || can_use_multiple_write_locations {
         return (effects, Vec::new());
     }
     let mut immediate = Vec::with_capacity(effects.len());
@@ -1178,7 +1185,7 @@ mod tests {
             },
             LocationEffect::RefreshAccountProperties,
         ];
-        let (immediate, deferred) = partition_effects_for_deferral(true, false, effects);
+        let (immediate, deferred) = partition_effects_for_deferral(true, false, false, effects);
         assert_eq!(immediate.len(), 3);
         assert!(deferred.is_empty());
     }
@@ -1198,8 +1205,9 @@ mod tests {
             },
             LocationEffect::RefreshAccountProperties,
         ];
-        // Non-PPAF write: partition mark is deferred, endpoint mark stays immediate.
-        let (immediate, deferred) = partition_effects_for_deferral(false, false, effects);
+        // Single-master write, non-PPAF: partition mark is deferred,
+        // endpoint mark stays immediate.
+        let (immediate, deferred) = partition_effects_for_deferral(false, false, false, effects);
         assert_eq!(immediate.len(), 2);
         assert!(immediate
             .iter()
@@ -1223,8 +1231,8 @@ mod tests {
             },
             LocationEffect::RefreshAccountProperties,
         ];
-        // Non-PPAF write: endpoint mark stays immediate.
-        let (immediate, deferred) = partition_effects_for_deferral(false, false, effects);
+        // Single-master write, non-PPAF: endpoint mark stays immediate.
+        let (immediate, deferred) = partition_effects_for_deferral(false, false, false, effects);
         assert_eq!(immediate.len(), 2);
         assert!(deferred.is_empty());
     }
@@ -1248,7 +1256,7 @@ mod tests {
             },
             LocationEffect::RefreshAccountProperties,
         ];
-        let (immediate, deferred) = partition_effects_for_deferral(false, true, effects);
+        let (immediate, deferred) = partition_effects_for_deferral(false, false, true, effects);
         // Only RefreshAccountProperties should be applied immediately.
         assert_eq!(immediate.len(), 1);
         assert!(matches!(
@@ -1263,5 +1271,29 @@ mod tests {
         assert!(deferred
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn deferral_passes_all_effects_through_for_multi_master_writes() {
+        // Multi-master writes are PPCB-managed: failures must be applied
+        // immediately so the per-partition write-failure counter can drive
+        // threshold-based failover. The PPAF flag is irrelevant because
+        // PPAF only applies to single-master accounts.
+        let effects = vec![
+            LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
+                partition_key_range_id: None,
+                region: None,
+                is_read: false,
+                is_partitioned_resource: true,
+            }),
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint_for_test(),
+                reason: UnavailableReason::ServiceUnavailable,
+            },
+            LocationEffect::RefreshAccountProperties,
+        ];
+        let (immediate, deferred) = partition_effects_for_deferral(false, true, false, effects);
+        assert_eq!(immediate.len(), 3);
+        assert!(deferred.is_empty());
     }
 }

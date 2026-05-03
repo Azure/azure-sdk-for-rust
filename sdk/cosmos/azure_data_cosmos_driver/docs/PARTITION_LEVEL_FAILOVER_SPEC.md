@@ -746,9 +746,9 @@ whether PPAF SM is active. The pipeline then partitions them via
 `partition_effects_for_deferral()`:
 
 - Reads / multi-master writes: all effects are immediate.
-- Writes: `MarkPartitionUnavailable` is always deferred. For PPAF SM,
-  `MarkEndpointUnavailable` is also deferred (so a transient retry doesn't
-  darken the only write region).
+- Single-master writes: `MarkPartitionUnavailable` is deferred. When PPAF is
+  also enabled (`ppaf_write_retry_allowed`), `MarkEndpointUnavailable` is
+  likewise deferred so a transient retry doesn't darken the only write region.
 
 ```
 STAGE 5 (evaluate)        STAGE 6 (apply)              STAGE 7 (act)

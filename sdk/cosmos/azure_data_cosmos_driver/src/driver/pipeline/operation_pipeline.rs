@@ -245,7 +245,7 @@ pub(crate) async fn execute_operation_pipeline(
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
         // ── STAGE 6: Apply location effects ────────────────────────────
-        // Write-path effects are deferred into
+        // Single-master write effects are deferred into
         // `retry_state.pending_write_effects` instead of being applied
         // immediately. They are flushed only when the write definitively
         // reaches a region (Complete, or Abort with a region-confirming
@@ -254,10 +254,11 @@ pub(crate) async fn execute_operation_pipeline(
         // partition or endpoint outages — critical for PPAF on single-master
         // accounts where prematurely marking the only known write region
         // unavailable would force an unnecessary cross-region failover.
-        // Read-path effects are applied immediately so PPCB read counters
-        // can drive threshold-based failover.
+        // Read-path and multi-master write effects are applied immediately
+        // so PPCB counters can drive threshold-based failover.
         let (immediate_effects, deferred_effects) = partition_effects_for_deferral(
             operation.is_read_only(),
+            retry_state.can_use_multiple_write_locations,
             retry_state.ppaf_write_retry_allowed,
             effects,
         );
