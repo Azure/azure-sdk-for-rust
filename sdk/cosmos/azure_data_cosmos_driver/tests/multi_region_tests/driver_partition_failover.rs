@@ -243,9 +243,14 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
             // After the threshold is exceeded, the PPCB should be active and reads
             // should go directly to the next region (succeeding without hitting the
             // faulted hub region).
+            assert!(
+                read_success_count == 0,
+                "All reads are failing at the moment with 401 unauthorized error."
+            );
+
             // TODO: When Fault Injection Rule is injected, even the regions where the rule is not applied responds with a CosmosStatus(401).
             // This seems like a gap in the fault injection http client and needed to be looked into. Until then this assertion is skipped.
-            // Please un-comment the below assertion, once fixed.
+            // Please remove the above assertion and un-comment the below assertion, once fixed.
             // assert!(
             //     read_success_count > 0,
             //     "At least some reads should succeed via failover to the non-faulted region"
