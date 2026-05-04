@@ -78,6 +78,7 @@ impl DualBackend {
             "East US",
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
         )])
+        .unwrap()
         .with_consistency(ConsistencyLevel::Session);
 
         let emulator = InMemoryEmulatorHttpClient::new(config);

@@ -11,7 +11,8 @@ async fn create_database() {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
-    )]);
+    )])
+    .unwrap();
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
 
     let url = format!("{}/dbs", GATEWAY_URL);
@@ -75,7 +76,8 @@ async fn create_container_with_pk() {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
-    )]);
+    )])
+    .unwrap();
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
     emulator.store().create_database("testdb");
 
@@ -150,7 +152,8 @@ async fn create_container_missing_pk_400() {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
-    )]);
+    )])
+    .unwrap();
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
     emulator.store().create_database("testdb");
 
@@ -167,7 +170,8 @@ async fn read_nonexistent_database_404() {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
-    )]);
+    )])
+    .unwrap();
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
 
     let url = format!("{}/dbs/nope", GATEWAY_URL);

@@ -31,7 +31,7 @@ pub(crate) mod request_header_names {
 }
 
 /// Standard Cosmos DB response header names.
-// cspell:ignore activityid acked llsn schemaversion gatewayversion serviceversion
+// cspell:ignore activityid acked llsn gatewayversion serviceversion
 pub(crate) mod response_header_names {
     pub const ACTIVITY_ID: &str = "x-ms-activity-id";
     pub const REQUEST_CHARGE: &str = "x-ms-request-charge";
@@ -56,12 +56,8 @@ pub(crate) mod response_header_names {
     pub const QUORUM_ACKED_LOCAL_LSN: &str = "x-ms-cosmos-quorum-acked-llsn";
     pub const LOCAL_LSN: &str = "x-ms-cosmos-llsn";
     pub const ITEM_LOCAL_LSN: &str = "x-ms-cosmos-item-llsn";
-    pub const CURRENT_REPLICA_SET_SIZE: &str = "x-ms-current-replica-set-size";
-    pub const CURRENT_WRITE_QUORUM: &str = "x-ms-current-write-quorum";
     pub const NUMBER_OF_READ_REGIONS: &str = "x-ms-number-of-read-regions";
-    pub const XP_ROLE: &str = "x-ms-xp-role";
     pub const LAST_STATE_CHANGE_UTC: &str = "x-ms-last-state-change-utc";
-    pub const SCHEMA_VERSION: &str = "x-ms-schemaversion";
     pub const GATEWAY_VERSION: &str = "x-ms-gatewayversion";
     pub const SERVICE_VERSION: &str = "x-ms-serviceversion";
     pub const RESOURCE_QUOTA: &str = "x-ms-resource-quota";
@@ -308,23 +304,11 @@ pub struct CosmosResponseHeaders {
     /// Item-level local LSN (`x-ms-cosmos-item-llsn`).
     pub item_local_lsn: Option<u64>,
 
-    /// Current replica set size (`x-ms-current-replica-set-size`).
-    pub current_replica_set_size: Option<u32>,
-
-    /// Current write quorum (`x-ms-current-write-quorum`).
-    pub current_write_quorum: Option<u32>,
-
     /// Number of read regions (`x-ms-number-of-read-regions`).
     pub number_of_read_regions: Option<u32>,
 
-    /// XP role of the responding replica (`x-ms-xp-role`).
-    pub xp_role: Option<u32>,
-
     /// Timestamp of the last state change (`x-ms-last-state-change-utc`).
     pub last_state_change_utc: Option<String>,
-
-    /// Schema version of the service (`x-ms-schemaversion`).
-    pub schema_version: Option<String>,
 
     /// Gateway version (`x-ms-gatewayversion`).
     pub gateway_version: Option<String>,
@@ -467,23 +451,11 @@ impl CosmosResponseHeaders {
                 response_header_names::ITEM_LOCAL_LSN => {
                     result.item_local_lsn = value.as_str().parse().ok();
                 }
-                response_header_names::CURRENT_REPLICA_SET_SIZE => {
-                    result.current_replica_set_size = value.as_str().parse().ok();
-                }
-                response_header_names::CURRENT_WRITE_QUORUM => {
-                    result.current_write_quorum = value.as_str().parse().ok();
-                }
                 response_header_names::NUMBER_OF_READ_REGIONS => {
                     result.number_of_read_regions = value.as_str().parse().ok();
                 }
-                response_header_names::XP_ROLE => {
-                    result.xp_role = value.as_str().parse().ok();
-                }
                 response_header_names::LAST_STATE_CHANGE_UTC => {
                     result.last_state_change_utc = Some(value.as_str().to_owned());
-                }
-                response_header_names::SCHEMA_VERSION => {
-                    result.schema_version = Some(value.as_str().to_owned());
                 }
                 response_header_names::GATEWAY_VERSION => {
                     result.gateway_version = Some(value.as_str().to_owned());
@@ -558,12 +530,8 @@ mod tests {
         headers.insert("x-ms-cosmos-quorum-acked-llsn", "47");
         headers.insert("x-ms-cosmos-llsn", "51");
         headers.insert("x-ms-cosmos-item-llsn", "39");
-        headers.insert("x-ms-current-replica-set-size", "4");
-        headers.insert("x-ms-current-write-quorum", "3");
         headers.insert("x-ms-number-of-read-regions", "2");
-        headers.insert("x-ms-xp-role", "1");
         headers.insert("x-ms-last-state-change-utc", "2024-01-01T00:00:00Z");
-        headers.insert("x-ms-schemaversion", "1.18");
         headers.insert("x-ms-gatewayversion", "2.18.0");
         headers.insert("x-ms-serviceversion", "version 2.18.0");
         headers.insert("x-ms-resource-quota", "documentSize=10240;");
@@ -624,15 +592,11 @@ mod tests {
         assert_eq!(cosmos_headers.quorum_acked_local_lsn, Some(47));
         assert_eq!(cosmos_headers.local_lsn, Some(51));
         assert_eq!(cosmos_headers.item_local_lsn, Some(39));
-        assert_eq!(cosmos_headers.current_replica_set_size, Some(4));
-        assert_eq!(cosmos_headers.current_write_quorum, Some(3));
         assert_eq!(cosmos_headers.number_of_read_regions, Some(2));
-        assert_eq!(cosmos_headers.xp_role, Some(1));
         assert_eq!(
             cosmos_headers.last_state_change_utc.as_deref(),
             Some("2024-01-01T00:00:00Z")
         );
-        assert_eq!(cosmos_headers.schema_version.as_deref(), Some("1.18"));
         assert_eq!(cosmos_headers.gateway_version.as_deref(), Some("2.18.0"));
         assert_eq!(
             cosmos_headers.service_version.as_deref(),

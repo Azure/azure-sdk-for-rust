@@ -94,6 +94,7 @@ pub struct CosmosClientBuilder {
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
+    #[cfg(feature = "__internal_in_memory_emulator")]
     driver_runtime_builder: Option<CosmosDriverRuntimeBuilder>,
 }
 
@@ -214,7 +215,11 @@ impl CosmosClientBuilder {
     /// When set, the client uses this builder instead of creating a default one.
     /// This enables testing with custom transports such as the
     /// [`InMemoryEmulatorHttpClient`](azure_data_cosmos_driver::in_memory_emulator::InMemoryEmulatorHttpClient).
+    ///
+    /// Note: SDK-level connection pool, fault injection, and throughput control settings
+    /// are subsequently applied to this builder and will override any matching values it contains.
     #[doc(hidden)]
+    #[cfg(feature = "__internal_in_memory_emulator")]
     pub fn with_driver_runtime_builder(mut self, builder: CosmosDriverRuntimeBuilder) -> Self {
         self.driver_runtime_builder = Some(builder);
         self
@@ -424,8 +429,10 @@ impl CosmosClientBuilder {
         // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
-        #[allow(unused_mut)]
+        #[cfg(feature = "__internal_in_memory_emulator")]
         let mut driver_runtime_builder = self.driver_runtime_builder.unwrap_or_default();
+        #[cfg(not(feature = "__internal_in_memory_emulator"))]
+        let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
 
         // Forward SDK connection settings to the driver's connection pool.
         let mut pool_builder = ConnectionPoolOptions::builder();

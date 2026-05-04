@@ -103,7 +103,12 @@ pub(crate) async fn handle_operation(
             }
             handle_delete(store, region_name, parsed, start).await
         }
-        OperationType::Query => unsupported_response("Query", start),
+        OperationType::Query => unsupported_response(
+            "SQL queries are not supported by the in-memory emulator. \
+             See sdk/cosmos/azure_data_cosmos_driver/docs/IN_MEMORY_EMULATOR_SPEC.md \
+             section 1 (Non-Goals).",
+            start,
+        ),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     }
 }

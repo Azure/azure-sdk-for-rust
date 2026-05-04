@@ -24,9 +24,14 @@ pub struct VirtualAccountConfig {
 impl VirtualAccountConfig {
     /// Creates a new configuration with the given regions.
     /// The first region is the hub/primary write region in single-write mode.
-    pub fn new(regions: Vec<VirtualRegion>) -> Self {
-        assert!(!regions.is_empty(), "at least one region is required");
-        Self {
+    pub fn new(regions: Vec<VirtualRegion>) -> azure_core::Result<Self> {
+        if regions.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "at least one region is required",
+            ));
+        }
+        Ok(Self {
             regions,
             write_mode: WriteMode::Single,
             consistency: ConsistencyLevel::Session,
@@ -34,7 +39,7 @@ impl VirtualAccountConfig {
             replication_overrides: HashMap::new(),
             ru_model: RuChargingModel::default(),
             throttling_enabled: false,
-        }
+        })
     }
 
     /// Sets the write mode.
@@ -249,12 +254,17 @@ impl ReplicationConfig {
     }
 
     /// Random delay within a range.
-    pub fn range(min: Duration, max: Duration) -> Self {
-        assert!(min <= max, "min delay must be <= max delay");
-        Self {
+    pub fn range(min: Duration, max: Duration) -> azure_core::Result<Self> {
+        if min > max {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "min delay must be <= max delay",
+            ));
+        }
+        Ok(Self {
             min_delay: min,
             max_delay: max,
-        }
+        })
     }
 
     /// Returns whether this is immediate (zero-delay) replication.
@@ -313,7 +323,7 @@ fn rand_fraction() -> f64 {
         x ^= x >> 7;
         x ^= x << 17;
         s.set(x);
-        (x as f64) / (u64::MAX as f64)
+        ((x >> 11) as f64) / ((1u64 << 53) as f64)
     })
 }
 
@@ -330,22 +340,29 @@ impl ContainerConfig {
     }
 
     /// Sets the number of physical partitions.
-    pub fn with_partition_count(mut self, count: u32) -> Self {
-        assert!(count > 0, "partition count must be > 0");
+    pub fn with_partition_count(mut self, count: u32) -> azure_core::Result<Self> {
+        if count == 0 {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "partition count must be > 0",
+            ));
+        }
         self.partition_count = count;
-        self
+        Ok(self)
     }
 
     /// Sets the provisioned throughput in RU/s.
     /// Minimum is 400 RU/s. When set and throttling is enabled, the emulator
     /// returns 429/3200 when consumed RU/s exceeds this limit.
-    pub fn with_throughput(mut self, ru_per_second: u32) -> Self {
-        assert!(
-            ru_per_second >= 400,
-            "provisioned throughput must be >= 400 RU/s"
-        );
+    pub fn with_throughput(mut self, ru_per_second: u32) -> azure_core::Result<Self> {
+        if ru_per_second < 400 {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "provisioned throughput must be >= 400 RU/s",
+            ));
+        }
         self.provisioned_throughput_ru = Some(ru_per_second);
-        self
+        Ok(self)
     }
 
     pub fn partition_count(&self) -> u32 {

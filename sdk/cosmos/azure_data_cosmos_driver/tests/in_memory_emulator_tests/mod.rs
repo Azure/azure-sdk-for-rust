@@ -33,6 +33,7 @@ pub async fn setup_single_region() -> TestContext {
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
     )])
+    .unwrap()
     .with_consistency(ConsistencyLevel::Session);
 
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
@@ -65,6 +66,7 @@ pub async fn setup_multi_region(write_mode: WriteMode) -> MultiRegionTestContext
         VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
         VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
     ])
+    .unwrap()
     .with_write_mode(write_mode)
     .with_consistency(ConsistencyLevel::Session)
     .with_replication_config(ReplicationConfig::immediate());

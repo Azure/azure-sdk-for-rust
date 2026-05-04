@@ -760,6 +760,7 @@ async fn read_failover_on_503_via_fault_injection() {
         VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
         VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
     ])
+    .unwrap()
     .with_write_mode(WriteMode::Single)
     .with_consistency(ConsistencyLevel::Session)
     .with_replication_config(ReplicationConfig::immediate());

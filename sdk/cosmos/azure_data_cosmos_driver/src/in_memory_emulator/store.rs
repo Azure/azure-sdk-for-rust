@@ -14,6 +14,8 @@ use super::rid::RidGenerator;
 use super::session::SessionState;
 use crate::models::PartitionKeyDefinition;
 
+type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
+
 /// Top-level emulator store holding all regions.
 pub struct EmulatorStore {
     config: VirtualAccountConfig,
@@ -25,6 +27,10 @@ pub struct EmulatorStore {
     /// to user documents, producing LSN and session tokens for control plane
     /// responses.
     master_partition_lsn: AtomicU64,
+    /// Per-(db, coll) async mutex serializing split/merge execution.
+    split_merge_locks: std::sync::Mutex<SplitMergeLocks>,
+    /// Tracks spawned replication tasks so tests can drain them.
+    replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
 }
 
 impl EmulatorStore {
@@ -40,9 +46,12 @@ impl EmulatorStore {
             rid_generator: RidGenerator::new(),
             regions: RwLock::new(regions),
             master_partition_lsn: AtomicU64::new(0),
+            split_merge_locks: std::sync::Mutex::new(HashMap::new()),
+            replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
         })
     }
 
+    #[doc(hidden)]
     pub fn config(&self) -> &VirtualAccountConfig {
         &self.config
     }
@@ -63,6 +72,23 @@ impl EmulatorStore {
         super::session::SessionToken::format(0, lsn)
     }
 
+    fn split_merge_lock(&self, db: &str, coll: &str) -> Arc<async_lock::Mutex<()>> {
+        let mut map = self.split_merge_locks.lock().unwrap();
+        map.entry((db.to_string(), coll.to_string()))
+            .or_insert_with(|| Arc::new(async_lock::Mutex::new(())))
+            .clone()
+    }
+
+    /// Awaits all pending in-flight replication tasks. Test-only.
+    #[doc(hidden)]
+    pub async fn drain_pending_replications(&self) {
+        let mut set = {
+            let mut guard = self.replication_tasks.lock().unwrap();
+            std::mem::replace(&mut *guard, tokio::task::JoinSet::new())
+        };
+        while set.join_next().await.is_some() {}
+    }
+
     /// Returns a reference to the region store for the given region name.
     pub(crate) fn region(&self, name: &str) -> Option<RegionStoreRef<'_>> {
         let regions = self.regions.read().unwrap();
@@ -77,6 +103,7 @@ impl EmulatorStore {
     }
 
     /// Creates a database in all regions.
+    #[doc(hidden)]
     pub fn create_database(&self, db_id: &str) {
         self.create_database_internal(db_id);
     }
@@ -103,6 +130,7 @@ impl EmulatorStore {
     }
 
     /// Creates a container in all regions with default partition count.
+    #[doc(hidden)]
     pub fn create_container(&self, db_id: &str, coll_id: &str, pk_def: PartitionKeyDefinition) {
         self.create_container_with_config_internal(
             db_id,
@@ -113,6 +141,7 @@ impl EmulatorStore {
     }
 
     /// Creates a container in all regions with custom config.
+    #[doc(hidden)]
     pub fn create_container_with_config(
         &self,
         db_id: &str,
@@ -176,25 +205,37 @@ impl EmulatorStore {
 
     /// Forces the next read in the given region for the specified partition key
     /// to return 404/1002 (ReadSessionNotAvailable), then resets.
-    pub fn force_session_not_available(&self, region: &str, partition_key_json: &str) {
+    ///
+    /// Returns `true` if the flag was set on at least one partition; `false` otherwise.
+    #[doc(hidden)]
+    pub fn force_session_not_available(&self, region: &str, partition_key_json: &str) -> bool {
+        let pk_components = super::epk::parse_partition_key_header(partition_key_json);
+        if pk_components.is_empty() {
+            return false;
+        }
         let regions = self.regions.read().unwrap();
-        if let Some(region_store) = regions.get(region) {
-            let containers = region_store.containers.read().unwrap();
-            let pk_components = super::epk::parse_partition_key_header(partition_key_json);
-            for state in containers.values() {
-                let epk = super::epk::compute_epk(
-                    &pk_components,
-                    state.metadata.partition_key.kind(),
-                    state.metadata.partition_key.version(),
-                );
-                if let Some(partition) = state.find_partition(&epk) {
-                    partition.session_state.set_force_unavailable();
-                }
+        let region_store = match regions.get(region) {
+            Some(r) => r,
+            None => return false,
+        };
+        let containers = region_store.containers.read().unwrap();
+        let mut any_set = false;
+        for state in containers.values() {
+            let epk = super::epk::compute_epk(
+                &pk_components,
+                state.metadata.partition_key.kind(),
+                state.metadata.partition_key.version(),
+            );
+            if let Some(partition) = state.find_partition(&epk) {
+                partition.session_state.set_force_unavailable();
+                any_set = true;
             }
         }
+        any_set
     }
 
     /// Pauses replication TO the given target region.
+    #[doc(hidden)]
     pub fn pause_replication(&self, target_region: &str) {
         let regions = self.regions.read().unwrap();
         if let Some(region_store) = regions.get(target_region) {
@@ -203,6 +244,7 @@ impl EmulatorStore {
     }
 
     /// Resumes replication TO the given target region, draining accumulated writes.
+    #[doc(hidden)]
     pub fn resume_replication(&self, target_region: &str) {
         let regions = self.regions.read().unwrap();
         if let Some(region_store) = regions.get(target_region) {
@@ -262,7 +304,7 @@ impl EmulatorStore {
             } else {
                 // Async delayed replication
                 let store_clone = store;
-                tokio::spawn(async move {
+                self.replication_tasks.lock().unwrap().spawn(async move {
                     tokio::time::sleep(delay).await;
                     store_clone.apply_replication(&target, &db, &coll, &document, is_delete);
                 });
@@ -284,11 +326,13 @@ impl EmulatorStore {
             if region_store.paused.load(Ordering::SeqCst) {
                 // Enqueue to buffer
                 let mut buffer = region_store.replication_buffer.write().unwrap();
-                // Backpressure: drop oldest entries when buffer exceeds capacity.
                 const MAX_REPLICATION_BUFFER: usize = 10_000;
-                while buffer.len() >= MAX_REPLICATION_BUFFER {
-                    buffer.pop_front();
-                }
+                assert!(
+                    buffer.len() < MAX_REPLICATION_BUFFER,
+                    "in-memory emulator: replication buffer for region '{}' exceeded {} entries while paused",
+                    target_region,
+                    MAX_REPLICATION_BUFFER
+                );
                 buffer.push_back(PendingReplication {
                     db_id: db_id.to_string(),
                     coll_id: coll_id.to_string(),
@@ -632,11 +676,9 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
 /// Computes N+1 EPK boundary strings that divide the 128-bit hex space into N equal ranges.
 fn compute_partition_boundaries(n: u32) -> Vec<String> {
     let mut boundaries = Vec::with_capacity((n + 1) as usize);
-    // We work with u128 for the full hash space
-    // Min = 0, Max = 0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF (after bit clearing)
-    // But EPK space is really [0, FF) where FF is the exclusive upper bound
-    // We use 128-bit space: [0, 2^128)
-    let total: u128 = u128::MAX;
+    // V2 EPK hash clears the top 2 bits, so EPKs lie in [0, 2^126).
+    // Divide that reachable space evenly across N partitions.
+    let total: u128 = 1u128 << 126;
     let step = total / n as u128;
 
     for i in 0..=n {
@@ -669,18 +711,22 @@ pub(crate) fn new_etag() -> String {
 /// Tracks RU consumption per second for throughput throttling.
 pub(crate) struct ThroughputTracker {
     provisioned_ru: u32,
-    /// Consumed RU in the current window, stored as RU * 100 to avoid floats in atomics.
-    consumed_centiru: AtomicU64,
-    /// Window start timestamp in seconds.
-    window_start: AtomicU64,
+    inner: std::sync::Mutex<ThroughputWindow>,
+}
+
+struct ThroughputWindow {
+    window_start: u64,
+    consumed_centiru: u64,
 }
 
 impl ThroughputTracker {
     pub fn new(provisioned_ru: u32) -> Self {
         Self {
             provisioned_ru,
-            consumed_centiru: AtomicU64::new(0),
-            window_start: AtomicU64::new(current_timestamp()),
+            inner: std::sync::Mutex::new(ThroughputWindow {
+                window_start: current_timestamp(),
+                consumed_centiru: 0,
+            }),
         }
     }
 
@@ -688,33 +734,18 @@ impl ThroughputTracker {
     /// or `Err(retry_after_ms)` if throttled.
     pub fn try_consume(&self, charge: f64) -> Result<(), u64> {
         let now = current_timestamp();
-        let window = self.window_start.load(Ordering::SeqCst);
-
-        // Reset window if we've moved to a new second. Only one thread wins
-        // the compare_exchange; losers proceed with the already-reset counter.
-        if now > window
-            && self
-                .window_start
-                .compare_exchange(window, now, Ordering::SeqCst, Ordering::SeqCst)
-                .is_ok()
-        {
-            self.consumed_centiru.store(0, Ordering::SeqCst);
-        }
-
         let charge_centiru = (charge * 100.0) as u64;
-        let prev = self
-            .consumed_centiru
-            .fetch_add(charge_centiru, Ordering::SeqCst);
         let budget_centiru = (self.provisioned_ru as u64) * 100;
-
-        if prev + charge_centiru > budget_centiru {
-            // Over budget — undo the add and return retry-after
-            self.consumed_centiru
-                .fetch_sub(charge_centiru, Ordering::SeqCst);
-            Err(1000) // Retry after ~1 second (next window)
-        } else {
-            Ok(())
+        let mut w = self.inner.lock().unwrap();
+        if now > w.window_start {
+            w.window_start = now;
+            w.consumed_centiru = 0;
         }
+        if w.consumed_centiru.saturating_add(charge_centiru) > budget_centiru {
+            return Err(1000);
+        }
+        w.consumed_centiru += charge_centiru;
+        Ok(())
     }
 }
 
@@ -727,6 +758,7 @@ impl EmulatorStore {
     /// partition return 410/1007. After: parent is replaced by two children with the
     /// EPK range split in half.
     /// Child LSN = parent_lsn + 1, vector_clock_version is preserved (split does NOT change it).
+    #[doc(hidden)]
     pub fn split_partition(
         self: &Arc<Self>,
         db_id: &str,
@@ -756,7 +788,9 @@ impl EmulatorStore {
         let db = db_id.to_string();
         let coll = coll_id.to_string();
 
-        tokio::spawn(async move {
+        let lock = self.split_merge_lock(db_id, coll_id);
+        self.replication_tasks.lock().unwrap().spawn(async move {
+            let _guard = lock.lock().await;
             if !min_lock_duration.is_zero() {
                 tokio::time::sleep(min_lock_duration).await;
             }
@@ -768,10 +802,78 @@ impl EmulatorStore {
 
     /// Performs the actual split after the lock period.
     fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32) {
+        // Compute child IDs/RIDs ONCE based on the first region's view; all regions
+        // share the same partition layout so this is consistent.
+        let key = (db_id.to_string(), coll_id.to_string());
+        let preview = {
+            let regions = self.regions.read().unwrap();
+            let mut found = None;
+            for region in regions.values() {
+                let containers = region.containers.read().unwrap();
+                if let Some(state) = containers.get(&key) {
+                    let parent = match state
+                        .physical_partitions
+                        .iter()
+                        .find(|p| p.id == partition_id)
+                    {
+                        Some(p) => p,
+                        None => continue,
+                    };
+                    let parent_lsn = parent.current_lsn();
+                    let parent_version = parent.current_version();
+                    let parent_min = parent.epk_min.clone();
+                    let parent_max = parent.epk_max.clone();
+                    let midpoint = compute_epk_midpoint(&parent_min, &parent_max);
+                    let child_id_1 = state.next_partition_id();
+                    let child_id_2 = state.next_partition_id();
+                    let child_rid_1 = self.rid_generator.next_pkrange_rid(
+                        state.metadata.numeric_db_id,
+                        state.metadata.numeric_coll_id,
+                        child_id_1,
+                    );
+                    let child_rid_2 = self.rid_generator.next_pkrange_rid(
+                        state.metadata.numeric_db_id,
+                        state.metadata.numeric_coll_id,
+                        child_id_2,
+                    );
+                    let total_throughput = state.metadata.provisioned_throughput_ru;
+                    found = Some((
+                        parent_lsn,
+                        parent_version,
+                        parent_min,
+                        parent_max,
+                        midpoint,
+                        child_id_1,
+                        child_id_2,
+                        child_rid_1,
+                        child_rid_2,
+                        total_throughput,
+                    ));
+                    break;
+                }
+            }
+            found
+        };
+        let (
+            parent_lsn,
+            parent_version,
+            parent_min,
+            parent_max,
+            midpoint,
+            child_id_1,
+            child_id_2,
+            child_rid_1,
+            child_rid_2,
+            total_throughput,
+        ) = match preview {
+            Some(t) => t,
+            None => return,
+        };
+        let child_lsn = parent_lsn + 1;
+
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
             let mut containers = region.containers.write().unwrap();
-            let key = (db_id.to_string(), coll_id.to_string());
             if let Some(state) = containers.get_mut(&key) {
                 let parent_idx = match state
                     .physical_partitions
@@ -783,36 +885,10 @@ impl EmulatorStore {
                 };
 
                 let parent = &state.physical_partitions[parent_idx];
-                let parent_lsn = parent.current_lsn();
-                let parent_version = parent.current_version();
-                let parent_min = parent.epk_min.clone();
-                let parent_max = parent.epk_max.clone();
-
-                // Compute midpoint
-                let midpoint = compute_epk_midpoint(&parent_min, &parent_max);
-
-                // Get new child IDs
-                let child_id_1 = state.next_partition_id();
-                let child_id_2 = state.next_partition_id();
-                let child_lsn = parent_lsn + 1;
-
-                // Generate RIDs for children
-                let child_rid_1 = self.rid_generator.next_pkrange_rid(
-                    state.metadata.numeric_db_id,
-                    state.metadata.numeric_coll_id,
-                    child_id_1,
-                );
-                let child_rid_2 = self.rid_generator.next_pkrange_rid(
-                    state.metadata.numeric_db_id,
-                    state.metadata.numeric_coll_id,
-                    child_id_2,
-                );
-
                 // Redistribute documents
                 let parent_docs = parent.documents.read().unwrap();
                 let mut docs_1: BTreeMap<Epk, BTreeMap<String, StoredDocument>> = BTreeMap::new();
                 let mut docs_2: BTreeMap<Epk, BTreeMap<String, StoredDocument>> = BTreeMap::new();
-
                 for (epk, items) in parent_docs.iter() {
                     if *epk < midpoint {
                         docs_1.insert(epk.clone(), items.clone());
@@ -822,21 +898,18 @@ impl EmulatorStore {
                 }
                 drop(parent_docs);
 
-                let n = state.physical_partitions.len() as f64 + 1.0; // +1 since we add 2 and remove 1
-                let per_partition_ru = state
-                    .metadata
-                    .provisioned_throughput_ru
-                    .map(|total| total / (n as u32));
+                let n = state.physical_partitions.len() as f64 + 1.0;
+                let per_partition_ru = total_throughput.map(|total| total / (n as u32));
 
                 let child1 = PhysicalPartition {
                     id: child_id_1,
-                    epk_min: parent_min,
+                    epk_min: parent_min.clone(),
                     epk_max: midpoint.clone(),
                     lsn: AtomicU64::new(child_lsn),
                     vector_clock_version: AtomicU64::new(parent_version),
                     documents: RwLock::new(docs_1),
                     session_state: SessionState::new(),
-                    rid: child_rid_1,
+                    rid: child_rid_1.clone(),
                     rid_prefix: child_id_1,
                     throughput_fraction: 1.0 / n,
                     parents: vec![partition_id],
@@ -846,13 +919,13 @@ impl EmulatorStore {
 
                 let child2 = PhysicalPartition {
                     id: child_id_2,
-                    epk_min: midpoint,
-                    epk_max: parent_max,
+                    epk_min: midpoint.clone(),
+                    epk_max: parent_max.clone(),
                     lsn: AtomicU64::new(child_lsn),
                     vector_clock_version: AtomicU64::new(parent_version),
                     documents: RwLock::new(docs_2),
                     session_state: SessionState::new(),
-                    rid: child_rid_2,
+                    rid: child_rid_2.clone(),
                     rid_prefix: child_id_2,
                     throughput_fraction: 1.0 / n,
                     parents: vec![partition_id],
@@ -860,10 +933,13 @@ impl EmulatorStore {
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                 };
 
-                // Remove parent, add children
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
                 state.physical_partitions.push(child2);
+                // Keep next_partition_id consistent across regions.
+                state
+                    .next_partition_id
+                    .fetch_max(child_id_2 + 1, Ordering::SeqCst);
             }
         }
     }
@@ -874,6 +950,7 @@ impl EmulatorStore {
     /// return 410/1007. After: both parents are replaced by a single child.
     /// Child vector_clock_version = max(parent_versions) + 1 (merge DOES increment version).
     /// Child LSN = 1 (restarts).
+    #[doc(hidden)]
     pub fn merge_partitions(
         self: &Arc<Self>,
         db_id: &str,
@@ -902,7 +979,9 @@ impl EmulatorStore {
         let db = db_id.to_string();
         let coll = coll_id.to_string();
 
-        tokio::spawn(async move {
+        let lock = self.split_merge_lock(db_id, coll_id);
+        self.replication_tasks.lock().unwrap().spawn(async move {
+            let _guard = lock.lock().await;
             if !min_lock_duration.is_zero() {
                 tokio::time::sleep(min_lock_duration).await;
             }
@@ -912,10 +991,65 @@ impl EmulatorStore {
 
     /// Performs the actual merge after the lock period.
     fn execute_merge(&self, db_id: &str, coll_id: &str, partition_id_a: u32, partition_id_b: u32) {
+        // Compute child id/rid + merged bounds ONCE, based on the first region's view.
+        let key = (db_id.to_string(), coll_id.to_string());
+        let preview = {
+            let regions = self.regions.read().unwrap();
+            let mut found = None;
+            for region in regions.values() {
+                let containers = region.containers.read().unwrap();
+                if let Some(state) = containers.get(&key) {
+                    let pa = state
+                        .physical_partitions
+                        .iter()
+                        .find(|p| p.id == partition_id_a);
+                    let pb = state
+                        .physical_partitions
+                        .iter()
+                        .find(|p| p.id == partition_id_b);
+                    let (pa, pb) = match (pa, pb) {
+                        (Some(a), Some(b)) => (a, b),
+                        _ => continue,
+                    };
+                    let (lower, upper) = if pa.epk_min < pb.epk_min {
+                        (pa, pb)
+                    } else {
+                        (pb, pa)
+                    };
+                    let merged_min = lower.epk_min.clone();
+                    let merged_max = upper.epk_max.clone();
+                    let max_version =
+                        std::cmp::max(lower.current_version(), upper.current_version());
+                    let child_version = max_version + 1;
+                    let child_id = state.next_partition_id();
+                    let child_rid = self.rid_generator.next_pkrange_rid(
+                        state.metadata.numeric_db_id,
+                        state.metadata.numeric_coll_id,
+                        child_id,
+                    );
+                    let total_throughput = state.metadata.provisioned_throughput_ru;
+                    found = Some((
+                        merged_min,
+                        merged_max,
+                        child_version,
+                        child_id,
+                        child_rid,
+                        total_throughput,
+                    ));
+                    break;
+                }
+            }
+            found
+        };
+        let (merged_min, merged_max, child_version, child_id, child_rid, total_throughput) =
+            match preview {
+                Some(t) => t,
+                None => return,
+            };
+
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
             let mut containers = region.containers.write().unwrap();
-            let key = (db_id.to_string(), coll_id.to_string());
             if let Some(state) = containers.get_mut(&key) {
                 let idx_a = state
                     .physical_partitions
@@ -925,13 +1059,10 @@ impl EmulatorStore {
                     .physical_partitions
                     .iter()
                     .position(|p| p.id == partition_id_b);
-
                 let (idx_a, idx_b) = match (idx_a, idx_b) {
                     (Some(a), Some(b)) => (a, b),
                     _ => continue,
                 };
-
-                // Determine which is "lower" (smaller EPK) and "upper"
                 let (lower_idx, upper_idx) = if state.physical_partitions[idx_a].epk_min
                     < state.physical_partitions[idx_b].epk_min
                 {
@@ -939,16 +1070,8 @@ impl EmulatorStore {
                 } else {
                     (idx_b, idx_a)
                 };
-
                 let lower = &state.physical_partitions[lower_idx];
                 let upper = &state.physical_partitions[upper_idx];
-
-                let merged_min = lower.epk_min.clone();
-                let merged_max = upper.epk_max.clone();
-                let max_version = std::cmp::max(lower.current_version(), upper.current_version());
-                let child_version = max_version + 1;
-
-                // Merge documents
                 let mut merged_docs: BTreeMap<Epk, BTreeMap<String, StoredDocument>> =
                     BTreeMap::new();
                 {
@@ -965,28 +1088,18 @@ impl EmulatorStore {
                     }
                 }
 
-                let child_id = state.next_partition_id();
-                let child_rid = self.rid_generator.next_pkrange_rid(
-                    state.metadata.numeric_db_id,
-                    state.metadata.numeric_coll_id,
-                    child_id,
-                );
-
-                let n = state.physical_partitions.len() as f64 - 1.0; // -1 since we remove 2 and add 1
-                let per_partition_ru = state
-                    .metadata
-                    .provisioned_throughput_ru
-                    .map(|total| total / (n.max(1.0) as u32));
+                let n = state.physical_partitions.len() as f64 - 1.0;
+                let per_partition_ru = total_throughput.map(|total| total / (n.max(1.0) as u32));
 
                 let child = PhysicalPartition {
                     id: child_id,
-                    epk_min: merged_min,
-                    epk_max: merged_max,
+                    epk_min: merged_min.clone(),
+                    epk_max: merged_max.clone(),
                     lsn: AtomicU64::new(1),
                     vector_clock_version: AtomicU64::new(child_version),
                     documents: RwLock::new(merged_docs),
                     session_state: SessionState::new(),
-                    rid: child_rid,
+                    rid: child_rid.clone(),
                     rid_prefix: child_id,
                     throughput_fraction: 1.0 / n.max(1.0),
                     parents: vec![partition_id_a, partition_id_b],
@@ -994,7 +1107,6 @@ impl EmulatorStore {
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                 };
 
-                // Remove both parents (remove higher index first to avoid shifting)
                 let (first_remove, second_remove) = if lower_idx > upper_idx {
                     (lower_idx, upper_idx)
                 } else {
@@ -1003,6 +1115,9 @@ impl EmulatorStore {
                 state.physical_partitions.remove(first_remove);
                 state.physical_partitions.remove(second_remove);
                 state.physical_partitions.push(child);
+                state
+                    .next_partition_id
+                    .fetch_max(child_id + 1, Ordering::SeqCst);
             }
         }
     }
@@ -1014,15 +1129,104 @@ fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Epk {
     let min_val = if min.as_str().is_empty() {
         0u128
     } else {
-        u128::from_str_radix(min.as_str(), 16).unwrap_or(0)
+        u128::from_str_radix(min.as_str(), 16).unwrap_or_else(|e| {
+            panic!("emulator: corrupted EPK partition bound min={:?}: {e}", min)
+        })
     };
 
     let max_val = if max.as_str() == "FF" {
-        u128::MAX
+        1u128 << 126
     } else {
-        u128::from_str_radix(max.as_str(), 16).unwrap_or(u128::MAX)
+        u128::from_str_radix(max.as_str(), 16).unwrap_or_else(|e| {
+            panic!("emulator: corrupted EPK partition bound max={:?}: {e}", max)
+        })
     };
 
     let mid = min_val / 2 + max_val / 2;
     Epk::new(format!("{:032X}", mid))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn partitions_distribute_across_full_v2_epk_space() {
+        use super::super::epk::{compute_epk, parse_partition_key_header};
+        use crate::models::PartitionKeyDefinition;
+        let pk_def: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        store.create_container_with_config(
+            "db",
+            "c",
+            pk_def,
+            super::super::config::ContainerConfig::new()
+                .with_partition_count(8)
+                .unwrap(),
+        );
+        let region_ref = store.region("r1").unwrap();
+        let mut counts = vec![0usize; 8];
+        for i in 0..2000 {
+            let pk_json = format!("[\"key-{}\"]", i);
+            let comps = parse_partition_key_header(&pk_json);
+            let epk = compute_epk(
+                &comps,
+                crate::models::PartitionKeyKind::Hash,
+                crate::models::PartitionKeyVersion::V2,
+            );
+            region_ref
+                .with_container("db", "c", |state| {
+                    let p = state.find_partition(&epk).unwrap();
+                    counts[p.id as usize] += 1;
+                })
+                .unwrap();
+        }
+        for (i, c) in counts.iter().enumerate() {
+            assert!(*c > 0, "partition {} had 0 docs (counts={:?})", i, counts);
+        }
+    }
+
+    #[test]
+    fn database_and_container_etags_consistent_across_regions() {
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+            super::super::config::VirtualRegion::new(
+                "r2",
+                url::Url::parse("https://r2.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        let pk_def: crate::models::PartitionKeyDefinition =
+            serde_json::from_value(serde_json::json!({
+                "paths": ["/pk"], "kind": "Hash", "version": 2
+            }))
+            .unwrap();
+        store.create_container("db", "c", pk_def);
+        let r1 = store.region("r1").unwrap();
+        let r2 = store.region("r2").unwrap();
+        assert_eq!(
+            r1.get_database("db").unwrap().etag,
+            r2.get_database("db").unwrap().etag
+        );
+        assert_eq!(
+            r1.get_container("db", "c").unwrap().metadata.etag,
+            r2.get_container("db", "c").unwrap().metadata.etag,
+        );
+    }
 }

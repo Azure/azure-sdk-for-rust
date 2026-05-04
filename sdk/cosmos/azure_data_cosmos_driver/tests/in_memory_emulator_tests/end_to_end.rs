@@ -131,6 +131,7 @@ impl SdkDualBackend {
             "East US",
             azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
         )])
+        .unwrap()
         .with_consistency(ConsistencyLevel::Session);
 
         let emulator = InMemoryEmulatorHttpClient::new(config);
@@ -548,6 +549,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         VirtualRegion::new("East US", azure_core::http::Url::parse(east_url).unwrap()),
         VirtualRegion::new("West US", azure_core::http::Url::parse(west_url).unwrap()),
     ])
+    .unwrap()
     .with_write_mode(WriteMode::Single)
     .with_consistency(ConsistencyLevel::Session)
     .with_replication_config(ReplicationConfig::immediate());

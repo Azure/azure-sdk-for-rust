@@ -16,6 +16,7 @@ async fn setup_throttled(throughput_ru: u32) -> TestContext {
         "East US",
         azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
     )])
+    .unwrap()
     .with_consistency(ConsistencyLevel::Session)
     .with_throttling_enabled(true);
 
@@ -33,8 +34,10 @@ async fn setup_throttled(throughput_ru: u32) -> TestContext {
         }))
         .unwrap(),
         azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new()
-            .with_partition_count(1) // single partition for predictable budget
-            .with_throughput(throughput_ru),
+            .with_partition_count(1)
+            .unwrap() // single partition for predictable budget
+            .with_throughput(throughput_ru)
+            .unwrap(),
     );
 
     TestContext {
@@ -112,9 +115,13 @@ async fn throttle_disabled_no_429() {
 }
 
 #[tokio::test]
-#[should_panic(expected = "provisioned throughput must be >= 400 RU/s")]
 async fn container_creation_min_400() {
-    azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new().with_throughput(100);
+    let err = azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new()
+        .with_throughput(100)
+        .unwrap_err();
+    assert!(err
+        .to_string()
+        .contains("provisioned throughput must be >= 400 RU/s"));
 }
 
 #[tokio::test]

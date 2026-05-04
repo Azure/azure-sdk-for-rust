@@ -57,11 +57,11 @@ impl InMemoryEmulatorHttpClient {
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
-    /// let emulator = InMemoryEmulatorHttpClient::new(
+    /// let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(
     ///     VirtualAccountConfig::new(vec![
     ///         VirtualRegion::new("East US", Url::parse("https://eastus.emulator.local").unwrap()),
-    ///     ])
-    /// );
+    ///     ]).unwrap()
+    /// ));
     ///
     /// let runtime = emulator.runtime_builder().build().await?;
     /// let account = AccountReference::with_master_key(
@@ -72,11 +72,9 @@ impl InMemoryEmulatorHttpClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn runtime_builder(&self) -> crate::driver::CosmosDriverRuntimeBuilder {
+    pub fn runtime_builder(self: &Arc<Self>) -> crate::driver::CosmosDriverRuntimeBuilder {
         let factory = Arc::new(EmulatorHttpClientFactory {
-            client: Arc::new(Self {
-                store: Arc::clone(&self.store),
-            }),
+            client: Arc::clone(self),
         });
         crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(factory)
     }
@@ -96,10 +94,18 @@ impl HttpClient for InMemoryEmulatorHttpClient {
         let parsed = parse_request(request);
 
         // Resolve region from URL
-        let region_name = resolve_region(request.url(), self.store.config()).unwrap_or_else(|| {
-            // If no region matches, use the first configured region as default
-            self.store.config().regions()[0].name()
-        });
+        let region_name = match resolve_region(request.url(), self.store.config()) {
+            Some(r) => r,
+            None => {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!(
+                        "in-memory emulator: request URL host '{}' does not match any configured region",
+                        request.url().host_str().unwrap_or("<none>"),
+                    ),
+                ));
+            }
+        };
 
         // Extract request body
         let body_bytes: Vec<u8> = Bytes::from(request.body()).to_vec();

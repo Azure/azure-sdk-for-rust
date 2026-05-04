@@ -37,7 +37,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth", "__internal_in_memory_emulator"] }
 azure_identity = { version = "0.35.0" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
