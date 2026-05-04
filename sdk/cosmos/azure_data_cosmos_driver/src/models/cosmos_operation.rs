@@ -582,7 +582,7 @@ impl CosmosOperation {
     /// - `x-ms-cosmos-supported-query-features: <feature-list>`
     /// - `Content-Type: application/query+json`
     /// - `x-ms-documentdb-isquery: True`
-    pub fn query_plan(container: ContainerReference) -> Self {
+    pub(crate) fn query_plan(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
