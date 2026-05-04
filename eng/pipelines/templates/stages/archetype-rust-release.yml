@@ -58,6 +58,7 @@ stages:
                 PackageRepository: Crates.io
                 ReleaseSha: $(Build.SourceVersion)
                 WorkingDirectory: $(Pipeline.Workspace)/_work
+                AuthToken: ''
 
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
@@ -196,5 +197,6 @@ stages:
               CommitMsg: "Increment package version after release of ${{ join(', ', parameters.Artifacts.*.name) }}"
               PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
               CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
+              AuthToken: ''
               ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
                 BaseBranchName: main
