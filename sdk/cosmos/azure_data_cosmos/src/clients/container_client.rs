@@ -16,14 +16,10 @@ use crate::{
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
     Query, ReplaceContainerOptions, ThroughputOptions,
 };
-use std::sync::Arc;
 
 use super::ThroughputPoller;
-use crate::handler::container_connection::ContainerConnection;
-use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_data_cosmos_driver::models::{
-    effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
-    CosmosOperation, ItemReference, PartitionKeyKind,
+    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
@@ -33,7 +29,6 @@ use serde::{de::DeserializeOwned, Serialize};
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
-    container_connection: Arc<ContainerConnection>,
     container_ref: ContainerReference,
     context: ClientContext,
 }
@@ -41,7 +36,7 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) async fn new(
         context: ClientContext,
-        database_link: &ResourceLink,
+        _database_link: &ResourceLink,
         container_id: &str,
         database_id: &str,
     ) -> azure_core::Result<Self> {
@@ -56,20 +51,7 @@ impl ContainerClient {
                 ))
             })?;
 
-        let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
-            context.pipeline.clone(),
-            database_link.clone(),
-            context.global_endpoint_manager.clone(),
-        ));
-        let container_connection = Arc::from(ContainerConnection::new(
-            context.pipeline.clone(),
-            partition_key_range_cache,
-            context.global_partition_endpoint_manager.clone(),
-            container_ref.clone(),
-        ));
-
         Ok(Self {
-            container_connection,
             container_ref,
             context,
         })
@@ -824,21 +806,21 @@ impl ContainerClient {
         options: Option<ReadFeedRangesOptions>,
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
-        let routing_map = self
-            .container_connection
-            .resolve_routing_map(options.force_refresh())
-            .await?
+        let ranges = self
+            .context
+            .driver
+            .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
+            .await
             .ok_or_else(|| {
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "failed to resolve routing map for container",
                 )
             })?;
-        Ok(routing_map
-            .ordered_partition_key_ranges()
+        ranges
             .iter()
-            .map(FeedRange::from_sdk_partition_key_range)
-            .collect())
+            .map(FeedRange::from_partition_key_range)
+            .collect()
     }
 
     /// Returns the [`FeedRange`]s covering the given partition key.
@@ -853,7 +835,7 @@ impl ContainerClient {
         let partition_key = partition_key.into();
         let driver_pk = partition_key.into_driver_partition_key();
         let options = options.unwrap_or_default();
-        let pk_def = self.container_connection.partition_key_definition();
+        let pk_def = self.container_ref.partition_key_definition();
         let values = driver_pk.values();
 
         if values.is_empty() {
@@ -882,10 +864,15 @@ impl ContainerClient {
             ));
         }
 
-        let routing_map = self
-            .container_connection
-            .resolve_routing_map(options.force_refresh())
-            .await?
+        let ranges = self
+            .context
+            .driver
+            .resolve_partition_key_ranges_for_key(
+                &self.container_ref,
+                &driver_pk,
+                options.force_refresh(),
+            )
+            .await
             .ok_or_else(|| {
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -893,56 +880,28 @@ impl ContainerClient {
                 )
             })?;
 
-        if is_prefix {
-            let epk_range = DriverEpk::compute_range(values, pk_def)?;
-            let query_range = crate::routing::range::Range::new(
-                epk_range.start.as_str().to_owned(),
-                epk_range.end.as_str().to_owned(),
-                true,
-                false,
-            );
-            let pkranges = routing_map.get_overlapping_ranges(&query_range);
-            if pkranges.is_empty() {
-                let refreshed = self
-                    .container_connection
-                    .resolve_routing_map(true)
-                    .await?
-                    .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
-                            "failed to resolve routing map after refresh",
-                        )
-                    })?;
-                Ok(refreshed
-                    .get_overlapping_ranges(&query_range)
-                    .iter()
-                    .map(FeedRange::from_sdk_partition_key_range)
-                    .collect())
-            } else {
-                Ok(pkranges
-                    .iter()
-                    .map(FeedRange::from_sdk_partition_key_range)
-                    .collect())
-            }
+        if ranges.is_empty() {
+            // Empty result may indicate a stale cache — retry with refresh.
+            let ranges = self
+                .context
+                .driver
+                .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
+                .await
+                .ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "failed to resolve routing map for container",
+                    )
+                })?;
+            ranges
+                .iter()
+                .map(FeedRange::from_partition_key_range)
+                .collect()
         } else {
-            let epk = DriverEpk::compute(values, pk_def.kind(), pk_def.version());
-            match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
-                Ok(pkr) => Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)]),
-                Err(_) => {
-                    let refreshed = self
-                        .container_connection
-                        .resolve_routing_map(true)
-                        .await?
-                        .ok_or_else(|| {
-                            azure_core::Error::with_message(
-                                azure_core::error::ErrorKind::Other,
-                                "failed to resolve routing map after refresh",
-                            )
-                        })?;
-                    let pkr = refreshed.get_range_by_effective_partition_key(epk.as_str())?;
-                    Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)])
-                }
-            }
+            ranges
+                .iter()
+                .map(FeedRange::from_partition_key_range)
+                .collect()
         }
     }
 
