@@ -176,7 +176,11 @@ impl<T: StressTestFactory> StressRunner<T> {
         }
         .await;
         if let Err(e) = setup_and_run_result {
-            eprintln!("Stress runner failure. {:#}", e);
+            eprintln!("Stress runner failure.");
+            eprintln!("{e}");
+            if let Ok(inner) = e.into_inner() {
+                eprintln!("{inner}");
+            }
         }
 
         println!(
