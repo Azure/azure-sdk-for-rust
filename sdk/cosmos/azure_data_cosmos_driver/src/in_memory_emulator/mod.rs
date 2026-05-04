@@ -12,7 +12,7 @@
 //!
 //! # Feature Gate
 //!
-//! All code in this module is gated behind the `in_memory_emulator` feature flag.
+//! All code in this module is gated behind the `__internal_in_memory_emulator` feature flag.
 
 mod client;
 mod config;

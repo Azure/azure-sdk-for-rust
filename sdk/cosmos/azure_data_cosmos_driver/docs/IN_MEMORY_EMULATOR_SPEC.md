@@ -68,20 +68,20 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 
 ## 2. Feature Gating
 
-All in-memory emulator code is gated behind the `in_memory_emulator` feature flag, following
+All in-memory emulator code is gated behind the `__internal_in_memory_emulator` feature flag, following
 the same pattern as `fault_injection` in `azure_data_cosmos`.
 
 ### Cargo.toml
 
 ```toml
 [features]
-in_memory_emulator = ["dep:tokio"]   # enables module, implies tokio for async replication/split/merge
+__internal_in_memory_emulator = ["dep:tokio"]   # enables module, implies tokio for async replication/split/merge
 ```
 
 ### Module Declaration (lib.rs)
 
 ```rust
-#[cfg(feature = "in_memory_emulator")]
+#[cfg(feature = "__internal_in_memory_emulator")]
 pub mod in_memory_emulator;
 ```
 

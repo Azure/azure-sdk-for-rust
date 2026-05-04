@@ -75,7 +75,7 @@ reqwest = [
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
-in_memory_emulator = ["dep:tokio"]
+__internal_in_memory_emulator = ["dep:tokio"]
 __internal_mocking = []
 __tls = []
 
