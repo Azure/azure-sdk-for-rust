@@ -818,7 +818,7 @@ impl ContainerClient {
                 )
             })?;
 
-        if ranges.is_empty() {
+        if ranges.is_empty() && !options.force_refresh() {
             // A valid container always has at least one partition key range.
             // Empty result likely means a stale/failed cache — retry with forced refresh.
             ranges = self
@@ -905,7 +905,7 @@ impl ContainerClient {
                 )
             })?;
 
-        if ranges.is_empty() {
+        if ranges.is_empty() && !options.force_refresh() {
             // Empty result may indicate a stale cache — retry with refresh.
             let ranges = self
                 .context

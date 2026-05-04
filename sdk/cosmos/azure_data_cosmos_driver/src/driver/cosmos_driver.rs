@@ -1400,8 +1400,13 @@ impl CosmosDriver {
         }
 
         let pk_def = container.partition_key_definition();
-        let epk_range =
-            EffectivePartitionKey::compute_range(partition_key.values(), pk_def).ok()?;
+        let epk_range = match EffectivePartitionKey::compute_range(partition_key.values(), pk_def) {
+            Ok(range) => range,
+            Err(e) => {
+                tracing::warn!("EPK computation failed for partition key: {e}");
+                return None;
+            }
+        };
 
         if epk_range.start == epk_range.end {
             // Full key — point lookup
@@ -1411,10 +1416,12 @@ impl CosmosDriver {
                     Box::pin(self.fetch_pk_ranges_from_service(c, cont))
                 })
                 .await?;
-            routing_map
-                .get_range_by_effective_partition_key(&epk_range.start)
-                .cloned()
-                .map(|r| vec![r])
+            Some(
+                routing_map
+                    .get_range_by_effective_partition_key(&epk_range.start)
+                    .cloned()
+                    .map_or_else(Vec::new, |r| vec![r]),
+            )
         } else {
             // Prefix key — overlapping range lookup
             self.pk_range_cache
