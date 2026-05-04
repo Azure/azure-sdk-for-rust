@@ -60,9 +60,39 @@ respond.
 
 ### Non-Goals
 
-- Hedging for non-document operations (metadata, sprocs, queries, change feed).
 - Hedging within a single region (e.g., across gateway nodes).
 - Automatic threshold tuning based on observed latency histograms (future work).
+
+All Cosmos DB operation types are addressed by the phased rollout below.
+Nothing is permanently excluded — stored procedures / triggers / UDFs and
+adaptive-tuning are deferred to the Future bucket pending a separate
+design review.
+
+### Operation-type scope (phased)
+
+| Operation type | Phase 1 | Phase 2 | Phase 3 | Future |
+|---|:---:|:---:|:---:|:---:|
+| Document point reads (GetItem) | ✅ | ✅ | ✅ | ✅ |
+| Document point writes on multi-master (Create/Replace/Upsert/Delete/Patch) | ✅ | ✅ | ✅ | ✅ |
+| Queries (`QueryItems`) | ❌ | ✅ | ✅ | ✅ |
+| `ReadMany` | ❌ | ✅ | ✅ | ✅ |
+| Change feed | ❌ | ❌ | ✅ | ✅ |
+| Metadata operations (Database / Container / Offer / Throughput) | ❌ | ❌ | ✅ | ✅ |
+| Stored procedures / triggers / UDFs execution | ❌ | ❌ | ❌ | 🟡 candidate |
+
+.NET v3 documents Query / ReadMany / ChangeFeed as supported by
+`CrossRegionHedgingAvailabilityStrategy`
+([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/docs/Cross%20Region%20Request%20Hedging.md));
+Java v4 ships read + write + query + ReadMany hedging today. The Rust
+driver phases these in sequentially because Query / ReadMany / ChangeFeed
+each carry pagination or checkpoint semantics (continuation tokens,
+multi-page state, change-feed lease state) that need their own design
+pass before they can be safely fanned out across regions. Metadata
+operations are control-plane and rarely latency-critical, but are
+included in Phase 3 to provide complete operation coverage where it is
+safe and cheap. Sprocs / triggers / UDFs are deferred to Future because
+their server-side execution model interacts with hedging in non-obvious
+ways (server-side state, idempotency). See §16 for the full rollout plan.
 
 ---
 
@@ -160,12 +190,37 @@ A response is "final" (non-transient) if:
 Non-final (transient) responses do NOT terminate hedging — the SDK keeps waiting
 for other in-flight requests that might succeed.
 
-### 2.6 PPAF Integration
+### 2.6 PPAF / PPCB Integration
 
-When PPAF is enabled on the account and the user has not specified a custom
-availability strategy, the SDK **automatically** installs a default hedging
-strategy (`IsSDKDefaultStrategyForPPAF = true`). This provides latency protection
+When PPAF (Per-Partition Automatic Failover) is enabled on the account and the
+user has not specified a custom availability strategy, the .NET SDK
+**automatically enables** a default cross-region hedging strategy
+(`IsSDKDefaultStrategyForPPAF = true`). This provides latency protection
 alongside PPAF's failover protection.
+
+**Default values used by .NET (PPAF-driven)**
+([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/docs/Cross%20Region%20Request%20Hedging.md)):
+
+- **Threshold:** `min(1000ms, RequestTimeout / 2)` (falls back to `1000ms` if
+  `RequestTimeout == 0`)
+- **Threshold step:** `500ms`
+- **Write hedging:** disabled
+
+PPCB (Per-Partition Circuit Breaker) on its own does **not** auto-enable
+hedging in .NET. However, .NET implicitly turns PPCB on whenever PPAF is
+enabled
+([CosmosClientOptions.cs `EnablePartitionLevelCircuitBreaker`](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/Microsoft.Azure.Cosmos/src/CosmosClientOptions.cs)),
+so a PPAF-enabled deployment ends up running with all three (PPAF + PPCB +
+hedging) active simultaneously.
+
+**The Rust driver matches .NET exactly:** the SDK-default hedging strategy
+is auto-enabled **only when PPAF is enabled** on the account and the user
+has not configured a custom strategy. Enabling PPCB on its own (without
+PPAF) does **not** auto-enable hedging — PPCB is a failure-driven circuit
+breaker and does not by itself signal that the application wants latency
+hedging. Users who want hedging without PPAF must configure an
+`AvailabilityStrategy` explicitly. See §5.2 for the full activation rules
+and lifecycle.
 
 ### 2.7 Diagnostics
 
@@ -311,6 +366,14 @@ impl HedgingStrategy {
 }
 ```
 
+> **Divergence from .NET:** the .NET v3 constructor accepts a nullable
+> `thresholdStep` and silently coerces `null` to a `-1ms` sentinel via `??`
+> ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Routing/AvailabilityStrategy/CrossRegionHedgingAvailabilityStrategy.cs#L60))
+> — a likely latent bug, since the same parameter is also checked against
+> `<= TimeSpan.Zero` immediately above (`null` slips through that comparison).
+> The Rust API requires both `threshold` and `threshold_step` to be explicit
+> non-zero `Duration` values.
+
 ### 4.2 Disabled Strategy
 
 ```rust
@@ -381,35 +444,149 @@ fn should_hedge(
 ) -> bool
 ```
 
-**Decision matrix:**
+**Decision matrix** — evaluated in order; first matching row wins:
 
-| Condition | Hedge? |
-|-----------|--------|
-| `ResourceType != Document` | No |
-| Single region account | No |
-| Read operation | Yes |
-| Write + single-master | No |
-| Write + multi-master + `enable_multi_write_region_hedge = false` | No |
-| Write + multi-master + `enable_multi_write_region_hedge = true` | Yes |
+| # | Condition | Hedge? |
+|---:|-----------|--------|
+| 1 | No strategy resolved (or `AvailabilityStrategy::Disabled`) | No |
+| 2 | Application preferred-region list empty (no fan-out targets) | No |
+| 3 | `ResourceType != Document` | No |
+| 4 | Read: applicable `preferred_read_endpoints` (after `ExcludeRegions`) has < 2 entries | No |
+| 5 | Write + single-master | No |
+| 6 | Write + multi-master + `enable_multi_write_region_hedge = false` | No |
+| 7 | Write + multi-master + applicable `preferred_write_endpoints` (after `ExcludeRegions`) has < 2 entries | No |
+| 8 | Read with ≥ 2 applicable read endpoints | Yes |
+| 9 | Write + multi-master + `enable_multi_write_region_hedge = true` + ≥ 2 applicable write endpoints | Yes |
 
-### 5.2 Interaction with PPAF Default Strategy
+The "≥ 2 applicable endpoints" check is computed against the
+operation-appropriate list **after** `ExcludeRegions` filtering, not the
+raw account region count — a user who excludes all-but-one region at the
+operation level will (correctly) skip hedging even on a multi-region
+account.
 
-When PPAF is enabled on the account and the user has NOT configured a custom
-availability strategy, the driver SHOULD install a default hedging strategy
-automatically (matching .NET SDK behavior):
+> **Divergence from .NET:** .NET's single-region bypass test in
+> `ExecuteAvailabilityStrategyAsync` checks `ReadEndpoints.Count == 1` for
+> *all* operations, including writes
+> ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Routing/AvailabilityStrategy/CrossRegionHedgingAvailabilityStrategy.cs#L108)).
+> The Rust impl uses the operation-appropriate region list
+> (`preferred_read_endpoints` for reads, `preferred_write_endpoints` for
+> multi-master writes), which is intentionally more precise: a multi-region
+> read account that has only one *write* region should still hedge writes
+> only when the write list has ≥ 2 entries.
+
+### 5.2 Default Hedging Enablement Driven by PPAF
+
+When the user has not configured a custom `AvailabilityStrategy` (via
+client-level options or per-operation options), the driver auto-enables a
+default hedging strategy whenever **PPAF** is enabled on the account. This
+matches .NET v3 exactly. **Enabling PPCB alone does not auto-enable
+hedging** — see §2.6 for the rationale.
+
+"Enable" here means the hedging orchestrator becomes active for eligible
+operations — no separate type or factory needs to be constructed by the user.
+
+**Activation rules** (evaluated against the latest account properties):
+
+| PPAF | PPCB | User strategy | Effective strategy |
+|:---:|:---:|---|---|
+| off | off | none | none (hedging off) |
+| off | off | `Hedging(…)` | user strategy |
+| off | off | `Disabled` | none (hedging off) |
+| off | **on** | none | none (hedging off — PPCB alone does not enable hedging) |
+| **on** | off | none | **SDK default** (PPAF-driven) |
+| **on** | **on** | none | **SDK default** (PPAF-driven) |
+| on/off | on/off | `Hedging(…)` | user strategy (always wins) |
+| on/off | on/off | `Disabled` | none (user opt-out wins) |
+
+**Default values used when auto-enabled** (see §5.2.1 below for the cross-SDK
+comparison and the rationale for these specific values):
+
+- **Threshold:** `min(1000ms, request_timeout / 2)`, with `1000ms` as fallback
+  when `request_timeout` is unset or zero.
+- **Threshold step:** `500ms`.
+- **Write hedging:** **enabled in Phase 1 only when the account is
+  multi-master**. Single-master accounts never hedge writes (PPAF
+  handles write redirection there). On multi-master accounts the
+  PPAF-driven default applies to writes as well as reads (see §16
+  Phase 1 scope).
+
+**Lifecycle** — the SDK-default strategy is dynamic with the account:
+
+- It is enabled the first time an account-properties refresh reports PPAF
+  on, and there is no user strategy.
+- It is removed if a subsequent refresh reports PPAF off again.
+- It is **never** activated when the user has explicitly configured a
+  strategy, even `AvailabilityStrategy::Disabled` — the user-level value
+  always wins over the SDK default.
+
+**Preconditions (mandatory)** — even when PPAF is enabled and the SDK
+default would otherwise activate, hedging is **skipped at runtime** for
+operations that fail any of the following checks:
+
+1. **At least two applicable regions.** The operation's preferred-endpoint
+   list (`preferred_read_endpoints` for reads, `preferred_write_endpoints`
+   for multi-master writes) — after `ExcludeRegions` filtering — must
+   contain ≥ 2 entries. Single-region accounts and accounts where the
+   user has excluded all but one region skip hedging (see §5.1).
+2. **Application-level region configuration is required.** The driver
+   must have a non-empty preferred-region list to derive the fan-out
+   order from. This is set via `ApplicationRegion` /
+   `ApplicationPreferredRegions` in .NET, or via
+   `DriverOptions::preferred_regions` /
+   `OperationOptions::application_preferred_regions` in Rust. Without it,
+   the driver has no ordered hedge-target list and falls back to
+   single-region routing — even when PPAF is enabled.
+
+Both checks are enforced inside `should_hedge()` (§5.1); failure of either
+short-circuits the orchestrator before the primary request is sent.
+
+#### 5.2.1 Cross-SDK comparison of default thresholds
+
+> **.NET v3 SDK** — PPAF auto-enables a default hedging strategy via
+> `SDKDefaultCrossRegionHedgingStrategyForPPAF`
+> ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/Microsoft.Azure.Cosmos/src/Routing/AvailabilityStrategy/AvailabilityStrategy.cs)):
+> threshold = `min(1000ms, RequestTimeout / 2)`, step = `500ms`, write
+> hedging disabled. PPCB on its own does not auto-enable hedging, but PPAF
+> implicitly enables PPCB.
+>
+> **Java v4 SDK** — `ThresholdBasedAvailabilityStrategy` ships with
+> `DEFAULT_THRESHOLD = 500ms` and `DEFAULT_THRESHOLD_STEP = 100ms`
+> ([source](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/ThresholdBasedAvailabilityStrategy.java#L15-L16));
+> PPAF auto-enables this default (gated by
+> `COSMOS.IS_PER_PARTITION_AUTOMATIC_FAILOVER_ENABLED`, opt-out via
+> `COSMOS.IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF`).
+>
+> **Rust driver** — follows .NET's threshold formula
+> (`min(1000ms, request_timeout / 2)` / `500ms`) and .NET's activation
+> trigger (PPAF only, not PPCB) so behavior matches the dominant SDK.
+> Users targeting cross-SDK latency parity with Java should explicitly
+> configure `500ms / 100ms`.
 
 ```rust
 // In cosmos_driver.rs, during account properties sync
-if account_properties.enable_per_partition_failover_behavior
-    && resolved_options.availability_strategy().is_none()
-{
-    // Install SDK-default hedging: 500ms threshold, 500ms step
-    let default_strategy = HedgingStrategy::new(
+let user_strategy = resolved_options.availability_strategy();
+let ppaf_enabled = account_properties.enable_per_partition_failover_behavior;
+
+// PPCB on its own does NOT auto-enable hedging (matches .NET).
+if user_strategy.is_none() && ppaf_enabled {
+    // Compute the .NET-compatible threshold from request_timeout.
+    let request_timeout = resolved_options.request_timeout();
+    let threshold = match request_timeout {
+        Some(t) if !t.is_zero() => Duration::from_millis(1000).min(t / 2),
+        _ => Duration::from_millis(1000),
+    };
+    let default_strategy = HedgingStrategy::sdk_default(
+        threshold,
         Duration::from_millis(500),
-        Duration::from_millis(500),
+        // Phase 1: enable write hedging by default when the account is
+        // multi-master; it is a no-op on single-master accounts because
+        // should_hedge() rejects writes there (see §5.1).
+        /* enable_multi_write_region_hedge */
+        account_properties.can_use_multiple_write_locations(),
     );
-    // Mark as SDK-default (distinguishable in diagnostics)
-    ...
+    // Mark as SDK-default so diagnostics can distinguish it from a
+    // user-configured strategy (mirrors .NET's IsSDKDefaultStrategyForPPAF).
+    resolved_options.set_sdk_default_strategy(default_strategy);
 }
 ```
 
@@ -460,6 +637,19 @@ This piggybacks on the existing `ExcludeRegions` mechanism in `resolve_endpoint(
 requiring no changes to the endpoint resolution logic.
 
 ### 6.4 Execution Flow (Pseudocode)
+
+> **Important orchestration note:** The pseudocode below is presented as a
+> spawn loop followed by a drain loop for readability, but a faithful
+> implementation must **interleave result observation with the spawn timer**
+> the way .NET does. .NET uses a single `do { Task.WhenAny(requestTasks) }
+> while (winner == hedgeTimer && !winner.IsCompleted)` per iteration, so a
+> final result observed mid-fan-out short-circuits the loop and prevents
+> launching unnecessary hedges. The two-phase form below would launch every
+> hedge regardless of when a winner appears, defeating the cancellation
+> guarantee. The Rust impl SHOULD use a single `tokio::select!` per spawn
+> step that races (a) the spawn-delay timer, (b) the next completion from
+> the in-flight `FuturesUnordered`, and (c) the parent cancellation token,
+> so a final result during the fan-out cancels remaining spawns immediately.
 
 ```rust
 async fn execute_with_hedging(...) -> Result<CosmosResponse> {
@@ -604,6 +794,12 @@ async fn execute_with_hedging(...) -> Result<CosmosResponse> {
 ///
 /// Final results terminate hedging immediately. Transient results allow other
 /// in-flight hedges to continue racing for a better outcome.
+///
+/// Note: 403 (with or without sub-status `3` WriteForbidden) is **transient**
+/// for hedging — it typically indicates the targeted region cannot serve the
+/// request right now (account-level failover, write-region change). The retry
+/// pipeline running *inside* each hedge may treat `403/3` as a redirect
+/// trigger; that is independent of this classification.
 fn is_final_result(status: &CosmosStatus) -> bool {
     let code = status.http_status_code;
     let sub = status.sub_status_code;
@@ -633,6 +829,7 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 | 304 | * | No (final) | Not Modified |
 | 400 | * | No (final) | Client error — won't succeed in another region |
 | 401 | * | No (final) | Auth failure — same credentials everywhere |
+| 403 | 0 (no sub) | **Yes** | Forbidden — may indicate a regional failover in progress; another region may serve |
 | 403 | 3 | **Yes** | WriteForbidden — region may be failing over |
 | 404 | 0 | No (final) | Resource genuinely not found |
 | 404 | 1002 | **Yes** | ReadSessionNotAvailable — session lag |
@@ -645,6 +842,17 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 | 429 | * | **Yes** | Throttled — another region may have capacity |
 | 500 | * | **Yes** | Internal error — may be region-specific |
 | 503 | * | **Yes** | Unavailable — another region may be healthy |
+
+> **Note on 403 sub-statuses.** The driver classifies any 403 (with or
+> without `WriteForbidden` sub-status `3`) as **transient** for hedging
+> purposes — a 403 typically signals that the targeted region cannot
+> currently serve the request (account-level failover in progress, write
+> region change, etc.), and the *correct* action is to keep racing other
+> in-flight hedges. This matches .NET v3's `IsFinalResult` behavior. Note
+> that the *retry layer* may treat `403/3` differently (PPAF write retry
+> consumes it as a write-redirect signal); the hedging classification
+> here governs only whether hedging itself terminates early, not the
+> retry pipeline that runs *inside* each hedge.
 
 ---
 
@@ -706,6 +914,42 @@ User CancellationToken
 The pipeline's deadline check (`if deadline_exceeded { return DeadlineExceeded }`)
 naturally cooperates with hedging cancellation — a cancelled hedge will observe the
 token at its next `select!` point and exit.
+
+### 8.4 Local-Only Retries Inside a Hedge (Contract)
+
+> **Contract:** Each hedged pipeline invocation runs the **full operation
+> pipeline including the retry layer**, but the retry layer must perform
+> **local-only retries** — it is forbidden from re-routing the request to
+> a different region than the one targeted by that hedge.
+
+This matches the .NET v3 behavior documented in
+[Cross Region Request Hedging.md](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/docs/Cross%20Region%20Request%20Hedging.md):
+*"hedged requests are restricted to the region they are sent out in so no
+cross region retries will be made, only local retries."*
+
+**Mechanism.** The orchestrator enforces this implicitly via
+`ExcludeRegions` (see §6.3): hedge `N` is sent with
+`ExcludeRegions = all_regions \ { regions[N] }`. The retry layer's
+region-fallback logic (PPAF / PPCB / 503 retry) consults
+`ExcludeRegions` when picking the next endpoint and therefore has no
+alternate region to fall back to — every retry attempt re-resolves to the
+same target region.
+
+**Why this matters.** Without this property, two hedges launched against
+different regions could converge onto the *same* fallback region during a
+regional outage, defeating the hedge's purpose and inflating RU.
+
+**Implementation requirement.** The retry layer must:
+
+1. Always honor `ExcludeRegions` from the operation options when computing
+   the next endpoint after a retry trigger.
+2. Treat "all eligible regions excluded" as a terminal condition — return
+   the last seen response/error rather than looping infinitely.
+3. Not bypass `ExcludeRegions` for any retry trigger class (PPAF write
+   retry, PPCB markdown failback, transport-layer 503, throttling, etc.).
+
+This is a **cross-cutting invariant** that any new retry trigger added
+after Phase 1 must respect.
 
 ### 8.4 File Layout
 
@@ -782,6 +1026,49 @@ threshold is 3s, the hedge has only ~2s to complete.
 
 ### 10.1 HedgeDiagnostics
 
+> **Divergence from .NET diagnostic shape:** .NET attaches diagnostics in two
+> different shapes depending on which loop produces the winner.
+> - **Fast path** (winner emerges during the spawn-and-race loop): only
+>   `HedgeConfig` is attached when the **primary** wins (`requestNumber == 0`);
+>   when a hedge wins, `HedgeContext = hedgeRegions.Take(requestNumber + 1)`
+>   and `ResponseRegion` are also attached
+>   ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Routing/AvailabilityStrategy/CrossRegionHedgingAvailabilityStrategy.cs#L198-L224)).
+> - **Drain path** (winner emerges from the post-loop drain after all hedges
+>   were launched): all three fields are always attached, with
+>   `HedgeContext = hedgeRegions` (the full list).
+>
+> The Rust impl simplifies this by **always** attaching the full
+> `HedgeDiagnostics` (config, regions launched, winner region, was_hedge flag)
+> whenever a hedging strategy was active for the operation — even when the
+> primary wins immediately. This is strictly more informative and avoids the
+> bookkeeping required to mirror .NET's two-shape behavior.
+
+**Attachment contract.** `DiagnosticsContext::hedge_diagnostics` is
+`Some(_)` if and only if a hedging strategy was **resolved and active**
+for the operation — i.e. `should_hedge()` returned `true` and the
+orchestrator was entered. It is `None` in all of the following cases:
+
+- No `AvailabilityStrategy` was resolved (no client/operation/SDK-default
+  strategy, or the user set `AvailabilityStrategy::Disabled`).
+- A strategy was resolved but `should_hedge()` returned `false` (e.g.
+  fewer than 2 applicable preferred regions, or non-Document operation).
+- The strategy resolved but the orchestrator short-circuited before
+  spawning the primary (e.g. cancellation observed at entry).
+
+**Field semantics when the primary wins before the first hedge fires:**
+
+| Field | Value |
+|---|---|
+| `strategy_config` | The active strategy config (always populated) |
+| `regions_contacted` | `vec![regions[0]]` (just the primary) |
+| `response_region` | `regions[0]` |
+| `total_requests_launched` | `1` |
+| `was_hedge` | `false` |
+
+This lets callers distinguish *"hedging was active and the primary won
+amongst the launched requests"* from *"hedging was active but no hedge
+ever fired because the primary returned within the threshold window"*.
+
 ```rust
 /// Diagnostic information about a hedging execution, attached to the winning
 /// response.
@@ -848,6 +1135,45 @@ tracing::debug!(
 );
 ```
 
+### 10.4 Reserved Telemetry / Metrics Surface
+
+Neither .NET v3 nor the current Rust driver emits quantitative metrics for
+hedging beyond the structured per-response `HedgeDiagnostics`. Phase 1 will
+ship without metrics, but the spec **reserves** the following surface so
+that later phases (or a separate observability PR) can add them without
+breaking changes.
+
+**Reserved `tracing` event names** (under target `cosmos.hedge`):
+
+| Event | Level | Fields | Emitted when |
+|---|---|---|---|
+| `cosmos.hedge.enabled_for_operation` | DEBUG | `threshold_ms`, `step_ms`, `region_count`, `is_sdk_default` | Orchestrator decides to hedge a specific operation |
+| `cosmos.hedge.spawned` | DEBUG | `request_number`, `target_region`, `elapsed_ms` | A hedge request task is spawned |
+| `cosmos.hedge.canceled` | DEBUG | `request_number`, `target_region`, `reason` (`winner_found` / `deadline` / `app_canceled`) | A non-winning hedge is canceled |
+| `cosmos.hedge.won` | INFO | `request_number`, `winner_region`, `elapsed_ms`, `was_primary` | A response is selected as final |
+| `cosmos.hedge.all_transient` | WARN | `regions_attempted`, `last_status_code` | Drain loop returned the last transient response |
+
+**Reserved metric names** (intentionally namespaced; not emitted in
+Phase 1, awaiting an `azure_core` metrics surface):
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `cosmos.hedge.operations_total` | counter | `result` (`primary_won` / `hedge_won` / `all_transient` / `disabled`) | Hedging-eligible operations grouped by outcome |
+| `cosmos.hedge.requests_spawned_total` | counter | `request_number` | Total hedge requests spawned (primary = 0) |
+| `cosmos.hedge.first_response_latency_ms` | histogram | `was_primary` (bool) | Latency from orchestrator entry to the winning response |
+| `cosmos.hedge.canceled_total` | counter | `reason` (`winner_found` / `deadline` / `app_canceled`) | Hedges that were canceled before completion |
+| `cosmos.hedge.ru_charge_winner` | histogram | `was_primary` | RU of the winning response (matches what is reported to the caller) |
+
+Notes:
+
+- RU consumed by losing hedges is **not** reported to the caller (see §17
+  Q3); a separate metric should be introduced if operators need to track
+  hedge cost separately from per-operation cost.
+- Histogram bucket layout intentionally unspecified — defer to whichever
+  metrics provider `azure_core` settles on.
+- Event/metric names follow OpenTelemetry conventions: dot-separated,
+  lower-snake-case, namespaced under `cosmos.hedge`.
+
 ---
 
 ## 11. Options API Design
@@ -897,6 +1223,21 @@ operation > account > runtime > environment
 
 If the operation sets `AvailabilityStrategy::Disabled`, it overrides a client-level
 hedging strategy.
+
+#### 11.3.1 Availability-strategy resolution priority
+
+The driver picks the effective strategy in the following priority order
+(highest first), mirroring the .NET resolution model:
+
+| Priority | Source | Notes |
+|:---:|---|---|
+| 1 | Operation `availability_strategy` (incl. `Disabled`) | Per-request override |
+| 2 | Client / runtime `availability_strategy` | Applies to all requests |
+| 3 | **SDK default** (PPAF-driven, see §5.2) | Auto-enabled when account has PPAF on and no user strategy is set. PPCB alone does not auto-enable hedging. |
+| 4 | None | Hedging off |
+
+A user-configured `AvailabilityStrategy::Disabled` at any layer suppresses the
+SDK default — explicit opt-out always wins.
 
 ---
 
@@ -1084,46 +1425,103 @@ Gated by `test_category = "multi_region"`:
 
 ## 16. Implementation Phases
 
-### Phase 1: Read Hedging (MVP)
+### Phase 1: Read + Write Hedging + PPAF Default Enablement (MVP)
 
 **Scope:**
 - `HedgingStrategy` and `AvailabilityStrategy` types
-- `should_hedge()` (reads only)
+- `should_hedge()` covering document point reads and document point
+  writes on multi-master accounts
 - `is_final_result()`
 - `execute_with_hedging()` orchestrator
 - `HedgeDiagnostics`
 - Integration into `cosmos_driver.rs`
 - Cancellation via `CancellationToken`
-- Unit tests + fault injection tests for reads
+- `enable_multi_write_region_hedge` configuration knob (with
+  documentation of 409 / 412 risk for non-idempotent upserts; see §13)
+- **Auto-enable the SDK-default hedging strategy when PPAF is enabled
+  on the account and the user has not configured a strategy** (see
+  §5.2). The SDK default covers reads always, and writes when the
+  account is multi-master. **Enabling PPCB alone does not auto-enable
+  hedging** (matches .NET).
+- Lifecycle handling: enable on account-properties refresh when PPAF
+  appears, remove when PPAF goes away again. Re-evaluate the
+  multi-master flag on each refresh so write coverage tracks the
+  account state.
+- Unit tests + fault injection tests for both reads and writes
+  (including PPAF-on, PPCB-on without PPAF (must NOT activate), and
+  PPAF+PPCB activation matrix coverage; single-master vs. multi-master
+  write coverage)
 - Environment variable support
 
 **Deliverables:**
 - New files: `hedging.rs`, `hedging_diagnostics.rs`
 - Modified: `cosmos_driver.rs`, `operation_options.rs`, `mod.rs`
 
-### Phase 2: Write Hedging + PPAF Default
+### Phase 2: Query + ReadMany Hedging
+
+**Scope (deferred — design pass required before scheduling):**
+- Extend `should_hedge()` to allow `OperationType::Query` and
+  `OperationType::ReadMany`.
+- Continuation-token semantics: per-page hedging vs. per-operation
+  hedging; how to compose hedge-winner selection with continuation-token
+  forwarding so callers see a consistent paging experience.
+- ReadMany batching: each underlying point read is independently
+  hedge-able today via Phase 1; whole-call hedging needs coordination
+  so that one slow identity does not block the entire batch.
+- Query plan caching interaction: query-plan fetches issued before the
+  orchestrator starts must not skew the hedge fan-out (see Phase 3
+  diagnostics caveat below).
+- Aligns Rust scope with Java v4, which already ships Query / ReadMany
+  hedging.
+
+### Phase 3: Change Feed + Metadata Hedging
+
+**Scope (deferred — design pass required before scheduling):**
+- Extend `should_hedge()` to allow `OperationType::ReadFeed`
+  (change feed) and metadata operations (Database / Container / Offer /
+  Throughput reads and updates).
+- Change-feed checkpointing: ensure hedged change-feed reads do not
+  produce divergent continuation tokens; lease-state interactions for
+  change-feed processor scenarios must be documented.
+- Metadata cache invalidation: hedged metadata reads must not produce
+  stale-cache races when one region returns an older view than another;
+  decide whether to prefer the latest `_etag` / resource id or the
+  fastest response.
+- **Diagnostics caveat for multi-phase operations** (applies to Phase 2
+  Query and Phase 3 ChangeFeed alike): Query, ReadMany, and ChangeFeed
+  may contact regions *before* the hedge orchestrator starts — query
+  plan fetches, partition-key-range cache loads, and identity-batching
+  pre-flights all hit the gateway/region in the normal pipeline.
+  `HedgeDiagnostics::regions_contacted` covers only the regions the
+  orchestrator itself fanned out to; pre-hedge contacts show up in the
+  surrounding `DiagnosticsContext` (existing per-attempt region trail).
+  Phase 2 / Phase 3 designs must specify how the two surfaces compose
+  so operators can tell hedge-driven contacts apart from setup-driven
+  contacts.
+
+### Future: Stored Procedures / Triggers / UDFs + Adaptive Thresholds
 
 **Scope:**
-- `enable_multi_write_region_hedge` support
-- Write eligibility rules
-- Auto-enable hedging when PPAF is detected
-- Write hedging integration tests
-- Documentation for 409/412 behavior
-
-### Phase 3: Adaptive Thresholds (Future)
-
-**Scope:**
+- Stored procedure, trigger, and UDF execution hedging — candidate
+  only. Server-side execution interacts with hedging in non-obvious
+  ways (state mutation, idempotency, body cloning of script payloads)
+  and needs a separate design proposal.
 - Latency histogram tracking per-region
-- Auto-tuning threshold based on p50/p90 latency
+- Auto-tuning threshold based on p50 / p90 latency
 - Exponential backoff on hedge threshold after repeated hedges
 
 ---
 
 ## 17. Open Questions
 
-1. **Should hedging be enabled by default?** — The .NET SDK does NOT enable it by
-   default (except as PPAF companion). Recommendation: off by default, opt-in via
-   configuration.
+1. **Should hedging be enabled by default?** — **Resolved.** Off by default
+   when PPAF is not enabled on the account. When the user opts into PPAF,
+   the driver auto-enables the SDK-default hedging strategy (see §5.2).
+   This matches .NET v3 exactly. Enabling PPCB alone does **not**
+   auto-enable hedging — PPCB is failure-driven and does not by itself
+   signal a desire for latency hedging. Phase 1 covers reads and writes
+   on multi-master accounts; Phase 2 extends to Query and ReadMany;
+   Phase 3 covers Change Feed and metadata (see §16).
 
 2. **Interaction with `EndToEndOperationLatencyPolicy`** — Should the hedge's
    deadline be the remaining time from the shared deadline, or should each hedge get
