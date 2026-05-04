@@ -35,6 +35,19 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const EMULATOR_CONNECTION_STRING: &str =
     "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
+/// Set of query features the local plan generator advertises to the Gateway.
+///
+/// Single source of truth for the test infrastructure. The driver crate does not
+/// yet expose a centralized constant for this header value; once it does (e.g.,
+/// a `query::SUPPORTED_QUERY_FEATURES` constant on the local plan generator),
+/// this test helper should switch to importing that constant so the two stay
+/// in sync.
+//
+// TODO(#cosmos): replace with shared constant from the driver once the local
+// plan generator exposes its supported-feature set.
+const SUPPORTED_QUERY_FEATURES: &str =
+    "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates";
+
 fn resolve_env() -> Option<(AccountReference, ConnectionPoolOptions)> {
     let conn_str_raw = match std::env::var(CONNECTION_STRING_ENV_VAR) {
         Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
@@ -79,7 +92,16 @@ async fn ensure_database(driver: &CosmosDriver) {
     let account = driver.account().clone();
     let op = CosmosOperation::create_database(account)
         .with_body(serde_json::to_vec(&serde_json::json!({"id": DB_NAME})).unwrap());
-    let _ = driver.execute_operation(op, Default::default()).await;
+    if let Err(e) = driver.execute_operation(op, Default::default()).await {
+        // 409 Conflict is expected on the second-and-later test runs (database already exists).
+        // Anything else (auth failure, throttling, network issues, ...) should surface as a
+        // panic instead of leaving the next `resolve_container` call to fail with a confusing
+        // "container not found" message.
+        let status = e.http_status();
+        if status != Some(azure_core::http::StatusCode::Conflict) {
+            panic!("failed to ensure test database '{DB_NAME}': status={status:?} {e}");
+        }
+    }
 }
 
 async fn ensure_container(
@@ -100,7 +122,14 @@ async fn ensure_container(
         DB_NAME.to_string(),
     );
     let op = CosmosOperation::create_container(db_ref).with_body(body);
-    let _ = driver.execute_operation(op, Default::default()).await;
+    if let Err(e) = driver.execute_operation(op, Default::default()).await {
+        // Same rationale as ensure_database: only 409 Conflict is expected (re-runs);
+        // other errors must not be silently dropped.
+        let status = e.http_status();
+        if status != Some(azure_core::http::StatusCode::Conflict) {
+            panic!("failed to ensure test container '{container_name}': status={status:?} {e}");
+        }
+    }
 
     driver
         .resolve_container(DB_NAME, container_name)
@@ -141,9 +170,7 @@ async fn fetch_gateway_plan(
     );
     custom_headers.insert(
         HeaderName::from("x-ms-cosmos-supported-query-features"),
-        HeaderValue::from(
-            "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates",
-        ),
+        HeaderValue::from(SUPPORTED_QUERY_FEATURES),
     );
     custom_headers.insert(
         HeaderName::from("x-ms-documentdb-isquery"),
@@ -167,18 +194,25 @@ async fn fetch_gateway_plan(
         .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
 }
 
-/// Compare a locally-generated QueryInfo (as JSON) against the Gateway's queryInfo.
+/// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB
+/// Gateway returns from its query-plan endpoint.
 ///
-/// Accounts for known divergences in Gateway behavior:
-/// - Gateway downgrades Ordered DISTINCT → Unordered when it has a rewrittenQuery
-/// - Gateway returns None for OFFSET 0 when it rewrites the query
-/// - Gateway drops limit when it has a rewrittenQuery
-/// - Gateway returns empty order_by when GROUP BY is present
-/// - Gateway moves aggregates to groupByAliasToAggregateType when it rewrites
+/// The Gateway exposes several quirks where it rewrites the user's query and then
+/// expresses parts of the resulting plan differently from what a direct AST analysis
+/// would produce. Each carve-out below is intentional and is checked only against
+/// well-known Gateway behavior — *not* against "the Gateway returned something
+/// different and we made the test pass". Any new carve-out must be accompanied by a
+/// citation explaining why it is safe.
 fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Value) {
     let gw_rewritten = gw.get("rewrittenQuery").and_then(|v| v.as_str());
 
-    // distinct_type
+    // ── distinctType ─────────────────────────────────────────────────────────
+    // Carve-out: Gateway downgrades `Ordered` → `Unordered` whenever it emits a
+    // `rewrittenQuery`. This is because the rewritten plan uses an explicit ORDER
+    // BY in the per-partition queries, so the cross-partition aggregation no longer
+    // needs to preserve order at the DISTINCT layer. Local AST analysis does not
+    // perform that rewrite, so it correctly reports `Ordered`. This is consistent
+    // with how the .NET / Java SDKs treat the field.
     let local_dt = local
         .get("distinctType")
         .and_then(|v| v.as_str())
@@ -193,14 +227,17 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         panic!("[distinctType] sql={sql}\n  local={local_dt}  gw={gw_dt}");
     }
 
-    // top
+    // ── top (no carve-out) ───────────────────────────────────────────────────
     let local_top = local.get("top").and_then(|v| v.as_i64());
     let gw_top = gw.get("top").and_then(|v| v.as_i64());
     if local_top != gw_top {
         panic!("[top] sql={sql}\n  local={local_top:?}  gw={gw_top:?}");
     }
 
-    // offset
+    // ── offset ───────────────────────────────────────────────────────────────
+    // Carve-out: Gateway omits `offset` from the response when its value is 0.
+    // This is a payload-shrinking optimization (see PartitionedQueryExecutionInfo
+    // in the Cosmos backend). The semantic value is the same; we accept either form.
     let local_offset = local.get("offset").and_then(|v| v.as_i64());
     let gw_offset = gw.get("offset").and_then(|v| v.as_i64());
     let offset_ok = local_offset == gw_offset || (local_offset == Some(0) && gw_offset.is_none());
@@ -208,14 +245,24 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         panic!("[offset] sql={sql}\n  local={local_offset:?}  gw={gw_offset:?}");
     }
 
-    // limit
+    // ── limit ────────────────────────────────────────────────────────────────
+    // Carve-out: when the Gateway emits a `rewrittenQuery`, the LIMIT is folded
+    // into the per-partition query and the top-level `limit` field is dropped.
+    // Local AST analysis still reports the user-specified LIMIT; that is the value
+    // the SDK pipeline will use to enforce cross-partition truncation, so there is
+    // no functional divergence. Skip the equality check in the rewrite case.
     let local_limit = local.get("limit").and_then(|v| v.as_i64());
     let gw_limit = gw.get("limit").and_then(|v| v.as_i64());
     if gw_rewritten.is_none() && local_limit != gw_limit {
         panic!("[limit] sql={sql}\n  local={local_limit:?}  gw={gw_limit:?}");
     }
 
-    // orderBy
+    // ── orderBy / orderByExpressions ─────────────────────────────────────────
+    // Carve-out: when GROUP BY is present, the Gateway returns an empty ORDER BY
+    // because the rewritten per-partition queries inline the ordering needed for
+    // group aggregation. Local analysis reports the user-specified ORDER BY items
+    // unchanged; the SDK pipeline still applies them at the merge stage. Skip the
+    // ORDER BY checks in the GROUP BY case.
     let gw_gbe = gw
         .get("groupByExpressions")
         .and_then(|v| v.as_array())
@@ -235,10 +282,6 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         if local_ob != gw_ob {
             panic!("[orderBy] sql={sql}\n  local={local_ob:?}  gw={gw_ob:?}");
         }
-    }
-
-    // orderByExpressions
-    if gw_gbe == 0 {
         let local_obe = local
             .get("orderByExpressions")
             .and_then(|v| v.as_array())
@@ -254,7 +297,13 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         }
     }
 
-    // groupByExpressions
+    // ── groupByExpressions (no carve-out) ────────────────────────────────────
+    // Note: previously this block carried a carve-out tolerating debug-formatted
+    // strings ("MemberIndexer", "Binary") in the local output for non-path
+    // GROUP BY expressions. That behavior was removed in #2 — the local generator
+    // now refuses to silently produce a non-comparable plan and instead returns
+    // an error so the caller can fall back to the Gateway. Any non-path GROUP BY
+    // expression therefore never reaches this comparison.
     let local_gbe = local
         .get("groupByExpressions")
         .and_then(|v| v.as_array())
@@ -265,15 +314,16 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let local_gbe_has_debug = local_gbe.iter().any(|e| {
-        e.as_str()
-            .is_some_and(|s| s.contains("MemberIndexer") || s.contains("Binary"))
-    });
-    if !local_gbe_has_debug && local_gbe != gw_gbe_arr {
+    if local_gbe != gw_gbe_arr {
         panic!("[groupByExpressions] sql={sql}\n  local={local_gbe:?}  gw={gw_gbe_arr:?}");
     }
 
-    // aggregates
+    // ── aggregates ───────────────────────────────────────────────────────────
+    // Carve-out: when Gateway emits a `rewrittenQuery`, aggregates move into
+    // `groupByAliasToAggregateType` (a per-alias map) and the top-level
+    // `aggregates` array is dropped. Local AST analysis still reports the
+    // aggregate kinds as a flat list, which is what the SDK pipeline consumes.
+    // Skip the equality check in the rewrite case.
     if gw_rewritten.is_none() {
         let local_agg = local
             .get("aggregates")
@@ -290,7 +340,7 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         }
     }
 
-    // hasSelectValue
+    // ── hasSelectValue (no carve-out) ────────────────────────────────────────
     let local_hsv = local
         .get("hasSelectValue")
         .and_then(|v| v.as_bool())
@@ -328,9 +378,10 @@ async fn validate_with_params(
         .iter()
         .map(|(n, v)| (n.to_string(), v.clone()))
         .collect();
-    let local_plan =
-        azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(sql, pk_paths, &owned)
-            .unwrap_or_else(|e| panic!("Local plan generation failed for: {sql}\n  {e}"));
+    let local_plan = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
+        sql, pk_paths, &owned,
+    )
+    .unwrap_or_else(|e| panic!("Local plan generation failed for: {sql}\n  {e}"));
     let local_qi = &local_plan["queryInfo"];
 
     // Fetch gateway plan, passing the same parameters in the request body.
@@ -719,7 +770,7 @@ async fn local_plan_top_parameter_without_value_errors() {
     // Mirror of the Gateway-400 test: when the caller does not supply a value for
     // a parameterized TOP/OFFSET/LIMIT, the *local* plan generator must fail
     // clearly (rather than silently dropping the clause).
-    let result = azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(
+    let result = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
         "SELECT TOP @n * FROM c",
         &["/pk"],
         &[],
@@ -735,7 +786,7 @@ async fn local_plan_top_parameter_without_value_errors() {
 
 #[tokio::test]
 async fn local_plan_offset_limit_parameter_without_value_errors() {
-    let result = azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(
+    let result = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
         "SELECT * FROM c OFFSET @off LIMIT @lim",
         &["/pk"],
         &[("@off".to_string(), serde_json::json!(0))],
@@ -746,5 +797,76 @@ async fn local_plan_offset_limit_parameter_without_value_errors() {
     assert!(
         msg.contains("@lim"),
         "error message should mention missing parameter @lim: {msg}"
+    );
+}
+
+// ─── Parameter substitution in PK extraction (#14) ───────────────────────────
+//
+// When the caller supplies parameter values, the local plan generator must
+// substitute them into the partition-key filter the same way the Gateway does
+// when the parameter is bound in the query-plan request body.
+
+#[tokio::test]
+async fn gw_pk_parameter_substitution() {
+    validate_pk_with_params(
+        "SELECT * FROM c WHERE c.pk = @val",
+        &[("@val", serde_json::json!("hello"))],
+    )
+    .await;
+    validate_pk_with_params(
+        "SELECT * FROM c WHERE c.pk = @val",
+        &[("@val", serde_json::json!(42))],
+    )
+    .await;
+}
+
+// ─── Numeric PK canonicalization (#3) ────────────────────────────────────────
+//
+// `c.pk = 1` and `c.pk = 1.0` must hash to the same effective partition key, so
+// the locally-extracted PK filter must canonicalize both literal forms to the
+// same `Number(f64)` representation. The Gateway's plan response itself does not
+// expose the PK filter, so we validate this indirectly: the *queryInfo* plans
+// produced for the two queries must be identical.
+
+#[tokio::test]
+async fn local_plan_numeric_pk_canonicalization() {
+    let int_form = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
+        "SELECT * FROM c WHERE c.pk = 1",
+        &["/pk"],
+        &[],
+    )
+    .unwrap();
+    let float_form = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
+        "SELECT * FROM c WHERE c.pk = 1.0",
+        &["/pk"],
+        &[],
+    )
+    .unwrap();
+    // The pkFilters block should be identical (canonical numeric form).
+    assert_eq!(int_form["pkFilters"], float_form["pkFilters"],);
+    // queryInfo must also be identical (both queries are structurally the same).
+    assert_eq!(int_form["queryInfo"], float_form["queryInfo"]);
+}
+
+// ─── Fail-fast on non-path GROUP BY expressions (#2) ─────────────────────────
+//
+// The Gateway accepts non-path GROUP BY expressions like `c.x & 1` and rewrites
+// the query. The local plan generator cannot reproduce the rewrite faithfully,
+// so it now refuses to silently emit a non-comparable plan and instead returns
+// an error so the caller can fall back to the Gateway query-plan endpoint.
+
+#[tokio::test]
+async fn local_plan_non_path_group_by_errors() {
+    let result = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
+        "SELECT c.x & 1 AS parity, COUNT(1) FROM c GROUP BY c.x & 1",
+        &["/pk"],
+        &[],
+    );
+    let err = result.expect_err(
+        "non-path GROUP BY expression must surface an error so the caller falls back to Gateway",
+    );
+    assert!(
+        format!("{err}").contains("GROUP BY / ORDER BY"),
+        "unexpected error message: {err}"
     );
 }

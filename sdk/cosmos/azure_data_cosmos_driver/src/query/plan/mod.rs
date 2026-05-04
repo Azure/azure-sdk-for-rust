@@ -7,6 +7,7 @@
 //! Cosmos DB Gateway query plan REST endpoint, enabling the SDK to make routing
 //! and pipeline decisions without a Gateway roundtrip.
 
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 use crate::query::ast::*;
@@ -17,7 +18,7 @@ use crate::query::common::get_root_alias;
 /// A client-side query plan produced by the local SQL parser.
 ///
 /// Contains partition key targeting information and structural query info.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(SafeDebug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryPlan {
     /// Partition key filters extracted from the WHERE clause.
@@ -34,7 +35,7 @@ pub(crate) struct QueryPlan {
 /// (e.g., `rewritten_query`) default to `None`/empty when generated locally.
 /// Fields present only in local analysis (e.g., `has_join`) default to `false`
 /// when deserialized from the gateway.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryInfo {
     /// The kind of DISTINCT, if any.
@@ -146,7 +147,7 @@ pub(crate) enum AggregateKind {
 // ─── Partition Key Filter ────────────────────────────────────────────────────
 
 /// Partition key filter extracted from a WHERE clause.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(SafeDebug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub(crate) enum PartitionKeyFilter {
@@ -156,22 +157,36 @@ pub(crate) enum PartitionKeyFilter {
     /// IN list on first PK component: `pk IN (v1, v2, ...)`.
     InList(Vec<Vec<PartitionKeyValue>>),
 
-    /// No PK filter found — cross-partition query.
-    None,
+    /// PK paths were supplied but the WHERE clause did not constrain them.
+    /// The query must be issued as a cross-partition request.
+    Unconstrained,
+
+    /// PK extraction was not attempted because the caller did not supply any
+    /// PK paths. This is distinct from [`PartitionKeyFilter::Unconstrained`]
+    /// (which means "caller asked, but query has no usable filter").
+    NotEvaluated,
 }
 
 /// A single partition key component value.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(SafeDebug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "value", rename_all = "camelCase")]
 #[non_exhaustive]
 pub(crate) enum PartitionKeyValue {
     String(String),
+    /// All numeric PK values are normalized to `f64`. Integer and floating-point
+    /// SQL literals are both stored here so that PK routing comparisons follow the
+    /// same canonical semantics the Cosmos backend uses for effective-partition-key
+    /// (EPK) hashing — `c.pk = 1` and `c.pk = 1.0` target the same partition.
     Number(f64),
-    Integer(i64),
     Bool(bool),
     Null,
     Undefined,
     /// A reference to a query parameter that must be resolved at runtime.
+    ///
+    /// Produced when the caller did not supply a value for `@name` in `parameters`.
+    /// Callers that rely on the extracted PK filter for routing must either supply
+    /// values for all referenced parameters or treat any [`PartitionKeyValue::Parameter`]
+    /// in the result as "PK could not be resolved — issue a cross-partition request".
     Parameter(String),
 }
 
@@ -224,7 +239,7 @@ pub(crate) fn generate_query_plan_with_parameters(
     let root_alias = get_root_alias(query);
 
     let pk_filters = if pk_paths.is_empty() {
-        PartitionKeyFilter::None
+        PartitionKeyFilter::NotEvaluated
     } else {
         let pk_segments: Vec<Vec<&str>> = pk_paths
             .iter()
@@ -236,9 +251,10 @@ pub(crate) fn generate_query_plan_with_parameters(
                 &where_clause.expression,
                 &pk_segments,
                 root_alias.as_deref(),
+                parameters,
             )
         } else {
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         }
     };
 
@@ -324,6 +340,12 @@ fn analyze_query(query: &SqlQuery, parameters: &Params) -> Result<QueryInfo, azu
     // constant (literal) that doesn't reference any collection variable, because
     // a single constant value is always distinct by definition.
     if query.select.distinct {
+        // Gateway only collapses DISTINCT-on-constant for the `SELECT DISTINCT VALUE <expr>`
+        // form. The list form (`SELECT DISTINCT 1, 2 FROM c`) is treated as ordinary DISTINCT
+        // by the Gateway because the result rows are JSON objects (with synthesized property
+        // names) and are therefore not all guaranteed to be identical. We mirror that
+        // asymmetry intentionally — do not extend this to `SqlSelectSpec::List` without
+        // verifying behavior against the Gateway.
         let is_constant_select = match &query.select.spec {
             SqlSelectSpec::Value(expr) => is_constant_expression(expr),
             _ => false,
@@ -366,14 +388,14 @@ fn analyze_query(query: &SqlQuery, parameters: &Params) -> Result<QueryInfo, azu
             };
             info.order_by.push(sort);
             info.order_by_expressions
-                .push(expr_to_path_string(&item.expression));
+                .push(expr_to_path_string(&item.expression)?);
         }
     }
 
     // GROUP BY
     if let Some(group_by) = &query.group_by {
         for expr in &group_by.expressions {
-            info.group_by_expressions.push(expr_to_path_string(expr));
+            info.group_by_expressions.push(expr_to_path_string(expr)?);
         }
     }
 
@@ -402,12 +424,24 @@ fn analyze_query(query: &SqlQuery, parameters: &Params) -> Result<QueryInfo, azu
 }
 
 /// Convert an expression to a dot-separated path string for the plan output.
-fn expr_to_path_string(expr: &SqlScalarExpression) -> String {
+///
+/// Returns an error for non-path expressions (e.g., `c.a + c.b`, function calls).
+/// The Gateway query-plan endpoint accepts such expressions and rewrites the query,
+/// but the local plan generator cannot fully reproduce that rewrite — emitting a
+/// debug-formatted placeholder would silently produce a JSON plan that does not
+/// match the Gateway's. Callers receiving this error should fall back to fetching
+/// the plan from the Gateway (#2).
+fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core::Error> {
     let mut parts = Vec::new();
     if collect_path_parts(expr, &mut parts) {
-        parts.join(".")
+        Ok(parts.join("."))
     } else {
-        format!("{expr:?}")
+        Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::DataConversion,
+            format!(
+                "GROUP BY / ORDER BY expression is not a property path; local plan generation cannot reproduce the Gateway's rewrite. Fall back to the Gateway query-plan endpoint. expression: {expr:?}"
+            ),
+        ))
     }
 }
 
@@ -540,17 +574,19 @@ fn extract_pk_from_expression(
     expr: &SqlScalarExpression,
     pk_segments: &[Vec<&str>],
     root_alias: Option<&str>,
+    parameters: &Params,
 ) -> PartitionKeyFilter {
     if pk_segments.len() == 1 {
-        return extract_single_pk(expr, &pk_segments[0], root_alias);
+        return extract_single_pk(expr, &pk_segments[0], root_alias, parameters);
     }
-    extract_hierarchical_pk(expr, pk_segments, root_alias)
+    extract_hierarchical_pk(expr, pk_segments, root_alias, parameters)
 }
 
 fn extract_single_pk(
     expr: &SqlScalarExpression,
     pk_path: &[&str],
     root_alias: Option<&str>,
+    parameters: &Params,
 ) -> PartitionKeyFilter {
     match expr {
         SqlScalarExpression::Binary {
@@ -559,16 +595,16 @@ fn extract_single_pk(
             right,
         } => {
             if is_pk_reference(left, pk_path, root_alias) {
-                if let Some(val) = extract_literal_value(right) {
+                if let Some(val) = extract_literal_value(right, parameters) {
                     return PartitionKeyFilter::Equality(vec![val]);
                 }
             }
             if is_pk_reference(right, pk_path, root_alias) {
-                if let Some(val) = extract_literal_value(left) {
+                if let Some(val) = extract_literal_value(left, parameters) {
                     return PartitionKeyFilter::Equality(vec![val]);
                 }
             }
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         }
         SqlScalarExpression::In {
             expression,
@@ -578,21 +614,21 @@ fn extract_single_pk(
             if is_pk_reference(expression, pk_path, root_alias) {
                 let values: Vec<Vec<PartitionKeyValue>> = items
                     .iter()
-                    .filter_map(|item| extract_literal_value(item).map(|v| vec![v]))
+                    .filter_map(|item| extract_literal_value(item, parameters).map(|v| vec![v]))
                     .collect();
                 if values.len() == items.len() {
                     return PartitionKeyFilter::InList(values);
                 }
             }
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         }
         SqlScalarExpression::Binary {
             op: SqlBinaryOp::And,
             left,
             right,
         } => {
-            let left_pk = extract_single_pk(left, pk_path, root_alias);
-            let right_pk = extract_single_pk(right, pk_path, root_alias);
+            let left_pk = extract_single_pk(left, pk_path, root_alias, parameters);
+            let right_pk = extract_single_pk(right, pk_path, root_alias, parameters);
             intersect_pk_filters(left_pk, right_pk)
         }
         SqlScalarExpression::Binary {
@@ -600,8 +636,8 @@ fn extract_single_pk(
             left,
             right,
         } => {
-            let left_pk = extract_single_pk(left, pk_path, root_alias);
-            let right_pk = extract_single_pk(right, pk_path, root_alias);
+            let left_pk = extract_single_pk(left, pk_path, root_alias, parameters);
+            let right_pk = extract_single_pk(right, pk_path, root_alias, parameters);
             match (left_pk, right_pk) {
                 (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
                     PartitionKeyFilter::InList(vec![a, b])
@@ -615,10 +651,10 @@ fn extract_single_pk(
                     a.extend(b);
                     PartitionKeyFilter::InList(a)
                 }
-                _ => PartitionKeyFilter::None,
+                _ => PartitionKeyFilter::Unconstrained,
             }
         }
-        _ => PartitionKeyFilter::None,
+        _ => PartitionKeyFilter::Unconstrained,
     }
 }
 
@@ -631,7 +667,9 @@ fn extract_single_pk(
 fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKeyFilter {
     match (a, b) {
         // One side has no PK constraint — the other side's constraint stands.
-        (PartitionKeyFilter::None, other) | (other, PartitionKeyFilter::None) => other,
+        (PartitionKeyFilter::Unconstrained, other) | (other, PartitionKeyFilter::Unconstrained) => {
+            other
+        }
 
         // Both sides have equality — they must agree.
         (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
@@ -640,7 +678,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
             } else {
                 // Contradictory: c.pk = 'a' AND c.pk = 'b' — logically empty result set.
                 // Return None because no single partition can be targeted.
-                PartitionKeyFilter::None
+                PartitionKeyFilter::Unconstrained
             }
         }
 
@@ -650,7 +688,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
             if list.contains(&eq) {
                 PartitionKeyFilter::Equality(eq)
             } else {
-                PartitionKeyFilter::None
+                PartitionKeyFilter::Unconstrained
             }
         }
 
@@ -659,10 +697,17 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
             let intersection: Vec<Vec<PartitionKeyValue>> =
                 a.into_iter().filter(|item| b.contains(item)).collect();
             match intersection.len() {
-                0 => PartitionKeyFilter::None,
+                0 => PartitionKeyFilter::Unconstrained,
                 1 => PartitionKeyFilter::Equality(intersection.into_iter().next().unwrap()),
                 _ => PartitionKeyFilter::InList(intersection),
             }
+        }
+        // `NotEvaluated` is only ever set at the top level (when no PK paths were
+        // supplied) and is never produced by the recursive extractors. Coerce to
+        // `Unconstrained` defensively in case the variant ever leaks here so the
+        // intersection logic can't silently misroute a query.
+        (PartitionKeyFilter::NotEvaluated, other) | (other, PartitionKeyFilter::NotEvaluated) => {
+            other
         }
     }
 }
@@ -671,6 +716,7 @@ fn extract_hierarchical_pk(
     expr: &SqlScalarExpression,
     pk_segments: &[Vec<&str>],
     root_alias: Option<&str>,
+    parameters: &Params,
 ) -> PartitionKeyFilter {
     let mut conjuncts = Vec::new();
     flatten_and(expr, &mut conjuncts);
@@ -687,9 +733,9 @@ fn extract_hierarchical_pk(
             } = conjunct
             {
                 let val = if is_pk_reference(left, pk_path, root_alias) {
-                    extract_literal_value(right)
+                    extract_literal_value(right, parameters)
                 } else if is_pk_reference(right, pk_path, root_alias) {
-                    extract_literal_value(left)
+                    extract_literal_value(left, parameters)
                 } else {
                     None
                 };
@@ -709,11 +755,11 @@ fn extract_hierarchical_pk(
             }
         }
         if conflict {
-            return PartitionKeyFilter::None;
+            return PartitionKeyFilter::Unconstrained;
         }
         match component_value {
             Some(v) => pk_values.push(v),
-            None => return PartitionKeyFilter::None,
+            None => return PartitionKeyFilter::Unconstrained,
         }
     }
     PartitionKeyFilter::Equality(pk_values)
@@ -769,18 +815,58 @@ fn resolve_property_path(expr: &SqlScalarExpression, path: &mut Vec<String>) -> 
     }
 }
 
-fn extract_literal_value(expr: &SqlScalarExpression) -> Option<PartitionKeyValue> {
+fn extract_literal_value(
+    expr: &SqlScalarExpression,
+    parameters: &Params,
+) -> Option<PartitionKeyValue> {
     match expr {
         SqlScalarExpression::Literal(lit) => match lit {
             SqlLiteral::String(s) => Some(PartitionKeyValue::String(s.clone())),
+            // Both numeric literal forms canonicalize to `Number(f64)` to mirror the
+            // backend's EPK-hash equivalence between `1` and `1.0` (#3).
             SqlLiteral::Number(n) => Some(PartitionKeyValue::Number(*n)),
-            SqlLiteral::Integer(n) => Some(PartitionKeyValue::Integer(*n)),
+            SqlLiteral::Integer(n) => Some(PartitionKeyValue::Number(*n as f64)),
             SqlLiteral::Boolean(b) => Some(PartitionKeyValue::Bool(*b)),
             SqlLiteral::Null => Some(PartitionKeyValue::Null),
             SqlLiteral::Undefined => Some(PartitionKeyValue::Undefined),
         },
-        SqlScalarExpression::ParameterRef(name) => Some(PartitionKeyValue::Parameter(name.clone())),
+        SqlScalarExpression::ParameterRef(name) => {
+            // #14: substitute the supplied parameter value if present; otherwise
+            // leave the placeholder so the caller can decide whether to fall back to
+            // a cross-partition request.
+            Some(resolve_pk_parameter(name, parameters))
+        }
         _ => None,
+    }
+}
+
+/// Look up `name` in `parameters` and convert the JSON value to a partition key
+/// value, or fall back to [`PartitionKeyValue::Parameter`] if the caller did not
+/// supply a value (an unresolved parameter — caller may need to issue a
+/// cross-partition request).
+fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
+    let needle = name.trim_start_matches('@');
+    let entry = parameters
+        .iter()
+        .find(|(n, _)| n.trim_start_matches('@') == needle);
+    let value = match entry {
+        Some((_, v)) => v,
+        None => return PartitionKeyValue::Parameter(needle.to_string()),
+    };
+    match value {
+        serde_json::Value::String(s) => PartitionKeyValue::String(s.clone()),
+        serde_json::Value::Number(n) => {
+            // Always canonicalize to f64 (#3).
+            n.as_f64()
+                .map(PartitionKeyValue::Number)
+                .unwrap_or_else(|| PartitionKeyValue::Parameter(needle.to_string()))
+        }
+        serde_json::Value::Bool(b) => PartitionKeyValue::Bool(*b),
+        serde_json::Value::Null => PartitionKeyValue::Null,
+        // Arrays / objects are not valid PK values; treat as unresolvable.
+        serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+            PartitionKeyValue::Parameter(needle.to_string())
+        }
     }
 }
 
@@ -792,9 +878,31 @@ fn extract_literal_value(expr: &SqlScalarExpression) -> Option<PartitionKeyValue
 /// no matching integer value is supplied. Pass an empty slice for queries that do not
 /// use parameters in those clauses.
 ///
-/// Used for cross-crate testing (gateway comparison) where internal types can't be accessed.
+/// **This function is intentionally not part of the supported public API.** It is
+/// gated on the `__internal_testing` feature flag and exists solely so that
+/// cross-crate gateway-comparison tests can exercise the local plan generator
+/// without taking a dependency on internal types. Production callers must not use it.
+///
+/// # Examples
+///
+/// ```
+/// # #[cfg(feature = "__internal_testing")]
+/// # fn main() {
+/// use azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths;
+///
+/// let plan = __test_only_generate_query_plan_for_pk_paths(
+///     "SELECT * FROM c WHERE c.pk = 'hello'",
+///     &["/pk"],
+///     &[],
+/// )
+/// .unwrap();
+/// assert_eq!(plan["queryInfo"]["hasWhere"], serde_json::json!(true));
+/// # }
+/// # #[cfg(not(feature = "__internal_testing"))]
+/// # fn main() {}
+/// ```
 #[cfg(any(test, feature = "__internal_testing"))]
-pub fn generate_query_plan_for_pk_paths(
+pub fn __test_only_generate_query_plan_for_pk_paths(
     sql: &str,
     pk_paths: &[&str],
     parameters: &[(String, serde_json::Value)],
@@ -853,13 +961,16 @@ mod tests {
     fn no_pk_filter() {
         assert_eq!(
             plan("SELECT * FROM c WHERE c.age > 21").pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
     #[test]
     fn no_where_clause() {
-        assert_eq!(plan("SELECT * FROM c").pk_filters, PartitionKeyFilter::None);
+        assert_eq!(
+            plan("SELECT * FROM c").pk_filters,
+            PartitionKeyFilter::Unconstrained
+        );
     }
 
     // ── QueryInfo: DISTINCT ──────────────────────────────────────────────
@@ -1092,7 +1203,7 @@ mod tests {
     #[test]
     fn cross_partition_aggregate_with_order_by() {
         let qp = plan("SELECT c.city, COUNT(1) FROM c GROUP BY c.city ORDER BY c.city ASC");
-        assert_eq!(qp.pk_filters, PartitionKeyFilter::None);
+        assert_eq!(qp.pk_filters, PartitionKeyFilter::Unconstrained);
         assert!(!qp.query_info.group_by_expressions.is_empty());
         assert!(!qp.query_info.order_by.is_empty());
         assert!(!qp.query_info.aggregates.is_empty());
@@ -1105,7 +1216,7 @@ mod tests {
         // c.pk = 'a' AND c.pk = 'b' — contradiction, no partition can match
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'").pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
@@ -1132,7 +1243,7 @@ mod tests {
         // c.pk = 'c' AND c.pk IN ('a', 'b') — contradiction
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk = 'c' AND c.pk IN ('a', 'b')").pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
@@ -1164,7 +1275,7 @@ mod tests {
         // c.pk IN ('a', 'b') AND c.pk IN ('c', 'd') — empty intersection
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('c', 'd')").pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
@@ -1201,7 +1312,7 @@ mod tests {
         // c.pk = 'a' AND c.x > 1 AND c.pk = 'b' — contradiction deep in chain
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'b'").pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
@@ -1226,7 +1337,7 @@ mod tests {
         assert_eq!(
             plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1'")
                 .pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
@@ -1237,7 +1348,7 @@ mod tests {
                 "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.userId = 'u2'"
             )
             .pk_filters,
-            PartitionKeyFilter::None
+            PartitionKeyFilter::Unconstrained
         );
     }
 
