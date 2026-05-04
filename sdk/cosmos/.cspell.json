@@ -3,10 +3,6 @@
     "../../.vscode/cspell.json"
   ],
   "ignoreWords": [
-    "AAAB",
-    "AAAAAQ",
-    "AAAAAYAAAA",
-    "AAAAAAAAAAEQ",
     "accountname",
     "ALPN",
     "apacsoutheast",
@@ -18,7 +14,6 @@
     "azurecosmos",
     "backoff",
     "backpressure",
-    "BFFF",
     "brazilsouth",
     "bytearray",
     "canadacentral",

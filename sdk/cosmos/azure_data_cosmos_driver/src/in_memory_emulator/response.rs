@@ -3,27 +3,38 @@
 
 //! Response construction and header generation.
 
-use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
+use azure_core::http::headers::{HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
 
 use std::time::Instant;
 
-static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
-static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-static ETAG: HeaderName = HeaderName::from_static("etag");
-static CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
-static DATE: HeaderName = HeaderName::from_static("date");
-static VERSION: HeaderName = HeaderName::from_static("x-ms-version");
-static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
-static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
-static RETRY_AFTER: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
-static LSN: HeaderName = HeaderName::from_static("lsn");
-static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
-#[allow(dead_code)]
-static CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-content-path");
-#[allow(dead_code)]
-static ALT_CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
+// Header-name constants used by both the emulator's response builder and the
+// integration tests that assert on emulator responses. Re-exported from a
+// `#[doc(hidden)] pub` module so tests can use the same values without drifting.
+#[doc(hidden)]
+pub mod headers {
+    use azure_core::http::headers::HeaderName;
+    pub static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
+    pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
+    pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+    pub static ETAG: HeaderName = HeaderName::from_static("etag");
+    pub static CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
+    pub static DATE: HeaderName = HeaderName::from_static("date");
+    pub static VERSION: HeaderName = HeaderName::from_static("x-ms-version");
+    pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+    pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
+    pub static RETRY_AFTER: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
+    pub static LSN: HeaderName = HeaderName::from_static("lsn");
+    pub static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
+    #[allow(dead_code)]
+    pub static CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-content-path");
+    #[allow(dead_code)]
+    pub static ALT_CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
+}
+use headers::{
+    ACTIVITY_ID, ALT_CONTENT_PATH, CONTENT_PATH, CONTENT_TYPE, DATE, ETAG, ITEM_COUNT, LSN,
+    REQUEST_CHARGE, RETRY_AFTER, SERVER_DURATION_MS, SESSION_TOKEN, SUBSTATUS, VERSION,
+};
 
 const COSMOS_VERSION: &str = "2020-07-15";
 
@@ -181,65 +192,21 @@ pub(crate) fn error_response(
     builder
 }
 
-/// Formats the current UTC time in RFC 1123 format.
+/// Formats the current UTC time in RFC 1123 format (the form used by HTTP `Date`
+/// headers, e.g. `"Sun, 06 Nov 1994 08:49:37 GMT"`).
+///
+/// Backed by the `time` crate to avoid hand-rolled Gregorian arithmetic.
 fn format_rfc1123_date() -> String {
-    use std::time::SystemTime;
+    use time::format_description::FormatItem;
+    use time::macros::format_description;
+    use time::OffsetDateTime;
 
-    let now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
+    // RFC 1123 / RFC 7231 IMF-fixdate format.
+    const FORMAT: &[FormatItem<'_>] = format_description!(
+        "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
+    );
 
-    // Simple RFC 1123 approximation - sufficient for emulator
-    let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    let months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
-
-    // Calculate date components from Unix timestamp
-    let secs_per_day: u64 = 86400;
-    let total_days = now / secs_per_day;
-    let day_of_week = ((total_days + 4) % 7) as usize; // Jan 1 1970 was Thursday (4)
-
-    let time_of_day = now % secs_per_day;
-    let hours = time_of_day / 3600;
-    let minutes = (time_of_day % 3600) / 60;
-    let seconds = time_of_day % 60;
-
-    // Calculate year/month/day from total days (simplified Gregorian)
-    let mut y = 1970i64;
-    let mut remaining = total_days as i64;
-    loop {
-        let days_in_year = if is_leap_year(y) { 366 } else { 365 };
-        if remaining < days_in_year {
-            break;
-        }
-        remaining -= days_in_year;
-        y += 1;
-    }
-
-    let days_in_months: [i64; 12] = if is_leap_year(y) {
-        [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    } else {
-        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    };
-
-    let mut m = 0usize;
-    for (i, &d) in days_in_months.iter().enumerate() {
-        if remaining < d {
-            m = i;
-            break;
-        }
-        remaining -= d;
-    }
-    let day = remaining + 1;
-
-    format!(
-        "{}, {:02} {} {} {:02}:{:02}:{:02} GMT",
-        days[day_of_week], day, months[m], y, hours, minutes, seconds
-    )
-}
-
-fn is_leap_year(y: i64) -> bool {
-    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
+    OffsetDateTime::now_utc()
+        .format(FORMAT)
+        .unwrap_or_else(|_| String::from("Thu, 01 Jan 1970 00:00:00 GMT"))
 }

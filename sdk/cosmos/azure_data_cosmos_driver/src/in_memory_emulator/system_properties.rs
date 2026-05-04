@@ -3,25 +3,27 @@
 
 //! System property generation and JSON injection.
 
-use super::store::StoredDocument;
 
 /// Injects system properties (`_rid`, `_self`, `_etag`, `_ts`, `_attachments`)
 /// into a document's JSON body.
-pub(crate) fn inject_system_properties(doc: &StoredDocument, body: &mut serde_json::Value) {
+///
+/// Takes the individual values (rather than a [`StoredDocument`]) so callers
+/// can mutate the body before owning the doc and avoid cloning the body twice.
+pub(crate) fn inject_system_properties(
+    rid: &str,
+    self_link: &str,
+    etag: &str,
+    ts: u64,
+    body: &mut serde_json::Value,
+) {
     if let Some(obj) = body.as_object_mut() {
-        obj.insert(
-            "_rid".to_string(),
-            serde_json::Value::String(doc.rid.clone()),
-        );
+        obj.insert("_rid".to_string(), serde_json::Value::String(rid.to_owned()));
         obj.insert(
             "_self".to_string(),
-            serde_json::Value::String(doc.self_link.clone()),
+            serde_json::Value::String(self_link.to_owned()),
         );
-        obj.insert(
-            "_etag".to_string(),
-            serde_json::Value::String(doc.etag.clone()),
-        );
-        obj.insert("_ts".to_string(), serde_json::json!(doc.ts));
+        obj.insert("_etag".to_string(), serde_json::Value::String(etag.to_owned()));
+        obj.insert("_ts".to_string(), serde_json::json!(ts));
         obj.insert(
             "_attachments".to_string(),
             serde_json::Value::String("attachments/".to_string()),

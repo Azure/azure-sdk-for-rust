@@ -530,15 +530,19 @@ fn handle_read_pkranges(
 // --- Point Operations ---
 
 /// Resolves the partition key components and EPK for a point operation.
+///
+/// Returns `BadRequest` when the partition key header or extracted document
+/// values are malformed (matches gateway behavior so client bugs surface
+/// with the same status code as against a real account).
 fn resolve_partition_key(
     parsed: &ParsedRequest,
     body: &serde_json::Value,
     meta: &ContainerMetadata,
-) -> (Vec<super::epk::PartitionKeyComponent>, Epk) {
+) -> azure_core::Result<(Vec<super::epk::PartitionKeyComponent>, Epk)> {
     let pk_components = if let Some(pk_header) = &parsed.partition_key_header {
-        parse_partition_key_header(pk_header)
+        parse_partition_key_header(pk_header)?
     } else {
-        extract_pk_from_body(body, meta.partition_key.paths())
+        extract_pk_from_body(body, meta.partition_key.paths())?
     };
 
     let epk = compute_epk(
@@ -547,7 +551,21 @@ fn resolve_partition_key(
         meta.partition_key.version(),
     );
 
-    (pk_components, epk)
+    Ok((pk_components, epk))
+}
+
+/// Builds a 400 BadRequest response from a partition-key resolution error.
+fn bad_partition_key_response(err: azure_core::Error, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        &err.to_string(),
+        1.0,
+        "",
+        start,
+    )
+    .build()
 }
 
 /// Builds a V2 session token for a partition in the given region.
@@ -658,7 +676,10 @@ async fn handle_create(
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
-        let (_, epk) = resolve_partition_key(parsed, &body, &state.metadata);
+        let (_, epk) = match resolve_partition_key(parsed, &body, &state.metadata) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
 
         let partition = match state.find_partition(&epk) {
             Some(p) => p,
@@ -726,6 +747,9 @@ async fn handle_create(
         let etag = new_etag();
         let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
 
+        // Inject system properties into the body before constructing the doc,
+        // so we only clone the (mutated) body once below.
+        inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
         let stored_doc = StoredDocument {
             body: body.clone(),
             id: doc_id.clone(),
@@ -735,13 +759,6 @@ async fn handle_create(
             self_link,
             lsn,
             epk: epk.clone(),
-        };
-
-        // Inject system properties into the body
-        inject_system_properties(&stored_doc, &mut body);
-        let stored_doc = StoredDocument {
-            body: body.clone(),
-            ..stored_doc
         };
 
         // Store the document
@@ -798,7 +815,10 @@ fn handle_read(
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
         let empty_body = serde_json::Value::Null;
-        let (_, epk) = resolve_partition_key(parsed, &empty_body, &state.metadata);
+        let (_, epk) = match resolve_partition_key(parsed, &empty_body, &state.metadata) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
 
         let partition = match state.find_partition(&epk) {
             Some(p) => p,
@@ -949,7 +969,10 @@ async fn handle_replace(
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
-        let (_, epk) = resolve_partition_key(parsed, &body, &state.metadata);
+        let (_, epk) = match resolve_partition_key(parsed, &body, &state.metadata) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
 
         let partition = match state.find_partition(&epk) {
             Some(p) => p,
@@ -1036,7 +1059,7 @@ async fn handle_replace(
         let charge = store
             .config()
             .ru_model()
-            .compute_replace_ru(request_body.len(), num_props);
+            .compute_replace_or_delete_ru(request_body.len(), num_props);
 
         if let Some(response) = check_throttle(
             partition,
@@ -1052,6 +1075,7 @@ async fn handle_replace(
         let ts = current_timestamp();
         let etag = new_etag();
 
+        inject_system_properties(&existing.rid, &existing.self_link, &etag, ts, &mut body);
         let new_doc = StoredDocument {
             body: body.clone(),
             id: doc_id.to_string(),
@@ -1061,12 +1085,6 @@ async fn handle_replace(
             self_link: existing.self_link.clone(),
             lsn,
             epk: epk.clone(),
-        };
-
-        inject_system_properties(&new_doc, &mut body);
-        let new_doc = StoredDocument {
-            body: body.clone(),
-            ..new_doc
         };
 
         logical.insert(doc_id.to_string(), new_doc.clone());
@@ -1145,7 +1163,10 @@ async fn handle_upsert(
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
-        let (_, epk) = resolve_partition_key(parsed, &body, &state.metadata);
+        let (_, epk) = match resolve_partition_key(parsed, &body, &state.metadata) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
 
         let partition = match state.find_partition(&epk) {
             Some(p) => p,
@@ -1168,15 +1189,40 @@ async fn handle_upsert(
             return Err(response);
         }
 
-        // Compute RU charge upfront. For upsert we use the create charge as
-        // a conservative estimate; the actual status (201 vs 200) is determined
-        // after checking existence, but the charge difference is small and the
-        // throttle gate must fire before any mutation.
+        // Determine whether this upsert is a create or replace BEFORE charging.
+        // Without this, throttle accounting and the reported RU charge would be
+        // mismatched (create charge debited from the bucket but a replace charge
+        // surfaced in the response), and replace-via-upsert would consume less
+        // budget than the same op invoked as a Replace.
         let num_props = RuChargingModel::count_properties(&body);
-        let charge = store
-            .config()
-            .ru_model()
-            .compute_create_ru(request_body.len(), num_props);
+        let mut docs = partition.documents.write().unwrap();
+        let logical = docs.entry(epk.clone()).or_default();
+
+        let (status, rid, self_link) = if let Some(existing) = logical.get(&doc_id) {
+            (
+                StatusCode::Ok,
+                existing.rid.clone(),
+                existing.self_link.clone(),
+            )
+        } else {
+            let (_, doc_rid) = store
+                .rid_generator()
+                .next_document_rid(state.metadata.numeric_db_id, state.metadata.numeric_coll_id);
+            let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
+            (StatusCode::Created, doc_rid, self_link)
+        };
+
+        let charge = if status == StatusCode::Created {
+            store
+                .config()
+                .ru_model()
+                .compute_create_ru(request_body.len(), num_props)
+        } else {
+            store
+                .config()
+                .ru_model()
+                .compute_replace_or_delete_ru(request_body.len(), num_props)
+        };
 
         if let Some(response) = check_throttle(
             partition,
@@ -1191,25 +1237,7 @@ async fn handle_upsert(
         let ts = current_timestamp();
         let etag = new_etag();
 
-        let mut docs = partition.documents.write().unwrap();
-        let logical = docs.entry(epk.clone()).or_default();
-
-        let (status, rid, self_link) = if let Some(existing) = logical.get(&doc_id) {
-            // Replace path
-            (
-                StatusCode::Ok,
-                existing.rid.clone(),
-                existing.self_link.clone(),
-            )
-        } else {
-            // Create path
-            let (_, doc_rid) = store
-                .rid_generator()
-                .next_document_rid(state.metadata.numeric_db_id, state.metadata.numeric_coll_id);
-            let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
-            (StatusCode::Created, doc_rid, self_link)
-        };
-
+        inject_system_properties(&rid, &self_link, &etag, ts, &mut body);
         let new_doc = StoredDocument {
             body: body.clone(),
             id: doc_id.clone(),
@@ -1221,26 +1249,8 @@ async fn handle_upsert(
             epk: epk.clone(),
         };
 
-        inject_system_properties(&new_doc, &mut body);
-        let new_doc = StoredDocument {
-            body: body.clone(),
-            ..new_doc
-        };
-
         logical.insert(doc_id, new_doc.clone());
 
-        // Refine charge based on actual status (create vs replace).
-        let charge = if status == StatusCode::Created {
-            store
-                .config()
-                .ru_model()
-                .compute_create_ru(request_body.len(), num_props)
-        } else {
-            store
-                .config()
-                .ru_model()
-                .compute_replace_ru(request_body.len(), num_props)
-        };
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
@@ -1287,7 +1297,10 @@ async fn handle_delete(
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
         let empty_body = serde_json::Value::Null;
-        let (_, epk) = resolve_partition_key(parsed, &empty_body, &state.metadata);
+        let (_, epk) = match resolve_partition_key(parsed, &empty_body, &state.metadata) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
 
         let partition = match state.find_partition(&epk) {
             Some(p) => p,
@@ -1374,7 +1387,7 @@ async fn handle_delete(
         let charge = store
             .config()
             .ru_model()
-            .compute_replace_ru(body_size, num_props);
+            .compute_replace_or_delete_ru(body_size, num_props);
 
         if let Some(response) = check_throttle(
             partition,

@@ -15,6 +15,10 @@ use super::session::SessionState;
 use crate::models::PartitionKeyDefinition;
 
 type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
+/// Sentinel pkrange id used for control-plane (database/container/offer) session
+/// tokens. Chosen as `u32::MAX` so it cannot collide with any user pkrange id,
+/// since real Cosmos partition counts are bounded far below this value.
+pub(crate) const MASTER_PARTITION_ID: u32 = u32::MAX;
 
 /// Top-level emulator store holding all regions.
 pub struct EmulatorStore {
@@ -60,16 +64,17 @@ impl EmulatorStore {
         &self.rid_generator
     }
 
-    /// Advances the master partition LSN and returns a V1 session token.
+    /// Advances the master partition LSN and returns a V1 session token for the
+    /// emulator's synthetic "master" partition.
     ///
     /// The real Cosmos DB service tracks control plane metadata (databases,
-    /// containers, throughput) in a special "MasterPartition" (pkrange -1).
-    /// This counter simulates that behavior so that control plane responses
-    /// carry a valid session token, matching what the real service returns.
+    /// containers, throughput) in a special MasterPartition that is distinct
+    /// from any user pkrange. We use the sentinel pkrange id [`MASTER_PARTITION_ID`]
+    /// so that control-plane session tokens never collide with the data-plane
+    /// pkrange-0 namespace if a downstream consumer ever merges them.
     pub(crate) fn advance_master_partition_lsn(&self) -> String {
         let lsn = self.master_partition_lsn.fetch_add(1, Ordering::SeqCst) + 1;
-        // Master partition uses pkrange id 0 with V1 format in the real service
-        super::session::SessionToken::format(0, lsn)
+        super::session::SessionToken::format(MASTER_PARTITION_ID, lsn)
     }
 
     fn split_merge_lock(&self, db: &str, coll: &str) -> Arc<async_lock::Mutex<()>> {
@@ -209,10 +214,10 @@ impl EmulatorStore {
     /// Returns `true` if the flag was set on at least one partition; `false` otherwise.
     #[doc(hidden)]
     pub fn force_session_not_available(&self, region: &str, partition_key_json: &str) -> bool {
-        let pk_components = super::epk::parse_partition_key_header(partition_key_json);
-        if pk_components.is_empty() {
-            return false;
-        }
+        let pk_components = match super::epk::parse_partition_key_header(partition_key_json) {
+            Ok(c) if !c.is_empty() => c,
+            _ => return false,
+        };
         let regions = self.regions.read().unwrap();
         let region_store = match regions.get(region) {
             Some(r) => r,
@@ -280,6 +285,15 @@ impl EmulatorStore {
         doc: &StoredDocument,
         is_delete: bool,
     ) {
+        // Reap any replication tasks that have already finished so the JoinSet
+        // does not grow unboundedly across long-running tests with delayed
+        // replication. `try_join_next` is non-blocking and returns immediately
+        // when no task is ready.
+        {
+            let mut set = self.replication_tasks.lock().unwrap();
+            while set.try_join_next().is_some() {}
+        }
+
         let regions = self.regions.read().unwrap();
         let region_names: Vec<String> = regions
             .keys()
@@ -621,8 +635,10 @@ pub(crate) struct StoredDocument {
     pub id: String,
     pub rid: String,
     pub etag: String,
+    #[allow(dead_code)]
     pub ts: u64,
     pub self_link: String,
+    #[allow(dead_code)]
     pub lsn: u64,
     pub epk: Epk,
 }
@@ -639,14 +655,14 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
 
     for i in 0..n {
         let min = if i == 0 {
-            Epk::MIN
+            Epk::min()
         } else {
-            Epk::new(boundaries[i as usize].clone())
+            Epk::from(boundaries[i as usize].clone())
         };
         let max = if i == n - 1 {
             Epk::max()
         } else {
-            Epk::new(boundaries[(i + 1) as usize].clone())
+            Epk::from(boundaries[(i + 1) as usize].clone())
         };
 
         let rid = rid_gen.next_pkrange_rid(meta.numeric_db_id, meta.numeric_coll_id, i);
@@ -683,7 +699,7 @@ fn compute_partition_boundaries(n: u32) -> Vec<String> {
 
     for i in 0..=n {
         if i == 0 {
-            boundaries.push(String::new()); // Epk::MIN
+            boundaries.push(String::new()); // Epk::min()
         } else if i == n {
             boundaries.push("FF".to_string()); // Epk::max()
         } else {
@@ -708,23 +724,30 @@ pub(crate) fn new_etag() -> String {
     format!("\"{}\"", uuid::Uuid::new_v4())
 }
 
-/// Tracks RU consumption per second for throughput throttling.
+/// Tracks RU consumption per 1-second tumbling window for throughput throttling.
+///
+/// Uses a monotonic [`std::time::Instant`] reference rather than wall-clock so:
+/// - tests are immune to NTP / DST steps,
+/// - bursts cannot accidentally span a second boundary and double the available
+///   budget when the wall clock happens to tick during the burst.
 pub(crate) struct ThroughputTracker {
     provisioned_ru: u32,
     inner: std::sync::Mutex<ThroughputWindow>,
 }
 
 struct ThroughputWindow {
-    window_start: u64,
+    window_start: std::time::Instant,
     consumed_centiru: u64,
 }
+
+const THROUGHPUT_WINDOW: std::time::Duration = std::time::Duration::from_secs(1);
 
 impl ThroughputTracker {
     pub fn new(provisioned_ru: u32) -> Self {
         Self {
             provisioned_ru,
             inner: std::sync::Mutex::new(ThroughputWindow {
-                window_start: current_timestamp(),
+                window_start: std::time::Instant::now(),
                 consumed_centiru: 0,
             }),
         }
@@ -733,16 +756,19 @@ impl ThroughputTracker {
     /// Attempts to consume `charge` RU. Returns `Ok(())` if within budget,
     /// or `Err(retry_after_ms)` if throttled.
     pub fn try_consume(&self, charge: f64) -> Result<(), u64> {
-        let now = current_timestamp();
+        let now = std::time::Instant::now();
         let charge_centiru = (charge * 100.0) as u64;
         let budget_centiru = (self.provisioned_ru as u64) * 100;
         let mut w = self.inner.lock().unwrap();
-        if now > w.window_start {
+        if now.duration_since(w.window_start) >= THROUGHPUT_WINDOW {
             w.window_start = now;
             w.consumed_centiru = 0;
         }
         if w.consumed_centiru.saturating_add(charge_centiru) > budget_centiru {
-            return Err(1000);
+            // Suggest waiting until the start of the next window.
+            let remaining = THROUGHPUT_WINDOW
+                .saturating_sub(now.duration_since(w.window_start));
+            return Err(remaining.as_millis().max(1) as u64);
         }
         w.consumed_centiru += charge_centiru;
         Ok(())
@@ -1143,7 +1169,7 @@ fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Epk {
     };
 
     let mid = min_val / 2 + max_val / 2;
-    Epk::new(format!("{:032X}", mid))
+    Epk::from(format!("{:032X}", mid))
 }
 
 #[cfg(test)]
@@ -1179,7 +1205,7 @@ mod tests {
         let mut counts = vec![0usize; 8];
         for i in 0..2000 {
             let pk_json = format!("[\"key-{}\"]", i);
-            let comps = parse_partition_key_header(&pk_json);
+            let comps = parse_partition_key_header(&pk_json).unwrap();
             let epk = compute_epk(
                 &comps,
                 crate::models::PartitionKeyKind::Hash,

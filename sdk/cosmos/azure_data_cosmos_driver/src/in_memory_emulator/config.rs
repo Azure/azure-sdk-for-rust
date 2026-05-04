@@ -302,7 +302,13 @@ impl Default for ReplicationConfig {
 }
 
 /// Simple pseudo-random fraction [0, 1) using thread-local state.
-/// Not cryptographically secure — fine for test infrastructure.
+///
+/// Not cryptographically secure and **intentionally non-deterministic**: the
+/// thread-local state is seeded from `SystemTime::now().as_nanos()` at first
+/// use, so two threads spawning in the same nanosecond will share the same
+/// initial seed. Tests that require reproducible replication delays must
+/// either pin the seed via a separate code path (not provided today) or use
+/// `ReplicationConfig::immediate()` / `ReplicationConfig::fixed`.
 fn rand_fraction() -> f64 {
     use std::cell::Cell;
     use std::time::SystemTime;
@@ -375,6 +381,10 @@ impl ContainerConfig {
 }
 
 impl Default for ContainerConfig {
+    /// Defaults: **4 physical partitions** and no provisioned throughput
+    /// (throttling disabled even if the account-level `with_throttling_enabled`
+    /// is `true`). Override with [`ContainerConfig::with_partition_count`] and
+    /// [`ContainerConfig::with_throughput`].
     fn default() -> Self {
         Self {
             partition_count: 4,

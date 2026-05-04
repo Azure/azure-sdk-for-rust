@@ -34,3 +34,5 @@ pub use config::{
 pub use epk::Epk;
 pub use ru_model::RuChargingModel;
 pub use store::EmulatorStore;
+#[doc(hidden)]
+pub use response::headers as test_headers;

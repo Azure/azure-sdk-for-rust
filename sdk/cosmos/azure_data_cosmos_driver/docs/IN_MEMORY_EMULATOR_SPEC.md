@@ -1,3 +1,4 @@
+<!-- cspell:disable -->
 # In-Memory Emulator Specification for `azure_data_cosmos_driver`
 
 **Status**: Draft

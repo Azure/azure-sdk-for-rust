@@ -4,15 +4,11 @@
 //! Shared test helpers for the in-memory emulator integration tests.
 
 pub mod control_plane;
-pub mod driver_end_to_end;
-pub mod dual_backend;
-pub mod end_to_end;
 pub mod error_cases;
 pub mod multi_region;
 pub mod point_operations;
 pub mod split_merge;
 pub mod throttling;
-pub mod validation;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
@@ -106,12 +102,13 @@ pub struct MultiRegionTestContext {
     pub west_url: String,
 }
 
-/// Header name constants for assertions.
-pub static ETAG: HeaderName = HeaderName::from_static("etag");
-pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
-pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-pub static SUBSTATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
+// Reuse the response-builder header constants from the emulator itself so
+// tests cannot drift from production strings.
+pub use azure_data_cosmos_driver::in_memory_emulator::test_headers::{
+    ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
+};
 
+// Request-side headers are only set by tests, so they live here.
 pub static PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
 pub static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-upsert");
 pub static CONTENT_RESPONSE: HeaderName =

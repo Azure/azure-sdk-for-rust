@@ -31,13 +31,13 @@ rand = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
+time = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth", "__internal_in_memory_emulator"] }
 azure_identity = { version = "0.35.0" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
@@ -75,7 +75,7 @@ reqwest = [
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
-__internal_in_memory_emulator = ["dep:tokio"]
+__internal_in_memory_emulator = ["dep:tokio", "dep:time"]
 __internal_mocking = []
 __tls = []
 

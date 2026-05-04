@@ -32,9 +32,11 @@ azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity = { version = "0.35.0" }
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
+serde = { workspace = true, features = ["derive"] }
 time.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "test-util"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [lints]
 workspace = true

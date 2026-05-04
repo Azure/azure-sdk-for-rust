@@ -134,7 +134,7 @@ impl SdkDualBackend {
         .unwrap()
         .with_consistency(ConsistencyLevel::Session);
 
-        let emulator = InMemoryEmulatorHttpClient::new(config);
+        let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
         let emulator_store = emulator.store();
 
         let emulator_account = CosmosAccountReference::with_master_key(
@@ -554,7 +554,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     .with_consistency(ConsistencyLevel::Session)
     .with_replication_config(ReplicationConfig::immediate());
 
-    let emulator = InMemoryEmulatorHttpClient::new(config);
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
     // Build the runtime with fault injection layered on top of the emulator.

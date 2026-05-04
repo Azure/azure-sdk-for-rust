@@ -49,7 +49,8 @@ impl RuChargingModel {
     }
 
     /// Computes RU charge for a replace or delete operation.
-    pub fn compute_replace_ru(&self, doc_size: usize, num_properties: usize) -> f64 {
+    /// (Renamed from compute_replace_ru to make the dual usage explicit.)
+    pub fn compute_replace_or_delete_ru(&self, doc_size: usize, num_properties: usize) -> f64 {
         let base = self.create_base_ru * self.write_multiplier * Self::size_multiplier(doc_size);
         base + self.indexing_ru_per_property * num_properties as f64
     }
@@ -96,7 +97,7 @@ mod tests {
     #[test]
     fn replace_1kb_5_props() {
         let model = RuChargingModel::default();
-        let ru = model.compute_replace_ru(512, 5);
+        let ru = model.compute_replace_or_delete_ru(512, 5);
         let expected = 5.8 * 1.5 + 0.3 * 5.0;
         assert!((ru - expected).abs() < f64::EPSILON);
     }

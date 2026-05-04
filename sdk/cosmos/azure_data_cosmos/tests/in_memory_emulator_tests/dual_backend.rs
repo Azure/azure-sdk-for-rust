@@ -81,7 +81,7 @@ impl DualBackend {
         .unwrap()
         .with_consistency(ConsistencyLevel::Session);
 
-        let emulator = InMemoryEmulatorHttpClient::new(config);
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
         let emulator_store = emulator.store();
         let emulator_runtime = emulator.runtime_builder().build().await?;
 
