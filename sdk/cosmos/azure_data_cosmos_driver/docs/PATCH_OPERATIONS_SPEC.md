@@ -595,6 +595,40 @@ question is solved.
 - It is not a defensible answer to "what did you do about the original
   concern in #3765?"
 
+### 7.5 Alternative E — Support all PATCH ops, but require `If-Match` etag on every patch (mandatory etag)
+
+**Sketch:** Allow `Add`/`Increment`/`Move` in `PatchOperation`. Make
+`PatchItemOptions::if_match_etag` a required field at the type level
+(or have `PatchDocument` itself carry the etag). A duplicate apply of
+an increment under retry would return 412 (etag advanced after the
+first successful apply), short-circuiting double-application.
+
+**Why rejected for phase 1:**
+- **Regresses the canonical use case.** OpenAI's `set /deleted = true`
+  on a known doc id can ship today with one RU charge. Mandatory-etag
+  forces a `read_item` first to obtain the etag — doubling RU cost
+  and adding a round-trip to the workload phase 1 most wants to enable.
+- **412 on retry is ambiguous.** Under `is_idempotent() == true` the
+  driver retries transparently. If the second attempt returns 412,
+  the driver cannot tell whether (a) the first attempt succeeded
+  and the etag is stale (a "duplicate-success" retry — should report
+  success to the caller) or (b) a concurrent writer changed the
+  document (a real conflict — should report 412). Disambiguation
+  requires a re-read, which is exactly the RMW loop alternative (A)
+  was rejected for. Surfacing the raw 412 to callers regardless makes
+  the SDK substantially less ergonomic than competing SDKs.
+- **Diverges from .NET / Java**, which both allow unconditional patches.
+
+**Note:** mandatory-etag *is* listed as one of the phase-2 design
+options in §10 (option (d)). For the `Add`/`Increment`/`Move`-only
+sub-surface, the trade-offs invert: most realistic counter/move
+workloads already have an etag in hand from a prior read, so the
+extra-read cost vanishes, and the caller is in a better position than
+the SDK to disambiguate the 412. The key insight from this comparison
+is that the right idempotency answer differs across the op set —
+which is itself a justification for the phase-1 narrowing rather
+than a one-size-fits-all retry policy.
+
 ---
 
 ## 8. Risk Assessment
@@ -647,10 +681,23 @@ implementation phase against the previews emulator. Does not block this spec.
      rather than silently regressing.
   In practice phase 2 is likely to take one of: (a) per-call dispatcher
   that converts non-idempotent patches into a Read + If-Match Replace
-  before they reach the retry surface; (b) a separate
+  before they reach the retry surface (RMW in the driver); (b) a separate
   `OperationType::PatchRmw` variant with its own `is_idempotent` value;
-  or (c) a refactor of `OperationType::is_idempotent` to accept
-  per-instance state. This spec takes no position among them.
+  (c) a refactor of `OperationType::is_idempotent` to accept per-instance
+  state; or (d) **mandatory `If-Match` etag** for any patch containing
+  a non-idempotent op — the 412 returned on a duplicate apply
+  short-circuits the double-application risk without an in-driver RMW
+  loop, at the cost of forcing callers to supply an etag (i.e., to have
+  read the document first, or to have it from a prior write). Option (d)
+  is *not* viable for phase 1 because it would regress the canonical
+  soft-delete use case (`set /deleted = true` on a known doc id) from
+  one RU to two by forcing an extra read; it is, however, attractive
+  for phase 2 because most realistic counter/move workloads already
+  have an etag in hand from a prior read. Note that under option (d)
+  the driver cannot transparently disambiguate a 412 on retry (real
+  conflict vs. successful first attempt with stale etag) and must
+  surface the result to the caller — that is the design trade-off
+  versus options (a)/(b)/(c). This spec takes no position among them.
 - **Transactional batch PatchItem.** Tracked as follow-up (SE-006).
 - **Reconciling SDK-side and driver-side `OperationType` enums** (SE-002).
 - **PATCH for stored procedures / UDFs / triggers.** Cosmos PATCH is
@@ -680,3 +727,13 @@ implementation phase against the previews emulator. Does not block this spec.
 4. *(Cross-SDK alignment)* Java exposes `CosmosBatchPatchItemRequestOptions`
    for batch PATCH; the Rust spec defers transactional-batch PATCH to
    follow-up (SE-006). Confirm this is acceptable for phase 1.
+5. *(Phase-2 framing — raised by @FabianMeiswinkel)* Whether mandatory
+   `If-Match` etag (alternative E, §7.5) is preferred over a driver-side
+   RMW loop (alternative A, §7.1) once non-idempotent ops are restored
+   in phase 2. Mandatory-etag avoids the in-driver RMW loop entirely
+   and is cheap for callers who already have an etag from a prior read,
+   but cannot transparently disambiguate a 412 on retry (real conflict
+   vs. duplicate-success), so it surfaces 412 to the caller rather than
+   resolving it. RMW resolves automatically but adds a read RU and
+   loop-correctness work to the driver. §10 lists both as live phase-2
+   options; this spec takes no position.
