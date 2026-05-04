@@ -42,7 +42,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Bounded Range Download (first 5 bytes: "hello")
     let response = blob_client
         .download(Some(BlobClientDownloadOptions {
-            range: Some(0..5),
+            range: Some((0..5usize).into()),
             ..Default::default()
         }))
         .await?;
@@ -53,7 +53,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Bounded Range Download (middle 6 bytes: " rusty")
     let response = blob_client
         .download(Some(BlobClientDownloadOptions {
-            range: Some(5..11),
+            range: Some((5..11usize).into()),
             ..Default::default()
         }))
         .await?;
@@ -64,7 +64,7 @@ async fn test_ranged_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Bounded Range Download (last 6 bytes: " world")
     let response = blob_client
         .download(Some(BlobClientDownloadOptions {
-            range: Some(11..17),
+            range: Some((11..17usize).into()),
             ..Default::default()
         }))
         .await?;

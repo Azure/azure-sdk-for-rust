@@ -1,4 +1,7 @@
 variables:
+  # 1.93 bumped the rustdocs version to v57, which cargo-semver-checks does not yet support.
+  # Affects cargo-semver-checks, check_api_superset, generate_api_report
+  PackToolchain: "1.92"
   RUSTFLAGS: "-Dwarnings"
   RUSTDOCFLAGS: "-Dwarnings"
   RUST_LOG: $[iif(eq(variables['System.Debug'], 'true'), 'trace', 'info')]

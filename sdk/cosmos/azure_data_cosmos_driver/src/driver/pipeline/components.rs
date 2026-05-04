@@ -16,7 +16,10 @@ use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
         jitter::with_jitter,
-        routing::{CosmosEndpoint, LocationIndex},
+        routing::{
+            partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, LocationEffect,
+            LocationIndex,
+        },
         transport::AuthorizationContext,
     },
     models::{CosmosResponseHeaders, CosmosStatus},
@@ -83,6 +86,57 @@ pub(crate) struct OperationRetryState {
     pub excluded_regions: Vec<Region>,
     /// Session-retry routing override for read operations.
     pub session_retry_routing: SessionRetryRouting,
+    /// Partition key range ID resolved from the first response headers.
+    /// `None` until the first transport attempt returns headers.
+    pub partition_key_range_id: Option<PartitionKeyRangeId>,
+    /// Whether PPAF allows non-idempotent write retries on failover.
+    ///
+    /// When `true`, a non-idempotent write that receives a 503/429/410/408
+    /// (or transport error) can be retried to a different region for write
+    /// region discovery. Precomputed from partition-level automatic failover
+    /// being enabled on a single-master account.
+    pub ppaf_write_retry_allowed: bool,
+    /// Whether the per-partition circuit breaker is active for this account.
+    ///
+    /// When `true`, endpoint-level `MarkEndpointUnavailable` effects are
+    /// suppressed for PPCB-eligible requests (reads, or writes on
+    /// multi-master). Failover is driven by the partition-level failure
+    /// threshold instead of marking the entire endpoint unavailable.
+    pub ppcb_active: bool,
+    /// Write-path location effects deferred until the write definitively
+    /// reaches a region.
+    ///
+    /// On the **single-master** write path we cannot tell from a single
+    /// failed response (503, 429/3092, 410, 408, 403/3, transport error)
+    /// whether the failure was a real per-region outage or a transient blip
+    /// we'll never see again. Applying `MarkPartitionUnavailable` (and, for
+    /// PPAF, `MarkEndpointUnavailable`) immediately on every such failure
+    /// pollutes the routing state with unverified failures and makes
+    /// failover behave non-deterministically across retries.
+    ///
+    /// **Multi-master** writes do NOT defer: the per-partition circuit
+    /// breaker is the source of truth for failover, and it must observe
+    /// every failure as it happens (otherwise the breaker can never trip
+    /// for non-idempotent writes that abort).
+    ///
+    /// Deferred effects are flushed only when the write definitively
+    /// reaches a region — either `OperationAction::Complete` (HTTP 2xx) or
+    /// `OperationAction::Abort` with a region-confirming status such as 409
+    /// Conflict or 412 Precondition Failed (statuses that prove the server
+    /// processed the request). On any other abort path the buffer is
+    /// discarded.
+    ///
+    /// **What gets deferred** is decided by `partition_effects_for_deferral`:
+    /// - For single-master writes: `MarkPartitionUnavailable` (per-partition
+    ///   state should never be polluted by unverified retries).
+    /// - Additionally for PPAF on single-master writes
+    ///   (`ppaf_write_retry_allowed`): `MarkEndpointUnavailable` is also
+    ///   deferred so a transient retry doesn't darken the only write region.
+    ///
+    /// Read-path and multi-master write effects are NOT deferred — PPCB
+    /// counters drive threshold-based failover and need the failure signal
+    /// immediately.
+    pub pending_write_effects: Vec<LocationEffect>,
 }
 
 /// How a session retry should resolve endpoints for a read operation.
@@ -112,6 +166,10 @@ impl OperationRetryState {
             can_use_multiple_write_locations,
             excluded_regions,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
         }
     }
 

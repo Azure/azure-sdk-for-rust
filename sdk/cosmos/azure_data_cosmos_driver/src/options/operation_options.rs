@@ -90,6 +90,88 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
 
+    /// Read failure count threshold before the per-partition circuit breaker
+    /// trips for a `(partition, region)` pair.
+    ///
+    /// **Default**: `10`. Counted within the
+    /// `circuit_breaker_timeout_counter_reset_window_in_minutes` window.
+    ///
+    /// **Tuning**: Lower values trip the breaker faster, isolating bad regions
+    /// sooner but at the cost of false positives during transient blips and
+    /// more cross-region traffic. Higher values are more tolerant of
+    /// short-lived issues but delay isolation of a genuinely unhealthy region
+    /// (more user-visible failed reads before failover engages).
+    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS")]
+    pub circuit_breaker_failure_count_for_reads: Option<u32>,
+
+    /// Write failure count threshold before the per-partition circuit breaker
+    /// trips for a `(partition, region)` pair (multi-master accounts only).
+    ///
+    /// **Default**: `5`. Lower than the read threshold because writes are not
+    /// retried as aggressively across regions and a stuck write region has a
+    /// larger user-visible blast radius.
+    ///
+    /// **Tuning**: same trade-offs as
+    /// `circuit_breaker_failure_count_for_reads`; only applies on accounts
+    /// where multiple write locations are enabled.
+    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES")]
+    pub circuit_breaker_failure_count_for_writes: Option<u32>,
+
+    /// Window (in minutes) after which the per-partition failure counters
+    /// reset for a `(partition, region)` pair.
+    ///
+    /// **Default**: `5` minutes. Failures older than this window do not
+    /// contribute to the trip threshold.
+    ///
+    /// **Tuning**: Shorter windows make the breaker more forgiving of
+    /// occasional failures (less likely to trip from sparse, intermittent
+    /// errors); longer windows accumulate evidence of chronic regional
+    /// degradation that does not happen all at once.
+    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")]
+    pub circuit_breaker_timeout_counter_reset_window_in_minutes: Option<u32>,
+
+    /// Minimum age (in seconds) a tripped circuit breaker entry must reach
+    /// before the background failback sweep is allowed to transition it from
+    /// `Unhealthy` to `ProbeCandidate` (and thereby attempt failback to the
+    /// original region).
+    ///
+    /// **Default**: `5` seconds (also the minimum permitted value).
+    ///
+    /// **Tuning**: Larger values keep traffic on the alternate region for
+    /// longer once a failover has happened, reducing flapping when a region
+    /// is recovering unevenly. Smaller values bring traffic back to the
+    /// preferred region sooner but risk repeatedly probing a not-yet-healed
+    /// region.
+    #[option(env = "AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")]
+    pub allowed_partition_unavailability_duration_in_seconds: Option<u32>,
+
+    /// Interval (in seconds) between iterations of the background failback
+    /// sweep that promotes eligible `Unhealthy` entries to `ProbeCandidate`.
+    ///
+    /// **Default**: `300` seconds (5 minutes).
+    ///
+    /// **Tuning**: This is purely a polling interval; it places an upper
+    /// bound on how long after `allowed_partition_unavailability_duration_in_seconds`
+    /// a tripped entry has to wait before being eligible to probe back to its
+    /// original region. Smaller values reduce that latency but raise the
+    /// background scan rate; larger values do the opposite.
+    #[option(env = "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS")]
+    pub ppcb_stale_partition_unavailability_refresh_interval_in_seconds: Option<u32>,
+
+    /// Whether the per-partition circuit breaker (PPCB) is enabled.
+    ///
+    /// **Default**: `false`. PPCB tracks failures per
+    /// `(partition_key_range_id, region)` and routes traffic to a healthy
+    /// alternate region once the threshold is exceeded, then probes the
+    /// original region for recovery via the failback sweep.
+    ///
+    /// **Tuning**: Enable to opt into partition-level circuit breaking on
+    /// reads (any account) and writes (multi-master accounts). When disabled,
+    /// the driver falls back to account-level endpoint marking, which is
+    /// coarser-grained.
+    #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
+    pub per_partition_circuit_breaker_enabled: Option<bool>,
+
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
     custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
