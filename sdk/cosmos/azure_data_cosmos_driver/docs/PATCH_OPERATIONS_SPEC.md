@@ -6,7 +6,9 @@
 **Status:** Draft (spec-only PR — no code changes)
 **Target branch:** `release/azure_data_cosmos-previews`
 **Companion artifacts:**
-- `.coding-harness/landscape-report.md` (this PR's landscape analysis)
+- `.coding-harness/landscape-report.md` (this PR's landscape analysis;
+  also inlined in the description of PR #4338 — `.coding-harness/` is
+  gitignored, so the PR description is the durable copy)
 - `.coding-harness/landscape.json` (machine-readable side-effect catalog)
 
 ---
@@ -56,7 +58,10 @@ This spec defines a **phase-1** PATCH design that:
   before the patch is applied.
 - **M5.** Serialized wire body matches the existing Cosmos PATCH contract
   exactly. In particular:
-  - The top-level wire field is `condition` (NOT `filterPredicate`).
+  - The top-level wire field for the operations array is `operations`
+    (lowercase, plural).
+  - The top-level wire field for the precondition is `condition` (NOT
+    `filterPredicate`).
   - Operation `op` tokens are: `set`, `replace`, `remove` (lowercase).
   - The serde representation is preserved from the implementation removed in
     PR #3765, recovered at `.coding-harness/removed_patch_operations.rs.diff`.
@@ -146,8 +151,9 @@ A reviewer can confirm "done" by checking:
   module verifies that an `OperationType::Patch` op against
   `ResourceType::Document` matches a `FaultOperationType::PatchItem` rule.
 - [ ] **AC10.** Unit test `patch_document_serializes_remove_operation_without_value`
-  asserts byte-exact equality with `{"op":"remove","path":"/foo"}` — the
-  `value` key must not appear at all, even as `null`.
+  asserts byte-exact equality with `{"operations":[{"op":"remove","path":"/foo"}]}`
+  — the `value` key must not appear at all (even as `null`), and the
+  `operations` wrapping array key is pinned (M5).
 - [ ] **AC11.** Compile-time guardrail test
   `all_patch_variants_are_idempotent_or_phase2_required` exists in
   `azure_data_cosmos/src/models/patch_operations.rs` and uses an
@@ -247,7 +253,13 @@ pub struct PatchItemOptions<'a> {
     /// Underlying write options shared with create_item / replace_item /
     /// upsert_item / delete_item. All fields apply to PATCH unchanged
     /// unless documented otherwise below.
-    pub item_options: ItemWriteOptions<'a>,
+    ///
+    /// Kept private (with builder pass-throughs) so that phase 2 can add
+    /// patch-specific invariants — e.g., disallowing certain
+    /// ItemWriteOptions combinations once non-idempotent patches land —
+    /// without a breaking change. .NET / Java use inheritance for the
+    /// equivalent type, which gives them the same encapsulation by default.
+    pub(crate) item_options: ItemWriteOptions<'a>,
     // Phase 1 has no patch-only options. The wire-level `condition`
     // (filter predicate) lives on PatchDocument, not on this struct,
     // because it is part of the patch body, not a request modifier.
@@ -263,8 +275,10 @@ impl<'a> PatchItemOptions<'a> {
         self
     }
 
-    // ... pass-throughs for the other ItemWriteOptions fields enumerated
-    // in the table below as needed for ergonomics.
+    // Pass-throughs for every other field in the applicability table
+    // below (consistency_level, session_token, indexing_directive,
+    // if_none_match_etag, enable_content_response_on_write) MUST be
+    // provided so customers never need direct field access.
 }
 ```
 
@@ -450,7 +464,7 @@ Reconciliation of the two enums is tracked as a separate follow-up.
 | `patch_document_serializes_set_operation_with_lowercase_op_token` | Build a PatchDocument with one Set; serialize | Wire `op` token is `"set"` (SE-004) |
 | `patch_document_serializes_filter_predicate_under_condition_field` | Set a filter predicate, serialize | Wire JSON contains `"condition"`, NOT `"filterPredicate"` (SE-005) |
 | `patch_document_omits_condition_when_not_set` | No filter predicate set, serialize | `condition` is absent from JSON |
-| `patch_document_serializes_remove_operation_without_value` | One Remove op, serialize | **Asserts byte-exact equality** with `{"op":"remove","path":"/foo"}`. The `value` key must not appear at all, even as `null`. (Java's `PatchUtil` emits `"value": null` under default Jackson settings; we explicitly diverge from that.) |
+| `patch_document_serializes_remove_operation_without_value` | One Remove op inside a `PatchDocument`, serialize | **Asserts byte-exact equality** with `{"operations":[{"op":"remove","path":"/foo"}]}`. The `value` key must not appear at all, even as `null` (Java's `PatchUtil` emits `"value": null` under default Jackson settings; we explicitly diverge from that). The `operations` wrapping field is also pinned by this assertion (M5). |
 | `patch_document_preserves_operation_order` | Build A then B then C, serialize | Operations array is in insertion order |
 | `all_patch_variants_are_idempotent_or_phase2_required` | Exhaustive `match` over `PatchOperation` (no `_` arm); see §4.4 | Compile-time guardrail: adding a non-idempotent variant breaks this test, forcing a phase-2 redesign before the variant can ship. |
 
@@ -476,8 +490,8 @@ Reconciliation of the two enums is tracked as a separate follow-up.
 | `item_patch_with_etag_no_match_returns_precondition_error` | AC3 |
 | `item_patch_on_nonexistent_item_returns_not_found` | Standard 404 path |
 | `item_patch_response_contains_updated_document` | Default behavior returns the patched body |
-| `item_patch_with_etag_and_filter_predicate_both_specified_evaluates_as_conjunction` | Pins SDK behavior when both preconditions are set: etag-match + predicate-match should succeed; etag-match + predicate-no-match should fail (412); etag-no-match + predicate-match should fail (412). The Cosmos service evaluates these as a server-side conjunction; this test catches any future divergence. |
-| `item_patch_already_soft_deleted_is_idempotent` | Headline OpenAI use case: PATCH-set `/deleted = true` on a document where `/deleted` is already `true`. Verifies end-to-end idempotency of the soft-delete pattern (the case retry-safety is most concerned with). |
+| `item_patch_with_etag_and_filter_predicate_both_specified_evaluates_as_conjunction` | Pins SDK behavior when both preconditions are set, exercising **all four** combinations: (1) etag-match + predicate-match → succeeds; (2) etag-match + predicate-no-match → 412; (3) etag-no-match + predicate-match → 412; (4) etag-no-match + predicate-no-match → 412 (test should also document, but not over-pin, the sub-status / error-code returned for case (4) — the order in which the service evaluates the two preconditions is observable and a future server change could flip which precondition "wins" the error). The Cosmos service evaluates these as a server-side conjunction; this test catches any future divergence. |
+| `item_patch_already_soft_deleted_is_idempotent` | Headline OpenAI use case: PATCH-set `/deleted = true` on a document where `/deleted` is already `true`. Verifies the soft-delete pattern is **application-level repeat-safe** (i.e., a second client call yields the same final state and a successful 200/204 response, not an error). Note: this does NOT exercise the §4.4 transparent-retry pathway — that property is server-state-after-apply correctness, which requires fault injection (tracked as a follow-up extension of M8 to inject a 5xx after server commit). |
 | `item_patch_during_partition_split_routes_correctly` | Same blast surface as `replace_item`'s split test. May be covered by parity (i.e., re-using the existing split-test harness); spec calls out the scenario so it is not silently dropped. |
 | `item_patch_with_circuit_breaker_open_fails_fast_or_routes_to_alternate_region` | Exercises PPCB interaction (relevant given the PPCB code paths flagged in §4.4). May be deferred to the implementation PR with explicit rationale, but spec calls it out. |
 
@@ -618,7 +632,12 @@ implementation phase against the previews emulator. Does not block this spec.
   Phase 2 must satisfy these constraints inherited from phase 1:
   1. Existing `set` / `replace` / `remove` callers must not break.
   2. `OperationType::Patch::is_idempotent() == true` cannot be flipped
-     for phase-1 patches without a major-version bump.
+     for phase-1 patches without breaking observable retry behavior at
+     the driver boundary for existing callers. The driver crate has no
+     formal semver contract, but flipping this value in place would
+     change which retry pathways fire for already-shipped phase-1
+     callers — phase 2 must therefore introduce the change behind an
+     opt-out (or a new variant; see options below).
   3. Document-level wire-body idempotency is the property required by
      all four+ retry pathways in `retry_evaluation.rs` (§4.4); a phase-2
      design that simply downgrades `is_idempotent()` will not be safe.
