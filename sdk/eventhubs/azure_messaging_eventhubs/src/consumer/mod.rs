@@ -251,7 +251,7 @@ impl ConsumerClient {
             self.endpoint
         );
 
-        let source_url = format!("{}/Partitions/{}", &self.endpoint, &partition_id);
+        let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
         let source_url = Url::parse(&source_url).map_err(azure_core::Error::from)?;
 
         let message_source = AmqpSource::builder()
