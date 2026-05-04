@@ -1,8 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{http::StatusCode, Result};
-use azure_core_test::{recorded, TestContext, TestMode};
+use azure_core::{
+    http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport},
+    Result,
+};
+use azure_core_test::{
+    credentials::MockCredential, http::MockHttpClient, recorded, TestContext, TestMode,
+};
 use azure_security_keyvault_keys::{
     models::{
         CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyClientEncryptOptions,
@@ -13,8 +18,8 @@ use azure_security_keyvault_keys::{
     KeyClient, KeyClientOptions, ResourceExt as _,
 };
 use azure_security_keyvault_test::Retry;
-use futures::TryStreamExt;
-use std::collections::HashMap;
+use futures::{FutureExt as _, TryStreamExt};
+use std::{collections::HashMap, sync::Arc};
 
 #[recorded::test]
 async fn key_roundtrip(ctx: TestContext) -> Result<()> {
@@ -457,4 +462,38 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 
     Ok(())
+}
+
+#[tokio::test]
+async fn get_key_requires_https() {
+    let mock_client = Arc::new(MockHttpClient::new(|_| {
+        async {
+            Ok(AsyncRawResponse::from_bytes(
+                StatusCode::Forbidden,
+                Headers::new(),
+                vec![],
+            ))
+        }
+        .boxed()
+    }));
+    let credential = MockCredential::new().unwrap();
+    let options = KeyClientOptions {
+        client_options: ClientOptions {
+            transport: Some(Transport::new(mock_client)),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let client =
+        KeyClient::new("http://my-vault.vault.azure.net", credential, Some(options)).unwrap();
+
+    let err = client
+        .get_key("my-key", None)
+        .await
+        .expect_err("request should fail for non-https url");
+    assert!(err.to_string().contains("non-transport error"));
+    assert!(
+        matches!(err.downcast_ref::<azure_core::Error>(), Some(e) if e.to_string().contains("https"))
+    );
 }

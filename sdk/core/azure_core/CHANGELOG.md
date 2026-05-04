@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Added `#[non_exhaustive]` to `AttributeArray`, `AttributeValue`, `SpanStatus`, and `SpanKind`.
+- Bearer token authentication now requires TLS (https).
 
 ### Bugs Fixed
 

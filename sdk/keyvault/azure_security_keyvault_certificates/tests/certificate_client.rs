@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{Method, StatusCode},
+    http::{headers::Headers, AsyncRawResponse, ClientOptions, Method, StatusCode, Transport},
     Result,
 };
 use azure_core_test::{
+    credentials::MockCredential,
+    http::MockHttpClient,
     recorded,
     tracing::{ExpectedApiInformation, ExpectedInstrumentation, ExpectedRestApiSpan},
     ErrorKind, TestContext, TestMode, SANITIZE_BODY_NAME,
@@ -23,9 +25,12 @@ use azure_security_keyvault_keys::{
     KeyClient, KeyClientOptions,
 };
 use azure_security_keyvault_test::Retry;
-use futures::TryStreamExt;
+use futures::{FutureExt as _, TryStreamExt};
 use openssl::sha::sha256;
-use std::{collections::HashMap, sync::LazyLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, LazyLock},
+};
 
 static DEFAULT_CERTIFICATE_POLICY: LazyLock<CertificatePolicy> =
     LazyLock::new(|| CertificatePolicy {
@@ -403,4 +408,39 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
     ));
 
     Ok(())
+}
+
+#[tokio::test]
+async fn get_certificate_requires_https() {
+    let mock_client = Arc::new(MockHttpClient::new(|_| {
+        async {
+            Ok(AsyncRawResponse::from_bytes(
+                StatusCode::Forbidden,
+                Headers::new(),
+                vec![],
+            ))
+        }
+        .boxed()
+    }));
+    let credential = MockCredential::new().unwrap();
+    let options = CertificateClientOptions {
+        client_options: ClientOptions {
+            transport: Some(Transport::new(mock_client)),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let client =
+        CertificateClient::new("http://my-vault.vault.azure.net", credential, Some(options))
+            .unwrap();
+
+    let err = client
+        .get_certificate("my-cert", None)
+        .await
+        .expect_err("request should fail for non-https url");
+    assert!(err.to_string().contains("non-transport error"));
+    assert!(
+        matches!(err.downcast_ref::<azure_core::Error>(), Some(e) if e.to_string().contains("https"))
+    );
 }

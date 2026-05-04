@@ -2,10 +2,15 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{pager::PagerOptions, InstrumentationOptions, StatusCode},
+    http::{
+        headers::Headers, pager::PagerOptions, AsyncRawResponse, ClientOptions,
+        InstrumentationOptions, StatusCode, Transport,
+    },
     Result,
 };
 use azure_core_test::{
+    credentials::MockCredential,
+    http::MockHttpClient,
     recorded,
     tracing::{ExpectedApiInformation, ExpectedInstrumentation},
     TestContext, TestMode,
@@ -18,8 +23,8 @@ use azure_security_keyvault_secrets::{
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
 use azure_security_keyvault_test::Retry;
-use futures::TryStreamExt;
-use std::collections::HashMap;
+use futures::{FutureExt as _, TryStreamExt};
+use std::{collections::HashMap, sync::Arc};
 
 #[recorded::test]
 async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
@@ -613,4 +618,38 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
     .await;
 
     validate_result
+}
+
+#[tokio::test]
+async fn get_secret_requires_https() {
+    let mock_client = Arc::new(MockHttpClient::new(|_| {
+        async {
+            Ok(AsyncRawResponse::from_bytes(
+                StatusCode::Forbidden,
+                Headers::new(),
+                vec![],
+            ))
+        }
+        .boxed()
+    }));
+    let credential = MockCredential::new().unwrap();
+    let options = SecretClientOptions {
+        client_options: ClientOptions {
+            transport: Some(Transport::new(mock_client)),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let client =
+        SecretClient::new("http://my-vault.vault.azure.net", credential, Some(options)).unwrap();
+
+    let err = client
+        .get_secret("my-secret", None)
+        .await
+        .expect_err("request should fail for non-https url");
+    assert!(err.to_string().contains("non-transport error"));
+    assert!(
+        matches!(err.downcast_ref::<azure_core::Error>(), Some(e) if e.to_string().contains("https"))
+    );
 }

@@ -67,6 +67,13 @@ impl Policy for BearerTokenAuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
+        if request.url().scheme() != "https" {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                "authenticated requests are not permitted for non-TLS protected (https) endpoints",
+            ));
+        }
+
         let mut ctx = ctx.to_borrowed();
         self.on_request
             .on_request(&mut ctx, request, self.authorizer.as_ref())
@@ -367,6 +374,27 @@ mod tests {
             .expect_err("request should fail");
 
         assert_eq!(ErrorKind::Credential, *err.kind());
+    }
+
+    #[tokio::test]
+    async fn http_scheme_rejected() {
+        let credential = MockCredential::new(&[]);
+        let policy = BearerTokenAuthorizationPolicy::new(Arc::new(credential), ["scope"]);
+        let client = MockHttpClient::new(|_| panic!("transport should not be reached"));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
+        let mut req = Request::new("http://localhost".parse().unwrap(), Method::Get);
+
+        let err = policy
+            .send(
+                &Context::default(),
+                &mut req,
+                std::slice::from_ref(&(transport.clone() as Arc<dyn Policy>)),
+            )
+            .await
+            .expect_err("request should fail for non-https url");
+
+        assert_eq!(err.kind(), &ErrorKind::Other);
+        assert!(err.to_string().contains("https"));
     }
 
     async fn run_test(tokens: &[AccessToken]) {

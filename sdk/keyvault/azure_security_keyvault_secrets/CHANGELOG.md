@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Bearer token authentication now requires TLS (https).
+
 ### Bugs Fixed
 
 ### Other Changes
