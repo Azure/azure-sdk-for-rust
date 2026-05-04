@@ -40,7 +40,7 @@ pub(crate) struct RoundtripBlobsTestArgs {
 
     /// Block length for download options.
     #[arg(long, default_value_t = 4 << 20, value_parser = simple_non_zero_len_u64)]
-    block_len: usize,
+    block_len: u64,
 
     /// Data length of blob(s) to download.
     #[arg(long, value_parser = simple_non_zero_len_u64)]
@@ -95,7 +95,7 @@ struct RoundtripBlobsTest {
 
     // Download options.
     parallel: NonZero<usize>,
-    chunk_len: NonZero<usize>,
+    chunk_len: NonZero<u64>,
 }
 
 static NO_FAULT: LazyLock<Context> = LazyLock::new(|| {
@@ -168,7 +168,7 @@ impl StressTest for RoundtripBlobsTest {
 struct RoundtripOperation {
     client: BlobClient,
     parallel: NonZero<usize>,
-    chunk_len: NonZero<usize>,
+    chunk_len: NonZero<u64>,
     data: Body,
     data_crc: u64,
 }
@@ -189,6 +189,7 @@ impl StressTestOperation for RoundtripOperation {
                     self.data.clone().into(),
                     Some(BlobClientUploadOptions {
                         parallel: Some(self.parallel),
+                        partition_size: Some(self.chunk_len),
                         ..Default::default()
                     }),
                 )
@@ -199,7 +200,6 @@ impl StressTestOperation for RoundtripOperation {
                 .client
                 .download(Some(BlobClientDownloadOptions {
                     parallel: Some(self.parallel),
-                    partition_size: Some(self.chunk_len),
                     ..Default::default()
                 }))
                 .await?
