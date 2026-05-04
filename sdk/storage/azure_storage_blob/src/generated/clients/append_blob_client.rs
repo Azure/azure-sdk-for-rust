@@ -342,7 +342,7 @@ impl AppendBlobClient {
             );
         }
         if let Some(source_range) = options.source_range.as_ref() {
-            request.insert_header("x-ms-source-range", source_range);
+            request.insert_header("x-ms-source-range", source_range.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self

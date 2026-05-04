@@ -1,7 +1,7 @@
 # Per-Partition Automatic Failover (PPAF) & Per-Partition Circuit Breaker (PPCB) Spec
 
 **Status:** Draft / Iterating  
-**Date:** 2026-03-11  
+**Date:** 2026-04-27  
 **Authors:** (team)  
 **Crate:** `azure_data_cosmos_driver`
 
@@ -52,19 +52,27 @@ The SDK implements two distinct but complementary partition-level failover mecha
 
 | Mechanism | Abbreviation | Applies To | Account Type | Trigger |
 |---|---|---|---|---|
-| Per-Partition Automatic Failover | **PPAF** | **Writes only** | **Single-master** (one write region) | 403/3 WriteForbidden, 503, 429/3092, 410/1022 |
-| Per-Partition Circuit Breaker | **PPCB** | **Reads** (any account), **Writes** on multi-master | **Multi-master** + all accounts for reads | Failure count exceeds threshold |
+| Per-Partition Automatic Failover | **PPAF** | **Writes only** | **Single-master** (one write region) | **Write success** (HTTP 2xx, 409 Conflict, 412 Precondition Failed) on a region during cross-region retry. Failure statuses (403/3, 503, 429/3092, 410/1022, 408, transport error) drive *retry* but **do not** record a partition-level override. |
+| Per-Partition Circuit Breaker | **PPCB** | **Reads** (any account), **Writes** on multi-master | **Multi-master** + all accounts for reads | Failure count meets threshold |
 
 These two mechanisms are **mutually exclusive per request** — a given request uses
 either the PPAF path or the PPCB path, never both. The decision is based on the
 request's operation type (read vs. write) and whether the account supports multiple
 write locations.
 
+> **PPAF design note (success-time discovery)**: Earlier iterations of this spec
+> recorded a PPAF override on every failure status code (403/3, 503, etc.). The
+> current design instead defers partition-level state changes until the write
+> *definitively reaches a region* (proven by a 2xx, 409, or 412 response). This
+> avoids polluting routing state with unverified failures from transient blips
+> and makes write-region discovery deterministic. See [§6.4](#64-ppaf--single-master-writes-success-time-discovery)
+> for full details.
+
 ### Design Principles
 
 - **Partition granularity**: Failover state is tracked per `(PartitionKeyRange, Region)` pair.
 - **Threshold-gated**: The circuit breaker does not trip on the first failure. Failure
-  counters must exceed configurable thresholds before a partition is failed over.
+  counters must meet configurable thresholds before a partition is failed over.
 - **Gradual failback**: After a configurable unavailability window, failed
   partitions transition to a `ProbeCandidate` state. A single probe request is
   routed to the original region; only on success is the partition marked healthy.
@@ -107,14 +115,26 @@ same lock-free pattern.
 │  STAGE 3: Build TransportRequest                                            │
 │  STAGE 4: Execute via transport pipeline → TransportResult                  │
 │  STAGE 5: evaluate_transport_result() → (OperationAction, Vec<Effect>)      │
-│           ├─ 403/3 → FailoverRetry + MarkPartitionUnavailable (PPAF/PPCB)   │
-│           ├─ 503 / 429/3092 / 410 → FailoverRetry + MarkPartitionUnavailable│
+│           ├─ PPAF + SM write FAILURE (403/3, 503, 429/3092, 410, 408,       │
+│           │  500, transport error) → FailoverRetry; partition / endpoint   │
+│           │  effects are produced but DEFERRED into                         │
+│           │  retry_state.pending_write_effects (not applied yet)            │
+│           ├─ Reads / multi-master writes → same effects, applied immediately│
 │           └─ Eligibility encoded in OperationRetryState + snapshot flags    │
 │  STAGE 6: location_state_store.apply(effects)                               │
-│           ├─ MarkEndpointUnavailable → CAS on AccountEndpointState          │
-│           ├─ MarkPartitionUnavailable → CAS on PartitionEndpointState (NEW) │
+│           ├─ Read-path / non-PPAF effects → applied immediately             │
+│           │   • MarkEndpointUnavailable → CAS on AccountEndpointState       │
+│           │   • MarkPartitionUnavailable → CAS on PartitionEndpointState    │
+│           ├─ PPAF write-path effects → buffered (NOT applied here)          │
 │           └─ RefreshAccountProperties → async refresh                       │
-│  STAGE 7: Act on OperationAction (Complete / FailoverRetry / Abort)         │
+│  STAGE 7: Act on OperationAction                                            │
+│           ├─ Complete (HTTP 2xx) → flush deferred effects (mark previously- │
+│           │   failed regions unavailable for this PK, rotating the PPAF     │
+│           │   override past them)                                           │
+│           ├─ Abort with 409/412 → flush deferred effects (region confirmed  │
+│           │   by status)                                                    │
+│           ├─ Abort with non-confirming status → DISCARD deferred effects    │
+│           └─ FailoverRetry → carry deferred effects forward to next attempt │
 │                                                                             │
 └──────────────────────┬──────────────────────────────────────────────────────┘
                        │
@@ -153,20 +173,33 @@ same lock-free pattern.
 
 ### Request Flow Summary
 
-1. **Endpoint resolution** (Stage 2 — `resolve_endpoint`):
+1. **Partition Key Range Pre-Resolution** (in `execute_operation`, before pipeline):
+   - When PPAF/PPCB is enabled and the operation targets a partitioned resource
+     with a known container and partition key, `pre_resolve_partition_key_range_id()`
+     uses the `PartitionKeyRangeCache` to look up the partition key range ID.
+   - The cache fetches from the service on cache miss (via `/pkranges` changefeed).
+   - The resolved ID is passed to `execute_operation_pipeline` and seeded on
+     `OperationRetryState.partition_key_range_id`.
+
+2. **Endpoint resolution** (Stage 2 — `resolve_endpoint`):
    - Select account-level endpoint from `AccountEndpointState` (existing logic).
    - If partition-level failover is enabled and a `partition_key_range_id` is
-     available on the `OperationRetryState`, consult `PartitionEndpointState`
-     for an override. If found and threshold conditions are met, use the
-     partition-level override endpoint instead.
+     available on the `OperationRetryState` (from pre-resolution or response
+     header capture), consult `PartitionEndpointState` for an override. If
+     found and threshold conditions are met, use the partition-level override
+     endpoint instead.
 
-2. **Failure evaluation** (Stage 5 — `evaluate_transport_result`):
+3. **Failure evaluation** (Stage 5 — `evaluate_transport_result`):
    - Classify the response status code.
    - Emit `LocationEffect::MarkPartitionUnavailable` for eligible status codes
-     (403/3, 503, 429/3092, 410). This effect carries the `partition_key_range_id`,
-     the failed endpoint's region, and whether the request was read-only.
+     (403/3, 503, 429/3092, 410, 408, 5xx server errors). This effect carries
+     the `partition_key_range_id`, the failed endpoint's region, and whether
+     the request was read-only.
    - Return `OperationAction::FailoverRetry` so the loop re-enters Stage 1,
      acquiring a fresh `LocationSnapshot` with the updated partition state.
+     When the failover retry budget is already exhausted the action becomes
+     `OperationAction::Abort` instead, but the same effects are still emitted
+     so PPCB observes the final failure (see §10).
 
 3. **Effect application** (Stage 6 — `location_state_store.apply`):
    - `MarkPartitionUnavailable` → CAS loop on `PartitionEndpointState`:
@@ -189,14 +222,14 @@ same lock-free pattern.
 
 | Flag | Source | Default | Description |
 |---|---|---|---|
-| `per_partition_circuit_breaker_enabled` | `DriverOptions` → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `true` | Fallback enablement for PPCB when the server flag is not set. Read from `DriverOptions` at construction (currently backed by the env var). The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
+| `per_partition_circuit_breaker_enabled` | Layered `OperationOptionsView` (env → runtime → account) → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `false` | Fallback enablement for PPCB when the server flag is not set. Resolved via the layered `OperationOptionsView` at construction time. The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
 | `per_partition_automatic_failover_enabled` | Server-side `AccountProperties.enable_per_partition_failover_behavior` | `false` | PPAF is enabled when the Cosmos DB account has this flag set. Updated dynamically on each account properties refresh. |
 
-> **Configuration resolution**: The PPCB option is read from `DriverOptions` at
-> construction time and stored in `PartitionFailoverConfig`. When the
-> [Hierarchical Configuration Model](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos/docs/HierarchicalConfigModel.md) lands, this will
-> be read from the layered options system (Environment → Runtime → Account →
-> Request). Until then, the `DriverOptions` value is backed by `env::var`.
+> **Configuration resolution**: The PPCB option is resolved at construction time
+> via the layered `OperationOptionsView` (Environment → Runtime → Account) and
+> stored in `PartitionFailoverConfig`. The environment layer reads the env var
+> `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED`; higher layers can
+> override the value programmatically.
 
 ### Dynamic Reconfiguration
 
@@ -220,11 +253,15 @@ via the CAS loop when account properties are refreshed:
 ```rust
 // In CosmosDriver construction:
 
-// 1. Build PartitionFailoverConfig from DriverOptions.
-//    The circuit_breaker_option_enabled value comes from DriverOptions
-//    (currently backed by env var AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED,
-//     will use Hierarchical Configuration Model once landed).
-let config = PartitionFailoverConfig::from_options(&driver_options);
+// 1. Build a layered OperationOptionsView (env → runtime → account) to resolve
+//    init-time config. No per-operation overrides exist at construction time.
+let init_view = OperationOptionsView::new(
+    Some(Arc::clone(runtime.env_operation_options())),
+    Some(runtime.operation_options()),
+    Some(options.operation_options().clone()),
+    None,
+);
+let config = PartitionFailoverConfig::from_options(&init_view);
 
 // 2. Initial PartitionEndpointState (PPAF starts disabled — updated on
 //    first account properties refresh)
@@ -258,8 +295,12 @@ let initial_partition_state = PartitionEndpointState {
 A request is eligible when **all** conditions are true:
 
 1. `partition_state.per_partition_automatic_failover_enabled == true`
-2. The operation is a **write** (`!operation.is_read_only()`)
-3. The account is **single-master** (`!account_state.multiple_write_locations_enabled`)
+2. The operation targets a partitioned resource (`is_partitioned_resource`) —
+   i.e., `ResourceType::Document` or `ResourceType::StoredProcedure` with
+   `OperationType::Execute`
+3. The operation is a **write** (`!is_read_only`)
+4. The account is **single-master** (`!account_state.multiple_write_locations_enabled`)
+5. More than one preferred read endpoint is available
 
 ```rust
 // Pure eligibility check — evaluated in resolve_endpoint() and in
@@ -267,11 +308,14 @@ A request is eligible when **all** conditions are true:
 fn is_eligible_for_ppaf(
     partition_state: &PartitionEndpointState,
     account_state: &AccountEndpointState,
-    operation: &CosmosOperation,
+    is_read_only: bool,
+    is_partitioned_resource: bool,
 ) -> bool {
     partition_state.per_partition_automatic_failover_enabled
-        && !operation.is_read_only()
+        && is_partitioned_resource
+        && !is_read_only
         && !account_state.multiple_write_locations_enabled
+        && account_state.preferred_read_endpoints.len() > 1
 }
 ```
 
@@ -287,22 +331,25 @@ that partition to the next available read region.
 A request is eligible when **all** conditions are true:
 
 1. `partition_state.per_partition_circuit_breaker_enabled == true`
-2. The operation targets `ResourceType::Document` or
-   `ResourceType::StoredProcedure` with `OperationType::Execute`
+2. The operation targets a partitioned resource (`is_partitioned_resource`) —
+   i.e., `ResourceType::Document` or `ResourceType::StoredProcedure` with
+   `OperationType::Execute`
 3. The operation is **either**:
-   - A **read** (`operation.is_read_only()`), **or**
+   - A **read** (`is_read_only`), **or**
    - A **write** on a **multi-master** account
+4. More than one preferred read endpoint is available
 
 ```rust
 fn is_eligible_for_ppcb(
     partition_state: &PartitionEndpointState,
     account_state: &AccountEndpointState,
-    operation: &CosmosOperation,
+    is_read_only: bool,
+    is_partitioned_resource: bool,
 ) -> bool {
     partition_state.per_partition_circuit_breaker_enabled
-        && operation.resource_type().is_partitioned()
-        && (operation.is_read_only()
-            || account_state.multiple_write_locations_enabled)
+        && is_partitioned_resource
+        && (is_read_only || account_state.multiple_write_locations_enabled)
+        && account_state.preferred_read_endpoints.len() > 1
 }
 ```
 
@@ -313,12 +360,13 @@ the threshold.
 
 ### 4.3 Shared Pre-Conditions
 
-Both mechanisms share additional validation:
+The conditions below are checked **inside** each eligibility function (§4.1, §4.2)
+rather than as external pre-gates. They are listed here for reference:
 
 1. At least one of PPAF or PPCB must be enabled on `PartitionEndpointState`.
-2. The operation must target a resource type that supports partition-level failover
-   (Documents, or StoredProcedures+Execute) — checked via
-   `operation.resource_type().is_partitioned()`.
+2. The operation must target a partitioned resource — checked via the
+   `is_partitioned_resource` parameter (resolved by the caller from
+   `resource_type().is_partitioned(operation_type())`).
 3. There must be **more than one preferred read endpoint** in `AccountEndpointState`
    (otherwise there is nowhere to fail over to).
 4. A resolved `partition_key_range_id` must be available on `OperationRetryState`
@@ -406,6 +454,19 @@ pub(crate) struct PartitionFailoverEntry {
     pub first_failure_time: Instant,
     /// When the most recent failure occurred (for counter reset).
     pub last_failure_time: Instant,
+
+    // ── Failback ───────────────────────────────────────────────
+    /// Lifecycle state for gradual failback (probe-based recovery). See §9.4.
+    pub health_status: HealthStatus,
+    /// Per-entry random delay added to `partition_unavailability_duration`
+    /// before this entry becomes a `ProbeCandidate`. Spreads simultaneously-
+    /// failed partitions across the failback window so they don't all stampede
+    /// the recovering region on the same sweep tick (thundering-herd
+    /// mitigation). Sampled once when the entry is created (and re-sampled on
+    /// probe failure) from `[0, partition_unavailability_duration / 2)`. PPAF
+    /// entries always use `Duration::ZERO` since they do not participate in
+    /// background failback. See §9.3.
+    pub failback_jitter: Duration,
 }
 ```
 
@@ -418,20 +479,14 @@ incremented/updated fields.
 
 ### 5.3 `PartitionFailoverConfig`
 
-Configuration values read from `DriverOptions` at driver construction time.
+Configuration values resolved from the layered `OperationOptionsView` at driver
+construction time.
 
 ```rust
 /// Configuration for partition-level failover, read once at construction.
 #[derive(Clone, Debug)]
 pub(crate) struct PartitionFailoverConfig {
-    /// PPCB option value from DriverOptions (default: true).
-    /// Retained for recomputation on account refresh:
-    ///   effective_ppcb = server_flag || circuit_breaker_option_enabled
-    /// Source: DriverOptions (currently backed by env var
-    ///   AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED).
-    pub circuit_breaker_option_enabled: bool,
-
-    /// Read failures before circuit trips (default: 2).
+    /// Read failures before circuit trips (default: 10).
     /// Env: AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS
     pub read_failure_threshold: i32,
 
@@ -450,6 +505,12 @@ pub(crate) struct PartitionFailoverConfig {
     /// Interval for the background failback sweep (default: 300s).
     /// Env: AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS
     pub failback_sweep_interval: Duration,
+
+    /// PPCB option value from layered options (default: false).
+    /// Retained for recomputation on account refresh:
+    ///   effective_ppcb = server_flag || circuit_breaker_option_enabled
+    /// Resolved via OperationOptionsView (env → runtime → account → operation).
+    pub circuit_breaker_option_enabled: bool,
 }
 ```
 
@@ -534,10 +595,10 @@ resolve_endpoint(operation, retry_state, location_snapshot, ttl)
       │
       ├─ if eligible for PPCB (is_eligible_for_ppcb):
       │   └─ lookup in partitions.circuit_breaker_overrides[pk_range_id]
-      │       ├─ if entry found AND threshold exceeded
+      │       ├─ if entry found AND threshold met
       │       │   (can_circuit_breaker_trigger_failover):
       │       │   └─ override endpoint → entry.current_endpoint
-      │       └─ if entry found BUT threshold NOT exceeded:
+      │       └─ if entry found BUT threshold NOT met:
       │           └─ no override (continue to account-level endpoint)
       │
       └─ else if eligible for PPAF (is_eligible_for_ppaf):
@@ -549,13 +610,19 @@ resolve_endpoint(operation, retry_state, location_snapshot, ttl)
 **Key difference**: PPAF overrides unconditionally when an entry exists. PPCB
 additionally checks `can_circuit_breaker_trigger_failover()` — the threshold
 gate — before applying the override. This means PPCB requires the failure count to
-exceed the threshold before the partition is actually routed to the alternate region,
+meet the threshold before the partition is actually routed to the alternate region,
 even if a failover entry already exists.
 
 ### 6.2 Marking Partition Unavailable (Stage 6 — `apply`)
 
-When `evaluate_transport_result()` emits `LocationEffect::MarkPartitionUnavailable`,
-`LocationStateStore::apply()` processes it via a CAS loop on `PartitionEndpointState`:
+> **Applies to PPCB only.** PPAF + single-master writes follow a different path —
+> see [§6.4](#64-ppaf--single-master-writes-success-time-discovery). The flow
+> below describes how PPCB (reads on any account, writes on multi-master) marks
+> a partition unavailable in response to a failure.
+
+When `evaluate_transport_result()` emits `LocationEffect::MarkPartitionUnavailable`
+for a PPCB-eligible request, `LocationStateStore::apply()` processes it
+immediately via a CAS loop on `PartitionEndpointState`:
 
 ```
 apply(effects):
@@ -575,11 +642,24 @@ apply(effects):
 
 ### 6.3 `mark_partition_unavailable` (Pure Routing System Function)
 
+> **Shared by PPAF and PPCB.** The same pure function handles both mechanisms;
+> the difference is *when* it runs. For PPCB it is applied immediately on every
+> failure; for PPAF + single-master writes it is **deferred** and only applied
+> when the operation reaches a region-confirming status — see
+> [§6.4](#64-ppaf--single-master-writes-success-time-discovery).
+
 A pure function in `routing_systems.rs` that produces a new `PartitionEndpointState`:
+
+> **Signature note**: The actual implementation takes a fourth parameter
+> `is_partitioned_resource: bool` so the eligibility checks (§4.1, §4.2) can
+> be evaluated without re-deriving it from the operation. The caller copies
+> the value from `UnavailablePartition.is_partitioned_resource` (which was
+> populated when `evaluate_transport_result` produced the effect). The
+> pseudocode below omits that parameter for readability.
 
 ```
 mark_partition_unavailable(
-    current_state, account_state, unavailable_partition)
+    current_state, account_state, unavailable_partition, is_partitioned_resource)
   │
   ├─ Determine mechanism and target map:
   │   ├─ if eligible for PPCB → use circuit_breaker_overrides
@@ -597,7 +677,7 @@ mark_partition_unavailable(
   │   ├─ if (now - last_failure_time) > counter_reset_window:
   │   │   └─ reset both counters to 0
   │   ├─ increment read or write counter
-  │   └─ if threshold NOT exceeded → return new_state (no endpoint move)
+  │   └─ if threshold NOT met → return new_state (no endpoint move)
   │
   ├─ try_move_next_endpoint(entry, next_endpoints, failed_endpoint):
   │   │
@@ -617,6 +697,161 @@ mark_partition_unavailable(
   └─ if all exhausted → remove entry from map, return new_state
      (partition returns to default routing on next snapshot)
 ```
+
+### 6.4 PPAF + Single-Master Writes: Success-Time Discovery
+
+For writes on a single-master account with PPAF enabled
+(`retry_state.ppaf_write_retry_allowed == true`), the partition-level override is
+**recorded only on success** — specifically when the request *definitively reaches
+a region* and the response status proves the region processed the request:
+
+| Status | Source | Meaning |
+|---|---|---|
+| HTTP 2xx | `OperationAction::Complete` | Write succeeded — region is the write region. |
+| 409 Conflict | `OperationAction::Abort` | Item already exists — region is processing writes. |
+| 412 Precondition Failed | `OperationAction::Abort` | ETag mismatch — region is processing writes. |
+
+**Failure statuses** (403/3, 503, 429/3092, 410, 408, 500, transport error) drive
+cross-region retry but **never** record a partition-level override. The would-be
+`MarkPartitionUnavailable` and `MarkEndpointUnavailable` effects are *deferred*
+in `retry_state.pending_write_effects` and either:
+
+- **flushed** at the same point the override is recorded (success or 409/412), or
+- **discarded** if the operation aborts with any other status (including
+  exhaustion of the failover retry budget).
+
+This design has three goals:
+
+1. **No false positives.** A transient blip on the only known write region must
+   never mark that region unavailable client-side — doing so would force
+   unnecessary cross-region failover for every subsequent write, even when the
+   region is healthy moments later.
+2. **Cross-region discovery during outages.** When the original write region is
+   down, the retry loop iterates over the **union of read + write endpoints**
+   (deduplicated, preserving read-list order then any write-only entries) so
+   the next attempt naturally rolls over to a different region. The first
+   region to return a region-confirming status is recorded as the new override.
+3. **Once-only cost.** After discovery, the override persists; subsequent
+   writes go directly to the discovered region. `flush_pending_write_effects`
+   performs a snapshot pre-check (`is_effect_already_applied`) and drops any
+   deferred effect whose target endpoint is already marked unavailable or whose
+   partition override already rotated past the failed region, so the
+   steady-state cost of a successful write that retried converges to a single
+   shared-pointer snapshot read.
+
+#### Effect emission and flow
+
+`evaluate_transport_result()` produces the same set of effects regardless of
+whether PPAF SM is active. The pipeline then partitions them via
+`partition_effects_for_deferral()`:
+
+- Reads / multi-master writes: all effects are immediate.
+- Single-master writes: `MarkPartitionUnavailable` is deferred. When PPAF is
+  also enabled (`ppaf_write_retry_allowed`), `MarkEndpointUnavailable` is
+  likewise deferred so a transient retry doesn't darken the only write region.
+
+```
+STAGE 5 (evaluate)        STAGE 6 (apply)              STAGE 7 (act)
+────────────────────      ──────────────────           ──────────────────────────
+[failure on attempt N]
+  effects = {              partition into:
+    MarkPartitionUnavail,    immediate = {RefreshAcctProps}
+    MarkEndpointUnavail,     deferred = {MarkPartitionUnavail,
+    RefreshAccountProps                   MarkEndpointUnavail}
+  }                        apply(immediate)
+                           extend retry_state
+                            .pending_write_effects with deferred
+                                                       FailoverRetry → loop
+                                                       (carry pending forward;
+                                                        next attempt skips
+                                                        regions that failed)
+
+[success on attempt N+1]   (no new effects)            Complete:
+                                                         flush pending_write_effects
+                                                           (snapshot pre-check
+                                                            drops no-op effects;
+                                                            mark_partition_unavailable
+                                                            then accumulates the
+                                                            previously-failed
+                                                            endpoints into the
+                                                            entry's failed_endpoints
+                                                            set and rotates
+                                                            current_endpoint past
+                                                            them via
+                                                            try_move_next_endpoint)
+```
+
+For an **abort** path the same logic applies, but the flush only happens when
+the status is region-confirming (409/412). On any other abort (503/429-3092/
+410/408/403-3/transport error/deadline) the buffered effects are dropped —
+the driver never proved any region was actually healthy, so it must not
+pollute routing state.
+
+#### How the override entry is created and where `current_endpoint` lands
+
+There is **no separate `RecordPpafWriteRegion` effect or pure function**. The
+PPAF override entry is created and rotated through the same
+`mark_partition_unavailable` function used by PPCB (see [§6.3](#63-mark_partition_unavailable-pure-routing-system-function)),
+the only difference being that for PPAF SM writes its application is deferred.
+
+When `flush_pending_write_effects` finally runs after a region-confirming
+status, each buffered `MarkPartitionUnavailable(failed_endpoint)` effect feeds
+`mark_partition_unavailable`, which:
+
+- creates the `PartitionFailoverEntry` on first encounter (initial
+  `current_endpoint = first_failed_endpoint`, both copies of the failed region),
+- inserts the failed endpoint into `failed_endpoints`, and
+- calls `try_move_next_endpoint` to advance `current_endpoint` to the next
+  candidate from `account_state.preferred_read_endpoints` that is not already
+  in `failed_endpoints`.
+
+After all deferred effects have been flushed, the entry's `failed_endpoints`
+contains every region that failed during the retry chain and `current_endpoint`
+points at the next candidate region in preferred-read order that is not in
+that set. This is **not guaranteed** to be the exact region that returned the
+region-confirming status — convergence happens implicitly: any subsequent
+failure on the still-unhealthy region rotates again, while any success leaves
+the entry alone. Because
+[`preferred_endpoints_for_attempt`](#cross-region-routing-during-discovery)
+exposes the union of read+write endpoints, both the retry loop and the
+post-flush rotation share the same candidate ordering, so steady-state
+convergence on the actually-healthy region is reached quickly.
+
+> **Note on `first_failed_endpoint`:** PPAF entries do not use probe-based
+> failback (see [§9.5](#95-failback-scope)), so `first_failed_endpoint` is set
+> to the originally failed region by the entry constructor and is never read
+> for PPAF.
+
+#### Cross-region routing during discovery
+
+While a PPAF SM write is retrying, `preferred_endpoints_for_attempt()` returns
+the deduplicated **union** of `preferred_read_endpoints + preferred_write_endpoints`
+(read order first, write-only entries appended). This is necessary because
+`preferred_write_endpoints` on a single-master account contains only the
+currently-known write region — if that region has failed over server-side,
+the driver must probe other regions to discover the new write region.
+
+The retry loop's location index advances on each attempt and the deferred
+`MarkEndpointUnavailable`/`MarkPartitionUnavailable` effects feed an in-flight
+"failed regions" skip set in `resolve_endpoint`, so each attempt is guaranteed
+to pick a different region (until the union is exhausted, at which point the
+retry budget is the only remaining gate).
+
+> **In-flight skip set applies to the PPAF override branch too.** Because PPAF
+> defers `MarkPartitionUnavailable` until success, the persistent
+> `failover_overrides[pk_range_id].current_endpoint` can lag the per-attempt
+> failure history within a single operation: a failback scenario where the
+> previously discovered region (e.g. `centralus`) starts returning 403/3 would
+> otherwise see every retry re-routed to that same stale override target.
+> `resolve_endpoint` therefore checks `entry.current_endpoint.region()`
+> against `in_flight_failed` *before* honouring the PPAF override; if the
+> region is in the skip set the override is bypassed for this attempt and the
+> branch falls through to `selected` (the primary endpoint computed by
+> `try_select_endpoint`, which has already rotated past the failed region).
+> The same guard is applied to the PPCB `ProbeCandidate` and threshold-met
+> branches for symmetry. The persistent override entry itself is left in
+> place; it is rewritten on the next region-confirming flush via
+> `mark_partition_unavailable`.
 
 ---
 
@@ -654,23 +889,18 @@ increment_request_failure_counter_and_check_if_partition_can_failover(request)
   │
   └─ can_circuit_breaker_trigger_partition_failover(is_read_only):
       ├─ if is_read_only:
-      │   └─ return read_count > read_threshold  (default: 2)
+      │   └─ return read_count >= read_threshold  (default: 10)
       └─ else:
-          └─ return write_count > write_threshold  (default: 5)
+          └─ return write_count >= write_threshold  (default: 5)
 ```
 
 ### 7.2 Threshold Configuration
 
 | Parameter | Default | Environment Variable |
 |---|---|---|
-| Read failure threshold | 2 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
+| Read failure threshold | 10 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` |
 | Write failure threshold | 5 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` |
 | Counter reset window | 5 minutes | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` |
-
-**Why reads = 2, writes = 5?** Reads are idempotent and safe to fail over
-aggressively. Writes are more expensive to fail over (potential double-write risk on
-multi-master), so a higher threshold reduces false-positive failovers due to transient
-errors.
 
 ### 7.3 Counter Reset Window
 
@@ -717,7 +947,7 @@ the counter fresh.
 | # | From | To | Trigger |
 |---|---|---|---|
 | 1 | HEALTHY | COUNTING | First failure creates an entry in the failover map; counter incremented but below threshold. |
-| 2 | COUNTING | TRIPPED | Counter exceeds threshold; `try_mark_endpoint_unavailable_for_partition_key_range()` moves the partition to the next region; override is now applied on subsequent requests. |
+| 2 | COUNTING | TRIPPED | Counter meets threshold; `try_mark_endpoint_unavailable_for_partition_key_range()` moves the partition to the next region; override is now applied on subsequent requests. |
 | 3 | COUNTING | HEALTHY | Background failback loop removes the entry after `partition_unavailability_duration` elapses (threshold was never reached). |
 | 4 | TRIPPED | HEALTHY | All locations exhausted in `try_move_next_location()`; entry is removed from the map and the partition returns to default routing. |
 | 5 | TRIPPED | PROBE_CANDIDATE | Background failback loop transitions the entry to `ProbeCandidate` after `partition_unavailability_duration` elapses. |
@@ -793,31 +1023,34 @@ if retry_state.partition_key_range_id.is_none() {
 }
 ```
 
-This means that on the **first attempt**, no partition-level override is possible
-(the partition key range ID is not yet known). Partition-level routing takes effect
-starting from the **second attempt** (first retry).
+This means that on the **first attempt**, if `pre_resolve_partition_key_range_id()`
+was unable to resolve the ID (e.g., due to a cache miss that fails to fetch from
+the service), no partition-level override is possible. In practice, the PK range
+cache successfully resolves the ID before the first attempt for most operations,
+so partition-level routing is effective from the very first attempt.
 
-#### 8.1.3 Stage 5: Retry Evaluation Emits Partition Effects
+#### 8.1.3 Stage 5: Retry Evaluation Emits Effects
 
-`evaluate_transport_result()` already emits `LocationEffect::MarkPartitionUnavailable`
-for 503/429/410. The change is to wire the actual `partition_key_range_id` from
-`OperationRetryState` instead of the current `String::new()` placeholder:
+`evaluate_transport_result()` emits `LocationEffect::MarkPartitionUnavailable`
+for failure status codes (403/3, 503, 429/3092, 410, 408, 500-on-reads,
+transport error). The `partition_key_range_id` is read from `OperationRetryState`:
 
 ```rust
 // In evaluate_transport_result(), for 503/429/410/gone:
 LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
     partition_key_range_id: retry_state
         .partition_key_range_id
-        .clone()
-        .unwrap_or_default(),
+        .clone(),
     region: endpoint.region().cloned(),
     is_read: operation.is_read_only(),
 })
 ```
 
-For 403/3 WriteForbidden, the effect list is extended to also emit
-`MarkPartitionUnavailable` (currently only `MarkEndpointUnavailable` +
-`RefreshAccountProperties` is emitted):
+For **403/3 WriteForbidden**, the effect list also includes
+`MarkPartitionUnavailable` so PPCB-eligible writes (multi-master) and reads can
+record the failure. **For PPAF + single-master writes, this effect is later
+deferred and ultimately discarded** unless the operation eventually succeeds in
+another region (see [§6.4](#64-ppaf--single-master-writes-success-time-discovery)).
 
 ```rust
 // In evaluate_transport_result(), 403/3 branch:
@@ -830,8 +1063,7 @@ if status.is_write_forbidden() && retry_state.can_retry_failover() {
             LocationEffect::MarkPartitionUnavailable(UnavailablePartition {
                 partition_key_range_id: retry_state
                     .partition_key_range_id
-                    .clone()
-                    .unwrap_or_default(),
+                    .clone(),
                 region: endpoint.region().cloned(),
                 is_read: false, // WriteForbidden is always a write
             }),
@@ -840,15 +1072,21 @@ if status.is_write_forbidden() && retry_state.can_retry_failover() {
 }
 ```
 
-#### 8.1.4 Stage 6: Effect Application
+The pipeline immediately partitions these effects via
+`partition_effects_for_deferral()` (see [§6.4](#64-ppaf--single-master-writes-success-time-discovery)
+for the rules). For PPAF SM writes, the partition / endpoint effects move into
+`retry_state.pending_write_effects`; only `RefreshAccountProperties` is applied
+immediately.
 
-`LocationStateStore::apply()` handles the previously-ignored
-`MarkPartitionUnavailable` effect:
+#### 8.1.4 Stage 6: Effect Application (with deferral)
+
+`LocationStateStore::apply()` handles the `MarkPartitionUnavailable` effect by
+CAS-updating `PartitionEndpointState`:
 
 ```rust
 // In LocationStateStore::apply():
 LocationEffect::MarkPartitionUnavailable(partition) => {
-    if partition.partition_key_range_id.is_empty() {
+    if partition.partition_key_range_id.is_none() {
         // No partition key range ID available (first attempt);
         // skip partition-level marking.
         continue;
@@ -863,6 +1101,26 @@ LocationEffect::MarkPartitionUnavailable(partition) => {
 }
 ```
 
+There is no separate effect arm for PPAF success-time recording — the same
+`MarkPartitionUnavailable` arm above is what eventually creates and rotates
+PPAF override entries when buffered write-path effects are flushed.
+
+**Deferral split.** Before `apply()` is called, `partition_effects_for_deferral()`
+partitions the emitted effects into `(immediate, deferred)`:
+
+- **Immediate**: applied right now (reads and multi-master writes always go
+  here; for PPAF SM writes only `RefreshAccountProperties` is immediate).
+- **Deferred**: appended to `retry_state.pending_write_effects` and either
+  flushed (on success / 409 / 412) or discarded (on any other abort). See
+  [§6.4](#64-ppaf--single-master-writes-success-time-discovery) for the
+  complete rules.
+
+For PPAF + SM writes there is no additional effect synthesized at success
+time: the override entry is created and rotated past failed regions purely
+as a side effect of replaying the buffered `MarkPartitionUnavailable` /
+`MarkEndpointUnavailable` effects through `mark_partition_unavailable` and
+the normal endpoint-marking path.
+
 ### 8.2 `OperationRetryState` Changes
 
 ```rust
@@ -872,6 +1130,14 @@ pub(crate) struct OperationRetryState {
     /// Partition key range ID resolved from the first response.
     /// None until the first transport attempt returns headers.
     pub partition_key_range_id: Option<PartitionKeyRangeId>,
+
+    /// Whether PPAF allows non-idempotent write retries on failover.
+    pub ppaf_write_retry_allowed: bool,
+
+    /// Whether the per-partition circuit breaker is active for this account.
+    /// When `true`, endpoint-level `MarkEndpointUnavailable` effects are
+    /// suppressed for PPCB-eligible requests.
+    pub ppcb_active: bool,
 }
 ```
 
@@ -977,22 +1243,28 @@ expire_partition_overrides(state, now, unavailability_duration) → PartitionEnd
   ├─ Clone state → new_state
   │
   ├─ Scan new_state.circuit_breaker_overrides:
-  │   └─ For entries where (now - entry.first_failure_time) > unavailability_duration
+  │   └─ For entries where
+  │       (now - entry.first_failure_time) >= unavailability_duration + entry.failback_jitter
   │       AND entry.health_status == Unhealthy:
   │       └─ Transition entry.health_status → ProbeCandidate
   │
-  ├─ Scan new_state.failover_overrides:
-  │   └─ For entries where (now - entry.first_failure_time) > unavailability_duration
-  │       AND entry.health_status == Unhealthy:
-  │       └─ Transition entry.health_status → ProbeCandidate
+  ├─ (failover_overrides are NOT swept — see §9.5)
   │
   └─ Return new_state
 ```
 
-**Note**: Unlike the SDK, the driver's failback loop scans **both** maps (PPAF and
-PPCB). This is a deliberate improvement — in the SDK, PPAF entries are only removed
-when all locations are exhausted. The driver's immutable-snapshot pattern makes it
-trivial to sweep both maps in the same CAS operation.
+**Per-entry jitter.** Each PPCB entry carries a `failback_jitter: Duration`
+sampled once at creation (and re-sampled on probe failure) from
+`[0, partition_unavailability_duration / 2)`. Adding it to the eligibility
+deadline staggers entries that all failed at the same instant — without it,
+a sweep tick following a region-wide outage would transition every affected
+partition into `ProbeCandidate` simultaneously and let the next operations
+stampede the still-recovering region. The jitter source is `SystemTime`
+nanoseconds (no `rand` dependency); PPAF entries always use `Duration::ZERO`
+because they are not swept here at all (see §9.5).
+
+**Note**: The failback loop only sweeps `circuit_breaker_overrides` (PPCB). PPAF
+entries in `failover_overrides` are **not** swept — see §9.5 for rationale.
 
 ### 9.3 Failback Timing
 
@@ -1001,9 +1273,13 @@ trivial to sweep both maps in the same CAS operation.
 | Unavailability duration before failback | 5 seconds | `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` |
 | Background sweep interval | 300 seconds | `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` |
 
-**Interaction**: A partition must have been unavailable for at least 5 seconds
-before the failback loop considers it. However, since the loop only runs every
-300 seconds by default, the effective failback time is between 5 and 305 seconds.
+**Interaction**: A partition must have been unavailable for at least
+`partition_unavailability_duration + failback_jitter` (where `failback_jitter`
+is sampled per entry from `[0, partition_unavailability_duration / 2)`) before
+the failback loop considers it. With defaults that lower bound is between 5
+and 7.5 seconds per entry; combined with the 300-second sweep interval, the
+effective failback time falls between 5 and ~308 seconds, with simultaneously-
+failed partitions naturally spread across the window.
 
 ### 9.4 Gradual Failback (Probe-Based Recovery)
 
@@ -1047,7 +1323,10 @@ Background failback sweep:
 resolve_endpoint():
   │
   └─ if entry exists and entry.health_status == ProbeCandidate:
-      └─ Route this ONE request to the original region (first_failed_endpoint)
+      └─ Route this ONE request to entry.first_failed_endpoint (the
+         originally failed region — see §5.2). PPCB is the only consumer
+         of this field; PPAF entries do not participate in probe-based
+         failback (see §9.5).
          (subsequent requests continue to the override endpoint until the
           probe result is known)
 
@@ -1080,44 +1359,71 @@ gate" for all requests at once is unsafe. By sending a single probe request firs
 
 ### 9.5 Failback Scope
 
-Unlike the SDK (which only scans the PPCB map in its background loop), the driver's
-failback loop scans **both** `circuit_breaker_overrides` and `failover_overrides` in a single
-`apply_partition` CAS operation. This is simpler and avoids the SDK's design quirk
-where PPAF entries can only be removed when all locations are exhausted.
+The failback loop only sweeps `circuit_breaker_overrides` (PPCB entries).
+`failover_overrides` (PPAF entries) are intentionally **not** swept.
+
+**Rationale**: PPAF failovers are *service-directed* — the Cosmos DB backend
+decides when a partition's write region changes (signalled via 403/3
+WriteForbidden). The SDK's role is to follow the service's routing hints, not
+to second-guess them with client-side probing. PPAF overrides therefore persist
+until either:
+
+1. All preferred read endpoints are exhausted in `try_move_next_endpoint()`,
+   at which point the entry is removed and the partition returns to default
+   routing.
+2. The service signals a new routing change (e.g., another 403/3 from the
+   override region triggers a fresh failover cycle).
+
+This matches the Java and .NET SDK behavior, where PPAF entries are not subject
+to the background circuit-breaker recovery sweep.
 
 ---
 
 ## 10. Status Code Handling Matrix
 
 The following table maps each status code to effects emitted by
-`evaluate_transport_result()`:
+`evaluate_transport_result()`. The right-most column shows what the pipeline
+actually applies once `partition_effects_for_deferral()` has split the effect
+list for the request type.
 
-| Status Code | Sub-Status | LocationEffects Emitted | OperationAction |
-|---|---|---|---|
-| 403 | 3 (WriteForbidden) | `RefreshAccountProperties` + `MarkEndpointUnavailable(WriteForbidden)` + `MarkPartitionUnavailable` | `FailoverRetry` |
-| 408 | Any (RequestTimeout) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(RequestTimeout)` | `FailoverRetry` |
-| 410 | Any (Gone) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` |
-| 429 | 3092 (SystemResourceUnavailable) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` |
-| 500 | Any (reads only) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(InternalServerError)` | `FailoverRetry` |
-| 503 | Any | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` |
-| 404 | 1002 (ReadSessionNotAvailable) | None | `SessionRetry` |
-| Transport error (not sent) | — | None | `FailoverRetry` |
-| Transport error (sent, idempotent) | — | `MarkEndpointUnavailable(TransportError)` | `FailoverRetry` |
-| Other | — | None | `Abort` |
+| Status Code | Sub-Status | LocationEffects Emitted | OperationAction | Effective for PPAF + SM writes |
+|---|---|---|---|---|
+| 403 | 3 (WriteForbidden) | `RefreshAccountProperties` + `MarkEndpointUnavailable(WriteForbidden)` + `MarkPartitionUnavailable` | `FailoverRetry` | Only `RefreshAccountProperties` applied; partition / endpoint effects deferred and ultimately discarded unless a later attempt succeeds. |
+| 408 | Any (RequestTimeout) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(RequestTimeout)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
+| 410 | Any (Gone) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
+| 429 | 3092 (SystemResourceUnavailable) | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(ServiceUnavailable)` | `FailoverRetry` | Both effects deferred; discarded on subsequent abort. |
+| 500-599 | Any | `MarkPartitionUnavailable` + `MarkEndpointUnavailable(InternalServerError)` | `FailoverRetry` if budget allows, else `Abort` (effects still emitted) | Reads / multi-master writes apply immediately; PPAF SM writes defer (discarded on subsequent non-confirming abort). |
+| 404 | 1002 (ReadSessionNotAvailable) | None | `SessionRetry` | — |
+| Transport error (not sent) | — | None | `FailoverRetry` | — |
+| Transport error (sent, idempotent) | — | `MarkEndpointUnavailable(TransportError)` | `FailoverRetry` | Effect deferred; discarded on subsequent abort. |
+| 2xx (Success: 200, 201, 202, 204, 207, …) | — | None | `Complete` | **Deferred effects flushed**, registering the override on the prior failed regions. |
+| 4xx — region-confirming (400, 401, 404/0, 409, 412, 413, …) | Any non-1002 | None | `Abort` | **Deferred effects flushed**: the server processed and rejected the request, so the prior failed regions are confirmed unhealthy. |
+| Non-retry-trigger 5xx (501, 502, …) after PPAF SM retry budget exhausted | Any | None | `Abort` | **Deferred effects flushed**: treated as a region-confirming response per `is_region_confirming_status`. |
+| Other | — | None | `Abort` | Deferred effects discarded. |
 
-> **Note**: 408 (RequestTimeout) and 500 (InternalServerError, reads only) also
-> trigger partition-level failure tracking (`MarkPartitionUnavailable`), matching
-> the Java SDK's behavior where these status codes invoke PPCB handling via
-> `handleLocationExceptionForPartitionKeyRange`.
+> **Note**: 408 (RequestTimeout) and all 5xx server errors (500-599) emit
+> `MarkPartitionUnavailable` from `evaluate_transport_result`, matching the
+> Java SDK's `handleLocationExceptionForPartitionKeyRange` behavior. As with
+> the other write-path entries above, those effects are **deferred** for
+> writes via `partition_effects_for_deferral` and applied only when a later
+> attempt produces a region-confirming status (see §6.4); on reads they are
+> applied immediately. The PPCB-eligible immediate path emits the marks even
+> when the failover retry budget is exhausted and the action becomes `Abort`,
+> so the final retry that pushed the operation over the budget is still
+> recorded against PPCB rather than silently dropped. For non-idempotent
+> writes without PPAF, the 5xx/408 branch falls through to `Abort` with no
+> effects emitted at all, since
+> `can_retry_failover()` and idempotency are both required to enter that
+> branch.
 
 ### Effect Processing in `apply()`
 
-For each status code that emits `MarkPartitionUnavailable`:
+For each status code that emits `MarkPartitionUnavailable` and is **not** a PPAF
+SM write:
 
 1. `MarkPartitionUnavailable` → CAS on `PartitionEndpointState`:
    - For PPCB: increment failure counter, check threshold, potentially move
      to next endpoint
-   - For PPAF: unconditionally move to next endpoint
    - If `partition_key_range_id` is empty (first attempt), this effect is
      skipped — no partition-level state change occurs
 
@@ -1126,9 +1432,13 @@ For each status code that emits `MarkPartitionUnavailable`:
    - Future requests to any partition on this endpoint will skip it during
      account-level endpoint selection
 
-Both effects are applied in the same `apply()` call. The partition effect modifies
-future routing for this specific partition, while the endpoint effect modifies
-routing for all requests to that region.
+For PPAF SM writes, both effects are buffered in
+`retry_state.pending_write_effects` and only applied on a region-confirming
+flush. See [§6.4](#64-ppaf--single-master-writes-success-time-discovery) for
+the full lifecycle. No additional effect is synthesized at success time —
+the override entry is created (or rotated past more failed regions) purely
+through `mark_partition_unavailable` replaying the buffered
+`MarkPartitionUnavailable` effects against `failover_overrides`.
 
 ---
 
@@ -1138,10 +1448,10 @@ routing for all requests to that region.
 
 | Variable | Type | Default | Description |
 |---|---|---|---|
-| `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `bool` | `true` | Master switch for per-partition circuit breaker |
+| `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `bool` | `false` | Master switch for per-partition circuit breaker |
 | `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` | `i64` | `5` | Minimum time a partition must be unavailable before failback sweep considers it |
 | `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` | `i64` | `300` | Interval between background failback sweep iterations |
-| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `2` | Read failure threshold before circuit trips |
+| `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` | `i32` | `10` | Read failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` | `i32` | `5` | Write failure threshold before circuit trips |
 | `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` | `i64` | `5` | Window (in minutes) after which failure counters reset |
 
@@ -1178,15 +1488,16 @@ evaluate_transport_result() emits effects
    in `resolve_endpoint()`. If a partition-level override exists, it takes
    precedence over the account-level routing decision for that specific partition.
 
-2. **For 403/3**, both `MarkPartitionUnavailable` and `MarkEndpointUnavailable` +
-   `RefreshAccountProperties` are emitted simultaneously. On the next loop
-   iteration, the partition override (if successfully applied) takes priority
-   in `resolve_endpoint()`.
+2. **For 403/3 on PPAF + single-master writes**, the failure-time effects are
+   **not** applied immediately — they are deferred and only flushed if a later
+   attempt succeeds (see [§6.4](#64-ppaf--single-master-writes-success-time-discovery)).
+   `RefreshAccountProperties` is the only effect applied immediately. For
+   PPCB-eligible 403/3 (multi-master writes / reads), all effects are applied
+   immediately in Stage 6.
 
-3. **For 503/429/410**, both `MarkPartitionUnavailable` and
-   `MarkEndpointUnavailable` are emitted. The account-level unavailability
-   routing skips the failed endpoint for all requests, while the partition-level
-   override routes this specific partition to a known-good alternate endpoint.
+3. **For 503/429/410** on PPCB-eligible requests, both `MarkPartitionUnavailable`
+   and `MarkEndpointUnavailable` are applied immediately. On PPAF + single-master
+   writes, the same effects are deferred per the rules in §6.4.
 
 ### 12.3 Endpoint Lists
 
@@ -1235,7 +1546,7 @@ better trade-off than introducing locks.
 
 ### 13.3 Threshold Gate on Override Application
 
-When a PPCB entry exists but the failure count has not yet exceeded the threshold,
+When a PPCB entry exists but the failure count has not yet met the threshold,
 `resolve_endpoint()` returns the account-level endpoint (no override applied).
 This means the request continues to hit the original (possibly unhealthy) region
 until enough failures accumulate. This is a deliberate trade-off:
@@ -1243,20 +1554,58 @@ until enough failures accumulate. This is a deliberate trade-off:
 - **Pro**: Prevents premature failovers on transient, self-healing errors.
 - **Con**: Requests continue to fail until the threshold is reached, adding latency.
 
-### 13.4 First Attempt Has No Partition Override
+### 13.4 First-Attempt Partition Override via PK Range Cache
 
-The partition key range ID is not known until the first response is received
-(from the `x-ms-documentdb-partitionkeyrangeid` header). This means:
+The driver uses a `PartitionKeyRangeCache` to pre-resolve partition key range IDs
+**before** the first pipeline attempt. When PPAF/PPCB is enabled and the operation
+provides a container reference and partition key,
+`CosmosDriver::pre_resolve_partition_key_range_id()` computes the effective
+partition key hash and looks up the owning range from the cached routing map. The
+resolved ID is passed into `execute_operation_pipeline` which seeds it on
+`OperationRetryState.partition_key_range_id`, enabling partition-level overrides
+from the **very first attempt**.
 
-- The **first attempt** always uses account-level routing.
-- Partition-level overrides take effect starting from the **first retry**.
-- If a partition has been previously failed over and a new request arrives, the
-  override is only applied if the partition key range ID was already learned
-  from a prior operation for the same partition.
+**Cache Behavior**:
+- On the first operation targeting a given container, the cache is empty. The driver
+  fetches partition key ranges from the service (`/pkranges` changefeed endpoint),
+  populates the routing map, and resolves the range ID — all before the first
+  pipeline attempt.
+- Subsequent operations for the same container use the cached routing map (O(log n)
+  binary search on range boundaries).
+- The cache uses incremental change feed (`A-IM: Incremental feed` + `If-None-Match`
+  etag) for efficient refresh.
 
-**Future improvement**: If the driver implements direct-mode partition key range
-resolution (bypassing the gateway for physical partition discovery), the partition
-key range ID could be known before the first attempt.
+**Retry & Fail-Fast Policy** (`fetch_pk_ranges_from_service`):
+
+The `/pkranges` request is dispatched through the standard `execute_operation`
+pipeline, so it inherits the pipeline's full retry stack — including
+**cross-region failover** via `retry_evaluation`. On transient outcomes
+(503 ServiceUnavailable, 408 RequestTimeout, 429-3092, 410-Gone, transport-layer
+errors), `evaluate_transport_result` returns `OperationAction::FailoverRetry` and
+the pipeline rotates to the next preferred read region. A single call therefore
+walks every preferred read region before giving up — no additional outer retry
+loop is needed.
+
+Permanent errors are treated as **fail-fast**:
+
+- **401 Unauthorized / 403 Forbidden / 404 NotFound** → return `None` immediately;
+  no retry is attempted. These indicate misconfiguration (bad credentials, missing
+  resource) where retrying or failing over to another region cannot help. The
+  caller surfaces a clear signal to the caller (and operators see an error-level
+  log line so they can distinguish misconfiguration from transient blips).
+
+The PK ranges call is foundational — without it the SDK cannot apply
+partition-level overrides — so this layered policy ensures we exhaust legitimate
+recovery options (cross-region retry) but stop quickly on conditions that cannot
+be fixed by retrying.
+
+**Fallback (last resort)**: If the cross-region retry cycle is exhausted or a
+permanent error occurs, the function returns `None` and the pipeline falls back
+to the response-header approach — the first attempt uses account-level routing,
+and the partition key range ID is captured from
+`x-ms-documentdb-partitionkeyrangeid` on the response for use in subsequent
+retries. This keeps the operation correct (partition-level overrides simply
+don't engage on the first attempt) without surfacing a hard error to the caller.
 
 ### 13.5 Stale Override After Account Refresh
 
@@ -1300,7 +1649,7 @@ The implementation should include comprehensive tests covering:
 
 - `mark_partition_unavailable`: PPAF path creates entry and moves to next endpoint
 - `mark_partition_unavailable`: PPCB path increments counter, no move below threshold
-- `mark_partition_unavailable`: PPCB path moves endpoint when threshold exceeded
+- `mark_partition_unavailable`: PPCB path moves endpoint when threshold met
 - `mark_partition_unavailable`: all endpoints exhausted → entry removed
 - `mark_partition_unavailable`: concurrent CAS (different thread already moved)
 - `expire_partition_overrides`: entries older than duration transition to `ProbeCandidate`
@@ -1325,14 +1674,14 @@ The implementation should include comprehensive tests covering:
 - Read failure counter increment and threshold check
 - Write failure counter increment and threshold check
 - Counter reset after timeout window elapses
-- Threshold not exceeded → no failover
-- Threshold exceeded → failover triggered
+- Threshold not met → no failover
+- Threshold met → failover triggered
 
 ### 14.4 `resolve_endpoint` Integration Tests
 
 - Partition override applied when PPAF entry exists
-- Partition override applied when PPCB entry exists and threshold exceeded
-- No partition override when PPCB entry exists but threshold not exceeded
+- Partition override applied when PPCB entry exists and threshold met
+- No partition override when PPCB entry exists but threshold not met
 - No partition override when `partition_key_range_id` is `None`
 - Partition override takes precedence over account-level endpoint
 
@@ -1344,6 +1693,21 @@ The implementation should include comprehensive tests covering:
 - 503 emits `MarkPartitionUnavailable` + `MarkEndpointUnavailable`
 - 429/3092 emits `MarkPartitionUnavailable` + `MarkEndpointUnavailable`
 - `partition_key_range_id` from `OperationRetryState` is wired into effect
+
+### 14.5.1 PPAF + SM Deferral / Success-Time Recording Tests
+
+- `partition_effects_for_deferral` defers `MarkPartitionUnavailable` for PPAF SM writes
+- `partition_effects_for_deferral` defers `MarkEndpointUnavailable` for PPAF SM writes
+- `partition_effects_for_deferral` does **not** defer for reads or multi-master writes
+- `mark_partition_unavailable` (PPAF branch) creates a new `failover_overrides` entry on first failed endpoint, rotates `current_endpoint` to the next preferred read endpoint, and accumulates failed endpoints across successive flushed effects
+- `union_read_write_endpoints` produces a deduplicated read-then-write list
+- `is_region_confirming_status` returns true for 409 / 412 only
+- Pipeline: 2xx success on PPAF SM write flushes deferred effects (override entry now exists for the partition with all failed regions accumulated)
+- Pipeline: 409/412 abort on PPAF SM write flushes deferred effects
+- Pipeline: 503 abort (retry budget exhausted) on PPAF SM write **discards** deferred effects (no override entry is created)
+- Pipeline: deferred effects are carried forward across `FailoverRetry` (skip set drives next-region selection)
+- `resolve_endpoint` (PPAF branch) bypasses the override when `entry.current_endpoint.region()` is in the in-flight skip set, falling through to the primary `selected` endpoint (regression test for the PPAF write failback infinite-retry bug — without this guard, a stale override pointing at a freshly-failing region causes every retry to hammer the same failed region)
+- `resolve_endpoint` (PPAF branch) honours the override when its `current_endpoint` is NOT in the in-flight skip set
 
 ### 14.6 `LocationStateStore::apply` Tests
 
@@ -1381,28 +1745,33 @@ The implementation should include comprehensive tests covering:
 
 ### 15.1 Partition Key Range ID Availability
 
-**Status**: Not yet available on `CosmosOperation` or `OperationRetryState`.
+**Status**: ✅ Implemented.
 
-The partition key range ID is essential for partition-level failover — it's the key
-for the failover override maps. In the SDK, this comes from
-`RequestContext.resolved_partition_key_range` which is set during address resolution.
+The partition key range ID is now available through two complementary mechanisms:
 
-**In the driver** (gateway mode), the partition key range ID must be extracted from
-the gateway response header `x-ms-documentdb-partitionkeyrangeid`. This requires:
+1. **Pre-resolution via `PartitionKeyRangeCache`** (proactive, before first attempt):
+   `CosmosDriver::pre_resolve_partition_key_range_id()` uses the cached routing map
+   to compute the partition key range ID from the operation's partition key. The
+   resolved ID is passed to `execute_operation_pipeline` and seeded on
+   `OperationRetryState.partition_key_range_id`. This enables PPAF/PPCB overrides
+   from the very first attempt.
 
-1. **Add `partition_key_range_id: Option<PartitionKeyRangeId>` to `OperationRetryState`**
-   (in `pipeline/components.rs`).
-2. **Extract the header from `TransportResult`** after Stage 4 of the operation loop.
-   The extraction should happen for both success and failure responses.
-3. **Wire the value into `UnavailablePartition`** when building
-   `LocationEffect::MarkPartitionUnavailable` in `evaluate_transport_result()`.
+2. **Response header extraction** (reactive, fallback):
+   The pipeline continues to capture `x-ms-documentdb-partitionkeyrangeid` from
+   response headers in Stage 4 when `partition_key_range_id` is `None`. This serves
+   as a fallback when pre-resolution fails or the operation type doesn't support it.
 
-**Limitation**: On the first attempt, no partition key range ID is available. This
-means partition-level failover cannot take effect until the first retry. This is
-acceptable because:
-- Account-level failover handles the first retry (via `MarkEndpointUnavailable`)
-- Partition-level override enhances routing for subsequent retries of the same
-  request and future requests for the same partition
+**Implementation details**:
+- `PartitionKeyRangeCache` field added to `CosmosDriver` struct.
+- `fetch_pk_ranges_from_service()` method fetches ranges via `/pkranges` changefeed
+  using the standard `execute_operation` pipeline. The pipeline's
+  `retry_evaluation` provides cross-region failover on transient errors
+  (503/408/429/410); permanent errors (401/403/404) fail fast (return `None`
+  without retry).
+- `pre_resolve_partition_key_range_id()` checks eligibility (PPAF/PPCB enabled,
+  partitioned resource, container + partition key present) before calling the cache.
+- `execute_operation_pipeline` accepts `pre_resolved_pk_range_id: Option<PartitionKeyRangeId>`
+  and seeds it on `retry_state` after `OperationRetryState::initial()`.
 
 ### 15.2 `ResourceType.is_partitioned()` Method
 
@@ -1411,13 +1780,22 @@ resource. A convenience method on `ResourceType`:
 
 ```rust
 impl ResourceType {
-    pub fn is_partitioned(&self) -> bool {
-        matches!(self, ResourceType::Document | ResourceType::StoredProcedure)
+    pub fn is_partitioned(self, operation_type: OperationType) -> bool {
+        match self {
+            ResourceType::Document => true,
+            ResourceType::StoredProcedure => operation_type == OperationType::Execute,
+            _ => false,
+        }
     }
 }
 ```
 
-**Status**: May already exist or need to be added.
+Documents are always partitioned. Stored procedures are only partitioned when
+the operation is `Execute` (i.e., executing the sproc against a specific
+partition). CRUD operations on stored procedure metadata are not
+partition-scoped. This matches the .NET SDK's
+`CanUsePartitionLevelFailoverLocations()` which checks
+`ResourceType.StoredProcedure && OperationType.ExecuteJavaScript`.
 
 ### 15.3 Environment Variable Reading
 
@@ -1447,13 +1825,15 @@ self.apply_partition(|current| {
 | File | Action | Purpose |
 |------|--------|---------|
 | `src/driver/routing/partition_endpoint_state.rs` | **Create** | `PartitionEndpointState`, `PartitionFailoverEntry`, `PartitionFailoverConfig` |
-| `src/driver/routing/routing_systems.rs` | **Modify** | Add `mark_partition_unavailable()`, `expire_partition_overrides()` pure functions |
+| `src/driver/routing/routing_systems.rs` | **Modify** | Add `mark_partition_unavailable()` and `expire_partition_overrides()` pure functions; the PPAF branch of `mark_partition_unavailable` is what creates and rotates `failover_overrides` entries when buffered write-path effects are flushed (see [§6.4](#64-ppaf--single-master-writes-success-time-discovery)) |
 | `src/driver/routing/location_state_store.rs` | **Modify** | Replace empty `PartitionEndpointState`; add `apply_partition()` CAS method; spawn failback loop via `BackgroundTaskManager`; update `sync_account_properties()` |
 | `src/driver/routing/location_effects.rs` | **Modify** | Remove `#[allow(dead_code)]` from `MarkPartitionUnavailable` and `UnavailablePartition` |
 | `src/driver/routing/mod.rs` | **Modify** | Export new `partition_endpoint_state` module |
-| `src/driver/pipeline/components.rs` | **Modify** | Add `partition_key_range_id: Option<PartitionKeyRangeId>` to `OperationRetryState` |
-| `src/driver/pipeline/retry_evaluation.rs` | **Modify** | Wire `partition_key_range_id` from retry state; add `MarkPartitionUnavailable` to 403/3 effects |
-| `src/driver/pipeline/operation_pipeline.rs` | **Modify** | Capture `partition_key_range_id` from response headers; consult partition overrides in `resolve_endpoint()` |
+| `src/driver/pipeline/components.rs` | **Modify** | Add `partition_key_range_id: Option<PartitionKeyRangeId>` and `pending_write_effects: Vec<LocationEffect>` to `OperationRetryState`; add `ppaf_write_retry_allowed` flag |
+| `src/driver/pipeline/retry_evaluation.rs` | **Modify** | Wire `partition_key_range_id` from retry state; emit `MarkPartitionUnavailable` for 403/3; add `partition_effects_for_deferral()` helper that splits effects into immediate / deferred based on `is_read_only` and `ppaf_write_retry_allowed` |
+| `src/driver/pipeline/operation_pipeline.rs` | **Modify** | Capture `partition_key_range_id` from response headers; consult partition overrides in `resolve_endpoint()`; accept `pre_resolved_pk_range_id` parameter and seed it on `OperationRetryState`; for PPAF SM writes, route via union of read+write endpoints (`union_read_write_endpoints`) and skip in-flight failed regions; in Stage 7 `Complete`/`Abort(409\|412)`, call `flush_pending_write_effects` to apply the buffered `MarkPartitionUnavailable` / `MarkEndpointUnavailable` effects; on non-confirming abort, discard `pending_write_effects`; on `FailoverRetry`/`SessionRetry`, transfer `pending_write_effects` across the retry-state transition |
+| `src/driver/cosmos_driver.rs` | **Modify** | Add `PartitionKeyRangeCache` field; implement `fetch_pk_ranges_from_service()` and `pre_resolve_partition_key_range_id()`; wire pre-resolution into `execute_operation()` |
+| `src/driver/cache/mod.rs` | **Modify** | Export `parse_pk_ranges_response`, `PartitionKeyRangeCache`, `PkRangeFetchResult` |
 
 ---
 
@@ -1464,6 +1844,18 @@ CosmosDriver        execute_operation_pipeline       LocationStateStore         
   │                           │                           │                        │
   │  execute_operation()      │                           │                        │
   │ ─────────────────────►    │                           │                        │
+  │                           │                           │                        │
+  │ [Step 5: pre_resolve_     │                           │                        │
+  │  partition_key_range_id() │                           │                        │
+  │  via PartitionKeyRange    │                           │                        │
+  │  Cache → pk_range_id]     │                           │                        │
+  │                           │                           │                        │
+  │  execute_operation_       │                           │                        │
+  │  pipeline(pre_resolved)   │                           │                        │
+  │ ─────────────────────►    │                           │                        │
+  │                           │ seed retry_state.         │                        │
+  │                           │ partition_key_range_id    │                        │
+  │                           │ = pre_resolved            │                        │
   │                           │                           │                        │
   │                           │ STAGE 1: snapshot()       │                        │
   │                           │ ─────────────────────►    │                        │

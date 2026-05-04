@@ -70,6 +70,7 @@ reqwest = [
   "reqwest/http2",
   "azure_core/reqwest",
   "azure_core/tokio",
+  "tokio",
 ]
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
