@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Added `#[non_exhaustive]` to `UserAssignedId`.
+
 ### Bugs Fixed
 
 ### Other Changes

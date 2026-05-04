@@ -11,7 +11,8 @@ use azure_core::{
 };
 use futures::channel::oneshot;
 use std::{
-    fs,
+    any::type_name,
+    fmt, fs,
     path::PathBuf,
     str,
     sync::Arc,
@@ -26,11 +27,16 @@ const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
 const AZURE_TENANT_ID: &str = "AZURE_TENANT_ID";
 
 /// Authenticates an [Entra Workload Identity on Kubernetes](https://learn.microsoft.com/azure/aks/workload-identity-overview).
-#[derive(Debug)]
 pub struct WorkloadIdentityCredential(ClientAssertionCredential<Token>);
 
+impl fmt::Debug for WorkloadIdentityCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple(type_name::<Self>()).finish_non_exhaustive()
+    }
+}
+
 /// Options for constructing a new [`WorkloadIdentityCredential`].
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct WorkloadIdentityCredentialOptions {
     /// Options for the [`ClientAssertionCredential`] used by the [`WorkloadIdentityCredential`].
     pub credential_options: ClientAssertionCredentialOptions,
@@ -47,6 +53,15 @@ pub struct WorkloadIdentityCredentialOptions {
 
     #[cfg(test)]
     pub(crate) env: Env,
+}
+
+impl fmt::Debug for WorkloadIdentityCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("tenant_id", &self.tenant_id)
+            .field("client_id", &self.client_id)
+            .finish_non_exhaustive()
+    }
 }
 
 impl WorkloadIdentityCredential {

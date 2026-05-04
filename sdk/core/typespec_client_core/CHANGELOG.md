@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Added `#[non_exhaustive]` to `AttributeArray`, `AttributeValue`, `SpanStatus`, and `SpanKind`.
+
 ### Bugs Fixed
 
 ### Other Changes
