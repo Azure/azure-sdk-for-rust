@@ -370,6 +370,21 @@ impl ResourceType {
         )
     }
 
+    /// Returns true if this resource type supports partition-level failover.
+    ///
+    /// Documents are partitioned for all operations except [`OperationType::QueryPlan`],
+    /// which is a gateway-only metadata operation that is not scoped to a specific
+    /// physical partition. Stored procedures are only partitioned when the operation
+    /// is [`OperationType::Execute`] (i.e. executing the sproc against a specific
+    /// partition). CRUD operations on stored procedure metadata are not partition-scoped.
+    pub fn is_partitioned(self, operation_type: OperationType) -> bool {
+        match self {
+            ResourceType::Document => operation_type != OperationType::QueryPlan,
+            ResourceType::StoredProcedure => operation_type == OperationType::Execute,
+            _ => false,
+        }
+    }
+
     /// Returns true if this resource type requires a database reference.
     pub fn requires_database(self) -> bool {
         matches!(

@@ -5,14 +5,13 @@ use crate::{
     clients::{offers_client, ClientContext},
     feed_range::FeedRange,
     models::{
-        BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
-        ThroughputProperties,
+        BatchResponse, ContainerProperties, ItemResponse, ResourceResponse, ThroughputProperties,
     },
     options::{
         BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         SessionToken,
     },
-    resource_context::{ResourceLink, ResourceType},
+    resource_context::ResourceLink,
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
     Query, ReplaceContainerOptions, ThroughputOptions,
@@ -20,15 +19,13 @@ use crate::{
 use std::sync::Arc;
 
 use super::ThroughputPoller;
-use crate::cosmos_request::CosmosRequest;
 use crate::handler::container_connection::ContainerConnection;
-use crate::operation_context::OperationType;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{
     effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
     CosmosOperation, ItemReference, PartitionKeyKind,
 };
+use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -36,7 +33,6 @@ use serde::{de::DeserializeOwned, Serialize};
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
-    link: ResourceLink,
     container_connection: Arc<ContainerConnection>,
     container_ref: ContainerReference,
     context: ClientContext,
@@ -49,10 +45,6 @@ impl ContainerClient {
         container_id: &str,
         database_id: &str,
     ) -> azure_core::Result<Self> {
-        let link = database_link
-            .feed(ResourceType::Containers)
-            .item(container_id);
-
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
             .driver
@@ -77,7 +69,6 @@ impl ContainerClient {
         ));
 
         Ok(Self {
-            link,
             container_connection,
             container_ref,
             context,
@@ -108,14 +99,17 @@ impl ContainerClient {
         )]
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        let response: CosmosResponse<ContainerProperties> = self
-            .container_connection
-            .send(cosmos_request, Context::default())
+        let operation = CosmosOperation::read_container(self.container_ref.clone());
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
-        Ok(ResourceResponse::new(response))
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Updates the indexing policy of the container.
@@ -151,13 +145,25 @@ impl ContainerClient {
         )]
         options: Option<ReplaceContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
-        let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
-            .json(&properties)
-            .build()?;
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let body = serde_json::to_vec(&properties)?;
+        let operation =
+            CosmosOperation::replace_container(self.container_ref.clone()).with_body(body);
+
+        // Control-plane replaces always need the full response body so the
+        // caller can inspect the updated resource properties.
+        let mut operation_options = OperationOptions::default();
+        operation_options.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, operation_options)
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Reads container throughput properties, if any.
@@ -239,12 +245,17 @@ impl ContainerClient {
         )]
         options: Option<DeleteContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<()>> {
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let operation = CosmosOperation::delete_container(self.container_ref.clone());
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Creates a new item in the container.

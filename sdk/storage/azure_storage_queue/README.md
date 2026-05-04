@@ -18,7 +18,7 @@ cargo add azure_storage_queue
 
 ### Prerequisites
 
-* You must have an [Azure subscription] and an [Azure storage account] to use this package.
+- You must have an [Azure subscription] and an [Azure storage account] to use this package.
 
 ### Create a storage account
 
@@ -36,7 +36,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
+In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient` or `QueueServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
 use azure_storage_queue::{QueueClient, QueueClientOptions};
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let queue_client = QueueClient::new(
         "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
-        "queue-name",                                             // Queue Name
+        "<queue_name>",                                           // Queue Name
         Some(credential),                                         // Credential
         Some(QueueClientOptions::default()),                      // QueueClient Options
     )?;
@@ -64,11 +64,60 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 You can find executable examples for all major SDK functions in:
 
-* [queue_hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_hello_world.rs) - Getting started: create a queue, send and receive messages
-* [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs) - Queue-level operations: metadata, send/peek/receive/delete, TTL/visibility options
-* [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs) - Service-level operations: list queues, service properties, statistics
-* [access_policy.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/access_policy.rs) - Set and get queue access policies (stored access policies for SAS)
-* [queue_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
+- [queue_hello_world.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_hello_world.rs) - Getting started: create a queue, send and receive messages
+- [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs) - Queue-level operations: metadata, send/peek/receive/delete, TTL/visibility options
+- [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs) - Service-level operations: list queues, service properties, statistics
+- [access_policy.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/access_policy.rs) - Set and get queue access policies (stored access policies for SAS)
+- [queue_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
+
+### Send a message
+
+```rust no_run
+use azure_storage_queue::{models::QueueMessage, QueueClient, QueueClientOptions};
+use azure_identity::DeveloperToolsCredential;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+    let queue_client = QueueClient::new(
+        "https://<storage_account_name>.queue.core.windows.net/",
+        "<queue_name>",
+        Some(credential),
+        Some(QueueClientOptions::default()),
+    )?;
+
+    let message = QueueMessage {
+        message_text: Some("hello world".to_string()),
+    };
+    queue_client.send_message(message.try_into()?, None).await?;
+    Ok(())
+}
+```
+
+### Receive messages
+
+```rust no_run
+use azure_storage_queue::{QueueClient, QueueClientOptions};
+use azure_identity::DeveloperToolsCredential;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+    let queue_client = QueueClient::new(
+        "https://<storage_account_name>.queue.core.windows.net/",
+        "<queue_name>",
+        Some(credential),
+        Some(QueueClientOptions::default()),
+    )?;
+
+    let response = queue_client.receive_messages(None).await?;
+    let messages = response.into_model()?;
+    for msg in messages.items.unwrap_or_default() {
+        println!("{}", msg.message_text.as_deref().unwrap_or("<empty>"));
+    }
+    Ok(())
+}
+```
 
 ## Next steps
 
@@ -90,7 +139,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure Portal]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-portal
 [Azure PowerShell]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-powershell
 [Azure CLI]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
-[cargo]: https://dev-doc.rust-lang.org/stable/cargo/commands/cargo.html
+[cargo]: https://doc.rust-lang.org/cargo/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [API reference documentation]: https://docs.rs/crate/azure_storage_queue/latest
 [Package (crates.io)]: https://crates.io/crates/azure_storage_queue

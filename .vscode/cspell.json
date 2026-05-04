@@ -108,7 +108,9 @@
     "windowspool",
     "windowsvmimage",
     "webpki",
-    "worktree"
+    "worktree",
+    "decorrelates",
+    "finalizer"
   ],
   "dictionaryDefinitions": [
     {

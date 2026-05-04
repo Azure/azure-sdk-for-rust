@@ -971,7 +971,7 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             .download(Some(BlobClientDownloadOptions {
                 partition_size: Some(NonZero::new(partition_len).unwrap()),
                 parallel: Some(NonZero::new(parallel).unwrap()),
-                range: download_range.map(|r| r.0..r.1),
+                range: download_range.map(|r| (r.0..r.1).into()),
                 ..Default::default()
             }))
             .await?
