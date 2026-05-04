@@ -34,7 +34,7 @@ pub mod options;
 // per-item `#[allow(dead_code)]` would mean ~50 annotations across lexer/parser/
 // eval/plan scaffolding without changing what the compiler actually checks.
 //
-// TODO(local-plan-wireup): drop `allow(dead_code)` once the driver wires the
+// TODO(local-plan-wire-up): drop `allow(dead_code)` once the driver wires the
 // local plan generator into the query execution path.
 #[cfg(any(test, feature = "__internal_testing"))]
 #[allow(dead_code)]

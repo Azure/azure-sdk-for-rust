@@ -705,7 +705,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
         // `NotEvaluated` is only ever set at the top level (when no PK paths were
         // supplied) and is never produced by the recursive extractors. Coerce to
         // `Unconstrained` defensively in case the variant ever leaks here so the
-        // intersection logic can't silently misroute a query.
+        // intersection logic can't silently mis-route a query.
         (PartitionKeyFilter::NotEvaluated, other) | (other, PartitionKeyFilter::NotEvaluated) => {
             other
         }
