@@ -147,7 +147,7 @@ pub(crate) enum AggregateKind {
 
 /// Partition key filter extracted from a WHERE clause.
 #[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub(crate) enum PartitionKeyFilter {
     /// Exact equality on all PK components: `pk = <value>`.
@@ -703,6 +703,24 @@ fn extract_literal_value(expr: &SqlScalarExpression) -> Option<PartitionKeyValue
         SqlScalarExpression::ParameterRef(name) => Some(PartitionKeyValue::Parameter(name.clone())),
         _ => None,
     }
+}
+
+/// Generate a query plan as a JSON value from SQL text and partition key paths.
+///
+/// Parses the SQL, generates the plan, and serializes it to `serde_json::Value`.
+/// Used for cross-crate testing (gateway comparison) where internal types can't be accessed.
+#[cfg(any(test, feature = "__internal_testing"))]
+pub fn generate_query_plan_for_pk_paths(
+    sql: &str,
+    pk_paths: &[&str],
+) -> Result<serde_json::Value, azure_core::Error> {
+    let program = crate::query::parse(sql)
+        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+
+    let raw_plan = generate_query_plan(&program.query, pk_paths);
+
+    serde_json::to_value(&raw_plan)
+        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

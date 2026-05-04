@@ -26,6 +26,10 @@ pub mod driver;
 pub mod fault_injection;
 pub mod models;
 pub mod options;
+#[cfg(any(test, feature = "__internal_testing"))]
+#[allow(dead_code)]
+pub mod query;
+#[cfg(not(any(test, feature = "__internal_testing")))]
 #[allow(dead_code)]
 pub(crate) mod query;
 pub(crate) mod system;

@@ -18,3 +18,6 @@ pub(crate) mod plan;
 mod value;
 
 pub(crate) use parser::parse;
+
+#[cfg(any(test, feature = "__internal_testing"))]
+pub use plan::generate_query_plan_for_pk_paths;
