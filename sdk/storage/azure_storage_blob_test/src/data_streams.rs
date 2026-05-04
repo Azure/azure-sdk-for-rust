@@ -10,6 +10,7 @@ use std::{fmt, iter::Cycle, ops::Range, pin::Pin, task::Poll};
 #[derive(Clone)]
 pub struct GeneratedStream<I> {
     generator: Cycle<I>,
+    generator_reset_src: Cycle<I>,
     bytes_read: u64,
     len: u64,
     chunk: usize,
@@ -19,6 +20,7 @@ impl GeneratedStream<Range<u8>> {
     pub fn new(len: u64, chunk: Option<usize>) -> GeneratedStream<Range<u8>> {
         GeneratedStream {
             generator: (0..u8::MAX).cycle(),
+            generator_reset_src: (0..u8::MAX).cycle(),
             bytes_read: 0,
             len,
             chunk: chunk.unwrap_or(1024),
@@ -33,7 +35,8 @@ where
     #[allow(clippy::should_implement_trait)]
     pub fn from_iter(iter: I, len: u64, chunk: Option<usize>) -> Self {
         GeneratedStream {
-            generator: iter.cycle(),
+            generator: iter.clone().cycle(),
+            generator_reset_src: iter.cycle(),
             bytes_read: 0,
             len,
             chunk: chunk.unwrap_or(1024),
@@ -51,8 +54,8 @@ impl<I> fmt::Debug for GeneratedStream<I> {
 
 impl<I> AsyncRead for GeneratedStream<I>
 where
-    I: Clone,
-    Cycle<I>: Iterator<Item = u8> + Unpin,
+    I: Clone + Unpin,
+    Cycle<I>: Iterator<Item = u8>,
 {
     fn poll_read(
         self: Pin<&mut Self>,
@@ -111,11 +114,12 @@ where
 #[async_trait::async_trait]
 impl<I> SeekableStream for GeneratedStream<I>
 where
-    I: Clone + Send + Sync,
+    I: Clone + Send + Sync + Unpin,
     Cycle<I>: Iterator<Item = u8> + Unpin,
 {
     async fn reset(&mut self) -> azure_core::Result<()> {
         self.bytes_read = 0;
+        self.generator = self.generator_reset_src.clone();
         Ok(())
     }
 
@@ -126,7 +130,7 @@ where
 
 impl<I> From<GeneratedStream<I>> for Body
 where
-    for<'a> I: Clone + Send + Sync + 'a,
+    for<'a> I: Clone + Send + Sync + Unpin + 'a,
     Cycle<I>: Iterator<Item = u8> + Unpin,
 {
     fn from(stream: GeneratedStream<I>) -> Self {
@@ -136,7 +140,7 @@ where
 
 impl<I> From<GeneratedStream<I>> for RequestContent<Bytes, NoFormat>
 where
-    for<'a> I: Clone + Send + Sync + 'a,
+    for<'a> I: Clone + Send + Sync + Unpin + 'a,
     Cycle<I>: Iterator<Item = u8> + Unpin,
 {
     fn from(stream: GeneratedStream<I>) -> Self {
