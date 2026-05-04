@@ -806,7 +806,7 @@ impl ContainerClient {
         options: Option<ReadFeedRangesOptions>,
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
-        let ranges = self
+        let mut ranges = self
             .context
             .driver
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
@@ -817,6 +817,31 @@ impl ContainerClient {
                     "failed to resolve routing map for container",
                 )
             })?;
+
+        if ranges.is_empty() {
+            // A valid container always has at least one partition key range.
+            // Empty result likely means a stale/failed cache — retry with forced refresh.
+            ranges = self
+                .context
+                .driver
+                .resolve_all_partition_key_ranges(&self.container_ref, true)
+                .await
+                .ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "failed to resolve routing map for container",
+                    )
+                })?;
+        }
+
+        if ranges.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "resolved routing map contains no partition key ranges; \
+                 the container may not exist or the service may be unreachable",
+            ));
+        }
+
         ranges
             .iter()
             .map(FeedRange::from_partition_key_range)
@@ -893,6 +918,15 @@ impl ContainerClient {
                         "failed to resolve routing map for container",
                     )
                 })?;
+
+            if ranges.is_empty() {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "no partition key ranges found for the given partition key; \
+                     the container may not exist or the service may be unreachable",
+                ));
+            }
+
             ranges
                 .iter()
                 .map(FeedRange::from_partition_key_range)
