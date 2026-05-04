@@ -1475,7 +1475,8 @@ mod tests {
 
     #[test]
     fn match_and_or() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.age > 18 AND c.name = 'Alice'").unwrap();
+        let p =
+            crate::query::parse("SELECT * FROM c WHERE c.age > 18 AND c.name = 'Alice'").unwrap();
         let doc = serde_json::json!({"name": "Alice", "age": 30});
         assert!(matches_query(&doc, &p.query, &[]).unwrap());
         let doc2 = serde_json::json!({"name": "Alice", "age": 16});
@@ -1570,7 +1571,8 @@ mod tests {
 
     #[test]
     fn function_array_contains() {
-        let p = crate::query::parse("SELECT * FROM c WHERE ARRAY_CONTAINS(c.tags, 'rust')").unwrap();
+        let p =
+            crate::query::parse("SELECT * FROM c WHERE ARRAY_CONTAINS(c.tags, 'rust')").unwrap();
         let doc = serde_json::json!({"tags": ["rust", "azure"]});
         assert!(matches_query(&doc, &p.query, &[]).unwrap());
     }
@@ -1595,7 +1597,8 @@ mod tests {
 
     #[test]
     fn in_expression() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.status IN ('active', 'pending')").unwrap();
+        let p =
+            crate::query::parse("SELECT * FROM c WHERE c.status IN ('active', 'pending')").unwrap();
         let doc = serde_json::json!({"status": "active"});
         assert!(matches_query(&doc, &p.query, &[]).unwrap());
         let doc2 = serde_json::json!({"status": "closed"});
@@ -1791,28 +1794,32 @@ mod tests {
 
     #[test]
     fn and_undefined_and_true_is_not_matching() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.missing > 5 AND c.present = true").unwrap();
+        let p = crate::query::parse("SELECT * FROM c WHERE c.missing > 5 AND c.present = true")
+            .unwrap();
         let doc = serde_json::json!({"present": true});
         assert!(!matches_query(&doc, &p.query, &[]).unwrap());
     }
 
     #[test]
     fn or_undefined_or_true_matches() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.missing > 5 OR c.present = true").unwrap();
+        let p =
+            crate::query::parse("SELECT * FROM c WHERE c.missing > 5 OR c.present = true").unwrap();
         let doc = serde_json::json!({"present": true});
         assert!(matches_query(&doc, &p.query, &[]).unwrap());
     }
 
     #[test]
     fn or_both_undefined_does_not_match() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.missing1 > 5 OR c.missing2 > 5").unwrap();
+        let p =
+            crate::query::parse("SELECT * FROM c WHERE c.missing1 > 5 OR c.missing2 > 5").unwrap();
         let doc = serde_json::json!({"x": 1});
         assert!(!matches_query(&doc, &p.query, &[]).unwrap());
     }
 
     #[test]
     fn and_both_undefined_does_not_match() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.missing1 > 5 AND c.missing2 > 5").unwrap();
+        let p =
+            crate::query::parse("SELECT * FROM c WHERE c.missing1 > 5 AND c.missing2 > 5").unwrap();
         let doc = serde_json::json!({"x": 1});
         assert!(!matches_query(&doc, &p.query, &[]).unwrap());
     }
@@ -1821,8 +1828,10 @@ mod tests {
 
     #[test]
     fn like_worst_case_pattern_completes_quickly() {
-        let p = crate::query::parse("SELECT * FROM c WHERE c.name LIKE '%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a%'")
-            .unwrap();
+        let p = crate::query::parse(
+            "SELECT * FROM c WHERE c.name LIKE '%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a%'",
+        )
+        .unwrap();
         let doc = serde_json::json!({"name": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"});
         assert!(!matches_query(&doc, &p.query, &[]).unwrap());
     }
@@ -1838,7 +1847,8 @@ mod tests {
 
     #[test]
     fn integer_literal_preserved() {
-        let p = crate::query::parse("SELECT VALUE c.id FROM c WHERE c.id = 9007199254740993").unwrap();
+        let p =
+            crate::query::parse("SELECT VALUE c.id FROM c WHERE c.id = 9007199254740993").unwrap();
         let doc = serde_json::json!({"id": 9007199254740993_i64});
         let result = project(&doc, &p.query, &[]).unwrap();
         assert_eq!(result, serde_json::json!(9007199254740993_i64));

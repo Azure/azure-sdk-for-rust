@@ -18,4 +18,3 @@ pub(crate) mod plan;
 mod value;
 
 pub(crate) use parser::parse;
-pub(crate) use plan::generate_client_query_plan;

@@ -4228,10 +4228,9 @@ fn hpk_deeply_nested_and_chain() {
 
 #[test]
 fn hpk_with_from_alias() {
-    let p = crate::query::parse(
-        "SELECT * FROM root AS r WHERE r.tenant = 'acme' AND r.userId = 'u1'",
-    )
-    .unwrap();
+    let p =
+        crate::query::parse("SELECT * FROM root AS r WHERE r.tenant = 'acme' AND r.userId = 'u1'")
+            .unwrap();
     let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]);
     assert_eq!(
         qp.pk_filters,
@@ -4244,10 +4243,8 @@ fn hpk_with_from_alias() {
 
 #[test]
 fn hpk_with_from_bare_alias() {
-    let p = crate::query::parse(
-        "SELECT * FROM root r WHERE r.tenant = 'acme' AND r.userId = 'u1'",
-    )
-    .unwrap();
+    let p = crate::query::parse("SELECT * FROM root r WHERE r.tenant = 'acme' AND r.userId = 'u1'")
+        .unwrap();
     let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]);
     assert_eq!(
         qp.pk_filters,
@@ -4261,10 +4258,9 @@ fn hpk_with_from_bare_alias() {
 #[test]
 fn hpk_alias_mismatch_cross_partition() {
     // WHERE uses 'c' but FROM uses alias 'r' — should not extract
-    let p = crate::query::parse(
-        "SELECT * FROM root AS r WHERE c.tenant = 'acme' AND c.userId = 'u1'",
-    )
-    .unwrap();
+    let p =
+        crate::query::parse("SELECT * FROM root AS r WHERE c.tenant = 'acme' AND c.userId = 'u1'")
+            .unwrap();
     let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]);
     assert_eq!(qp.pk_filters, PartitionKeyFilter::None);
     // Gateway rejects: alias mismatch (FROM uses r but WHERE references c)
@@ -4649,4 +4645,3 @@ fn hpk3_with_join_and_order_by() {
         }
     );
 }
-
