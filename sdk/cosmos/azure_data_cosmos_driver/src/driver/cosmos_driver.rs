@@ -1378,7 +1378,13 @@ impl CosmosDriver {
             })
             .await?;
 
-        Some(routing_map.ranges().to_vec())
+        let ranges = routing_map.ranges();
+        if ranges.is_empty() {
+            // A valid container always has at least one partition key range.
+            // An empty routing map indicates a service/parse failure.
+            return None;
+        }
+        Some(ranges.to_vec())
     }
 
     /// Returns the partition key ranges covering the given partition key.
@@ -1416,6 +1422,9 @@ impl CosmosDriver {
                     Box::pin(self.fetch_pk_ranges_from_service(c, cont))
                 })
                 .await?;
+            if routing_map.ranges().is_empty() {
+                return None;
+            }
             Some(
                 routing_map
                     .get_range_by_effective_partition_key(&epk_range.start)
