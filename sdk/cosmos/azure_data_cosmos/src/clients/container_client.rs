@@ -753,67 +753,6 @@ impl ContainerClient {
         .into_stream()
     }
 
-    /// Retrieves a query plan from the Cosmos DB Gateway for the given query.
-    ///
-    /// This sends the query to the Gateway's query plan endpoint and returns
-    /// the raw [`GatewayQueryPlan`](crate::query::gateway_plan::GatewayQueryPlan)
-    /// response, which includes structural query information (`queryInfo`) and
-    /// the effective partition key ranges (`queryRanges`) that the query targets.
-    ///
-    /// This is primarily used for testing to validate that locally-generated
-    /// query plans match what the Gateway would produce.
-    ///
-    /// # Arguments
-    /// * `query` - The SQL query to get the plan for.
-    /// * `options` - Optional parameters for the request.
-    pub async fn get_query_plan(
-        &self,
-        query: impl Into<Query>,
-        options: Option<crate::options::OperationOptions>,
-    ) -> azure_core::Result<crate::query::gateway_plan::GatewayQueryPlan> {
-        let query = query.into();
-        let body = serde_json::to_vec(&query)
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
-
-        let mut custom_headers = std::collections::HashMap::new();
-        custom_headers.insert(
-            crate::constants::IS_QUERY_PLAN_REQUEST,
-            azure_core::http::headers::HeaderValue::from("True"),
-        );
-        custom_headers.insert(
-            crate::constants::SUPPORTED_QUERY_FEATURES,
-            azure_core::http::headers::HeaderValue::from(
-                "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates",
-            ),
-        );
-        custom_headers.insert(
-            crate::constants::DOCUMENTDB_ISQUERY,
-            azure_core::http::headers::HeaderValue::from("True"),
-        );
-        custom_headers.insert(
-            azure_core::http::headers::CONTENT_TYPE,
-            azure_core::http::headers::HeaderValue::from("application/query+json"),
-        );
-        custom_headers.insert(
-            crate::constants::QUERY_ENABLE_CROSS_PARTITION,
-            azure_core::http::headers::HeaderValue::from("True"),
-        );
-
-        let mut op_options = options.unwrap_or_default();
-        op_options = op_options.with_custom_headers(custom_headers);
-
-        let operation = CosmosOperation::query_plan(self.container_ref.clone()).with_body(body);
-
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, op_options)
-            .await?;
-
-        let body_bytes = driver_response.into_body();
-        serde_json::from_slice(&body_bytes)
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
-    }
     /// Executes a transactional batch of operations.
     ///
     /// All operations in the batch are executed atomically within the same partition key.
