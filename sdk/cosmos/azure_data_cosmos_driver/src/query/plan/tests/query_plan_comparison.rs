@@ -10,8 +10,8 @@
 //! is caught immediately.
 
 use super::super::{
-    generate_query_plan, AggregateKind, DistinctType, PartitionKeyFilter, PartitionKeyValue,
-    QueryInfo, QueryPlan, SortOrder,
+    generate_query_plan, generate_query_plan_with_parameters, AggregateKind, DistinctType,
+    PartitionKeyFilter, PartitionKeyValue, QueryInfo, QueryPlan, SortOrder,
 };
 
 /// Parse SQL and produce a full query plan against a single `/pk` partition key.
@@ -1348,32 +1348,113 @@ fn aggregate_min_max_combined() {
 // PARAMETERIZED PLANS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-#[test]
-fn top_parameter_plan() {
-    assert_eq!(
-        plan("SELECT TOP @n * FROM c"),
-        QueryPlan {
-            pk_filters: PartitionKeyFilter::None,
-            query_info: QueryInfo { top: None, ..qi() },
-        }
-    );
-    // Gateway rejects this query with HTTP 400: parameterized TOP requires resolved value for Gateway plan
+fn plan_with_params(sql: &str, params: &[(&str, serde_json::Value)]) -> QueryPlan {
+    let p = crate::query::parse(sql).unwrap();
+    let owned: Vec<(String, serde_json::Value)> = params
+        .iter()
+        .map(|(n, v)| (n.to_string(), v.clone()))
+        .collect();
+    generate_query_plan_with_parameters(&p.query, &["/pk"], &owned).unwrap()
+}
+
+fn plan_with_params_err(sql: &str, params: &[(&str, serde_json::Value)]) -> azure_core::Error {
+    let p = crate::query::parse(sql).unwrap();
+    let owned: Vec<(String, serde_json::Value)> = params
+        .iter()
+        .map(|(n, v)| (n.to_string(), v.clone()))
+        .collect();
+    generate_query_plan_with_parameters(&p.query, &["/pk"], &owned)
+        .expect_err("expected parameter resolution to fail")
 }
 
 #[test]
-fn offset_limit_parameter_plan() {
+fn top_parameter_substituted_from_params() {
     assert_eq!(
-        plan("SELECT * FROM c OFFSET @off LIMIT @lim"),
+        plan_with_params("SELECT TOP @n * FROM c", &[("@n", serde_json::json!(7))]),
         QueryPlan {
             pk_filters: PartitionKeyFilter::None,
             query_info: QueryInfo {
-                offset: None,
-                limit: None,
+                top: Some(7),
                 ..qi()
             },
         }
     );
-    // Gateway rejects this query with HTTP 400: parameterized OFFSET/LIMIT requires resolved values for Gateway plan
+    // Param name without leading '@' must also work.
+    assert_eq!(
+        plan_with_params("SELECT TOP @n * FROM c", &[("n", serde_json::json!(7))])
+            .query_info
+            .top,
+        Some(7)
+    );
+}
+
+#[test]
+fn offset_limit_parameter_substituted_from_params() {
+    assert_eq!(
+        plan_with_params(
+            "SELECT * FROM c OFFSET @off LIMIT @lim",
+            &[
+                ("@off", serde_json::json!(3)),
+                ("@lim", serde_json::json!(11)),
+            ],
+        ),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::None,
+            query_info: QueryInfo {
+                offset: Some(3),
+                limit: Some(11),
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn top_parameter_missing_value_is_error() {
+    let err = plan_with_params_err("SELECT TOP @n * FROM c", &[]);
+    let msg = format!("{err}");
+    assert!(
+        msg.contains("@n"),
+        "error should mention parameter name: {msg}"
+    );
+}
+
+#[test]
+fn offset_limit_parameter_missing_value_is_error() {
+    let err = plan_with_params_err(
+        "SELECT * FROM c OFFSET @off LIMIT @lim",
+        &[("@off", serde_json::json!(0))],
+    );
+    let msg = format!("{err}");
+    assert!(
+        msg.contains("@lim"),
+        "error should mention missing param @lim: {msg}"
+    );
+}
+
+#[test]
+fn top_parameter_non_integer_is_error() {
+    let err = plan_with_params_err(
+        "SELECT TOP @n * FROM c",
+        &[("@n", serde_json::json!("not-a-number"))],
+    );
+    assert!(format!("{err}").contains("@n"));
+
+    let err = plan_with_params_err("SELECT TOP @n * FROM c", &[("@n", serde_json::json!(3.5))]);
+    assert!(format!("{err}").contains("@n"));
+}
+
+#[test]
+fn top_parameter_negative_is_error() {
+    let err = plan_with_params_err("SELECT TOP @n * FROM c", &[("@n", serde_json::json!(-1))]);
+    assert!(format!("{err}").contains("non-negative"));
+}
+
+#[test]
+#[should_panic(expected = "generate_query_plan called on a query with parameterized")]
+fn legacy_generate_query_plan_panics_for_parameterized_top_without_params() {
+    // The legacy parameter-less helper must not silently drop parameterized TOP/OFFSET/LIMIT.
+    plan("SELECT TOP @n * FROM c");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

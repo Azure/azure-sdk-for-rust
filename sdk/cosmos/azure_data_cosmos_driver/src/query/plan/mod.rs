@@ -191,7 +191,36 @@ pub(crate) enum PartitionKeyValue {
 /// assert_eq!(qp.query_info.distinct_type, plan::DistinctType::None);
 /// ```
 pub(crate) fn generate_query_plan(query: &SqlQuery, pk_paths: &[&str]) -> QueryPlan {
-    let query_info = analyze_query(query);
+    // Convenience wrapper used by tests that don't care about parameter substitution.
+    // Parameterized TOP/OFFSET/LIMIT clauses without a corresponding parameter value
+    // will produce an error here — callers must use `generate_query_plan_with_parameters`
+    // and supply the parameter values for parameterized queries.
+    generate_query_plan_with_parameters(query, pk_paths, &[])
+        .expect("generate_query_plan called on a query with parameterized TOP/OFFSET/LIMIT but no parameters supplied; use generate_query_plan_with_parameters")
+}
+
+/// Type alias for query parameters used during plan generation.
+///
+/// Each entry is a `(name, value)` pair. Names are stored *without* the leading `@`.
+/// Values are arbitrary JSON values; only integer values are accepted as substitutions
+/// for parameterized `TOP` / `OFFSET` / `LIMIT` clauses.
+pub(crate) type Params = [(String, serde_json::Value)];
+
+/// Generate a complete query plan, substituting query parameters into parameterized
+/// `TOP`, `OFFSET`, and `LIMIT` clauses.
+///
+/// Returns an error if the query references a parameter (in `TOP`, `OFFSET`, or `LIMIT`)
+/// that is not present in `parameters`, or whose value is not a non-negative integer.
+///
+/// The Cosmos DB Gateway rejects query-plan requests for queries with parameterized
+/// `TOP` / `OFFSET` / `LIMIT` (HTTP 400). Unlike the Gateway, this function can produce
+/// a valid plan when the caller supplies the parameter values up-front.
+pub(crate) fn generate_query_plan_with_parameters(
+    query: &SqlQuery,
+    pk_paths: &[&str],
+    parameters: &Params,
+) -> Result<QueryPlan, azure_core::Error> {
+    let query_info = analyze_query(query, parameters)?;
     let root_alias = get_root_alias(query);
 
     let pk_filters = if pk_paths.is_empty() {
@@ -213,9 +242,55 @@ pub(crate) fn generate_query_plan(query: &SqlQuery, pk_paths: &[&str]) -> QueryP
         }
     };
 
-    QueryPlan {
+    Ok(QueryPlan {
         pk_filters,
         query_info,
+    })
+}
+
+/// Look up a parameter value by name and return it as an `i64`.
+///
+/// Used to substitute parameterized `TOP` / `OFFSET` / `LIMIT` values. Accepts only
+/// non-negative integer JSON values; rejects floats (even integer-valued ones like `5.0`),
+/// strings, booleans, and missing parameters.
+fn resolve_integer_parameter(name: &str, parameters: &Params) -> Result<i64, azure_core::Error> {
+    let needle = name.trim_start_matches('@');
+    let entry = parameters
+        .iter()
+        .find(|(n, _)| n.trim_start_matches('@') == needle)
+        .ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "query references parameter @{needle} in a TOP/OFFSET/LIMIT clause but no value was supplied"
+                ),
+            )
+        })?;
+    match &entry.1 {
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                if i < 0 {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        format!(
+                            "parameter @{needle} used in TOP/OFFSET/LIMIT must be non-negative; got {i}"
+                        ),
+                    ));
+                }
+                Ok(i)
+            } else {
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    format!(
+                        "parameter @{needle} used in TOP/OFFSET/LIMIT must be an integer; got {n}"
+                    ),
+                ))
+            }
+        }
+        other => Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::DataConversion,
+            format!("parameter @{needle} used in TOP/OFFSET/LIMIT must be an integer; got {other}"),
+        )),
     }
 }
 
@@ -238,7 +313,7 @@ fn is_constant_expression(expr: &SqlScalarExpression) -> bool {
     }
 }
 
-fn analyze_query(query: &SqlQuery) -> QueryInfo {
+fn analyze_query(query: &SqlQuery, parameters: &Params) -> Result<QueryInfo, azure_core::Error> {
     let mut info = QueryInfo {
         has_select_value: matches!(query.select.spec, SqlSelectSpec::Value(_)),
         has_where: query.where_clause.is_some(),
@@ -263,19 +338,23 @@ fn analyze_query(query: &SqlQuery) -> QueryInfo {
         }
     }
 
-    // TOP
-    if let Some(SqlTopSpec::Literal(n)) = &query.select.top {
-        info.top = Some(*n);
-    }
+    // TOP — substitute parameterized values; error if unresolvable.
+    info.top = match &query.select.top {
+        Some(SqlTopSpec::Literal(n)) => Some(*n),
+        Some(SqlTopSpec::Parameter(name)) => Some(resolve_integer_parameter(name, parameters)?),
+        None => None,
+    };
 
-    // OFFSET / LIMIT
+    // OFFSET / LIMIT — same substitution rules as TOP.
     if let Some(ol) = &query.offset_limit {
-        if let SqlOffsetSpec::Literal(n) = &ol.offset {
-            info.offset = Some(*n);
-        }
-        if let SqlLimitSpec::Literal(n) = &ol.limit {
-            info.limit = Some(*n);
-        }
+        info.offset = match &ol.offset {
+            SqlOffsetSpec::Literal(n) => Some(*n),
+            SqlOffsetSpec::Parameter(name) => Some(resolve_integer_parameter(name, parameters)?),
+        };
+        info.limit = match &ol.limit {
+            SqlLimitSpec::Literal(n) => Some(*n),
+            SqlLimitSpec::Parameter(name) => Some(resolve_integer_parameter(name, parameters)?),
+        };
     }
 
     // ORDER BY
@@ -319,7 +398,7 @@ fn analyze_query(query: &SqlQuery) -> QueryInfo {
         }
     }
 
-    info
+    Ok(info)
 }
 
 /// Convert an expression to a dot-separated path string for the plan output.
@@ -705,19 +784,25 @@ fn extract_literal_value(expr: &SqlScalarExpression) -> Option<PartitionKeyValue
     }
 }
 
-/// Generate a query plan as a JSON value from SQL text and partition key paths.
+/// Generate a query plan as a JSON value from SQL text, partition key paths, and
+/// query parameters.
 ///
-/// Parses the SQL, generates the plan, and serializes it to `serde_json::Value`.
+/// Substitutes parameter values into parameterized `TOP` / `OFFSET` / `LIMIT` clauses.
+/// Returns an error if the query references a parameter in one of those clauses and
+/// no matching integer value is supplied. Pass an empty slice for queries that do not
+/// use parameters in those clauses.
+///
 /// Used for cross-crate testing (gateway comparison) where internal types can't be accessed.
 #[cfg(any(test, feature = "__internal_testing"))]
 pub fn generate_query_plan_for_pk_paths(
     sql: &str,
     pk_paths: &[&str],
+    parameters: &[(String, serde_json::Value)],
 ) -> Result<serde_json::Value, azure_core::Error> {
     let program = crate::query::parse(sql)
         .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
 
-    let raw_plan = generate_query_plan(&program.query, pk_paths);
+    let raw_plan = generate_query_plan_with_parameters(&program.query, pk_paths, parameters)?;
 
     serde_json::to_value(&raw_plan)
         .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))

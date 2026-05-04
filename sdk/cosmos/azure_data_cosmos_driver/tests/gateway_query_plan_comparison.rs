@@ -20,12 +20,13 @@ use std::sync::Arc;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use tokio::sync::OnceCell;
 
-use azure_data_cosmos_driver::models::{
-    AccountReference, ConnectionString, ContainerReference, CosmosOperation,
-    PartitionKeyDefinition,
-};
-use azure_data_cosmos_driver::options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions};
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
+use azure_data_cosmos_driver::models::{
+    AccountReference, ConnectionString, ContainerReference, CosmosOperation, PartitionKeyDefinition,
+};
+use azure_data_cosmos_driver::options::{
+    ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 // ─── Test infrastructure ─────────────────────────────────────────────────────
@@ -61,10 +62,7 @@ async fn build_driver() -> Option<Arc<CosmosDriver>> {
         .build()
         .await
         .ok()?;
-    let driver = runtime
-        .get_or_create_driver(account, None)
-        .await
-        .ok()?;
+    let driver = runtime.get_or_create_driver(account, None).await.ok()?;
     Some(driver)
 }
 
@@ -79,9 +77,8 @@ const DB_NAME: &str = "query_plan_test_db";
 
 async fn ensure_database(driver: &CosmosDriver) {
     let account = driver.account().clone();
-    let op = CosmosOperation::create_database(account).with_body(
-        serde_json::to_vec(&serde_json::json!({"id": DB_NAME})).unwrap(),
-    );
+    let op = CosmosOperation::create_database(account)
+        .with_body(serde_json::to_vec(&serde_json::json!({"id": DB_NAME})).unwrap());
     let _ = driver.execute_operation(op, Default::default()).await;
 }
 
@@ -116,8 +113,25 @@ async fn fetch_gateway_plan(
     driver: &CosmosDriver,
     container: &ContainerReference,
     sql: &str,
+    parameters: &[(&str, serde_json::Value)],
 ) -> Result<serde_json::Value, azure_core::Error> {
-    let query_body = serde_json::json!({"query": sql});
+    // Build {"query": ..., "parameters": [{"name":..., "value":...}, ...]}.
+    let params_json: Vec<serde_json::Value> = parameters
+        .iter()
+        .map(|(name, value)| {
+            let n = if name.starts_with('@') {
+                name.to_string()
+            } else {
+                format!("@{name}")
+            };
+            serde_json::json!({"name": n, "value": value})
+        })
+        .collect();
+    let query_body = if params_json.is_empty() {
+        serde_json::json!({"query": sql})
+    } else {
+        serde_json::json!({"query": sql, "parameters": params_json})
+    };
     let body = serde_json::to_vec(&query_body)?;
 
     let mut custom_headers = HashMap::new();
@@ -189,8 +203,7 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
     // offset
     let local_offset = local.get("offset").and_then(|v| v.as_i64());
     let gw_offset = gw.get("offset").and_then(|v| v.as_i64());
-    let offset_ok =
-        local_offset == gw_offset || (local_offset == Some(0) && gw_offset.is_none());
+    let offset_ok = local_offset == gw_offset || (local_offset == Some(0) && gw_offset.is_none());
     if !offset_ok {
         panic!("[offset] sql={sql}\n  local={local_offset:?}  gw={gw_offset:?}");
     }
@@ -252,9 +265,10 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let local_gbe_has_debug = local_gbe
-        .iter()
-        .any(|e| e.as_str().is_some_and(|s| s.contains("MemberIndexer") || s.contains("Binary")));
+    let local_gbe_has_debug = local_gbe.iter().any(|e| {
+        e.as_str()
+            .is_some_and(|s| s.contains("MemberIndexer") || s.contains("Binary"))
+    });
     if !local_gbe_has_debug && local_gbe != gw_gbe_arr {
         panic!("[groupByExpressions] sql={sql}\n  local={local_gbe:?}  gw={gw_gbe_arr:?}");
     }
@@ -297,14 +311,30 @@ async fn validate(
     pk_paths: &[&str],
     sql: &str,
 ) {
-    // Generate local plan
+    validate_with_params(driver, container, pk_paths, sql, &[]).await;
+}
+
+/// Like [`validate`], but also passes parameter values to both the local plan generator
+/// and the Gateway. Used for parameterized `TOP` / `OFFSET` / `LIMIT` regression coverage.
+async fn validate_with_params(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    pk_paths: &[&str],
+    sql: &str,
+    parameters: &[(&str, serde_json::Value)],
+) {
+    // Generate local plan with parameter substitution.
+    let owned: Vec<(String, serde_json::Value)> = parameters
+        .iter()
+        .map(|(n, v)| (n.to_string(), v.clone()))
+        .collect();
     let local_plan =
-        azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(sql, pk_paths)
+        azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(sql, pk_paths, &owned)
             .unwrap_or_else(|e| panic!("Local plan generation failed for: {sql}\n  {e}"));
     let local_qi = &local_plan["queryInfo"];
 
-    // Fetch gateway plan
-    let gw_plan = fetch_gateway_plan(driver, container, sql)
+    // Fetch gateway plan, passing the same parameters in the request body.
+    let gw_plan = fetch_gateway_plan(driver, container, sql, parameters)
         .await
         .unwrap_or_else(|e| panic!("Gateway query plan request failed for: {sql}\n  {e}"));
     let gw_qi = &gw_plan["queryInfo"];
@@ -319,7 +349,7 @@ async fn validate_expects_400(
     sql: &str,
     reason: &str,
 ) {
-    match fetch_gateway_plan(driver, container, sql).await {
+    match fetch_gateway_plan(driver, container, sql, &[]).await {
         Err(e) => {
             let status = e.http_status();
             assert_eq!(
@@ -370,12 +400,7 @@ container_fixture!(
         "/sessionId".into()
     ])
 );
-container_fixture!(
-    C_NESTED,
-    c_nested,
-    "qp_nested",
-    "/address/city".into()
-);
+container_fixture!(C_NESTED, c_nested, "qp_nested", "/address/city".into());
 container_fixture!(C_NOPK, c_nopk, "qp_nopk", "/id".into());
 
 // ─── Gateway validation helper functions ─────────────────────────────────────
@@ -555,7 +580,8 @@ async fn gw_functions() {
 async fn gw_nested_paths() {
     validate_nested("SELECT * FROM c WHERE c.address.city = 'Seattle'").await;
     validate_nested("SELECT * FROM c WHERE c.address.city = 'Seattle' AND c.age > 21").await;
-    validate_nested("SELECT * FROM c WHERE c.address.city IN ('Seattle', 'Portland', 'Austin')").await;
+    validate_nested("SELECT * FROM c WHERE c.address.city IN ('Seattle', 'Portland', 'Austin')")
+        .await;
 }
 
 #[tokio::test]
@@ -568,7 +594,10 @@ async fn gw_hierarchical_pk() {
 
 #[tokio::test]
 async fn gw_hierarchical_pk3() {
-    validate_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.sessionId = 's1'").await;
+    validate_hpk3(
+        "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.sessionId = 's1'",
+    )
+    .await;
     validate_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.sessionId = 's1'").await;
     validate_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1'").await;
 }
@@ -620,4 +649,102 @@ async fn gw_400_alias_mismatch() {
         "alias mismatch: FROM uses r but WHERE references c",
     )
     .await;
+}
+
+// ─── Parameterized TOP / OFFSET / LIMIT ──────────────────────────────────────
+//
+// Regression coverage for the local plan generator's parameter substitution.
+// When the caller supplies parameter values up-front, the local plan must match
+// what the Gateway returns for the equivalent literal query. When values are NOT
+// supplied, the local generator must fail clearly (the Gateway responds 400).
+
+async fn validate_pk_with_params(sql: &str, params: &[(&str, serde_json::Value)]) {
+    if let (Some(d), Some(c)) = (get_driver().await, c_pk().await) {
+        validate_with_params(d, c, &["/pk"], sql, params).await;
+    }
+}
+
+#[tokio::test]
+async fn gw_top_parameter_substituted() {
+    validate_pk_with_params("SELECT TOP @n * FROM c", &[("@n", serde_json::json!(10))]).await;
+    validate_pk_with_params(
+        "SELECT TOP @n * FROM c WHERE c.pk = 'x'",
+        &[("@n", serde_json::json!(5))],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn gw_offset_limit_parameter_substituted() {
+    validate_pk_with_params(
+        "SELECT * FROM c OFFSET @off LIMIT @lim",
+        &[
+            ("@off", serde_json::json!(2)),
+            ("@lim", serde_json::json!(8)),
+        ],
+    )
+    .await;
+    validate_pk_with_params(
+        "SELECT * FROM c WHERE c.pk = 'x' OFFSET @off LIMIT @lim",
+        &[
+            ("@off", serde_json::json!(0)),
+            ("@lim", serde_json::json!(20)),
+        ],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn gw_400_top_parameter_without_value() {
+    // Gateway rejects parameterized TOP without a supplied value with HTTP 400.
+    validate_pk_expects_400(
+        "SELECT TOP @n * FROM c",
+        "parameterized TOP requires resolved value for Gateway plan",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn gw_400_offset_limit_parameter_without_value() {
+    // Gateway rejects parameterized OFFSET/LIMIT without supplied values with HTTP 400.
+    validate_pk_expects_400(
+        "SELECT * FROM c OFFSET @off LIMIT @lim",
+        "parameterized OFFSET/LIMIT requires resolved values for Gateway plan",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn local_plan_top_parameter_without_value_errors() {
+    // Mirror of the Gateway-400 test: when the caller does not supply a value for
+    // a parameterized TOP/OFFSET/LIMIT, the *local* plan generator must fail
+    // clearly (rather than silently dropping the clause).
+    let result = azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(
+        "SELECT TOP @n * FROM c",
+        &["/pk"],
+        &[],
+    );
+    let err =
+        result.expect_err("local plan generator must reject parameterized TOP without a value");
+    let msg = format!("{err}");
+    assert!(
+        msg.contains("@n"),
+        "error message should mention parameter name: {msg}"
+    );
+}
+
+#[tokio::test]
+async fn local_plan_offset_limit_parameter_without_value_errors() {
+    let result = azure_data_cosmos_driver::query::generate_query_plan_for_pk_paths(
+        "SELECT * FROM c OFFSET @off LIMIT @lim",
+        &["/pk"],
+        &[("@off".to_string(), serde_json::json!(0))],
+    );
+    let err =
+        result.expect_err("local plan generator must reject parameterized LIMIT without a value");
+    let msg = format!("{err}");
+    assert!(
+        msg.contains("@lim"),
+        "error message should mention missing parameter @lim: {msg}"
+    );
 }
