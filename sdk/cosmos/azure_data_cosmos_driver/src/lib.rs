@@ -26,6 +26,7 @@ pub mod driver;
 pub mod fault_injection;
 pub mod models;
 pub mod options;
+pub(crate) mod query;
 pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]
 pub mod testing;
