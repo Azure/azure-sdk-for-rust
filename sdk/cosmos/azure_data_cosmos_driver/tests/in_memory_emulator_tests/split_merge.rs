@@ -67,11 +67,38 @@ async fn split_locked_returns_410_1007() {
     let ctx = setup_single_region().await;
     let store = ctx.emulator.store();
 
-    // Split partition 0 with 500ms lock
-    store.split_partition("testdb", "testcoll", 0, Duration::from_millis(500));
+    // Discover which partition the test PK routes to. V2 hashing distributes
+    // `""` to partition 3 (not 0), so we cannot hard-code partition 0 — we
+    // do a seed create first, parse the session token to learn the pkrange
+    // id, then split *that* partition and verify the next write to the same
+    // PK is rejected with 410/1007.
+    let probe_body = serde_json::json!({"id": "probe", "pk": "", "value": 0});
+    let probe_req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &probe_body,
+        r#"[""]"#,
+        false,
+    );
+    let probe_resp = ctx.emulator.execute_request(&probe_req).await.unwrap();
+    assert_eq!(probe_resp.status(), StatusCode::Created);
+    let probe_token = probe_resp
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .expect("probe create should return a session token")
+        .to_string();
+    let pkrange_id: u32 = probe_token
+        .split(':')
+        .next()
+        .and_then(|s| s.parse().ok())
+        .expect("session token must start with a numeric pkrange id");
 
-    // Immediately try to write to partition 0 — should get 410/1007
-    // (The item's EPK routes to partition 0 since it's in the [MIN, boundary) range)
+    // Split that partition with 500ms lock so the subsequent write hits the
+    // locked window deterministically.
+    store.split_partition("testdb", "testcoll", pkrange_id, Duration::from_millis(500));
+
+    // Immediately try to write to the locked partition — should get 410/1007.
     let body = serde_json::json!({"id": "locked_item", "pk": "", "value": 1});
     let req = create_item_request(
         &ctx.gateway_url,

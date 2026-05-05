@@ -165,7 +165,34 @@ async fn forced_session_not_available() {
 async fn session_not_available_404_1002() {
     let ctx = setup_single_region().await;
 
-    // Request with a session token ahead of current LSN
+    // Discover which pkrange `pk1` routes to by parsing the session token
+    // returned from a seed create. Hardcoding `0:` only works if `pk1`
+    // happens to hash into partition 0, which it does not under V2 hashing.
+    let seed = serde_json::json!({"id": "seed", "pk": "pk1", "value": 0});
+    let seed_req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &seed,
+        r#"["pk1"]"#,
+        false,
+    );
+    let seed_resp = ctx.emulator.execute_request(&seed_req).await.unwrap();
+    assert_eq!(seed_resp.status(), StatusCode::Created);
+    let seed_token = seed_resp
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .expect("seed create should return a session token")
+        .to_string();
+    let pkrange_id = seed_token
+        .split(':')
+        .next()
+        .expect("token should have pkrange prefix");
+
+    // Build a stale V1 token for that pkrange (LSN 999 is far past whatever
+    // the seed advanced the partition to).
+    let stale_token = format!("{}:-1#999", pkrange_id);
+
     let req = {
         let url = format!("{}/dbs/testdb/colls/testcoll/docs/item1", ctx.gateway_url);
         let mut req = azure_core::http::Request::new(
@@ -176,10 +203,9 @@ async fn session_not_available_404_1002() {
             PARTITION_KEY.clone(),
             azure_core::http::headers::HeaderValue::from(r#"["pk1"]"#.to_string()),
         );
-        // Set session token ahead of current LSN (partition 0, LSN 999)
         req.headers_mut().insert(
             SESSION_TOKEN.clone(),
-            azure_core::http::headers::HeaderValue::from("0:-1#999".to_string()),
+            azure_core::http::headers::HeaderValue::from(stale_token),
         );
         req
     };

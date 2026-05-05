@@ -460,9 +460,10 @@ async fn read_with_stale_session_token_returns_404_1002() {
     // far beyond the partition's actual LSN. This ensures the service matches
     // the token to the correct partition and detects the stale LSN.
     //
-    // For the emulator, we use a hardcoded stale token since PKRange 0 always exists.
-    // For the real account, we derive the token from a create response.
-    let emu_stale_token = "0:-1#9999999999".to_string();
+    // We derive the token (and pkrange id) from a seed create on each backend
+    // — `pk1` does not always hash to pkrange 0 under V2 hashing, so a
+    // hardcoded `"0:..."` token is silently ignored against the real
+    // partition and the read returns plain 404 instead of 404/1002.
 
     // Create a seed item on both backends to get a valid session token from real.
     let seed_body = serde_json::to_vec(&serde_json::json!({
@@ -502,8 +503,9 @@ async fn read_with_stale_session_token_returns_404_1002() {
             None
         };
 
-    // Also create the seed in the emulator (keeps state consistent).
-    let _ = backend
+    // Seed the emulator and derive a stale token using the same pkrange id
+    // the emulator routed the seed write to.
+    let emu_seed_result = backend
         .emulator_driver
         .execute_operation(
             CosmosOperation::create_item(ItemReference::from_name(
@@ -514,7 +516,17 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .with_body(seed_body),
             OperationOptions::default(),
         )
-        .await;
+        .await
+        .expect("Emulator seed create should succeed");
+    let emu_seed_token = emu_seed_result
+        .headers()
+        .session_token
+        .as_ref()
+        .expect("Emulator create should return a session token")
+        .as_str()
+        .to_string();
+    let emu_prefix = emu_seed_token.split('#').next().unwrap_or("0:-1");
+    let emu_stale_token = format!("{emu_prefix}#9999999999");
 
     // Disable session retries so the error propagates immediately.
     let opts = OperationOptionsBuilder::new()
