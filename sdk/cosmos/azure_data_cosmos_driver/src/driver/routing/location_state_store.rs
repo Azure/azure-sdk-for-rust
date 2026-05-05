@@ -320,9 +320,13 @@ impl LocationStateStore {
                 Ordering::Acquire,
                 &guard,
             ) {
-                Ok(old) => {
-                    // SAFETY: old pointer is detached after successful exchange.
-                    unsafe { guard.defer_destroy(old) };
+                Ok(_) => {
+                    // current is the pointer that was just replaced and is no
+                    // longer reachable from self.partitions. compare_exchange
+                    // returns the newly-installed pointer on success, not the
+                    // replaced one, so we must defer-destroy current (matching
+                    // the pattern in pply_account above).
+                    unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
                 }
