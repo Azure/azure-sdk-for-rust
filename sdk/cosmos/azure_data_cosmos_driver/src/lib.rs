@@ -46,6 +46,14 @@ pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]
 pub mod testing;
 
+#[cfg(test)]
+mod test_alloc_tracking;
+
+#[cfg(test)]
+#[global_allocator]
+static TEST_ALLOCATOR: test_alloc_tracking::TrackingAllocator =
+    test_alloc_tracking::TrackingAllocator;
+
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
