@@ -509,7 +509,10 @@ fn epoch_millis() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::{
+        mem::ManuallyDrop,
+        sync::atomic::{AtomicUsize, Ordering},
+    };
 
     use crate::{
         driver::routing::{CosmosEndpoint, LocationEffect, UnavailableReason},
@@ -659,5 +662,77 @@ mod tests {
 
         let snapshot = store.snapshot();
         assert!(snapshot.account.unavailable_endpoints.is_empty());
+    }
+
+    #[test]
+    fn apply_partition_keeps_installed_pointer_live_until_store_drop() {
+        crate::test_alloc_tracking::clear();
+
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let mut store = ManuallyDrop::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        ));
+
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled =
+                !current.per_partition_automatic_failover_enabled;
+            next
+        });
+
+        let installed_ptr = {
+            let guard = epoch::pin();
+            let current = store.partitions.load(Ordering::Acquire, &guard);
+            unsafe { current.deref() as *const PartitionEndpointState }
+        };
+        crate::test_alloc_tracking::watch_ptr(installed_ptr);
+
+        let collector = epoch::default_collector();
+        let helper_a = collector.register();
+        let helper_b = collector.register();
+
+        for _ in 0..1024 {
+            let mut main = epoch::pin();
+            main.flush();
+            main.repin();
+            drop(main);
+
+            let mut helper_a_guard = helper_a.pin();
+            helper_a_guard.flush();
+            helper_a_guard.repin();
+            drop(helper_a_guard);
+
+            let mut helper_b_guard = helper_b.pin();
+            helper_b_guard.flush();
+            helper_b_guard.repin();
+            drop(helper_b_guard);
+
+            if crate::test_alloc_tracking::dealloc_count() != 0 {
+                break;
+            }
+        }
+
+        assert_eq!(
+            crate::test_alloc_tracking::dealloc_count(),
+            0,
+            "installed partitions pointer was reclaimed before LocationStateStore::drop"
+        );
+
+        crate::test_alloc_tracking::clear();
+        unsafe { ManuallyDrop::drop(&mut store) };
     }
 }
