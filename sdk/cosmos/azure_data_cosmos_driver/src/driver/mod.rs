@@ -14,5 +14,8 @@ mod cosmos_driver;
 mod runtime;
 pub(crate) mod transport;
 
+pub mod account_state;
+
+pub use account_state::{AccountState, SharedAccountState};
 pub use cosmos_driver::CosmosDriver;
 pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};

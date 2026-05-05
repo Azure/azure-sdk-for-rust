@@ -5,7 +5,7 @@
 
 use crate::{
     models::AccountReference,
-    options::{RuntimeOptions, SharedRuntimeOptions},
+    options::{PartitionLevelFailoverPolicy, RuntimeOptions, SharedRuntimeOptions},
 };
 
 /// Configuration options for a Cosmos DB driver instance.
@@ -24,6 +24,7 @@ use crate::{
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use azure_data_cosmos_driver::options::{
 ///     DriverOptions, DriverOptionsBuilder, RuntimeOptions, ContentResponseOnWrite,
+///     PartitionLevelFailoverPolicy,
 /// };
 /// use url::Url;
 ///
@@ -38,6 +39,7 @@ use crate::{
 ///
 /// let options = DriverOptionsBuilder::new(account)
 ///     .with_runtime_options(runtime)
+///     .with_partition_level_failover_policy(PartitionLevelFailoverPolicy::Enabled)
 ///     .build();
 ///
 /// // Later, modify defaults at runtime
@@ -50,6 +52,8 @@ pub struct DriverOptions {
     account: AccountReference,
     /// Thread-safe runtime options for operation options at the driver level.
     runtime_options: SharedRuntimeOptions,
+    /// Client-side PPAF policy controlling per-partition automatic failover.
+    partition_level_failover_policy: PartitionLevelFailoverPolicy,
 }
 
 impl DriverOptions {
@@ -71,6 +75,14 @@ impl DriverOptions {
     pub fn runtime_options(&self) -> &SharedRuntimeOptions {
         &self.runtime_options
     }
+
+    /// Returns the partition-level failover policy.
+    ///
+    /// This determines how the driver handles per-partition automatic failover
+    /// for write operations on single-write accounts.
+    pub fn partition_level_failover_policy(&self) -> PartitionLevelFailoverPolicy {
+        self.partition_level_failover_policy
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -82,6 +94,7 @@ impl DriverOptions {
 pub struct DriverOptionsBuilder {
     account: AccountReference,
     runtime_options: Option<RuntimeOptions>,
+    partition_level_failover_policy: PartitionLevelFailoverPolicy,
 }
 
 impl DriverOptionsBuilder {
@@ -90,6 +103,7 @@ impl DriverOptionsBuilder {
         Self {
             account,
             runtime_options: None,
+            partition_level_failover_policy: PartitionLevelFailoverPolicy::default(),
         }
     }
 
@@ -101,6 +115,23 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets the partition-level failover policy.
+    ///
+    /// Controls how the driver handles per-partition automatic failover (PPAF)
+    /// for write operations on single-write accounts.
+    ///
+    /// - [`PartitionLevelFailoverPolicy::ServerControlled`] (default): respects the server-side
+    ///   `enablePerPartitionFailoverBehavior` account property.
+    /// - [`PartitionLevelFailoverPolicy::Enabled`]: force-enables PPAF regardless of server config.
+    /// - [`PartitionLevelFailoverPolicy::Disabled`]: force-disables PPAF (client override).
+    pub fn with_partition_level_failover_policy(
+        mut self,
+        policy: PartitionLevelFailoverPolicy,
+    ) -> Self {
+        self.partition_level_failover_policy = policy;
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
@@ -108,6 +139,7 @@ impl DriverOptionsBuilder {
             runtime_options: SharedRuntimeOptions::from_options(
                 self.runtime_options.unwrap_or_default(),
             ),
+            partition_level_failover_policy: self.partition_level_failover_policy,
         }
     }
 }
@@ -178,6 +210,26 @@ mod tests {
                 .snapshot()
                 .content_response_on_write,
             Some(ContentResponseOnWrite::Enabled)
+        );
+    }
+
+    #[test]
+    fn default_ppaf_policy_is_server_controlled() {
+        let options = DriverOptionsBuilder::new(test_account()).build();
+        assert_eq!(
+            options.partition_level_failover_policy(),
+            PartitionLevelFailoverPolicy::ServerControlled
+        );
+    }
+
+    #[test]
+    fn builder_sets_ppaf_policy() {
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_partition_level_failover_policy(PartitionLevelFailoverPolicy::Enabled)
+            .build();
+        assert_eq!(
+            options.partition_level_failover_policy(),
+            PartitionLevelFailoverPolicy::Enabled
         );
     }
 }

@@ -7,7 +7,7 @@ use crate::{
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
-        DatabaseReference,
+        DatabaseReference, OperationType,
     },
     options::{
         DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
@@ -17,6 +17,7 @@ use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
 
 use super::{
+    account_state::SharedAccountState,
     transport::{uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus},
     CosmosDriverRuntime,
 };
@@ -36,6 +37,8 @@ pub struct CosmosDriver {
     runtime: CosmosDriverRuntime,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    /// Cached account state for PPAF and routing decisions.
+    account_state: SharedAccountState,
 }
 
 impl CosmosDriver {
@@ -52,7 +55,11 @@ impl CosmosDriver {
     ///
     /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
     pub(crate) fn new(runtime: CosmosDriverRuntime, options: DriverOptions) -> Self {
-        Self { runtime, options }
+        Self {
+            runtime,
+            options,
+            account_state: SharedAccountState::new(),
+        }
     }
 
     /// Returns the account reference.
@@ -68,6 +75,42 @@ impl CosmosDriver {
     /// Returns the driver options.
     pub fn options(&self) -> &DriverOptions {
         &self.options
+    }
+
+    /// Returns the account state for PPAF and routing decisions.
+    ///
+    /// The account state is updated when account metadata is refreshed and
+    /// provides the effective PPAF enabled state for request routing.
+    pub fn account_state(&self) -> &SharedAccountState {
+        &self.account_state
+    }
+
+    /// Checks whether a given operation is eligible for per-partition automatic failover.
+    ///
+    /// An operation is eligible for PPAF when **all** of the following are true:
+    /// 1. PPAF is effectively enabled (resolved from client policy + server flag)
+    /// 2. The operation is a **write** operation (not read-only)
+    /// 3. The account is a **single-write** account (not multi-write)
+    ///
+    /// # .NET Comparison
+    ///
+    /// This corresponds to `GlobalPartitionEndpointManagerCore.IsRequestEligibleForPerPartitionAutomaticFailover()`:
+    /// ```csharp
+    /// return this.isPartitionLevelAutomaticFailoverEnabled == 1
+    ///     && !request.IsReadOnlyRequest
+    ///     && !this.globalEndpointManager.CanSupportMultipleWriteLocations(...);
+    /// ```
+    ///
+    /// # Rust Concept: Method Visibility
+    ///
+    /// This method is `pub` (public) so it can be used by the SDK layer
+    /// (`azure_data_cosmos`) to make routing decisions. The `&self` parameter
+    /// means it borrows the driver immutably — multiple threads can call this
+    /// simultaneously without locking.
+    pub fn is_eligible_for_ppaf(&self, operation_type: OperationType) -> bool {
+        self.account_state.is_ppaf_enabled()
+            && !operation_type.is_read_only()
+            && !self.account_state.is_multi_write()
     }
 
     /// Computes the effective runtime options by merging operation, driver, and runtime options.

@@ -14,6 +14,7 @@ mod env_parsing;
 mod identity;
 mod operation_options;
 mod policies;
+mod ppaf;
 mod priority;
 mod read_consistency;
 mod region;
@@ -31,6 +32,7 @@ pub use policies::{
     ContentResponseOnWrite, EmulatorServerCertValidation, EndToEndOperationLatencyPolicy,
     ExcludedRegions, QuotaInfoEnabled, ScriptLoggingEnabled,
 };
+pub use ppaf::PartitionLevelFailoverPolicy;
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;

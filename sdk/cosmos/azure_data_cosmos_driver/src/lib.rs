@@ -26,5 +26,7 @@ pub mod options;
 
 // Re-export key types at crate root
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
-pub use models::{ActivityId, CosmosResponse, CosmosStatus, RequestCharge};
+pub use models::{
+    ActivityId, CosmosResponse, CosmosStatus, DatabaseAccountProperties, RequestCharge,
+};
 pub use options::DriverOptions;
