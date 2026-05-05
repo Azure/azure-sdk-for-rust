@@ -5,8 +5,10 @@ use async_stream::try_stream;
 use std::{cmp::min, mem, num::NonZero, slice};
 
 use azure_core::stream::SeekableStream;
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Bytes, BytesMut};
 use futures::{AsyncReadExt, Stream};
+
+use crate::buffers::{read_buf::ReadBuf, read_buf_ext::ReadBufExt};
 
 type Result<T> = azure_core::Result<T>;
 
@@ -22,16 +24,19 @@ pub(crate) fn stream_single_buffer_partitions(
     try_stream! {
         let mut len_hint = inner.len();
         let mut total_read = 0;
-        let new_partition = |len_hint: Option<u64>, total_read: u64| BytesMut::with_capacity(len_hint
-            .map(|len| min(len.saturating_sub(total_read), partition_len as u64) as usize)
-            .unwrap_or(partition_len));
+        let new_partition = |len_hint: Option<u64>, total_read: u64| {
+            let capacity = len_hint
+                .map(|len| min(len.saturating_sub(total_read), partition_len as u64) as usize)
+                .unwrap_or(partition_len);
+            ReadBuf::zeroed(capacity)
+        };
         let mut partition = new_partition(len_hint, total_read);
         loop {
             // If partition is at partition_len, yield it
             // Do NOT consider the len_hint. We handle that later.
             let mut remaining_partition_space = partition_len.saturating_sub(partition.len());
             if remaining_partition_space == 0 {
-                yield mem::replace(&mut partition, new_partition(len_hint, total_read)).freeze();
+                yield mem::replace(&mut partition, new_partition(len_hint, total_read)).finalize().into();
                 remaining_partition_space = partition_len;
             }
             let remaining_partition_space = remaining_partition_space; // un-mut this variable
@@ -46,46 +51,30 @@ pub(crate) fn stream_single_buffer_partitions(
                 let count = inner.read(&mut small_buf).await?;
                 if count == 0 {
                     if !partition.is_empty() {
-                        yield mem::take(&mut partition).freeze();
+                        yield mem::take(&mut partition).finalize().into();
                     }
                     break;
                 }
                 let remaining = &small_buf[..count];
                 // len_hint proven inaccurate. discard and reallocate
                 len_hint = None;
-                partition.reserve(partition_len.saturating_sub(partition.capacity()));
-                partition.put(remaining);
+                partition.extend_zeroed(partition_len.saturating_sub(partition.capacity()));
+                partition.extend_from_slice(remaining)?;
                 total_read += count as u64;
                 // after special-case read, loop back around to recalculate next steps
                 continue;
             }
 
             // Read from inner stream
-            // SAFETY: spare_capacity_mut() returns allocated memory without initialized value.
-            // We want to read directly into that memory. We are responsible for correctly
-            // updating `buf` with its new length using the memory we've now initialized.
-            unsafe {
-                let spare_capacity = partition.spare_capacity_mut();
-                let mut spare_capacity = slice::from_raw_parts_mut(
-                    spare_capacity.as_mut_ptr() as *mut u8,
-                    spare_capacity.len(),
-                );
-                // Reserved capacity may go beyond the partition length. Cap it.
-                // The resulting capped slice may go beyond what len_hint suggests. Good.
-                if spare_capacity.len() > remaining_partition_space {
-                    spare_capacity = &mut spare_capacity[..remaining_partition_space];
+            let count = partition.read_from(&mut inner).await?;
+            if count == 0 {
+                // stream finished! yield existing bytes and complete
+                if !partition.is_empty() {
+                    yield mem::take(&mut partition).finalize().into();
                 }
-                let count = inner.read(spare_capacity).await?;
-                if count == 0 {
-                    // stream finished! yield existing bytes and complete
-                    if !partition.is_empty() {
-                        yield mem::take(&mut partition).freeze();
-                    }
-                    break;
-                }
-                partition.set_len(partition.len() + count);
-                total_read += count as u64;
+                break;
             }
+            total_read += count as u64;
 
             // If len_hint has been exceeded, discard as inaccurate
             if let Some(expected_total_len) = len_hint {
