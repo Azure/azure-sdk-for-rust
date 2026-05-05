@@ -216,8 +216,26 @@ impl CosmosClientBuilder {
     /// This enables testing with custom transports such as the
     /// [`InMemoryEmulatorHttpClient`](azure_data_cosmos_driver::in_memory_emulator::InMemoryEmulatorHttpClient).
     ///
-    /// Note: SDK-level connection pool, fault injection, and throughput control settings
-    /// are subsequently applied to this builder and will override any matching values it contains.
+    /// # Field interactions
+    ///
+    /// After `build()` is invoked, the SDK forwards a small set of its own
+    /// settings into the supplied builder. These overwrite the corresponding
+    /// fields on the supplied builder (last-writer-wins):
+    ///
+    /// - **Connection pool** (`with_connection_pool`): always replaced by an
+    ///   SDK-derived pool that reflects `with_proxy_allowed` and
+    ///   `with_allow_emulator_invalid_certificates`.
+    /// - **Fault injection rules** (`with_fault_injection_rules`): replaced
+    ///   when the SDK has its own fault-injection builder configured.
+    /// - **Throughput control groups** (`register_throughput_control_group`):
+    ///   the SDK appends each group registered via
+    ///   `with_throughput_control_group` (additive — does not clear existing
+    ///   groups on the supplied builder).
+    ///
+    /// All other fields on the supplied builder — most importantly
+    /// `with_http_client_factory` (the in-memory emulator transport),
+    /// `with_cpu_refresh_interval`, and any future fields — are left
+    /// untouched and take effect as configured.
     #[doc(hidden)]
     #[cfg(feature = "__internal_in_memory_emulator")]
     pub fn with_driver_runtime_builder(mut self, builder: CosmosDriverRuntimeBuilder) -> Self {

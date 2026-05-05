@@ -5,6 +5,7 @@
 
 use azure_core::http::headers::HeaderName;
 use azure_core::http::Request;
+use percent_encoding::percent_decode_str;
 
 /// The type of operation resolved from an HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,7 +80,10 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&IS_UPSERT)
         .map(|s| s.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
-    let is_query = headers.get_optional_str(&IS_QUERY).is_some();
+    let is_query = headers
+        .get_optional_str(&IS_QUERY)
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
 
     let path = url.path();
     let segments = parse_path_segments(path);
@@ -103,10 +107,21 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
 }
 
 /// Parses URL path into segments, skipping empty entries.
+///
+/// Each segment is percent-decoded so document, container, and database IDs
+/// that contain characters the SDK percent-encodes (spaces, '+', '%',
+/// non-ASCII) match the stored IDs the way they would against a real Cosmos
+/// DB gateway. Invalid UTF-8 in a percent-decoded segment falls back to the
+/// raw segment so we never panic on malformed input.
 fn parse_path_segments(path: &str) -> Vec<String> {
     path.split('/')
         .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
+        .map(|s| {
+            percent_decode_str(s)
+                .decode_utf8()
+                .map(|cow| cow.into_owned())
+                .unwrap_or_else(|_| s.to_string())
+        })
         .collect()
 }
 

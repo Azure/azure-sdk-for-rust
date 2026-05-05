@@ -569,12 +569,19 @@ fn bad_partition_key_response(err: azure_core::Error, start: Instant) -> AsyncRa
 }
 
 /// Builds a V2 session token for a partition in the given region.
+///
+/// `current_local_lsn` reflects the writes applied at *this* region (locally
+/// produced + replicated in) and is the value the real Cosmos DB gateway
+/// includes in the per-region segment of the token. Using `current_lsn`
+/// (which tracks the global high-water LSN) for both components produces
+/// tokens that look correct only on single-region accounts.
 fn session_token_for(partition: &PhysicalPartition, region_id: u64) -> String {
     SessionToken::format_v2(
         partition.id,
         partition.current_version(),
         partition.current_lsn(),
         region_id,
+        partition.current_local_lsn(),
     )
 }
 
@@ -739,6 +746,7 @@ async fn handle_create(
 
         // Generate system properties
         let lsn = partition.advance_lsn();
+        partition.advance_local_lsn();
         let (_, doc_rid) = store.rid_generator().next_document_rid(
             state.metadata.numeric_db_id,
             state.metadata.numeric_coll_id,
@@ -1072,6 +1080,7 @@ async fn handle_replace(
 
         // Replace
         let lsn = partition.advance_lsn();
+        partition.advance_local_lsn();
         let ts = current_timestamp();
         let etag = new_etag();
 
@@ -1234,6 +1243,7 @@ async fn handle_upsert(
         }
 
         let lsn = partition.advance_lsn();
+        partition.advance_local_lsn();
         let ts = current_timestamp();
         let etag = new_etag();
 
@@ -1399,6 +1409,7 @@ async fn handle_delete(
         }
 
         let lsn = partition.advance_lsn();
+        partition.advance_local_lsn();
         logical.remove(doc_id);
 
         // Create a "tombstone" for replication

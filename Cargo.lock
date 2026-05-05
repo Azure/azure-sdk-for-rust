@@ -475,6 +475,7 @@ dependencies = [
  "crossbeam-epoch",
  "futures",
  "h2",
+ "percent-encoding",
  "quick-xml",
  "rand 0.10.1",
  "reqwest",

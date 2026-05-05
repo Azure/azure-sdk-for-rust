@@ -697,6 +697,26 @@ mod tests {
         assert!(headers.server_duration_ms.is_none());
         assert!(headers.lsn.is_none());
         assert!(headers.item_lsn.is_none());
+        assert!(headers.partition_key_range_id.is_none());
+        assert!(headers.internal_partition_id.is_none());
+        assert!(headers.retry_after_ms.is_none());
+        assert!(headers.correlated_activity_id.is_none());
+        assert!(headers.transport_request_id.is_none());
+        assert!(headers.global_committed_lsn.is_none());
+        assert!(headers.quorum_acked_lsn.is_none());
+        assert!(headers.quorum_acked_local_lsn.is_none());
+        assert!(headers.local_lsn.is_none());
+        assert!(headers.item_local_lsn.is_none());
+        assert!(headers.number_of_read_regions.is_none());
+        assert!(headers.last_state_change_utc.is_none());
+        assert!(headers.gateway_version.is_none());
+        assert!(headers.service_version.is_none());
+        assert!(headers.resource_quota.is_none());
+        assert!(headers.resource_usage.is_none());
+        assert!(headers.has_tentative_writes.is_none());
+        assert!(headers.log_results.is_none());
+        assert!(headers.collection_index_transformation_progress.is_none());
+        assert!(headers.collection_lazy_indexing_progress.is_none());
     }
 
     #[test]

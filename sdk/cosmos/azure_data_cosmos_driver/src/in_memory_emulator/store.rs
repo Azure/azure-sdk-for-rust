@@ -188,22 +188,23 @@ impl EmulatorStore {
             partition_key: pk_def,
             partition_count: config.partition_count(),
             provisioned_throughput_ru: config.provisioned_throughput_ru(),
+            // Shared counter — first id allocated by split/merge will be
+            // `partition_count` (one past the last initial partition id).
+            next_partition_id: Arc::new(AtomicU32::new(config.partition_count())),
+            pkrange_rids: Arc::new(RwLock::new(HashMap::new())),
         };
 
-        let state = ContainerState::new(&meta, &self.rid_generator);
-
+        // Each region gets its own ContainerState (own LSNs, own document
+        // store) but they all share the same `ContainerMetadata`, so pkrange
+        // RIDs are allocated once via `pkrange_rid_for` and reused.
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
             let mut containers = region.containers.write().unwrap();
             containers.insert(
                 (db_id.to_string(), coll_id.to_string()),
-                state.clone_for_region(&self.rid_generator, &meta),
+                ContainerState::new(&meta, &self.rid_generator),
             );
         }
-
-        // Store the "template" state in case we need to reference it
-        drop(regions);
-        let _ = state;
 
         meta
     }
@@ -255,21 +256,58 @@ impl EmulatorStore {
         if let Some(region_store) = regions.get(target_region) {
             region_store.paused.store(false, Ordering::SeqCst);
 
-            // Drain the replication buffer
+            // Drain the replication buffer.
+            //
+            // The buffer is FIFO across **all** source regions, so for
+            // multi-master accounts the arrival order does not necessarily
+            // match per-(epk, id) causal order. Sort by (db, coll, epk, id, ts,
+            // lsn) before applying so the LWW comparison in `apply_replication`
+            // sees mutations in a stable order — without this, a paused
+            // multi-master target could apply a stale write after a fresh one
+            // and the LWW guard would still be observed as correct only by
+            // accident.
             let mut buffer = region_store.replication_buffer.write().unwrap();
-            while let Some(pending) = buffer.pop_front() {
+            let mut pending: Vec<PendingReplication> = buffer.drain(..).collect();
+            pending.sort_by(|a, b| {
+                (
+                    &a.db_id,
+                    &a.coll_id,
+                    &a.doc.epk,
+                    &a.doc.id,
+                    a.doc.ts,
+                    a.doc.lsn,
+                )
+                    .cmp(&(
+                        &b.db_id,
+                        &b.coll_id,
+                        &b.doc.epk,
+                        &b.doc.id,
+                        b.doc.ts,
+                        b.doc.lsn,
+                    ))
+            });
+            for entry in pending {
                 let containers = region_store.containers.read().unwrap();
-                let key = (pending.db_id.clone(), pending.coll_id.clone());
+                let key = (entry.db_id.clone(), entry.coll_id.clone());
                 if let Some(state) = containers.get(&key) {
-                    if let Some(partition) = state.find_partition(&pending.doc.epk) {
+                    if let Some(partition) = state.find_partition(&entry.doc.epk) {
                         let mut docs = partition.documents.write().unwrap();
-                        let logical = docs.entry(pending.doc.epk.clone()).or_default();
-                        if pending.is_delete {
-                            logical.remove(&pending.doc.id);
-                        } else {
-                            logical.insert(pending.doc.id.clone(), pending.doc.clone());
+                        let logical = docs.entry(entry.doc.epk.clone()).or_default();
+                        let should_apply = match logical.get(&entry.doc.id) {
+                            None => true,
+                            Some(existing) => {
+                                (entry.doc.ts, entry.doc.lsn) > (existing.ts, existing.lsn)
+                            }
+                        };
+                        if should_apply {
+                            if entry.is_delete {
+                                logical.remove(&entry.doc.id);
+                            } else {
+                                logical.insert(entry.doc.id.clone(), entry.doc.clone());
+                            }
                         }
-                        partition.lsn.fetch_max(pending.doc.lsn, Ordering::SeqCst);
+                        partition.lsn.fetch_max(entry.doc.lsn, Ordering::SeqCst);
+                        partition.local_lsn.fetch_add(1, Ordering::SeqCst);
                     }
                 }
             }
@@ -338,12 +376,31 @@ impl EmulatorStore {
         let regions = self.regions.read().unwrap();
         if let Some(region_store) = regions.get(target_region) {
             if region_store.paused.load(Ordering::SeqCst) {
-                // Enqueue to buffer
+                // Enqueue to buffer.
+                //
+                // # Intentional panic
+                //
+                // The `assert!` below is **deliberately fail-fast**. The
+                // emulator runs only inside `cargo test` (the
+                // `__internal_in_memory_emulator` feature is internal-only and
+                // not part of any production build) and a paused region whose
+                // buffer grows past 10_000 entries always indicates a test bug:
+                // either the test forgot to call `resume_replication` or it is
+                // generating writes faster than any reasonable replicated
+                // workload. Silently dropping or summarising those writes
+                // would mask the bug and cause confusing downstream failures
+                // (stale reads, missing items, divergent regions). Crashing
+                // the test process with a clear message is the correct
+                // behavior. Do **not** soften this to a `debug_assert!`,
+                // logged warning, or buffer eviction without a corresponding
+                // update to the spec — see
+                // `azure_data_cosmos_driver/docs/IN_MEMORY_EMULATOR_SPEC.md`
+                // ("Replication buffer overflow") for the rationale.
                 let mut buffer = region_store.replication_buffer.write().unwrap();
                 const MAX_REPLICATION_BUFFER: usize = 10_000;
                 assert!(
                     buffer.len() < MAX_REPLICATION_BUFFER,
-                    "in-memory emulator: replication buffer for region '{}' exceeded {} entries while paused",
+                    "in-memory emulator: replication buffer for region '{}' exceeded {} entries while paused (likely a test forgot to call resume_replication)",
                     target_region,
                     MAX_REPLICATION_BUFFER
                 );
@@ -362,12 +419,34 @@ impl EmulatorStore {
                 if let Some(partition) = state.find_partition(&doc.epk) {
                     let mut docs = partition.documents.write().unwrap();
                     let logical = docs.entry(doc.epk.clone()).or_default();
-                    if is_delete {
-                        logical.remove(&doc.id);
-                    } else {
-                        logical.insert(doc.id.clone(), doc.clone());
+                    // Last-Writer-Wins on (_ts, lsn): if there is already a
+                    // record for this id with a strictly newer timestamp, or
+                    // the same timestamp and a strictly higher lsn, the
+                    // incoming replicated mutation is stale and must be
+                    // dropped. This honors the conflictResolutionPolicy
+                    // advertised in container metadata
+                    // (LastWriterWins on /_ts) and prevents an out-of-order
+                    // arrival (paused-then-resumed buffer, multi-master
+                    // concurrent writes) from clobbering newer state.
+                    let should_apply = match logical.get(&doc.id) {
+                        None => true,
+                        Some(existing) => (doc.ts, doc.lsn) > (existing.ts, existing.lsn),
+                    };
+                    if should_apply {
+                        if is_delete {
+                            logical.remove(&doc.id);
+                        } else {
+                            logical.insert(doc.id.clone(), doc.clone());
+                        }
                     }
+                    // Always advance the partition's global LSN watermark; the
+                    // LSN reflects the replication stream, not which write
+                    // ultimately won the LWW comparison.
                     partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
+                    // Bump local LSN at this region (target replica): this is
+                    // the count of mutations applied here, regardless of
+                    // origin.
+                    partition.local_lsn.fetch_add(1, Ordering::SeqCst);
                 }
             }
         }
@@ -534,13 +613,24 @@ pub(crate) struct ContainerMetadata {
     pub partition_key: PartitionKeyDefinition,
     pub partition_count: u32,
     pub provisioned_throughput_ru: Option<u32>,
+    /// Shared atomic counter for allocating new partition IDs (split/merge).
+    /// Authoritative across *all* regions so partition IDs cannot diverge —
+    /// real Cosmos DB pkrange IDs are properties of the container, not the
+    /// replica.
+    pub next_partition_id: Arc<AtomicU32>,
+    /// Stable per-partition pkrange RIDs (`partition_id` → RID).
+    ///
+    /// Real Cosmos DB guarantees that a given pkrange has the same RID in
+    /// every region. We cache the RID at first allocation so subsequent
+    /// region replicas (and split-child seeding paths) reuse it instead of
+    /// drawing a fresh value from the per-account `RidGenerator`.
+    pub pkrange_rids: Arc<RwLock<HashMap<u32, String>>>,
 }
 
 /// A container's state including metadata and physical partitions.
 pub(crate) struct ContainerState {
     pub metadata: ContainerMetadata,
     pub physical_partitions: Vec<PhysicalPartition>,
-    pub next_partition_id: AtomicU32,
 }
 
 /// Snapshot of container metadata (without borrowing the lock).
@@ -552,22 +642,9 @@ pub(crate) struct ContainerStateSnapshot {
 impl ContainerState {
     pub(crate) fn new(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Self {
         let partitions = create_partitions(meta, rid_gen);
-        let next_id = partitions.iter().map(|p| p.id).max().unwrap_or(0) + 1;
         Self {
             metadata: meta.clone(),
             physical_partitions: partitions,
-            next_partition_id: AtomicU32::new(next_id),
-        }
-    }
-
-    /// Creates a clone of this state for another region (new partitions, same layout).
-    fn clone_for_region(&self, rid_gen: &RidGenerator, meta: &ContainerMetadata) -> Self {
-        let partitions = create_partitions(meta, rid_gen);
-        let next_id = partitions.iter().map(|p| p.id).max().unwrap_or(0) + 1;
-        Self {
-            metadata: meta.clone(),
-            physical_partitions: partitions,
-            next_partition_id: AtomicU32::new(next_id),
         }
     }
 
@@ -578,9 +655,9 @@ impl ContainerState {
             .find(|p| p.contains_epk(epk))
     }
 
-    /// Allocates the next partition ID.
+    /// Allocates the next partition ID from the container-wide shared counter.
     pub fn next_partition_id(&self) -> u32 {
-        self.next_partition_id.fetch_add(1, Ordering::SeqCst)
+        self.metadata.next_partition_id.fetch_add(1, Ordering::SeqCst)
     }
 }
 
@@ -590,6 +667,12 @@ pub(crate) struct PhysicalPartition {
     pub epk_min: Epk,
     pub epk_max: Epk,
     pub lsn: AtomicU64,
+    /// Per-region local LSN: count of mutations applied at *this* region for
+    /// this partition (locally produced + replicated in). Real Cosmos DB
+    /// session tokens carry both a global LSN and per-region local LSNs;
+    /// using one value for both produces tokens that look correct only on
+    /// single-region accounts.
+    pub local_lsn: AtomicU64,
     pub vector_clock_version: AtomicU64,
     pub documents: RwLock<BTreeMap<Epk, BTreeMap<String, StoredDocument>>>,
     pub session_state: SessionState,
@@ -622,6 +705,16 @@ impl PhysicalPartition {
         self.vector_clock_version.load(Ordering::SeqCst)
     }
 
+    /// Returns the current local LSN for this region.
+    pub fn current_local_lsn(&self) -> u64 {
+        self.local_lsn.load(Ordering::SeqCst)
+    }
+
+    /// Advances the local LSN by 1 and returns the new value.
+    pub fn advance_local_lsn(&self) -> u64 {
+        self.local_lsn.fetch_add(1, Ordering::SeqCst) + 1
+    }
+
     /// Returns whether this partition is currently locked (split/merge in progress).
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::SeqCst)
@@ -641,6 +734,28 @@ pub(crate) struct StoredDocument {
     #[allow(dead_code)]
     pub lsn: u64,
     pub epk: Epk,
+}
+
+/// Returns the cached pkrange RID for `partition_id`, allocating (and
+/// caching on the shared metadata) on first sight.
+///
+/// The cache lives on `ContainerMetadata` and is shared across every region
+/// replica of the container so the same partition has the same RID in every
+/// region — matching the real Cosmos DB invariant that pkrange RIDs are a
+/// property of the container, not the replica.
+fn pkrange_rid_for(meta: &ContainerMetadata, rid_gen: &RidGenerator, partition_id: u32) -> String {
+    {
+        let map = meta.pkrange_rids.read().unwrap();
+        if let Some(rid) = map.get(&partition_id) {
+            return rid.clone();
+        }
+    }
+    let mut map = meta.pkrange_rids.write().unwrap();
+    map.entry(partition_id)
+        .or_insert_with(|| {
+            rid_gen.next_pkrange_rid(meta.numeric_db_id, meta.numeric_coll_id, partition_id)
+        })
+        .clone()
 }
 
 /// Creates physical partitions for a container by dividing the EPK space equally.
@@ -665,7 +780,7 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
             Epk::from(boundaries[(i + 1) as usize].clone())
         };
 
-        let rid = rid_gen.next_pkrange_rid(meta.numeric_db_id, meta.numeric_coll_id, i);
+        let rid = pkrange_rid_for(meta, rid_gen, i);
 
         let per_partition_ru = meta.provisioned_throughput_ru.map(|total| total / n);
 
@@ -674,6 +789,7 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
             epk_min: min,
             epk_max: max,
             lsn: AtomicU64::new(0),
+            local_lsn: AtomicU64::new(0),
             vector_clock_version: AtomicU64::new(0),
             documents: RwLock::new(BTreeMap::new()),
             session_state: SessionState::new(),
@@ -694,21 +810,33 @@ fn compute_partition_boundaries(n: u32) -> Vec<String> {
     let mut boundaries = Vec::with_capacity((n + 1) as usize);
     // V2 EPK hash clears the top 2 bits, so EPKs lie in [0, 2^126).
     // Divide that reachable space evenly across N partitions.
+    //
+    // We always emit 32-character uppercase hex strings (16 bytes) for every
+    // boundary including the endpoints. Lex compare on equal-length hex
+    // strings matches numeric compare, which is what the EPK ordering relies
+    // on, and avoids special-case handling in `compute_epk_midpoint`. The
+    // `Epk::min()` / `Epk::max()` sentinels still represent the open ends of
+    // the EPK space — see `is_epk_min` / `is_epk_max` for predicates.
     let total: u128 = 1u128 << 126;
     let step = total / n as u128;
 
     for i in 0..=n {
-        if i == 0 {
-            boundaries.push(String::new()); // Epk::min()
-        } else if i == n {
-            boundaries.push("FF".to_string()); // Epk::max()
-        } else {
-            let boundary = step * i as u128;
-            boundaries.push(format!("{:032X}", boundary));
-        }
+        let boundary = step * i as u128;
+        boundaries.push(format!("{:032X}", boundary));
     }
 
     boundaries
+}
+
+/// Returns true if `epk` represents the open lower bound of the EPK space.
+fn is_epk_min(epk: &Epk) -> bool {
+    epk.as_str().is_empty() || epk.as_str().chars().all(|c| c == '0')
+}
+
+/// Returns true if `epk` represents the open upper bound of the EPK space.
+fn is_epk_max(epk: &Epk) -> bool {
+    let s = epk.as_str();
+    s == "FF" || s.eq_ignore_ascii_case("ffffffffffffffffffffffffffffffff")
 }
 
 /// Returns the current Unix timestamp in seconds.
@@ -849,19 +977,45 @@ impl EmulatorStore {
                     let parent_version = parent.current_version();
                     let parent_min = parent.epk_min.clone();
                     let parent_max = parent.epk_max.clone();
-                    let midpoint = compute_epk_midpoint(&parent_min, &parent_max);
+                    let midpoint = match compute_epk_midpoint(&parent_min, &parent_max) {
+                        Ok(m) => m,
+                        Err(err) => {
+                            tracing::error!(
+                                error = %err,
+                                db_id = db_id,
+                                coll_id = coll_id,
+                                partition_id = partition_id,
+                                "in-memory emulator: aborting split — unlocking parent",
+                            );
+                            // Unlock the parent in every region so the partition
+                            // does not stay wedged at locked=true.
+                            let regions = self.regions.read().unwrap();
+                            for region in regions.values() {
+                                let containers = region.containers.read().unwrap();
+                                if let Some(state) = containers.get(&key) {
+                                    if let Some(p) = state
+                                        .physical_partitions
+                                        .iter()
+                                        .find(|p| p.id == partition_id)
+                                    {
+                                        p.locked.store(false, Ordering::SeqCst);
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    };
+                    // Both child IDs come from the shared per-container
+                    // counter on `ContainerMetadata`, so they are identical
+                    // across regions. Likewise RIDs go through the shared
+                    // pkrange_rids cache so a given child id maps to the same
+                    // RID in every region.
                     let child_id_1 = state.next_partition_id();
                     let child_id_2 = state.next_partition_id();
-                    let child_rid_1 = self.rid_generator.next_pkrange_rid(
-                        state.metadata.numeric_db_id,
-                        state.metadata.numeric_coll_id,
-                        child_id_1,
-                    );
-                    let child_rid_2 = self.rid_generator.next_pkrange_rid(
-                        state.metadata.numeric_db_id,
-                        state.metadata.numeric_coll_id,
-                        child_id_2,
-                    );
+                    let child_rid_1 =
+                        pkrange_rid_for(&state.metadata, &self.rid_generator, child_id_1);
+                    let child_rid_2 =
+                        pkrange_rid_for(&state.metadata, &self.rid_generator, child_id_2);
                     let total_throughput = state.metadata.provisioned_throughput_ru;
                     found = Some((
                         parent_lsn,
@@ -932,6 +1086,7 @@ impl EmulatorStore {
                     epk_min: parent_min.clone(),
                     epk_max: midpoint.clone(),
                     lsn: AtomicU64::new(child_lsn),
+                    local_lsn: AtomicU64::new(child_lsn),
                     vector_clock_version: AtomicU64::new(parent_version),
                     documents: RwLock::new(docs_1),
                     session_state: SessionState::new(),
@@ -948,6 +1103,7 @@ impl EmulatorStore {
                     epk_min: midpoint.clone(),
                     epk_max: parent_max.clone(),
                     lsn: AtomicU64::new(child_lsn),
+                    local_lsn: AtomicU64::new(child_lsn),
                     vector_clock_version: AtomicU64::new(parent_version),
                     documents: RwLock::new(docs_2),
                     session_state: SessionState::new(),
@@ -962,10 +1118,9 @@ impl EmulatorStore {
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
                 state.physical_partitions.push(child2);
-                // Keep next_partition_id consistent across regions.
-                state
-                    .next_partition_id
-                    .fetch_max(child_id_2 + 1, Ordering::SeqCst);
+                // No per-region counter to reconcile any more — the shared
+                // counter on `ContainerMetadata` was already advanced when the
+                // child IDs were allocated.
             }
         }
     }
@@ -1048,11 +1203,8 @@ impl EmulatorStore {
                         std::cmp::max(lower.current_version(), upper.current_version());
                     let child_version = max_version + 1;
                     let child_id = state.next_partition_id();
-                    let child_rid = self.rid_generator.next_pkrange_rid(
-                        state.metadata.numeric_db_id,
-                        state.metadata.numeric_coll_id,
-                        child_id,
-                    );
+                    let child_rid =
+                        pkrange_rid_for(&state.metadata, &self.rid_generator, child_id);
                     let total_throughput = state.metadata.provisioned_throughput_ru;
                     found = Some((
                         merged_min,
@@ -1122,6 +1274,7 @@ impl EmulatorStore {
                     epk_min: merged_min.clone(),
                     epk_max: merged_max.clone(),
                     lsn: AtomicU64::new(1),
+                    local_lsn: AtomicU64::new(1),
                     vector_clock_version: AtomicU64::new(child_version),
                     documents: RwLock::new(merged_docs),
                     session_state: SessionState::new(),
@@ -1141,35 +1294,35 @@ impl EmulatorStore {
                 state.physical_partitions.remove(first_remove);
                 state.physical_partitions.remove(second_remove);
                 state.physical_partitions.push(child);
-                state
-                    .next_partition_id
-                    .fetch_max(child_id + 1, Ordering::SeqCst);
             }
         }
     }
 }
 
 /// Computes the EPK midpoint between two EPK bounds (hex strings).
-fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Epk {
-    // Parse hex strings to u128, compute midpoint, format back
-    let min_val = if min.as_str().is_empty() {
-        0u128
-    } else {
-        u128::from_str_radix(min.as_str(), 16).unwrap_or_else(|e| {
-            panic!("emulator: corrupted EPK partition bound min={:?}: {e}", min)
-        })
+///
+/// Returns `Err` if either bound is not parseable. Callers in the split path
+/// must surface the error and unlock the parent partition rather than panic;
+/// a corrupt bound at the split site would otherwise wedge the partition
+/// `locked = true` forever inside a spawned task with no caller to observe
+/// the panic.
+fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Result<Epk, String> {
+    let parse = |epk: &Epk, label: &str| -> Result<u128, String> {
+        if is_epk_min(epk) {
+            return Ok(0u128);
+        }
+        if is_epk_max(epk) {
+            return Ok(1u128 << 126);
+        }
+        u128::from_str_radix(epk.as_str(), 16)
+            .map_err(|e| format!("corrupted EPK partition bound {}={:?}: {e}", label, epk))
     };
-
-    let max_val = if max.as_str() == "FF" {
-        1u128 << 126
-    } else {
-        u128::from_str_radix(max.as_str(), 16).unwrap_or_else(|e| {
-            panic!("emulator: corrupted EPK partition bound max={:?}: {e}", max)
-        })
-    };
-
-    let mid = min_val / 2 + max_val / 2;
-    Epk::from(format!("{:032X}", mid))
+    let min_val = parse(min, "min")?;
+    let max_val = parse(max, "max")?;
+    // Safe midpoint: `min/2 + max/2` loses 1 bit when both operands are odd.
+    // Add the missing carry explicitly.
+    let mid = min_val / 2 + max_val / 2 + ((min_val & 1) & (max_val & 1));
+    Ok(Epk::from(format!("{:032X}", mid)))
 }
 
 #[cfg(test)]

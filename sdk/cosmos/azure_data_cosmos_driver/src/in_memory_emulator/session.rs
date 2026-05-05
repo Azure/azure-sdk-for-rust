@@ -71,10 +71,20 @@ impl SessionToken {
     }
 
     /// Formats a V2 session token.
-    pub fn format_v2(pkrange_id: u32, version: u64, global_lsn: u64, region_id: u64) -> String {
+    ///
+    /// `local_lsn` is the number of mutations applied at this region for the
+    /// partition, which differs from `global_lsn` for any partition that
+    /// receives writes via replication rather than originating them.
+    pub fn format_v2(
+        pkrange_id: u32,
+        version: u64,
+        global_lsn: u64,
+        region_id: u64,
+        local_lsn: u64,
+    ) -> String {
         format!(
             "{}:{}#{}#{}={}",
-            pkrange_id, version, global_lsn, region_id, global_lsn
+            pkrange_id, version, global_lsn, region_id, local_lsn
         )
     }
 
@@ -148,8 +158,17 @@ mod tests {
 
     #[test]
     fn format_v2_token() {
-        let s = SessionToken::format_v2(0, 1, 100, 0);
+        // Single-region: local LSN equals global LSN.
+        let s = SessionToken::format_v2(0, 1, 100, 0, 100);
         assert_eq!(s, "0:1#100#0=100");
+    }
+
+    #[test]
+    fn format_v2_token_distinguishes_local_from_global() {
+        // Multi-region: a region that received this write via replication
+        // reports the local-LSN component independently of the global LSN.
+        let s = SessionToken::format_v2(2, 4, 100, 1, 73);
+        assert_eq!(s, "2:4#100#1=73");
     }
 
     #[test]
