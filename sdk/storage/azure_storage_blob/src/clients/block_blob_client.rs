@@ -133,7 +133,7 @@ impl BlockBlobClient {
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_UPLOAD_PARTITION_SIZE);
         // Construct exhaustively to catch new options.
-        let tags_string = options.tags.as_ref().map(blob_tags_to_string);
+        let tags_string = options.tags.as_ref().and_then(blob_tags_to_string);
         let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),

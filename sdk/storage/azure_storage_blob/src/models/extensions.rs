@@ -6,20 +6,33 @@ use crate::models::{
     BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions, PageBlobClientCreateOptions,
     SignedIdentifier, SignedIdentifiers,
 };
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
 
 /// Converts a `BlobTags` to the `x-ms-tags` header string format (`key=value&key2=value2`).
-pub(crate) fn blob_tags_to_string(tags: &BlobTags) -> String {
-    match &tags.blob_tag_set {
+///
+/// Keys and values are percent-encoded to handle special characters (`&`, `=`, spaces, etc.).
+/// Returns `None` if there are no valid tag entries.
+pub(crate) fn blob_tags_to_string(tags: &BlobTags) -> Option<String> {
+    let result = match &tags.blob_tag_set {
         Some(tag_set) => tag_set
             .iter()
             .filter_map(|tag| match (&tag.key, &tag.value) {
-                (Some(k), Some(v)) => Some(format!("{}={}", k, v)),
+                (Some(k), Some(v)) => {
+                    let encoded_key = percent_encode(k.as_bytes(), NON_ALPHANUMERIC);
+                    let encoded_value = percent_encode(v.as_bytes(), NON_ALPHANUMERIC);
+                    Some(format!("{}={}", encoded_key, encoded_value))
+                }
                 _ => None,
             })
             .collect::<Vec<_>>()
             .join("&"),
         None => String::new(),
+    };
+    if result.is_empty() {
+        None
+    } else {
+        Some(result)
     }
 }
 

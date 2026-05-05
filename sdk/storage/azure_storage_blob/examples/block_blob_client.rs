@@ -123,7 +123,7 @@ async fn copy_from_url(
     container_client: &BlobContainerClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create a source blob to copy from, tagging it and guarding against accidental
-    // overwrites with `with_if_not_exists` + `with_tags`.
+    // overwrites with `if_none_match: Some("*")` and setting `tags` on the options.
     let source_blob_name = "copy-source.txt";
     let source_client = container_client.blob_client(source_blob_name);
     let upload_options = BlockBlobClientUploadOptions {
