@@ -41,7 +41,7 @@ pub(crate) fn blob_tags_to_string(tags: &BlobTags) -> Option<String> {
 ///
 /// * `self` - The options bag to be modified.
 impl PageBlobClientCreateOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -54,7 +54,7 @@ impl PageBlobClientCreateOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl AppendBlobClientCreateOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -67,7 +67,7 @@ impl AppendBlobClientCreateOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -80,7 +80,7 @@ impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl BlockBlobClientUploadOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self

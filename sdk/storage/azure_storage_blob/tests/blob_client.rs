@@ -140,7 +140,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client
         .upload(
             RequestContent::from(new_data.to_vec()),
-            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+            Some(BlockBlobClientUploadOptions::default().if_not_exists()),
         )
         .await;
 
@@ -1316,7 +1316,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let err = blob_client
         .upload(
             RequestContent::from(b"duplicate".to_vec()),
-            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+            Some(BlockBlobClientUploadOptions::default().if_not_exists()),
         )
         .await
         .unwrap_err();

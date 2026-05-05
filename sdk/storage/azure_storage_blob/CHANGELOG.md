@@ -15,6 +15,10 @@
 - Removed `BlockBlobClientUploadOptions::with_tags()` builder method. Set the `tags` field directly using `HashMap<String, String>.into()`.
 - [TEMP] Renamed `BlobServiceClientFindBlobsByTagsOptions` to `BlobServiceClientListFindBlobsByTagsOptions`.
 - [TEMP] Renamed `BlobContainerClientFindBlobsByTagsOptions` to `BlobContainerClientListFindBlobsByTagsOptions`.
+- Renamed `PageBlobClientCreateOptions::with_if_not_exists()` to `if_not_exists()`.
+- Renamed `AppendBlobClientCreateOptions::with_if_not_exists()` to `if_not_exists()`.
+- Renamed `BlockBlobClientUploadBlobFromUrlOptions::with_if_not_exists()` to `if_not_exists()`.
+- Renamed `BlockBlobClientUploadOptions::with_if_not_exists()` to `if_not_exists()`.
 
 ### Bugs Fixed
 

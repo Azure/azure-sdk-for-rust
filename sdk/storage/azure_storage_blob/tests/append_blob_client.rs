@@ -384,7 +384,7 @@ async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), B
     // If Not Exists Scenario (blob already exists)
     let result = append_blob_client
         .create(Some(
-            AppendBlobClientCreateOptions::default().with_if_not_exists(),
+            AppendBlobClientCreateOptions::default().if_not_exists(),
         ))
         .await;
 

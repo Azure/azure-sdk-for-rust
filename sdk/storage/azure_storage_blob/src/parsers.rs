@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 /// Takes in a HashMap of tag key-value pairs and converts them to a filter expression
-/// for use with [`BlobServiceClient::find_blobs_by_tags()`](crate::BlobServiceClient::find_blobs_by_tags) or [`BlobContainerClient::find_blobs_by_tags()`](crate::BlobContainerClient::find_blobs_by_tags).
+/// for use with [`BlobServiceClient::list_find_blobs_by_tags()`](crate::BlobServiceClient::list_find_blobs_by_tags) or [`BlobContainerClient::list_find_blobs_by_tags()`](crate::BlobContainerClient::list_find_blobs_by_tags).
 ///
 /// # Arguments
 ///
