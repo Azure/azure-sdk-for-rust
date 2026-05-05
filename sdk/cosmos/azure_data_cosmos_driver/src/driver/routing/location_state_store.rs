@@ -320,9 +320,13 @@ impl LocationStateStore {
                 Ordering::Acquire,
                 &guard,
             ) {
-                Ok(old) => {
-                    // SAFETY: old pointer is detached after successful exchange.
-                    unsafe { guard.defer_destroy(old) };
+                Ok(_) => {
+                    // current is the pointer that was just replaced and is no
+                    // longer reachable from self.partitions. compare_exchange
+                    // returns the newly-installed pointer on success, not the
+                    // replaced one, so we must defer-destroy current (matching
+                    // the pattern in apply_account above).
+                    unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
                 }
@@ -655,5 +659,104 @@ mod tests {
 
         let snapshot = store.snapshot();
         assert!(snapshot.account.unavailable_endpoints.is_empty());
+    }
+
+    #[test]
+    fn apply_partition_keeps_installed_pointer_live_until_store_drop() {
+        // Regression test for a use-after-free in `apply_partition`. Earlier
+        // versions called `defer_destroy(installed)` instead of
+        // `defer_destroy(replaced)` (because crossbeam_epoch's
+        // `compare_exchange` returns the *newly installed* pointer in `Ok`,
+        // not the replaced one). With that bug, the freshly installed
+        // `PartitionEndpointState` is reclaimed once the epoch advances even
+        // though it is still reachable through `self.partitions`.
+        //
+        // We detect this by stamping a `Weak` canary onto the new state via
+        // `apply_partition`'s closure. If the new state is incorrectly
+        // destroyed, the canary's only strong reference (held inside the
+        // destroyed state) drops and `weak.upgrade()` returns `None`. With the
+        // fix, the strong ref stays alive until the store itself is dropped.
+
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        );
+
+        let canary = Arc::new(());
+        let weak = Arc::downgrade(&canary);
+
+        // Move the canary into the closure. `apply_partition` may call the
+        // closure more than once under contention; in this single-threaded
+        // test there is no contention, but we still write it defensively so
+        // the closure is callable repeatedly.
+        let canary_for_closure = canary.clone();
+        store.apply_partition(move |current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled =
+                !current.per_partition_automatic_failover_enabled;
+            next._test_canary = Some(canary_for_closure.clone());
+            next
+        });
+
+        // Drop our outer strong reference. The only remaining strong ref must
+        // now live inside the newly installed `PartitionEndpointState` held by
+        // `self.partitions`.
+        drop(canary);
+
+        // Force epoch advancement on multiple participants so any incorrectly
+        // deferred destroy would actually fire. Without this, the buggy free
+        // can be observed only at process exit.
+        let collector = epoch::default_collector();
+        let helper_a = collector.register();
+        let helper_b = collector.register();
+        for _ in 0..1024 {
+            let mut g = epoch::pin();
+            g.flush();
+            g.repin();
+            drop(g);
+
+            let mut ga = helper_a.pin();
+            ga.flush();
+            ga.repin();
+            drop(ga);
+
+            let mut gb = helper_b.pin();
+            gb.flush();
+            gb.repin();
+            drop(gb);
+
+            if weak.upgrade().is_none() {
+                break;
+            }
+        }
+
+        assert!(
+            weak.upgrade().is_some(),
+            "newly installed PartitionEndpointState was reclaimed by apply_partition \
+             while still reachable from self.partitions (use-after-free regression)"
+        );
+
+        // After dropping the store the canary must be released, confirming
+        // the install path eventually frees the state via the normal Drop
+        // path rather than leaking it.
+        drop(store);
+        assert!(
+            weak.upgrade().is_none(),
+            "PartitionEndpointState was leaked: not dropped after LocationStateStore drop"
+        );
     }
 }
