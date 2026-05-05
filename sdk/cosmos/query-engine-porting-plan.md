@@ -8,7 +8,9 @@ A subset of the C++ query engine has been ported to Rust, enabling:
 1. **Client-side query plan generation** — Parse SQL text, extract partition key filters, and produce structural query info (aggregates, ORDER BY, GROUP BY, DISTINCT, etc.) without a Gateway roundtrip.
 2. **In-memory query evaluation** — Match JSON documents against SQL WHERE clauses and apply SELECT projections, for use in test emulators.
 
-The implementation lives entirely inside the `azure_data_cosmos_driver` crate as `pub(crate)` modules. No query-specific types are exposed in the public API.
+The implementation lives entirely inside the `azure_data_cosmos_driver` crate. In normal builds the query subsystem remains crate-private; test builds and the `__internal_testing` feature expose temporary validation entry points (`query` and `__test_only_generate_query_plan_for_pk_paths`) so parity tests can exercise the local planner without making it part of the supported surface.
+
+The supported SDK query path still uses Gateway query plans today. The local planner and evaluator are scaffolding that is validated in isolation, but they are not yet wired into production query execution.
 
 ---
 
@@ -19,7 +21,7 @@ SQL Text
   → Lexer (hand-crafted tokenizer)
   → Parser (recursive descent with Pratt precedence)
   → QueryPlan { pk_filters, query_info }
-      ├── pk_filters: PartitionKeyFilter (Equality / InList / None)
+      ├── pk_filters: PartitionKeyFilter (Equality / InList / Unconstrained / Contradictory / NotEvaluated)
       └── query_info: QueryInfo (unified type for local + gateway plans)
 ```
 
@@ -29,7 +31,7 @@ The pipeline goes directly from SQL AST to partition key extraction and structur
 
 ## Module Structure
 
-All modules live under `azure_data_cosmos_driver::query` (`pub(crate)`):
+All modules live under `azure_data_cosmos_driver::query`. The module is `pub(crate)` in normal builds and exposed only for tests / `__internal_testing` validation:
 
 ```
 sdk/cosmos/azure_data_cosmos_driver/src/query/
@@ -40,7 +42,7 @@ sdk/cosmos/azure_data_cosmos_driver/src/query/
 ├── plan/
 │   ├── mod.rs        # Query plan generation + unified QueryInfo type
 │   └── tests/
-│       └── query_plan_comparison.rs  # 348 exhaustive structural comparison tests
+│       └── query_plan_comparison.rs  # Exhaustive structural comparison tests
 ├── eval/mod.rs       # In-memory evaluator (WHERE matching, SELECT projection, JOIN, GROUP BY, ORDER BY)
 ├── gateway_plan.rs   # Gateway response envelope (GatewayQueryPlan wrapping shared QueryInfo)
 ├── common.rs         # Shared utilities (root alias extraction)
@@ -51,7 +53,7 @@ sdk/cosmos/azure_data_cosmos_driver/src/query/
 
 - Query plan generation is an internal implementation detail — no external consumer needs the types.
 - The driver already has all required dependencies (`serde`, `serde_json`, `azure_core`).
-- Keeps the public API surface at zero — all query modules are `pub(crate)`.
+- Keeps the supported public API surface at zero in normal builds; only test/internal feature gates expose validation hooks.
 - The unified `QueryInfo` type (with `Serialize + Deserialize`) is shared between local plan generation and gateway response deserialization.
 
 ---
@@ -77,7 +79,7 @@ Full recursive descent parser for the Cosmos DB SQL dialect:
 - Partition key filter extraction from WHERE clauses
 - Single PK equality, IN lists, hierarchical PK (2 and 3 components)
 - AND intersection logic (contradictory, redundant, narrowing)
-- OR union logic (equality + equality, equality + IN, IN + IN)
+- OR union logic (equality + equality, equality + IN, IN + IN) with duplicate-value deduplication
 - Nested PK paths (e.g., `/address/city`)
 - FROM alias resolution
 - Full structural analysis: `QueryInfo` with distinct, top, offset, limit, order_by, group_by, aggregates, has_join, has_subquery, has_where, has_udf, has_select_value
@@ -106,9 +108,9 @@ Both directions default unknown fields to `None`/`false`/empty.
 
 ## Testing
 
-- **348 structural plan comparison tests** covering every `QueryInfo` field, PK extraction pattern, hierarchical PK, AND/OR intersection, nested paths, aliases, edge cases
-- **Inline unit tests** in each module (lexer, parser, plan, eval, value)
-- **Gateway validation tests** (TODO): compare local plans against live Gateway responses using the driver's `CosmosOperation::query_plan` and the unified `QueryInfo` type
+- **Exhaustive structural plan comparison tests** covering every `QueryInfo` field, PK extraction pattern, hierarchical PK, AND/OR intersection, nested paths, aliases, and edge cases
+- **Inline unit tests** in each module (lexer, parser, plan, eval, value), including typed `GatewayQueryPlan` deserialization coverage in `gateway_plan.rs`
+- **Live Gateway validation tests** in `tests/gateway_query_plan_comparison.rs`, behind `__internal_testing`, comparing local plans against Gateway responses using `CosmosOperation::query_plan`
 
 ---
 
@@ -119,6 +121,7 @@ Both directions default unknown fields to `None`/`false`/empty.
 | IL compilation pipeline                  | Direct AST interpretation suffices                               |
 | VM runtime / bytecode execution          | Backend-only concern                                             |
 | Index plans / physical plans             | Backend-only concern                                             |
-| Distributed query coordination           | Gateway's responsibility                                         |
-| KQL / JavaScript query support           | Not needed                                                       |
-| Full ORDER BY / GROUP BY in plan routing | Plan generation detects these features; execution is server-side |
+| Distributed query coordination               | Gateway's responsibility                                                      |
+| KQL / JavaScript query support               | Not needed                                                                    |
+| Full ORDER BY / GROUP BY in plan routing     | Plan generation detects these features; execution is server-side              |
+| Production query execution using local plans | Still pending; the supported SDK path continues to request Gateway plans      |

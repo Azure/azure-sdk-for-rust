@@ -43,6 +43,21 @@ impl std::error::Error for EvalError {}
 
 type Params = [(String, serde_json::Value)];
 
+fn normalize_parameter_name(name: &str) -> &str {
+    name.trim_start_matches('@')
+}
+
+fn resolve_parameter_value<'a>(
+    parameters: &'a Params,
+    name: &str,
+) -> Option<&'a serde_json::Value> {
+    let needle = normalize_parameter_name(name);
+    parameters
+        .iter()
+        .find(|(param_name, _)| normalize_parameter_name(param_name) == needle)
+        .map(|(_, value)| value)
+}
+
 /// Check if a JSON document matches a query's WHERE clause.
 ///
 /// # Examples
@@ -94,7 +109,7 @@ pub fn project(
         }
         SqlSelectSpec::List(items) => {
             let mut obj = serde_json::Map::new();
-            for item in items {
+            for (index, item) in items.iter().enumerate() {
                 let val = eval_scalar(
                     &item.expression,
                     document,
@@ -104,7 +119,7 @@ pub fn project(
                 let key = if let Some(alias) = &item.alias {
                     alias.clone()
                 } else {
-                    infer_property_name(&item.expression)
+                    infer_property_name(&item.expression, index + 1)
                 };
                 if !val.is_undefined() {
                     obj.insert(key, val.to_json());
@@ -117,22 +132,28 @@ pub fn project(
 
 // ─── JOIN expansion ──────────────────────────────────────────────────────────
 
-/// Check whether a FROM clause contains JOINs.
-fn has_join(collection: &SqlCollectionExpression) -> bool {
-    matches!(collection, SqlCollectionExpression::Join { .. })
+fn is_plain_root_from(collection: &SqlCollectionExpression) -> bool {
+    matches!(
+        collection,
+        SqlCollectionExpression::Aliased {
+            collection: SqlCollection::Path { path, .. },
+            ..
+        } if path.is_empty()
+    )
 }
 
 /// Resolve a `SqlCollection::Path` against a set of variable bindings.
 fn resolve_collection_path(
+    root_document: &serde_json::Value,
     collection: &SqlCollection,
     bindings: &serde_json::Map<String, serde_json::Value>,
-) -> serde_json::Value {
+) -> Result<serde_json::Value, EvalError> {
     match collection {
         SqlCollection::Path { root, path } => {
             let mut val = bindings
                 .get(root)
                 .cloned()
-                .unwrap_or(serde_json::Value::Null);
+                .unwrap_or_else(|| root_document.clone());
             for segment in path {
                 val = match segment {
                     SqlPathSegment::Identifier(name) => {
@@ -148,9 +169,9 @@ fn resolve_collection_path(
                         .unwrap_or(serde_json::Value::Null),
                 };
             }
-            val
+            Ok(val)
         }
-        SqlCollection::Subquery(_) => serde_json::Value::Null,
+        SqlCollection::Subquery(_) => Err(EvalError::Unsupported("FROM subqueries".into())),
     }
 }
 
@@ -170,8 +191,9 @@ fn expand_from(
                 SqlCollection::Path { root, .. } => root.clone(),
                 SqlCollection::Subquery(_) => "c".to_string(),
             });
+            let source = resolve_collection_path(doc, collection, bindings)?;
             let mut map = serde_json::Map::new();
-            map.insert(alias_name, doc.clone());
+            map.insert(alias_name, source);
             Ok(vec![map])
         }
         SqlCollectionExpression::Join { left, right } => {
@@ -193,7 +215,7 @@ fn expand_from(
             identifier,
             collection,
         } => {
-            let arr = resolve_collection_path(collection, bindings);
+            let arr = resolve_collection_path(doc, collection, bindings)?;
             match arr {
                 serde_json::Value::Array(items) => Ok(items
                     .into_iter()
@@ -446,19 +468,23 @@ fn project_row(
     params: &Params,
 ) -> Result<serde_json::Value, EvalError> {
     match &query.select.spec {
-        SqlSelectSpec::Star => Ok(doc.clone()),
+        SqlSelectSpec::Star => Ok(if root_alias.is_none() {
+            project_star_row(doc)
+        } else {
+            doc.clone()
+        }),
         SqlSelectSpec::Value(expr) => {
             let val = eval_scalar(expr, doc, root_alias, params)?;
             Ok(val.to_json())
         }
         SqlSelectSpec::List(items) => {
             let mut obj = serde_json::Map::new();
-            for item in items {
+            for (index, item) in items.iter().enumerate() {
                 let val = eval_scalar(&item.expression, doc, root_alias, params)?;
                 let key = item
                     .alias
                     .clone()
-                    .unwrap_or_else(|| infer_property_name(&item.expression));
+                    .unwrap_or_else(|| infer_property_name(&item.expression, index + 1));
                 if !val.is_undefined() {
                     obj.insert(key, val.to_json());
                 }
@@ -478,14 +504,18 @@ fn project_group(
     let empty_obj = serde_json::Value::Object(serde_json::Map::new());
     let representative = group.first().unwrap_or(&empty_obj);
     match &query.select.spec {
-        SqlSelectSpec::Star => Ok(representative.clone()),
+        SqlSelectSpec::Star => Ok(if root_alias.is_none() {
+            project_star_row(representative)
+        } else {
+            representative.clone()
+        }),
         SqlSelectSpec::Value(expr) => {
             let val = eval_scalar_with_group(expr, representative, root_alias, params, group)?;
             Ok(val.to_json())
         }
         SqlSelectSpec::List(items) => {
             let mut obj = serde_json::Map::new();
-            for item in items {
+            for (index, item) in items.iter().enumerate() {
                 let val = eval_scalar_with_group(
                     &item.expression,
                     representative,
@@ -496,7 +526,7 @@ fn project_group(
                 let key = item
                     .alias
                     .clone()
-                    .unwrap_or_else(|| infer_property_name(&item.expression));
+                    .unwrap_or_else(|| infer_property_name(&item.expression, index + 1));
                 if !val.is_undefined() {
                     obj.insert(key, val.to_json());
                 }
@@ -551,6 +581,66 @@ fn compare_for_order_by(
     Ordering::Equal
 }
 
+fn compare_for_grouped_order_by(
+    projected_a: &serde_json::Value,
+    group_a: &[serde_json::Value],
+    projected_b: &serde_json::Value,
+    group_b: &[serde_json::Value],
+    order_by: &SqlOrderByClause,
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Ordering {
+    let null = serde_json::Value::Null;
+    let representative_a = group_a.first().unwrap_or(&null);
+    let representative_b = group_b.first().unwrap_or(&null);
+
+    for item in &order_by.items {
+        let va = eval_grouped_order_by_value(
+            projected_a,
+            representative_a,
+            group_a,
+            &item.expression,
+            root_alias,
+            params,
+        )
+        .unwrap_or(CosmosValue::Undefined);
+        let vb = eval_grouped_order_by_value(
+            projected_b,
+            representative_b,
+            group_b,
+            &item.expression,
+            root_alias,
+            params,
+        )
+        .unwrap_or(CosmosValue::Undefined);
+        let cmp = match item.order {
+            SqlSortOrder::Descending => total_cmp_for_sort(&va, &vb).reverse(),
+            _ => total_cmp_for_sort(&va, &vb),
+        };
+        if cmp != Ordering::Equal {
+            return cmp;
+        }
+    }
+
+    Ordering::Equal
+}
+
+fn eval_grouped_order_by_value(
+    projected_row: &serde_json::Value,
+    representative: &serde_json::Value,
+    group: &[serde_json::Value],
+    expression: &SqlScalarExpression,
+    root_alias: Option<&str>,
+    params: &Params,
+) -> Result<CosmosValue, EvalError> {
+    match eval_scalar(expression, projected_row, None, params) {
+        Ok(value) if !value.is_undefined() => Ok(value),
+        Ok(_) | Err(_) => {
+            eval_scalar_with_group(expression, representative, root_alias, params, group)
+        }
+    }
+}
+
 /// Evaluate a WHERE clause against a document with an explicit root alias.
 fn eval_where(
     doc: &serde_json::Value,
@@ -597,12 +687,15 @@ pub fn query_documents(
     let query = &program.query;
     let root_alias = get_root_alias(query);
 
-    // Determine whether the FROM clause contains JOINs.
-    let use_join = query.from.as_ref().is_some_and(|f| has_join(&f.collection));
+    let use_binding_context = query
+        .from
+        .as_ref()
+        .is_some_and(|from| !is_plain_root_from(&from.collection));
 
-    // With JOINs, PropertyRef looks up bindings by name in the context object,
-    // so root_alias must be None. Without JOINs, use the FROM alias as before.
-    let eval_alias = if use_join {
+    // Binding-context queries (joins, array iterators, aliased subpaths) must
+    // resolve PropertyRef against the row context rather than treating the root
+    // alias as the full current document.
+    let eval_alias = if use_binding_context {
         None
     } else {
         root_alias.as_deref()
@@ -612,7 +705,7 @@ pub fn query_documents(
     let mut filtered_rows: Vec<serde_json::Value> = Vec::new();
 
     for doc in documents {
-        if use_join {
+        if use_binding_context {
             let from = &query.from.as_ref().unwrap().collection;
             let bindings_list = expand_from(doc, from, &serde_json::Map::new())
                 .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
@@ -634,7 +727,11 @@ pub fn query_documents(
     // ── Step 2: GROUP BY / aggregates, or plain projection ───────────────
     let use_aggregates = query.group_by.is_some() || select_has_aggregates(query);
 
-    let (mut results, originals): (Vec<serde_json::Value>, Vec<serde_json::Value>) =
+    let (mut results, originals, groups): (
+        Vec<serde_json::Value>,
+        Vec<serde_json::Value>,
+        Option<Vec<Vec<serde_json::Value>>>,
+    ) =
         if use_aggregates {
             if let Some(group_by) = &query.group_by {
                 // Explicit GROUP BY — partition rows into groups by key.
@@ -668,7 +765,7 @@ pub fn query_documents(
                     )?);
                     reps.push(group[0].clone());
                 }
-                (projected, reps)
+                (projected, reps, Some(groups))
             } else {
                 // Aggregates without GROUP BY → implicit single group over all rows.
                 let projected = project_group(&filtered_rows, query, eval_alias, parameters)
@@ -677,7 +774,11 @@ pub fn query_documents(
                     .first()
                     .cloned()
                     .unwrap_or(serde_json::Value::Null);
-                (vec![projected], vec![rep])
+                (
+                    vec![projected],
+                    vec![rep],
+                    Some(vec![filtered_rows.clone()]),
+                )
             }
         } else {
             // No aggregates — project each row individually.
@@ -690,20 +791,32 @@ pub fn query_documents(
                     })?,
                 );
             }
-            (projected, originals)
+            (projected, originals, None)
         };
 
     // ── Step 3: ORDER BY ─────────────────────────────────────────────────
     if let Some(order_by) = &query.order_by {
         let mut indices: Vec<usize> = (0..results.len()).collect();
         indices.sort_by(|&a, &b| {
-            compare_for_order_by(
-                &originals[a],
-                &originals[b],
-                order_by,
-                eval_alias,
-                parameters,
-            )
+            if let Some(groups) = &groups {
+                compare_for_grouped_order_by(
+                    &results[a],
+                    &groups[a],
+                    &results[b],
+                    &groups[b],
+                    order_by,
+                    eval_alias,
+                    parameters,
+                )
+            } else {
+                compare_for_order_by(
+                    &originals[a],
+                    &originals[b],
+                    order_by,
+                    eval_alias,
+                    parameters,
+                )
+            }
         });
         results = indices.iter().map(|&i| results[i].clone()).collect();
     }
@@ -746,29 +859,32 @@ pub fn query_documents(
 
 /// Resolve a parameter to an integer value for TOP/OFFSET/LIMIT.
 fn resolve_integer_param(parameters: &Params, name: &str) -> Result<i64, EvalError> {
-    for (param_name, param_value) in parameters {
-        let clean = param_name.strip_prefix('@').unwrap_or(param_name);
-        if clean == name || param_name == name {
-            return match param_value {
-                serde_json::Value::Number(n) => {
-                    if let Some(i) = n.as_i64() {
-                        Ok(i)
-                    } else if let Some(f) = n.as_f64() {
-                        Ok(f as i64)
-                    } else {
-                        Err(EvalError::TypeError(format!(
-                            "parameter @{name} is not a valid integer"
-                        )))
-                    }
+    let Some(param_value) = resolve_parameter_value(parameters, name) else {
+        return Err(EvalError::ParameterNotFound(
+            normalize_parameter_name(name).to_string(),
+        ));
+    };
+
+    match param_value {
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                if i < 0 {
+                    return Err(EvalError::TypeError(format!(
+                        "parameter @{name} must be non-negative; got {i}"
+                    )));
                 }
-                _ => Err(EvalError::TypeError(format!(
-                    "parameter @{name} must be a number, got {}",
-                    param_value
-                ))),
-            };
+                Ok(i)
+            } else {
+                Err(EvalError::TypeError(format!(
+                    "parameter @{name} must be an integer; got {n}"
+                )))
+            }
         }
+        _ => Err(EvalError::TypeError(format!(
+            "parameter @{name} must be a number, got {}",
+            param_value
+        ))),
     }
-    Err(EvalError::ParameterNotFound(name.to_string()))
 }
 
 /// Evaluate a scalar expression against a document.
@@ -926,12 +1042,11 @@ fn eval_scalar(
         }
 
         SqlScalarExpression::ParameterRef(name) => {
-            for (param_name, param_value) in params {
-                if param_name == name {
-                    return Ok(CosmosValue::from_json(param_value));
-                }
+            if let Some(value) = resolve_parameter_value(params, name) {
+                Ok(CosmosValue::from_json(value))
+            } else {
+                Err(EvalError::ParameterNotFound(name.clone()))
             }
-            Err(EvalError::ParameterNotFound(name.clone()))
         }
 
         SqlScalarExpression::IsNull { expression, not } => {
@@ -1352,15 +1467,17 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
             _ => Ok(CosmosValue::Undefined),
         },
         "ARRAY_SLICE" => match args {
-            [CosmosValue::Array(arr), CosmosValue::Number(start), ..] => {
-                let start = *start as i64;
+            [CosmosValue::Array(arr), start, ..] => {
+                let Some(start) = as_number(start).map(|value| value as i64) else {
+                    return Ok(CosmosValue::Undefined);
+                };
                 let start = if start < 0 {
                     (arr.len() as i64 + start).max(0) as usize
                 } else {
                     start as usize
                 };
                 let len = match args.get(2) {
-                    Some(CosmosValue::Number(n)) => Some(*n as usize),
+                    Some(value) => as_number(value).map(|n| n as usize),
                     _ => None,
                 };
                 let end = match len {
@@ -1386,16 +1503,27 @@ fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalEr
 }
 
 fn num_fn1(args: &[CosmosValue], f: fn(f64) -> f64) -> Result<CosmosValue, EvalError> {
-    match args.first() {
-        Some(CosmosValue::Number(n)) => Ok(CosmosValue::Number(f(*n))),
-        _ => Ok(CosmosValue::Undefined),
-    }
+    Ok(match args.first().and_then(as_number) {
+        Some(n) => CosmosValue::Number(f(n)),
+        None => CosmosValue::Undefined,
+    })
 }
 
 fn num_fn2(args: &[CosmosValue], f: fn(f64, f64) -> f64) -> Result<CosmosValue, EvalError> {
-    match args {
-        [CosmosValue::Number(a), CosmosValue::Number(b)] => Ok(CosmosValue::Number(f(*a, *b))),
-        _ => Ok(CosmosValue::Undefined),
+    Ok(match args {
+        [a, b] => match (as_number(a), as_number(b)) {
+            (Some(a), Some(b)) => CosmosValue::Number(f(a, b)),
+            _ => CosmosValue::Undefined,
+        },
+        _ => CosmosValue::Undefined,
+    })
+}
+
+fn as_number(value: &CosmosValue) -> Option<f64> {
+    match value {
+        CosmosValue::Number(n) => Some(*n),
+        CosmosValue::Integer(n) => Some(*n as f64),
+        _ => None,
     }
 }
 
@@ -1440,12 +1568,23 @@ fn like_match_dp(text: &[char], pattern: &[char], escape: Option<char>) -> bool 
 }
 
 /// Infer a property name from a select expression for unnamed columns.
-fn infer_property_name(expr: &SqlScalarExpression) -> String {
+fn infer_property_name(expr: &SqlScalarExpression, position: usize) -> String {
     match expr {
         SqlScalarExpression::PropertyRef(name) => name.clone(),
         SqlScalarExpression::MemberRef { member, .. } => member.clone(),
         SqlScalarExpression::FunctionCall { name, .. } => name.clone(),
-        _ => "$1".to_string(),
+        _ => format!("${position}"),
+    }
+}
+
+fn project_star_row(doc: &serde_json::Value) -> serde_json::Value {
+    match doc {
+        serde_json::Value::Object(map) if map.len() == 1 => map
+            .values()
+            .next()
+            .cloned()
+            .unwrap_or(serde_json::Value::Null),
+        _ => doc.clone(),
     }
 }
 
@@ -1518,6 +1657,64 @@ mod tests {
         let doc = serde_json::json!({"name": "Alice"});
         let result = project(&doc, &p.query, &[]).unwrap();
         assert_eq!(result, serde_json::json!({"n": "Alice"}));
+    }
+
+    #[test]
+    fn math_functions_accept_integer_literals() {
+        let doc = serde_json::json!({});
+        let abs = project(
+            &doc,
+            &crate::query::parse("SELECT VALUE ABS(-20) FROM c")
+                .unwrap()
+                .query,
+            &[],
+        )
+        .unwrap();
+        let power = project(
+            &doc,
+            &crate::query::parse("SELECT VALUE POWER(12, 2) FROM c")
+                .unwrap()
+                .query,
+            &[],
+        )
+        .unwrap();
+        let round = project(
+            &doc,
+            &crate::query::parse("SELECT VALUE ROUND(12) FROM c")
+                .unwrap()
+                .query,
+            &[],
+        )
+        .unwrap();
+        let sqrt = project(
+            &doc,
+            &crate::query::parse("SELECT VALUE SQRT(144) FROM c")
+                .unwrap()
+                .query,
+            &[],
+        )
+        .unwrap();
+
+        assert_eq!(abs, serde_json::json!(20.0));
+        assert_eq!(power, serde_json::json!(144.0));
+        assert_eq!(round, serde_json::json!(12.0));
+        assert_eq!(sqrt, serde_json::json!(12.0));
+    }
+
+    #[test]
+    fn array_slice_accepts_integer_arguments() {
+        let p = crate::query::parse("SELECT VALUE ARRAY_SLICE(c.scores, 0, 1) FROM c").unwrap();
+        let doc = serde_json::json!({"scores": [99, 42]});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!([99]));
+    }
+
+    #[test]
+    fn unnamed_computed_projections_use_unique_synthesized_names() {
+        let p = crate::query::parse("SELECT 1 + 1, 2 + 2 FROM c").unwrap();
+        let doc = serde_json::json!({});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!({"$1": 2.0, "$2": 4.0}));
     }
 
     #[test]
@@ -1607,6 +1804,14 @@ mod tests {
     fn parameter_resolution() {
         let p = crate::query::parse("SELECT * FROM c WHERE c.id = @id").unwrap();
         let params = vec![("id".to_string(), serde_json::json!("abc"))];
+        let doc = serde_json::json!({"id": "abc"});
+        assert!(matches_query(&doc, &p.query, &params).unwrap());
+    }
+
+    #[test]
+    fn parameter_resolution_accepts_at_prefixed_values() {
+        let p = crate::query::parse("SELECT * FROM c WHERE c.id = @id").unwrap();
+        let params = vec![("@id".to_string(), serde_json::json!("abc"))];
         let doc = serde_json::json!({"id": "abc"});
         assert!(matches_query(&doc, &p.query, &params).unwrap());
     }
@@ -1715,15 +1920,23 @@ mod tests {
     }
 
     #[test]
-    fn top_parameter_float_truncated() {
+    fn top_parameter_float_is_error() {
         let docs = vec![
             serde_json::json!({"x": 1}),
             serde_json::json!({"x": 2}),
             serde_json::json!({"x": 3}),
         ];
         let params = vec![("n".to_string(), serde_json::json!(2.7))];
-        let results = query_documents("SELECT TOP @n * FROM c", &params, &docs).unwrap();
-        assert_eq!(results.len(), 2);
+        let result = query_documents("SELECT TOP @n * FROM c", &params, &docs);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn top_parameter_negative_is_error() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let params = vec![("n".to_string(), serde_json::json!(-1))];
+        let result = query_documents("SELECT TOP @n * FROM c", &params, &docs);
+        assert!(result.is_err());
     }
 
     // ── Bug fix tests: SUBSTRING character indexing ─────────────────────
@@ -2185,6 +2398,47 @@ mod tests {
     }
 
     #[test]
+    fn group_by_order_by_count_expression() {
+        let docs = vec![
+            serde_json::json!({"city": "Seattle"}),
+            serde_json::json!({"city": "Seattle"}),
+            serde_json::json!({"city": "Seattle"}),
+            serde_json::json!({"city": "Portland"}),
+        ];
+        let results = query_documents(
+            "SELECT c.city, COUNT(1) AS cnt FROM c GROUP BY c.city ORDER BY COUNT(1) ASC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(
+            results[0],
+            serde_json::json!({"city": "Portland", "cnt": 1})
+        );
+        assert_eq!(results[1], serde_json::json!({"city": "Seattle", "cnt": 3}));
+    }
+
+    #[test]
+    fn group_by_order_by_aggregate_alias() {
+        let docs = vec![
+            serde_json::json!({"city": "Seattle"}),
+            serde_json::json!({"city": "Seattle"}),
+            serde_json::json!({"city": "Portland"}),
+        ];
+        let results = query_documents(
+            "SELECT c.city, COUNT(1) AS cnt FROM c GROUP BY c.city ORDER BY cnt ASC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(
+            results[0],
+            serde_json::json!({"city": "Portland", "cnt": 1})
+        );
+        assert_eq!(results[1], serde_json::json!({"city": "Seattle", "cnt": 2}));
+    }
+
+    #[test]
     fn aggregate_without_group_by() {
         let docs = vec![
             serde_json::json!({"name": "Alice", "age": 30}),
@@ -2215,6 +2469,35 @@ mod tests {
         assert_eq!(results.len(), 1);
         // AVG on empty set produces undefined (null in JSON)
         assert_eq!(results[0]["avg_age"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn array_iterator_without_join_expands_rows() {
+        let docs = vec![
+            serde_json::json!({"tags": ["a", "b"]}),
+            serde_json::json!({"tags": ["c"]}),
+        ];
+        let results = query_documents("SELECT VALUE t FROM t IN c.tags", &[], &docs).unwrap();
+        assert_eq!(
+            results,
+            vec![
+                serde_json::json!("a"),
+                serde_json::json!("b"),
+                serde_json::json!("c"),
+            ]
+        );
+    }
+
+    #[test]
+    fn aliased_path_without_join_uses_collection_value() {
+        let docs = vec![serde_json::json!({
+            "address": {"city": "Seattle", "zip": 98052}
+        })];
+        let results = query_documents("SELECT * FROM c.address a", &[], &docs).unwrap();
+        assert_eq!(
+            results,
+            vec![serde_json::json!({"city": "Seattle", "zip": 98052})]
+        );
     }
 
     // ── JOIN tests ──────────────────────────────────────────────────────
@@ -2305,6 +2588,36 @@ mod tests {
         .unwrap();
         // Alice: 2 tags * 2 skills = 4 rows; Bob: 1 tag * 1 skill = 1 row
         assert_eq!(results.len(), 5);
+    }
+
+    #[test]
+    fn nested_join_uses_join_alias_bindings() {
+        let docs = vec![serde_json::json!({
+            "name": "Alice",
+            "children": [
+                {"name": "Amy", "grades": [95, 97]},
+                {"name": "Ben", "grades": [88]}
+            ]
+        })];
+        let results = query_documents(
+            "SELECT p.name, c.name AS child, g FROM p JOIN c IN p.children JOIN g IN c.grades",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(
+            results[0],
+            serde_json::json!({"name": "Alice", "child": "Amy", "g": 95})
+        );
+        assert_eq!(
+            results[1],
+            serde_json::json!({"name": "Alice", "child": "Amy", "g": 97})
+        );
+        assert_eq!(
+            results[2],
+            serde_json::json!({"name": "Alice", "child": "Ben", "g": 88})
+        );
     }
 
     #[test]

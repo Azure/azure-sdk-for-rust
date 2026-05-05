@@ -259,6 +259,38 @@ fn pk_or_pk() {
 }
 
 #[test]
+fn pk_or_duplicate_equality_collapses_to_single_equality() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk = 'a' OR c.pk = 'a'"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn pk_or_duplicate_values_are_deduped_across_in_lists() {
+    assert_eq!(
+        plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') OR c.pk IN ('b', 'c')"),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::InList(vec![
+                vec![PartitionKeyValue::String("a".into())],
+                vec![PartitionKeyValue::String("b".into())],
+                vec![PartitionKeyValue::String("c".into())],
+            ]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
 fn pk_in_list() {
     let qp = plan("SELECT * FROM c WHERE c.pk IN ('a', 'b', 'c')");
     assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 3));

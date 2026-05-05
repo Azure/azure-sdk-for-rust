@@ -662,23 +662,42 @@ fn extract_single_pk(
         } => {
             let left_pk = extract_single_pk(left, pk_path, root_alias, parameters);
             let right_pk = extract_single_pk(right, pk_path, root_alias, parameters);
-            match (left_pk, right_pk) {
-                (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
-                    PartitionKeyFilter::InList(vec![a, b])
-                }
-                (PartitionKeyFilter::Equality(a), PartitionKeyFilter::InList(mut list))
-                | (PartitionKeyFilter::InList(mut list), PartitionKeyFilter::Equality(a)) => {
-                    list.push(a);
-                    PartitionKeyFilter::InList(list)
-                }
-                (PartitionKeyFilter::InList(mut a), PartitionKeyFilter::InList(b)) => {
-                    a.extend(b);
-                    PartitionKeyFilter::InList(a)
-                }
-                _ => PartitionKeyFilter::Unconstrained,
-            }
+            union_pk_filters(left_pk, right_pk)
         }
         _ => PartitionKeyFilter::Unconstrained,
+    }
+}
+
+fn union_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKeyFilter {
+    match (a, b) {
+        (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
+            normalize_pk_union(vec![a, b])
+        }
+        (PartitionKeyFilter::Equality(a), PartitionKeyFilter::InList(mut list))
+        | (PartitionKeyFilter::InList(mut list), PartitionKeyFilter::Equality(a)) => {
+            list.push(a);
+            normalize_pk_union(list)
+        }
+        (PartitionKeyFilter::InList(mut a), PartitionKeyFilter::InList(b)) => {
+            a.extend(b);
+            normalize_pk_union(a)
+        }
+        _ => PartitionKeyFilter::Unconstrained,
+    }
+}
+
+fn normalize_pk_union(values: Vec<Vec<PartitionKeyValue>>) -> PartitionKeyFilter {
+    let mut deduped = Vec::new();
+    for value in values {
+        if !deduped.contains(&value) {
+            deduped.push(value);
+        }
+    }
+
+    match deduped.len() {
+        0 => PartitionKeyFilter::Unconstrained,
+        1 => PartitionKeyFilter::Equality(deduped.into_iter().next().unwrap()),
+        _ => PartitionKeyFilter::InList(deduped),
     }
 }
 
