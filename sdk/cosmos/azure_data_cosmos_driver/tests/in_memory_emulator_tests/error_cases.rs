@@ -5,6 +5,8 @@
 
 use super::*;
 use azure_core::http::HttpClient;
+use std::sync::Arc;
+use tokio::sync::Barrier;
 
 #[tokio::test]
 async fn read_nonexistent_404() {
@@ -108,6 +110,235 @@ async fn replace_stale_etag_412() {
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::PreconditionFailed);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn concurrent_create_same_id_has_single_winner() {
+    let ctx = setup_single_region().await;
+    let barrier = Arc::new(Barrier::new(8));
+    let mut handles = Vec::new();
+
+    for value in 0..8 {
+        let emulator = Arc::clone(&ctx.emulator);
+        let gateway_url = ctx.gateway_url.clone();
+        let barrier = Arc::clone(&barrier);
+        handles.push(tokio::spawn(async move {
+            let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": value});
+            let req = create_item_request(
+                &gateway_url,
+                "testdb",
+                "testcoll",
+                &body,
+                r#"["pk1"]"#,
+                true,
+            );
+            barrier.wait().await;
+            let response = emulator.execute_request(&req).await.unwrap();
+            collect_response(response).await
+        }));
+    }
+
+    let mut created = 0;
+    let mut conflicts = 0;
+    let mut winner_value = None;
+    for handle in handles {
+        let (status, _, body) = handle.await.unwrap();
+        match status {
+            StatusCode::Created => {
+                created += 1;
+                winner_value = body["value"].as_i64();
+            }
+            StatusCode::Conflict => conflicts += 1,
+            other => panic!("unexpected status from concurrent create: {other}"),
+        }
+    }
+
+    assert_eq!(created, 1);
+    assert_eq!(conflicts, 7);
+
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(body["value"].as_i64(), winner_value);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn concurrent_replace_same_etag_has_single_winner() {
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 0});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (_, _, created) = collect_response(response).await;
+    let etag = created["_etag"].as_str().unwrap().to_string();
+
+    let barrier = Arc::new(Barrier::new(8));
+    let mut handles = Vec::new();
+    for value in 1..=8 {
+        let emulator = Arc::clone(&ctx.emulator);
+        let gateway_url = ctx.gateway_url.clone();
+        let etag = etag.clone();
+        let barrier = Arc::clone(&barrier);
+        handles.push(tokio::spawn(async move {
+            let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": value});
+            let req = replace_item_request(
+                &gateway_url,
+                "testdb",
+                "testcoll",
+                "item1",
+                &body,
+                r#"["pk1"]"#,
+                Some(&etag),
+                true,
+            );
+            barrier.wait().await;
+            let response = emulator.execute_request(&req).await.unwrap();
+            collect_response(response).await
+        }));
+    }
+
+    let mut ok = 0;
+    let mut precondition_failed = 0;
+    let mut winner_value = None;
+    for handle in handles {
+        let (status, _, body) = handle.await.unwrap();
+        match status {
+            StatusCode::Ok => {
+                ok += 1;
+                winner_value = body["value"].as_i64();
+            }
+            StatusCode::PreconditionFailed => precondition_failed += 1,
+            other => panic!("unexpected status from concurrent replace: {other}"),
+        }
+    }
+
+    assert_eq!(ok, 1);
+    assert_eq!(precondition_failed, 7);
+
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(body["value"].as_i64(), winner_value);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn concurrent_delete_same_etag_has_single_winner() {
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 0});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (_, _, created) = collect_response(response).await;
+    let etag = created["_etag"].as_str().unwrap().to_string();
+
+    let barrier = Arc::new(Barrier::new(8));
+    let mut handles = Vec::new();
+    for _ in 0..8 {
+        let emulator = Arc::clone(&ctx.emulator);
+        let gateway_url = ctx.gateway_url.clone();
+        let etag = etag.clone();
+        let barrier = Arc::clone(&barrier);
+        handles.push(tokio::spawn(async move {
+            let req = delete_item_request(
+                &gateway_url,
+                "testdb",
+                "testcoll",
+                "item1",
+                r#"["pk1"]"#,
+                Some(&etag),
+            );
+            barrier.wait().await;
+            let response = emulator.execute_request(&req).await.unwrap();
+            response.status()
+        }));
+    }
+
+    let mut no_content = 0;
+    let mut not_found = 0;
+    for handle in handles {
+        match handle.await.unwrap() {
+            StatusCode::NoContent => no_content += 1,
+            StatusCode::NotFound => not_found += 1,
+            other => panic!("unexpected status from concurrent delete: {other}"),
+        }
+    }
+
+    assert_eq!(no_content, 1);
+    assert_eq!(not_found, 7);
+
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NotFound);
+}
+
+#[tokio::test]
+async fn read_with_malformed_session_token_returns_400() {
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 42});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        false,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+
+    let url = format!("{}/dbs/testdb/colls/testcoll/docs/item1", ctx.gateway_url);
+    let mut req = azure_core::http::Request::new(
+        azure_core::http::Url::parse(&url).unwrap(),
+        azure_core::http::Method::Get,
+    );
+    req.headers_mut().insert(
+        PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from(r#"["pk1"]"#.to_string()),
+    );
+    req.headers_mut().insert(
+        SESSION_TOKEN.clone(),
+        azure_core::http::headers::HeaderValue::from("0:1#5#0=5,broken-token".to_string()),
+    );
+
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::BadRequest);
+    assert_eq!(body["message"], "Invalid session token");
 }
 
 #[tokio::test]

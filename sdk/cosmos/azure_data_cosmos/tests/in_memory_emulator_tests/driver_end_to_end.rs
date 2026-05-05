@@ -25,10 +25,32 @@ use super::dual_backend::DualBackend;
 use super::validation::{
     compare_responses, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
 };
+use uuid::Uuid;
 
 /// Sets up both backends with a shared database and container.
 ///
 /// Returns `(backend, db_name, emulator_container, Option<real_container>)`.
+fn make_stale_session_token(token: &str) -> String {
+    let mut parts = token.split('#');
+    let prefix = parts.next().unwrap_or(token);
+    let Some(_) = parts.next() else {
+        return format!("{prefix}#9999999999");
+    };
+
+    let region_progress: Vec<String> = parts
+        .map(|segment| match segment.split_once('=') {
+            Some((region_id, _)) => format!("{region_id}=9999999999"),
+            None => segment.to_string(),
+        })
+        .collect();
+
+    if region_progress.is_empty() {
+        format!("{prefix}#9999999999")
+    } else {
+        format!("{prefix}#9999999999#{}", region_progress.join("#"))
+    }
+}
+
 async fn setup_with_container() -> (
     DualBackend,
     String,
@@ -494,11 +516,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
                 .expect("Real create should return session token")
                 .as_str()
                 .to_string();
-            // Replace the LSN in the token with a very large value.
-            // Token format: "pkrangeId:version#globalLSN#regionId=localLSN" or "pkrangeId:-1#lsn"
-            // We replace everything after the first '#' with a huge LSN.
-            let prefix = token.split('#').next().unwrap_or("0:-1");
-            Some(format!("{prefix}#9999999999"))
+            Some(make_stale_session_token(&token))
         } else {
             None
         };
@@ -525,8 +543,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
         .expect("Emulator create should return a session token")
         .as_str()
         .to_string();
-    let emu_prefix = emu_seed_token.split('#').next().unwrap_or("0:-1");
-    let emu_stale_token = format!("{emu_prefix}#9999999999");
+    let emu_stale_token = make_stale_session_token(&emu_seed_token);
 
     // Disable session retries so the error propagates immediately.
     let opts = OperationOptionsBuilder::new()
@@ -587,8 +604,6 @@ async fn read_with_stale_session_token_returns_404_1002() {
             Some(azure_core::http::StatusCode::NotFound),
             "Real error should be HTTP 404",
         );
-        // The gateway may not enforce ReadSessionNotAvailable for V1 tokens
-        // on all account configurations. Log the actual substatus for diagnosis.
         match real_err.kind() {
             azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
                 if error_code.as_deref() != Some("1002") {
@@ -607,6 +622,72 @@ async fn read_with_stale_session_token_returns_404_1002() {
     backend.cleanup_real_database(&db_name).await;
 }
 
+#[tokio::test]
+async fn read_after_split_refreshes_driver_routing_map() {
+    let (backend, db_name, emu_container, _) = setup_with_container().await;
+
+    let create = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::create_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "split-item",
+            ))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({
+                    "id": "split-item",
+                    "pk": "pk1",
+                    "value": 42
+                }))
+                .unwrap(),
+            ),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    let routed_partition_id: u32 = create
+        .headers()
+        .session_token
+        .as_ref()
+        .and_then(|token| token.as_str().split(':').next())
+        .and_then(|prefix| prefix.parse().ok())
+        .expect("create should return a session token with a numeric partition id");
+
+    backend.emulator_store.split_partition(
+        &db_name,
+        "testcoll",
+        routed_partition_id,
+        std::time::Duration::ZERO,
+    );
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    let read = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "split-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        u16::from(read.status().status_code()),
+        200,
+        "driver should refresh the routing map after a split",
+    );
+
+    let doc: serde_json::Value = serde_json::from_slice(read.body()).unwrap();
+    assert_eq!(doc["id"], "split-item");
+    assert_eq!(doc["value"], 42);
+
+    backend.cleanup_real_database(&db_name).await;
+}
 #[tokio::test]
 async fn upsert_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
@@ -703,6 +784,270 @@ async fn upsert_item_through_driver() {
     backend.cleanup_real_database(&db_name).await;
 }
 
+#[tokio::test]
+async fn paused_satellite_converges_to_latest_hub_write() {
+    use azure_core::http::Url;
+    use azure_data_cosmos_driver::in_memory_emulator::{
+        ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+        VirtualRegion, WriteMode,
+    };
+    use azure_data_cosmos_driver::models::AccountReference;
+    use azure_data_cosmos_driver::options::{DriverOptionsBuilder, Region};
+
+    let run_id = Uuid::new_v4().to_string()[..8].to_string();
+    let east_url = "https://eastus.emulator.local";
+    let west_url = "https://westus.emulator.local";
+
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+    ])
+    .unwrap()
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let emulator_store = emulator.store();
+    let emulator_runtime = emulator.runtime_builder().build().await.unwrap();
+
+    let db_name = format!("hub-sync-{run_id}");
+    emulator_store.create_database(&db_name);
+    emulator_store.create_container(
+        &db_name,
+        "hub-testcoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+    emulator_store.pause_replication("West US");
+
+    let account = AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
+    let driver = emulator_runtime
+        .get_or_create_driver(
+            account.clone(),
+            Some(
+                DriverOptionsBuilder::new(account)
+                    .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
+                    .build(),
+            ),
+        )
+        .await
+        .unwrap();
+
+    let container = driver
+        .resolve_container(&db_name, "hub-testcoll")
+        .await
+        .unwrap();
+
+    driver
+        .execute_operation(
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            ))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({
+                    "id": "hub-item",
+                    "pk": "pk1",
+                    "value": 1
+                }))
+                .unwrap(),
+            ),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    driver
+        .execute_operation(
+            CosmosOperation::replace_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            ))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({
+                    "id": "hub-item",
+                    "pk": "pk1",
+                    "value": 2
+                }))
+                .unwrap(),
+            ),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    let no_session_retry = OperationOptionsBuilder::new()
+        .with_max_session_retry_count(0)
+        .build();
+
+    let west_read_before_resume = driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            no_session_retry,
+        )
+        .await
+        .expect_err("paused satellite should not observe the hub write yet");
+    assert_eq!(
+        west_read_before_resume.http_status(),
+        Some(azure_core::http::StatusCode::NotFound),
+        "read should fail while West US replication is paused",
+    );
+
+    emulator_store.resume_replication("West US");
+
+    let west_read_after_resume = driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        u16::from(west_read_after_resume.status().status_code()),
+        200,
+        "satellite read should succeed once hub writes replicate",
+    );
+
+    let doc: serde_json::Value = serde_json::from_slice(west_read_after_resume.body()).unwrap();
+    assert_eq!(doc["value"], 2);
+}
+
+#[tokio::test]
+async fn create_retries_after_429_throttling() {
+    use azure_core::http::Url;
+    use azure_data_cosmos_driver::in_memory_emulator::{
+        ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
+        VirtualRegion,
+    };
+    use azure_data_cosmos_driver::models::AccountReference;
+
+    let run_id = Uuid::new_v4().to_string()[..8].to_string();
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        Url::parse("https://eastus.emulator.local").unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_throttling_enabled(true);
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let emulator_store = emulator.store();
+    let emulator_runtime = emulator.runtime_builder().build().await.unwrap();
+
+    let db_name = format!("driver-throttle-{run_id}");
+    emulator_store.create_database(&db_name);
+    emulator_store.create_container_with_config(
+        &db_name,
+        "throttlecoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .unwrap()
+            .with_throughput(400)
+            .unwrap(),
+    );
+
+    let account = AccountReference::with_master_key(
+        Url::parse("https://eastus.emulator.local").unwrap(),
+        "dGVzdGtleQ==",
+    );
+    let driver = emulator_runtime
+        .get_or_create_driver(account.clone(), None)
+        .await
+        .unwrap();
+    let container = driver
+        .resolve_container(&db_name, "throttlecoll")
+        .await
+        .unwrap();
+
+    let seed_body = serde_json::to_vec(&serde_json::json!({
+        "id": "seed-throttle",
+        "pk": "pk1",
+        "value": 1,
+        "padding": "x".repeat(40 * 1024)
+    }))
+    .unwrap();
+    driver
+        .execute_operation(
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "seed-throttle",
+            ))
+            .with_body(seed_body),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    let throttled_body = serde_json::to_vec(&serde_json::json!({
+        "id": "throttled-item",
+        "pk": "pk1",
+        "value": 42,
+        "padding": "x".repeat(8 * 1024)
+    }))
+    .unwrap();
+
+    let start = std::time::Instant::now();
+    let create = driver
+        .execute_operation(
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "throttled-item",
+            ))
+            .with_body(throttled_body),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+    let elapsed = start.elapsed();
+
+    assert!(
+        elapsed >= std::time::Duration::from_millis(200),
+        "create should have retried after a 429 throttling response (elapsed: {:?})",
+        elapsed,
+    );
+    assert_eq!(u16::from(create.status().status_code()), 201);
+
+    let read = driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "throttled-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    let doc: serde_json::Value = serde_json::from_slice(read.body()).unwrap();
+    assert_eq!(doc["value"], 42);
+    assert_eq!(doc["padding"].as_str().map(str::len), Some(8 * 1024));
+}
+
 // ─── Multi-region fault injection ────────────────────────────────────────────
 
 /// Tests that fault injection on the primary (preferred) read region causes
@@ -777,7 +1122,7 @@ async fn read_failover_on_503_via_fault_injection() {
     .with_consistency(ConsistencyLevel::Session)
     .with_replication_config(ReplicationConfig::immediate());
 
-    let emulator = InMemoryEmulatorHttpClient::new(config);
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
     // Build runtime with fault injection rules layered on top of the emulator.

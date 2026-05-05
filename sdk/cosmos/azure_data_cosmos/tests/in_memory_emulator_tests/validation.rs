@@ -84,6 +84,31 @@ impl HeaderValidationSpec {
             .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Exists)
+            .with_rule("item_lsn", HeaderMatch::Ignore)
+            .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
+            .with_rule("retry_after_ms", HeaderMatch::Symmetric)
+            .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
+            .with_rule("transport_request_id", HeaderMatch::Symmetric)
+            .with_rule("global_committed_lsn", HeaderMatch::Symmetric)
+            .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
+            .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
+            .with_rule("local_lsn", HeaderMatch::Symmetric)
+            .with_rule("item_local_lsn", HeaderMatch::Ignore)
+            .with_rule("number_of_read_regions", HeaderMatch::Symmetric)
+            .with_rule("last_state_change_utc", HeaderMatch::Symmetric)
+            .with_rule("gateway_version", HeaderMatch::Symmetric)
+            .with_rule("service_version", HeaderMatch::Symmetric)
+            .with_rule("resource_quota", HeaderMatch::Ignore)
+            .with_rule("resource_usage", HeaderMatch::Ignore)
+            .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
+            .with_rule("partition_key_range_id", HeaderMatch::Ignore)
+            .with_rule("internal_partition_id", HeaderMatch::Ignore)
+            .with_rule("log_results", HeaderMatch::Symmetric)
+            .with_rule(
+                "collection_index_transformation_progress",
+                HeaderMatch::Symmetric,
+            )
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Symmetric)
     }
 
     /// Spec for a delete operation (no etag in response typically).
@@ -99,6 +124,31 @@ impl HeaderValidationSpec {
             .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Exists)
+            .with_rule("item_lsn", HeaderMatch::Ignore)
+            .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
+            .with_rule("retry_after_ms", HeaderMatch::Symmetric)
+            .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
+            .with_rule("transport_request_id", HeaderMatch::Symmetric)
+            .with_rule("global_committed_lsn", HeaderMatch::Symmetric)
+            .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
+            .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
+            .with_rule("local_lsn", HeaderMatch::Symmetric)
+            .with_rule("item_local_lsn", HeaderMatch::Ignore)
+            .with_rule("number_of_read_regions", HeaderMatch::Symmetric)
+            .with_rule("last_state_change_utc", HeaderMatch::Symmetric)
+            .with_rule("gateway_version", HeaderMatch::Symmetric)
+            .with_rule("service_version", HeaderMatch::Symmetric)
+            .with_rule("resource_quota", HeaderMatch::Ignore)
+            .with_rule("resource_usage", HeaderMatch::Ignore)
+            .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
+            .with_rule("partition_key_range_id", HeaderMatch::Ignore)
+            .with_rule("internal_partition_id", HeaderMatch::Ignore)
+            .with_rule("log_results", HeaderMatch::Symmetric)
+            .with_rule(
+                "collection_index_transformation_progress",
+                HeaderMatch::Symmetric,
+            )
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Symmetric)
     }
 
     /// Spec for a control-plane operation (create database/container).
@@ -113,6 +163,31 @@ impl HeaderValidationSpec {
             .with_rule("index_metrics", HeaderMatch::Symmetric)
             .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
+            .with_rule("item_lsn", HeaderMatch::Ignore)
+            .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
+            .with_rule("retry_after_ms", HeaderMatch::Symmetric)
+            .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
+            .with_rule("transport_request_id", HeaderMatch::Exists)
+            .with_rule("global_committed_lsn", HeaderMatch::Symmetric)
+            .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
+            .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
+            .with_rule("local_lsn", HeaderMatch::Symmetric)
+            .with_rule("item_local_lsn", HeaderMatch::Ignore)
+            .with_rule("number_of_read_regions", HeaderMatch::Symmetric)
+            .with_rule("last_state_change_utc", HeaderMatch::Symmetric)
+            .with_rule("gateway_version", HeaderMatch::Symmetric)
+            .with_rule("service_version", HeaderMatch::Symmetric)
+            .with_rule("resource_quota", HeaderMatch::Ignore)
+            .with_rule("resource_usage", HeaderMatch::Ignore)
+            .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
+            .with_rule("partition_key_range_id", HeaderMatch::Ignore)
+            .with_rule("internal_partition_id", HeaderMatch::Ignore)
+            .with_rule("log_results", HeaderMatch::Symmetric)
+            .with_rule(
+                "collection_index_transformation_progress",
+                HeaderMatch::Symmetric,
+            )
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Symmetric)
             .with_rule("lsn", HeaderMatch::Ignore)
     }
 }
@@ -290,6 +365,122 @@ fn extract_header_pairs(
             "lsn",
             real.lsn.map(|v| v.to_string()),
             emulator.lsn.map(|v| v.to_string()),
+        ),
+        (
+            "item_lsn",
+            real.item_lsn.map(|v| v.to_string()),
+            emulator.item_lsn.map(|v| v.to_string()),
+        ),
+        (
+            "offer_replace_pending",
+            real.offer_replace_pending.map(|v| v.to_string()),
+            emulator.offer_replace_pending.map(|v| v.to_string()),
+        ),
+        (
+            "retry_after_ms",
+            real.retry_after_ms.map(|v| v.to_string()),
+            emulator.retry_after_ms.map(|v| v.to_string()),
+        ),
+        (
+            "correlated_activity_id",
+            real.correlated_activity_id.clone(),
+            emulator.correlated_activity_id.clone(),
+        ),
+        (
+            "transport_request_id",
+            real.transport_request_id.map(|v| v.to_string()),
+            emulator.transport_request_id.map(|v| v.to_string()),
+        ),
+        (
+            "global_committed_lsn",
+            real.global_committed_lsn.map(|v| v.to_string()),
+            emulator.global_committed_lsn.map(|v| v.to_string()),
+        ),
+        (
+            "quorum_acked_lsn",
+            real.quorum_acked_lsn.map(|v| v.to_string()),
+            emulator.quorum_acked_lsn.map(|v| v.to_string()),
+        ),
+        (
+            "quorum_acked_local_lsn",
+            real.quorum_acked_local_lsn.map(|v| v.to_string()),
+            emulator.quorum_acked_local_lsn.map(|v| v.to_string()),
+        ),
+        (
+            "local_lsn",
+            real.local_lsn.map(|v| v.to_string()),
+            emulator.local_lsn.map(|v| v.to_string()),
+        ),
+        (
+            "item_local_lsn",
+            real.item_local_lsn.map(|v| v.to_string()),
+            emulator.item_local_lsn.map(|v| v.to_string()),
+        ),
+        (
+            "number_of_read_regions",
+            real.number_of_read_regions.map(|v| v.to_string()),
+            emulator.number_of_read_regions.map(|v| v.to_string()),
+        ),
+        (
+            "last_state_change_utc",
+            real.last_state_change_utc.clone(),
+            emulator.last_state_change_utc.clone(),
+        ),
+        (
+            "gateway_version",
+            real.gateway_version.clone(),
+            emulator.gateway_version.clone(),
+        ),
+        (
+            "service_version",
+            real.service_version.clone(),
+            emulator.service_version.clone(),
+        ),
+        (
+            "resource_quota",
+            real.resource_quota.clone(),
+            emulator.resource_quota.clone(),
+        ),
+        (
+            "resource_usage",
+            real.resource_usage.clone(),
+            emulator.resource_usage.clone(),
+        ),
+        (
+            "has_tentative_writes",
+            real.has_tentative_writes.map(|v| v.to_string()),
+            emulator.has_tentative_writes.map(|v| v.to_string()),
+        ),
+        (
+            "partition_key_range_id",
+            real.partition_key_range_id.clone(),
+            emulator.partition_key_range_id.clone(),
+        ),
+        (
+            "internal_partition_id",
+            real.internal_partition_id.clone(),
+            emulator.internal_partition_id.clone(),
+        ),
+        (
+            "log_results",
+            real.log_results.clone(),
+            emulator.log_results.clone(),
+        ),
+        (
+            "collection_index_transformation_progress",
+            real.collection_index_transformation_progress
+                .map(|v| v.to_string()),
+            emulator
+                .collection_index_transformation_progress
+                .map(|v| v.to_string()),
+        ),
+        (
+            "collection_lazy_indexing_progress",
+            real.collection_lazy_indexing_progress
+                .map(|v| v.to_string()),
+            emulator
+                .collection_lazy_indexing_progress
+                .map(|v| v.to_string()),
         ),
     ]
 }

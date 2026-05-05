@@ -3,7 +3,7 @@
 
 //! Response construction and header generation.
 
-use azure_core::http::headers::{HeaderValue, Headers};
+use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
 
 use std::time::Instant;
@@ -25,15 +25,40 @@ pub mod headers {
     pub static ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
     pub static RETRY_AFTER: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
     pub static LSN: HeaderName = HeaderName::from_static("lsn");
+    pub static ITEM_LSN: HeaderName = HeaderName::from_static("x-ms-item-lsn");
     pub static SERVER_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
+    pub static TRANSPORT_REQUEST_ID: HeaderName =
+        HeaderName::from_static("x-ms-transport-request-id");
+    pub static GLOBAL_COMMITTED_LSN: HeaderName =
+        HeaderName::from_static("x-ms-global-committed-lsn");
+    pub static QUORUM_ACKED_LSN: HeaderName = HeaderName::from_static("x-ms-quorum-acked-lsn");
+    pub static QUORUM_ACKED_LOCAL_LSN: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-quorum-acked-llsn");
+    pub static LOCAL_LSN: HeaderName = HeaderName::from_static("x-ms-cosmos-llsn");
+    pub static ITEM_LOCAL_LSN: HeaderName = HeaderName::from_static("x-ms-cosmos-item-llsn");
+    pub static NUMBER_OF_READ_REGIONS: HeaderName =
+        HeaderName::from_static("x-ms-number-of-read-regions");
+    pub static LAST_STATE_CHANGE_UTC: HeaderName =
+        HeaderName::from_static("x-ms-last-state-change-utc");
+    pub static GATEWAY_VERSION: HeaderName = HeaderName::from_static("x-ms-gatewayversion");
+    pub static SERVICE_VERSION: HeaderName = HeaderName::from_static("x-ms-serviceversion");
+    pub static RESOURCE_QUOTA: HeaderName = HeaderName::from_static("x-ms-resource-quota");
+    pub static RESOURCE_USAGE: HeaderName = HeaderName::from_static("x-ms-resource-usage");
+    pub static PARTITION_KEY_RANGE_ID: HeaderName =
+        HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
+    pub static INTERNAL_PARTITION_ID: HeaderName =
+        HeaderName::from_static("x-ms-cosmos-internal-partition-id");
     #[allow(dead_code)]
     pub static CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-content-path");
     #[allow(dead_code)]
     pub static ALT_CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
 }
 use headers::{
-    ACTIVITY_ID, ALT_CONTENT_PATH, CONTENT_PATH, CONTENT_TYPE, DATE, ETAG, ITEM_COUNT, LSN,
-    REQUEST_CHARGE, RETRY_AFTER, SERVER_DURATION_MS, SESSION_TOKEN, SUBSTATUS, VERSION,
+    ACTIVITY_ID, ALT_CONTENT_PATH, CONTENT_PATH, CONTENT_TYPE, DATE, ETAG, GATEWAY_VERSION,
+    GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_COUNT, LAST_STATE_CHANGE_UTC, LOCAL_LSN, LSN,
+    NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID, QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN,
+    REQUEST_CHARGE, RESOURCE_QUOTA, RESOURCE_USAGE, RETRY_AFTER, SERVER_DURATION_MS,
+    SERVICE_VERSION, SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID, VERSION,
 };
 
 const COSMOS_VERSION: &str = "2020-07-15";
@@ -58,6 +83,51 @@ impl ResponseBuilder {
         headers.insert(
             ACTIVITY_ID.clone(),
             HeaderValue::from(uuid::Uuid::new_v4().to_string()),
+        );
+        headers.insert(
+            TRANSPORT_REQUEST_ID.clone(),
+            HeaderValue::from((uuid::Uuid::new_v4().as_u128() as u32).to_string()),
+        );
+        headers.insert(GLOBAL_COMMITTED_LSN.clone(), HeaderValue::from_static("0"));
+        headers.insert(QUORUM_ACKED_LSN.clone(), HeaderValue::from_static("0"));
+        headers.insert(
+            QUORUM_ACKED_LOCAL_LSN.clone(),
+            HeaderValue::from_static("0"),
+        );
+        headers.insert(LOCAL_LSN.clone(), HeaderValue::from_static("0"));
+        headers.insert(
+            NUMBER_OF_READ_REGIONS.clone(),
+            HeaderValue::from_static("0"),
+        );
+        headers.insert(
+            LAST_STATE_CHANGE_UTC.clone(),
+            HeaderValue::from_static("Thu, 01 Jan 1970 00:00:00 GMT"),
+        );
+        headers.insert(
+            GATEWAY_VERSION.clone(),
+            HeaderValue::from_static("version=emulator"),
+        );
+        headers.insert(
+            SERVICE_VERSION.clone(),
+            HeaderValue::from_static("version=emulator"),
+        );
+        headers.insert(
+            INTERNAL_PARTITION_ID.clone(),
+            HeaderValue::from(uuid::Uuid::new_v4().to_string()),
+        );
+        headers.insert(
+            PARTITION_KEY_RANGE_ID.clone(),
+            HeaderValue::from_static("0"),
+        );
+        headers.insert(
+            RESOURCE_QUOTA.clone(),
+            HeaderValue::from_static("documentSize=10240;documentsSize=10485760;documentsCount=-1;collectionSize=10485760;"),
+        );
+        headers.insert(
+            RESOURCE_USAGE.clone(),
+            HeaderValue::from_static(
+                "documentSize=0;documentsSize=0;documentsCount=0;collectionSize=0;",
+            ),
         );
 
         Self {
@@ -103,6 +173,12 @@ impl ResponseBuilder {
     pub fn with_lsn(mut self, lsn: u64) -> Self {
         self.headers
             .insert(LSN.clone(), HeaderValue::from(lsn.to_string()));
+        self
+    }
+
+    pub fn with_header_value(mut self, name: HeaderName, value: impl ToString) -> Self {
+        self.headers
+            .insert(name, HeaderValue::from(value.to_string()));
         self
     }
 

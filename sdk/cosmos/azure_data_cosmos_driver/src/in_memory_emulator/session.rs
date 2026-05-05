@@ -95,9 +95,15 @@ impl SessionToken {
 }
 
 /// Parses a composite session token string (comma-separated) into individual tokens.
-pub(crate) fn parse_composite_session_token(s: &str) -> Vec<SessionToken> {
+pub(crate) fn parse_composite_session_token(s: &str) -> Result<Vec<SessionToken>, ()> {
     s.split(',')
-        .filter_map(|part| SessionToken::parse(part.trim()))
+        .map(|part| {
+            let trimmed = part.trim();
+            if trimmed.is_empty() {
+                return Err(());
+            }
+            SessionToken::parse(trimmed).ok_or(())
+        })
         .collect()
 }
 
@@ -178,7 +184,7 @@ mod tests {
 
     #[test]
     fn parse_composite_v2() {
-        let tokens = parse_composite_session_token("0:1#5#0=5,1:1#3#0=3");
+        let tokens = parse_composite_session_token("0:1#5#0=5,1:1#3#0=3").unwrap();
         assert_eq!(tokens.len(), 2);
         assert_eq!(tokens[0].global_lsn, 5);
         assert_eq!(tokens[1].global_lsn, 3);
@@ -186,10 +192,16 @@ mod tests {
 
     #[test]
     fn parse_composite_mixed() {
-        let tokens = parse_composite_session_token("0:-1#5,1:1#3#0=3");
+        let tokens = parse_composite_session_token("0:-1#5,1:1#3#0=3").unwrap();
         assert_eq!(tokens.len(), 2);
         assert_eq!(tokens[0].version, 0);
         assert_eq!(tokens[1].version, 1);
+    }
+
+    #[test]
+    fn parse_composite_rejects_malformed_session_token() {
+        assert!(parse_composite_session_token("0:1#5#0=5,broken-token").is_err());
+        assert!(parse_composite_session_token("0:1#5#0=5,").is_err());
     }
 
     #[test]

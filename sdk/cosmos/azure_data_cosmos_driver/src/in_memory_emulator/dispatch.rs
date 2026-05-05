@@ -37,6 +37,7 @@ pub(crate) struct ParsedRequest {
     pub partition_key_header: Option<String>,
     pub if_match: Option<String>,
     pub session_token: Option<String>,
+    pub activity_id: Option<String>,
     pub content_response_on_write: bool,
     #[allow(dead_code)]
     pub is_upsert: bool, // used during dispatch resolution
@@ -47,6 +48,7 @@ static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-upser
 static PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
 static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 static PREFER: HeaderName = HeaderName::from_static("prefer");
@@ -64,6 +66,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let if_match = headers.get_optional_str(&IF_MATCH).map(|s| s.to_string());
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
+        .map(|s| s.to_string());
+    let activity_id = headers
+        .get_optional_str(&ACTIVITY_ID)
         .map(|s| s.to_string());
     // Determine whether write responses should include the document body.
     // Check the explicit header first; if absent, check the `Prefer` header
@@ -101,6 +106,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         partition_key_header,
         if_match,
         session_token,
+        activity_id,
         content_response_on_write,
         is_upsert,
     }

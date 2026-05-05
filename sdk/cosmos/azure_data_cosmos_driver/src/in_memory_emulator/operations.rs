@@ -6,23 +6,47 @@
 use std::sync::Arc;
 use std::time::Instant;
 
+use azure_core::http::headers::HeaderValue;
 use azure_core::http::{AsyncRawResponse, StatusCode};
 
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
+use super::response::headers::{
+    ACTIVITY_ID, GATEWAY_VERSION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
+    ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
+    QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
+    TRANSPORT_REQUEST_ID,
+};
 use super::response::{error_response, success_response, ResponseBuilder};
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
 use super::store::{
     current_timestamp, new_etag, ContainerMetadata, EmulatorStore, PhysicalPartition,
-    StoredDocument,
+    RegionStoreRef, StoredDocument,
 };
 use super::system_properties::{
     account_properties_to_json, container_to_json, database_to_json, inject_system_properties,
     pkranges_to_json,
 };
 use crate::models::PartitionKeyDefinition;
+
+async fn with_request_activity_id(
+    response: AsyncRawResponse,
+    activity_id: Option<&str>,
+) -> AsyncRawResponse {
+    let Some(activity_id) = activity_id else {
+        return response;
+    };
+
+    let raw = response.try_into_raw_response().await.unwrap();
+    let mut headers = raw.headers().clone();
+    headers.insert(
+        ACTIVITY_ID.clone(),
+        HeaderValue::from(activity_id.to_string()),
+    );
+    AsyncRawResponse::from_bytes(raw.status(), headers, raw.body().as_ref().to_vec())
+}
 
 /// Dispatches a parsed request to the appropriate handler.
 pub(crate) async fn handle_operation(
@@ -32,7 +56,7 @@ pub(crate) async fn handle_operation(
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
-    match &parsed.operation {
+    let response = match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, start),
         OperationType::CreateDatabase => {
             handle_create_database(store, region_name, parsed, request_body, start)
@@ -110,7 +134,9 @@ pub(crate) async fn handle_operation(
             start,
         ),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
-    }
+    };
+
+    with_request_activity_id(response, parsed.activity_id.as_deref()).await
 }
 
 // --- Control-Plane Operations ---
@@ -594,6 +620,96 @@ fn session_token_for(partition: &PhysicalPartition, region_id: u64) -> String {
     )
 }
 
+struct PointResponseHeaders {
+    partition_key_range_id: u32,
+    internal_partition_id: String,
+    transport_request_id: u64,
+    global_committed_lsn: u64,
+    quorum_acked_lsn: u64,
+    quorum_acked_local_lsn: u64,
+    local_lsn: u64,
+    resource_usage: String,
+}
+
+fn point_response_headers(
+    region_ref: &RegionStoreRef,
+    db_id: &str,
+    coll_id: &str,
+    epk: &Epk,
+) -> Option<PointResponseHeaders> {
+    region_ref
+        .with_container(db_id, coll_id, |state| {
+            state.find_partition(epk).map(|partition| {
+                let documents = partition.documents.read().unwrap();
+                let documents_in_partition = documents
+                    .values()
+                    .map(std::collections::BTreeMap::len)
+                    .sum::<usize>();
+                PointResponseHeaders {
+                    partition_key_range_id: partition.id,
+                    internal_partition_id: partition.rid.clone(),
+                    transport_request_id: partition.current_lsn().max(1),
+                    global_committed_lsn: partition.current_lsn(),
+                    quorum_acked_lsn: partition.current_lsn(),
+                    quorum_acked_local_lsn: partition.current_local_lsn(),
+                    local_lsn: partition.current_local_lsn(),
+                    resource_usage: format!(
+                        "documentSize=0;documentsSize={documents_in_partition};documentsCount={documents_in_partition};collectionSize={documents_in_partition};"
+                    ),
+                }
+            })
+        })
+        .flatten()
+}
+
+fn decorate_point_response(
+    builder: ResponseBuilder,
+    region_ref: &RegionStoreRef,
+    db_id: &str,
+    coll_id: &str,
+    epk: &Epk,
+    item_lsn: Option<u64>,
+) -> ResponseBuilder {
+    let Some(headers) = point_response_headers(region_ref, db_id, coll_id, epk) else {
+        return builder;
+    };
+
+    let builder = builder
+        .with_header_value(
+            PARTITION_KEY_RANGE_ID.clone(),
+            headers.partition_key_range_id,
+        )
+        .with_header_value(INTERNAL_PARTITION_ID.clone(), headers.internal_partition_id)
+        .with_header_value(TRANSPORT_REQUEST_ID.clone(), headers.transport_request_id)
+        .with_header_value(GLOBAL_COMMITTED_LSN.clone(), headers.global_committed_lsn)
+        .with_header_value(QUORUM_ACKED_LSN.clone(), headers.quorum_acked_lsn)
+        .with_header_value(
+            QUORUM_ACKED_LOCAL_LSN.clone(),
+            headers.quorum_acked_local_lsn,
+        )
+        .with_header_value(LOCAL_LSN.clone(), headers.local_lsn)
+        .with_header_value(NUMBER_OF_READ_REGIONS.clone(), 0)
+        .with_header_value(
+            LAST_STATE_CHANGE_UTC.clone(),
+            "Thu, 01 Jan 1970 00:00:00 GMT",
+        )
+        .with_header_value(GATEWAY_VERSION.clone(), "2.0.0")
+        .with_header_value(SERVICE_VERSION.clone(), "version=emulator")
+        .with_header_value(
+            RESOURCE_QUOTA.clone(),
+            "documentSize=10240;documentsSize=10485760;documentsCount=-1;collectionSize=10485760;",
+        )
+        .with_header_value(RESOURCE_USAGE.clone(), headers.resource_usage);
+
+    if let Some(item_lsn) = item_lsn {
+        builder
+            .with_header_value(ITEM_LSN.clone(), item_lsn)
+            .with_header_value(ITEM_LOCAL_LSN.clone(), headers.local_lsn)
+    } else {
+        builder
+    }
+}
+
 /// Returns a 410/1007 response if the partition is locked (split/merge in progress).
 fn check_partition_lock(partition: &PhysicalPartition, start: Instant) -> Option<AsyncRawResponse> {
     if partition.is_locked() {
@@ -753,37 +869,51 @@ async fn handle_create(
             return Err(response);
         }
 
-        // Generate system properties
-        let lsn = partition.advance_lsn();
-        partition.advance_local_lsn();
-        let (_, doc_rid) = store.rid_generator().next_document_rid(
-            state.metadata.numeric_db_id,
-            state.metadata.numeric_coll_id,
-        );
-        let ts = current_timestamp();
-        let etag = new_etag();
-        let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
-
-        // Inject system properties into the body before constructing the doc,
-        // so we only clone the (mutated) body once below.
-        inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
-        let stored_doc = StoredDocument {
-            body: body.clone(),
-            id: doc_id.clone(),
-            rid: doc_rid,
-            etag: etag.clone(),
-            ts,
-            self_link,
-            lsn,
-            epk: epk.clone(),
-        };
-
-        // Store the document
-        {
+        let stored_doc = {
             let mut docs = partition.documents.write().unwrap();
-            let logical = docs.entry(epk).or_default();
-            logical.insert(doc_id, stored_doc.clone());
-        }
+            let logical = docs.entry(epk.clone()).or_default();
+            if logical.contains_key(&doc_id) {
+                let region_id = store.config().region_id_for(region_name);
+                let token = session_token_for(partition, region_id);
+                return Err(error_response(
+                    StatusCode::Conflict,
+                    None,
+                    "Conflict",
+                    &format!(
+                        "Entity with the specified id already exists in the system. ResourceId: {}",
+                        doc_id
+                    ),
+                    1.0,
+                    &token,
+                    start,
+                )
+                .build());
+            }
+
+            let lsn = partition.advance_lsn();
+            partition.advance_local_lsn();
+            let (_, doc_rid) = store.rid_generator().next_document_rid(
+                state.metadata.numeric_db_id,
+                state.metadata.numeric_coll_id,
+            );
+            let ts = current_timestamp();
+            let etag = new_etag();
+            let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
+
+            inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
+            let stored_doc = StoredDocument {
+                body: body.clone(),
+                id: doc_id.clone(),
+                rid: doc_rid,
+                etag: etag.clone(),
+                ts,
+                self_link,
+                lsn,
+                epk: epk.clone(),
+            };
+            logical.insert(doc_id.clone(), stored_doc.clone());
+            stored_doc
+        };
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
@@ -796,19 +926,27 @@ async fn handle_create(
             // Trigger replication
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
-            if parsed.content_response_on_write {
+            let builder = if parsed.content_response_on_write {
                 success_response(StatusCode::Created, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
                     .with_lsn(doc.lsn)
-                    .build()
             } else {
                 ResponseBuilder::new(StatusCode::Created, start)
                     .with_request_charge(charge)
                     .with_session_token(&token)
                     .with_etag(&doc.etag)
                     .with_lsn(doc.lsn)
-                    .build()
-            }
+            };
+
+            decorate_point_response(
+                builder,
+                &region_ref,
+                db_id,
+                coll_id,
+                &doc.epk,
+                Some(doc.lsn),
+            )
+            .build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -886,7 +1024,21 @@ fn handle_read(
         // mismatch visible (review #8).
         if store.config().consistency().is_session() {
             if let Some(session_header) = &parsed.session_token {
-                let tokens = super::session::parse_composite_session_token(session_header);
+                let tokens = match super::session::parse_composite_session_token(session_header) {
+                    Ok(tokens) => tokens,
+                    Err(()) => {
+                        return Err(error_response(
+                            StatusCode::BadRequest,
+                            None,
+                            "BadRequest",
+                            "Invalid session token",
+                            1.0,
+                            &token,
+                            start,
+                        )
+                        .build());
+                    }
+                };
                 for st in &tokens {
                     if st.pkrange_id == partition.id {
                         let partition_version = partition.current_version();
@@ -947,10 +1099,16 @@ fn handle_read(
 
     match result {
         Some(Ok((body, etag, token, charge, lsn))) => {
-            success_response(StatusCode::Ok, &body, charge, &token, start)
+            let builder = success_response(StatusCode::Ok, &body, charge, &token, start)
                 .with_etag(&etag)
-                .with_lsn(lsn)
-                .build()
+                .with_lsn(lsn);
+            let (_, epk) = region_ref
+                .with_container(db_id, coll_id, |state| {
+                    let empty_body = serde_json::Value::Null;
+                    resolve_partition_key(parsed, &empty_body, &state.metadata).unwrap()
+                })
+                .unwrap();
+            decorate_point_response(builder, &region_ref, db_id, coll_id, &epk, Some(lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -983,6 +1141,34 @@ async fn handle_replace(
             .build();
         }
     };
+
+    match body.get("id").and_then(|value| value.as_str()) {
+        Some(body_id) if body_id == doc_id => {}
+        Some(_) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Document id in request body must match the resource id in the request URI",
+                1.0,
+                "",
+                start,
+            )
+            .build();
+        }
+        None => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Missing 'id' field in document",
+                1.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    }
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
@@ -1023,11 +1209,11 @@ async fn handle_replace(
         // partition are not blocked while we run precondition / throttle
         // checks. We re-acquire a write lock at commit time below — see
         // review #6.
-        let (existing_rid, existing_self_link, existing_etag) = {
+        let existing_etag = {
             let docs = partition.documents.read().unwrap();
             let existing = docs.get(&epk).and_then(|l| l.get(doc_id));
             match existing {
-                Some(e) => (e.rid.clone(), e.self_link.clone(), e.etag.clone()),
+                Some(e) => e.etag.clone(),
                 None => {
                     return Err(error_response(
                         StatusCode::NotFound,
@@ -1081,28 +1267,78 @@ async fn handle_replace(
         }
 
         // Replace
-        let lsn = partition.advance_lsn();
-        partition.advance_local_lsn();
-        let ts = current_timestamp();
-        let etag = new_etag();
-
-        inject_system_properties(&existing_rid, &existing_self_link, &etag, ts, &mut body);
-        let new_doc = StoredDocument {
-            body: body.clone(),
-            id: doc_id.to_string(),
-            rid: existing_rid,
-            etag: etag.clone(),
-            ts,
-            self_link: existing_self_link,
-            lsn,
-            epk: epk.clone(),
-        };
-
-        {
+        let new_doc = {
             let mut docs = partition.documents.write().unwrap();
-            let logical = docs.entry(epk.clone()).or_default();
+            let logical = match docs.get_mut(&epk) {
+                Some(logical) => logical,
+                None => {
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            doc_id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            };
+            let current = match logical.get(doc_id).cloned() {
+                Some(current) => current,
+                None => {
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            doc_id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            };
+            if let Some(if_match) = &parsed.if_match {
+                if *if_match != current.etag {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            }
+
+            let lsn = partition.advance_lsn();
+            partition.advance_local_lsn();
+            let ts = current_timestamp();
+            let etag = new_etag();
+
+            inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut body);
+            let new_doc = StoredDocument {
+                body: body.clone(),
+                id: doc_id.to_string(),
+                rid: current.rid,
+                etag: etag.clone(),
+                ts,
+                self_link: current.self_link,
+                lsn,
+                epk: epk.clone(),
+            };
             logical.insert(doc_id.to_string(), new_doc.clone());
-        }
+            new_doc
+        };
 
         Ok((new_doc, token, charge, body))
     });
@@ -1111,19 +1347,27 @@ async fn handle_replace(
         Some(Ok((doc, token, charge, response_body))) => {
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
-            if parsed.content_response_on_write {
+            let builder = if parsed.content_response_on_write {
                 success_response(StatusCode::Ok, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
                     .with_lsn(doc.lsn)
-                    .build()
             } else {
                 ResponseBuilder::new(StatusCode::Ok, start)
                     .with_request_charge(charge)
                     .with_session_token(&token)
                     .with_etag(&doc.etag)
                     .with_lsn(doc.lsn)
-                    .build()
-            }
+            };
+
+            decorate_point_response(
+                builder,
+                &region_ref,
+                db_id,
+                coll_id,
+                &doc.epk,
+                Some(doc.lsn),
+            )
+            .build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -1288,19 +1532,27 @@ async fn handle_upsert(
         Some(Ok((doc, status, token, charge, response_body))) => {
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
-            if parsed.content_response_on_write {
+            let builder = if parsed.content_response_on_write {
                 success_response(status, &response_body, charge, &token, start)
                     .with_etag(&doc.etag)
                     .with_lsn(doc.lsn)
-                    .build()
             } else {
                 ResponseBuilder::new(status, start)
                     .with_request_charge(charge)
                     .with_session_token(&token)
                     .with_etag(&doc.etag)
                     .with_lsn(doc.lsn)
-                    .build()
-            }
+            };
+
+            decorate_point_response(
+                builder,
+                &region_ref,
+                db_id,
+                coll_id,
+                &doc.epk,
+                Some(doc.lsn),
+            )
+            .build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -1412,25 +1664,73 @@ async fn handle_delete(
             return Err(response);
         }
 
-        let lsn = partition.advance_lsn();
-        partition.advance_local_lsn();
-        {
+        let tombstone = {
             let mut docs = partition.documents.write().unwrap();
-            if let Some(logical) = docs.get_mut(&epk) {
-                logical.remove(doc_id);
+            let logical = match docs.get_mut(&epk) {
+                Some(logical) => logical,
+                None => {
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            doc_id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            };
+            let current = match logical.get(doc_id).cloned() {
+                Some(current) => current,
+                None => {
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            doc_id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            };
+            if let Some(if_match) = &parsed.if_match {
+                if *if_match != current.etag {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
             }
-        }
 
-        // Create a "tombstone" for replication
-        let tombstone = StoredDocument {
-            body: serde_json::Value::Null,
-            id: doc_id.to_string(),
-            rid: existing.rid,
-            etag: existing.etag,
-            ts: current_timestamp(),
-            self_link: existing.self_link,
-            lsn,
-            epk,
+            let lsn = partition.advance_lsn();
+            partition.advance_local_lsn();
+            logical.remove(doc_id);
+
+            StoredDocument {
+                body: serde_json::Value::Null,
+                id: doc_id.to_string(),
+                rid: current.rid,
+                etag: current.etag,
+                ts: current_timestamp(),
+                self_link: current.self_link,
+                lsn,
+                epk: current.epk,
+            }
         };
 
         Ok((tombstone, token, charge))
@@ -1440,10 +1740,11 @@ async fn handle_delete(
         Some(Ok((tombstone, token, charge))) => {
             store.replicate(region_name, db_id, coll_id, &tombstone, true);
 
-            ResponseBuilder::new(StatusCode::NoContent, start)
+            let builder = ResponseBuilder::new(StatusCode::NoContent, start)
                 .with_request_charge(charge)
                 .with_session_token(&token)
-                .with_lsn(tombstone.lsn)
+                .with_lsn(tombstone.lsn);
+            decorate_point_response(builder, &region_ref, db_id, coll_id, &tombstone.epk, None)
                 .build()
         }
         Some(Err(response)) => response,

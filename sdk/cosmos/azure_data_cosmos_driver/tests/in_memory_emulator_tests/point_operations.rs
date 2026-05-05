@@ -4,6 +4,7 @@
 //! Point operation integration tests.
 
 use super::*;
+use azure_core::http::headers::HeaderValue;
 use azure_core::http::HttpClient;
 
 #[tokio::test]
@@ -108,6 +109,83 @@ async fn replace_existing_item() {
 }
 
 #[tokio::test]
+async fn replace_rejects_body_id_mismatch() {
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 42});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (_, _, created) = collect_response(response).await;
+    let etag = created["_etag"].as_str().unwrap().to_string();
+
+    let replacement = serde_json::json!({"id": "item2", "pk": "pk1", "value": 99});
+    let req = replace_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        &replacement,
+        r#"["pk1"]"#,
+        Some(&etag),
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::BadRequest);
+    assert_eq!(
+        body["message"],
+        "Document id in request body must match the resource id in the request URI"
+    );
+
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, doc) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(doc["id"], "item1");
+    assert_eq!(doc["value"], 42);
+}
+
+#[tokio::test]
+async fn echoes_request_activity_id() {
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 42});
+    let mut req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        true,
+    );
+    req.headers_mut().insert(
+        ACTIVITY_ID.clone(),
+        HeaderValue::from("test-activity-id".to_string()),
+    );
+
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, headers, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+    assert_eq!(
+        headers.get_optional_str(&ACTIVITY_ID),
+        Some("test-activity-id")
+    );
+}
+
+#[tokio::test]
 async fn upsert_new_item() {
     let ctx = setup_single_region().await;
 
@@ -159,6 +237,37 @@ async fn upsert_existing_item() {
     let (status, _, doc) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
     assert_eq!(doc["value"], 99);
+}
+
+#[tokio::test]
+async fn upsert_without_content_response() {
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 42});
+    let req = upsert_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        false,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, response_body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+    assert_eq!(response_body, serde_json::Value::Null);
+
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, doc) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(doc["value"], 42);
 }
 
 #[tokio::test]

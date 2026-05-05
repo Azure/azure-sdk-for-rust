@@ -187,6 +187,74 @@ async fn merge_adjacent_partitions() {
 }
 
 #[tokio::test]
+async fn merge_rejects_non_adjacent_partitions() {
+    let ctx = setup_single_region().await;
+    let store = ctx.emulator.store();
+
+    let mut routed_item = None;
+    for index in 0..128 {
+        let item_id = format!("item{index}");
+        let pk_value = format!("pk{index}");
+        let body = serde_json::json!({"id": item_id, "pk": pk_value, "value": index});
+        let pk_header = serde_json::json!([body["pk"].as_str().unwrap()]).to_string();
+        let req = create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &body,
+            &pk_header,
+            false,
+        );
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::Created);
+
+        let partition_id = response
+            .headers()
+            .get_optional_str(&SESSION_TOKEN)
+            .and_then(|token| token.split(':').next())
+            .and_then(|prefix| prefix.parse::<u32>().ok())
+            .expect("create should return a numeric partition id in the session token");
+        if partition_id == 0 || partition_id == 2 {
+            routed_item = Some((item_id, pk_header));
+            break;
+        }
+    }
+
+    let (item_id, pk_header) =
+        routed_item.expect("expected to route at least one item into partition 0 or 2");
+
+    store.merge_partitions("testdb", "testcoll", 0, 2, Duration::ZERO);
+    tokio::time::sleep(Duration::from_millis(50)).await;
+
+    let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
+    let req = Request::new(Url::parse(&url).unwrap(), Method::Get);
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (_, _, body) = collect_response(response).await;
+    let ranges = body["PartitionKeyRanges"].as_array().unwrap();
+    assert_eq!(
+        ranges.len(),
+        4,
+        "non-adjacent merge should not change topology"
+    );
+    assert!(ranges.iter().all(|range| {
+        range["parents"]
+            .as_array()
+            .expect("PKRange should always contain parents array")
+            .is_empty()
+    }));
+
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", &item_id, &pk_header);
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, doc) = collect_response(response).await;
+    assert_eq!(
+        status,
+        StatusCode::Ok,
+        "invalid merge must not leave parent ranges locked"
+    );
+    assert_eq!(doc["id"], item_id);
+}
+
+#[tokio::test]
 async fn merge_increments_vector_clock_version() {
     let ctx = setup_single_region().await;
     let store = ctx.emulator.store();
@@ -269,22 +337,16 @@ async fn read_after_split_succeeds() {
         r#"["pk1"]"#,
         false,
     );
-    ctx.emulator.execute_request(&req).await.unwrap();
-
-    // Split the partition that contains this item
-    // First find which partition has the item
-    let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
-    let req = Request::new(Url::parse(&url).unwrap(), Method::Get);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
-    let (_, _, body) = collect_response(response).await;
-    let first_pk_id: u32 = body["PartitionKeyRanges"][0]["id"]
-        .as_str()
-        .unwrap()
-        .parse()
-        .unwrap();
+    let routed_partition_id: u32 = response
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .and_then(|token| token.split(':').next())
+        .and_then(|prefix| prefix.parse().ok())
+        .expect("create should return a session token with a numeric partition id");
 
-    // Split the first partition
-    store.split_partition("testdb", "testcoll", first_pk_id, Duration::ZERO);
+    // Split the partition that actually owns the item.
+    store.split_partition("testdb", "testcoll", routed_partition_id, Duration::ZERO);
     tokio::time::sleep(Duration::from_millis(50)).await;
 
     // Read the item — should still work after split

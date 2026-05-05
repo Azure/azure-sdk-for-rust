@@ -105,7 +105,7 @@ pub struct MultiRegionTestContext {
 // Reuse the response-builder header constants from the emulator itself so
 // tests cannot drift from production strings.
 pub use azure_data_cosmos_driver::in_memory_emulator::test_headers::{
-    ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
+    ACTIVITY_ID, ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
 };
 
 // Request-side headers are only set by tests, so they live here.
@@ -227,6 +227,9 @@ pub fn upsert_item_request(
     if content_response {
         req.headers_mut()
             .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("True"));
+    } else {
+        req.headers_mut()
+            .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("False"));
     }
     req
 }

@@ -12,16 +12,15 @@
 //! 3. Compares status codes, headers, and payloads between the two
 //!    backends using the shared [`super::validation`] comparison framework.
 //!
-//! Only `create_item` and `read_item` are tested here because these are the SDK
-//! operations currently routed through the driver pipeline. Operations like
-//! `replace_item`, `delete_item`, `create_database`, and `create_container` still
-//! go through the gateway HTTP pipeline and cannot be intercepted by the
-//! in-memory emulator transport. Add tests for those once they are migrated to
-//! the driver.
+//! The suite now covers the SDK item methods routed through the driver-backed
+//! emulator (`create_item`, `read_item`, `replace_item`, `upsert_item`, and
+//! `delete_item`) plus explicit control-plane create coverage. Most data-plane
+//! tests still pre-provision emulator resources directly in the store so the
+//! individual scenarios can stay focused on the SDK operation under test.
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
 use azure_data_cosmos::regions::Region;
 use azure_data_cosmos::CosmosAccountReference;
 use azure_data_cosmos::{
@@ -29,7 +28,8 @@ use azure_data_cosmos::{
     ItemWriteOptions, OperationOptions, RoutingStrategy,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+    ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
+    VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{ConnectionString, CosmosResponseHeaders};
 use serde::{Deserialize, Serialize};
@@ -49,6 +49,14 @@ struct TestItem {
     value: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct PaddedTestItem {
+    id: String,
+    pk: String,
+    value: i64,
+    padding: String,
+}
+
 // ─── SDK → ResponseSnapshot adapter ─────────────────────────────────────────
 
 /// Builds a [`ResponseSnapshot`] from an SDK [`ItemResponse`] so the shared
@@ -64,17 +72,25 @@ fn snapshot_from_item_response<T>(resp: &ItemResponse<T>, label: &str) -> Respon
     }
 }
 
-/// Compares an emulator and real [`ItemResponse`] using the shared header
-/// validation spec for point operations.
-fn compare_item_responses<T>(real: &ItemResponse<T>, emu: &ItemResponse<T>) {
+fn compare_item_responses_with_spec<T>(
+    real: &ItemResponse<T>,
+    emu: &ItemResponse<T>,
+    header_spec: &HeaderValidationSpec,
+) {
     let real_snap = snapshot_from_item_response(real, "real");
     let emu_snap = snapshot_from_item_response(emu, "emulator");
     compare_responses(
         &real_snap,
         &emu_snap,
-        &HeaderValidationSpec::for_point_operation(),
+        header_spec,
         BodyValidationSpec::Ignore, // body validated via typed deserialization
     );
+}
+
+/// Compares an emulator and real [`ItemResponse`] using the shared header
+/// validation spec for point operations.
+fn compare_item_responses<T>(real: &ItemResponse<T>, emu: &ItemResponse<T>) {
+    compare_item_responses_with_spec(real, emu, &HeaderValidationSpec::for_point_operation());
 }
 
 /// Compares two SDK error responses: both must have the same HTTP status.
@@ -86,6 +102,45 @@ fn compare_sdk_errors(real: &azure_core::Error, emu: &azure_core::Error) {
         real.http_status(),
         emu.http_status(),
     );
+}
+
+fn make_stale_session_token(token: &str) -> String {
+    let mut parts = token.split('#');
+    let prefix = parts.next().unwrap_or(token);
+    let Some(_) = parts.next() else {
+        return format!("{prefix}#9999999999");
+    };
+
+    let region_progress: Vec<String> = parts
+        .map(|segment| match segment.split_once('=') {
+            Some((region_id, _)) => format!("{region_id}=9999999999"),
+            None => segment.to_string(),
+        })
+        .collect();
+
+    if region_progress.is_empty() {
+        format!("{prefix}#9999999999")
+    } else {
+        format!("{prefix}#9999999999#{}", region_progress.join("#"))
+    }
+}
+
+fn assert_read_session_not_available(err: &azure_core::Error, label: &str) {
+    assert_eq!(
+        err.http_status(),
+        Some(StatusCode::NotFound),
+        "{label}: stale session read should return 404",
+    );
+    match err.kind() {
+        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
+            assert_eq!(
+                error_code.as_deref(),
+                Some("1002"),
+                "{label}: stale session read should surface substatus 1002",
+            );
+        }
+        other => panic!("{label}: expected HttpResponse error, got {other}"),
+    }
 }
 
 /// Asserts emulator-only response metadata when no real account is available.
@@ -271,8 +326,74 @@ fn write_options_with_content() -> ItemWriteOptions {
     ItemWriteOptions::default().with_operation_options(operation)
 }
 
+fn padded_test_item(id: &str, value: i64, padding_len: usize) -> PaddedTestItem {
+    PaddedTestItem {
+        id: id.to_string(),
+        pk: "pk1".to_string(),
+        value,
+        padding: "x".repeat(padding_len),
+    }
+}
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
+#[tokio::test]
+async fn sdk_create_database_and_container_through_driver() {
+    let backend = SdkDualBackend::setup().await.unwrap();
+    let db_name = backend.unique_db_name();
+    let container_name = "sdkcp";
+
+    let emu_create_db = backend
+        .emulator_client
+        .create_database(&db_name, None)
+        .await
+        .unwrap();
+    assert_eq!(emu_create_db.status(), StatusCode::Created);
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_create_db = real_client.create_database(&db_name, None).await.unwrap();
+        assert_eq!(real_create_db.status(), emu_create_db.status());
+
+        let real_db: DatabaseProperties = real_create_db.into_model().unwrap();
+        assert_eq!(real_db.id, db_name);
+    }
+
+    let emu_db: DatabaseProperties = emu_create_db.into_model().unwrap();
+    assert_eq!(emu_db.id, db_name);
+
+    let props = ContainerProperties::new(container_name.to_string(), "/pk".into());
+    let emu_db_client = backend.emulator_client.database_client(&db_name);
+    let emu_create_container = emu_db_client
+        .create_container(props.clone(), None)
+        .await
+        .unwrap();
+    assert_eq!(emu_create_container.status(), StatusCode::Created);
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_db_client = real_client.database_client(&db_name);
+        let real_create_container = real_db_client
+            .create_container(props.clone(), None)
+            .await
+            .unwrap();
+        assert_eq!(
+            real_create_container.status(),
+            emu_create_container.status()
+        );
+
+        let real_container_props: ContainerProperties = real_create_container.into_model().unwrap();
+        assert_eq!(real_container_props.id, container_name);
+    }
+
+    let emu_container_props: ContainerProperties = emu_create_container.into_model().unwrap();
+    assert_eq!(emu_container_props.id, container_name);
+
+    let _emu_container = emu_db_client
+        .container_client(container_name)
+        .await
+        .unwrap();
+
+    backend.cleanup_real_database(&db_name).await;
+}
 #[tokio::test]
 async fn sdk_create_and_read_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
@@ -335,6 +456,245 @@ async fn sdk_create_and_read_item() {
     backend.cleanup_real_database(&db_name).await;
 }
 
+#[tokio::test]
+async fn sdk_replace_item() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    let original = TestItem {
+        id: "replace-me".into(),
+        pk: "pk1".into(),
+        value: 1,
+    };
+    let updated = TestItem {
+        id: "replace-me".into(),
+        pk: "pk1".into(),
+        value: 99,
+    };
+
+    let emu_create = emu_container
+        .create_item(
+            "pk1",
+            &original.id,
+            &original,
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_create, StatusCode::Created);
+
+    if let Some(ref real) = real_container {
+        let real_create = real
+            .create_item(
+                "pk1",
+                &original.id,
+                &original,
+                Some(write_options_with_content()),
+            )
+            .await
+            .unwrap();
+        compare_item_responses(&real_create, &emu_create);
+    }
+
+    let emu_replace = emu_container
+        .replace_item(
+            "pk1",
+            &updated.id,
+            &updated,
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_replace, StatusCode::Ok);
+
+    if let Some(ref real) = real_container {
+        let real_replace = real
+            .replace_item(
+                "pk1",
+                &updated.id,
+                &updated,
+                Some(write_options_with_content()),
+            )
+            .await
+            .unwrap();
+        compare_item_responses(&real_replace, &emu_replace);
+
+        let real_doc: TestItem = real_replace.into_body().json().unwrap();
+        assert_eq!(real_doc.value, 99);
+    }
+
+    let emu_doc: TestItem = emu_replace.into_body().json().unwrap();
+    assert_eq!(emu_doc.value, 99);
+
+    let emu_read = emu_container
+        .read_item::<TestItem>("pk1", &updated.id, None)
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_read, StatusCode::Ok);
+
+    if let Some(ref real) = real_container {
+        let real_read = real
+            .read_item::<TestItem>("pk1", &updated.id, None)
+            .await
+            .unwrap();
+        compare_item_responses(&real_read, &emu_read);
+
+        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        assert_eq!(real_doc.value, 99);
+    }
+
+    let emu_read_doc: TestItem = emu_read.into_body().json().unwrap();
+    assert_eq!(emu_read_doc.value, 99);
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+async fn sdk_upsert_item() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    let initial = TestItem {
+        id: "upsert-item".into(),
+        pk: "pk1".into(),
+        value: 10,
+    };
+    let updated = TestItem {
+        id: "upsert-item".into(),
+        pk: "pk1".into(),
+        value: 20,
+    };
+
+    let emu_upsert_create = emu_container
+        .upsert_item(
+            "pk1",
+            &initial.id,
+            &initial,
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_upsert_create, StatusCode::Created);
+
+    if let Some(ref real) = real_container {
+        let real_upsert_create = real
+            .upsert_item(
+                "pk1",
+                &initial.id,
+                &initial,
+                Some(write_options_with_content()),
+            )
+            .await
+            .unwrap();
+        compare_item_responses(&real_upsert_create, &emu_upsert_create);
+    }
+
+    let emu_upsert_update = emu_container
+        .upsert_item(
+            "pk1",
+            &updated.id,
+            &updated,
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_upsert_update, StatusCode::Ok);
+
+    if let Some(ref real) = real_container {
+        let real_upsert_update = real
+            .upsert_item(
+                "pk1",
+                &updated.id,
+                &updated,
+                Some(write_options_with_content()),
+            )
+            .await
+            .unwrap();
+        compare_item_responses(&real_upsert_update, &emu_upsert_update);
+
+        let real_doc: TestItem = real_upsert_update.into_body().json().unwrap();
+        assert_eq!(real_doc.value, 20);
+    }
+
+    let emu_doc: TestItem = emu_upsert_update.into_body().json().unwrap();
+    assert_eq!(emu_doc.value, 20);
+
+    let emu_read = emu_container
+        .read_item::<TestItem>("pk1", &updated.id, None)
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_read, StatusCode::Ok);
+
+    if let Some(ref real) = real_container {
+        let real_read = real
+            .read_item::<TestItem>("pk1", &updated.id, None)
+            .await
+            .unwrap();
+        compare_item_responses(&real_read, &emu_read);
+
+        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        assert_eq!(real_doc.value, 20);
+    }
+
+    let emu_read_doc: TestItem = emu_read.into_body().json().unwrap();
+    assert_eq!(emu_read_doc.value, 20);
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+async fn sdk_delete_item() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    let item = TestItem {
+        id: "delete-me".into(),
+        pk: "pk1".into(),
+        value: 1,
+    };
+
+    let emu_create = emu_container
+        .create_item("pk1", &item.id, &item, Some(write_options_with_content()))
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_create, StatusCode::Created);
+
+    if let Some(ref real) = real_container {
+        let real_create = real
+            .create_item("pk1", &item.id, &item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+        compare_item_responses(&real_create, &emu_create);
+    }
+
+    let emu_delete = emu_container
+        .delete_item("pk1", &item.id, None)
+        .await
+        .unwrap();
+    assert_eq!(emu_delete.status(), StatusCode::NoContent);
+
+    if let Some(ref real) = real_container {
+        let real_delete = real.delete_item("pk1", &item.id, None).await.unwrap();
+        compare_item_responses_with_spec(
+            &real_delete,
+            &emu_delete,
+            &HeaderValidationSpec::for_delete_operation(),
+        );
+    }
+
+    let emu_err = emu_container
+        .read_item::<TestItem>("pk1", &item.id, None)
+        .await
+        .expect_err("emulator: reading deleted item should fail");
+    assert_eq!(emu_err.http_status(), Some(StatusCode::NotFound));
+
+    if let Some(ref real) = real_container {
+        let real_err = real
+            .read_item::<TestItem>("pk1", &item.id, None)
+            .await
+            .expect_err("real: reading deleted item should fail");
+        compare_sdk_errors(&real_err, &emu_err);
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
 #[tokio::test]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
@@ -451,37 +811,166 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
 async fn sdk_read_with_stale_session_token_returns_error() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
+    let seed = TestItem {
+        id: "seed-for-session".into(),
+        pk: "pk1".into(),
+        value: 0,
+    };
+    let emu_seed = emu_container
+        .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
+        .await
+        .expect("emulator seed create should succeed");
+    let emu_seed_headers = CosmosResponseHeaders::from_headers(emu_seed.headers());
+    let emu_stale_token = make_stale_session_token(
+        emu_seed_headers
+            .session_token
+            .as_ref()
+            .expect("emulator seed create should return a session token")
+            .as_str(),
+    );
+
     let mut operation = OperationOptions::default();
     operation.max_session_retry_count = Some(0);
     let read_options = ItemReadOptions::default()
-        .with_session_token("0:-1#999999")
+        .with_session_token(emu_stale_token)
         .with_operation_options(operation);
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", "no-such-item", Some(read_options.clone()))
+        .read_item::<TestItem>("pk1", "seed-for-session", Some(read_options.clone()))
         .await
         .expect_err("emulator should return error for stale session read");
-    assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::NotFound),
-        "emulator error should be HTTP 404",
-    );
+    assert_read_session_not_available(&emu_err, "emulator");
 
     if let Some(ref real) = real_container {
+        let real_seed = real
+            .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
+            .await
+            .expect("real seed create should succeed");
+        let real_seed_headers = CosmosResponseHeaders::from_headers(real_seed.headers());
+        let real_stale_token = make_stale_session_token(
+            real_seed_headers
+                .session_token
+                .as_ref()
+                .expect("real seed create should return a session token")
+                .as_str(),
+        );
+
         let mut operation = OperationOptions::default();
         operation.max_session_retry_count = Some(0);
         let real_read_options = ItemReadOptions::default()
-            .with_session_token("0:-1#999999")
+            .with_session_token(real_stale_token)
             .with_operation_options(operation);
 
-        let real_err = real
-            .read_item::<TestItem>("pk1", "no-such-item", Some(real_read_options))
+        match real
+            .read_item::<TestItem>("pk1", "seed-for-session", Some(real_read_options))
             .await
-            .expect_err("real should return error for stale session read");
-        compare_sdk_errors(&real_err, &emu_err);
+        {
+            Err(real_err) => {
+                assert_read_session_not_available(&real_err, "real");
+                compare_sdk_errors(&real_err, &emu_err);
+            }
+            Ok(real_resp) => {
+                let real_doc: TestItem = real_resp.into_body().json().unwrap();
+                assert_eq!(real_doc.id, "seed-for-session");
+                assert_eq!(real_doc.pk, "pk1");
+            }
+        }
     }
 
     backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+async fn sdk_create_retries_after_429_throttling() {
+    let run_id = Uuid::new_v4().to_string()[..8].to_string();
+
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_throttling_enabled(true);
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let emulator_store = emulator.store();
+
+    let db_name = format!("sdk-throttle-{run_id}");
+    emulator_store.create_database(&db_name);
+    emulator_store.create_container_with_config(
+        &db_name,
+        "throttlecoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .unwrap()
+            .with_throughput(400)
+            .unwrap(),
+    );
+
+    let emulator_account = CosmosAccountReference::with_master_key(
+        EMULATOR_GATEWAY_URL.parse().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    let emulator_client = CosmosClientBuilder::new()
+        .with_driver_runtime_builder(emulator.runtime_builder())
+        .build(
+            emulator_account,
+            RoutingStrategy::ProximityTo(Region::EAST_US),
+        )
+        .await
+        .unwrap();
+
+    let emu_container = emulator_client
+        .database_client(&db_name)
+        .container_client("throttlecoll")
+        .await
+        .unwrap();
+
+    let seed = padded_test_item("seed-throttle", 1, 40 * 1024);
+    emu_container
+        .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
+        .await
+        .unwrap();
+
+    let throttled = padded_test_item("throttled-item", 42, 8 * 1024);
+    let start = std::time::Instant::now();
+    let emu_create = emu_container
+        .create_item(
+            "pk1",
+            &throttled.id,
+            &throttled,
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let elapsed = start.elapsed();
+
+    assert!(
+        elapsed >= std::time::Duration::from_millis(200),
+        "create should have retried after a 429 throttling response (elapsed: {:?})",
+        elapsed,
+    );
+    assert_emulator_item_response(&emu_create, StatusCode::Created);
+
+    let emu_doc: PaddedTestItem = emu_create.into_body().json().unwrap();
+    assert_eq!(emu_doc.value, 42);
+    assert_eq!(emu_doc.padding.len(), 8 * 1024);
+
+    let emu_read = emu_container
+        .read_item::<PaddedTestItem>("pk1", &throttled.id, None)
+        .await
+        .unwrap();
+    assert_emulator_item_response(&emu_read, StatusCode::Ok);
+
+    let emu_read_doc: PaddedTestItem = emu_read.into_body().json().unwrap();
+    assert_eq!(emu_read_doc.value, 42);
+    assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
 }
 
 // ─── Multi-region fault injection via SDK ────────────────────────────────────

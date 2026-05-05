@@ -1237,8 +1237,27 @@ impl EmulatorStore {
         });
     }
 
+    fn unlock_partitions(&self, key: &(String, String), partition_ids: &[u32]) {
+        let regions = self.regions.read().unwrap();
+        for region in regions.values() {
+            let containers = region.containers.read().unwrap();
+            if let Some(state) = containers.get(key) {
+                for partition in &state.physical_partitions {
+                    if partition_ids.contains(&partition.id) {
+                        partition.locked.store(false, Ordering::SeqCst);
+                    }
+                }
+            }
+        }
+    }
+
     /// Performs the actual merge after the lock period.
     fn execute_merge(&self, db_id: &str, coll_id: &str, partition_id_a: u32, partition_id_b: u32) {
+        enum MergePreview {
+            Ready((Epk, Epk, u64, u32, String, Option<u32>)),
+            NonAdjacent(Epk, Epk),
+        }
+
         // Compute child id/rid + merged bounds ONCE, based on the first region's view.
         let key = (db_id.to_string(), coll_id.to_string());
         let preview = {
@@ -1264,6 +1283,13 @@ impl EmulatorStore {
                     } else {
                         (pb, pa)
                     };
+                    if lower.epk_max != upper.epk_min {
+                        found = Some(MergePreview::NonAdjacent(
+                            lower.epk_max.clone(),
+                            upper.epk_min.clone(),
+                        ));
+                        break;
+                    }
                     let merged_min = lower.epk_min.clone();
                     let merged_max = upper.epk_max.clone();
                     let max_version =
@@ -1272,14 +1298,14 @@ impl EmulatorStore {
                     let child_id = state.next_partition_id();
                     let child_rid = pkrange_rid_for(&state.metadata, &self.rid_generator, child_id);
                     let total_throughput = state.metadata.provisioned_throughput_ru;
-                    found = Some((
+                    found = Some(MergePreview::Ready((
                         merged_min,
                         merged_max,
                         child_version,
                         child_id,
                         child_rid,
                         total_throughput,
-                    ));
+                    )));
                     break;
                 }
             }
@@ -1287,8 +1313,24 @@ impl EmulatorStore {
         };
         let (merged_min, merged_max, child_version, child_id, child_rid, total_throughput) =
             match preview {
-                Some(t) => t,
-                None => return,
+                Some(MergePreview::Ready(preview)) => preview,
+                Some(MergePreview::NonAdjacent(left_max, right_min)) => {
+                    tracing::warn!(
+                        db_id = db_id,
+                        coll_id = coll_id,
+                        partition_id_a = partition_id_a,
+                        partition_id_b = partition_id_b,
+                        left_max = %left_max,
+                        right_min = %right_min,
+                        "in-memory emulator: rejecting merge for non-adjacent partitions",
+                    );
+                    self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
+                    return;
+                }
+                None => {
+                    self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
+                    return;
+                }
             };
 
         let regions = self.regions.read().unwrap();
