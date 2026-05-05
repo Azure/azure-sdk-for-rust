@@ -60,7 +60,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .create_certificate("certificate-roundtrip", body.try_into()?, None)?
+        .begin_create_certificate("certificate-roundtrip", body.try_into()?, None)?
         .await?
         .into_model()?;
 
@@ -98,7 +98,7 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
                 ..Default::default()
             };
             let _certificate = client
-                .create_certificate(
+                .begin_create_certificate(
                     "certificate-validate-instrumentation",
                     body.try_into()?,
                     None,
@@ -158,7 +158,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .create_certificate("update-properties", body.try_into()?, None)?
+        .begin_create_certificate("update-properties", body.try_into()?, None)?
         .await?
         .into_model()?;
 
@@ -215,10 +215,10 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     client
-        .create_certificate("list-certificates-1", body.clone().try_into()?, None)?
+        .begin_create_certificate("list-certificates-1", body.clone().try_into()?, None)?
         .await?;
     client
-        .create_certificate("list-certificates-2", body.try_into()?, None)?
+        .begin_create_certificate("list-certificates-2", body.try_into()?, None)?
         .await?;
 
     // List certificates.
@@ -256,7 +256,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     };
     const NAME: &str = "purge-certificate";
     client
-        .create_certificate(NAME, body.try_into()?, None)?
+        .begin_create_certificate(NAME, body.try_into()?, None)?
         .await?;
 
     // Delete the certificate.
@@ -329,7 +329,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     };
     const NAME: &str = "ec-certificate-signer";
     let certificate = client
-        .create_certificate(NAME, body.try_into()?, None)?
+        .begin_create_certificate(NAME, body.try_into()?, None)?
         .await?
         .into_model()?;
     let certificate_version = certificate
@@ -393,7 +393,7 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let err = client
-        .create_certificate("create_invalid_certificate", body.try_into()?, None)?
+        .begin_create_certificate("create_invalid_certificate", body.try_into()?, None)?
         .await
         .expect_err("expected HTTP error");
 
