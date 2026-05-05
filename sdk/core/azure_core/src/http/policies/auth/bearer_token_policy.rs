@@ -70,7 +70,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
         if request.url().scheme() != "https" {
             return Err(Error::with_message(
                 ErrorKind::Other,
-                "authenticated requests are not permitted for non-TLS protected (https) endpoints",
+                "authorized requests are not permitted for non-TLS protected (https) endpoints",
             ));
         }
 

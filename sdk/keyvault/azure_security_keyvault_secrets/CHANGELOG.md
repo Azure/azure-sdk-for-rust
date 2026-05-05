@@ -6,7 +6,7 @@
 
 ### Breaking Changes
 
-- Bearer token authentication now requires TLS (https).
+- Vault URLs must use TLS (https).
 
 ### Bugs Fixed
 
