@@ -573,37 +573,63 @@ impl CosmosOperation {
         Self::query_items(container, PartitionKey::EMPTY)
     }
 
-    /// Retrieves a query plan from the Gateway for the given container.
+    /// Builds a Gateway query-plan request: the [`CosmosOperation`] paired with
+    /// the [`OperationOptions`](crate::options::OperationOptions) that carry the
+    /// four required headers (`x-ms-cosmos-is-query-plan-request`,
+    /// `x-ms-cosmos-supported-query-features`, `x-ms-documentdb-isquery`, and
+    /// `Content-Type: application/query+json`).
     ///
-    /// Use `with_body()` to provide the query JSON (same format as `query_items`).
-    /// The caller must also set the required query-plan headers via
-    /// `OperationOptions::with_custom_headers()`:
-    /// - `x-ms-cosmos-is-query-plan-request: True`
-    /// - `x-ms-cosmos-supported-query-features: <feature-list>`
-    /// - `Content-Type: application/query+json`
-    /// - `x-ms-documentdb-isquery: True`
+    /// Use [`with_body`](Self::with_body) on the returned operation to attach
+    /// the query JSON (same format as `query_items`). Callers that need extra
+    /// headers should fold them into the returned options via
+    /// [`OperationOptions::with_custom_headers`](crate::options::OperationOptions::with_custom_headers).
     ///
     /// **This constructor is intentionally not part of the supported public API.**
     /// The driver issues Gateway query-plan requests internally; the local plan
     /// generator (see `query::plan`) replaces it for production callers. It is
     /// gated on the `__internal_testing` feature flag so that cross-crate
-    /// gateway-comparison tests can build the operation directly. Production
+    /// gateway-comparison tests can build the request directly. Production
     /// callers must not use it.
     #[cfg(any(test, feature = "__internal_testing"))]
-    pub fn query_plan(container: ContainerReference) -> Self {
+    pub fn query_plan(container: ContainerReference) -> (Self, crate::options::OperationOptions) {
         Self::query_plan_impl(container)
     }
     #[cfg(not(any(test, feature = "__internal_testing")))]
-    #[allow(dead_code)]
-    pub(crate) fn query_plan(container: ContainerReference) -> Self {
+    #[allow(dead_code)] // until the local-plan generator wires this in (#13)
+    pub(crate) fn query_plan(
+        container: ContainerReference,
+    ) -> (Self, crate::options::OperationOptions) {
         Self::query_plan_impl(container)
     }
 
-    fn query_plan_impl(container: ContainerReference) -> Self {
+    fn query_plan_impl(container: ContainerReference) -> (Self, crate::options::OperationOptions) {
+        use azure_core::http::headers::{HeaderName, HeaderValue};
+
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
-        Self::new(OperationType::QueryPlan, resource_ref)
+        let operation = Self::new(OperationType::QueryPlan, resource_ref);
+
+        let mut headers = std::collections::HashMap::with_capacity(4);
+        headers.insert(
+            HeaderName::from_static("x-ms-cosmos-is-query-plan-request"),
+            HeaderValue::from_static("True"),
+        );
+        headers.insert(
+            HeaderName::from_static("x-ms-cosmos-supported-query-features"),
+            HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+        );
+        headers.insert(
+            HeaderName::from_static("x-ms-documentdb-isquery"),
+            HeaderValue::from_static("True"),
+        );
+        headers.insert(
+            azure_core::http::headers::CONTENT_TYPE,
+            HeaderValue::from_static("application/query+json"),
+        );
+        let options = crate::options::OperationOptions::default().with_custom_headers(headers);
+
+        (operation, options)
     }
 
     /// Reads (lists) all partition key ranges for a container.
@@ -780,5 +806,52 @@ mod tests {
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    // ── #12: query_plan factory pre-populates required headers ───────────
+
+    /// `CosmosOperation::query_plan` must return options that already carry
+    /// the four headers the Gateway requires for query-plan requests
+    /// (`x-ms-cosmos-is-query-plan-request`, `x-ms-cosmos-supported-query-features`,
+    /// `x-ms-documentdb-isquery`, and `Content-Type: application/query+json`).
+    /// Previously these were the caller's responsibility — forgetting any one
+    /// produced an opaque 4xx from the Gateway.
+    #[test]
+    fn query_plan_factory_sets_required_headers() {
+        use azure_core::http::headers::{HeaderName, HeaderValue, CONTENT_TYPE};
+
+        let (op, options) = CosmosOperation::query_plan(test_container());
+        assert_eq!(op.operation_type(), OperationType::QueryPlan);
+
+        let headers = options
+            .custom_headers()
+            .expect("query_plan must return options with custom headers");
+
+        let expect = |name: HeaderName, value: HeaderValue| {
+            let actual = headers
+                .get(&name)
+                .unwrap_or_else(|| panic!("missing header {name:?}"));
+            assert_eq!(
+                actual.as_str(),
+                value.as_str(),
+                "wrong value for header {name:?}"
+            );
+        };
+        expect(
+            HeaderName::from_static("x-ms-cosmos-is-query-plan-request"),
+            HeaderValue::from_static("True"),
+        );
+        expect(
+            HeaderName::from_static("x-ms-cosmos-supported-query-features"),
+            HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+        );
+        expect(
+            HeaderName::from_static("x-ms-documentdb-isquery"),
+            HeaderValue::from_static("True"),
+        );
+        expect(
+            CONTENT_TYPE,
+            HeaderValue::from_static("application/query+json"),
+        );
     }
 }

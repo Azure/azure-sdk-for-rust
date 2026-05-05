@@ -49,9 +49,14 @@ impl CosmosValue {
         }
     }
 
-    /// Returns true if this value is "truthy" in Cosmos DB semantics.
-    /// `null`, `undefined`, `false`, `0`, and `""` are falsy; everything else is truthy.
-    /// However, Cosmos DB WHERE clauses only accept boolean true as "matches".
+    /// JavaScript-style truthiness check.
+    ///
+    /// **NOT** the Cosmos SQL boolean coercion — Cosmos `WHERE`, `AND`, `OR`,
+    /// and `NOT` only accept `Boolean(true)` as "matches" and treat any other
+    /// type as `Undefined`. Use direct pattern-matching on `Boolean(true)` for
+    /// SQL semantics. This helper is reserved for non-SQL ergonomic checks
+    /// (e.g., evaluator-internal short-circuit hints in conditional/coalesce
+    /// paths that already have separate Boolean-only handling).
     pub(crate) fn is_truthy(&self) -> bool {
         match self {
             Self::Boolean(b) => *b,

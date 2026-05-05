@@ -14,7 +14,6 @@
 
 #![cfg(feature = "__internal_testing")]
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
@@ -32,21 +31,14 @@ use azure_data_cosmos_driver::CosmosDriver;
 // ─── Test infrastructure ─────────────────────────────────────────────────────
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+// Matches `azure_data_cosmos::tests::framework::test_client::EMULATOR_CONNECTION_STRING`
+// (see `sdk/cosmos/azure_data_cosmos/tests/framework/test_client.rs`). Keep
+// these two in sync — the emulator is published with this well-known key and
+// uses `127.0.0.1` rather than `localhost` so its self-signed cert SAN matches.
 const EMULATOR_CONNECTION_STRING: &str =
-    "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+    "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 
-/// Set of query features the local plan generator advertises to the Gateway.
-///
-/// Single source of truth for the test infrastructure. The driver crate does not
-/// yet expose a centralized constant for this header value; once it does (e.g.,
-/// a `query::SUPPORTED_QUERY_FEATURES` constant on the local plan generator),
-/// this test helper should switch to importing that constant so the two stay
-/// in sync.
-//
-// TODO(#cosmos): replace with shared constant from the driver once the local
-// plan generator exposes its supported-feature set.
-const SUPPORTED_QUERY_FEATURES: &str =
-    "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates";
+// SUPPORTED_QUERY_FEATURES is now sourced from the driver crate via __test_only_supported_query_features.
 
 fn resolve_env() -> Option<(AccountReference, ConnectionPoolOptions)> {
     let conn_str_raw = match std::env::var(CONNECTION_STRING_ENV_VAR) {
@@ -163,30 +155,17 @@ async fn fetch_gateway_plan(
     };
     let body = serde_json::to_vec(&query_body)?;
 
-    let mut custom_headers = HashMap::new();
-    custom_headers.insert(
-        HeaderName::from("x-ms-cosmos-is-query-plan-request"),
-        HeaderValue::from("True"),
-    );
-    custom_headers.insert(
-        HeaderName::from("x-ms-cosmos-supported-query-features"),
-        HeaderValue::from(SUPPORTED_QUERY_FEATURES),
-    );
-    custom_headers.insert(
-        HeaderName::from("x-ms-documentdb-isquery"),
-        HeaderValue::from("True"),
-    );
-    custom_headers.insert(
-        azure_core::http::headers::CONTENT_TYPE,
-        HeaderValue::from("application/query+json"),
-    );
+    // Headers required for a query-plan request are folded in by
+    // `CosmosOperation::query_plan` (see #12). We only add the cross-partition
+    // toggle here, which is specific to gateway-comparison tests.
+    let (operation, op_options) = CosmosOperation::query_plan(container.clone());
+    let mut custom_headers = op_options.custom_headers().cloned().unwrap_or_default();
     custom_headers.insert(
         HeaderName::from("x-ms-documentdb-query-enablecrosspartition"),
         HeaderValue::from("True"),
     );
-
     let op_options = OperationOptions::default().with_custom_headers(custom_headers);
-    let operation = CosmosOperation::query_plan(container.clone()).with_body(body);
+    let operation = operation.with_body(body);
 
     let response = driver.execute_operation(operation, op_options).await?;
     let body_bytes = response.into_body();

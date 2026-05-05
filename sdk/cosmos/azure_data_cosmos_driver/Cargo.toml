@@ -75,6 +75,11 @@ rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
 __internal_mocking = []
+# `__internal_testing` exposes a small, intentionally-unstable surface
+# (`CosmosOperation::query_plan`, `query::__test_only_generate_query_plan_for_pk_paths`,
+# and `query::SUPPORTED_QUERY_FEATURES`) for cross-crate gateway-comparison tests.
+# Production code MUST NOT enable this feature; it is not covered by SemVer and
+# may change or disappear at any time.
 __internal_testing = []
 __tls = []
 

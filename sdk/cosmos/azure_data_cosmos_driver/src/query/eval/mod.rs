@@ -1054,47 +1054,45 @@ fn eval_binary(op: SqlBinaryOp, left: &CosmosValue, right: &CosmosValue) -> Cosm
     }
 }
 
-/// Three-valued AND: `undefined AND false` = `false`, `undefined AND true` = `undefined`.
-fn eval_and(left: &CosmosValue, right: &CosmosValue) -> CosmosValue {
-    match (left.is_undefined(), right.is_undefined()) {
-        (true, true) => CosmosValue::Undefined,
-        (true, false) => {
-            if !right.is_truthy() {
-                CosmosValue::Boolean(false)
-            } else {
-                CosmosValue::Undefined
-            }
-        }
-        (false, true) => {
-            if !left.is_truthy() {
-                CosmosValue::Boolean(false)
-            } else {
-                CosmosValue::Undefined
-            }
-        }
-        (false, false) => CosmosValue::Boolean(left.is_truthy() && right.is_truthy()),
+/// Coerce a value to a strict Boolean operand for SQL three-valued logic.
+///
+/// In Cosmos DB SQL, `AND`/`OR`/`NOT` operate only on `Boolean` values; any
+/// other type (including non-zero numbers or non-empty strings) is treated as
+/// `Undefined`. This mirrors the engine's behavior — `WHERE 1 AND TRUE` does
+/// **not** match documents because `1` is not a Boolean.
+fn as_bool(value: &CosmosValue) -> Option<bool> {
+    match value {
+        CosmosValue::Boolean(b) => Some(*b),
+        _ => None,
     }
 }
 
-/// Three-valued OR: `undefined OR true` = `true`, `undefined OR false` = `undefined`.
+/// Three-valued AND with strict-Boolean operands.
+///
+/// Truth table (`U` = `Undefined`):
+///   T AND T = T,  T AND F = F,  T AND U = U
+///   F AND _ = F,  U AND F = F,  U AND U = U,  U AND T = U
+/// Any non-Boolean operand is coerced to `U` per Cosmos semantics.
+fn eval_and(left: &CosmosValue, right: &CosmosValue) -> CosmosValue {
+    match (as_bool(left), as_bool(right)) {
+        // `false` short-circuits regardless of the other side.
+        (Some(false), _) | (_, Some(false)) => CosmosValue::Boolean(false),
+        (Some(true), Some(true)) => CosmosValue::Boolean(true),
+        // `true AND undefined` and `undefined AND undefined` are both undefined.
+        _ => CosmosValue::Undefined,
+    }
+}
+
+/// Three-valued OR with strict-Boolean operands.
+///
+/// Truth table (`U` = `Undefined`):
+///   T OR _ = T,  _ OR T = T
+///   F OR F = F,  F OR U = U,  U OR F = U,  U OR U = U
 fn eval_or(left: &CosmosValue, right: &CosmosValue) -> CosmosValue {
-    match (left.is_undefined(), right.is_undefined()) {
-        (true, true) => CosmosValue::Undefined,
-        (true, false) => {
-            if right.is_truthy() {
-                CosmosValue::Boolean(true)
-            } else {
-                CosmosValue::Undefined
-            }
-        }
-        (false, true) => {
-            if left.is_truthy() {
-                CosmosValue::Boolean(true)
-            } else {
-                CosmosValue::Undefined
-            }
-        }
-        (false, false) => CosmosValue::Boolean(left.is_truthy() || right.is_truthy()),
+    match (as_bool(left), as_bool(right)) {
+        (Some(true), _) | (_, Some(true)) => CosmosValue::Boolean(true),
+        (Some(false), Some(false)) => CosmosValue::Boolean(false),
+        _ => CosmosValue::Undefined,
     }
 }
 
@@ -2327,5 +2325,49 @@ mod tests {
         assert_eq!(results[0]["t"], "rust");
         assert_eq!(results[1]["name"], "Charlie");
         assert_eq!(results[1]["t"], "rust");
+    }
+
+    // ── #10: AND/OR strict-Boolean three-valued logic ────────────────────
+
+    /// In Cosmos SQL, `AND` / `OR` only accept `Boolean` operands. Any
+    /// non-Boolean value (number, string, array, object) is coerced to
+    /// `Undefined`, which means `WHERE c.x AND TRUE` does **not** match a
+    /// document where `c.x = 1`. The earlier implementation used JS-style
+    /// truthiness and would have wrongly matched.
+    #[test]
+    fn where_number_and_true_does_not_match() {
+        let p = crate::query::parse("SELECT * FROM c WHERE c.x AND true").unwrap();
+        let doc = serde_json::json!({"x": 1});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn where_string_or_false_does_not_match() {
+        let p = crate::query::parse("SELECT * FROM c WHERE c.s OR false").unwrap();
+        let doc = serde_json::json!({"s": "non-empty"});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn and_false_short_circuits_over_undefined() {
+        // `false AND <undefined>` is still `false` (absorbing element).
+        let p = crate::query::parse("SELECT * FROM c WHERE false AND c.missing").unwrap();
+        assert!(!matches_query(&serde_json::json!({}), &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn or_true_short_circuits_over_undefined() {
+        // `true OR <undefined>` is still `true` (absorbing element).
+        let p = crate::query::parse("SELECT * FROM c WHERE true OR c.missing").unwrap();
+        assert!(matches_query(&serde_json::json!({}), &p.query, &[]).unwrap());
+    }
+
+    #[test]
+    fn and_two_booleans_evaluates_normally() {
+        let p = crate::query::parse("SELECT * FROM c WHERE c.a AND c.b").unwrap();
+        assert!(matches_query(&serde_json::json!({"a": true, "b": true}), &p.query, &[]).unwrap());
+        assert!(
+            !matches_query(&serde_json::json!({"a": true, "b": false}), &p.query, &[]).unwrap()
+        );
     }
 }

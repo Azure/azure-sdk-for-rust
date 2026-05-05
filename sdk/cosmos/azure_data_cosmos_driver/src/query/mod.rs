@@ -19,5 +19,20 @@ mod value;
 
 pub(crate) use parser::parse;
 
+/// Comma-separated list of query features the local plan generator advertises
+/// to the Cosmos DB Gateway via `x-ms-cosmos-supported-query-features`.
+///
+/// Kept in sync with the structural features the local plan generator and
+/// pipeline can actually execute. Used both by the internal query-plan request
+/// builder (`CosmosOperation::query_plan`) and by gateway-comparison tests so
+/// the two stay in lockstep.
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates";
+
+/// Re-export of [`SUPPORTED_QUERY_FEATURES`] for cross-crate gateway-comparison
+/// tests. Production callers must not depend on this — it shares the
+/// `__internal_testing` feature gate (visibility-limited via the parent module).
+#[cfg(any(test, feature = "__internal_testing"))]
+pub(crate) const __TEST_ONLY_SUPPORTED_QUERY_FEATURES: &str = SUPPORTED_QUERY_FEATURES;
+
 #[cfg(any(test, feature = "__internal_testing"))]
 pub use plan::__test_only_generate_query_plan_for_pk_paths;

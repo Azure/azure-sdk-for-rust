@@ -161,6 +161,14 @@ pub(crate) enum PartitionKeyFilter {
     /// The query must be issued as a cross-partition request.
     Unconstrained,
 
+    /// The WHERE clause is logically self-contradictory on the partition key
+    /// (e.g., `c.pk = 'a' AND c.pk = 'b'`, or two IN lists with empty
+    /// intersection). The result set is provably empty and the routing layer
+    /// should short-circuit to an empty feed without issuing any I/O —
+    /// otherwise this would fan out a guaranteed-empty query across every
+    /// physical partition.
+    Contradictory,
+
     /// PK extraction was not attempted because the caller did not supply any
     /// PK paths. This is distinct from [`PartitionKeyFilter::Unconstrained`]
     /// (which means "caller asked, but query has no usable filter").
@@ -181,13 +189,27 @@ pub(crate) enum PartitionKeyValue {
     Bool(bool),
     Null,
     Undefined,
-    /// A reference to a query parameter that must be resolved at runtime.
+    /// A reference to a query parameter that the caller did not bind.
     ///
-    /// Produced when the caller did not supply a value for `@name` in `parameters`.
-    /// Callers that rely on the extracted PK filter for routing must either supply
-    /// values for all referenced parameters or treat any [`PartitionKeyValue::Parameter`]
-    /// in the result as "PK could not be resolved — issue a cross-partition request".
-    Parameter(String),
+    /// Produced when the WHERE clause uses `@name` but `parameters` did not
+    /// include a value for it. Callers that rely on the extracted PK filter for
+    /// routing must either supply a value for the named parameter or treat the
+    /// filter as "PK could not be resolved - issue a cross-partition request".
+    UnboundParameter(String),
+
+    /// A reference to a parameter whose bound value is not a legal partition
+    /// key value (e.g., array, object, or non-finite number).
+    ///
+    /// Distinct from [`PartitionKeyValue::UnboundParameter`] so callers can
+    /// surface a clearer diagnostic - the user *did* bind the parameter; the
+    /// binding is just unusable for routing. Callers should still fall back to
+    /// a cross-partition request.
+    InvalidParameter {
+        /// Parameter name (without the leading `@`).
+        name: String,
+        /// Human-readable reason the bound value cannot be used as a PK value.
+        reason: String,
+    },
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -205,13 +227,15 @@ pub(crate) enum PartitionKeyValue {
 /// assert!(matches!(qp.pk_filters, plan::PartitionKeyFilter::Equality(_)));
 /// assert_eq!(qp.query_info.distinct_type, plan::DistinctType::None);
 /// ```
-pub(crate) fn generate_query_plan(query: &SqlQuery, pk_paths: &[&str]) -> QueryPlan {
-    // Convenience wrapper used by tests that don't care about parameter substitution.
-    // Parameterized TOP/OFFSET/LIMIT clauses without a corresponding parameter value
-    // will produce an error here — callers must use `generate_query_plan_with_parameters`
-    // and supply the parameter values for parameterized queries.
+pub(crate) fn generate_query_plan(
+    query: &SqlQuery,
+    pk_paths: &[&str],
+) -> Result<QueryPlan, azure_core::Error> {
+    // Convenience wrapper for callers that do not need parameter substitution
+    // for `TOP` / `OFFSET` / `LIMIT`. If the query references a parameter in
+    // any of those clauses this returns an error — use
+    // `generate_query_plan_with_parameters` to supply the values up front.
     generate_query_plan_with_parameters(query, pk_paths, &[])
-        .expect("generate_query_plan called on a query with parameterized TOP/OFFSET/LIMIT but no parameters supplied; use generate_query_plan_with_parameters")
 }
 
 /// Type alias for query parameters used during plan generation.
@@ -671,14 +695,19 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
             other
         }
 
-        // Both sides have equality — they must agree.
+        // Contradiction is absorbing — `Contradictory AND anything` stays
+        // contradictory because no value can satisfy both sides.
+        (PartitionKeyFilter::Contradictory, _) | (_, PartitionKeyFilter::Contradictory) => {
+            PartitionKeyFilter::Contradictory
+        }
+
+        // Both sides have equality — they must agree, otherwise the
+        // conjunction is provably empty.
         (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
             if a == b {
                 PartitionKeyFilter::Equality(a)
             } else {
-                // Contradictory: c.pk = 'a' AND c.pk = 'b' — logically empty result set.
-                // Return None because no single partition can be targeted.
-                PartitionKeyFilter::Unconstrained
+                PartitionKeyFilter::Contradictory
             }
         }
 
@@ -688,7 +717,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
             if list.contains(&eq) {
                 PartitionKeyFilter::Equality(eq)
             } else {
-                PartitionKeyFilter::Unconstrained
+                PartitionKeyFilter::Contradictory
             }
         }
 
@@ -697,7 +726,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
             let intersection: Vec<Vec<PartitionKeyValue>> =
                 a.into_iter().filter(|item| b.contains(item)).collect();
             match intersection.len() {
-                0 => PartitionKeyFilter::Unconstrained,
+                0 => PartitionKeyFilter::Contradictory,
                 1 => PartitionKeyFilter::Equality(intersection.into_iter().next().unwrap()),
                 _ => PartitionKeyFilter::InList(intersection),
             }
@@ -755,7 +784,7 @@ fn extract_hierarchical_pk(
             }
         }
         if conflict {
-            return PartitionKeyFilter::Unconstrained;
+            return PartitionKeyFilter::Contradictory;
         }
         match component_value {
             Some(v) => pk_values.push(v),
@@ -851,25 +880,34 @@ fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
         .find(|(n, _)| n.trim_start_matches('@') == needle);
     let value = match entry {
         Some((_, v)) => v,
-        None => return PartitionKeyValue::Parameter(needle.to_string()),
+        None => return PartitionKeyValue::UnboundParameter(needle.to_string()),
     };
     match value {
         serde_json::Value::String(s) => PartitionKeyValue::String(s.clone()),
         serde_json::Value::Number(n) => {
-            // Always canonicalize to f64 (#3).
+            // Always canonicalize to f64 (#3). `as_f64` returns `None` only for
+            // non-finite values that serde_json refuses to round-trip; surface
+            // those as InvalidParameter so the diagnostic is precise.
             n.as_f64()
                 .map(PartitionKeyValue::Number)
-                .unwrap_or_else(|| PartitionKeyValue::Parameter(needle.to_string()))
+                .unwrap_or_else(|| PartitionKeyValue::InvalidParameter {
+                    name: needle.to_string(),
+                    reason: format!("number value `{n}` is not representable as f64"),
+                })
         }
         serde_json::Value::Bool(b) => PartitionKeyValue::Bool(*b),
         serde_json::Value::Null => PartitionKeyValue::Null,
-        // Arrays / objects are not valid PK values; treat as unresolvable.
-        serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
-            PartitionKeyValue::Parameter(needle.to_string())
-        }
+        // Arrays / objects are not valid PK values.
+        serde_json::Value::Array(_) => PartitionKeyValue::InvalidParameter {
+            name: needle.to_string(),
+            reason: "array values cannot be used as a partition key".to_string(),
+        },
+        serde_json::Value::Object(_) => PartitionKeyValue::InvalidParameter {
+            name: needle.to_string(),
+            reason: "object values cannot be used as a partition key".to_string(),
+        },
     }
 }
-
 /// Generate a query plan as a JSON value from SQL text, partition key paths, and
 /// query parameters.
 ///
@@ -925,7 +963,7 @@ mod tests {
 
     fn plan(sql: &str) -> QueryPlan {
         let p = parse(sql).unwrap();
-        generate_query_plan(&p.query, &["/pk"])
+        generate_query_plan(&p.query, &["/pk"]).unwrap()
     }
 
     // Include the exhaustive comparison tests from the external file.
@@ -1212,11 +1250,11 @@ mod tests {
     // ── AND intersection logic ───────────────────────────────────────────
 
     #[test]
-    fn and_contradictory_equality_is_none() {
+    fn and_contradictory_equality_is_contradictory() {
         // c.pk = 'a' AND c.pk = 'b' — contradiction, no partition can match
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'").pk_filters,
-            PartitionKeyFilter::Unconstrained
+            PartitionKeyFilter::Contradictory
         );
     }
 
@@ -1239,11 +1277,11 @@ mod tests {
     }
 
     #[test]
-    fn and_equality_not_in_list_is_none() {
+    fn and_equality_not_in_list_is_contradictory() {
         // c.pk = 'c' AND c.pk IN ('a', 'b') — contradiction
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk = 'c' AND c.pk IN ('a', 'b')").pk_filters,
-            PartitionKeyFilter::Unconstrained
+            PartitionKeyFilter::Contradictory
         );
     }
 
@@ -1271,11 +1309,11 @@ mod tests {
     }
 
     #[test]
-    fn and_in_list_empty_intersection_is_none() {
+    fn and_in_list_empty_intersection_is_contradictory() {
         // c.pk IN ('a', 'b') AND c.pk IN ('c', 'd') — empty intersection
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('c', 'd')").pk_filters,
-            PartitionKeyFilter::Unconstrained
+            PartitionKeyFilter::Contradictory
         );
     }
 
@@ -1312,7 +1350,7 @@ mod tests {
         // c.pk = 'a' AND c.x > 1 AND c.pk = 'b' — contradiction deep in chain
         assert_eq!(
             plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'b'").pk_filters,
-            PartitionKeyFilter::Unconstrained
+            PartitionKeyFilter::Contradictory
         );
     }
 
@@ -1329,7 +1367,7 @@ mod tests {
 
     fn plan_hpk(sql: &str) -> QueryPlan {
         let p = parse(sql).unwrap();
-        generate_query_plan(&p.query, &["/tenant", "/userId"])
+        generate_query_plan(&p.query, &["/tenant", "/userId"]).unwrap()
     }
 
     #[test]
@@ -1337,7 +1375,7 @@ mod tests {
         assert_eq!(
             plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1'")
                 .pk_filters,
-            PartitionKeyFilter::Unconstrained
+            PartitionKeyFilter::Contradictory
         );
     }
 
@@ -1348,7 +1386,7 @@ mod tests {
                 "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.userId = 'u2'"
             )
             .pk_filters,
-            PartitionKeyFilter::Unconstrained
+            PartitionKeyFilter::Contradictory
         );
     }
 
@@ -1362,5 +1400,78 @@ mod tests {
                 PartitionKeyValue::String("u1".into()),
             ])
         );
+    }
+
+    // ── #7: Contradictory short-circuit (regression) ───────────────────────
+
+    /// `c.pk = 'a' AND c.pk = 'b'` is provably empty — surface a distinct
+    /// `Contradictory` variant so the routing layer can short-circuit to an
+    /// empty feed instead of fanning out across every physical partition.
+    #[test]
+    fn contradictory_pk_equality_is_distinct_from_unconstrained() {
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'").pk_filters,
+            PartitionKeyFilter::Contradictory
+        );
+        // No-WHERE / non-PK WHERE must remain `Unconstrained`, not collapse to
+        // `Contradictory`.
+        assert_eq!(
+            plan("SELECT * FROM c").pk_filters,
+            PartitionKeyFilter::Unconstrained
+        );
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.age > 18").pk_filters,
+            PartitionKeyFilter::Unconstrained
+        );
+    }
+
+    /// `Contradictory` is absorbing under AND-intersection: nesting it inside
+    /// a longer chain must not silently degrade back to `Unconstrained`.
+    #[test]
+    fn contradictory_is_absorbing_under_and() {
+        assert_eq!(
+            plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b' AND c.age > 18").pk_filters,
+            PartitionKeyFilter::Contradictory
+        );
+    }
+
+    // ── #9: PK parameter resolution variants (regression) ──────────────────
+
+    /// An unbound parameter must surface `UnboundParameter`, not collapse to
+    /// `Unconstrained` (the routing layer needs to distinguish "user forgot to
+    /// bind" from "WHERE has no PK constraint at all").
+    #[test]
+    fn unbound_pk_parameter_is_distinct_variant() {
+        let p = parse("SELECT * FROM c WHERE c.pk = @missing").unwrap();
+        let qp = generate_query_plan_with_parameters(&p.query, &["/pk"], &[]).unwrap();
+        match qp.pk_filters {
+            PartitionKeyFilter::Equality(values) => {
+                assert_eq!(values.len(), 1);
+                match &values[0] {
+                    PartitionKeyValue::UnboundParameter(name) => assert_eq!(name, "missing"),
+                    other => panic!("expected UnboundParameter, got {other:?}"),
+                }
+            }
+            other => panic!("expected Equality(UnboundParameter), got {other:?}"),
+        }
+    }
+
+    /// A parameter bound to an array/object is `InvalidParameter` — the user
+    /// did bind it, but the binding is unusable for routing.
+    #[test]
+    fn invalid_pk_parameter_carries_reason() {
+        let p = parse("SELECT * FROM c WHERE c.pk = @bad").unwrap();
+        let params = vec![("bad".to_string(), serde_json::json!([1, 2, 3]))];
+        let qp = generate_query_plan_with_parameters(&p.query, &["/pk"], &params).unwrap();
+        match qp.pk_filters {
+            PartitionKeyFilter::Equality(values) => match &values[0] {
+                PartitionKeyValue::InvalidParameter { name, reason } => {
+                    assert_eq!(name, "bad");
+                    assert!(reason.contains("array"), "reason was: {reason}");
+                }
+                other => panic!("expected InvalidParameter, got {other:?}"),
+            },
+            other => panic!("expected Equality, got {other:?}"),
+        }
     }
 }

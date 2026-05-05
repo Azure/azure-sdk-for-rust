@@ -17,31 +17,31 @@ use super::super::{
 /// Parse SQL and produce a full query plan against a single `/pk` partition key.
 fn plan(sql: &str) -> QueryPlan {
     let p = crate::query::parse(sql).unwrap();
-    generate_query_plan(&p.query, &["/pk"])
+    generate_query_plan(&p.query, &["/pk"]).unwrap()
 }
 
 /// Parse SQL and produce a full query plan against hierarchical `/tenant`, `/userId`.
 fn plan_hpk(sql: &str) -> QueryPlan {
     let p = crate::query::parse(sql).unwrap();
-    generate_query_plan(&p.query, &["/tenant", "/userId"])
+    generate_query_plan(&p.query, &["/tenant", "/userId"]).unwrap()
 }
 
 /// Parse SQL and produce a full query plan against 3-component hierarchical PK.
 fn plan_hpk3(sql: &str) -> QueryPlan {
     let p = crate::query::parse(sql).unwrap();
-    generate_query_plan(&p.query, &["/tenant", "/userId", "/sessionId"])
+    generate_query_plan(&p.query, &["/tenant", "/userId", "/sessionId"]).unwrap()
 }
 
 /// Parse SQL and produce a full query plan against a nested PK path `/address/city`.
 fn plan_nested_pk(sql: &str) -> QueryPlan {
     let p = crate::query::parse(sql).unwrap();
-    generate_query_plan(&p.query, &["/address/city"])
+    generate_query_plan(&p.query, &["/address/city"]).unwrap()
 }
 
 /// Parse SQL and produce a full query plan with no PK paths (always cross-partition).
 fn plan_no_pk(sql: &str) -> QueryPlan {
     let p = crate::query::parse(sql).unwrap();
-    generate_query_plan(&p.query, &[])
+    generate_query_plan(&p.query, &[]).unwrap()
 }
 /// Shorthand: the default QueryInfo with all fields at their zero/empty/false values.
 fn qi() -> QueryInfo {
@@ -216,7 +216,7 @@ fn pk_eq_parameter() {
     assert_eq!(
         plan("SELECT * FROM c WHERE c.pk = @val"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Parameter(
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::UnboundParameter(
                 "val".into()
             )]),
             query_info: QueryInfo {
@@ -1071,7 +1071,7 @@ fn and_contradictory_equality() {
     assert_eq!(
         plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -1113,7 +1113,7 @@ fn and_equality_not_in_list() {
     assert_eq!(
         plan("SELECT * FROM c WHERE c.pk = 'c' AND c.pk IN ('a', 'b')"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -1141,7 +1141,7 @@ fn and_in_list_empty_intersection() {
     assert_eq!(
         plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('c', 'd')"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -1155,7 +1155,7 @@ fn and_contradictory_deep_in_chain() {
     assert_eq!(
         plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'b'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -1169,7 +1169,7 @@ fn hpk_contradictory_component() {
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -1451,10 +1451,17 @@ fn top_parameter_negative_is_error() {
 }
 
 #[test]
-#[should_panic(expected = "generate_query_plan called on a query with parameterized")]
-fn legacy_generate_query_plan_panics_for_parameterized_top_without_params() {
-    // The legacy parameter-less helper must not silently drop parameterized TOP/OFFSET/LIMIT.
-    plan("SELECT TOP @n * FROM c");
+fn generate_query_plan_errors_for_parameterized_top_without_params() {
+    // The convenience helper must surface a clear error rather than silently
+    // dropping or guessing a value when a parameterized TOP/OFFSET/LIMIT is
+    // present and no parameters are supplied.
+    let p = crate::query::parse("SELECT TOP @n * FROM c").unwrap();
+    let err = super::super::generate_query_plan(&p.query, &["/pk"]).unwrap_err();
+    let msg = format!("{err}");
+    assert!(
+        msg.contains("TOP/OFFSET/LIMIT"),
+        "unexpected error message: {msg}"
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1593,8 +1600,8 @@ fn hpk_with_parameters() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = @t AND c.userId = @u"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![
-                PartitionKeyValue::Parameter("t".into()),
-                PartitionKeyValue::Parameter("u".into()),
+                PartitionKeyValue::UnboundParameter("t".into()),
+                PartitionKeyValue::UnboundParameter("u".into()),
             ]),
             query_info: QueryInfo {
                 has_where: true,
@@ -1611,7 +1618,7 @@ fn hpk_mixed_literal_and_parameter() {
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![
                 PartitionKeyValue::String("acme".into()),
-                PartitionKeyValue::Parameter("uid".into()),
+                PartitionKeyValue::UnboundParameter("uid".into()),
             ]),
             query_info: QueryInfo {
                 has_where: true,
@@ -1811,7 +1818,7 @@ fn hpk3_contradictory_middle() {
             "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.userId = 'u2' AND c.sessionId = 's1'"
         ),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -1970,7 +1977,7 @@ fn pk_in_and_pk_equality_contradiction() {
     // c.pk IN ('a', 'b') AND c.pk = 'z' → None (contradiction)
     assert_eq!(
         plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk = 'z'").pk_filters,
-        PartitionKeyFilter::Unconstrained
+        PartitionKeyFilter::Contradictory
     );
 }
 
@@ -2171,7 +2178,7 @@ fn pk_eq_negative_float() {
 #[test]
 fn pk_with_explicit_alias() {
     let p = crate::query::parse("SELECT * FROM root AS r WHERE r.pk = 'hello'").unwrap();
-    let qp = generate_query_plan(&p.query, &["/pk"]);
+    let qp = generate_query_plan(&p.query, &["/pk"]).unwrap();
     assert_eq!(
         qp.pk_filters,
         PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("hello".into())])
@@ -2181,7 +2188,7 @@ fn pk_with_explicit_alias() {
 #[test]
 fn pk_with_bare_alias() {
     let p = crate::query::parse("SELECT * FROM root r WHERE r.pk = 'hello'").unwrap();
-    let qp = generate_query_plan(&p.query, &["/pk"]);
+    let qp = generate_query_plan(&p.query, &["/pk"]).unwrap();
     assert_eq!(
         qp.pk_filters,
         PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("hello".into())])
@@ -2192,7 +2199,7 @@ fn pk_with_bare_alias() {
 fn pk_alias_mismatch_no_extract() {
     // WHERE uses 'c' but FROM uses alias 'r' — path doesn't match
     let p = crate::query::parse("SELECT * FROM root AS r WHERE c.pk = 'hello'").unwrap();
-    let qp = generate_query_plan(&p.query, &["/pk"]);
+    let qp = generate_query_plan(&p.query, &["/pk"]).unwrap();
     assert_eq!(qp.pk_filters, PartitionKeyFilter::Unconstrained);
     // Gateway rejects this query with HTTP 400: alias mismatch (FROM uses r but WHERE uses c)
 }
@@ -2560,9 +2567,18 @@ fn pk_in_with_parameters() {
     match &qp.pk_filters {
         PartitionKeyFilter::InList(list) => {
             assert_eq!(list.len(), 3);
-            assert_eq!(list[0], vec![PartitionKeyValue::Parameter("a".into())]);
-            assert_eq!(list[1], vec![PartitionKeyValue::Parameter("b".into())]);
-            assert_eq!(list[2], vec![PartitionKeyValue::Parameter("c".into())]);
+            assert_eq!(
+                list[0],
+                vec![PartitionKeyValue::UnboundParameter("a".into())]
+            );
+            assert_eq!(
+                list[1],
+                vec![PartitionKeyValue::UnboundParameter("b".into())]
+            );
+            assert_eq!(
+                list[2],
+                vec![PartitionKeyValue::UnboundParameter("c".into())]
+            );
         }
         other => panic!("expected InList(3), got {other:?}"),
     }
@@ -4324,7 +4340,7 @@ fn hpk_with_from_alias() {
     let p =
         crate::query::parse("SELECT * FROM root AS r WHERE r.tenant = 'acme' AND r.userId = 'u1'")
             .unwrap();
-    let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]);
+    let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]).unwrap();
     assert_eq!(
         qp.pk_filters,
         PartitionKeyFilter::Equality(vec![
@@ -4338,7 +4354,7 @@ fn hpk_with_from_alias() {
 fn hpk_with_from_bare_alias() {
     let p = crate::query::parse("SELECT * FROM root r WHERE r.tenant = 'acme' AND r.userId = 'u1'")
         .unwrap();
-    let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]);
+    let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]).unwrap();
     assert_eq!(
         qp.pk_filters,
         PartitionKeyFilter::Equality(vec![
@@ -4354,7 +4370,7 @@ fn hpk_alias_mismatch_cross_partition() {
     let p =
         crate::query::parse("SELECT * FROM root AS r WHERE c.tenant = 'acme' AND c.userId = 'u1'")
             .unwrap();
-    let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]);
+    let qp = generate_query_plan(&p.query, &["/tenant", "/userId"]).unwrap();
     assert_eq!(qp.pk_filters, PartitionKeyFilter::Unconstrained);
     // Gateway rejects: alias mismatch (FROM uses r but WHERE references c)
 }
@@ -4531,9 +4547,9 @@ fn hpk3_all_parameters() {
         plan_hpk3("SELECT * FROM c WHERE c.tenant = @t AND c.userId = @u AND c.sessionId = @s"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![
-                PartitionKeyValue::Parameter("t".into()),
-                PartitionKeyValue::Parameter("u".into()),
-                PartitionKeyValue::Parameter("s".into()),
+                PartitionKeyValue::UnboundParameter("t".into()),
+                PartitionKeyValue::UnboundParameter("u".into()),
+                PartitionKeyValue::UnboundParameter("s".into()),
             ]),
             query_info: QueryInfo {
                 has_where: true,
@@ -4612,7 +4628,7 @@ fn hpk3_contradictory_first() {
             "SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1' AND c.sessionId = 's1'"
         ),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
@@ -4628,7 +4644,7 @@ fn hpk3_contradictory_last() {
             "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.sessionId = 's1' AND c.sessionId = 's2'"
         ),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Contradictory,
             query_info: QueryInfo {
                 has_where: true,
                 ..qi()
