@@ -24,7 +24,7 @@ pub(crate) const MASTER_PARTITION_ID: u32 = u32::MAX;
 pub struct EmulatorStore {
     config: VirtualAccountConfig,
     rid_generator: RidGenerator,
-    regions: RwLock<HashMap<String, RegionStore>>,
+    regions: RwLock<HashMap<String, Arc<RegionStore>>>,
     /// LSN counter for the "master partition" that tracks control plane operations
     /// (database/container CRUD, throughput changes). The real Cosmos DB service
     /// stores metadata in a special MasterPartition and replicates it similarly
@@ -42,7 +42,7 @@ impl EmulatorStore {
     pub(crate) fn new(config: VirtualAccountConfig) -> Arc<Self> {
         let mut regions = HashMap::new();
         for region in config.regions() {
-            regions.insert(region.name().to_string(), RegionStore::new());
+            regions.insert(region.name().to_string(), Arc::new(RegionStore::new()));
         }
 
         Arc::new(Self {
@@ -85,26 +85,38 @@ impl EmulatorStore {
     }
 
     /// Awaits all pending in-flight replication tasks. Test-only.
+    ///
+    /// If any task panicked (typically the buffer-overflow guard inside
+    /// `apply_replication`), the panic is re-raised on the current thread so
+    /// the test surfaces the failure. Silently dropping the panic would let
+    /// stale-state bugs hide behind a paused-but-overflowed buffer
+    /// (review #4).
     #[doc(hidden)]
     pub async fn drain_pending_replications(&self) {
         let mut set = {
             let mut guard = self.replication_tasks.lock().unwrap();
             std::mem::replace(&mut *guard, tokio::task::JoinSet::new())
         };
-        while set.join_next().await.is_some() {}
+        while let Some(res) = set.join_next().await {
+            if let Err(e) = res {
+                if e.is_panic() {
+                    std::panic::resume_unwind(e.into_panic());
+                }
+            }
+        }
     }
 
     /// Returns a reference to the region store for the given region name.
-    pub(crate) fn region(&self, name: &str) -> Option<RegionStoreRef<'_>> {
+    ///
+    /// The returned [`RegionStoreRef`] holds an [`Arc<RegionStore>`] directly,
+    /// so subsequent reads/writes against it skip the outer regions-map lock
+    /// and avoid the TOCTOU window between `contains_key` and per-method
+    /// re-lookup that the previous handle had (see review #18).
+    pub(crate) fn region(&self, name: &str) -> Option<RegionStoreRef> {
         let regions = self.regions.read().unwrap();
-        if regions.contains_key(name) {
-            Some(RegionStoreRef {
-                store: self,
-                name: name.to_string(),
-            })
-        } else {
-            None
-        }
+        regions.get(name).map(|r| RegionStoreRef {
+            region: Arc::clone(r),
+        })
     }
 
     /// Creates a database in all regions.
@@ -209,35 +221,70 @@ impl EmulatorStore {
         meta
     }
 
-    /// Forces the next read in the given region for the specified partition key
-    /// to return 404/1002 (ReadSessionNotAvailable), then resets.
+    /// Forces the next read in the given region against the specified
+    /// `(db_id, coll_id, partition_key)` to return 404/1002
+    /// (ReadSessionNotAvailable), then resets.
     ///
-    /// Returns `true` if the flag was set on at least one partition; `false` otherwise.
+    /// `partition_key_json` is the JSON-encoded partition key (for example
+    /// `r#"["pk1"]"#`).
+    ///
+    /// Returns a descriptive error when the region, database, or container is
+    /// not provisioned, when the JSON partition-key header is malformed, or
+    /// when no physical partition matches the EPK. Test code should treat any
+    /// `Err` as a programmer mistake (see review #3 — the previous `bool`
+    /// return type silently no-op'd on misuse and applied cross-container
+    /// side effects).
     #[doc(hidden)]
-    pub fn force_session_not_available(&self, region: &str, partition_key_json: &str) -> bool {
-        let pk_components = match super::epk::parse_partition_key_header(partition_key_json) {
-            Ok(c) if !c.is_empty() => c,
-            _ => return false,
-        };
-        let regions = self.regions.read().unwrap();
-        let region_store = match regions.get(region) {
-            Some(r) => r,
-            None => return false,
-        };
-        let containers = region_store.containers.read().unwrap();
-        let mut any_set = false;
-        for state in containers.values() {
-            let epk = super::epk::compute_epk(
-                &pk_components,
-                state.metadata.partition_key.kind(),
-                state.metadata.partition_key.version(),
-            );
-            if let Some(partition) = state.find_partition(&epk) {
-                partition.session_state.set_force_unavailable();
-                any_set = true;
-            }
+    pub fn force_session_not_available(
+        &self,
+        region: &str,
+        db_id: &str,
+        coll_id: &str,
+        partition_key_json: &str,
+    ) -> azure_core::Result<()> {
+        let pk_components = super::epk::parse_partition_key_header(partition_key_json)?;
+        if pk_components.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "force_session_not_available requires a non-empty partition key",
+            ));
         }
-        any_set
+        let regions = self.regions.read().unwrap();
+        let region_store = regions.get(region).ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("region '{}' is not provisioned", region),
+            )
+        })?;
+        let containers = region_store.containers.read().unwrap();
+        let key = (db_id.to_string(), coll_id.to_string());
+        let state = containers.get(&key).ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "container '{}/{}' is not provisioned in region '{}'",
+                    db_id, coll_id, region
+                ),
+            )
+        })?;
+        let epk = super::epk::compute_epk(
+            &pk_components,
+            state.metadata.partition_key.kind(),
+            state.metadata.partition_key.version(),
+        );
+        let partition = state.find_partition(&epk).ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "no physical partition found for EPK {} in container '{}/{}'",
+                    epk.as_str(),
+                    db_id,
+                    coll_id
+                ),
+            )
+        })?;
+        partition.session_state.set_force_unavailable();
+        Ok(())
     }
 
     /// Pauses replication TO the given target region.
@@ -268,6 +315,11 @@ impl EmulatorStore {
             // accident.
             let mut buffer = region_store.replication_buffer.write().unwrap();
             let mut pending: Vec<PendingReplication> = buffer.drain(..).collect();
+            // Sort key includes `source_region` as a final tiebreaker so that
+            // two entries from different source regions colliding on
+            // `(db, coll, epk, id, ts, lsn)` get a deterministic, stable
+            // order — input/FIFO order across mixed sources is exactly the
+            // case the sort is meant to neutralize (review #7).
             pending.sort_by(|a, b| {
                 (
                     &a.db_id,
@@ -276,6 +328,7 @@ impl EmulatorStore {
                     &a.doc.id,
                     a.doc.ts,
                     a.doc.lsn,
+                    &a.source_region,
                 )
                     .cmp(&(
                         &b.db_id,
@@ -284,6 +337,7 @@ impl EmulatorStore {
                         &b.doc.id,
                         b.doc.ts,
                         b.doc.lsn,
+                        &b.source_region,
                     ))
             });
             for entry in pending {
@@ -327,9 +381,23 @@ impl EmulatorStore {
         // does not grow unboundedly across long-running tests with delayed
         // replication. `try_join_next` is non-blocking and returns immediately
         // when no task is ready.
+        //
+        // If a reaped task panicked (e.g. the buffer-overflow `assert!` in
+        // `apply_replication`), resume-unwind on the current thread so the
+        // failure surfaces in the test rather than being silently swallowed.
+        // Without this, a panic in a spawned replication task would only be
+        // observable if a test happened to call `drain_pending_replications`
+        // *and* iterate the join results — which `drain` itself does not
+        // (review #4).
         {
             let mut set = self.replication_tasks.lock().unwrap();
-            while set.try_join_next().is_some() {}
+            while let Some(res) = set.try_join_next() {
+                if let Err(e) = res {
+                    if e.is_panic() {
+                        std::panic::resume_unwind(e.into_panic());
+                    }
+                }
+            }
         }
 
         let regions = self.regions.read().unwrap();
@@ -350,15 +418,17 @@ impl EmulatorStore {
             let coll = coll_id.to_string();
             let document = doc.clone();
 
+            let source = source_region.to_string();
             if delay.is_zero() {
                 // Immediate replication — no async needed
-                store.apply_replication(&target, &db, &coll, &document, is_delete);
+                store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
             } else {
                 // Async delayed replication
                 let store_clone = store;
                 self.replication_tasks.lock().unwrap().spawn(async move {
                     tokio::time::sleep(delay).await;
-                    store_clone.apply_replication(&target, &db, &coll, &document, is_delete);
+                    store_clone
+                        .apply_replication(&target, &source, &db, &coll, &document, is_delete);
                 });
             }
         }
@@ -368,6 +438,7 @@ impl EmulatorStore {
     fn apply_replication(
         &self,
         target_region: &str,
+        source_region: &str,
         db_id: &str,
         coll_id: &str,
         doc: &StoredDocument,
@@ -407,6 +478,7 @@ impl EmulatorStore {
                 buffer.push_back(PendingReplication {
                     db_id: db_id.to_string(),
                     coll_id: coll_id.to_string(),
+                    source_region: source_region.to_string(),
                     doc: doc.clone(),
                     is_delete,
                 });
@@ -462,25 +534,23 @@ impl std::fmt::Debug for EmulatorStore {
 }
 
 /// A reference-counted handle to a specific region's store.
-pub(crate) struct RegionStoreRef<'a> {
-    store: &'a EmulatorStore,
-    name: String,
+///
+/// Holds an [`Arc<RegionStore>`] directly so each access only takes the
+/// per-resource (databases / containers) lock — no outer regions-map lock
+/// per call (see review #18).
+pub(crate) struct RegionStoreRef {
+    region: Arc<RegionStore>,
 }
 
-impl<'a> RegionStoreRef<'a> {
+impl RegionStoreRef {
     /// Reads a database metadata.
     pub fn get_database(&self, db_id: &str) -> Option<DatabaseMetadata> {
-        let regions = self.store.regions.read().unwrap();
-        let region = regions.get(&self.name)?;
-        let dbs = region.databases.read().unwrap();
-        dbs.get(db_id).cloned()
+        self.region.databases.read().unwrap().get(db_id).cloned()
     }
 
     /// Reads a container state.
     pub fn get_container(&self, db_id: &str, coll_id: &str) -> Option<ContainerStateSnapshot> {
-        let regions = self.store.regions.read().unwrap();
-        let region = regions.get(&self.name)?;
-        let containers = region.containers.read().unwrap();
+        let containers = self.region.containers.read().unwrap();
         let key = (db_id.to_string(), coll_id.to_string());
         containers.get(&key).map(|s| ContainerStateSnapshot {
             metadata: s.metadata.clone(),
@@ -494,66 +564,51 @@ impl<'a> RegionStoreRef<'a> {
         coll_id: &str,
         f: impl FnOnce(&ContainerState) -> R,
     ) -> Option<R> {
-        let regions = self.store.regions.read().unwrap();
-        let region = regions.get(&self.name)?;
-        let containers = region.containers.read().unwrap();
+        let containers = self.region.containers.read().unwrap();
         let key = (db_id.to_string(), coll_id.to_string());
         containers.get(&key).map(f)
     }
 
     /// Checks if a database exists.
     pub fn database_exists(&self, db_id: &str) -> bool {
-        let regions = self.store.regions.read().unwrap();
-        let region = match regions.get(&self.name) {
-            Some(r) => r,
-            None => return false,
-        };
-        let dbs = region.databases.read().unwrap();
-        dbs.contains_key(db_id)
+        self.region.databases.read().unwrap().contains_key(db_id)
     }
 
     /// Checks if a container exists.
     pub fn container_exists(&self, db_id: &str, coll_id: &str) -> bool {
-        let regions = self.store.regions.read().unwrap();
-        let region = match regions.get(&self.name) {
-            Some(r) => r,
-            None => return false,
-        };
-        let containers = region.containers.read().unwrap();
-        containers.contains_key(&(db_id.to_string(), coll_id.to_string()))
+        self.region
+            .containers
+            .read()
+            .unwrap()
+            .contains_key(&(db_id.to_string(), coll_id.to_string()))
     }
 
     /// Deletes a database and all its containers in this region.
     pub fn delete_database(&self, db_id: &str) -> bool {
-        let regions = self.store.regions.read().unwrap();
-        let region = match regions.get(&self.name) {
-            Some(r) => r,
-            None => return false,
-        };
-
-        let removed = {
-            let mut dbs = region.databases.write().unwrap();
-            dbs.remove(db_id).is_some()
-        };
-
+        let removed = self
+            .region
+            .databases
+            .write()
+            .unwrap()
+            .remove(db_id)
+            .is_some();
         if removed {
             // Cascade: remove all containers in this database
-            let mut containers = region.containers.write().unwrap();
-            containers.retain(|(db, _), _| db != db_id);
+            self.region
+                .containers
+                .write()
+                .unwrap()
+                .retain(|(db, _), _| db != db_id);
         }
-
         removed
     }
 
     /// Deletes a container in this region.
     pub fn delete_container(&self, db_id: &str, coll_id: &str) -> bool {
-        let regions = self.store.regions.read().unwrap();
-        let region = match regions.get(&self.name) {
-            Some(r) => r,
-            None => return false,
-        };
-        let mut containers = region.containers.write().unwrap();
-        containers
+        self.region
+            .containers
+            .write()
+            .unwrap()
             .remove(&(db_id.to_string(), coll_id.to_string()))
             .is_some()
     }
@@ -583,6 +638,10 @@ impl RegionStore {
 pub(crate) struct PendingReplication {
     pub db_id: String,
     pub coll_id: String,
+    /// Region that originated this write. Used as a stable tiebreaker when
+    /// draining a paused replication buffer where two entries from different
+    /// source regions can collide on `(epk, id, ts, lsn)` — see review #7.
+    pub source_region: String,
     pub doc: StoredDocument,
     pub is_delete: bool,
 }
@@ -657,7 +716,9 @@ impl ContainerState {
 
     /// Allocates the next partition ID from the container-wide shared counter.
     pub fn next_partition_id(&self) -> u32 {
-        self.metadata.next_partition_id.fetch_add(1, Ordering::SeqCst)
+        self.metadata
+            .next_partition_id
+            .fetch_add(1, Ordering::SeqCst)
     }
 }
 
@@ -769,15 +830,18 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
     let boundaries = compute_partition_boundaries(n);
 
     for i in 0..n {
+        // `boundaries` holds the N-1 *internal* boundaries; partition i's
+        // lower bound is `boundaries[i-1]` and its upper bound is
+        // `boundaries[i]`. The two open ends use the sentinels.
         let min = if i == 0 {
             Epk::min()
         } else {
-            Epk::from(boundaries[i as usize].clone())
+            Epk::from(boundaries[(i - 1) as usize].clone())
         };
         let max = if i == n - 1 {
             Epk::max()
         } else {
-            Epk::from(boundaries[(i + 1) as usize].clone())
+            Epk::from(boundaries[i as usize].clone())
         };
 
         let rid = pkrange_rid_for(meta, rid_gen, i);
@@ -805,26 +869,30 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
     partitions
 }
 
-/// Computes N+1 EPK boundary strings that divide the 128-bit hex space into N equal ranges.
+/// Computes the N-1 internal EPK boundary strings that divide the reachable
+/// 128-bit hex space into N equal ranges.
+///
+/// The endpoints (partition 0's lower bound and partition N-1's upper bound)
+/// are represented by the [`Epk::min()`] / [`Epk::max()`] sentinels at the
+/// call site, so they are intentionally not emitted here. The returned vec
+/// has length N-1 and is indexed `[1..N)` by the caller (review #20).
 fn compute_partition_boundaries(n: u32) -> Vec<String> {
-    let mut boundaries = Vec::with_capacity((n + 1) as usize);
+    if n <= 1 {
+        return Vec::new();
+    }
     // V2 EPK hash clears the top 2 bits, so EPKs lie in [0, 2^126).
     // Divide that reachable space evenly across N partitions.
     //
-    // We always emit 32-character uppercase hex strings (16 bytes) for every
-    // boundary including the endpoints. Lex compare on equal-length hex
-    // strings matches numeric compare, which is what the EPK ordering relies
-    // on, and avoids special-case handling in `compute_epk_midpoint`. The
-    // `Epk::min()` / `Epk::max()` sentinels still represent the open ends of
-    // the EPK space — see `is_epk_min` / `is_epk_max` for predicates.
+    // 32-character uppercase hex (16 bytes) is used for every boundary so
+    // that lex-compare on equal-length hex strings matches numeric compare,
+    // which is what `compute_epk_midpoint` relies on.
+    let mut boundaries = Vec::with_capacity((n - 1) as usize);
     let total: u128 = 1u128 << 126;
     let step = total / n as u128;
-
-    for i in 0..=n {
+    for i in 1..n {
         let boundary = step * i as u128;
         boundaries.push(format!("{:032X}", boundary));
     }
-
     boundaries
 }
 
@@ -894,8 +962,7 @@ impl ThroughputTracker {
         }
         if w.consumed_centiru.saturating_add(charge_centiru) > budget_centiru {
             // Suggest waiting until the start of the next window.
-            let remaining = THROUGHPUT_WINDOW
-                .saturating_sub(now.duration_since(w.window_start));
+            let remaining = THROUGHPUT_WINDOW.saturating_sub(now.duration_since(w.window_start));
             return Err(remaining.as_millis().max(1) as u64);
         }
         w.consumed_centiru += charge_centiru;
@@ -1203,8 +1270,7 @@ impl EmulatorStore {
                         std::cmp::max(lower.current_version(), upper.current_version());
                     let child_version = max_version + 1;
                     let child_id = state.next_partition_id();
-                    let child_rid =
-                        pkrange_rid_for(&state.metadata, &self.rid_generator, child_id);
+                    let child_rid = pkrange_rid_for(&state.metadata, &self.rid_generator, child_id);
                     let total_throughput = state.metadata.provisioned_throughput_ru;
                     found = Some((
                         merged_min,

@@ -128,10 +128,10 @@ async fn forced_session_not_available() {
     assert_eq!(response.status(), StatusCode::Created);
 
     // Force session not available
-    assert!(ctx
-        .emulator
+    ctx.emulator
         .store()
-        .force_session_not_available("East US", r#"["pk1"]"#));
+        .force_session_not_available("East US", "testdb", "testcoll", r#"["pk1"]"#)
+        .expect("force_session_not_available should succeed for provisioned (db, coll, pk)");
 
     // Read should return 404 with substatus 1002
     let req = read_item_request(

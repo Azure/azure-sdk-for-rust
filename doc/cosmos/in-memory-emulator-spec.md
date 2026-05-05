@@ -358,22 +358,22 @@ fields, and BTreeMap keys use `Epk`.
 ### EPK Hash Computation
 
 Cosmos DB uses a **modified Murmur hash** algorithm, and the specific variant depends on
-the `PartitionKeyDefinition`'s kind and version. The emulator must include a **self-contained
-implementation** of all hash variants — it cannot delegate to `azure_data_cosmos::hash`
-because `azure_data_cosmos` depends on (or will depend on) `azure_data_cosmos_driver`,
-which would create a cyclic dependency.
+the `PartitionKeyDefinition`'s kind and version. The emulator delegates EPK hashing to
+the production [`crate::models::effective_partition_key`](../../sdk/cosmos/azure_data_cosmos_driver/src/models/effective_partition_key.rs)
+implementation in `azure_data_cosmos_driver`. Both the emulator and the production driver
+share the same `azure_data_cosmos_driver` crate, so there is no cyclic dependency: the
+emulator can — and does — re-export the production type rather than reimplementing the
+hash from scratch.
 
-The reference implementations are:
-- **Rust (partial)**: `azure_data_cosmos::hash` (`sdk/cosmos/azure_data_cosmos/src/hash.rs`)
-  — covers V1, V2, and binary encoding but lacks MultiHash.
-- **Java (complete)**: [`PartitionKeyInternalHelper`](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/routing/PartitionKeyInternalHelper.java)
-  and related files in the `routing` package (`StringPartitionKeyComponent`,
-  `NumberPartitionKeyComponent`, `MurmurHash3_128`, `MurmurHash3_32`, `Int128`, `UInt128`).
+Reimplementing the hash inside the emulator would let emulator and production drift, so
+the emulator's `epk` module is intentionally a thin wrapper that adds only the glue
+needed to parse the `x-ms-documentdb-partitionkey` header and to extract partition key
+values from a JSON document body.
 
-The driver's `epk` module must implement all three algorithms (V1, V2, MultiHash),
-including the component serialization logic (`write_for_hashing_v1/v2`,
-`write_for_binary_encoding_v1`), the MurmurHash3 32-bit and 128-bit hash functions,
-and the hex-encoding output.
+For reference, full hash implementations exist in the
+[Java SDK](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/routing/PartitionKeyInternalHelper.java)
+and related files in the `routing` package (`StringPartitionKeyComponent`,
+`NumberPartitionKeyComponent`, `MurmurHash3_128`, `MurmurHash3_32`, `Int128`, `UInt128`).
 
 #### Algorithm Selection
 
@@ -448,9 +448,10 @@ EPK ranges use `Epk` comparison (lexicographic on the underlying uppercase hex s
 - **Min inclusive**: `Epk::MIN` — empty string, corresponds to empty partition key
 - **Max exclusive**: `Epk::MAX` — `"FF"`, corresponds to infinity partition key
 
-The emulator includes its own full EPK hash implementation (`epk` module) to avoid
-a cyclic dependency on `azure_data_cosmos`. The emulator selects the algorithm based on
-the container's `PartitionKeyDefinition` kind and version.
+The emulator's `epk` module re-exports the production `EffectivePartitionKey` from
+`azure_data_cosmos_driver::models::effective_partition_key` and delegates all hashing to
+it. The emulator selects the algorithm based on the container's `PartitionKeyDefinition`
+kind and version.
 
 **Routing flow**:
 
@@ -736,7 +737,7 @@ When account consistency is `Session` and request includes `x-ms-session-token`:
 ### Forced Session Unavailability
 
 ```rust
-store.force_session_not_available("East US", r#"["pk1"]"#);
+store.force_session_not_available("East US", "testdb", "testcoll", r#"["pk1"]"#)?;
 ```
 
 One-shot: next read to the physical partition containing the given partition key returns
@@ -830,7 +831,7 @@ RU/s enforcement with 429/3200 responses.
 
 ```rust
 // One-shot: next read to the partition containing this PK returns 404/1002, then resets.
-store.force_session_not_available(region, partition_key);
+store.force_session_not_available(region, db_id, coll_id, partition_key)?;
 
 // Pauses all replication TO the target region. Writes to other regions continue to
 // execute and accumulate, but are not delivered to the paused region.
@@ -914,7 +915,7 @@ ContainerConfig::new()
     .with_throughput(4000) // 4000 RU/s total → 1000 RU/s per partition
 ```
 
-Minimum provisioned throughput is 400 RU/s (panics on lower values).
+Minimum provisioned throughput is 400 RU/s; values below this and a partition count of `0` are rejected with an `azure_core::Error` from `with_throughput` / `with_partition_count`.
 
 ### Per-Partition Tracking
 
@@ -1380,7 +1381,7 @@ The `EmulatorStore` (accessible via `emulator.store()`) exposes hooks for edge-c
 let store = emulator.store();
 
 // Force next read in "East US" for partition key ["pk1"] to return 404/1002
-store.force_session_not_available("East US", r#"["pk1"]"#);
+store.force_session_not_available("East US", "testdb", "testcoll", r#"["pk1"]"#)?;
 
 // Pause all replication TO "West US" — writes accumulate but aren't delivered
 store.pause_replication("West US");
@@ -1455,7 +1456,7 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
 | `create_database(db_id)`                                       | Provision a database                  |
 | `create_container(db_id, coll_id, pk_def)`                     | Provision a container (default 4 PPs) |
 | `create_container_with_config(db_id, coll_id, pk_def, config)` | Provision with custom config          |
-| `force_session_not_available(region, pk)`                      | One-shot 404/1002 on next read        |
+| `force_session_not_available(region, db, coll, pk)`            | One-shot 404/1002 on next read        |
 | `pause_replication(target_region)`                             | Stop replication to target            |
 | `resume_replication(target_region)`                            | Resume + drain accumulated writes     |
 | `split_partition(db, coll, partition_id, min_lock_duration)`   | Split partition into two children     |

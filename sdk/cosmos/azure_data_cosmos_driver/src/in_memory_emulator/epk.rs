@@ -50,7 +50,9 @@ pub(crate) fn compute_epk(
 /// - Malformed JSON returns `BadRequest` (HTTP 400).
 /// - NaN / +Inf / -Inf numbers return `BadRequest` (HTTP 400).
 /// - Object / array components return `BadRequest` (HTTP 400).
-pub(crate) fn parse_partition_key_header(header: &str) -> azure_core::Result<Vec<PartitionKeyValue>> {
+pub(crate) fn parse_partition_key_header(
+    header: &str,
+) -> azure_core::Result<Vec<PartitionKeyValue>> {
     let trimmed = header.trim();
     if trimmed.is_empty() || trimmed == "[]" {
         return Ok(Vec::new());
@@ -136,7 +138,10 @@ mod tests {
     #[test]
     fn parse_pk_header_string() {
         let components = parse_partition_key_header(r#"["hello"]"#).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::from("hello".to_string())]);
+        assert_eq!(
+            components,
+            vec![PartitionKeyValue::from("hello".to_string())]
+        );
     }
 
     #[test]
@@ -177,38 +182,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_pk_header_nan_errors() {
-        // Construct a serde_json::Value that wraps a non-finite f64 by parsing
-        // a numeric token directly through serde_json::Number's arbitrary-
-        // precision support. serde_json's `from_str` rejects literal `NaN`, so
-        // we have to forge a Number with a non-finite value via a small detour:
-        // mutate a parsed number's underlying repr by going through f64.
-        //
-        // The exposed contract is that `json_to_pk_component` rejects any
-        // non-finite f64. We assert that directly to cover the branch — the
-        // other tests (`parse_pk_header_*`) cover the JSON parser path.
-        let v = serde_json::Value::Number(
-            serde_json::Number::from_f64(1.5_f64).unwrap(),
-        );
-        assert!(json_to_pk_component(&v).is_ok());
-
-        // Forge a non-finite by smuggling through serde_json's representation.
-        // serde_json::Number does not accept NaN/Inf, so the easiest way to
-        // reach the non-finite branch is to invoke the converter with a
-        // serde_json value whose `as_f64()` is NaN. Today, no such Value can
-        // exist via the public API (Number::from_f64 returns None). The
-        // branch is therefore reachable only if a future serde_json version
-        // ever exposes non-finite numbers; pin behavior for that case via a
-        // direct constructor on a custom Number-like wrapper here would
-        // require unsafe. Instead, validate that any attempt to construct
-        // such a Number returns None — which is the upstream guarantee that
-        // makes `json_to_pk_component`'s non-finite branch unreachable today.
-        assert!(serde_json::Number::from_f64(f64::NAN).is_none());
-        assert!(serde_json::Number::from_f64(f64::INFINITY).is_none());
-        assert!(serde_json::Number::from_f64(f64::NEG_INFINITY).is_none());
-    }
-
-    #[test]
     fn parse_pk_header_object_errors() {
         let err = parse_partition_key_header(r#"[{"x":1}]"#).unwrap_err();
         assert!(err.to_string().contains("scalar"));
@@ -218,7 +191,10 @@ mod tests {
     fn extract_pk_from_json_body() {
         let body = serde_json::json!({"id": "doc1", "pk": "value1", "nested": {"key": 42}});
         let components = extract_pk_from_body(&body, &["/pk"]).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::from("value1".to_string())]);
+        assert_eq!(
+            components,
+            vec![PartitionKeyValue::from("value1".to_string())]
+        );
     }
 
     #[test]

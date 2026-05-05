@@ -24,12 +24,22 @@ pub struct VirtualAccountConfig {
 impl VirtualAccountConfig {
     /// Creates a new configuration with the given regions.
     /// The first region is the hub/primary write region in single-write mode.
-    pub fn new(regions: Vec<VirtualRegion>) -> azure_core::Result<Self> {
+    pub fn new(mut regions: Vec<VirtualRegion>) -> azure_core::Result<Self> {
         if regions.is_empty() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "at least one region is required",
             ));
+        }
+        // Auto-assign monotonically increasing region IDs by position for any
+        // region that did not have one set explicitly via `with_region_id`.
+        // Using `0` as the sentinel means callers that explicitly pass
+        // `with_region_id(0)` to the *first* region get the same effective ID
+        // they would have been auto-assigned anyway.
+        for (idx, r) in regions.iter_mut().enumerate() {
+            if r.region_id == 0 {
+                r.region_id = idx as u64;
+            }
         }
         Ok(Self {
             regions,
@@ -132,14 +142,29 @@ impl VirtualAccountConfig {
     }
 
     /// Finds the region name for a given gateway URL.
+    ///
+    /// Matches on `(scheme, host, port)` — not host alone — so two regions
+    /// that share a hostname but differ in port (or scheme) route correctly.
+    /// Useful when adding e.g. `https://localhost:8081` and
+    /// `https://localhost:8082` regions for parity tests.
     pub fn region_for_url(&self, url: &Url) -> Option<&str> {
         let host = url.host_str()?;
+        let scheme = url.scheme();
+        let port = url.port_or_known_default();
         for r in &self.regions {
-            if let Some(rhost) = r.gateway_url.host_str() {
-                if rhost.eq_ignore_ascii_case(host) {
-                    return Some(&r.name);
-                }
+            let Some(rhost) = r.gateway_url.host_str() else {
+                continue;
+            };
+            if !rhost.eq_ignore_ascii_case(host) {
+                continue;
             }
+            if r.gateway_url.scheme() != scheme {
+                continue;
+            }
+            if r.gateway_url.port_or_known_default() != port {
+                continue;
+            }
+            return Some(&r.name);
         }
         None
     }
@@ -163,8 +188,10 @@ pub struct VirtualRegion {
 }
 
 impl VirtualRegion {
-    /// Creates a new region. The `region_id` is auto-assigned based on position
-    /// in the regions list when constructing `VirtualAccountConfig`.
+    /// Creates a new region. The `region_id` is auto-assigned monotonically
+    /// (0, 1, 2, …) based on position in the regions list when constructing
+    /// `VirtualAccountConfig`. To pin an explicit region ID, chain
+    /// [`Self::with_region_id`] before passing the region into the config.
     pub fn new(name: &str, gateway_url: Url) -> Self {
         Self {
             name: name.to_string(),

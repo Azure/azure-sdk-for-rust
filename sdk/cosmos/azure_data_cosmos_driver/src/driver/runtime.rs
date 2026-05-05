@@ -594,12 +594,24 @@ impl CosmosDriverRuntimeBuilder {
     /// When set, all HTTP clients created by the transport layer will
     /// evaluate these rules before delegating to the real transport
     /// (per Transport Pipeline Spec §7).
+    /// Appends the supplied rules to any rules already configured on this
+    /// builder (additive). Calling this multiple times accumulates rules in
+    /// insertion order. Mirrors the additive semantics of
+    /// [`Self::register_throughput_control_group`] so callers that compose a
+    /// runtime builder from multiple sources (e.g. the
+    /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
+    /// a user-supplied builder) do not silently lose previously-configured
+    /// rules — see review #12.
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
     ) -> Self {
-        self.fault_injection_rules = Some(rules);
+        match &mut self.fault_injection_rules {
+            Some(existing) => existing.extend(rules),
+            None if rules.is_empty() => {}
+            None => self.fault_injection_rules = Some(rules),
+        }
         self
     }
 

@@ -3,7 +3,6 @@
 
 //! System property generation and JSON injection.
 
-
 /// Injects system properties (`_rid`, `_self`, `_etag`, `_ts`, `_attachments`)
 /// into a document's JSON body.
 ///
@@ -17,12 +16,18 @@ pub(crate) fn inject_system_properties(
     body: &mut serde_json::Value,
 ) {
     if let Some(obj) = body.as_object_mut() {
-        obj.insert("_rid".to_string(), serde_json::Value::String(rid.to_owned()));
+        obj.insert(
+            "_rid".to_string(),
+            serde_json::Value::String(rid.to_owned()),
+        );
         obj.insert(
             "_self".to_string(),
             serde_json::Value::String(self_link.to_owned()),
         );
-        obj.insert("_etag".to_string(), serde_json::Value::String(etag.to_owned()));
+        obj.insert(
+            "_etag".to_string(),
+            serde_json::Value::String(etag.to_owned()),
+        );
         obj.insert("_ts".to_string(), serde_json::json!(ts));
         obj.insert(
             "_attachments".to_string(),

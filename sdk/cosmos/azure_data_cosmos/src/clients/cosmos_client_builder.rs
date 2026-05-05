@@ -225,8 +225,11 @@ impl CosmosClientBuilder {
     /// - **Connection pool** (`with_connection_pool`): always replaced by an
     ///   SDK-derived pool that reflects `with_proxy_allowed` and
     ///   `with_allow_emulator_invalid_certificates`.
-    /// - **Fault injection rules** (`with_fault_injection_rules`): replaced
-    ///   when the SDK has its own fault-injection builder configured.
+    /// - **Fault injection rules** (`with_fault_injection_rules`): the SDK
+    ///   appends each rule from its own fault-injection builder to the
+    ///   rules already configured on the supplied builder (additive — see
+    ///   review #12). Both sources contribute and neither is silently
+    ///   dropped.
     /// - **Throughput control groups** (`register_throughput_control_group`):
     ///   the SDK appends each group registered via
     ///   `with_throughput_control_group` (additive — does not clear existing

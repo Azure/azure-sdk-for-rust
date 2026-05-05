@@ -541,6 +541,15 @@ fn resolve_partition_key(
 ) -> azure_core::Result<(Vec<super::epk::PartitionKeyComponent>, Epk)> {
     let pk_components = if let Some(pk_header) = &parsed.partition_key_header {
         parse_partition_key_header(pk_header)?
+    } else if body.is_null() {
+        // Read / Delete callers pass a `Null` body — there is nothing to
+        // extract a partition key from. Real Cosmos rejects point operations
+        // that omit the partition key header in this case with 400 BadRequest;
+        // mirror that so dual-backend tests stay consistent.
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "missing 'x-ms-documentdb-partitionkey' header on point operation",
+        ));
     } else {
         extract_pk_from_body(body, meta.partition_key.paths())?
     };
@@ -866,27 +875,31 @@ fn handle_read(
             .build());
         }
 
-        // Session consistency check (V2-aware: compare version first, then globalLSN)
+        // Session consistency check (V2-aware: compare version first, then globalLSN).
+        //
+        // On a 1002 (ReadSessionNotAvailable) the response token echoes the
+        // *requested* LSN/version rather than the partition's current
+        // watermark. Returning the partition's higher LSN would mislead the
+        // client into thinking its caught up — the caller would retry with
+        // a token that the partition trivially satisfies and treat the
+        // failure as transient. Echoing back what they asked for makes the
+        // mismatch visible (review #8).
         if store.config().consistency().is_session() {
             if let Some(session_header) = &parsed.session_token {
                 let tokens = super::session::parse_composite_session_token(session_header);
                 for st in &tokens {
                     if st.pkrange_id == partition.id {
                         let partition_version = partition.current_version();
-                        if st.version > partition_version {
-                            return Err(error_response(
-                                StatusCode::NotFound,
-                                Some(1002),
-                                "ReadSessionNotAvailable",
-                                "The read session is not available for the input session token.",
-                                1.0,
-                                &token,
-                                start,
-                            )
-                            .build());
-                        }
-                        if st.version == partition_version
-                            && st.global_lsn > partition.current_lsn()
+                        let request_token = SessionToken::format_v2(
+                            partition.id,
+                            st.version,
+                            st.global_lsn,
+                            region_id,
+                            st.global_lsn,
+                        );
+                        if st.version > partition_version
+                            || (st.version == partition_version
+                                && st.global_lsn > partition.current_lsn())
                         {
                             return Err(error_response(
                                 StatusCode::NotFound,
@@ -894,7 +907,7 @@ fn handle_read(
                                 "ReadSessionNotAvailable",
                                 "The read session is not available for the input session token.",
                                 1.0,
-                                &token,
+                                &request_token,
                                 start,
                             )
                             .build());
@@ -1006,49 +1019,36 @@ async fn handle_replace(
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
 
-        // Lookup existing
-        let mut docs = partition.documents.write().unwrap();
-        let logical = match docs.get_mut(&epk) {
-            Some(l) => l,
-            None => {
-                return Err(error_response(
-                    StatusCode::NotFound,
-                    None,
-                    "NotFound",
-                    &format!(
-                        "Entity with the specified id does not exist in the system. ResourceId: {}",
-                        doc_id
-                    ),
-                    1.0,
-                    &token,
-                    start,
-                )
-                .build());
-            }
-        };
-
-        let existing = match logical.get(doc_id) {
-            Some(e) => e,
-            None => {
-                return Err(error_response(
-                    StatusCode::NotFound,
-                    None,
-                    "NotFound",
-                    &format!(
-                        "Entity with the specified id does not exist in the system. ResourceId: {}",
-                        doc_id
-                    ),
-                    1.0,
-                    &token,
-                    start,
-                )
-                .build());
+        // Lookup existing under a *read* lock so concurrent reads on the
+        // partition are not blocked while we run precondition / throttle
+        // checks. We re-acquire a write lock at commit time below — see
+        // review #6.
+        let (existing_rid, existing_self_link, existing_etag) = {
+            let docs = partition.documents.read().unwrap();
+            let existing = docs.get(&epk).and_then(|l| l.get(doc_id));
+            match existing {
+                Some(e) => (e.rid.clone(), e.self_link.clone(), e.etag.clone()),
+                None => {
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            doc_id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
             }
         };
 
         // If-Match precondition check
         if let Some(if_match) = &parsed.if_match {
-            if *if_match != existing.etag {
+            if *if_match != existing_etag {
                 return Err(error_response(
                     StatusCode::PreconditionFailed,
                     None,
@@ -1062,7 +1062,9 @@ async fn handle_replace(
             }
         }
 
-        // Compute RU charge and check throttle BEFORE mutating the store.
+        // Compute RU charge and check throttle BEFORE acquiring the write
+        // lock — keeps throttled requests from serializing other writers /
+        // readers on the partition (review #6).
         let num_props = RuChargingModel::count_properties(&body);
         let charge = store
             .config()
@@ -1084,19 +1086,23 @@ async fn handle_replace(
         let ts = current_timestamp();
         let etag = new_etag();
 
-        inject_system_properties(&existing.rid, &existing.self_link, &etag, ts, &mut body);
+        inject_system_properties(&existing_rid, &existing_self_link, &etag, ts, &mut body);
         let new_doc = StoredDocument {
             body: body.clone(),
             id: doc_id.to_string(),
-            rid: existing.rid.clone(),
+            rid: existing_rid,
             etag: etag.clone(),
             ts,
-            self_link: existing.self_link.clone(),
+            self_link: existing_self_link,
             lsn,
             epk: epk.clone(),
         };
 
-        logical.insert(doc_id.to_string(), new_doc.clone());
+        {
+            let mut docs = partition.documents.write().unwrap();
+            let logical = docs.entry(epk.clone()).or_default();
+            logical.insert(doc_id.to_string(), new_doc.clone());
+        }
 
         Ok((new_doc, token, charge, body))
     });
@@ -1203,22 +1209,30 @@ async fn handle_upsert(
         // mismatched (create charge debited from the bucket but a replace charge
         // surfaced in the response), and replace-via-upsert would consume less
         // budget than the same op invoked as a Replace.
+        //
+        // The existence probe runs under a *read* lock (so concurrent reads on
+        // the partition are not blocked while we compute the charge) and we
+        // only escalate to a write lock once throttling has passed. Avoiding
+        // `entry(..).or_default()` here also prevents a leaked empty
+        // `BTreeMap` entry on the throttled / error paths — see review #2.
         let num_props = RuChargingModel::count_properties(&body);
-        let mut docs = partition.documents.write().unwrap();
-        let logical = docs.entry(epk.clone()).or_default();
-
-        let (status, rid, self_link) = if let Some(existing) = logical.get(&doc_id) {
-            (
-                StatusCode::Ok,
-                existing.rid.clone(),
-                existing.self_link.clone(),
-            )
-        } else {
-            let (_, doc_rid) = store
-                .rid_generator()
-                .next_document_rid(state.metadata.numeric_db_id, state.metadata.numeric_coll_id);
-            let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
-            (StatusCode::Created, doc_rid, self_link)
+        let (status, rid, self_link) = {
+            let docs = partition.documents.read().unwrap();
+            match docs.get(&epk).and_then(|l| l.get(&doc_id)) {
+                Some(existing) => (
+                    StatusCode::Ok,
+                    existing.rid.clone(),
+                    existing.self_link.clone(),
+                ),
+                None => {
+                    let (_, doc_rid) = store.rid_generator().next_document_rid(
+                        state.metadata.numeric_db_id,
+                        state.metadata.numeric_coll_id,
+                    );
+                    let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
+                    (StatusCode::Created, doc_rid, self_link)
+                }
+            }
         };
 
         let charge = if status == StatusCode::Created {
@@ -1259,8 +1273,11 @@ async fn handle_upsert(
             epk: epk.clone(),
         };
 
-        logical.insert(doc_id, new_doc.clone());
-
+        {
+            let mut docs = partition.documents.write().unwrap();
+            let logical = docs.entry(epk.clone()).or_default();
+            logical.insert(doc_id, new_doc.clone());
+        }
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
@@ -1336,42 +1353,28 @@ async fn handle_delete(
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
 
-        let mut docs = partition.documents.write().unwrap();
-        let logical = match docs.get_mut(&epk) {
-            Some(l) => l,
-            None => {
-                return Err(error_response(
-                    StatusCode::NotFound,
-                    None,
-                    "NotFound",
-                    &format!(
-                        "Entity with the specified id does not exist in the system. ResourceId: {}",
-                        doc_id
-                    ),
-                    1.0,
-                    &token,
-                    start,
-                )
-                .build());
-            }
-        };
-
-        let existing = match logical.get(doc_id) {
-            Some(e) => e.clone(),
-            None => {
-                return Err(error_response(
-                    StatusCode::NotFound,
-                    None,
-                    "NotFound",
-                    &format!(
-                        "Entity with the specified id does not exist in the system. ResourceId: {}",
-                        doc_id
-                    ),
-                    1.0,
-                    &token,
-                    start,
-                )
-                .build());
+        // Look up the existing doc under a *read* lock; only escalate to
+        // a write lock at commit time so throttled / precondition-failed
+        // requests do not serialize other writers/readers (review #6).
+        let existing = {
+            let docs = partition.documents.read().unwrap();
+            match docs.get(&epk).and_then(|l| l.get(doc_id)).cloned() {
+                Some(e) => e,
+                None => {
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            doc_id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
             }
         };
 
@@ -1391,7 +1394,8 @@ async fn handle_delete(
             }
         }
 
-        // Compute RU charge and check throttle BEFORE mutating the store.
+        // Compute RU charge and check throttle BEFORE acquiring the write
+        // lock (review #6).
         let num_props = RuChargingModel::count_properties(&existing.body);
         let body_size = serde_json::to_vec(&existing.body).unwrap_or_default().len();
         let charge = store
@@ -1410,7 +1414,12 @@ async fn handle_delete(
 
         let lsn = partition.advance_lsn();
         partition.advance_local_lsn();
-        logical.remove(doc_id);
+        {
+            let mut docs = partition.documents.write().unwrap();
+            if let Some(logical) = docs.get_mut(&epk) {
+                logical.remove(doc_id);
+            }
+        }
 
         // Create a "tombstone" for replication
         let tombstone = StoredDocument {
