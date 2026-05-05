@@ -21,6 +21,7 @@
 10. [API Semantics & Invariants](#10-api-semantics--invariants)
 11. [Testing Strategy](#11-testing-strategy)
 12. [Future Work](#12-future-work)
+13. [Implementation Plan](#13-implementation-plan)
 
 ---
 
@@ -2036,7 +2037,7 @@ fetch unless a specific plan node has a reason to override (none today).
 | ContinuationToken — operation kind | Token with wrong operation kind is rejected. |
 | ContinuationToken — split recovery | Token with EPK bounds spanning a split range maps to correct child ranges. |
 | ContinuationToken — SequentialDrain resume | SequentialDrain node correctly classifies partitions as left/target/right. |
-| ContinuationToken — nesting | Nested tokens round-trip correctly through serialize/deserialize. |
+| ContinuationToken — nesting | Nested tokens serialize to the expected exact string and parse back from a fixed input (no round-trip tests; see §13.0). |
 | ContinuationToken — unknown variant | Unknown `ResumeState` type fails gracefully on deserialize. |
 | NodeId/NodeRange | Verify range iteration, length, empty checks. |
 | OperationTarget — variants | Verify `PartitionKey`, `all_ranges()`, and custom `FeedRange` produce correct targets. |
@@ -2161,3 +2162,658 @@ and a corresponding `CosmosOperation::read_all_items(...)` factory backed by the
 query, which can be cheaper RU-wise on large containers. The plan model and continuation
 token format above already accommodate this — only the payload variant and the chosen
 wire shape differ — so this is purely additive.
+
+---
+
+## 13. Implementation Plan
+
+This section is the execution checklist for landing the spec. It is split into **two
+PR-sized phases**. Each phase ends with a working, mergeable, end-to-end slice — Phase 1
+unblocks single-partition queries; Phase 2 unblocks cross-partition queries.
+
+The plan is deliberately mechanical so a follow-up coding agent can execute it without
+re-deriving design decisions. Cross-references to the design sections above are inline.
+
+### 13.0 Conventions
+
+- All new public types live in `azure_data_cosmos_driver` and are re-exported from
+  `azure_data_cosmos` only when the SDK layer needs them in its public surface.
+- All driver-internal types are `pub(crate)`.
+- New code must derive `SafeDebug` (not `Debug`) for any type that may carry user data.
+- Every public type needs a doc comment summary + details.
+- Each phase ends with: `cargo fmt -p azure_data_cosmos_driver -p azure_data_cosmos`,
+  `cargo clippy -p azure_data_cosmos_driver -p azure_data_cosmos --all-features`,
+  `cargo test -p azure_data_cosmos_driver -p azure_data_cosmos --all-features`. All three
+  must be clean before opening the PR.
+- **Integration tests run against the live Cosmos DB Emulator**, not via test-proxy
+  recordings. Agents should expect the user to assist with starting / pointing at the
+  emulator and reviewing the resulting test runs.
+- **Serialization tests never use round-trip assertions.** For each `Display` /
+  `Serialize` impl, assert against an exact expected string. For each `FromStr` /
+  `Deserialize` impl, feed an exact input string and assert the parsed structure. Tests
+  MAY locally base64-decode the wire format inside the test body so that the on-disk
+  exemplar can stay as plain JSON.
+
+---
+
+### 13.1 Phase 1 — Single-Node Plans
+
+**End-state for Phase 1.** A user can write:
+
+```rust
+let pager = container.query_items::<Customer>(
+    "SELECT * FROM c WHERE c.region = 'westus'",
+    OperationTarget::partition("westus"),
+    None,
+)?;
+while let Some(page) = pager.next().await {
+    let page = page?;
+    // ... use page.items, page.continuation_token() ...
+}
+```
+
+…and every existing point operation (`read_item`, `create_item`, `delete_item`, etc.)
+goes through the new Plan → Execute pipeline. Cross-partition / `FeedRange` targets are
+type-acceptable but error at planning time pointing to "Phase 2".
+
+#### 13.1.1 Foundational types in `azure_data_cosmos_driver`
+
+These can be done in any order but must all land before the planner work.
+
+1. **Migrate `FeedRange` into the driver and extend it.** §3.2.1.
+   - Move `sdk/cosmos/azure_data_cosmos/src/feed_range.rs` to
+     `sdk/cosmos/azure_data_cosmos_driver/src/models/feed_range.rs`. Add to
+     `models/mod.rs`. Make the type `pub`.
+   - Add `pub use azure_data_cosmos_driver::models::FeedRange;` to
+     `azure_data_cosmos/src/lib.rs` (or wherever the existing re-export lives) so
+     the public API does not change.
+   - Update the driver's internal callers that previously used the old path.
+   - **Add `pub fn FeedRange::for_partition_key(pk: impl Into<PartitionKey>, definition: &PartitionKeyDefinition) -> azure_core::Result<FeedRange>`.**
+     Computes the EPK for the given partition-key value and returns a single-EPK
+     `FeedRange` whose `min_inclusive == max_exclusive == EPK(pk)`. Returns an error if
+     the value count does not match the definition (full keys only — Phase 1 does not
+     attempt to support MultiHash prefix keys here; defer that to a follow-up if
+     needed).
+   - **Add `pub fn FeedRange::is_singleton(&self) -> bool`** returning `true` iff the
+     range bounds collapse to a single EPK (i.e. inclusive lower bound equals the
+     bound that would otherwise be exclusive — the implementation should treat the
+     "singleton" representation as a closed-closed range over one EPK or use whatever
+     internal marker `for_partition_key` produces, as long as the predicate is exact
+     for those constructed values and `false` for any range covering more than one
+     EPK).
+   - **Remove `ContainerClient::feed_range_from_partition_key`** from the SDK — its
+     functionality is now `FeedRange::for_partition_key` (callers can fetch the
+     `PartitionKeyDefinition` from the container themselves, or via a thin sync
+     helper on `ContainerClient` that returns the definition). Update the changelog.
+   - **Acceptance:** `cargo build -p azure_data_cosmos -p azure_data_cosmos_driver`.
+
+2. **Add `OperationTarget`.** §3.2.
+   - New file `models/operation_target.rs`. Public enum with three variants
+     (`None`, `PartitionKey { key: PartitionKey, feed_range: FeedRange }`,
+     `FeedRange(FeedRange)`).
+   - The `PartitionKey` variant carries both the logical key (used for the
+     `x-ms-documentdb-partitionkey` header on gateway-issued requests) and its
+     singleton `FeedRange` (the range whose min/max EPK equals `EPK(key)`).
+     **The EPK headers are NOT used for `OperationTarget::PartitionKey` requests** —
+     the gateway routes by the logical-PK header. The singleton `FeedRange` exists so
+     downstream planning, continuation tokens, and merge-recovery can reason about a
+     PK target uniformly with `FeedRange` targets.
+   - Implement the named constructors:
+     - `pub fn partition(key: impl Into<PartitionKey>, definition: &PartitionKeyDefinition) -> azure_core::Result<Self>` —
+       computes the singleton `FeedRange` via `FeedRange::for_partition_key` and
+       stores both. Errors propagate from `for_partition_key`.
+     - `pub fn feed_range(impl Into<FeedRange>) -> Self`.
+     - `pub fn all_ranges() -> Self` — returns `Self::FeedRange(FeedRange::full())`.
+   - Add accessors: `pub fn partition_key(&self) -> Option<&PartitionKey>`,
+     `pub fn feed_range(&self) -> Option<&FeedRange>` (returns `Some` for both
+     `PartitionKey` and `FeedRange` variants).
+   - Do **not** implement `From<PartitionKey>` or `From<FeedRange>`. §10.6.
+   - Re-export from `models/mod.rs`.
+   - **Note on the SDK's `ContainerClient::query_items` ergonomics:** since
+     `OperationTarget::partition` requires a `PartitionKeyDefinition`, the SDK
+     provides a thin wrapper `ContainerClient::partition_target(key) -> OperationTarget`
+     that pulls the definition from `container_connection`. Driver-level callers that
+     already hold a `PartitionKeyDefinition` (e.g. existing point-op factories) call
+     `OperationTarget::partition` directly.
+
+3. **Add `OperationPayload`.** §3.1.
+   - New enum with `None`, `Body(Vec<u8>)`, `Query { query, parameters }`.
+   - Define the Phase-1 `QueryParameter` shape: `{ name: String, value: serde_json::Value }`
+     unless an equivalent already exists; if one does, reuse it.
+   - Add a `pub fn body(&self) -> Option<&[u8]>` for transport-layer convenience.
+
+4. **Add `OperationOverrides`.** §6.3.
+   - Fields exactly: `feed_range: Option<FeedRange>`, `continuation: Option<String>`,
+     `max_item_count: Option<u32>`. `Default`-derive friendly.
+   - Document the allow/deny list inline.
+
+5. **Add `ContinuationToken` (Request variant only).** §7.
+   - `pub struct ContinuationToken { inner: ContinuationTokenInner }`.
+   - Internal `ContinuationTokenInner { version, container_rid, operation_kind, resume }`.
+   - `enum ResumeState { Request(RequestState) }` only — `SequentialDrain` is added in
+     Phase 2.
+   - `RequestState` carries `server_token: String` plus a `target` discriminator that
+     captures the original `OperationTarget`:
+     - For `OperationTarget::PartitionKey { key, .. }`: store the **logical partition
+       key value** (serialized via `PartitionKey`'s existing wire form). On resume,
+       the planner reconstructs the singleton `FeedRange` by re-running
+       `FeedRange::for_partition_key` with the container's current
+       `PartitionKeyDefinition`.
+     - For `OperationTarget::FeedRange(_)`: store `epk_min` / `epk_max`.
+     - For `OperationTarget::None`: store nothing extra (control-plane resumes are
+       rare but the variant exists for symmetry).
+   - Implement `Display` (base64url-encoded JSON, no padding) and `FromStr` (decode +
+     version check). Tests assert the exact JSON exemplar — see §13.1.7.
+   - Const `CURRENT_TOKEN_VERSION: u32 = 1`.
+   - **Version preservation rule** (§7.1): emit output tokens at the same version as the
+     input token; emit `CURRENT_TOKEN_VERSION` only when there is no input token.
+     This only applies if the incoming version is KNOWN to the Driver, so nothing is
+     actually needed here since there is only one version and the Driver already
+     emits it.
+
+6. **Add `ResponseBody` and update `CosmosResponse`.** §10.2.
+   - Variants `None`, `Bytes(Vec<u8>)`, `Items(Vec<Vec<u8>>)`.
+   - Replace `CosmosResponse::body() -> &[u8]` with `body() -> &ResponseBody` (and
+     remove `into_body`). Update every caller. Convenience `as_bytes(&self) -> Option<&[u8]>`
+     is acceptable to ease migration.
+   - Add `continuation_token: Option<ContinuationToken>` field + `continuation_token()`
+     accessor.
+
+#### 13.1.2 `CosmosOperation` refactor
+
+§3.
+
+7. **Field swap.** Replace `body: Option<Vec<u8>>` with `payload: OperationPayload`;
+   replace `partition_key: Option<PartitionKey>` with `target: OperationTarget`.
+   Keep `with_body(Vec<u8>)` as sugar for `with_payload(OperationPayload::Body(...))`.
+   Add `with_payload(OperationPayload)` and `with_target(OperationTarget)`.
+
+8. **Update all existing factory methods** in `models/cosmos_operation.rs` to populate
+   `target` and `payload` correctly (every `read_item`, `create_item`, `delete_item`,
+   `batch`, `query_items`, `read_all_databases`, etc.). Point ops use
+   `OperationTarget::partition(pk)`; account/database ops use `OperationTarget::None`;
+   existing `query_items` factory keeps `OperationTarget::partition(pk)` for now.
+
+9. **Add `CosmosOperation::query(container, query, parameters)`.** §3.3. Defaults to
+   `OperationTarget::all_ranges()` so callers that target a single PK must call
+   `.with_target(OperationTarget::partition(pk))`.
+
+#### 13.1.3 Pipeline rename + overrides plumbing
+
+10. **Rename `execute_operation_pipeline` → `execute_single_operation`.** §2 / §6.3.
+    - New signature:
+      `async fn execute_single_operation(&self, operation: &CosmosOperation, options: &OperationOptions, overrides: &OperationOverrides, diagnostics: &mut DiagnosticsContextBuilder) -> Result<CosmosResponse>`.
+    - Call sites within the driver pass a default `OperationOverrides` for now (point
+      ops don't use it).
+
+11. **Apply overrides in the request builder.**
+    - `overrides.continuation` → `x-ms-continuation` header.
+    - `overrides.max_item_count` → `x-ms-max-item-count` header (falls back to
+      `options.max_item_count` if unset).
+    - `overrides.feed_range` → `x-ms-documentdb-epk-min` / `x-ms-documentdb-epk-max`
+      headers, **only when the operation's `target` is NOT `OperationTarget::PartitionKey`**.
+      Gateway-routed PK queries use the logical-PK header instead and rejecting both
+      together is the simplest correctness rule. The planner is responsible for never
+      setting `overrides.feed_range` on a PK-targeted node, but the request builder
+      enforces the invariant defensively (debug-assert in the builder).
+      Phase 1 never sets EPK headers from the planner, but the wiring must be in
+      place for Phase 2 — add a unit test that sets `overrides.feed_range` on a
+      `OperationTarget::None` operation to lock the behavior.
+
+12. **Translate `OperationPayload` to wire body.**
+    - `None` → no body.
+    - `Body(b)` → bytes verbatim, `Content-Type: application/json`.
+    - `Query { query, parameters }` → JSON envelope `{"query":..., "parameters":[...]}`,
+      `Content-Type: application/query+json`. Set `x-ms-documentdb-isquery: True` and
+      `x-ms-documentdb-query-iscontinuationexpected: True` for the cross-partition path
+      later, but for Phase 1 single-partition queries set `IsContinuationExpected: True`
+      and **omit** `x-ms-documentdb-query-enablecrosspartition`.
+
+13. **Extract response continuation.** When `x-ms-continuation` is present on the
+    response, set `CosmosResponse.continuation_token` to a `ContinuationToken` whose
+    `ResumeState::Request` carries:
+    - the `server_token` from the header,
+    - the `target` discriminator captured from the originating `CosmosOperation`:
+      - `OperationTarget::PartitionKey { key, .. }` → store the logical PK value
+        (NOT the EPK bounds — those are reconstructed from the definition on resume),
+      - `OperationTarget::FeedRange(fr)` → store `fr`'s `min_inclusive` / `max_exclusive`,
+      - `OperationTarget::None` → no extra fields.
+    - The `container_rid` and `operation_kind` come from the `CosmosOperation` /
+      `OperationType`. Use `"query"` for `OperationType::Query`, the operation type
+      name for everything else.
+
+14. **`ResponseBody` variant selection.**
+    - For `OperationPayload::Query`, parse the response envelope and emit
+      `ResponseBody::Items(Vec<Vec<u8>>)`. The driver does **not** deserialize items —
+      it slices the `Documents` array into a `Vec<Vec<u8>>` of raw JSON values. (Use
+      `serde_json::value::RawValue` or equivalent to avoid double-parse.)
+    - For all other operations, emit `ResponseBody::Bytes(...)` for non-empty bodies and
+      `ResponseBody::None` for 204 / empty bodies.
+
+#### 13.1.4 Plan model + planner + executor (single-node only)
+
+§4–§6.
+
+15. **Plan types — minimal shape.**
+    - `pub(crate) enum OperationPlan { SingleNode(PlanNode) }` — no `Graph` variant yet
+      (defer to Phase 2 with a `// TODO(phase-2): Graph variant`).
+    - `pub(crate) enum PlanNode { Request { operation: Arc<CosmosOperation>, options: OperationOptions, feed_range: Option<FeedRange>, continuation: Option<String> } }` —
+      no `SequentialDrain` yet.
+    - `NodeId` / `NodeRange` are NOT needed in Phase 1; add them in Phase 2.
+
+16. **`Planner::plan(operation, options, continuation)`.** §5.
+    - Always returns `Ok(OperationPlan::SingleNode(...))` in Phase 1.
+    - Acceptance rules:
+      - Any `OperationType` other than `Query` → SingleNode regardless of target. (Point
+        ops, batch, control-plane ops.)
+      - `OperationType::Query` with `OperationTarget::PartitionKey(_)` → SingleNode
+        fast-path (no query plan fetch). §5.2.1.
+      - `OperationType::Query` with `OperationTarget::FeedRange(_)` /
+        `OperationTarget::all_ranges()` → return
+        `Err(azure_core::Error::with_message(ErrorKind::Other, "cross-partition queries are not yet supported (planned for Phase 2)"))`.
+        Phase 2 lifts this.
+    - When a continuation token is present, validate:
+      - `version <= CURRENT_TOKEN_VERSION` (already checked in `FromStr`).
+      - `container_rid` matches `operation.target()`'s container RID.
+      - `operation_kind` matches.
+      - `ResumeState` is `Request` (Phase 1 only knows that variant). Otherwise
+        `ErrorKind::DataConversion`.
+      - The token's stored `target` discriminator matches `operation.target()`'s
+        variant. For a `PartitionKey` token, the stored PK value must equal
+        `operation.target()`'s PK value (otherwise reject with
+        `ErrorKind::DataConversion`). For a `FeedRange` token the stored EPK bounds
+        must equal the operation's `FeedRange`.
+      - Seed `PlanNode::Request.continuation` with `RequestState.server_token`.
+
+17. **`PlanExecutor::execute(plan, driver_context, diagnostics)`.** §6.
+    - Match `OperationPlan::SingleNode(node)` and dispatch to a private
+      `execute_request_node`.
+    - `execute_request_node` builds an `OperationOverrides` from the node's
+      `feed_range` + `continuation` + `options.max_item_count` and calls
+      `execute_single_operation`. Returns the `CosmosResponse` straight through.
+
+18. **`CosmosDriver::execute_operation` rewrite.** §10.1.
+    - Sequence: plan → execute one page → return the `CosmosResponse`.
+    - Continuation token already lives on the response from step 13.
+    - Existing point operations now go through this path. Verify with the existing
+      point-op integration test suite — must pass with no test changes.
+
+19. **Send-future invariant.** The existing
+    `_assert_execute_operation_future_is_send` compile-time assertion must continue to
+    hold after the rewrite. Do not introduce non-`Send` types into the plan/executor.
+
+#### 13.1.5 SDK surface (`azure_data_cosmos`)
+
+§10.6.
+
+20. **Re-export `OperationTarget`.** Add `pub use azure_data_cosmos_driver::models::OperationTarget;`
+    next to the existing `FeedRange` re-export.
+
+21. **`QueryOptions` change.** Add `pub continuation: Option<ContinuationToken>` and
+    `pub max_item_count: Option<u32>`. Add chained setters
+    `with_continuation(...)`, `with_max_item_count(...)`. Keep `session_token` and
+    `operation` fields unchanged.
+
+22. **`query_items` signature change.** Replace
+    `partition_key: impl Into<PartitionKey>` with `target: OperationTarget`. Update doc
+    comments and example snippets to use `OperationTarget::partition(...)`.
+    - In Phase 1, calling with `OperationTarget::feed_range(_)` /
+      `OperationTarget::all_ranges()` returns the planner error from step 16. The SDK
+      does not need its own validation — it surfaces the driver error. Add a doc note
+      that cross-partition support arrives in Phase 2.
+
+23. **Pager-style return value.** The existing `query_items` returns
+    `FeedItemIterator<T>` built by `QueryExecutor::into_stream()`. Replace its
+    implementation so each underlying page is produced by
+    `driver.execute_operation(op, opts)`:
+    - Build the `CosmosOperation::query(...)` once with the user's `target`.
+    - Loop: feed `options.continuation` into `OperationOptions`, await
+      `execute_operation`, emit a `FeedPage<T>` from `ResponseBody::Items`, set the
+      next-iteration continuation from the response, stop when no continuation is
+      returned.
+    - `FeedPage<T>::continuation_token()` exposes the `ContinuationToken` so callers can
+      pause / resume across process boundaries.
+    - Item deserialization happens here in the SDK (`T: DeserializeOwned`), not in the
+      driver.
+
+24. **Update other call sites.** Anything in the SDK that builds a
+    `CosmosOperation::query_items(...)` factory call must be updated for the new field
+    layout. Should be confined to `container_client.rs`.
+
+#### 13.1.6 Diagnostics (deferred)
+
+Hierarchical `NodeDiagnostics` (§8) are **deferred to Phase 2 or later**. Phase 1 keeps
+the existing flat `RequestDiagnostics` list. Document this in the PR description.
+
+#### 13.1.7 Tests
+
+> **Note:** No round-trip tests. Each serialization test pins an exact expected
+> string; each deserialization test feeds an exact input. Tests MAY base64-decode the
+> wire form locally so the JSON exemplar in the test is human-readable.
+
+25. **Driver unit tests.**
+    - `OperationTarget::partition(...)` populates both the logical PK and the
+      singleton `FeedRange` produced by `FeedRange::for_partition_key(...)`.
+    - `OperationTarget::feed_range(...)` and `all_ranges()` produce the expected
+      variants.
+    - `FeedRange::for_partition_key`: for a known PK value + definition, assert
+      `min_inclusive == max_exclusive == <expected EPK string>` (use a hand-computed
+      EPK fixture).
+    - `FeedRange::is_singleton`: `true` for any `FeedRange::for_partition_key(...)`
+      output; `false` for `FeedRange::full()` and a multi-EPK fixture.
+    - `OperationPayload::Query` envelope serializes to the exact string
+      `{"query":"SELECT * FROM c","parameters":[]}` (and a parametrized variant with
+      the exact expected JSON, asserting field order / casing).
+    - `ContinuationToken` serialization: build a token with known fields, assert
+      `token.to_string()` equals an exact base64url string. Provide the JSON
+      exemplar inside the test body and base64url-encode it locally to derive the
+      expected string.
+    - `ContinuationToken` deserialization: feed a known base64url input, assert the
+      parsed `ContinuationTokenInner` field-by-field.
+    - `ContinuationToken` for a `PartitionKey`-target token preserves the original
+      logical PK value across decode (assert the PK value equals the input).
+    - `ContinuationToken` parse rejects: version > current; bad base64; bad JSON;
+      missing required fields. One assertion per failure mode.
+    - `Planner` returns `SingleNode` for every point op type (table-driven test).
+    - `Planner` returns `SingleNode` for `Query` + `PartitionKey`.
+    - `Planner` returns the Phase-2 error for `Query` + `FeedRange` /
+      `Query` + `all_ranges()`, asserting the exact error message.
+    - `Planner` rejects a continuation token whose stored PK value differs from the
+      operation's target PK (`ErrorKind::DataConversion`).
+    - `OperationOverrides` → request headers: lock-in test that asserts
+      `x-ms-continuation` and `x-ms-max-item-count` appear when the corresponding
+      override is set; assert that EPK headers DO NOT appear when the operation's
+      target is `OperationTarget::PartitionKey`; assert that EPK headers DO appear
+      when the target is `OperationTarget::None` or `OperationTarget::FeedRange(_)`.
+    - `ResponseBody::Items` parser: feed a fixture body, assert items extracted as
+      raw bytes without re-encoding (assert the `Vec<Vec<u8>>` byte-for-byte against
+      expected slices).
+
+26. **Driver integration tests (Cosmos DB Emulator).**
+    - All existing point-op tests pass unchanged.
+    - New: single-partition query against an emulator container
+      (`SELECT * FROM c`, `SELECT * FROM c WHERE c.id = @id`), pagination across
+      multiple pages by setting a small `max_item_count`. Tests provision their
+      own container, seed deterministic data, and assert exact item sets.
+      **Do not introduce any test-proxy recordings** — the existing point-op
+      recordings stay as-is, but new feed-operation tests run live against the
+      emulator only.
+
+27. **SDK integration tests (Cosmos DB Emulator).**
+    - `query_items` with `OperationTarget::partition(pk)` returns the expected
+      items.
+    - `query_items` with a `WHERE` clause filters server-side.
+    - Pagination: drain a multi-page result, then resume from a captured
+      continuation token mid-stream and verify the second half matches.
+    - Continuation token from a `partition`-target query, when handed back to a
+      fresh `query_items` call with the same logical PK, resumes correctly. When
+      handed to a different PK, it is rejected.
+
+---
+
+### 13.2 Phase 2 — Sequential Drain & Multi-Node Plans
+
+**End-state for Phase 2.** A user can write:
+
+```rust
+let pager = container.query_items::<Customer>(
+    "SELECT * FROM c WHERE c.year = @y",
+    [Parameter::new("@y", 2026)],
+    OperationTarget::all_ranges(),                  // or feed_range(fr)
+    None,
+)?;
+```
+
+…and the driver plans a `SequentialDrain` over every PK range that intersects the
+target, draining them one at a time, paginating across calls, surviving partition
+splits and merges via EPK headers, and producing a continuation token after each page.
+
+The Phase-2 PR is purely additive on top of Phase 1: the Phase-1 SingleNode fast-path
+remains the path for `OperationTarget::PartitionKey` queries.
+
+#### 13.2.1 Plan model expansion
+
+§4.
+
+1. **Add `NodeId` and `NodeRange`.** `pub(crate)`, `Copy`, with the `len`, `is_empty`,
+   `iter` helpers.
+
+2. **Extend `OperationPlan` with `Graph { nodes: Vec<PlanNode>, root: NodeId }`.**
+   Remove the Phase-1 `// TODO(phase-2)` comment.
+
+3. **Add `PlanNode::SequentialDrain { children: NodeRange }`.** Document the bottom-up
+   invariant inline.
+
+4. **Update existing pattern matches.** Anywhere that matched on `OperationPlan` /
+   `PlanNode` now needs to handle the new variants. The compiler enforces this.
+
+#### 13.2.2 Backend Query Plan request
+
+§5.2.1 / §12.2.
+
+5. **Add `BackendQueryPlan` types.** New module
+   `driver/query_plan/{mod.rs,backend_plan.rs}`. **There is no `QueryPlanClient`** —
+   the planner issues query-plan requests directly through `execute_single_operation`
+   (see step 6).
+   - Mirror the schema noted in the team's existing memory (camelCase JSON):
+     `partitionedQueryExecutionInfoVersion`, `queryInfo`, `queryRanges`,
+     `hybridSearchQueryInfo`. For Phase 2 we only need: `queryInfo.rewrittenQuery` (must
+     be empty / absent for in-scope queries), `queryInfo.hasNonStreamingOrderBy` (must be
+     `false`), `queryInfo.aggregates` (must be empty), `queryInfo.groupByExpressions`
+     (must be empty), `queryInfo.distinctType` (must be `None`), `queryInfo.orderBy`
+     (must be empty), `queryInfo.dCountInfo` (must be absent), `queryInfo.top` (must be
+     absent), `queryInfo.offset` / `limit` (must be absent), and `queryRanges`.
+
+6. **Issue the query-plan request inline from the planner.** Add a helper
+   `Planner::fetch_backend_plan(operation: &CosmosOperation) -> Result<BackendQueryPlan>`
+   that:
+    - Builds a synthetic `CosmosOperation` whose target is `OperationTarget::None`
+      and whose payload is the same `OperationPayload::Query` as the user's request.
+    - Calls `execute_single_operation` directly with an `OperationOverrides` that
+      sets the query-plan headers:
+      `x-ms-cosmos-is-query-plan-request: True`,
+      `x-ms-cosmos-supported-query-features: None`,
+      `x-ms-cosmos-query-version: 1.0`,
+      `Content-Type: application/query+json`,
+      `x-ms-documentdb-query-iscontinuationexpected: False`.
+      (Extend `OperationOverrides` with a small `extra_headers: Vec<(HeaderName, HeaderValue)>`
+      field if no cleaner mechanism exists, or — preferred — add a private
+      `RequestKind::QueryPlan` discriminant on the synthetic operation so the
+      transport layer applies the right headers without growing the public
+      override type. Pick the smaller diff.)
+    - Bypasses planning recursion (the planner calls `execute_single_operation`
+      directly, not `execute_operation`).
+    - Parses the response body into `BackendQueryPlan`.
+
+7. **Classify the plan as passthrough.**
+   - Helper `BackendQueryPlan::is_passthrough(&self) -> bool` returning `true` iff every
+     "must be empty/false/absent" check above passes.
+   - If `false`, the planner returns
+     `Err(azure_core::Error::with_message(ErrorKind::Other, "this query requires features that are not yet supported by the Rust SDK (cross-partition ORDER BY / GROUP BY / aggregates / vector / hybrid)"))`.
+
+#### 13.2.3 Planner: cross-partition `SELECT *`
+
+§5.4.
+
+8. **Wire `PartitionKeyRangeCache` into the planner.** Pass an `Arc<PartitionKeyRangeCache>`
+   on `Planner::new(...)`. Add a `fetch_pk_ranges_for_target` helper that returns the
+   list of `PartitionKeyRange`s overlapping the target's `FeedRange`.
+
+9. **Implement cross-partition planning.**
+   - Phase-1 SingleNode acceptance rules unchanged.
+   - For `Query` + (`FeedRange(_)` | `all_ranges()`):
+     1. Fetch the backend query plan (step 6). Cache by `(container_rid, query_text,
+        params_hash)` for the lifetime of one `execute_operation` call. (Cross-call
+        caching is §12.5 future work.)
+     2. Verify passthrough (step 7).
+     3. Compute the effective EPK bounds: intersect `target.feed_range()` with each PK
+        range from the cache. Filter out PK ranges that do not overlap.
+     4. Apply continuation-token resume: if the input continuation has
+        `ResumeState::SequentialDrain { epk_min, epk_max, server_token }`, drop ranges
+        whose `max_epk <= epk_min`; the first remaining range carries `server_token`,
+        the rest start fresh. §7.3.
+     5. Build nodes bottom-up: push N `PlanNode::Request` (each carries
+        `Arc<CosmosOperation>` shared across siblings, its EPK range, and any seeded
+        continuation), then push `PlanNode::SequentialDrain { children: NodeRange(0..N) }`.
+        `root = NodeId(N)`.
+
+10. **Single-Request degenerate case.** If after intersection N == 1, still emit a
+    `Graph` plan (do **not** silently downgrade to SingleNode) so the executor can
+    produce a `ResumeState::SequentialDrain` token consistent across pages.
+
+#### 13.2.4 Executor: SequentialDrain walk
+
+§6.1.
+
+11. **Match `OperationPlan::Graph`** in `PlanExecutor::execute`, look up `root`, dispatch.
+
+12. **`execute_sequential_drain`.**
+    - Pick the active child = `children.start` (Phase-2 invariant: planner has already
+      pruned drained ranges).
+    - Acquire a single concurrency permit (sequential: a `Semaphore::new(1)` per drain;
+      the permit machinery is §5.6 future work but we add a minimal stub now so that
+      future variants slot in cleanly — a `tokio::sync::Semaphore` is fine).
+    - Execute the active child via `execute_request_node`.
+    - Build the output `ContinuationToken` (step 14).
+    - Return the `CosmosResponse` with the new token attached.
+
+13. **Page-boundary rule.** Each `execute_operation` call returns exactly one page from
+    one partition. Even if the active child completes (no server continuation) and there
+    are more children, do NOT proactively start the next one in the same call — the
+    output continuation simply moves the cursor to the next range. §10.5.
+
+14. **Output continuation construction.**
+    - If the executed `Request` returned a server continuation: emit
+      `ResumeState::SequentialDrain { epk_min, epk_max, server_token: Some(...) }` for
+      the active range.
+    - If it did not, and there are more children to the right: emit
+      `ResumeState::SequentialDrain { epk_min, epk_max, server_token: None }` so the
+      Planner on the next call skips this range and starts the next.
+    - If it did not, and the active child was the last one: emit `None` continuation
+      (operation complete).
+
+#### 13.2.5 Continuation token expansion
+
+§7.
+
+15. **Add `ResumeState::SequentialDrain(SequentialDrainState)`.** Add explicit
+    serialization tests (assert against an exact base64url string) and explicit
+    deserialization tests (feed an exact input, assert parsed structure
+    field-by-field). No round-trip tests.
+
+16. **Version preservation across resume.** Already handled by Phase 1's "echo the input
+    version" rule — verify it continues to apply when the input is a `SequentialDrain`
+    token.
+
+17. **Reject cross-variant tokens.** A `SequentialDrain` token presented to a Phase-1
+    SingleNode operation is rejected (`ErrorKind::DataConversion`). A `Request` token
+    presented to a cross-partition operation is also rejected.
+
+#### 13.2.6 Split / merge handling
+
+§9.1 / §9.2.
+
+18. **Inside `execute_request_node`, on `Status 410 SubStatus 1002`:**
+    - Invalidate `PartitionKeyRangeCache` for the container.
+    - Re-fetch the PK ranges intersecting the node's `feed_range`.
+    - For each new sub-range, issue a follow-up `execute_single_operation` call with
+      `OperationOverrides.feed_range` set to the **original** node EPK bounds (so EPK
+      headers narrow the result to the node's slice even on a merged PK range).
+    - Concatenate the resulting `ResponseBody::Items` into one page-output.
+    - The continuation token logic (step 14) still applies to the original EPK bounds,
+      not the new sub-range bounds; the next planner call will see the new topology.
+
+19. **Pipeline-level helper.** Make sure the transport layer always emits
+    `x-ms-documentdb-epk-min` / `x-ms-documentdb-epk-max` whenever
+    `OperationOverrides.feed_range` is set. (Hooked up in Phase 1 step 11.)
+
+#### 13.2.7 SDK surface adjustments
+
+20. **Lift Phase-1 restriction.** The planner now accepts `FeedRange` and `all_ranges()`
+    targets, so the SDK's `query_items` automatically gains cross-partition support — no
+    code change required at the SDK boundary beyond updating doc comments and adding
+    examples.
+
+21. **Pager loop.** The Phase-1 pager loop in `query_items` works unchanged — it just
+    drains more pages now.
+
+22. **`FeedRange::for_partition_key` interaction.** Confirm that
+    `FeedRange::for_partition_key(pk, &definition)` (added in Phase 1, step 1)
+    returns a `FeedRange` that, when handed to `OperationTarget::feed_range(...)`,
+    drives a single-PK-range `SequentialDrain` and returns the same items as
+    `OperationTarget::partition(pk, &definition)`. Add an emulator integration
+    test that asserts the two paths produce the same item set.
+
+#### 13.2.8 Diagnostics (now or split into a follow-up PR)
+
+23. Decide based on PR size. If hierarchical `NodeDiagnostics` (§8) fits, add it here:
+    `start_node` / `complete_node` builder methods, recursive collection in the executor,
+    flat `requests()` accessor for back-compat. If not, file a follow-up issue and ship
+    Phase 2 with the existing flat diagnostics — this is purely an observability
+    enhancement and does not affect correctness.
+
+#### 13.2.9 Tests
+
+> Same testing rules as §13.1.7: no round-trip serialization tests; integration tests
+> run against the Cosmos DB Emulator, not test-proxy recordings.
+
+24. **Planner unit tests.**
+    - Cross-partition `SELECT *` against 3 PK ranges produces a Graph with 3 Request
+      children + 1 SequentialDrain root, bottom-up.
+    - Resume from `ResumeState::SequentialDrain` skips left-of-cursor ranges, seeds the
+      active range's continuation, leaves right-of-cursor ranges unseeded.
+    - Backend query plan rejection: a query with cross-partition `ORDER BY` is rejected
+      with the documented error message (assert exact string).
+    - Single-PK degenerate case still emits `Graph`, not `SingleNode`.
+
+25. **Executor unit tests (with mock pipeline).**
+    - SequentialDrain processes one page per call; continuation token threads correctly.
+    - Active-range completion (no server token, more children) emits a token with
+      `server_token: None` that on the next call skips to the next range.
+    - Last range exhausted → `continuation_token` is `None`.
+
+26. **Continuation token tests.**
+    - `SequentialDrain` serialization: build a token with known fields, assert
+      `to_string()` equals an exact base64url string (JSON exemplar provided in the
+      test, base64url-encoded locally).
+    - `SequentialDrain` deserialization: feed an exact base64url string, assert the
+      parsed structure field-by-field.
+    - Cross-variant rejection (Phase 1 `Request` token vs Phase 2 `SequentialDrain`
+      operation, both directions).
+    - Version preservation: input v1 token → all output tokens are v1, even if
+      `CURRENT_TOKEN_VERSION` has bumped (assert by constructing a v1 input token,
+      executing one page, asserting the output token's version field equals 1).
+
+27. **Split / merge tests.**
+    - Unit-level fault injection: inject a 410/1002 response in the mock pipeline;
+      verify the Request node re-resolves the PK ranges, issues follow-up calls
+      with EPK headers narrowing to the original node bounds, and the page completes
+      without surfacing the error to the caller.
+    - Verify the EPK headers on the post-split sub-requests by inspecting the
+      mock pipeline's recorded requests.
+    - Emulator integration: there is no portable way to force a split on the
+      emulator, so split/merge coverage is unit-level only. Note this in the PR.
+
+28. **End-to-end SDK integration tests (Cosmos DB Emulator).**
+    - `OperationTarget::all_ranges()` with `SELECT * FROM c` against a multi-partition
+      container drains every item exactly once, in `(EPK, RID)` order.
+    - Same with a `WHERE` clause: only matching items returned.
+    - `OperationTarget::feed_range(FeedRange::for_partition_key(pk, &def)?)` returns
+      the same set as `OperationTarget::partition(pk, &def)` for the same logical
+      partition.
+    - Mid-stream pause/resume: capture the continuation after page 2, build a fresh
+      `query_items` call with the same query + the captured token, verify the
+      remaining pages match.
+
+---
+
+### 13.3 Out of Scope for Both Phases
+
+- Cross-partition `ORDER BY`, `GROUP BY`, aggregates, vector, hybrid (§12.2).
+- ReadMany (§12.1).
+- Change feed (§12.3).
+- Hierarchical OTEL spans built by the SDK from `NodeDiagnostics` (the SDK owns this,
+  not the driver; spec'd in §8.7 but not on the implementation critical path).
+- Cross-call `OperationPlan` caching (§12.5).
+- Hedging on feed nodes (§12.6).
+- Dedicated `read_all_items` factory (§12.7).
