@@ -5,6 +5,7 @@
 ### Breaking Changes
 
 - [TEMP] Renamed `BlobServiceClient::find_blobs_by_tags()` to `list_find_blobs_by_tags()`. The method is now pageable and returns `Result<Pager<FilterBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobSegment, XmlFormat>>`.
+- [TEMP] Renamed `BlobContainerClient::find_blobs_by_tags()` to `list_find_blobs_by_tags()`. The method is now pageable and returns `Result<Pager<FilterBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobResponse, XmlFormat>>`.
 - Renamed `FilterBlobSegment` to `FilterBlobResponse`.
 - Changed `FilterBlobResponse.blobs` from `Option<Vec<FilterBlobItem>>` to `Vec<FilterBlobItem>`.
 - Renamed `ListContainersSegmentResponse` to `ListContainersResponse`.
@@ -12,7 +13,8 @@
 - Renamed `BlobProperties.customer_provided_key_sha256` to `encryption_key_sha256`.
 - Renamed `BlockBlobClientUploadOptions.blob_tags_string` to `tags` and changed its type from `Option<String>` to `Option<BlobTags>`.
 - Removed `BlockBlobClientUploadOptions::with_tags()` builder method. Set the `tags` field directly using `HashMap<String, String>.into()`.
-- Renamed `BlobServiceClientFindBlobsByTagsOptions` to `BlobServiceClientListFindBlobsByTagsOptions`.
+- [TEMP] Renamed `BlobServiceClientFindBlobsByTagsOptions` to `BlobServiceClientListFindBlobsByTagsOptions`.
+- [TEMP] Renamed `BlobContainerClientFindBlobsByTagsOptions` to `BlobContainerClientListFindBlobsByTagsOptions`.
 
 ### Bugs Fixed
 

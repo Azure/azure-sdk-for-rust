@@ -227,11 +227,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
-    let mut pager = service_client
+    let blobs: Vec<_> = service_client
         .list_find_blobs_by_tags("\"foo\"='bar'", None)?
-        .into_pages();
-    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+        .try_collect()
+        .await?;
     assert!(
         blobs
             .iter()
@@ -240,11 +239,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
-    let mut pager = service_client
+    let blobs: Vec<_> = service_client
         .list_find_blobs_by_tags("\"fizz\"='buzz'", None)?
-        .into_pages();
-    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+        .try_collect()
+        .await?;
     assert!(
         blobs
             .iter()
@@ -253,11 +251,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     );
 
     // Find "six seven" blob by its tag {"tagged": "true"}
-    let mut pager = service_client
+    let blobs: Vec<_> = service_client
         .list_find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)?
-        .into_pages();
-    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+        .try_collect()
+        .await?;
     assert!(
         blobs
             .iter()
@@ -325,12 +322,13 @@ async fn test_list_containers_with_metadata_include(
         prefix: Some(container_name.clone()),
         ..Default::default()
     };
-    let mut pager = service_client.list_containers(Some(options))?.into_pages();
-    let page = pager.try_next().await?.unwrap().into_model()?;
+    let items: Vec<_> = service_client
+        .list_containers(Some(options))?
+        .try_collect()
+        .await?;
 
     // Assert
-    let found = page
-        .container_items
+    let found = items
         .into_iter()
         .find(|c| c.name.as_deref() == Some(container_name.as_str()))
         .expect("container not found in listing");
@@ -360,13 +358,10 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
         prefix: Some(prefix.to_string()),
         ..Default::default()
     };
-    let mut pager = service_client.list_containers(Some(options))?.into_pages();
-    let names: Vec<String> = pager
-        .try_next()
+    let names: Vec<String> = service_client
+        .list_containers(Some(options))?
+        .try_collect::<Vec<_>>()
         .await?
-        .unwrap()
-        .into_model()?
-        .container_items
         .into_iter()
         .filter_map(|c| c.name)
         .collect();

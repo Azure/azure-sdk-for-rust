@@ -138,13 +138,9 @@ async fn find_blobs_by_tags(
 
     // Tag names must be in double-quotes and values in single-quotes.
     let filter = "\"sample\" = 'service-client'";
-    let mut pager = service_client
-        .list_find_blobs_by_tags(filter, None)?
-        .into_pages();
-    let page = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = page.blobs;
-    println!("list_find_blobs_by_tags: {} result(s)", blobs.len());
-    for item in blobs {
+    let mut blobs = service_client.list_find_blobs_by_tags(filter, None)?;
+    println!("list_find_blobs_by_tags results:");
+    while let Some(item) = blobs.try_next().await? {
         println!(
             "  {}/{}",
             item.container_name.as_deref().unwrap_or("<?>"),

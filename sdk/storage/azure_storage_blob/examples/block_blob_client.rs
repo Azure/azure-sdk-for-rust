@@ -123,14 +123,14 @@ async fn copy_from_url(
     container_client: &BlobContainerClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create a source blob to copy from, tagging it and guarding against accidental
-    // overwrites with `if_none_match: Some("*")` and setting `tags` on the options.
+    // overwrites with `with_if_not_exists()` and setting `tags` on the options.
     let source_blob_name = "copy-source.txt";
     let source_client = container_client.blob_client(source_blob_name);
     let upload_options = BlockBlobClientUploadOptions {
-        if_none_match: Some("*".into()),
         tags: Some(HashMap::from([("origin".to_string(), "sample".to_string())]).into()),
         ..Default::default()
-    };
+    }
+    .with_if_not_exists();
     source_client
         .upload(
             RequestContent::from(b"original source content".to_vec()),
