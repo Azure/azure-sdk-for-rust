@@ -582,7 +582,24 @@ impl CosmosOperation {
     /// - `x-ms-cosmos-supported-query-features: <feature-list>`
     /// - `Content-Type: application/query+json`
     /// - `x-ms-documentdb-isquery: True`
+    ///
+    /// **This constructor is intentionally not part of the supported public API.**
+    /// The driver issues Gateway query-plan requests internally; the local plan
+    /// generator (see `query::plan`) replaces it for production callers. It is
+    /// gated on the `__internal_testing` feature flag so that cross-crate
+    /// gateway-comparison tests can build the operation directly. Production
+    /// callers must not use it.
+    #[cfg(any(test, feature = "__internal_testing"))]
     pub fn query_plan(container: ContainerReference) -> Self {
+        Self::query_plan_impl(container)
+    }
+    #[cfg(not(any(test, feature = "__internal_testing")))]
+    #[allow(dead_code)]
+    pub(crate) fn query_plan(container: ContainerReference) -> Self {
+        Self::query_plan_impl(container)
+    }
+
+    fn query_plan_impl(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
