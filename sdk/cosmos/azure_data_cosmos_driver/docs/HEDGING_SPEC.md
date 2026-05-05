@@ -70,29 +70,29 @@ design review.
 
 ### Operation-type scope (phased)
 
-| Operation type | Phase 1 | Phase 2 | Phase 3 | Future |
-|---|:---:|:---:|:---:|:---:|
-| Document point reads (GetItem) | ✅ | ✅ | ✅ | ✅ |
-| Document point writes on multi-master (Create/Replace/Upsert/Delete/Patch) | ✅ | ✅ | ✅ | ✅ |
-| Queries (`QueryItems`) | ❌ | ✅ | ✅ | ✅ |
-| `ReadMany` | ❌ | ✅ | ✅ | ✅ |
-| Change feed | ❌ | ❌ | ✅ | ✅ |
-| Metadata operations (Database / Container / Offer / Throughput) | ❌ | ❌ | ✅ | ✅ |
-| Stored procedures / triggers / UDFs execution | ❌ | ❌ | ❌ | 🟡 candidate |
+| Operation type | Phase 1 | Phase 2 | Future |
+|---|:---:|:---:|:---:|
+| Document point reads (GetItem) | ✅ | ✅ | ✅ |
+| Document point writes on multi-master (Create/Replace/Upsert/Delete/Patch) | ✅ | ✅ | ✅ |
+| Queries (`QueryItems`) | ✅ | ✅ | ✅ |
+| `ReadMany` | ✅ | ✅ | ✅ |
+| Change feed | ✅ | ✅ | ✅ |
+| Metadata operations (Database / Container / Offer / Throughput) | ❌ | ✅ | ✅ |
+| Stored procedures / triggers / UDFs execution | ❌ | ❌ | 🟡 candidate |
 
 .NET v3 documents Query / ReadMany / ChangeFeed as supported by
 `CrossRegionHedgingAvailabilityStrategy`
 ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/docs/Cross%20Region%20Request%20Hedging.md));
 Java v4 ships read + write + query + ReadMany hedging today. The Rust
-driver phases these in sequentially because Query / ReadMany / ChangeFeed
-each carry pagination or checkpoint semantics (continuation tokens,
-multi-page state, change-feed lease state) that need their own design
-pass before they can be safely fanned out across regions. Metadata
-operations are control-plane and rarely latency-critical, but are
-included in Phase 3 to provide complete operation coverage where it is
-safe and cheap. Sprocs / triggers / UDFs are deferred to Future because
-their server-side execution model interacts with hedging in non-obvious
-ways (server-side state, idempotency). See §16 for the full rollout plan.
+driver matches the dominant SDKs by covering the same document-scoped
+operation surface in Phase 1 — Query, ReadMany, and ChangeFeed all
+travel as `ResourceType.Document` over the wire and are hedged by the
+same orchestrator. Metadata operations are control-plane and rarely
+latency-critical; they are deferred to Phase 2 to provide complete
+operation coverage where it is safe and cheap. Sprocs / triggers / UDFs
+are deferred to Future because their server-side execution model
+interacts with hedging in non-obvious ways (server-side state,
+idempotency). See §16 for the full rollout plan.
 
 ---
 
@@ -345,12 +345,34 @@ pub struct HedgingStrategy {
     enable_multi_write_region_hedge: bool,
 }
 
+/// Configuration error returned by fallible `HedgingStrategy` constructors.
+#[derive(Debug, thiserror::Error)]
+pub enum HedgingConfigError {
+    #[error("hedging threshold must be > 0, got {0:?}")]
+    ZeroThreshold(Duration),
+    #[error("hedging threshold_step must be > 0, got {0:?}")]
+    ZeroThresholdStep(Duration),
+}
+
 impl HedgingStrategy {
     /// Creates a new hedging strategy.
     ///
+    /// Returns `HedgingConfigError` if `threshold` or `threshold_step` is
+    /// zero. Use this constructor whenever the values originate from a
+    /// runtime source (env var, remote config, JSON file, user input) so a
+    /// malformed value can be surfaced without aborting the process.
+    pub fn new(
+        threshold: Duration,
+        threshold_step: Duration,
+    ) -> Result<Self, HedgingConfigError> { ... }
+
+    /// Infallible constructor for callers that have compile-time-validated
+    /// values (e.g., `Duration::from_millis(500)` literals in tests or
+    /// hand-tuned defaults).
+    ///
     /// # Panics
     /// Panics if `threshold` or `threshold_step` is zero.
-    pub fn new(threshold: Duration, threshold_step: Duration) -> Self { ... }
+    pub fn new_unchecked(threshold: Duration, threshold_step: Duration) -> Self { ... }
 
     /// Enables hedging for write operations on multi-master accounts.
     pub fn with_multi_write_region_hedge(mut self) -> Self { ... }
@@ -366,13 +388,23 @@ impl HedgingStrategy {
 }
 ```
 
-> **Divergence from .NET:** the .NET v3 constructor accepts a nullable
-> `thresholdStep` and silently coerces `null` to a `-1ms` sentinel via `??`
+> **Divergence from .NET and Java:** the .NET v3 constructor accepts a
+> nullable `thresholdStep` and silently coerces `null` to a `-1ms`
+> sentinel via `??`
 > ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Routing/AvailabilityStrategy/CrossRegionHedgingAvailabilityStrategy.cs#L60))
-> — a likely latent bug, since the same parameter is also checked against
-> `<= TimeSpan.Zero` immediately above (`null` slips through that comparison).
-> The Rust API requires both `threshold` and `threshold_step` to be explicit
-> non-zero `Duration` values.
+> — a likely latent bug, since the same parameter is also checked
+> against `<= TimeSpan.Zero` immediately above (`null` slips through
+> that comparison). Java v4's `ThresholdBasedAvailabilityStrategy`
+> rejects `null` or `isNegative()` durations but **accepts
+> `Duration.ZERO`**
+> ([source](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/ThresholdBasedAvailabilityStrategy.java)),
+> and additionally exposes a no-arg constructor that fills in built-in
+> defaults (`500ms / 100ms`). The Rust API requires both `threshold`
+> and `threshold_step` to be explicit non-zero `Duration` values —
+> stricter than .NET (which rejects `<= 0` but lets `null` slip), and
+> stricter than Java (which accepts zero). There is no no-arg
+> constructor: the user must always supply both values (or rely on the
+> PPAF SDK default in §5.2).
 
 ### 4.2 Disabled Strategy
 
@@ -416,11 +448,23 @@ pub struct OperationOptions {
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Threshold in milliseconds | (none — off) |
-| `AZURE_COSMOS_HEDGING_THRESHOLD_STEP_MS` | Step interval in milliseconds | Same as threshold |
+| `AZURE_COSMOS_HEDGING_THRESHOLD_STEP_MS` | Step interval in milliseconds | `500` |
 | `AZURE_COSMOS_HEDGING_ENABLE_MULTI_WRITE_REGION` | `true`/`false` | `false` |
+| `AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT` | `true`/`false` — suppresses the PPAF-driven SDK default (§5.2) without forcing every call site to set `AvailabilityStrategy::Disabled`. Equivalent to Java v4's `COSMOS.IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF=false`. | `false` |
 
-Environment variables provide the lowest-priority configuration. Setting the
-threshold env var implicitly enables hedging at the runtime level.
+Environment variables provide the lowest-priority configuration above the
+SDK default (see §11.3.1). Setting the threshold env var implicitly enables
+hedging at the runtime level. Setting `AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT=true`
+is equivalent to setting `DriverOptions::disable_sdk_default_hedging(true)`
+in code: it suppresses *only* the SDK-default strategy, leaving any
+user-configured `AvailabilityStrategy` (client-level or per-operation)
+untouched.
+
+> **Default-step alignment.** The env-var step default (`500ms`) intentionally
+> matches the PPAF-driven SDK-default step in §5.2 / §2.6, so a user who flips
+> hedging on via env var sees the same fan-out cadence as a user who let PPAF
+> auto-enable it. The two paths share the `500ms` constant; if either ever
+> changes, both must move together.
 
 ---
 
@@ -450,7 +494,7 @@ fn should_hedge(
 |---:|-----------|--------|
 | 1 | No strategy resolved (or `AvailabilityStrategy::Disabled`) | No |
 | 2 | Application preferred-region list empty (no fan-out targets) | No |
-| 3 | `ResourceType != Document` | No |
+| 3 | `ResourceType` not in the **phase-allowed set** † | No |
 | 4 | Read: applicable `preferred_read_endpoints` (after `ExcludeRegions`) has < 2 entries | No |
 | 5 | Write + single-master | No |
 | 6 | Write + multi-master + `enable_multi_write_region_hedge = false` | No |
@@ -463,6 +507,20 @@ operation-appropriate list **after** `ExcludeRegions` filtering, not the
 raw account region count — a user who excludes all-but-one region at the
 operation level will (correctly) skip hedging even on a multi-region
 account.
+
+> **† Phase-allowed `ResourceType` set.** Row 3's allowed set evolves with
+> the implementation phases in §16, so the eligibility rule is encoded in
+> one place rather than rewritten each phase:
+>
+> | Phase | Allowed `ResourceType` set |
+> |---|---|
+> | 1 (MVP)  | `{Document}` (covers point reads/writes, Query, ReadMany, ChangeFeed — all travel as `ResourceType.Document`) |
+> | 2        | Phase 1 set ∪ `{Database, Container, Offer, Throughput}` |
+> | Future   | Phase 2 set ∪ `{StoredProcedure, Trigger, UDF}` (see §16 "Future") |
+>
+> Phase 1 implementations should hard-code the set to `{Document}`,
+> matching .NET's `ShouldHedge` exactly. Each subsequent phase widens
+> the constant in one place; no other change to §5.1 is required.
 
 > **Divergence from .NET:** .NET's single-region bypass test in
 > `ExecuteAvailabilityStrategyAsync` checks `ReadEndpoints.Count == 1` for
@@ -504,11 +562,15 @@ comparison and the rationale for these specific values):
 - **Threshold:** `min(1000ms, request_timeout / 2)`, with `1000ms` as fallback
   when `request_timeout` is unset or zero.
 - **Threshold step:** `500ms`.
-- **Write hedging:** **enabled in Phase 1 only when the account is
-  multi-master**. Single-master accounts never hedge writes (PPAF
-  handles write redirection there). On multi-master accounts the
-  PPAF-driven default applies to writes as well as reads (see §16
-  Phase 1 scope).
+- **Write hedging:** **disabled** — matches .NET v3 exactly. The
+  SDK-default strategy never hedges writes, even on multi-master
+  accounts. Users who want write hedging must construct an explicit
+  `HedgingStrategy` and call
+  `with_multi_write_region_hedge()` (see §13). Rationale: write hedging
+  on multi-master can amplify 409 / 412 surface area (see §13.1) and is
+  non-obvious to operators — it must be a deliberate opt-in, not an
+  SDK-default behavior that activates implicitly the moment the account
+  becomes MM.
 
 **Lifecycle** — the SDK-default strategy is dynamic with the account:
 
@@ -547,20 +609,32 @@ short-circuits the orchestrator before the primary request is sent.
 > ([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/Microsoft.Azure.Cosmos/src/Routing/AvailabilityStrategy/AvailabilityStrategy.cs)):
 > threshold = `min(1000ms, RequestTimeout / 2)`, step = `500ms`, write
 > hedging disabled. PPCB on its own does not auto-enable hedging, but PPAF
-> implicitly enables PPCB.
+> implicitly enables PPCB. There is no runtime opt-out for the SDK
+> default — users must set a `RequestOptions.AvailabilityStrategy =
+> AvailabilityStrategy.DisabledStrategy()` per request.
 >
 > **Java v4 SDK** — `ThresholdBasedAvailabilityStrategy` ships with
 > `DEFAULT_THRESHOLD = 500ms` and `DEFAULT_THRESHOLD_STEP = 100ms`
 > ([source](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/ThresholdBasedAvailabilityStrategy.java#L15-L16));
 > PPAF auto-enables this default (gated by
 > `COSMOS.IS_PER_PARTITION_AUTOMATIC_FAILOVER_ENABLED`, opt-out via
-> `COSMOS.IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF`).
+> `COSMOS.IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF`). Java
+> notably has **no write-hedging flag at all** —
+> `ThresholdBasedAvailabilityStrategy` is read-only by design; write
+> hedging in Java is gated by separate system properties outside the
+> strategy type itself. Java also exposes a no-arg constructor that
+> uses the built-in defaults.
 >
 > **Rust driver** — follows .NET's threshold formula
 > (`min(1000ms, request_timeout / 2)` / `500ms`) and .NET's activation
 > trigger (PPAF only, not PPCB) so behavior matches the dominant SDK.
-> Users targeting cross-SDK latency parity with Java should explicitly
-> configure `500ms / 100ms`.
+> Unlike .NET, Rust **does** expose a runtime opt-out for the SDK
+> default (see §4.4 `AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT` and the
+> `DriverOptions::disable_sdk_default_hedging` builder knob), aligning
+> with Java's opt-out ergonomics. Write hedging is exposed on the same
+> `HedgingStrategy` type via `with_multi_write_region_hedge()` rather
+> than a separate strategy class. Users targeting cross-SDK latency
+> parity with Java should explicitly configure `500ms / 100ms`.
 
 ```rust
 // In cosmos_driver.rs, during account properties sync
@@ -578,11 +652,15 @@ if user_strategy.is_none() && ppaf_enabled {
     let default_strategy = HedgingStrategy::sdk_default(
         threshold,
         Duration::from_millis(500),
-        // Phase 1: enable write hedging by default when the account is
-        // multi-master; it is a no-op on single-master accounts because
-        // should_hedge() rejects writes there (see §5.1).
-        /* enable_multi_write_region_hedge */
-        account_properties.can_use_multiple_write_locations(),
+        // Match .NET exactly: write hedging is OFF in the SDK-default
+        // strategy even on multi-master accounts. Users who want write
+        // hedging must opt in explicitly via
+        // `HedgingStrategy::with_multi_write_region_hedge()`.
+        // Rationale: write hedging on multi-master can amplify 409/412
+        // surface area (see §13.1) and is non-obvious to operators —
+        // it must be a deliberate opt-in, not an SDK-default behavior
+        // that activates implicitly the moment the account becomes MM.
+        /* enable_multi_write_region_hedge */ false,
     );
     // Mark as SDK-default so diagnostics can distinguish it from a
     // user-configured strategy (mirrors .NET's IsSDKDefaultStrategyForPPAF).
@@ -638,35 +716,43 @@ requiring no changes to the endpoint resolution logic.
 
 ### 6.4 Execution Flow (Pseudocode)
 
-> **Important orchestration note:** The pseudocode below is presented as a
-> spawn loop followed by a drain loop for readability, but a faithful
-> implementation must **interleave result observation with the spawn timer**
-> the way .NET does. .NET uses a single `do { Task.WhenAny(requestTasks) }
-> while (winner == hedgeTimer && !winner.IsCompleted)` per iteration, so a
-> final result observed mid-fan-out short-circuits the loop and prevents
-> launching unnecessary hedges. The two-phase form below would launch every
-> hedge regardless of when a winner appears, defeating the cancellation
-> guarantee. The Rust impl SHOULD use a single `tokio::select!` per spawn
-> step that races (a) the spawn-delay timer, (b) the next completion from
-> the in-flight `FuturesUnordered`, and (c) the parent cancellation token,
-> so a final result during the fan-out cancels remaining spawns immediately.
+The orchestrator interleaves spawn-timer waits with completion observation in
+a single loop, so a final result observed mid-fan-out short-circuits the spawn
+schedule. This faithfully translates the .NET pattern
+(`do { Task.WhenAny(requestTasks) } while (winner == hedgeTimer && !winner.IsCompleted)`)
+into Tokio idioms: `tokio::select!` races the spawn timer, the next completion
+from a shared `FuturesUnordered`, and the parent cancellation token.
+
+> **Why this shape (not a sequential spawn loop followed by a drain loop):**
+> a two-phase form would launch every hedge regardless of when a winner
+> appears — the spawn loop's `cancel.cancelled()` arm only fires *after* the
+> drain loop sets the token, by which point all hedges have already been
+> spawned. The single-loop form below ensures `cancel.cancel()` runs the
+> instant a final result is observed, even while later spawn timers are
+> still pending.
 
 ```rust
-async fn execute_with_hedging(...) -> Result<CosmosResponse> {
-    let regions = get_applicable_regions(&account_state, &excluded_regions, is_read);
+async fn execute_with_hedging(
+    strategy: &HedgingStrategy,
+    options: &OperationOptions,
+    parent_cancel: &CancellationToken,
+    /* ... all other pipeline params ... */
+) -> Result<CosmosResponse> {
+    let regions = get_applicable_regions(&account_state, &options.excluded_regions, is_read);
     if regions.len() <= 1 {
         // No alternate region — fall through to non-hedged path
-        return execute_operation_pipeline(...).await;
+        return execute_operation_pipeline(options, /* ... */).await;
     }
 
-    let cancel = CancellationToken::new();
-    let (winner_tx, winner_rx) = tokio::sync::oneshot::channel();
-
-    // Shared state: collects JoinHandles for cleanup
-    let mut tasks: Vec<JoinHandle<HedgeOutcome>> = Vec::with_capacity(regions.len());
+    // `cancel` is a child of the application's cancellation token: cancelling
+    // it tears down all in-flight hedges; cancelling the parent also cancels
+    // every hedge (and is re-raised to the caller below).
+    let cancel = parent_cancel.child_token();
+    let mut remaining: FuturesUnordered<JoinHandle<HedgeOutcome>> = FuturesUnordered::new();
+    let mut last_transient: Option<HedgeOutcome> = None;
 
     for request_number in 0..regions.len() {
-        // ── Gate: wait for threshold/step before launching ──
+        // ── Compute the wait until *this* hedge should be spawned ──
         let wait = if request_number == 0 {
             Duration::ZERO  // Primary fires immediately
         } else if request_number == 1 {
@@ -674,92 +760,122 @@ async fn execute_with_hedging(...) -> Result<CosmosResponse> {
         } else {
             strategy.threshold_step()
         };
+        let spawn_at = tokio::time::Instant::now() + wait;
 
-        tokio::select! {
-            // Timer fires → launch this hedge
-            _ = tokio::time::sleep(wait) => {}
-            // A previous request already won → stop launching
-            _ = cancel.cancelled() => break,
+        // ── Single-select loop: race spawn timer ↔ next completion ↔ parent cancel ──
+        // Skip the inner loop entirely on `request_number == 0` (wait == 0)
+        // so the primary spawns without an extra scheduler round-trip.
+        if !wait.is_zero() {
+            loop {
+                tokio::select! {
+                    biased;
+
+                    // Application cancellation: tear down hedges, but
+                    // first attempt to harvest the most recent in-flight
+                    // hedge's result so its trace/diagnostics survive into
+                    // the returned error (mirrors .NET's
+                    // `if (applicationProvidedCancellationToken.IsCancellationRequested)
+                    //  { await (Task<HedgingResponse>)completedTask; }`).
+                    _ = parent_cancel.cancelled() => {
+                        cancel.cancel();
+                        return Err(harvest_app_cancel_error(
+                            &mut remaining,
+                            last_transient.take(),
+                            strategy,
+                            &regions,
+                        ).await);
+                    }
+
+                    // A previously-spawned hedge completed. If it's a final
+                    // result we cancel the rest and return immediately —
+                    // never spawning the hedges that were still pending.
+                    Some(join_result) = remaining.next(), if !remaining.is_empty() => {
+                        if let Some(response) = handle_completion(
+                            join_result,
+                            &cancel,
+                            &mut last_transient,
+                            &regions,
+                            strategy,
+                        ) {
+                            return Ok(response);
+                        }
+                        // Transient → keep waiting for the same spawn deadline
+                        // (note `spawn_at` is unchanged, so the timer naturally
+                        //  shrinks as elapsed time accumulates).
+                    }
+
+                    // Spawn timer fires → break inner loop and launch the hedge.
+                    _ = tokio::time::sleep_until(spawn_at) => break,
+                }
+            }
         }
 
-        // ── Clone operation context for this hedge ──
+        // ── Build per-hedge OperationOptions ──
         let hedge_options = if request_number == 0 {
             options.clone()  // Primary: no region override
         } else {
+            // Compose the user's *original* exclusion set with the per-hedge
+            // pin so the hedge can never widen routing back into a region the
+            // user explicitly opted out of. `regions` is already post-filter,
+            // so we must add the originals back in explicitly.
+            let mut exclude: Vec<Region> = options
+                .excluded_regions
+                .as_ref()
+                .map(|er| er.regions().to_vec())
+                .unwrap_or_default();
+            for (i, r) in regions.iter().enumerate() {
+                if i != request_number && !exclude.contains(r) {
+                    exclude.push(r.clone());
+                }
+            }
             let mut opts = options.clone();
-            // Exclude all regions except the target
-            let exclude: Vec<Region> = regions.iter()
-                .enumerate()
-                .filter(|(i, _)| *i != request_number)
-                .map(|(_, r)| r.clone())
-                .collect();
             opts.excluded_regions = Some(ExcludedRegions::new(exclude));
             opts
         };
 
+        // ── Spawn the hedge ──
         let cancel_child = cancel.child_token();
+        let target_region = regions[request_number].clone();
         let task = tokio::spawn(async move {
             tokio::select! {
-                result = execute_operation_pipeline(
-                    &hedge_options,
-                    /* ... all other params ... */
-                ) => {
-                    HedgeOutcome {
-                        request_number,
-                        region: regions[request_number].clone(),
-                        result,
-                    }
+                result = execute_operation_pipeline(&hedge_options, /* ... */) => {
+                    HedgeOutcome { request_number, region: target_region, result }
                 }
                 _ = cancel_child.cancelled() => {
                     HedgeOutcome {
                         request_number,
-                        region: regions[request_number].clone(),
+                        region: target_region,
                         result: Err(cancelled_error()),
                     }
                 }
             }
         });
-        tasks.push(task);
+        remaining.push(task);
     }
 
-    // ── Race: collect results as they complete ──
-    let mut remaining: FuturesUnordered<_> = tasks.into_iter().collect();
-    let mut last_transient: Option<HedgeOutcome> = None;
-
+    // ── All hedges spawned — drain remaining completions ──
     while let Some(join_result) = remaining.next().await {
-        let outcome = match join_result {
-            Ok(o) => o,
-            Err(join_err) => {
-                // Task panicked — treat as transient failure
-                tracing::error!("hedged task panicked: {join_err}");
-                continue;
-            }
-        };
-
-        match &outcome.result {
-            Ok(response) if is_final_result(response.status()) => {
-                // ── Winner: cancel all others, return ──
-                cancel.cancel();
-                let mut response = outcome.result.unwrap();
-                response.attach_hedge_diagnostics(HedgeDiagnostics {
-                    strategy_config: strategy.clone(),
-                    regions_contacted: regions[..=outcome.request_number].to_vec(),
-                    response_region: outcome.region,
-                });
-                return Ok(response);
-            }
-            Ok(_) => {
-                // Transient response — keep waiting for other hedges
-                last_transient = Some(outcome);
-            }
-            Err(_) => {
-                // Error — keep waiting
-                last_transient = Some(outcome);
-            }
+        if let Some(response) = handle_completion(
+            join_result,
+            &cancel,
+            &mut last_transient,
+            &regions,
+            strategy,
+        ) {
+            return Ok(response);
+        }
+        if parent_cancel.is_cancelled() {
+            cancel.cancel();
+            return Err(harvest_app_cancel_error(
+                &mut remaining,
+                last_transient.take(),
+                strategy,
+                &regions,
+            ).await);
         }
     }
 
-    // ── All tasks completed without a final result ──
+    // ── No hedge produced a final result ──
     cancel.cancel();
     match last_transient {
         Some(outcome) => outcome.result,
@@ -769,19 +885,118 @@ async fn execute_with_hedging(...) -> Result<CosmosResponse> {
         )),
     }
 }
+
+/// Inspects a completed hedge. Returns `Some(response)` when this is a final
+/// winner (caller must return it); returns `None` when the outcome was
+/// transient or a panic (caller keeps racing).
+fn handle_completion(
+    join_result: Result<HedgeOutcome, JoinError>,
+    cancel: &CancellationToken,
+    last_transient: &mut Option<HedgeOutcome>,
+    regions: &[Region],
+    strategy: &HedgingStrategy,
+) -> Option<CosmosResponse> {
+    let outcome = match join_result {
+        Ok(o) => o,
+        Err(join_err) => {
+            tracing::error!("hedged task panicked: {join_err}");
+            return None;
+        }
+    };
+    match &outcome.result {
+        Ok(response) if is_final_result(response.status()) => {
+            // Cancel the rest *immediately* — this is the load-bearing call
+            // that the single-loop spawn shape exists to make timely.
+            cancel.cancel();
+            let mut response = outcome.result.unwrap();
+            response.attach_hedge_diagnostics(HedgeDiagnostics {
+                strategy_config: strategy.clone(),
+                regions_contacted: regions[..=outcome.request_number].to_vec(),
+                response_region: outcome.region,
+            });
+            Some(response)
+        }
+        _ => {
+            *last_transient = Some(outcome);
+            None
+        }
+    }
+}
+
+/// Builds the application-cancellation error after harvesting whatever
+/// in-flight hedges can complete within a short bounded window. Any
+/// outcome (success or transient) collected in the window contributes
+/// its diagnostics to the returned error so the user-visible
+/// `OperationCanceledException` carries the trace from the hedge that
+/// was furthest along — mirroring the .NET v3 behavior where the
+/// orchestrator awaits the faulted task before re-raising.
+async fn harvest_app_cancel_error(
+    remaining: &mut FuturesUnordered<JoinHandle<HedgeOutcome>>,
+    mut last: Option<HedgeOutcome>,
+    strategy: &HedgingStrategy,
+    regions: &[Region],
+) -> azure_core::Error {
+    // Bounded so a stuck hedge can't extend user-visible cancel latency.
+    const HARVEST_WINDOW: Duration = Duration::from_millis(50);
+    let deadline = tokio::time::Instant::now() + HARVEST_WINDOW;
+
+    while let Ok(Some(join_result)) = tokio::time::timeout_at(
+        deadline,
+        remaining.next(),
+    ).await {
+        if let Ok(outcome) = join_result {
+            last = Some(outcome);
+        }
+    }
+
+    let mut err = application_cancelled_error();
+    if let Some(outcome) = last {
+        err.attach_hedge_diagnostics(HedgeDiagnostics {
+            strategy_config: strategy.clone(),
+            regions_contacted: regions[..=outcome.request_number].to_vec(),
+            response_region: outcome.region,
+        });
+    }
+    err
+}
 ```
+
+#### 6.4.1 Ownership & Sharing
+
+Because each hedge is spawned via `tokio::spawn`, every captured value must
+be `'static + Send`. The orchestrator achieves this without per-iteration
+heap allocation as follows:
+
+| Value | Sharing strategy |
+|---|---|
+| `regions: Arc<Vec<Region>>` | Cloned (cheap `Arc::clone`) into each spawn for diagnostics; the per-hedge target is moved as an owned `Region`. |
+| Pipeline parameters (`Arc<HedgeContext>`) | Bundled into a single `Arc` shared across spawns; each spawn clones the `Arc`. |
+| `OperationOptions` (per hedge) | Cloned per spawn — the body is `Bytes` (cheap) and the rest is small `Copy`/`Arc` data. |
+| `cancel_child: CancellationToken` | Constructed per spawn via `cancel.child_token()` and moved in. |
+| `parent_cancel: &CancellationToken` | Borrowed only by the orchestrator itself — never crosses a spawn boundary. |
+| `remaining: FuturesUnordered<JoinHandle<_>>` | Owned by the orchestrator; never shared. |
+
+This keeps the orchestrator lock-free (no `Mutex`/`RwLock` introduced for
+hedging state), matching the design principles in §3.3.
 
 ### 6.5 Key Invariants
 
 1. **At most `regions.len()` concurrent requests** — one per region.
 2. **Primary request fires immediately** — zero additional latency on the happy path.
-3. **Hedge timers are interruptible** — if a winner arrives during a timer wait,
+3. **Hedge timers can be preempted** — if a winner arrives during a timer wait,
    no further hedges are launched.
 4. **Cancellation is cooperative** — `CancellationToken` is checked at `select!`
    points inside `execute_operation_pipeline()` and at the transport layer via
    deadline enforcement.
 5. **Single writer to diagnostics** — only the winning response gets hedge
    diagnostics attached.
+6. **App-cancel preserves hedge trace** — when the application's cancellation
+   token fires, the orchestrator harvests in-flight hedges within a bounded
+   window (`HARVEST_WINDOW = 50ms`) and attaches the most-advanced hedge's
+   diagnostics to the returned `application_cancelled_error()`. This mirrors
+   .NET v3's `await (Task<HedgingResponse>)completedTask;` behavior so users
+   see the trace from the request that was actually in flight when they
+   cancelled.
 
 ---
 
@@ -951,7 +1166,7 @@ regional outage, defeating the hedge's purpose and inflating RU.
 This is a **cross-cutting invariant** that any new retry trigger added
 after Phase 1 must respect.
 
-### 8.4 File Layout
+### 8.5 File Layout
 
 New files:
 ```
@@ -1002,6 +1217,25 @@ Because hedges run in parallel, a hedge to Region B may use a session token from
 Region A. If that fails with 404/1002, the pipeline's session retry logic handles
 it internally — this is indistinguishable from normal session retry behavior.
 
+**Concurrent capture from competing hedges.** Even after the orchestrator
+cancels losing hedges and returns the winner, a losing hedge's transport
+future may already have received a response in flight (cancellation is
+best-effort — see §14.2). If both the winner and a losing hedge call back
+into `SessionManager` to record their captured tokens, the order in which
+the writes land is non-deterministic. The hedging design relies on
+**`SessionManager` updates being commutative under max-LSN merge**: each
+write merges the incoming token with the stored token by taking the higher
+LSN per-partition. Under that contract, late writes from a losing hedge are
+safe (they can only advance the stored LSN, never regress it) and the next
+operation always observes a token at least as fresh as the winner's.
+
+This is a precondition on the existing `SessionManager` API — if it ever
+moves to a last-write-wins model, the hedging orchestrator must instead
+suppress session capture on hedges that observed cancellation before
+STAGE 4 completed (or capture into a per-hedge buffer that only the winner
+flushes). This invariant is verified by the unit tests in §15.1
+(`session_capture_under_cancellation`).
+
 ### 9.3 Throughput Control
 
 Each hedged request independently checks the throughput control group budget.
@@ -1010,6 +1244,36 @@ transport. Users should account for this when setting throughput control limits.
 
 The throughput control snapshot is acquired per-attempt in the operation pipeline
 (STAGE 3), so concurrent hedges will see the latest budget.
+
+**Pathological interaction under TC saturation.** When the throughput control
+group is saturated, every hedge will be throttled to 429 by the local TC gate
+before reaching the network. The orchestrator classifies 429 as transient
+(see §7.2), drains every hedge, and returns the last 429 — i.e., under TC
+saturation hedging actively makes the experience **worse** by multiplying
+TC pressure and adding orchestration latency on top of the throttle.
+
+This is amplified by the SDK-default auto-enable on PPAF accounts (§5.2):
+a PPAF-enabled account under load gets hedging by default, which it cannot
+opt out of without explicitly setting `AvailabilityStrategy::Disabled` at
+the operation or client level.
+
+**Mitigations the implementation must adopt:**
+
+1. **Sizing guidance (operator-facing docs).** State explicitly that the
+   maximum RU multiplier introduced by hedging is `regions.len()`, and TC
+   group budgets should be sized with that headroom in mind when hedging
+   is enabled.
+2. **Short-circuit on local TC 429.** If the primary returns a TC-gate 429
+   *before* reaching transport (i.e., the throttle is local rather than
+   service-side), the orchestrator SHOULD treat that as a "do not fan out"
+   signal — every hedge will hit the same gate. Distinguish this from a
+   service-side 429 (which is genuinely region-local and benefits from
+   hedging) via the response source field.
+3. **Optional: exempt hedges from TC accounting.** Speculative-hedge RU is
+   not user-attributable; the loser's RU is wasted by definition. A future
+   option (`HedgingStrategy::with_throughput_control_exemption`) MAY skip
+   TC accounting for hedge requests. Out of scope for Phase 1; tracked as
+   a follow-up.
 
 ### 9.4 End-to-End Deadline
 
@@ -1227,17 +1491,29 @@ hedging strategy.
 #### 11.3.1 Availability-strategy resolution priority
 
 The driver picks the effective strategy in the following priority order
-(highest first), mirroring the .NET resolution model:
+(highest first), mirroring the .NET resolution model and extending it with
+explicit env-var support:
 
 | Priority | Source | Notes |
 |:---:|---|---|
 | 1 | Operation `availability_strategy` (incl. `Disabled`) | Per-request override |
 | 2 | Client / runtime `availability_strategy` | Applies to all requests |
-| 3 | **SDK default** (PPAF-driven, see §5.2) | Auto-enabled when account has PPAF on and no user strategy is set. PPCB alone does not auto-enable hedging. |
-| 4 | None | Hedging off |
+| 3 | Environment variables (§4.4) | Deploy-time intent; overrides SDK default but not code-level config |
+| 4 | **SDK default** (PPAF-driven, see §5.2) | Auto-enabled when account has PPAF on and no user strategy is set. PPCB alone does not auto-enable hedging. |
+| 5 | None | Hedging off |
 
-A user-configured `AvailabilityStrategy::Disabled` at any layer suppresses the
-SDK default — explicit opt-out always wins.
+A user-configured `AvailabilityStrategy::Disabled` at any layer suppresses every
+lower layer (including the SDK default and env-var-derived strategy) — explicit
+opt-out always wins.
+
+The **SDK-default opt-out** (`DriverOptions::disable_sdk_default_hedging`
+or `AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT=true`, see §4.4) is a
+narrower kill-switch: it suppresses **only** priority 4 (the PPAF-driven
+SDK default) without affecting priorities 1–3. Users who want PPAF
+without the auto-enabled hedging strategy should use this flag rather
+than setting `AvailabilityStrategy::Disabled` at the client level (which
+would also block per-operation `Hedging(..)` overrides). Mirrors Java
+v4's `COSMOS.IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF=false`.
 
 ---
 
@@ -1325,7 +1601,11 @@ fn should_hedge_write(
 ) -> bool {
     strategy.multi_write_region_hedge_enabled()
         && account_state.multiple_write_locations_enabled
-        && account_state.preferred_write_endpoints.len() > 1
+        // Use the post-`ExcludeRegions` applicable list (matches §5.1
+        // row 7) — a user who has excluded all-but-one write region at
+        // the operation level should correctly skip hedging even on a
+        // multi-region MM account.
+        && applicable_write_endpoints(account_state, &operation.excluded_regions).len() > 1
 }
 ```
 
@@ -1346,6 +1626,17 @@ cancelled. The hedge's transport request may or may not have been sent (depends 
 timing). Cancellation is best-effort — an in-flight HTTP request cannot be aborted
 mid-stream, but the response will be discarded.
 
+> **Divergence from .NET on application-cancel diagnostics.** When the
+> *application* cancellation token fires mid-fan-out, .NET awaits the
+> most-recently-completed task with no timeout (relying on it being
+> already completed) before re-raising. The Rust orchestrator instead
+> harvests in-flight hedges within a bounded `HARVEST_WINDOW = 50ms`
+> window (see §6.4 / §6.5 invariant #6). This bounds user-visible
+> cancel latency under a stuck transport future at the cost of
+> occasionally returning slightly less-rich diagnostics than .NET would.
+> Documented as best-effort: "diagnostics-on-cancel are attached when a
+> hedge has produced a result within 50ms of cancellation."
+
 ### 14.3 Deadline Interplay
 
 If the end-to-end deadline is shorter than the hedging threshold, hedging has no
@@ -1363,12 +1654,26 @@ to leave time for the hedge to complete.
 
 ### 14.4 Region List Changes During Hedging
 
-The region list is captured at the start of `execute_with_hedging()`. If account
-metadata refreshes during execution (e.g., a `RefreshAccountProperties` effect),
-the region list for **already-launched** hedges is unchanged. The pipeline's
-`resolve_endpoint()` within each hedge will use the latest `LocationSnapshot`,
-which may reflect updated regions. This is safe because `ExcludeRegions` only
-*hints* at routing — `resolve_endpoint()` always falls back to available endpoints.
+The region list is captured at the start of `execute_with_hedging()`. If
+account metadata refreshes during execution (e.g., a `RefreshAccountProperties`
+effect), the region list for **already-launched** hedges is unchanged — each
+hedge keeps the `ExcludeRegions` set it was spawned with.
+
+Per the §8.4 contract, `ExcludeRegions` is a **hard constraint** inside each
+hedge: `resolve_endpoint()` does *not* fall back to an excluded region even
+if the metadata refresh has marked the only allowed region unavailable. If
+an in-flight hedge ends up with no eligible endpoint, the retry layer
+returns the terminal "all eligible regions excluded" condition (§8.4 item
+2) as the result of that hedge.
+
+**How the orchestrator handles that terminal condition.** The "all
+eligible regions excluded" result from a single hedge is classified as
+transient (§7.2) — it does *not* short-circuit the orchestrator. The
+remaining hedges (each pinned to a different region) continue racing, and
+whichever one produces a final result wins. If *every* hedge terminates
+this way, §14.1 applies (return the last-seen transient response). This
+preserves the per-hedge region-pinning invariant under metadata churn
+without sacrificing availability.
 
 ---
 
@@ -1394,6 +1699,8 @@ which may reflect updated regions. This is safe because `ExcludeRegions` only
 | `hedging_config_validation` | Zero threshold panics |
 | `hedging_config_step_defaults` | Step inherits threshold |
 | `region_exclusion_for_hedge_n` | Correct ExcludeRegions per hedge |
+| `exclude_regions_honored_by_every_retry_trigger` | For each retry trigger class — PPAF write retry, PPCB markdown failback, transport-layer 503, throttling 429, session-token 1002 — fault-inject the trigger inside a hedge and assert the retry attempt does **not** route to a region listed in the hedge's `ExcludeRegions`. Encodes the §8.4 cross-cutting invariant; new retry triggers added in later phases must extend this test. |
+| `app_cancel_preserves_hedge_diagnostics` | Cancel the application token mid-fan-out; assert the returned error carries `HedgeDiagnostics` from the most-advanced in-flight hedge (covers §6.5 invariant #6). |
 
 ### 15.2 Integration Tests (Fault Injection)
 
@@ -1410,6 +1717,7 @@ which may reflect updated regions. This is safe because `ExcludeRegions` only
 | `hedging_with_ppcb` | 503 on Region A reads; PPCB enabled | PPCB and hedging both apply; circuit breaker tripped AND hedge succeeds |
 | `hedging_cancels_losers` | Delay on Region A | Region B wins; verify Region A task cancelled (hit_count ≤ expected) |
 | `hedging_failback_to_primary` | Region A initially slow, then fast | First few reads hedged; after threshold tightened, primary wins again |
+| `hedging_exclude_regions_under_503_retry` | Region B inside hedge returns 503 (triggers transport retry) while Region C is healthy and excluded by that hedge's `ExcludeRegions` | Hedge B's retry stays pinned to Region B (does NOT fall back to Region C) — fault-injection counterpart to the §8.4 invariant unit test. |
 
 ### 15.3 Multi-Region Live Tests
 
@@ -1425,90 +1733,148 @@ Gated by `test_category = "multi_region"`:
 
 ## 16. Implementation Phases
 
-### Phase 1: Read + Write Hedging + PPAF Default Enablement (MVP)
+This section is the execution plan for the phased rollout introduced in §1
+("Operation-type scope (phased)"). Each phase below explicitly maps to the
+§1 operation-scope table rows it lights up and the §1 Goals it closes, so
+the phases are auditable against the spec's own goal list rather than
+drifting into a separate scope.
+
+| §1 Goal | Phase that closes it |
+|---|---|
+| **G1. Reduce tail latency** (p99/p99.9 bounded by `threshold + RTT`) | Phase 1 (point reads + opt-in writes + Query + ReadMany + ChangeFeed — the full document-scoped surface that .NET v3 and Java v4 already hedge). Phase 2 widens to metadata. |
+| **G2. Transparent to application** (single `CosmosResponse`; opt-in diagnostics) | Phase 1 (`HedgeDiagnostics`, `DiagnosticsContext` integration). Phase 2 extends the diagnostics surface to cover pre-hedge region contacts (see Phase 2 caveat). |
+| **G3. Configurable** (threshold, step, write-hedging opt-in at client AND per-operation levels) | Phase 1 (client-level via `DriverOptions::availability_strategy`; per-operation override via `OperationOptions::availability_strategy`; `AvailabilityStrategy::Disabled` sentinel; env-var fallback; SDK-default opt-out). |
+| **G4. Complementary to failover** (composes with PPAF/PPCB without interference) | Phase 1 (PPAF auto-enable, lock-free `LocationStateStore` interaction, §9.1). |
+| **G5. Resource-safe** (losing hedges cancelled promptly to bound RU/transport waste) | Phase 1 (single-loop `tokio::select!` orchestrator + `CancellationToken` child tree, §6.4 / §12). |
+
+§1 Non-Goals (single-region hedging, automatic threshold tuning) remain
+out of scope for every phase below; adaptive-threshold work is tracked in
+**Future** but is explicitly labelled as a *non-goal* of the current spec.
+
+### Phase 1: Document-scoped Hedging + PPAF Default Enablement (MVP)
+
+**Operation rows from §1 covered (Phase 1 column) — matches .NET v3 and Java v4:**
+- Document point reads (`GetItem`)
+- Document point writes on **multi-master** accounts: `CreateItem`,
+  `ReplaceItem`, `UpsertItem`, `DeleteItem`, `PatchItem` — eligible only
+  when the user has explicitly opted in via
+  `HedgingStrategy::with_multi_write_region_hedge()` (matches .NET; see
+  §5.2 / §13).
+- `QueryItems` (single- and cross-partition)
+- `ReadMany`
+- Change feed (`ReadFeed`)
+
+All five categories travel as `ResourceType.Document` over the wire and
+are therefore covered by the same `should_hedge()` predicate (§5.1
+row 3, Phase-1 allowed set = `{Document}`). This matches .NET v3's
+`ShouldHedge` exactly and aligns with the Java v4 hedging surface.
 
 **Scope:**
-- `HedgingStrategy` and `AvailabilityStrategy` types
-- `should_hedge()` covering document point reads and document point
-  writes on multi-master accounts
-- `is_final_result()`
-- `execute_with_hedging()` orchestrator
-- `HedgeDiagnostics`
-- Integration into `cosmos_driver.rs`
-- Cancellation via `CancellationToken`
-- `enable_multi_write_region_hedge` configuration knob (with
-  documentation of 409 / 412 risk for non-idempotent upserts; see §13)
+- `HedgingStrategy` and `AvailabilityStrategy` types (§4.1, §4.2).
+- `should_hedge()` covering the operation set above (§5.1; phase-allowed
+  set = `{Document}` per §5.1 row 3 footnote).
+- `is_final_result()` (§7.1).
+- `execute_with_hedging()` orchestrator with single-loop spawn+observe
+  shape (§6.4) and `harvest_app_cancel_error` for trace-preserving
+  application cancellation (§6.4 / §6.5 invariant #6).
+- `HedgeDiagnostics` and `DiagnosticsContext` integration (§10).
+- Integration into `cosmos_driver.rs` (§8.1).
+- Cooperative cancellation via `CancellationToken` child tree (§12);
+  loser hedges observe cancellation at every pipeline `select!` point
+  → satisfies **G5**.
+- `enable_multi_write_region_hedge` configuration knob with explicit
+  documentation of 409 / 412 amplification risk for non-idempotent
+  upserts (§13).
+- **Per-operation override surface** (satisfies **G3**): `OperationOptions::availability_strategy`
+  (§4.3) accepting `Some(AvailabilityStrategy::Hedging(..))`,
+  `Some(AvailabilityStrategy::Disabled)`, or `None`; layered resolution
+  per §11.3 / §11.3.1.
 - **Auto-enable the SDK-default hedging strategy when PPAF is enabled
-  on the account and the user has not configured a strategy** (see
-  §5.2). The SDK default covers reads always, and writes when the
-  account is multi-master. **Enabling PPCB alone does not auto-enable
-  hedging** (matches .NET).
+  on the account and the user has not configured a strategy** (§5.2).
+  The SDK default covers reads on multi-region accounts; writes are NOT
+  covered by the SDK default — write hedging requires explicit opt-in
+  on a user-constructed `HedgingStrategy` (matches .NET exactly).
+  PPCB alone does **not** auto-enable hedging.
+- **SDK-default opt-out** at the runtime layer:
+  `DriverOptions::disable_sdk_default_hedging(true)` and the
+  `AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT` env var (§4.4) — mirrors
+  Java v4's `IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF` opt-out.
 - Lifecycle handling: enable on account-properties refresh when PPAF
-  appears, remove when PPAF goes away again. Re-evaluate the
-  multi-master flag on each refresh so write coverage tracks the
-  account state.
-- Unit tests + fault injection tests for both reads and writes
-  (including PPAF-on, PPCB-on without PPAF (must NOT activate), and
-  PPAF+PPCB activation matrix coverage; single-master vs. multi-master
-  write coverage)
-- Environment variable support
+  appears, remove when PPAF goes away again. The SDK-default strategy
+  itself does not change shape based on the multi-master flag.
+- Environment variable support (§4.4) at the runtime level (priority 3
+  in §11.3.1).
+- **Continuation-token semantics for Query / ReadMany / ChangeFeed:**
+  hedging operates per-page — each page request is an independent
+  hedge fan-out, and the winning page's continuation token is forwarded
+  to the next page. This matches the .NET behavior, where the
+  `AvailabilityStrategy` operates at the `RequestInvokerHandler` level
+  and each request (including paged ones) goes through its own handler
+  pipeline.
+- Unit + fault-injection tests per §15 covering: PPAF-on, PPCB-on
+  without PPAF (must NOT activate), PPAF+PPCB activation matrix,
+  single-master vs. multi-master write coverage, the §8.4 cross-cutting
+  `ExcludeRegions` invariant, and the §6.5 invariant #6 app-cancel
+  diagnostics preservation.
+
+**§1 Goals closed at end of Phase 1:** G2, G3, G4, G5 in full; G1 for
+the full document-scoped operation surface (parity with .NET v3 / Java v4).
+
+**Out of scope this phase (deferred to Phase 2 / Future per §1 table):**
+Metadata operations (Database / Container / Offer / Throughput), stored
+procedures / triggers / UDFs, adaptive threshold tuning.
 
 **Deliverables:**
-- New files: `hedging.rs`, `hedging_diagnostics.rs`
-- Modified: `cosmos_driver.rs`, `operation_options.rs`, `mod.rs`
+- New files: `hedging.rs`, `hedging_diagnostics.rs` (see §8.5).
+- Modified: `cosmos_driver.rs`, `operation_options.rs`, `mod.rs`,
+  `diagnostics/mod.rs`.
 
-### Phase 2: Query + ReadMany Hedging
+### Phase 2: Metadata Hedging
 
-**Scope (deferred — design pass required before scheduling):**
-- Extend `should_hedge()` to allow `OperationType::Query` and
-  `OperationType::ReadMany`.
-- Continuation-token semantics: per-page hedging vs. per-operation
-  hedging; how to compose hedge-winner selection with continuation-token
-  forwarding so callers see a consistent paging experience.
-- ReadMany batching: each underlying point read is independently
-  hedge-able today via Phase 1; whole-call hedging needs coordination
-  so that one slow identity does not block the entire batch.
-- Query plan caching interaction: query-plan fetches issued before the
-  orchestrator starts must not skew the hedge fan-out (see Phase 3
-  diagnostics caveat below).
-- Aligns Rust scope with Java v4, which already ships Query / ReadMany
-  hedging.
-
-### Phase 3: Change Feed + Metadata Hedging
+**Operation rows from §1 covered (Phase 2 column):**
+- Metadata operations: Database / Container / Offer / Throughput reads
+  and updates
 
 **Scope (deferred — design pass required before scheduling):**
-- Extend `should_hedge()` to allow `OperationType::ReadFeed`
-  (change feed) and metadata operations (Database / Container / Offer /
-  Throughput reads and updates).
-- Change-feed checkpointing: ensure hedged change-feed reads do not
-  produce divergent continuation tokens; lease-state interactions for
-  change-feed processor scenarios must be documented.
-- Metadata cache invalidation: hedged metadata reads must not produce
-  stale-cache races when one region returns an older view than another;
-  decide whether to prefer the latest `_etag` / resource id or the
-  fastest response.
-- **Diagnostics caveat for multi-phase operations** (applies to Phase 2
-  Query and Phase 3 ChangeFeed alike): Query, ReadMany, and ChangeFeed
-  may contact regions *before* the hedge orchestrator starts — query
-  plan fetches, partition-key-range cache loads, and identity-batching
-  pre-flights all hit the gateway/region in the normal pipeline.
+- Extend `should_hedge()`'s phase-allowed `ResourceType` set to add
+  `Database`, `Container`, `Offer`, `Throughput`.
+- **Metadata cache invalidation:** hedged metadata reads must not
+  produce stale-cache races when one region returns an older view than
+  another; decide whether to prefer the latest `_etag` / resource id or
+  the fastest response.
+- **Diagnostics caveat for multi-phase operations** (already applies to
+  Phase 1 Query / ReadMany / ChangeFeed and extends to Phase 2 metadata
+  operations): these may contact regions *before* the hedge
+  orchestrator starts — query plan fetches, partition-key-range cache
+  loads, identity-batching pre-flights, and metadata-cache priming all
+  hit the gateway/region in the normal pipeline.
   `HedgeDiagnostics::regions_contacted` covers only the regions the
   orchestrator itself fanned out to; pre-hedge contacts show up in the
   surrounding `DiagnosticsContext` (existing per-attempt region trail).
-  Phase 2 / Phase 3 designs must specify how the two surfaces compose
-  so operators can tell hedge-driven contacts apart from setup-driven
-  contacts.
+  Operators must consult both surfaces to tell hedge-driven contacts
+  apart from setup-driven contacts — keeps **G2** intact under
+  multi-stage operations.
+
+**§1 Goals advanced:** G1 widens to metadata. G2 extended with
+pre-hedge / hedge contact disambiguation.
 
 ### Future: Stored Procedures / Triggers / UDFs + Adaptive Thresholds
 
-**Scope:**
-- Stored procedure, trigger, and UDF execution hedging — candidate
-  only. Server-side execution interacts with hedging in non-obvious
-  ways (state mutation, idempotency, body cloning of script payloads)
-  and needs a separate design proposal.
-- Latency histogram tracking per-region
-- Auto-tuning threshold based on p50 / p90 latency
-- Exponential backoff on hedge threshold after repeated hedges
+**Operation rows from §1 covered (Future column):**
+- Stored procedures / triggers / UDFs execution — **🟡 candidate**
+  pending a separate design proposal (server-side state mutation,
+  idempotency, body cloning of script payloads interact with hedging
+  in non-obvious ways).
+
+**Out-of-spec extensions** (explicit §1 Non-Goals — included here only
+to record where the work would land if priorities change):
+- Latency histogram tracking per-region.
+- Auto-tuning threshold based on observed p50 / p90 latency.
+- Exponential backoff on hedge threshold after repeated hedges.
+
+These three items intentionally do **not** advance any §1 Goal — they
+are quality-of-life follow-ups whose addition would constitute a new
+goal and require a spec amendment.
 
 ---
 
@@ -1519,27 +1885,39 @@ Gated by `test_category = "multi_region"`:
    the driver auto-enables the SDK-default hedging strategy (see §5.2).
    This matches .NET v3 exactly. Enabling PPCB alone does **not**
    auto-enable hedging — PPCB is failure-driven and does not by itself
-   signal a desire for latency hedging. Phase 1 covers reads and writes
-   on multi-master accounts; Phase 2 extends to Query and ReadMany;
-   Phase 3 covers Change Feed and metadata (see §16).
+   signal a desire for latency hedging. A runtime opt-out
+   (`DriverOptions::disable_sdk_default_hedging` /
+   `AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT`) is provided for users who
+   want PPAF without the auto-default, mirroring Java v4's
+   `IS_READ_AVAILABILITY_STRATEGY_ENABLED_WITH_PPAF` flag. Phase 1
+   covers the full document-scoped surface (point reads/writes, Query,
+   ReadMany, ChangeFeed) matching .NET v3 / Java v4; Phase 2 extends
+   to metadata (see §16).
 
-2. **Interaction with `EndToEndOperationLatencyPolicy`** — Should the hedge's
-   deadline be the remaining time from the shared deadline, or should each hedge get
-   its own full timeout? Recommendation: shared deadline (matching .NET behavior).
+2. **Interaction with `EndToEndOperationLatencyPolicy`** — **Resolved.**
+   All hedges share the same end-to-end deadline. The deadline is computed
+   once at the start of `execute_with_hedging()` and passed to each pipeline
+   invocation (see §9.4). This matches .NET v3 behavior: late hedges
+   inherit the *remaining* deadline budget rather than getting their own
+   full timeout, which prevents a slow primary from extending the
+   user-visible latency past the configured cap.
 
 3. **RU accounting** — Hedged requests consume RU/s. Should diagnostics report the
    total RU across all hedges, or only the winner's RU? Recommendation: total RU
    (matching .NET SDK's `RequestCharge` which includes all sub-requests).
 
-4. **Race with background failback** — If PPCB transitions a partition to
-   `ProbeCandidate` while a hedging orchestrator is running, the probe request
-   and the hedge may both target the original region. Is this safe?
-   Recommendation: yes — they are independent pipeline invocations with independent
-   retry states. The CAS-based state update is safe under concurrency.
+4. **Race with background failback** — **Resolved.** PPCB transitions to
+   `ProbeCandidate` and a concurrent hedge against the original region are
+   independent pipeline invocations with independent retry states; the
+   shared `LocationStateStore` uses CAS-based updates that are safe under
+   concurrency (see §9.1). No additional coordination is required.
 
-5. **Max concurrent hedges cap** — Should there be a maximum number of concurrent
-   hedges (e.g., 3) even if the account has 5 regions? Recommendation: no cap
-   initially (match .NET SDK). Add a cap option in Phase 3 if needed.
+5. **Max concurrent hedges cap** — **Resolved.** No cap in Phase 1 (matches
+   .NET SDK). The natural ceiling is `regions.len()`. A configurable cap
+   (e.g., `HedgingStrategy::with_max_concurrent_hedges`) MAY be added in
+   Phase 2 if operational data shows the unbounded fan-out is problematic
+   on accounts with many regions; tracked as a follow-up rather than an
+   open design question.
 
 6. **`tokio_util` dependency** — `CancellationToken` requires `tokio_util`. Is this
    acceptable for the driver crate? Alternative: implement a lightweight cancel
