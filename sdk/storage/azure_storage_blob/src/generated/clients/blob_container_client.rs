@@ -14,7 +14,8 @@ use crate::generated::models::{
     BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsResponse, SignedIdentifiers,
+    BlobContainerClientSetMetadataOptions, FilterBlobResponse, ListBlobsResponse,
+    SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -415,7 +416,7 @@ impl BlobContainerClient {
         &self,
         filter_expression: &str,
         options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
+    ) -> Result<Response<FilterBlobResponse, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();

@@ -191,20 +191,20 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     create_test_blob(
         &container_client_1.blob_client(&blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
-        Some(
-            BlockBlobClientUploadOptions::default()
-                .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
-        ),
+        Some(BlockBlobClientUploadOptions {
+            tags: Some(HashMap::from([("foo".to_string(), "bar".to_string())]).into()),
+            ..Default::default()
+        }),
     )
     .await?;
     let blob2_name = get_blob_name(recording);
     create_test_blob(
         &container_client_1.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
-        Some(
-            BlockBlobClientUploadOptions::default()
-                .with_tags(HashMap::from([("fizz".to_string(), "buzz".to_string())])),
-        ),
+        Some(BlockBlobClientUploadOptions {
+            tags: Some(HashMap::from([("fizz".to_string(), "buzz".to_string())]).into()),
+            ..Default::default()
+        }),
     )
     .await?;
     let blob3_name = get_blob_name(recording);
@@ -212,7 +212,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     create_test_blob(
         &container_client_1.blob_client(&blob3_name.clone()),
         Some(RequestContent::from("six seven".as_bytes().into())),
-        Some(BlockBlobClientUploadOptions::default().with_tags(blob3_tags.clone())),
+        Some(BlockBlobClientUploadOptions {
+            tags: Some(blob3_tags.clone().into()),
+            ..Default::default()
+        }),
     )
     .await?;
 
@@ -224,11 +227,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
-    let response = service_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)
-        .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
+    let mut pager = service_client
+        .list_find_blobs_by_tags("\"foo\"='bar'", None)?
+        .into_pages();
+    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+    let blobs = &filter_blob_segment.blobs;
     assert!(
         blobs
             .iter()
@@ -237,11 +240,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
-    let response = service_client
-        .find_blobs_by_tags("\"fizz\"='buzz'", None)
-        .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
+    let mut pager = service_client
+        .list_find_blobs_by_tags("\"fizz\"='buzz'", None)?
+        .into_pages();
+    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+    let blobs = &filter_blob_segment.blobs;
     assert!(
         blobs
             .iter()
@@ -250,11 +253,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     );
 
     // Find "six seven" blob by its tag {"tagged": "true"}
-    let response = service_client
-        .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
-        .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
+    let mut pager = service_client
+        .list_find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)?
+        .into_pages();
+    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+    let blobs = &filter_blob_segment.blobs;
     assert!(
         blobs
             .iter()

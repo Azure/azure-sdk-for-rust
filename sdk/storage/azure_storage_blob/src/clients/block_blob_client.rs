@@ -9,8 +9,9 @@ use crate::{
         BlockBlobClientUploadInternalResultHeaders,
     },
     models::{
-        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
+        extensions::blob_tags_to_string, method_options::BlockBlobClientUploadOptions,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
 };
@@ -132,6 +133,7 @@ impl BlockBlobClient {
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_UPLOAD_PARTITION_SIZE);
         // Construct exhaustively to catch new options.
+        let tags_string = options.tags.as_ref().map(blob_tags_to_string);
         let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
             blob_content_disposition: options.blob_content_disposition.clone(),
@@ -139,7 +141,7 @@ impl BlockBlobClient {
             blob_content_language: options.blob_content_language.clone(),
             blob_content_md5: options.blob_content_md5.clone(),
             blob_content_type: options.blob_content_type.clone(),
-            blob_tags_string: options.blob_tags_string.clone(),
+            blob_tags_string: tags_string.clone(),
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key.clone(),
             encryption_key_sha256: options.encryption_key_sha256.clone(),
@@ -182,7 +184,7 @@ impl BlockBlobClient {
             blob_content_language: options.blob_content_language,
             blob_content_md5: options.blob_content_md5,
             blob_content_type: options.blob_content_type,
-            blob_tags_string: options.blob_tags_string,
+            blob_tags_string: tags_string,
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key,
             encryption_key_sha256: options.encryption_key_sha256,

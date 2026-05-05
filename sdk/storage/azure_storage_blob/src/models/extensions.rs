@@ -8,6 +8,21 @@ use crate::models::{
 };
 use std::collections::HashMap;
 
+/// Converts a `BlobTags` to the `x-ms-tags` header string format (`key=value&key2=value2`).
+pub(crate) fn blob_tags_to_string(tags: &BlobTags) -> String {
+    match &tags.blob_tag_set {
+        Some(tag_set) => tag_set
+            .iter()
+            .filter_map(|tag| match (&tag.key, &tag.value) {
+                (Some(k), Some(v)) => Some(format!("{}={}", k, v)),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("&"),
+        None => String::new(),
+    }
+}
+
 /// Augments the current options bag to only create if the Page blob does not already exist.
 /// # Arguments
 ///
@@ -55,26 +70,6 @@ impl BlockBlobClientUploadOptions<'_> {
     pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
-            ..self
-        }
-    }
-}
-
-/// Augments the current options bag to include blob tags.
-/// # Arguments
-///
-/// * `self` - The options bag to be modified.
-/// * `tags` - A HashMap of key-value pairs representing the blob tags.
-impl BlockBlobClientUploadOptions<'_> {
-    pub fn with_tags(self, tags: HashMap<String, String>) -> Self {
-        let tags_string = tags
-            .iter()
-            .map(|(key, value)| format!("{}={}", key, value))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        Self {
-            blob_tags_string: Some(tags_string),
             ..self
         }
     }

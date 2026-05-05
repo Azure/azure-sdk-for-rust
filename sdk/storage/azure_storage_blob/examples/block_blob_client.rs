@@ -126,12 +126,11 @@ async fn copy_from_url(
     // overwrites with `with_if_not_exists` + `with_tags`.
     let source_blob_name = "copy-source.txt";
     let source_client = container_client.blob_client(source_blob_name);
-    let upload_options = BlockBlobClientUploadOptions::default()
-        .with_if_not_exists()
-        .with_tags(HashMap::from([(
-            "origin".to_string(),
-            "sample".to_string(),
-        )]));
+    let upload_options = BlockBlobClientUploadOptions {
+        if_none_match: Some("*".into()),
+        tags: Some(HashMap::from([("origin".to_string(), "sample".to_string())]).into()),
+        ..Default::default()
+    };
     source_client
         .upload(
             RequestContent::from(b"original source content".to_vec()),

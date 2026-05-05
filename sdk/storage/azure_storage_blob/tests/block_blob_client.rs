@@ -836,7 +836,7 @@ async fn test_upload_block_blob_with_tags(ctx: TestContext) -> Result<(), Box<dy
         &blob_client,
         Some(RequestContent::from(b"tagged blob content".to_vec())),
         Some(BlockBlobClientUploadOptions {
-            blob_tags_string: Some("version=1".to_string()),
+            tags: Some(HashMap::from([("version".to_string(), "1".to_string())]).into()),
             ..Default::default()
         }),
     )
