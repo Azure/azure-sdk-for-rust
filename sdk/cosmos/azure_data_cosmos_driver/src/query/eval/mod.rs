@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore STARTSWITH ENDSWITH LTRIM RTRIM TOSTRING multibyte
+// cspell:ignore STARTSWITH ENDSWITH LTRIM RTRIM TOSTRING multibyte subpaths
 
 //! In-memory query evaluation: match documents against WHERE clauses and apply projections.
 //!
@@ -10,9 +10,18 @@
 
 use std::{cmp::Ordering, collections::HashMap};
 
-use crate::query::ast::*;
+use crate::query::ast::{
+    SqlBinaryOp, SqlCollection, SqlCollectionExpression, SqlLimitSpec, SqlLiteral, SqlOffsetSpec,
+    SqlOrderByClause, SqlPathSegment, SqlQuery, SqlScalarExpression, SqlSelectSpec, SqlSortOrder,
+    SqlTopSpec, SqlUnaryOp, SqlWhereClause,
+};
 use crate::query::common::get_root_alias;
 use crate::query::value::CosmosValue;
+
+// (#16) Built-in scalar function dispatch lives in a sibling file to keep
+// this module focused on AST traversal.
+mod builtins;
+use builtins::eval_function;
 
 /// Error during query evaluation.
 #[derive(Debug, Clone)]
@@ -428,10 +437,16 @@ fn eval_scalar_with_group(
         } => {
             let cond =
                 eval_scalar_with_group(condition, representative, root_alias, params, group)?;
-            if cond.internal_js_truthy() {
-                eval_scalar_with_group(if_true, representative, root_alias, params, group)
-            } else {
-                eval_scalar_with_group(if_false, representative, root_alias, params, group)
+            // (#1) Cosmos SQL `?:` is strict-Boolean — see the matching arm in
+            // `eval_scalar` for the rationale.
+            match cond {
+                CosmosValue::Boolean(true) => {
+                    eval_scalar_with_group(if_true, representative, root_alias, params, group)
+                }
+                CosmosValue::Boolean(false) => {
+                    eval_scalar_with_group(if_false, representative, root_alias, params, group)
+                }
+                _ => Ok(CosmosValue::Undefined),
             }
         }
         SqlScalarExpression::Coalesce { left, right } => {
@@ -995,10 +1010,14 @@ fn eval_scalar(
             if_false,
         } => {
             let cond = eval_scalar(condition, doc, root_alias, params)?;
-            if cond.internal_js_truthy() {
-                eval_scalar(if_true, doc, root_alias, params)
-            } else {
-                eval_scalar(if_false, doc, root_alias, params)
+            // (#1) Cosmos SQL `?:` is strict-Boolean: a non-Boolean condition
+            // (Number, String, Null, Undefined, Array, Object) yields
+            // `Undefined`, which causes the surrounding row to be filtered out.
+            // This is *not* JS truthiness — do not call `internal_js_truthy`.
+            match cond {
+                CosmosValue::Boolean(true) => eval_scalar(if_true, doc, root_alias, params),
+                CosmosValue::Boolean(false) => eval_scalar(if_false, doc, root_alias, params),
+                _ => Ok(CosmosValue::Undefined),
             }
         }
 
@@ -1249,270 +1268,9 @@ fn int_op(left: &CosmosValue, right: &CosmosValue, f: fn(i64, i64) -> i64) -> Co
 }
 
 // ─── Built-in functions ──────────────────────────────────────────────────────
-
-fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosValue, EvalError> {
-    let upper = name.to_ascii_uppercase();
-    match upper.as_str() {
-        // Type checking
-        "IS_DEFINED" => Ok(CosmosValue::Boolean(
-            args.first().is_some_and(|v| !v.is_undefined()),
-        )),
-        "IS_NULL" => Ok(CosmosValue::Boolean(matches!(
-            args.first(),
-            Some(CosmosValue::Null)
-        ))),
-        "IS_BOOL" | "IS_BOOLEAN" => Ok(CosmosValue::Boolean(matches!(
-            args.first(),
-            Some(CosmosValue::Boolean(_))
-        ))),
-        "IS_NUMBER" => Ok(CosmosValue::Boolean(matches!(
-            args.first(),
-            Some(CosmosValue::Number(_) | CosmosValue::Integer(_))
-        ))),
-        "IS_STRING" => Ok(CosmosValue::Boolean(matches!(
-            args.first(),
-            Some(CosmosValue::String(_))
-        ))),
-        "IS_ARRAY" => Ok(CosmosValue::Boolean(matches!(
-            args.first(),
-            Some(CosmosValue::Array(_))
-        ))),
-        "IS_OBJECT" => Ok(CosmosValue::Boolean(matches!(
-            args.first(),
-            Some(CosmosValue::Object(_))
-        ))),
-
-        // String functions
-        "CONTAINS" => match args {
-            [CosmosValue::String(s), CosmosValue::String(sub), ..] => {
-                let case_insensitive = matches!(args.get(2), Some(CosmosValue::Boolean(true)));
-                if case_insensitive {
-                    Ok(CosmosValue::Boolean(
-                        s.to_lowercase().contains(&sub.to_lowercase()),
-                    ))
-                } else {
-                    Ok(CosmosValue::Boolean(s.contains(sub.as_str())))
-                }
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "STARTSWITH" => match args {
-            [CosmosValue::String(s), CosmosValue::String(prefix), ..] => {
-                let case_insensitive = matches!(args.get(2), Some(CosmosValue::Boolean(true)));
-                if case_insensitive {
-                    Ok(CosmosValue::Boolean(
-                        s.to_lowercase().starts_with(&prefix.to_lowercase()),
-                    ))
-                } else {
-                    Ok(CosmosValue::Boolean(s.starts_with(prefix.as_str())))
-                }
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "ENDSWITH" => match args {
-            [CosmosValue::String(s), CosmosValue::String(suffix), ..] => {
-                let case_insensitive = matches!(args.get(2), Some(CosmosValue::Boolean(true)));
-                if case_insensitive {
-                    Ok(CosmosValue::Boolean(
-                        s.to_lowercase().ends_with(&suffix.to_lowercase()),
-                    ))
-                } else {
-                    Ok(CosmosValue::Boolean(s.ends_with(suffix.as_str())))
-                }
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "UPPER" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.to_uppercase())),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "LOWER" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.to_lowercase())),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "LENGTH" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::Integer(s.chars().count() as i64)),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "LTRIM" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.trim_start().to_string())),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "RTRIM" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.trim_end().to_string())),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "TRIM" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.trim().to_string())),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "CONCAT" => {
-            let mut result = String::new();
-            for arg in args {
-                match arg {
-                    CosmosValue::String(s) => result.push_str(s),
-                    CosmosValue::Undefined => return Ok(CosmosValue::Undefined),
-                    _ => return Ok(CosmosValue::Undefined),
-                }
-            }
-            Ok(CosmosValue::String(result))
-        }
-        "SUBSTRING" => {
-            let s = match args.first() {
-                Some(CosmosValue::String(s)) => s,
-                _ => return Ok(CosmosValue::Undefined),
-            };
-            let start = match args.get(1) {
-                Some(CosmosValue::Number(n)) => *n as usize,
-                Some(CosmosValue::Integer(n)) => *n as usize,
-                _ => return Ok(CosmosValue::Undefined),
-            };
-            let len = match args.get(2) {
-                Some(CosmosValue::Number(n)) => *n as usize,
-                Some(CosmosValue::Integer(n)) => *n as usize,
-                _ => return Ok(CosmosValue::Undefined),
-            };
-            Ok(CosmosValue::String(
-                s.chars().skip(start).take(len).collect(),
-            ))
-        }
-        "REPLACE" => match args {
-            [CosmosValue::String(s), CosmosValue::String(old), CosmosValue::String(new)] => {
-                Ok(CosmosValue::String(s.replace(old.as_str(), new.as_str())))
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "LEFT" => match args {
-            [CosmosValue::String(s), CosmosValue::Number(n)] => {
-                let n = *n as usize;
-                Ok(CosmosValue::String(s.chars().take(n).collect()))
-            }
-            [CosmosValue::String(s), CosmosValue::Integer(n)] => {
-                let n = *n as usize;
-                Ok(CosmosValue::String(s.chars().take(n).collect()))
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "RIGHT" => match args {
-            [CosmosValue::String(s), CosmosValue::Number(n)] => {
-                let n = *n as usize;
-                let chars: Vec<char> = s.chars().collect();
-                let start = chars.len().saturating_sub(n);
-                Ok(CosmosValue::String(chars[start..].iter().collect()))
-            }
-            [CosmosValue::String(s), CosmosValue::Integer(n)] => {
-                let n = *n as usize;
-                let chars: Vec<char> = s.chars().collect();
-                let start = chars.len().saturating_sub(n);
-                Ok(CosmosValue::String(chars[start..].iter().collect()))
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "TOSTRING" => match args.first() {
-            Some(CosmosValue::String(s)) => Ok(CosmosValue::String(s.clone())),
-            Some(CosmosValue::Integer(n)) => Ok(CosmosValue::String(format!("{n}"))),
-            Some(CosmosValue::Number(n)) => Ok(CosmosValue::String(format!("{n}"))),
-            Some(CosmosValue::Boolean(b)) => Ok(CosmosValue::String(
-                if *b { "true" } else { "false" }.into(),
-            )),
-            Some(CosmosValue::Null) => Ok(CosmosValue::String("null".into())),
-            _ => Ok(CosmosValue::Undefined),
-        },
-
-        // Math functions
-        "ABS" => num_fn1(args, |n| n.abs()),
-        "CEILING" => num_fn1(args, |n| n.ceil()),
-        "FLOOR" => num_fn1(args, |n| n.floor()),
-        "ROUND" => num_fn1(args, |n| n.round()),
-        "POWER" => num_fn2(args, |a, b| a.powf(b)),
-        "SQRT" => num_fn1(args, |n| n.sqrt()),
-        "LOG" => num_fn1(args, |n| n.ln()),
-        "LOG10" => num_fn1(args, |n| n.log10()),
-        "EXP" => num_fn1(args, |n| n.exp()),
-        "SIGN" => num_fn1(args, |n| {
-            if n > 0.0 {
-                1.0
-            } else if n < 0.0 {
-                -1.0
-            } else {
-                0.0
-            }
-        }),
-
-        // Array functions
-        "ARRAY_CONTAINS" => match args {
-            [CosmosValue::Array(arr), search, ..] => {
-                let found = arr
-                    .iter()
-                    .any(|item| matches!(item.cosmos_eq(search), CosmosValue::Boolean(true)));
-                Ok(CosmosValue::Boolean(found))
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "ARRAY_LENGTH" => match args.first() {
-            Some(CosmosValue::Array(arr)) => Ok(CosmosValue::Integer(arr.len() as i64)),
-            _ => Ok(CosmosValue::Undefined),
-        },
-        "ARRAY_SLICE" => match args {
-            [CosmosValue::Array(arr), start, ..] => {
-                let Some(start) = as_number(start).map(|value| value as i64) else {
-                    return Ok(CosmosValue::Undefined);
-                };
-                let start = if start < 0 {
-                    (arr.len() as i64 + start).max(0) as usize
-                } else {
-                    start as usize
-                };
-                let len = match args.get(2) {
-                    Some(value) => as_number(value).map(|n| n as usize),
-                    _ => None,
-                };
-                let end = match len {
-                    Some(l) => (start + l).min(arr.len()),
-                    None => arr.len(),
-                };
-                if start >= arr.len() {
-                    Ok(CosmosValue::Array(Vec::new()))
-                } else {
-                    Ok(CosmosValue::Array(arr[start..end].to_vec()))
-                }
-            }
-            _ => Ok(CosmosValue::Undefined),
-        },
-
-        // Aggregate placeholders (return undefined — they need special handling)
-        "COUNT" | "SUM" | "AVG" | "MIN" | "MAX" => Err(EvalError::Unsupported(format!(
-            "aggregate function {upper}"
-        ))),
-
-        _ => Err(EvalError::UnknownFunction(name.to_string())),
-    }
-}
-
-fn num_fn1(args: &[CosmosValue], f: fn(f64) -> f64) -> Result<CosmosValue, EvalError> {
-    Ok(match args.first().and_then(as_number) {
-        Some(n) => CosmosValue::Number(f(n)),
-        None => CosmosValue::Undefined,
-    })
-}
-
-fn num_fn2(args: &[CosmosValue], f: fn(f64, f64) -> f64) -> Result<CosmosValue, EvalError> {
-    Ok(match args {
-        [a, b] => match (as_number(a), as_number(b)) {
-            (Some(a), Some(b)) => CosmosValue::Number(f(a, b)),
-            _ => CosmosValue::Undefined,
-        },
-        _ => CosmosValue::Undefined,
-    })
-}
-
-fn as_number(value: &CosmosValue) -> Option<f64> {
-    match value {
-        CosmosValue::Number(n) => Some(*n),
-        CosmosValue::Integer(n) => Some(*n as f64),
-        _ => None,
-    }
-}
+// (#16) The built-in function dispatch table and its helpers eval_function /
+// num_fn1 / num_fn2 / as_number live in the sibling builtins module to keep
+// this file focused on AST traversal.
 
 /// SQL LIKE pattern matching.
 fn sql_like_match(text: &str, pattern: &str, escape: Option<&str>) -> bool {
@@ -1825,6 +1583,109 @@ mod tests {
         let doc = serde_json::json!({"name": "Alice"});
         let result = project(&doc, &p.query, &[]).unwrap();
         assert_eq!(result, serde_json::json!("Alice"));
+    }
+
+    // ── #1: Conditional (?:) is strict-Boolean, NOT JS-truthy ────────────
+    //
+    // Cosmos SQL `cond ? a : b` yields `Undefined` when `cond` is anything
+    // other than `Boolean(true)` or `Boolean(false)`. Earlier the evaluator
+    // routed Conditional through the JS-style `internal_js_truthy`, which
+    // (a) treated `Number(1)`, non-empty strings, arrays, and objects as
+    // truthy and (b) treated `Number(0)` and the empty string as falsy. Both
+    // diverge from Cosmos / Gateway semantics; the tests below pin the
+    // strict-Boolean contract in place so the regression cannot return.
+
+    /// `WHERE c.x ? 'a' : 'b' = 'a'` must NOT match a row with a non-Boolean
+    /// `c.x`, because the ternary returns `Undefined` and the WHERE only
+    /// accepts `Boolean(true)`.
+    #[test]
+    fn conditional_with_non_boolean_condition_does_not_match() {
+        let p = crate::query::parse("SELECT * FROM c WHERE c.x ? 'a' : 'b' = 'a'").unwrap();
+        for doc in [
+            serde_json::json!({"x": 1}),           // non-zero number
+            serde_json::json!({"x": 0}),           // zero number
+            serde_json::json!({"x": "non-empty"}), // non-empty string
+            serde_json::json!({"x": ""}),          // empty string
+            serde_json::json!({"x": null}),        // null
+            serde_json::json!({}),                 // undefined
+            serde_json::json!({"x": [1, 2]}),      // array
+            serde_json::json!({"x": {"a": 1}}),    // object
+        ] {
+            assert!(
+                !matches_query(&doc, &p.query, &[]).unwrap(),
+                "non-Boolean condition must yield Undefined; doc={doc}"
+            );
+        }
+    }
+
+    /// `WHERE c.x ? true : false` matches exactly when `c.x = true`, never
+    /// when `c.x = false` or any non-Boolean. Mirrors the Gateway.
+    #[test]
+    fn conditional_with_boolean_condition_picks_correct_branch() {
+        let p = crate::query::parse("SELECT * FROM c WHERE c.x ? true : false").unwrap();
+        assert!(matches_query(&serde_json::json!({"x": true}), &p.query, &[]).unwrap());
+        assert!(!matches_query(&serde_json::json!({"x": false}), &p.query, &[]).unwrap());
+        // Sanity: non-Boolean still filters out (regression for the bug above).
+        assert!(!matches_query(&serde_json::json!({"x": 1}), &p.query, &[]).unwrap());
+    }
+
+    /// SELECT projection: a non-Boolean condition projects `Undefined`
+    /// (which is omitted from the resulting object), regardless of branch
+    /// values. Earlier the JS-truthy path would have projected the truthy
+    /// branch for `c.x = 1` and the falsy branch for `c.x = 0`.
+    #[test]
+    fn conditional_projection_with_non_boolean_condition_is_omitted() {
+        let p = crate::query::parse("SELECT (c.x ? 'a' : 'b') AS r FROM c").unwrap();
+        for doc in [
+            serde_json::json!({"x": 1}),
+            serde_json::json!({"x": 0}),
+            serde_json::json!({"x": ""}),
+            serde_json::json!({"x": "y"}),
+            serde_json::json!({"x": null}),
+            serde_json::json!({}),
+        ] {
+            let result = project(&doc, &p.query, &[]).unwrap();
+            assert_eq!(
+                result,
+                serde_json::json!({}),
+                "non-Boolean condition must project to omitted (Undefined); doc={doc}"
+            );
+        }
+        // Boolean conditions still pick the correct branch.
+        assert_eq!(
+            project(&serde_json::json!({"x": true}), &p.query, &[]).unwrap(),
+            serde_json::json!({"r": "a"})
+        );
+        assert_eq!(
+            project(&serde_json::json!({"x": false}), &p.query, &[]).unwrap(),
+            serde_json::json!({"r": "b"})
+        );
+    }
+
+    /// Coalesce (`??`) returns the left operand whenever it is *defined*,
+    /// even if defined-but-falsy (`false`, `0`, `""`, `null`). This pins the
+    /// IS_DEFINED contract \u2014 a future regression that swapped this for
+    /// `internal_js_truthy` would change the result for every case below.
+    #[test]
+    fn coalesce_returns_defined_left_even_when_falsy() {
+        let p = crate::query::parse("SELECT VALUE c.x ?? 'fallback' FROM c").unwrap();
+        for (doc, expected) in [
+            (serde_json::json!({"x": false}), serde_json::json!(false)),
+            (serde_json::json!({"x": 0}), serde_json::json!(0)),
+            (serde_json::json!({"x": ""}), serde_json::json!("")),
+            (serde_json::json!({"x": null}), serde_json::json!(null)),
+        ] {
+            let result = project(&doc, &p.query, &[]).unwrap();
+            assert_eq!(
+                result, expected,
+                "coalesce must return defined-but-falsy left; doc={doc}"
+            );
+        }
+        // And falls back when left is Undefined.
+        assert_eq!(
+            project(&serde_json::json!({}), &p.query, &[]).unwrap(),
+            serde_json::json!("fallback")
+        );
     }
 
     // ── TOP / OFFSET / LIMIT with parameters ────────────────────────────

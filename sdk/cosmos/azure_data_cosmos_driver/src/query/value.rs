@@ -49,32 +49,6 @@ impl CosmosValue {
         }
     }
 
-    /// **WARNING:** This is NOT the Cosmos SQL boolean coercion. Cosmos `WHERE`,
-    /// `AND`, `OR`, and `NOT` only accept `Boolean(true)` as "matches" and treat any
-    /// other type — including `Number(1)`, non-empty strings, arrays, and objects —
-    /// as `Undefined` (i.e., the row is filtered out). Use direct pattern-matching on
-    /// `Boolean(true)` for SQL semantics; **never** call this from a SQL evaluation
-    /// path.
-    ///
-    /// This helper exists for non-SQL ergonomic checks inside the evaluator
-    /// (e.g., internal short-circuit hints in conditional/coalesce paths that
-    /// already have separate Boolean-only handling). It implements JavaScript-style
-    /// truthiness: `false`, `Null`, `Undefined`, `Number(0)`, `Integer(0)`, and the
-    /// empty string are falsy; everything else is truthy. The deliberately
-    /// awkward name discourages reach-for-it-by-default use; if you find
-    /// yourself calling it from a new code path, double-check whether you
-    /// actually want SQL `Boolean` semantics instead.
-    pub(crate) fn internal_js_truthy(&self) -> bool {
-        match self {
-            Self::Boolean(b) => *b,
-            Self::Null | Self::Undefined => false,
-            Self::Number(n) => *n != 0.0,
-            Self::Integer(n) => *n != 0,
-            Self::String(s) => !s.is_empty(),
-            Self::Array(_) | Self::Object(_) => true,
-        }
-    }
-
     /// Cosmos DB equality: returns `Undefined` for cross-type, `true`/`false` for same-type.
     pub(crate) fn cosmos_eq(&self, other: &Self) -> CosmosValue {
         match (self, other) {
@@ -280,16 +254,6 @@ mod tests {
         let cv = CosmosValue::from_json(&json);
         let back = cv.to_json();
         assert_eq!(json, back);
-    }
-
-    #[test]
-    fn truthy_values() {
-        assert!(CosmosValue::Boolean(true).internal_js_truthy());
-        assert!(!CosmosValue::Boolean(false).internal_js_truthy());
-        assert!(!CosmosValue::Null.internal_js_truthy());
-        assert!(!CosmosValue::Undefined.internal_js_truthy());
-        assert!(CosmosValue::Number(1.0).internal_js_truthy());
-        assert!(!CosmosValue::Number(0.0).internal_js_truthy());
     }
 
     #[test]

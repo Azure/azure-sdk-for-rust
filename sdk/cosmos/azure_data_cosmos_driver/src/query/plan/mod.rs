@@ -10,7 +10,10 @@
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
-use crate::query::ast::*;
+use crate::query::ast::{
+    SqlBinaryOp, SqlCollectionExpression, SqlLimitSpec, SqlLiteral, SqlOffsetSpec, SqlQuery,
+    SqlScalarExpression, SqlSelectClause, SqlSelectSpec, SqlSortOrder, SqlTopSpec,
+};
 use crate::query::common::get_root_alias;
 
 // ─── Query Plan ──────────────────────────────────────────────────────────────
@@ -25,12 +28,12 @@ pub(crate) struct QueryPlan {
     pub(crate) pk_filters: PartitionKeyFilter,
 
     /// Structural information about the query for pipeline construction.
-    pub(crate) query_info: QueryInfo,
+    pub(crate) query_info: LocalQueryInfo,
 }
 
 /// Structural information about a query as produced by the local plan generator.
 ///
-/// F21: split from the previously-unified `QueryInfo`. This struct now contains
+/// F21: split from the previously-unified `LocalQueryInfo`. This struct now contains
 /// only the fields the local AST analyzer can populate — the shared structural
 /// fields the SDK pipeline needs (TOP / OFFSET / LIMIT / DISTINCT / ORDER BY /
 /// GROUP BY / aggregates / SELECT VALUE) plus the local-analysis booleans
@@ -104,14 +107,8 @@ pub(crate) struct LocalQueryInfo {
     pub(crate) has_udf: bool,
 }
 
-// Backwards-compat alias: the bulk of the unit-test surface (~4800 lines of
-// structural plan-comparison tests) refers to `QueryInfo { ... }`. Keep the
-// alias so the rename doesn't churn that test file. New code should refer to
-// `LocalQueryInfo` directly.
-pub(crate) type QueryInfo = LocalQueryInfo;
-
 /// The kind of DISTINCT operator.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[non_exhaustive]
 pub(crate) enum DistinctType {
     /// No DISTINCT.
@@ -124,7 +121,7 @@ pub(crate) enum DistinctType {
 }
 
 /// Sort order for ORDER BY items (mirrors the Gateway's representation).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub(crate) enum SortOrder {
     Ascending,
@@ -132,7 +129,7 @@ pub(crate) enum SortOrder {
 }
 
 /// Recognized aggregate function kinds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(SafeDebug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub(crate) enum AggregateKind {
     Count,
@@ -323,8 +320,11 @@ fn is_constant_expression(expr: &SqlScalarExpression) -> bool {
     }
 }
 
-fn analyze_query(query: &SqlQuery, parameters: &Params) -> Result<QueryInfo, azure_core::Error> {
-    let mut info = QueryInfo {
+fn analyze_query(
+    query: &SqlQuery,
+    parameters: &Params,
+) -> Result<LocalQueryInfo, azure_core::Error> {
+    let mut info = LocalQueryInfo {
         has_select_value: matches!(query.select.spec, SqlSelectSpec::Value(_)),
         has_where: query.where_clause.is_some(),
         ..Default::default()
@@ -462,19 +462,19 @@ fn has_join(coll: &SqlCollectionExpression) -> bool {
     matches!(coll, SqlCollectionExpression::Join { .. })
 }
 
-fn visit_select_for_info(select: &SqlSelectClause, info: &mut QueryInfo) {
+fn visit_select_for_info(select: &SqlSelectClause, info: &mut LocalQueryInfo) {
     match &select.spec {
         SqlSelectSpec::List(items) => {
             for item in items {
                 visit_expr_for_info(&item.expression, info);
             }
         }
-        SqlSelectSpec::Value(expr) => visit_expr_for_info(expr, info),
+        SqlSelectSpec::Value(expr) => visit_expr_for_info(expr.as_ref(), info),
         SqlSelectSpec::Star => {}
     }
 }
 
-fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut QueryInfo) {
+fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
     match expr {
         SqlScalarExpression::FunctionCall {
             name, args, is_udf, ..
@@ -856,7 +856,17 @@ fn extract_literal_value(
             SqlLiteral::String(s) => Some(PartitionKeyValue::String(s.clone())),
             // Both numeric literal forms canonicalize to `Number(f64)` to mirror the
             // backend's EPK-hash equivalence between `1` and `1.0` (#3).
-            SqlLiteral::Number(n) => Some(PartitionKeyValue::Number(*n)),
+            //
+            // Invariant (#13): every `PartitionKeyValue::Number(f)` flowing through
+            // `normalize_pk_union`'s `Vec::contains`-based dedup must be finite —
+            // NaN would silently break dedup. The parser cannot emit NaN (it has no
+            // NaN literal) and `serde_json` rejects non-finite numbers, so the
+            // invariant holds today; the asserts make it explicit and will catch
+            // any future code path that introduces a runtime double.
+            SqlLiteral::Number(n) => {
+                debug_assert!(n.is_finite(), "PartitionKeyValue::Number must be finite");
+                Some(PartitionKeyValue::Number(*n))
+            }
             SqlLiteral::Integer(n) => Some(PartitionKeyValue::Number(*n as f64)),
             SqlLiteral::Boolean(b) => Some(PartitionKeyValue::Bool(*b)),
             SqlLiteral::Null => Some(PartitionKeyValue::Null),
@@ -937,12 +947,13 @@ fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
 ///     &[],
 /// )
 /// .unwrap();
-/// assert_eq!(plan["queryInfo"]["hasWhere"], serde_json::json!(true));
+/// assert_eq!(plan["LocalQueryInfo"]["hasWhere"], serde_json::json!(true));
 /// # }
 /// # #[cfg(not(feature = "__internal_testing"))]
 /// # fn main() {}
 /// ```
 #[cfg(any(test, feature = "__internal_testing"))]
+#[doc(hidden)]
 pub fn __test_only_generate_query_plan_for_pk_paths(
     sql: &str,
     pk_paths: &[&str],
@@ -970,6 +981,11 @@ mod tests {
     }
 
     // Include the exhaustive comparison tests from the external file.
+    // The `#[path]` attribute makes the indirection explicit; without it Rust
+    // would resolve `mod query_plan_comparison;` (because it lives inside the
+    // inline `mod tests`) to `plan/tests/query_plan_comparison.rs` via the
+    // implicit `tests` directory — a non-obvious convention. (#11)
+    #[path = "query_plan_comparison.rs"]
     mod query_plan_comparison;
 
     // ── PK extraction ────────────────────────────────────────────────────
@@ -1014,7 +1030,7 @@ mod tests {
         );
     }
 
-    // ── QueryInfo: DISTINCT ──────────────────────────────────────────────
+    // ── LocalQueryInfo: DISTINCT ──────────────────────────────────────────────
 
     #[test]
     fn distinct_unordered() {
@@ -1034,7 +1050,7 @@ mod tests {
         assert_eq!(qp.query_info.distinct_type, DistinctType::None);
     }
 
-    // ── QueryInfo: TOP / OFFSET / LIMIT ──────────────────────────────────
+    // ── LocalQueryInfo: TOP / OFFSET / LIMIT ──────────────────────────────────
 
     #[test]
     fn top_value() {
@@ -1048,7 +1064,7 @@ mod tests {
         assert_eq!(qp.query_info.limit, Some(20));
     }
 
-    // ── QueryInfo: ORDER BY ──────────────────────────────────────────────
+    // ── LocalQueryInfo: ORDER BY ──────────────────────────────────────────────
 
     #[test]
     fn order_by_single_asc() {
@@ -1073,7 +1089,7 @@ mod tests {
         assert_eq!(qp.query_info.order_by_expressions, vec!["c.name", "c.age"]);
     }
 
-    // ── QueryInfo: GROUP BY ──────────────────────────────────────────────
+    // ── LocalQueryInfo: GROUP BY ──────────────────────────────────────────────
 
     #[test]
     fn group_by_single() {
@@ -1091,7 +1107,7 @@ mod tests {
         );
     }
 
-    // ── QueryInfo: Aggregates ────────────────────────────────────────────
+    // ── LocalQueryInfo: Aggregates ────────────────────────────────────────────
 
     #[test]
     fn aggregate_count() {
@@ -1133,7 +1149,7 @@ mod tests {
         assert!(qp.query_info.aggregates.is_empty());
     }
 
-    // ── QueryInfo: SELECT VALUE ──────────────────────────────────────────
+    // ── LocalQueryInfo: SELECT VALUE ──────────────────────────────────────────
 
     #[test]
     fn select_value_detected() {
@@ -1149,7 +1165,7 @@ mod tests {
         assert!(!plan("SELECT * FROM c").query_info.has_select_value);
     }
 
-    // ── QueryInfo: JOIN ──────────────────────────────────────────────────
+    // ── LocalQueryInfo: JOIN ──────────────────────────────────────────────────
 
     #[test]
     fn join_detected() {
@@ -1161,7 +1177,7 @@ mod tests {
         assert!(!plan("SELECT * FROM c").query_info.has_join);
     }
 
-    // ── QueryInfo: Subqueries ────────────────────────────────────────────
+    // ── LocalQueryInfo: Subqueries ────────────────────────────────────────────
 
     #[test]
     fn exists_subquery_detected() {
@@ -1181,7 +1197,7 @@ mod tests {
         );
     }
 
-    // ── QueryInfo: UDF ───────────────────────────────────────────────────
+    // ── LocalQueryInfo: UDF ───────────────────────────────────────────────────
 
     #[test]
     fn udf_detected() {
@@ -1201,7 +1217,7 @@ mod tests {
         );
     }
 
-    // ── QueryInfo: WHERE ─────────────────────────────────────────────────
+    // ── LocalQueryInfo: WHERE ─────────────────────────────────────────────────
 
     #[test]
     fn has_where() {

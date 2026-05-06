@@ -26,12 +26,21 @@ pub(crate) use parser::parse;
 /// pipeline can actually execute. Used both by the internal query-plan request
 /// builder (`CosmosOperation::query_plan`) and by gateway-comparison tests so
 /// the two stay in lockstep.
-pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates";
+///
+/// (#8) `MultipleAggregates` and `CompositeAggregate` are intentionally NOT
+/// advertised: the in-memory evaluator only handles single-aggregate queries
+/// over `COUNT|SUM|AVG|MIN|MAX` inline today and cannot execute the rewritten
+/// query that the Gateway returns when those features are enabled. Re-add them
+/// once the evaluator gains support, otherwise the Gateway will hand back a
+/// plan the local pipeline cannot run.
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
+    "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,GroupBy";
 
 /// Re-export of [`SUPPORTED_QUERY_FEATURES`] for cross-crate gateway-comparison
 /// tests. Production callers must not depend on this — it shares the
 /// `__internal_testing` feature gate and is not covered by SemVer.
 #[cfg(any(test, feature = "__internal_testing"))]
+#[doc(hidden)]
 pub const __TEST_ONLY_SUPPORTED_QUERY_FEATURES: &str = SUPPORTED_QUERY_FEATURES;
 
 #[cfg(any(test, feature = "__internal_testing"))]

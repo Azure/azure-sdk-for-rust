@@ -9,14 +9,14 @@
 //! every field of `query_info` — so that any regression in any part of the plan
 //! is caught immediately.
 //!
-//! A handful of tests fully spell out every `QueryInfo` field *and* trail with
+//! A handful of tests fully spell out every `LocalQueryInfo` field *and* trail with
 //! `..qi()` — the redundant `..qi()` is intentional codegen-style ballast so
 //! that future field additions don't silently leave the test under-specified.
 #![allow(clippy::needless_update)]
 
 use super::super::{
     generate_query_plan, generate_query_plan_with_parameters, AggregateKind, DistinctType,
-    PartitionKeyFilter, PartitionKeyValue, QueryInfo, QueryPlan, SortOrder,
+    LocalQueryInfo, PartitionKeyFilter, PartitionKeyValue, QueryPlan, SortOrder,
 };
 
 /// Parse SQL and produce a full query plan against a single `/pk` partition key.
@@ -48,9 +48,9 @@ fn plan_no_pk(sql: &str) -> QueryPlan {
     let p = crate::query::parse(sql).unwrap();
     generate_query_plan(&p.query, &[]).unwrap()
 }
-/// Shorthand: the default QueryInfo with all fields at their zero/empty/false values.
-fn qi() -> QueryInfo {
-    QueryInfo::default()
+/// Shorthand: the default LocalQueryInfo with all fields at their zero/empty/false values.
+fn qi() -> LocalQueryInfo {
+    LocalQueryInfo::default()
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -91,7 +91,7 @@ fn select_value() {
         plan("SELECT VALUE c.name FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -122,7 +122,7 @@ fn pk_eq_string() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
                 "hello".into()
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -136,7 +136,7 @@ fn pk_eq_integer() {
         plan("SELECT * FROM c WHERE c.pk = 42"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Number(42_f64)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -150,7 +150,7 @@ fn pk_eq_float() {
         plan("SELECT * FROM c WHERE c.pk = 1.23"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Number(1.23)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -164,7 +164,7 @@ fn pk_eq_bool_true() {
         plan("SELECT * FROM c WHERE c.pk = true"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Bool(true)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -178,7 +178,7 @@ fn pk_eq_null() {
         plan("SELECT * FROM c WHERE c.pk = null"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Null]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -192,7 +192,7 @@ fn pk_eq_negative() {
         plan("SELECT * FROM c WHERE c.pk = -99"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Number(-99_f64)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -208,7 +208,7 @@ fn pk_eq_reversed_operand() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
                 "hello".into()
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -224,7 +224,7 @@ fn pk_eq_parameter() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::UnboundParameter(
                 "val".into()
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -242,7 +242,7 @@ fn pk_and_other_filter() {
         plan("SELECT * FROM c WHERE c.pk = 'x' AND c.age > 21"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -256,7 +256,7 @@ fn pk_or_pk() {
     assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 2));
     assert_eq!(
         qp.query_info,
-        QueryInfo {
+        LocalQueryInfo {
             has_where: true,
             ..qi()
         }
@@ -269,7 +269,7 @@ fn pk_or_duplicate_equality_collapses_to_single_equality() {
         plan("SELECT * FROM c WHERE c.pk = 'a' OR c.pk = 'a'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -287,7 +287,7 @@ fn pk_or_duplicate_values_are_deduped_across_in_lists() {
                 vec![PartitionKeyValue::String("b".into())],
                 vec![PartitionKeyValue::String("c".into())],
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -301,7 +301,7 @@ fn pk_in_list() {
     assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 3));
     assert_eq!(
         qp.query_info,
-        QueryInfo {
+        LocalQueryInfo {
             has_where: true,
             ..qi()
         }
@@ -318,7 +318,7 @@ fn non_pk_equality() {
         plan("SELECT * FROM c WHERE c.age > 21"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -332,7 +332,7 @@ fn pk_inequality() {
         plan("SELECT * FROM c WHERE c.pk > 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -346,7 +346,7 @@ fn pk_between() {
         plan("SELECT * FROM c WHERE c.pk BETWEEN 'a' AND 'z'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -360,7 +360,7 @@ fn pk_like() {
         plan("SELECT * FROM c WHERE c.pk LIKE 'x%'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -374,7 +374,7 @@ fn pk_is_null() {
         plan("SELECT * FROM c WHERE c.pk IS NULL"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -396,7 +396,7 @@ fn hpk_both_components() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -410,7 +410,7 @@ fn hpk_partial_is_cross() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -428,7 +428,7 @@ fn top_only() {
         plan("SELECT TOP 10 * FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(10),
                 ..qi()
             },
@@ -442,7 +442,7 @@ fn top_with_pk() {
         plan("SELECT TOP 5 * FROM c WHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(5),
                 has_where: true,
                 ..qi()
@@ -461,7 +461,7 @@ fn offset_limit() {
         plan("SELECT * FROM c OFFSET 5 LIMIT 20"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 offset: Some(5),
                 limit: Some(20),
                 ..qi()
@@ -476,7 +476,7 @@ fn offset_limit_with_pk() {
         plan("SELECT * FROM c WHERE c.pk = 'x' OFFSET 0 LIMIT 10"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 offset: Some(0),
                 limit: Some(10),
                 has_where: true,
@@ -496,7 +496,7 @@ fn distinct_unordered() {
         plan("SELECT DISTINCT c.name FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 ..qi()
             },
@@ -510,7 +510,7 @@ fn distinct_ordered() {
         plan("SELECT DISTINCT c.name FROM c ORDER BY c.name ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Ordered,
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
@@ -526,7 +526,7 @@ fn distinct_with_pk() {
         plan("SELECT DISTINCT c.name FROM c WHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 has_where: true,
                 ..qi()
@@ -545,7 +545,7 @@ fn order_by_single_asc() {
         plan("SELECT * FROM c ORDER BY c.name ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
                 ..qi()
@@ -560,7 +560,7 @@ fn order_by_single_desc() {
         plan("SELECT * FROM c ORDER BY c.age DESC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Descending],
                 order_by_expressions: vec!["c.age".into()],
                 ..qi()
@@ -575,7 +575,7 @@ fn order_by_default_is_asc() {
         plan("SELECT * FROM c ORDER BY c.name"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
                 ..qi()
@@ -590,7 +590,7 @@ fn order_by_multiple() {
         plan("SELECT * FROM c ORDER BY c.name ASC, c.age DESC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending, SortOrder::Descending],
                 order_by_expressions: vec!["c.name".into(), "c.age".into()],
                 ..qi()
@@ -605,7 +605,7 @@ fn order_by_nested_path() {
         plan("SELECT * FROM c ORDER BY c.address.city ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.address.city".into()],
                 ..qi()
@@ -620,7 +620,7 @@ fn order_by_with_pk() {
         plan("SELECT * FROM c WHERE c.pk = 'x' ORDER BY c.name DESC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Descending],
                 order_by_expressions: vec!["c.name".into()],
                 has_where: true,
@@ -640,7 +640,7 @@ fn aggregate_count() {
         plan("SELECT COUNT(1) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
             },
@@ -654,7 +654,7 @@ fn aggregate_sum() {
         plan("SELECT SUM(c.price) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Sum],
                 ..qi()
             },
@@ -668,7 +668,7 @@ fn aggregate_avg() {
         plan("SELECT AVG(c.score) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Avg],
                 ..qi()
             },
@@ -682,7 +682,7 @@ fn aggregate_min() {
         plan("SELECT MIN(c.age) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Min],
                 ..qi()
             },
@@ -696,7 +696,7 @@ fn aggregate_max() {
         plan("SELECT MAX(c.age) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Max],
                 ..qi()
             },
@@ -710,7 +710,7 @@ fn aggregate_multiple() {
         plan("SELECT COUNT(1), SUM(c.price), AVG(c.score) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Count, AggregateKind::Sum, AggregateKind::Avg],
                 ..qi()
             },
@@ -724,7 +724,7 @@ fn aggregate_with_pk() {
         plan("SELECT COUNT(1) FROM c WHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Count],
                 has_where: true,
                 ..qi()
@@ -743,7 +743,7 @@ fn group_by_single() {
         plan("SELECT c.city, COUNT(1) FROM c GROUP BY c.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.city".into()],
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -758,7 +758,7 @@ fn group_by_multiple() {
         plan("SELECT c.city, c.state, COUNT(1) FROM c GROUP BY c.city, c.state"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.city".into(), "c.state".into()],
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -773,7 +773,7 @@ fn group_by_with_sum_avg() {
         plan("SELECT c.city, SUM(c.revenue), AVG(c.score) FROM c GROUP BY c.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.city".into()],
                 aggregates: vec![AggregateKind::Sum, AggregateKind::Avg],
                 ..qi()
@@ -788,7 +788,7 @@ fn group_by_with_pk() {
         plan("SELECT c.city, COUNT(1) FROM c WHERE c.pk = 'x' GROUP BY c.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.city".into()],
                 aggregates: vec![AggregateKind::Count],
                 has_where: true,
@@ -808,7 +808,7 @@ fn join_simple() {
         plan("SELECT * FROM c JOIN t IN c.tags"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_join: true,
                 ..qi()
             },
@@ -823,7 +823,7 @@ fn join_with_pk_and_where() {
         plan("SELECT c.id, t FROM c JOIN t IN c.tags WHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_join: true,
                 has_where: true,
                 ..qi()
@@ -842,7 +842,7 @@ fn exists_subquery() {
         plan("SELECT * FROM c WHERE EXISTS(SELECT VALUE t FROM t IN c.tags)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 has_where: true,
                 ..qi()
@@ -857,7 +857,7 @@ fn array_subquery_in_select() {
         plan("SELECT ARRAY(SELECT t FROM t IN c.tags) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 ..qi()
             },
@@ -871,7 +871,7 @@ fn subquery_with_pk() {
         plan("SELECT * FROM c WHERE c.pk = 'x' AND EXISTS(SELECT VALUE t FROM t IN c.tags WHERE t = 'rust')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 has_where: true,
                 ..qi()
@@ -890,7 +890,7 @@ fn udf_in_where() {
         plan("SELECT * FROM c WHERE udf.myFunc(c.x) > 0"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_udf: true,
                 has_where: true,
                 ..qi()
@@ -905,7 +905,7 @@ fn builtin_function_not_udf() {
         plan("SELECT * FROM c WHERE CONTAINS(c.name, 'test')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -923,7 +923,7 @@ fn select_value_with_pk() {
         plan("SELECT VALUE c.name FROM c WHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 has_where: true,
                 ..qi()
@@ -947,7 +947,7 @@ fn complex_aggregate_group_order_pk() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.city".into()],
                 group_by_expressions: vec!["c.city".into()],
@@ -965,7 +965,7 @@ fn complex_distinct_top_order() {
         plan("SELECT DISTINCT TOP 5 c.name FROM c ORDER BY c.name ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Ordered,
                 top: Some(5),
                 order_by: vec![SortOrder::Ascending],
@@ -987,7 +987,7 @@ fn complex_cross_partition_multi_aggregate_group_order() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending, SortOrder::Descending],
                 order_by_expressions: vec!["c.region".into(), "c.city".into()],
                 group_by_expressions: vec!["c.region".into(), "c.city".into()],
@@ -1004,7 +1004,7 @@ fn complex_join_aggregate_group_pk() {
         plan("SELECT c.id, COUNT(1) FROM c JOIN t IN c.tags WHERE c.pk = 'x' GROUP BY c.id"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.id".into()],
                 aggregates: vec![AggregateKind::Count],
                 has_join: true,
@@ -1021,7 +1021,7 @@ fn complex_select_value_offset_limit() {
         plan("SELECT VALUE c.name FROM c OFFSET 10 LIMIT 5"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 offset: Some(10),
                 limit: Some(5),
@@ -1044,7 +1044,7 @@ fn complex_everything() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Ordered,
                 top: Some(100),
                 offset: None,
@@ -1074,7 +1074,7 @@ fn line_comment() {
         plan("SELECT * FROM c -- comment\nWHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1088,7 +1088,7 @@ fn mixed_case() {
         plan("select top 3 * from c where c.pk = 'x' order by c.name desc"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(3),
                 order_by: vec![SortOrder::Descending],
                 order_by_expressions: vec!["c.name".into()],
@@ -1109,7 +1109,7 @@ fn and_contradictory_equality() {
         plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1123,7 +1123,7 @@ fn and_redundant_equality() {
         plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'a'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1137,7 +1137,7 @@ fn and_equality_narrows_in_list() {
         plan("SELECT * FROM c WHERE c.pk = 'a' AND c.pk IN ('a', 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1151,7 +1151,7 @@ fn and_equality_not_in_list() {
         plan("SELECT * FROM c WHERE c.pk = 'c' AND c.pk IN ('a', 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1165,7 +1165,7 @@ fn and_in_list_intersection_narrows_to_single() {
         plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('b', 'c')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("b".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1179,7 +1179,7 @@ fn and_in_list_empty_intersection() {
         plan("SELECT * FROM c WHERE c.pk IN ('a', 'b') AND c.pk IN ('c', 'd')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1193,7 +1193,7 @@ fn and_contradictory_deep_in_chain() {
         plan("SELECT * FROM c WHERE c.pk = 'a' AND c.x > 1 AND c.pk = 'b'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1207,7 +1207,7 @@ fn hpk_contradictory_component() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' AND c.tenant = 'b' AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1224,7 +1224,7 @@ fn hpk_redundant_ok() {
                 PartitionKeyValue::String("a".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1242,7 +1242,7 @@ fn function_contains_no_pk() {
         plan("SELECT * FROM c WHERE CONTAINS(c.name, 'test')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1256,7 +1256,7 @@ fn function_startswith_with_pk() {
         plan("SELECT * FROM c WHERE c.pk = 'x' AND STARTSWITH(c.name, 'A')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1270,7 +1270,7 @@ fn function_is_defined() {
         plan("SELECT * FROM c WHERE IS_DEFINED(c.optional)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1325,7 +1325,7 @@ fn pk_not_in() {
         plan("SELECT * FROM c WHERE c.pk NOT IN ('a', 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1339,7 +1339,7 @@ fn not_between_no_pk() {
         plan("SELECT * FROM c WHERE c.x NOT BETWEEN 1 AND 10"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1357,7 +1357,7 @@ fn aggregate_array_agg() {
         plan("SELECT c.city, ARRAY_AGG(c.name) FROM c GROUP BY c.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.city".into()],
                 aggregates: vec![AggregateKind::ArrayAgg],
                 ..qi()
@@ -1373,7 +1373,7 @@ fn aggregate_min_max_combined() {
         plan("SELECT MIN(c.age), MAX(c.age) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 aggregates: vec![AggregateKind::Min, AggregateKind::Max],
                 ..qi()
             },
@@ -1410,7 +1410,7 @@ fn top_parameter_substituted_from_params() {
         plan_with_params("SELECT TOP @n * FROM c", &[("@n", serde_json::json!(7))]),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(7),
                 ..qi()
             },
@@ -1437,7 +1437,7 @@ fn offset_limit_parameter_substituted_from_params() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 offset: Some(3),
                 limit: Some(11),
                 ..qi()
@@ -1511,7 +1511,7 @@ fn nested_path_in_where() {
         plan("SELECT * FROM c WHERE c.address.city = 'Seattle'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1525,7 +1525,7 @@ fn nested_path_in_group_by() {
         plan("SELECT c.address.city, COUNT(1) FROM c GROUP BY c.address.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.address.city".into()],
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -1555,7 +1555,7 @@ fn complex_where_or_union() {
     assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 2));
     assert_eq!(
         qp.query_info,
-        QueryInfo {
+        LocalQueryInfo {
             order_by: vec![SortOrder::Ascending],
             order_by_expressions: vec!["c.name".into()],
             has_where: true,
@@ -1570,7 +1570,7 @@ fn complex_in_with_order_by() {
     assert!(matches!(qp.pk_filters, PartitionKeyFilter::InList(ref l) if l.len() == 3));
     assert_eq!(
         qp.query_info,
-        QueryInfo {
+        LocalQueryInfo {
             order_by: vec![SortOrder::Ascending],
             order_by_expressions: vec!["c.pk".into()],
             has_where: true,
@@ -1585,7 +1585,7 @@ fn complex_distinct_group_by() {
         plan("SELECT DISTINCT c.city FROM c GROUP BY c.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 group_by_expressions: vec!["c.city".into()],
                 ..qi()
@@ -1607,7 +1607,7 @@ fn complex_all_clauses() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Ordered,
                 top: Some(50),
                 offset: None,
@@ -1640,7 +1640,7 @@ fn hpk_with_parameters() {
                 PartitionKeyValue::UnboundParameter("t".into()),
                 PartitionKeyValue::UnboundParameter("u".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1657,7 +1657,7 @@ fn hpk_mixed_literal_and_parameter() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::UnboundParameter("uid".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1674,7 +1674,7 @@ fn hpk_mixed_types_string_integer() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::Number(42_f64),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1691,7 +1691,7 @@ fn hpk_mixed_types_string_bool() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::Bool(true),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1708,7 +1708,7 @@ fn hpk_null_component() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::Null,
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1723,7 +1723,7 @@ fn hpk_missing_second_component() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.age > 21"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1738,7 +1738,7 @@ fn hpk_missing_first_component() {
         plan_hpk("SELECT * FROM c WHERE c.userId = 'u1' AND c.age > 21"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1756,7 +1756,7 @@ fn hpk_reversed_order_still_extracts() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1775,7 +1775,7 @@ fn hpk_with_additional_filters() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1790,7 +1790,7 @@ fn hpk_or_makes_cross_partition() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'a' OR c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1812,7 +1812,7 @@ fn hpk3_all_components() {
                 PartitionKeyValue::String("u1".into()),
                 PartitionKeyValue::String("s1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1826,7 +1826,7 @@ fn hpk3_missing_middle_component() {
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.sessionId = 's1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1840,7 +1840,7 @@ fn hpk3_missing_last_component() {
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1856,7 +1856,7 @@ fn hpk3_contradictory_middle() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1876,7 +1876,7 @@ fn nested_pk_equality() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
                 "Seattle".into()
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1892,7 +1892,7 @@ fn nested_pk_with_other_filter() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
                 "Seattle".into()
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1915,7 +1915,7 @@ fn nested_pk_wrong_path_no_extract() {
         plan_nested_pk("SELECT * FROM c WHERE c.address.state = 'WA'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -1930,7 +1930,7 @@ fn nested_pk_partial_path_no_extract() {
         plan_nested_pk("SELECT * FROM c WHERE c.address = 'something'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2126,7 +2126,7 @@ fn pk_eq_bool_false() {
         plan("SELECT * FROM c WHERE c.pk = false"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Bool(false)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2140,7 +2140,7 @@ fn pk_eq_zero() {
         plan("SELECT * FROM c WHERE c.pk = 0"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Number(0 as f64)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2154,7 +2154,7 @@ fn pk_eq_undefined() {
         plan("SELECT * FROM c WHERE c.pk = undefined"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Undefined]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2170,7 +2170,7 @@ fn pk_eq_empty_string() {
             pk_filters: PartitionKeyFilter::Equality(vec![
                 PartitionKeyValue::String(String::new())
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2186,7 +2186,7 @@ fn pk_eq_large_integer() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Number(
                 9007199254740993_i64 as f64
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2200,7 +2200,7 @@ fn pk_eq_negative_float() {
         plan("SELECT * FROM c WHERE c.pk = -1.5"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::Number(-1.5)]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2255,7 +2255,7 @@ fn no_pk_paths_with_no_evaluation() {
         plan_no_pk("SELECT * FROM c WHERE c.pk = 'hello'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::NotEvaluated,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2307,7 +2307,7 @@ fn multiple_joins_plan() {
         plan("SELECT * FROM c JOIN t IN c.tags JOIN s IN c.skills"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_join: true,
                 ..qi()
             },
@@ -2322,7 +2322,7 @@ fn join_with_nested_path() {
         plan("SELECT * FROM c JOIN a IN c.addresses.tags"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_join: true,
                 ..qi()
             },
@@ -2348,7 +2348,7 @@ fn is_null_in_where() {
         plan("SELECT * FROM c WHERE c.x IS NULL"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2363,7 +2363,7 @@ fn is_not_null_in_where() {
         plan("SELECT * FROM c WHERE c.x IS NOT NULL"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2378,7 +2378,7 @@ fn like_in_where_plan() {
         plan("SELECT * FROM c WHERE c.name LIKE 'A%'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2392,7 +2392,7 @@ fn like_with_escape_in_where() {
         plan(r"SELECT * FROM c WHERE c.name LIKE 'a\%b' ESCAPE '\'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2407,7 +2407,7 @@ fn not_like_in_where() {
         plan("SELECT * FROM c WHERE c.name NOT LIKE '%test%'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -2421,7 +2421,7 @@ fn udf_in_select() {
         plan("SELECT udf.myFunc(c.x) AS result FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_udf: true,
                 ..qi()
             },
@@ -2435,7 +2435,7 @@ fn multiple_udfs() {
         plan("SELECT * FROM c WHERE udf.func1(c.x) > 0 AND udf.func2(c.y) = true"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_udf: true,
                 has_where: true,
                 ..qi()
@@ -2450,7 +2450,7 @@ fn deeply_nested_order_by() {
         plan("SELECT * FROM c ORDER BY c.a.b.c ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.a.b.c".into()],
                 ..qi()
@@ -2467,7 +2467,7 @@ fn multiple_subquery_types() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 ..qi()
             },
@@ -2481,7 +2481,7 @@ fn offset_limit_with_order_by_and_where() {
         plan("SELECT * FROM c WHERE c.active = true ORDER BY c.name ASC OFFSET 10 LIMIT 20"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
                 offset: Some(10),
@@ -2499,7 +2499,7 @@ fn top_with_distinct_and_where() {
         plan("SELECT DISTINCT TOP 5 c.name FROM c WHERE c.active = true"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 top: Some(5),
                 has_where: true,
@@ -2515,7 +2515,7 @@ fn select_value_with_aggregate() {
         plan("SELECT VALUE COUNT(1) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -2533,7 +2533,7 @@ fn group_by_nested_path_with_multiple_aggregates() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.address.city".into()],
                 aggregates: vec![AggregateKind::Count, AggregateKind::Sum, AggregateKind::Avg],
                 ..qi()
@@ -2548,7 +2548,7 @@ fn order_by_three_columns() {
         plan("SELECT * FROM c ORDER BY c.city ASC, c.state DESC, c.name ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![
                     SortOrder::Ascending,
                     SortOrder::Descending,
@@ -2640,7 +2640,7 @@ fn complex_hpk_with_join_group_order() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.city".into()],
                 group_by_expressions: vec!["c.city".into()],
@@ -2667,7 +2667,7 @@ fn complex_pk_in_with_distinct_top_order() {
     }
     assert_eq!(
         qp.query_info,
-        QueryInfo {
+        LocalQueryInfo {
             distinct_type: DistinctType::Ordered,
             top: Some(10),
             order_by: vec![SortOrder::Ascending],
@@ -2693,7 +2693,7 @@ fn complex_nested_pk_with_full_pipeline() {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
                 "Seattle".into()
             )]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Descending],
                 order_by_expressions: vec!["c.name".into()],
                 group_by_expressions: vec!["c.name".into()],
@@ -2713,7 +2713,7 @@ fn complex_select_value_count_with_pk() {
         plan("SELECT VALUE COUNT(1) FROM c WHERE c.pk = 'x'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 aggregates: vec![AggregateKind::Count],
                 has_where: true,
@@ -2753,7 +2753,7 @@ fn complex_everything_with_hpk() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Ordered,
                 top: Some(100),
                 offset: Some(5),
@@ -2817,7 +2817,7 @@ fn select_value_root() {
         plan("SELECT VALUE r FROM r"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2857,7 +2857,7 @@ fn select_value_null_literal() {
         plan("SELECT VALUE null"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2871,7 +2871,7 @@ fn select_value_undefined_literal() {
         plan("SELECT VALUE undefined"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2885,7 +2885,7 @@ fn select_value_object_constructor() {
         plan("SELECT VALUE {name: c.name} FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2899,7 +2899,7 @@ fn select_value_array_constructor() {
         plan("SELECT VALUE [c.name, c.age] FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2913,7 +2913,7 @@ fn select_value_boolean_expr() {
         plan("SELECT VALUE c.age > 10 AND c.age < 20 FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2927,7 +2927,7 @@ fn select_null_eq_null() {
         plan("SELECT VALUE null = null"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2941,7 +2941,7 @@ fn select_undefined_eq_undefined() {
         plan("SELECT VALUE undefined = undefined"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2955,7 +2955,7 @@ fn select_array_eq_array() {
         plan("SELECT VALUE [1,2,3] = [1,2,3]"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2969,7 +2969,7 @@ fn select_empty_array_eq() {
         plan("SELECT VALUE [] = []"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2983,7 +2983,7 @@ fn select_object_eq_object() {
         plan("SELECT VALUE {a: 1, b: 2} = {a: 1, b: 2}"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -2997,7 +2997,7 @@ fn select_empty_object_eq() {
         plan("SELECT VALUE {} = {}"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3015,7 +3015,7 @@ fn where_deep_nested_member() {
         plan("SELECT * FROM c WHERE c.a.b.c.d = 1"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3029,7 +3029,7 @@ fn where_array_index_in_condition() {
         plan("SELECT * FROM c WHERE c.scores[0] = 90"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3043,7 +3043,7 @@ fn where_nested_unary() {
         plan("SELECT VALUE -(+(-c.age)) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3057,7 +3057,7 @@ fn where_complex_arithmetic() {
         plan("SELECT VALUE 10 + c.age * 2 - 10 FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3071,7 +3071,7 @@ fn where_string_concat_in_value() {
         plan("SELECT VALUE '[' || c.name || ']' FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3085,7 +3085,7 @@ fn where_bitwise_in_select() {
         plan("SELECT VALUE c.age | 8 FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3099,7 +3099,7 @@ fn where_zero_fill_right_shift() {
         plan("SELECT VALUE -100 >>> 1"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3113,7 +3113,7 @@ fn where_truthy_check() {
         plan("SELECT * FROM c WHERE c.active"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3127,7 +3127,7 @@ fn where_not_truthy() {
         plan("SELECT * FROM c WHERE NOT c.active"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3141,7 +3141,7 @@ fn where_type_check_is_array() {
         plan("SELECT * FROM c WHERE IS_ARRAY(c.tags)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3155,7 +3155,7 @@ fn where_type_check_is_object() {
         plan("SELECT * FROM c WHERE IS_OBJECT(c.address)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3169,7 +3169,7 @@ fn where_type_check_is_string() {
         plan("SELECT * FROM c WHERE IS_STRING(c.name)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3183,7 +3183,7 @@ fn where_type_check_is_number() {
         plan("SELECT * FROM c WHERE IS_NUMBER(c.age)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3197,7 +3197,7 @@ fn where_type_check_is_bool() {
         plan("SELECT * FROM c WHERE IS_BOOL(c.active)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3211,7 +3211,7 @@ fn where_not_type_check() {
         plan("SELECT * FROM c WHERE NOT IS_DEFINED(c.optional)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3225,7 +3225,7 @@ fn where_in_with_expressions() {
         plan("SELECT * FROM c WHERE c.age + 1 IN (10, 20, 30)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3243,7 +3243,7 @@ fn pk_eq_array_literal_no_extract() {
         plan("SELECT * FROM c WHERE c.pk = [1, 2, 3]"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3257,7 +3257,7 @@ fn pk_eq_object_literal_no_extract() {
         plan("SELECT * FROM c WHERE c.pk = {'x': 1}"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3281,7 +3281,7 @@ fn pk_not_in_and_not_eq() {
         plan("SELECT * FROM c WHERE (c.pk NOT IN ('a', 'b')) AND (c.pk != 'c')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3295,7 +3295,7 @@ fn pk_range_and_not_eq() {
         plan("SELECT * FROM c WHERE (c.pk > 'a') AND (c.pk != 'z')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3309,7 +3309,7 @@ fn pk_double_not_eq() {
         plan("SELECT * FROM c WHERE (c.pk != 'a') AND (c.pk != 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3323,7 +3323,7 @@ fn pk_double_not_eq_or() {
         plan("SELECT * FROM c WHERE (c.pk != 'a') OR (c.pk != 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3341,7 +3341,7 @@ fn group_by_without_aggregate() {
         plan("SELECT c.age FROM c GROUP BY c.age"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.age".into()],
                 ..qi()
             },
@@ -3370,7 +3370,7 @@ fn group_by_two_nested_paths() {
         plan("SELECT c.address.city, c.address.state, COUNT(1) AS cnt FROM c GROUP BY c.address.city, c.address.state"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.address.city".into(), "c.address.state".into()],
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -3385,7 +3385,7 @@ fn group_by_three_keys() {
         plan("SELECT c.age, c.team, c.gender, COUNT(1) AS cnt FROM c GROUP BY c.age, c.team, c.gender"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.age".into(), "c.team".into(), "c.gender".into()],
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -3400,7 +3400,7 @@ fn group_by_with_alias_select() {
         plan("SELECT c.age AS a, COUNT(1) AS cnt FROM c GROUP BY c.age"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.age".into()],
                 aggregates: vec![AggregateKind::Count],
                 ..qi()
@@ -3419,7 +3419,7 @@ fn order_by_with_in_filter() {
         plan("SELECT * FROM c WHERE c.age IN (10, 11, 23) ORDER BY c.age"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.age".into()],
                 has_where: true,
@@ -3435,7 +3435,7 @@ fn order_by_with_not_in() {
         plan("SELECT * FROM c WHERE c.age NOT IN (10, 11) ORDER BY c.age"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.age".into()],
                 has_where: true,
@@ -3451,7 +3451,7 @@ fn order_by_with_contains() {
         plan("SELECT * FROM c WHERE CONTAINS(c.name, 'a') ORDER BY c.name"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
                 has_where: true,
@@ -3467,7 +3467,7 @@ fn order_by_with_startswith() {
         plan("SELECT * FROM c WHERE STARTSWITH(c.name, 'A') ORDER BY c.name"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
                 has_where: true,
@@ -3483,7 +3483,7 @@ fn order_by_boolean_field() {
         plan("SELECT * FROM c ORDER BY c.active"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.active".into()],
                 ..qi()
@@ -3498,7 +3498,7 @@ fn order_by_null_field() {
         plan("SELECT * FROM c WHERE c.valid = null ORDER BY c.valid"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.valid".into()],
                 has_where: true,
@@ -3518,7 +3518,7 @@ fn top_with_where_order_by() {
         plan("SELECT TOP 5 * FROM c WHERE c.age > 10 ORDER BY c.age ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(5),
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.age".into()],
@@ -3535,7 +3535,7 @@ fn top_with_in_filter() {
         plan("SELECT TOP 3 * FROM c WHERE c.age IN (10, 11, 23)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(3),
                 has_where: true,
                 ..qi()
@@ -3550,7 +3550,7 @@ fn top_with_nested_field_order() {
         plan("SELECT TOP 5 c.name, c.games.wins FROM c ORDER BY c.games.wins"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(5),
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.games.wins".into()],
@@ -3572,7 +3572,7 @@ fn distinct_value_null_literal() {
         plan("SELECT DISTINCT VALUE null"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::None,
                 has_select_value: true,
                 ..qi()
@@ -3588,7 +3588,7 @@ fn distinct_value_literal_number() {
         plan("SELECT DISTINCT VALUE 1"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::None,
                 has_select_value: true,
                 ..qi()
@@ -3604,7 +3604,7 @@ fn distinct_value_literal_string() {
         plan("SELECT DISTINCT VALUE 'a'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::None,
                 has_select_value: true,
                 ..qi()
@@ -3619,7 +3619,7 @@ fn distinct_multiple_columns() {
         plan("SELECT DISTINCT c.city, c.state FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 ..qi()
             },
@@ -3633,7 +3633,7 @@ fn distinct_value_array() {
         plan("SELECT DISTINCT VALUE [c.city, c.state] FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 has_select_value: true,
                 ..qi()
@@ -3648,7 +3648,7 @@ fn distinct_value_with_where() {
         plan("SELECT DISTINCT VALUE c.city FROM c WHERE c.active = true"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Unordered,
                 has_select_value: true,
                 has_where: true,
@@ -3668,7 +3668,7 @@ fn offset_limit_with_join() {
         plan("SELECT c.id, t FROM c JOIN t IN c.tags OFFSET 1 LIMIT 3"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 offset: Some(1),
                 limit: Some(3),
                 has_join: true,
@@ -3684,7 +3684,7 @@ fn offset_limit_with_double_join() {
         plan("SELECT c.id, d1, d2 FROM c JOIN d1 IN c.digits JOIN d2 IN c.digits WHERE d2 = 0 OFFSET 0 LIMIT 5"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 offset: Some(0),
                 limit: Some(5),
                 has_join: true,
@@ -3701,7 +3701,7 @@ fn offset_limit_with_top_precedence() {
         plan("SELECT TOP 2 * FROM c OFFSET 0 LIMIT 10"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 top: Some(2),
                 offset: Some(0),
                 limit: Some(10),
@@ -3722,7 +3722,7 @@ fn like_single_char_wildcard() {
         plan("SELECT * FROM c WHERE c.name LIKE 'A_ice'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3736,7 +3736,7 @@ fn like_percent_and_underscore() {
         plan("SELECT * FROM c WHERE c.name LIKE 'A_%'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3750,7 +3750,7 @@ fn like_and_combination() {
         plan("SELECT * FROM c WHERE c.city LIKE 'Se%' AND c.state LIKE 'W_'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3764,7 +3764,7 @@ fn like_no_wildcards() {
         plan("SELECT * FROM c WHERE c.name LIKE 'Alice'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3815,7 +3815,7 @@ fn scalar_subquery_in_select() {
         plan("SELECT (SELECT VALUE 1) AS x FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 ..qi()
             },
@@ -3829,7 +3829,7 @@ fn scalar_subquery_in_where() {
         plan("SELECT * FROM c WHERE (SELECT VALUE c.age) > 21"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 has_where: true,
                 ..qi()
@@ -3857,7 +3857,7 @@ fn exists_with_join_in_subquery() {
         plan("SELECT * FROM c WHERE EXISTS(SELECT VALUE t FROM t IN c.tags WHERE t = 'rust')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 has_where: true,
                 ..qi()
@@ -3872,7 +3872,7 @@ fn array_subquery_with_where() {
         plan("SELECT ARRAY(SELECT VALUE t FROM t IN c.tags WHERE t != 'old') AS filtered_tags FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_subquery: true,
                 ..qi()
             },
@@ -3890,7 +3890,7 @@ fn regression_complex_and_or_precedence() {
         plan("SELECT * FROM c WHERE c.name = 'fox' AND c.type = 'wood' AND c.flag AND c.userId = 3 OR c.userId = 4"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3915,7 +3915,7 @@ fn regression_parenthesized_and_or() {
         plan("SELECT VALUE c.id FROM c WHERE (c.a = 1) AND (c.b = 1 OR c.c = 1)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 has_where: true,
                 ..qi()
@@ -3930,7 +3930,7 @@ fn regression_double_join_with_double_where() {
         plan("SELECT c.id, t1.name, t2.name AS name2 FROM c JOIN t1 IN c.tags JOIN t2 IN c.tags WHERE t1.name = 'a' AND t2.name = 'b'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_join: true,
                 has_where: true,
                 ..qi()
@@ -3945,7 +3945,7 @@ fn regression_array_contains_and() {
         plan("SELECT * FROM c WHERE ARRAY_CONTAINS(c.items, 1) AND ARRAY_CONTAINS(c.items, 2)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -3961,7 +3961,7 @@ fn regression_join_with_array_contains() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_join: true,
                 has_where: true,
                 ..qi()
@@ -3981,7 +3981,7 @@ fn bitwise_and_in_select() {
         plan("SELECT VALUE 3 & 2"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -3995,7 +3995,7 @@ fn bitwise_or_in_select() {
         plan("SELECT VALUE 3 | 2"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -4009,7 +4009,7 @@ fn bitwise_xor_in_select() {
         plan("SELECT VALUE 3 ^ 2"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -4023,7 +4023,7 @@ fn bitwise_not_in_select() {
         plan("SELECT VALUE ~1"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -4037,7 +4037,7 @@ fn bitwise_left_shift() {
         plan("SELECT VALUE 3 << 2"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -4051,7 +4051,7 @@ fn bitwise_right_shift() {
         plan("SELECT VALUE 3 >> 2"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 ..qi()
             },
@@ -4065,7 +4065,7 @@ fn bitwise_in_where() {
         plan("SELECT * FROM c WHERE c.flags & 4 != 0"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4096,7 +4096,7 @@ fn udf_multiple_in_select() {
         plan("SELECT udf.fn1(c.x) AS r1, udf.fn2(c.y) AS r2 FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_udf: true,
                 ..qi()
             },
@@ -4110,7 +4110,7 @@ fn udf_in_where_with_join() {
         plan("SELECT VALUE t FROM c JOIN t IN c.items WHERE udf.check(t)"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 has_join: true,
                 has_where: true,
@@ -4127,7 +4127,7 @@ fn udf_in_select_value() {
         plan("SELECT VALUE udf.transform(c.data) FROM c"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_select_value: true,
                 has_udf: true,
                 ..qi()
@@ -4146,7 +4146,7 @@ fn order_by_four_columns() {
         plan("SELECT * FROM c ORDER BY c.a ASC, c.b DESC, c.c ASC, c.d DESC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![
                     SortOrder::Ascending,
                     SortOrder::Descending,
@@ -4166,7 +4166,7 @@ fn order_by_nested_and_flat() {
         plan("SELECT * FROM c ORDER BY c.address.city ASC, c.age DESC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending, SortOrder::Descending],
                 order_by_expressions: vec!["c.address.city".into(), "c.age".into()],
                 ..qi()
@@ -4189,7 +4189,7 @@ fn hpk_reversed_operand_on_first() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4207,7 +4207,7 @@ fn hpk_reversed_operand_on_second() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4224,7 +4224,7 @@ fn hpk_reversed_operand_on_both() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4241,7 +4241,7 @@ fn hpk_undefined_component() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::Undefined,
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4258,7 +4258,7 @@ fn hpk_negative_number_component() {
                 PartitionKeyValue::Number(-1_f64),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4275,7 +4275,7 @@ fn hpk_float_component() {
                 PartitionKeyValue::Number(1.5),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4292,7 +4292,7 @@ fn hpk_empty_string_component() {
                 PartitionKeyValue::String(String::new()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4309,7 +4309,7 @@ fn hpk_bool_false_component() {
                 PartitionKeyValue::Bool(false),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4326,7 +4326,7 @@ fn hpk_both_null() {
                 PartitionKeyValue::Null,
                 PartitionKeyValue::Null,
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4344,7 +4344,7 @@ fn hpk_parenthesized_nested_and() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4364,7 +4364,7 @@ fn hpk_deeply_nested_and_chain() {
                 PartitionKeyValue::String("acme".into()),
                 PartitionKeyValue::String("u1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4419,7 +4419,7 @@ fn hpk_non_equality_on_second_component() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId > 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4434,7 +4434,7 @@ fn hpk_in_on_first_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE c.tenant IN ('a', 'b') AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4448,7 +4448,7 @@ fn hpk_in_on_second_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId IN ('u1', 'u2')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4462,7 +4462,7 @@ fn hpk_between_on_first_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE c.tenant BETWEEN 'a' AND 'z' AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4477,7 +4477,7 @@ fn hpk_like_on_second_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId LIKE 'u%'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4491,7 +4491,7 @@ fn hpk_function_wrap_first_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE LOWER(c.tenant) = 'acme' AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4505,7 +4505,7 @@ fn hpk_not_on_first_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE NOT (c.tenant = 'acme') AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4519,7 +4519,7 @@ fn hpk_is_null_on_component_no_extract() {
         plan_hpk("SELECT * FROM c WHERE c.tenant IS NULL AND c.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4547,7 +4547,7 @@ fn hpk_or_of_full_hpk_tuples_extracts_inlist() {
                     PartitionKeyValue::String("u2".into()),
                 ],
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4579,7 +4579,7 @@ fn hpk_or_of_three_full_hpk_tuples_extracts_inlist() {
                     PartitionKeyValue::String("u3".into()),
                 ],
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4596,7 +4596,7 @@ fn hpk_or_with_one_partial_tuple_falls_back_to_unconstrained() {
         plan_hpk("SELECT * FROM c WHERE (c.tenant = 'a' AND c.userId = 'u1') OR (c.tenant = 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4611,7 +4611,7 @@ fn hpk_wrong_root_on_second_component() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND d.userId = 'u1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4627,7 +4627,7 @@ fn hpk_comparison_to_other_field_no_extract() {
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId = c.other"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4647,7 +4647,7 @@ fn hpk3_all_parameters() {
                 PartitionKeyValue::UnboundParameter("u".into()),
                 PartitionKeyValue::UnboundParameter("s".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4667,7 +4667,7 @@ fn hpk3_mixed_types_all_different() {
                 PartitionKeyValue::Number(42_f64),
                 PartitionKeyValue::Bool(true),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4688,7 +4688,7 @@ fn hpk3_reversed_order() {
                 PartitionKeyValue::String("u1".into()),
                 PartitionKeyValue::String("s1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4709,7 +4709,7 @@ fn hpk3_shuffled_with_extra_filters() {
                 PartitionKeyValue::String("u1".into()),
                 PartitionKeyValue::String("s1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4725,7 +4725,7 @@ fn hpk3_contradictory_first() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4741,7 +4741,7 @@ fn hpk3_contradictory_last() {
         ),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Contradictory,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4762,7 +4762,7 @@ fn hpk3_redundant_all_components() {
                 PartitionKeyValue::String("u1".into()),
                 PartitionKeyValue::String("s1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4776,7 +4776,7 @@ fn hpk3_missing_first_only() {
         plan_hpk3("SELECT * FROM c WHERE c.userId = 'u1' AND c.sessionId = 's1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4790,7 +4790,7 @@ fn hpk3_only_first_component() {
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4804,7 +4804,7 @@ fn hpk3_only_last_component() {
         plan_hpk3("SELECT * FROM c WHERE c.sessionId = 's1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4818,7 +4818,7 @@ fn hpk3_first_and_last_missing_middle() {
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.sessionId = 's1'"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
             },
@@ -4840,7 +4840,7 @@ fn hpk3_with_join_and_order_by() {
                 PartitionKeyValue::String("u1".into()),
                 PartitionKeyValue::String("s1".into()),
             ]),
-            query_info: QueryInfo {
+            query_info: LocalQueryInfo {
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
                 has_join: true,

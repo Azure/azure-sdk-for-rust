@@ -461,6 +461,13 @@ pub enum OperationType {
     /// Execute a SQL query.
     SqlQuery,
     /// Get a query plan.
+    ///
+    /// **Construction**: do NOT instantiate `CosmosOperation` with this variant
+    /// directly. Use [`crate::models::CosmosOperation::query_plan`], which is
+    /// the only constructor that pre-populates the four mandatory headers
+    /// (`x-ms-cosmos-is-query-plan-request`,
+    /// `x-ms-cosmos-supported-query-features`, `x-ms-documentdb-isquery`,
+    /// `Content-Type: application/query+json`) the Gateway requires. (#14)
     QueryPlan,
     /// Execute a batch operation.
     Batch,

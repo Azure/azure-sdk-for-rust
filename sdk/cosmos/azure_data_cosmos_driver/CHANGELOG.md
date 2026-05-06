@@ -18,6 +18,7 @@
 
 - The PPCB failback sweep now applies a per-entry random jitter (uniform in `[0, partition_unavailability_duration / 2)`) before transitioning an `Unhealthy` entry to `ProbeCandidate`. This spreads the failback of partitions that failed in the same burst across the failback window, mitigating a thundering-herd effect on the recovering region. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 - The `reqwest` feature now also enables the crate's `tokio` feature, ensuring the partition failback background loop is compiled in when using the reqwest transport. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+- Added the local query-plan generator scaffolding under `crate::query` (lexer, parser, AST, planner, and in-memory evaluator). The scaffolding is **not wired into the production query path** yet — production callers still issue Gateway query-plan requests via `CosmosOperation::query_plan`. The `__internal_testing` cargo feature exposes `query::__test_only_generate_query_plan_for_pk_paths`, `query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES`, and `CosmosOperation::query_plan` for cross-crate gateway-comparison tests; this feature is intentionally unstable and **not covered by SemVer**.
 
 ## 0.2.0 (2026-04-24)
 

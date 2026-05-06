@@ -6,7 +6,13 @@
 //! Produces an [`SqlProgram`] AST from SQL text. Uses Pratt parsing
 //! for operator precedence in scalar expressions.
 
-use crate::query::ast::*;
+use crate::query::ast::{
+    SqlBinaryOp, SqlCollection, SqlCollectionExpression, SqlFromClause, SqlGroupByClause,
+    SqlLimitSpec, SqlLiteral, SqlObjectProperty, SqlOffsetLimitClause, SqlOffsetSpec,
+    SqlOrderByClause, SqlOrderByItem, SqlPathSegment, SqlProgram, SqlQuery, SqlScalarExpression,
+    SqlSelectClause, SqlSelectItem, SqlSelectSpec, SqlSortOrder, SqlTopSpec, SqlUnaryOp,
+    SqlWhereClause,
+};
 use crate::query::lexer::{
     extract_identifier, extract_parameter_name, extract_string_content, Lexer, Span, Token,
     TokenKind,
@@ -38,7 +44,11 @@ impl std::error::Error for ParseError {}
 /// ```
 pub fn parse(sql: &str) -> Result<SqlProgram, ParseError> {
     let mut parser = Parser::new(sql);
-    parser.parse_program()
+    let program = parser.parse_program()?;
+    // (#6) Surface any deferred lexer error (e.g. unterminated string literal
+    // that appeared after the parser had already finished consuming).
+    parser.check_pending_lex_error()?;
+    Ok(program)
 }
 
 const MAX_NESTING_DEPTH: usize = 128;
@@ -60,6 +70,19 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// (#6) Convert any in-flight lexer error token (e.g. unterminated string)
+    /// into a structured [`ParseError`]. Called from `expect`, `parse`, and
+    /// other choke points so the parser cannot silently accept a malformed
+    /// token as if it were a well-formed `StringLiteral`.
+    fn check_pending_lex_error(&self) -> Result<(), ParseError> {
+        match self.current.kind {
+            TokenKind::ErrUnterminatedString => {
+                Err(self.error("unterminated string literal: missing closing single quote".into()))
+            }
+            _ => Ok(()),
+        }
+    }
+
     fn advance(&mut self) {
         self.current = self.lexer.next_token();
     }
@@ -73,6 +96,9 @@ impl<'a> Parser<'a> {
     }
 
     fn expect(&mut self, kind: TokenKind) -> Result<Token<'a>, ParseError> {
+        // (#6) If the lexer flagged the current token as a malformed literal,
+        // raise a precise diagnostic before attempting the match.
+        self.check_pending_lex_error()?;
         if self.current.kind == kind {
             let tok = self.current.clone();
             self.advance();
@@ -1880,5 +1906,76 @@ mod tests {
             msg.to_ascii_lowercase().contains("nesting"),
             "expected nesting-depth error, got: {msg}"
         );
+    }
+
+    /// (#6) An unterminated string literal must produce a parse error rather
+    /// than silently consuming the remainder of the input as a partial
+    /// `StringLiteral` (which the Gateway would have rejected with a 400 but
+    /// the local parser used to swallow). The diagnostic must mention the
+    /// missing closing quote so authors can locate the typo.
+    #[test]
+    fn parse_unterminated_string_literal_is_error() {
+        let result = parse("SELECT * FROM c WHERE c.x = 'unclosed");
+        assert!(
+            result.is_err(),
+            "unterminated string must produce a parse error"
+        );
+        let msg = result.unwrap_err().message.to_ascii_lowercase();
+        assert!(
+            msg.contains("unterminated") && msg.contains("string"),
+            "diagnostic must mention an unterminated string literal, got: {msg}"
+        );
+    }
+
+    /// (#6) Same regression at the very end of the input \u2014 verifies the
+    /// deferred check after `parse_program` returns Ok also catches it.
+    #[test]
+    fn parse_unterminated_string_at_end_of_input_is_error() {
+        // The string literal is the last thing on the input; without the
+        // deferred lex-error check the parser would happily return Ok.
+        assert!(parse("SELECT VALUE 'unclosed").is_err());
+    }
+
+    /// (#9) Deep `AND` chains must not stack-overflow either the parser
+    /// (recursive descent through Pratt parsing) nor any downstream pass that
+    /// walks the resulting AST. Mirrors the existing nested-parens regression
+    /// test but covers the binary-operator recursion path used by the local
+    /// plan generator's `extract_pk_from_expression` / `intersect_pk_filters`.
+    #[test]
+    fn deeply_nested_and_chain_does_not_stack_overflow() {
+        // Run on a fresh thread with a generous stack so we measure the
+        // plan generator's behaviour on deep input rather than the test
+        // harness's default 2 MiB stack on Windows. 4000 nested ANDs is
+        // representative of generated queries we have seen in the wild.
+        let handle = std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                let mut sql = String::from("SELECT * FROM c WHERE c.x = 1");
+                for i in 0..4000 {
+                    sql.push_str(&format!(" AND c.x = {i}"));
+                }
+                // Either the depth guard rejects it, or the parser succeeds
+                // and the plan generator processes it without crashing.
+                // Both are acceptable -- what we must NOT do is overflow the
+                // thread stack.
+                match parse(&sql) {
+                    Ok(program) => {
+                        let plan =
+                            crate::query::plan::generate_query_plan(&program.query, &["/pk"]);
+                        assert!(plan.is_ok(), "plan generation must not fail for deep AND");
+                    }
+                    Err(e) => {
+                        let msg = e.message.to_ascii_lowercase();
+                        assert!(
+                            msg.contains("nesting") || msg.contains("depth"),
+                            "if parsing rejects, the error must come from the depth guard, got: {msg}"
+                        );
+                    }
+                }
+            })
+            .expect("spawn");
+        handle
+            .join()
+            .expect("deep AND chain must not stack-overflow");
     }
 }
