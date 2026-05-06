@@ -14,7 +14,7 @@ use crate::generated::models::{
     BlobContainerClientListFindBlobsByTagsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilterBlobResponse, ListBlobsResponse,
+    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsResponse,
     SignedIdentifiers,
 };
 use azure_core::{
@@ -726,7 +726,7 @@ impl BlobContainerClient {
         &self,
         filter_expression: &str,
         options: Option<BlobContainerClientListFindBlobsByTagsOptions<'_>>,
-    ) -> Result<Pager<FilterBlobResponse, XmlFormat>> {
+    ) -> Result<Pager<FilteredBlobResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -782,7 +782,7 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: FilterBlobResponse = xml::from_xml(&body)?;
+                    let res: FilteredBlobResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {

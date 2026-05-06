@@ -834,7 +834,7 @@ pub struct FilterBlobItem {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct FilterBlobResponse {
+pub struct FilteredBlobResponse {
     /// The blob segment.
     #[serde(
         default,
@@ -915,7 +915,7 @@ pub struct ListBlobsResponse {
     pub service_endpoint: Option<String>,
 }
 
-/// The list containers response
+/// The list containers response.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
