@@ -1589,7 +1589,9 @@ async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
     queue_client_options
         .client_options
         .per_try_policies
-        .push(fail_first);
+        // Make sure the test recording policies come last
+        // since we're copying from the instrumented ClientOptions above.
+        .insert(0, fail_first);
 
     let queue_name = get_queue_name(recording);
     let queue_client = QueueClient::new(
@@ -1606,7 +1608,7 @@ async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
     assert_eq!(
         err.http_status(),
         Some(StatusCode::NotFound),
-        "Expected 404 from the retried attempt, got {:?}",
+        "Expected 404 from the retried attempt, got {:?}\n{err:?}",
         err.http_status()
     );
     assert_eq!(

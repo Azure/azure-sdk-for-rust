@@ -6,7 +6,9 @@
 
 ### Breaking Changes
 
+- Bearer token authentication now requires TLS (https).
 - Renamed `CertificateClient::create_certificate()` to `begin_create_certificate()` per [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html#rust-lro-prefix).
+- Vault URLs must use TLS (https).
 
 ### Bugs Fixed
 

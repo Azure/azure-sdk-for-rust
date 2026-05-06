@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Vault URLs must use TLS (https).
+
 ### Bugs Fixed
 
 ### Other Changes
