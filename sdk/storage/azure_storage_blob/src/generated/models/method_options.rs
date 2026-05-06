@@ -1020,6 +1020,45 @@ pub struct BlobContainerClientDeleteOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `BlobContainerClient::find_blobs_by_tags()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
+    /// Include this parameter to specify one or more datasets to include in the response.
+    pub include: Option<Vec<FilterBlobsIncludeItem>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+impl BlobContainerClientFindBlobsByTagsOptions<'_> {
+    /// Transforms this [`BlobContainerClientFindBlobsByTagsOptions`] into a new `BlobContainerClientFindBlobsByTagsOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobContainerClientFindBlobsByTagsOptions<'static> {
+        BlobContainerClientFindBlobsByTagsOptions {
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            timeout: self.timeout,
+        }
+    }
+}
+
 /// Options to be passed to `BlobContainerClient::get_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
@@ -1104,45 +1143,6 @@ impl BlobContainerClientListBlobsOptions<'_> {
     }
 }
 
-/// Options to be passed to `BlobContainerClient::list_find_blobs_by_tags()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListFindBlobsByTagsOptions<'a> {
-    /// Include this parameter to specify one or more datasets to include in the response.
-    pub include: Option<Vec<FilterBlobsIncludeItem>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-impl BlobContainerClientListFindBlobsByTagsOptions<'_> {
-    /// Transforms this [`BlobContainerClientListFindBlobsByTagsOptions`] into a new `BlobContainerClientListFindBlobsByTagsOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListFindBlobsByTagsOptions<'static> {
-        BlobContainerClientListFindBlobsByTagsOptions {
-            include: self.include,
-            marker: self.marker,
-            maxresults: self.maxresults,
-            method_options: PagerOptions {
-                context: self.method_options.context.into_owned(),
-                ..self.method_options
-            },
-            timeout: self.timeout,
-        }
-    }
-}
-
 /// Options to be passed to `BlobContainerClient::release_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientReleaseLeaseOptions<'a> {
@@ -1213,6 +1213,45 @@ pub struct BlobContainerClientSetMetadataOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `BlobServiceClient::find_blobs_by_tags()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
+    /// Include this parameter to specify one or more datasets to include in the response.
+    pub include: Option<Vec<FilterBlobsIncludeItem>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+impl BlobServiceClientFindBlobsByTagsOptions<'_> {
+    /// Transforms this [`BlobServiceClientFindBlobsByTagsOptions`] into a new `BlobServiceClientFindBlobsByTagsOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobServiceClientFindBlobsByTagsOptions<'static> {
+        BlobServiceClientFindBlobsByTagsOptions {
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            timeout: self.timeout,
+        }
+    }
+}
+
 /// Options to be passed to `BlobServiceClient::get_account_info()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoOptions<'a> {
@@ -1281,45 +1320,6 @@ impl BlobServiceClientListContainersOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
-            timeout: self.timeout,
-        }
-    }
-}
-
-/// Options to be passed to `BlobServiceClient::list_find_blobs_by_tags()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientListFindBlobsByTagsOptions<'a> {
-    /// Include this parameter to specify one or more datasets to include in the response.
-    pub include: Option<Vec<FilterBlobsIncludeItem>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-impl BlobServiceClientListFindBlobsByTagsOptions<'_> {
-    /// Transforms this [`BlobServiceClientListFindBlobsByTagsOptions`] into a new `BlobServiceClientListFindBlobsByTagsOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobServiceClientListFindBlobsByTagsOptions<'static> {
-        BlobServiceClientListFindBlobsByTagsOptions {
-            include: self.include,
-            marker: self.marker,
-            maxresults: self.maxresults,
-            method_options: PagerOptions {
-                context: self.method_options.context.into_owned(),
-                ..self.method_options
-            },
             timeout: self.timeout,
         }
     }
