@@ -460,48 +460,62 @@ container_fixture!(C_NESTED, c_nested, "qp_nested", "/address/city".into());
 container_fixture!(C_NOPK, c_nopk, "qp_nopk", "/id".into());
 
 // ─── Gateway validation helper functions ─────────────────────────────────────
+//
+// Helpers panic with a clear message if the Gateway is not reachable. Silently
+// no-oping here would cause "wrong test config" runs to report passing tests
+// while actually skipping every assertion - these gateway-parity tests are
+// crucial and must surface configuration problems instead of hiding them.
+// To intentionally skip them in environments without a Cosmos account, set
+// `AZURE_COSMOS_TEST_MODE=Skipped` (handled inside `resolve_test_env`) or do
+// not enable the `__internal_testing` feature.
+
+fn require_driver_and<'a, T>(
+    driver: Option<&'a T>,
+    container: Option<&'a ContainerReference>,
+) -> (&'a T, &'a ContainerReference) {
+    let driver = driver.expect(
+        "gateway query-plan comparison tests require a configured Cosmos DB account; \
+         set AZURE_COSMOS_CONNECTION_STRING (or AZURE_COSMOS_TEST_MODE=Skipped to skip)",
+    );
+    let container = container
+        .expect("test container could not be provisioned against the configured Cosmos DB account");
+    (driver, container)
+}
 
 async fn validate_pk(sql: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_pk().await) {
-        validate(d, c, &["/pk"], sql).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_pk().await);
+    validate(d, c, &["/pk"], sql).await;
 }
 
 async fn validate_hpk(sql: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_hpk().await) {
-        validate(d, c, &["/tenant", "/userId"], sql).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_hpk().await);
+    validate(d, c, &["/tenant", "/userId"], sql).await;
 }
 
 async fn validate_hpk3(sql: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_hpk3().await) {
-        validate(d, c, &["/tenant", "/userId", "/sessionId"], sql).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_hpk3().await);
+    validate(d, c, &["/tenant", "/userId", "/sessionId"], sql).await;
 }
 
 async fn validate_nested(sql: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_nested().await) {
-        validate(d, c, &["/address/city"], sql).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_nested().await);
+    validate(d, c, &["/address/city"], sql).await;
 }
 
 #[allow(dead_code)]
 async fn validate_nopk(sql: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_nopk().await) {
-        validate(d, c, &["/id"], sql).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_nopk().await);
+    validate(d, c, &["/id"], sql).await;
 }
 
 async fn validate_pk_expects_400(sql: &str, reason: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_pk().await) {
-        validate_expects_400(d, c, sql, reason).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_pk().await);
+    validate_expects_400(d, c, sql, reason).await;
 }
 
 async fn validate_hpk_expects_400(sql: &str, reason: &str) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_hpk().await) {
-        validate_expects_400(d, c, sql, reason).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_hpk().await);
+    validate_expects_400(d, c, sql, reason).await;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -744,9 +758,8 @@ async fn gw_400_alias_mismatch() {
 // supplied, the local generator must fail clearly (the Gateway responds 400).
 
 async fn validate_pk_with_params(sql: &str, params: &[(&str, serde_json::Value)]) {
-    if let (Some(d), Some(c)) = (get_driver().await, c_pk().await) {
-        validate_with_params(d, c, &["/pk"], sql, params).await;
-    }
+    let (d, c) = require_driver_and(get_driver().await, c_pk().await);
+    validate_with_params(d, c, &["/pk"], sql, params).await;
 }
 
 #[tokio::test]
@@ -905,18 +918,46 @@ async fn local_plan_non_path_group_by_errors() {
     );
 }
 
-// ─── Cross-crate visibility sanity check for the supported-features constant ─
-//
-// The driver crate keeps `SUPPORTED_QUERY_FEATURES` `pub(crate)` so production
-// callers cannot reach it; only the `__internal_testing`-gated alias
-// `__TEST_ONLY_SUPPORTED_QUERY_FEATURES` is reachable from this integration
-// test. This test makes the contract explicit so accidental visibility changes
-// (or constant edits) do not silently desync the local plan generator from
-// what is advertised to the Gateway in `x-ms-cosmos-supported-query-features`.
 #[test]
 fn internal_testing_supported_features_constant_is_reachable() {
+    // Cross-crate visibility sanity check for the supported-features constant.
+    //
+    // The driver crate keeps `SUPPORTED_QUERY_FEATURES` `pub(crate)` so
+    // production callers cannot reach it; only the `__internal_testing`-gated
+    // alias `__TEST_ONLY_SUPPORTED_QUERY_FEATURES` is reachable from this
+    // integration test. This test makes the contract explicit so accidental
+    // visibility changes (or constant edits) do not silently desync the
+    // local plan generator from what is advertised to the Gateway in
+    // `x-ms-cosmos-supported-query-features`.
+    //
+    // Must stay in lockstep with `query::SUPPORTED_QUERY_FEATURES` in
+    // `src/query/mod.rs`. `MultipleAggregates` and `CompositeAggregate` are
+    // intentionally NOT advertised today (see the doc comment on the constant
+    // for the rationale - the local pipeline cannot execute the rewritten
+    // queries the Gateway hands back when those features are enabled).
     assert_eq!(
         azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES,
-        "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates",
+        "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,GroupBy",
     );
+}
+
+// (#10) CONCAT plan-parity coverage. The local evaluator implements
+// `CONCAT` with strict string-only arguments (any non-string yields
+// `Undefined`, matching the gateway). These tests pin the *plan-level*
+// shape so the parser/plan generator handles `CONCAT` calls in projection
+// and WHERE positions identically to the Gateway. End-to-end value parity
+// is covered by inline tests in `query::eval::builtins`.
+#[tokio::test]
+async fn gw_concat_in_projection() {
+    validate_pk("SELECT CONCAT(c.first, c.last) FROM c").await;
+}
+
+#[tokio::test]
+async fn gw_concat_in_where_clause() {
+    validate_pk("SELECT * FROM c WHERE CONCAT(c.first, c.last) = 'AliceSmith'").await;
+}
+
+#[tokio::test]
+async fn gw_concat_with_literal_argument() {
+    validate_pk("SELECT CONCAT(c.name, '@example.com') FROM c").await;
 }

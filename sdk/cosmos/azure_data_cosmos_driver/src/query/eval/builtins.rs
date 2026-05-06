@@ -105,30 +105,33 @@ pub(super) fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosVa
             _ => Ok(CosmosValue::Undefined),
         },
         "CONCAT" => {
+            // Cosmos SQL `CONCAT` requires every argument to be a string;
+            // any non-string (including `Undefined`) yields `Undefined`. The
+            // gateway-comparison test `gw_concat_*` pins this contract.
             let mut result = String::new();
             for arg in args {
                 match arg {
                     CosmosValue::String(s) => result.push_str(s),
-                    CosmosValue::Undefined => return Ok(CosmosValue::Undefined),
                     _ => return Ok(CosmosValue::Undefined),
                 }
             }
             Ok(CosmosValue::String(result))
         }
         "SUBSTRING" => {
+            // (#4) Negative `start` or `length` is not a valid Cosmos
+            // SUBSTRING input; previously the code did `n as usize` and
+            // wrapped to ~2^63, silently producing odd results. Reject
+            // negatives (and non-numeric / non-finite arguments) by
+            // returning `Undefined`.
             let s = match args.first() {
                 Some(CosmosValue::String(s)) => s,
                 _ => return Ok(CosmosValue::Undefined),
             };
-            let start = match args.get(1) {
-                Some(CosmosValue::Number(n)) => *n as usize,
-                Some(CosmosValue::Integer(n)) => *n as usize,
-                _ => return Ok(CosmosValue::Undefined),
+            let Some(start) = nonneg_usize(args.get(1)) else {
+                return Ok(CosmosValue::Undefined);
             };
-            let len = match args.get(2) {
-                Some(CosmosValue::Number(n)) => *n as usize,
-                Some(CosmosValue::Integer(n)) => *n as usize,
-                _ => return Ok(CosmosValue::Undefined),
+            let Some(len) = nonneg_usize(args.get(2)) else {
+                return Ok(CosmosValue::Undefined);
             };
             Ok(CosmosValue::String(
                 s.chars().skip(start).take(len).collect(),
@@ -140,30 +143,25 @@ pub(super) fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosVa
             }
             _ => Ok(CosmosValue::Undefined),
         },
+        // (#4) `LEFT` / `RIGHT` reject negative lengths; previously
+        // `n as usize` wrapped negative i64 to ~2^63 and `LEFT(s, -1)`
+        // returned the entire string instead of `Undefined`.
         "LEFT" => match args {
-            [CosmosValue::String(s), CosmosValue::Number(n)] => {
-                let n = *n as usize;
-                Ok(CosmosValue::String(s.chars().take(n).collect()))
-            }
-            [CosmosValue::String(s), CosmosValue::Integer(n)] => {
-                let n = *n as usize;
-                Ok(CosmosValue::String(s.chars().take(n).collect()))
-            }
+            [CosmosValue::String(s), n_arg] => match nonneg_usize(Some(n_arg)) {
+                Some(n) => Ok(CosmosValue::String(s.chars().take(n).collect())),
+                None => Ok(CosmosValue::Undefined),
+            },
             _ => Ok(CosmosValue::Undefined),
         },
         "RIGHT" => match args {
-            [CosmosValue::String(s), CosmosValue::Number(n)] => {
-                let n = *n as usize;
-                let chars: Vec<char> = s.chars().collect();
-                let start = chars.len().saturating_sub(n);
-                Ok(CosmosValue::String(chars[start..].iter().collect()))
-            }
-            [CosmosValue::String(s), CosmosValue::Integer(n)] => {
-                let n = *n as usize;
-                let chars: Vec<char> = s.chars().collect();
-                let start = chars.len().saturating_sub(n);
-                Ok(CosmosValue::String(chars[start..].iter().collect()))
-            }
+            [CosmosValue::String(s), n_arg] => match nonneg_usize(Some(n_arg)) {
+                Some(n) => {
+                    let chars: Vec<char> = s.chars().collect();
+                    let start = chars.len().saturating_sub(n);
+                    Ok(CosmosValue::String(chars[start..].iter().collect()))
+                }
+                None => Ok(CosmosValue::Undefined),
+            },
             _ => Ok(CosmosValue::Undefined),
         },
         "TOSTRING" => match args.first() {
@@ -213,6 +211,10 @@ pub(super) fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosVa
         },
         "ARRAY_SLICE" => match args {
             [CosmosValue::Array(arr), start, ..] => {
+                // Negative `start` is meaningful for `ARRAY_SLICE` - it
+                // indexes from the end, matching Cosmos semantics. The
+                // `length` argument however must be non-negative; we treat
+                // negatives as `Undefined`.
                 let Some(start) = as_number(start).map(|value| value as i64) else {
                     return Ok(CosmosValue::Undefined);
                 };
@@ -222,8 +224,11 @@ pub(super) fn eval_function(name: &str, args: &[CosmosValue]) -> Result<CosmosVa
                     start as usize
                 };
                 let len = match args.get(2) {
-                    Some(value) => as_number(value).map(|n| n as usize),
-                    _ => None,
+                    Some(value) => match nonneg_usize(Some(value)) {
+                        Some(n) => Some(n),
+                        None => return Ok(CosmosValue::Undefined),
+                    },
+                    None => None,
                 };
                 let end = match len {
                     Some(l) => (start + l).min(arr.len()),
@@ -272,5 +277,172 @@ pub(super) fn as_number(value: &CosmosValue) -> Option<f64> {
         CosmosValue::Number(n) => Some(*n),
         CosmosValue::Integer(n) => Some(*n as f64),
         _ => None,
+    }
+}
+
+/// Coerce an argument to a non-negative `usize` for length / index parameters.
+///
+/// Returns `None` for missing, non-numeric, negative, or non-finite inputs.
+/// Used by `SUBSTRING`, `LEFT`, `RIGHT`, and `ARRAY_SLICE` to avoid the
+/// `as usize` wrap-around on negative values that previously produced silent
+/// surprising behavior (`LEFT(s, -1)` returning the entire string).
+fn nonneg_usize(arg: Option<&CosmosValue>) -> Option<usize> {
+    let n = match arg? {
+        CosmosValue::Integer(n) => *n as f64,
+        CosmosValue::Number(n) => *n,
+        _ => return None,
+    };
+    if !n.is_finite() || n < 0.0 {
+        return None;
+    }
+    Some(n as usize)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // (#4) Regression: previously `SUBSTRING`/`LEFT`/`RIGHT`/`ARRAY_SLICE`
+    // length cast negative i64 to usize via `as usize`, wrapping to ~2^63
+    // and producing surprising results (e.g. `LEFT('abc', -1)` returned the
+    // entire string). All four must now return `Undefined` on negative
+    // numeric inputs.
+    #[test]
+    fn substring_negative_start_is_undefined() {
+        let r = eval_function(
+            "SUBSTRING",
+            &[
+                CosmosValue::String("hello".into()),
+                CosmosValue::Integer(-1),
+                CosmosValue::Integer(3),
+            ],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    #[test]
+    fn substring_negative_length_is_undefined() {
+        let r = eval_function(
+            "SUBSTRING",
+            &[
+                CosmosValue::String("hello".into()),
+                CosmosValue::Integer(0),
+                CosmosValue::Integer(-1),
+            ],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    #[test]
+    fn left_negative_length_is_undefined() {
+        let r = eval_function(
+            "LEFT",
+            &[
+                CosmosValue::String("hello".into()),
+                CosmosValue::Integer(-1),
+            ],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    #[test]
+    fn right_negative_length_is_undefined() {
+        let r = eval_function(
+            "RIGHT",
+            &[
+                CosmosValue::String("hello".into()),
+                CosmosValue::Integer(-1),
+            ],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    #[test]
+    fn array_slice_negative_length_is_undefined() {
+        let arr = CosmosValue::Array(vec![
+            CosmosValue::Integer(1),
+            CosmosValue::Integer(2),
+            CosmosValue::Integer(3),
+        ]);
+        let r = eval_function(
+            "ARRAY_SLICE",
+            &[arr, CosmosValue::Integer(0), CosmosValue::Integer(-1)],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    // (#10) CONCAT semantics pinned to match the Cosmos DB gateway.
+    //
+    // Per the Cosmos SQL reference for `CONCAT`:
+    //   - All arguments must be string values.
+    //   - Any non-string argument (including `Undefined`, numbers, booleans,
+    //     arrays, objects, null) yields `Undefined`.
+    //
+    // Source: https://learn.microsoft.com/azure/cosmos-db/nosql/query/concat
+    //
+    // The earlier reviewer note suggested numeric/boolean coercion to match
+    // ANSI SQL, but the gateway does NOT coerce - we keep the strict
+    // contract here and document it. The gateway-comparison test
+    // `gw_concat_plan_parses` ensures the plan-level shape matches.
+    #[test]
+    fn concat_all_strings_produces_concatenation() {
+        let r = eval_function(
+            "CONCAT",
+            &[
+                CosmosValue::String("a".into()),
+                CosmosValue::String("b".into()),
+                CosmosValue::String("c".into()),
+            ],
+        )
+        .unwrap();
+        assert_eq!(r, CosmosValue::String("abc".into()));
+    }
+
+    #[test]
+    fn concat_with_number_argument_is_undefined() {
+        let r = eval_function(
+            "CONCAT",
+            &[CosmosValue::String("a".into()), CosmosValue::Integer(1)],
+        )
+        .unwrap();
+        assert!(
+            matches!(r, CosmosValue::Undefined),
+            "Cosmos CONCAT does NOT coerce numbers to strings - expected Undefined, got {r:?}"
+        );
+    }
+
+    #[test]
+    fn concat_with_boolean_argument_is_undefined() {
+        let r = eval_function(
+            "CONCAT",
+            &[CosmosValue::String("a".into()), CosmosValue::Boolean(true)],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    #[test]
+    fn concat_with_null_argument_is_undefined() {
+        let r = eval_function(
+            "CONCAT",
+            &[CosmosValue::String("a".into()), CosmosValue::Null],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
+    }
+
+    #[test]
+    fn concat_with_undefined_argument_is_undefined() {
+        let r = eval_function(
+            "CONCAT",
+            &[CosmosValue::String("a".into()), CosmosValue::Undefined],
+        )
+        .unwrap();
+        assert!(matches!(r, CosmosValue::Undefined));
     }
 }

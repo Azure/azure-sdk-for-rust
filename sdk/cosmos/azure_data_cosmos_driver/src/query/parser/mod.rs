@@ -1978,4 +1978,80 @@ mod tests {
             .join()
             .expect("deep AND chain must not stack-overflow");
     }
+
+    // (#7) The whitelist in `parse_identifier_name` is the contract for
+    // which lexer keywords may also appear as property names (e.g.
+    // `c.value`, `c.from`, `c.order`). Adding a new keyword to the lexer
+    // without updating that whitelist would silently reject valid Cosmos
+    // queries that happen to use the new keyword as a property name. These
+    // tests pin the contract so the regression surfaces immediately.
+    //
+    // If a new keyword is added to the lexer and *deliberately* not allowed
+    // as a property name, remove the corresponding case from this list.
+    fn assert_keyword_parses_as_property(keyword: &str) {
+        let sql = format!("SELECT c.{keyword} FROM c");
+        crate::query::parse(&sql).unwrap_or_else(|e| {
+            panic!(
+                "lexer keyword '{keyword}' must be accepted as a property name; \
+                 update parse_identifier_name when adding a new keyword.\n  error: {e}"
+            )
+        });
+    }
+
+    #[test]
+    fn keyword_as_property_name_select_value_from_etc() {
+        for kw in [
+            "value",
+            "left",
+            "right",
+            "let",
+            "rank",
+            "set",
+            "over",
+            "for",
+            "top",
+            "asc",
+            "desc",
+            "distinct",
+            "null",
+            "true",
+            "false",
+            "undefined",
+            "array",
+            "order",
+            "group",
+            "offset",
+            "limit",
+            "select",
+            "from",
+            "where",
+            "by",
+            "as",
+            "and",
+            "or",
+            "not",
+            "in",
+            "between",
+            "like",
+            "escape",
+            "join",
+            "cross",
+            "inner",
+            "exists",
+            "is",
+            "having",
+            "udf",
+        ] {
+            assert_keyword_parses_as_property(kw);
+        }
+    }
+
+    #[test]
+    fn keyword_as_nested_property_name() {
+        // The whitelist must also work in nested member positions (`a.b.c`).
+        crate::query::parse("SELECT c.address.from FROM c")
+            .expect("nested keyword property must parse");
+        crate::query::parse("SELECT c.order.value FROM c")
+            .expect("chained keyword properties must parse");
+    }
 }

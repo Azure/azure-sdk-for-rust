@@ -22,8 +22,22 @@ SQL Text
   → Parser (recursive descent with Pratt precedence)
   → QueryPlan { pk_filters, query_info }
       ├── pk_filters: PartitionKeyFilter (Equality / InList / Unconstrained / Contradictory / NotEvaluated)
-      └── query_info: QueryInfo (unified type for local + gateway plans)
+      └── query_info: LocalQueryInfo (structural analysis from the AST)
+
+Gateway response (when issued)
+  → GatewayQueryPlan { partition_key_ranges, query_info: GatewayQueryInfo }
 ```
+
+The `LocalQueryInfo` and `GatewayQueryInfo` types are intentionally **not**
+unified (see commit marker `F21`). `LocalQueryInfo` carries fields the AST
+can populate (`has_join`, `has_subquery`, `has_where`, `has_udf`,
+`has_select_value`, …). `GatewayQueryInfo` carries fields only the Gateway
+can populate (`rewritten_query`, `group_by_aliases`, `d_count_info`,
+`has_non_streaming_order_by`, …). The fields they share are compared by
+`gateway_plan::shared_fields_match`, which is the parity surface the
+`tests/gateway_query_plan_comparison.rs` suite asserts against. Splitting
+the types avoids silently fabricating `false` for local-only booleans on
+Gateway responses (and vice versa).
 
 The pipeline goes directly from SQL AST to partition key extraction and structural analysis. No IL layer, no VM — direct AST interpretation.
 
@@ -40,13 +54,13 @@ sdk/cosmos/azure_data_cosmos_driver/src/query/
 ├── lexer/mod.rs      # Hand-crafted tokenizer (TokenKind, Lexer, keyword lookup)
 ├── parser/mod.rs     # Recursive descent parser, Pratt precedence for expressions
 ├── plan/
-│   ├── mod.rs        # Query plan generation + unified QueryInfo type
+│   ├── mod.rs        # Query plan generation + LocalQueryInfo type
 │   └── tests/
 │       └── query_plan_comparison.rs  # Exhaustive structural comparison tests
-├── eval/mod.rs       # In-memory evaluator (WHERE matching, SELECT projection, JOIN, GROUP BY, ORDER BY)
-├── gateway_plan.rs   # Gateway response envelope (GatewayQueryPlan wrapping shared QueryInfo)
+├── eval/mod.rs       # In-memory evaluator (gated on `__internal_in_memory_emulator`)
+├── gateway_plan.rs   # Gateway response envelope (GatewayQueryPlan / GatewayQueryInfo + shared_fields_match)
 ├── common.rs         # Shared utilities (root alias extraction)
-└── value.rs          # CosmosValue: type-aware comparison semantics
+└── value.rs          # CosmosValue: type-aware comparison semantics (gated on `__internal_in_memory_emulator`)
 ```
 
 ### Why Inside the Driver Crate?
@@ -54,7 +68,10 @@ sdk/cosmos/azure_data_cosmos_driver/src/query/
 - Query plan generation is an internal implementation detail — no external consumer needs the types.
 - The driver already has all required dependencies (`serde`, `serde_json`, `azure_core`).
 - Keeps the supported public API surface at zero in normal builds; only test/internal feature gates expose validation hooks.
-- The unified `QueryInfo` type (with `Serialize + Deserialize`) is shared between local plan generation and gateway response deserialization.
+- The split `LocalQueryInfo` / `GatewayQueryInfo` types live next to the
+  pieces that produce them (plan generator vs. response deserialization)
+  while `gateway_plan::shared_fields_match` keeps the parity contract in
+  one place.
 
 ---
 
@@ -82,17 +99,33 @@ Full recursive descent parser for the Cosmos DB SQL dialect:
 - OR union logic (equality + equality, equality + IN, IN + IN) with duplicate-value deduplication
 - Nested PK paths (e.g., `/address/city`)
 - FROM alias resolution
-- Full structural analysis: `QueryInfo` with distinct, top, offset, limit, order_by, group_by, aggregates, has_join, has_subquery, has_where, has_udf, has_select_value
+- Full structural analysis populated by the AST: `LocalQueryInfo` with
+  `distinct`, `top`, `offset`, `limit`, `order_by`, `group_by`,
+  `aggregates`, `has_join`, `has_subquery`, `has_where`, `has_udf`,
+  `has_select_value`.
 
-### Unified QueryInfo Type
+### LocalQueryInfo / GatewayQueryInfo split
 
-`QueryInfo` derives both `Serialize` and `Deserialize` and is used for:
-- **Local plans**: fields like `has_join`, `has_subquery`, `has_where`, `has_udf` populated by AST analysis
-- **Gateway plans**: fields like `rewritten_query`, `group_by_aliases`, `has_non_streaming_order_by`, `d_count_info` populated by deserialization
-
-Both directions default unknown fields to `None`/`false`/empty.
+- **`LocalQueryInfo`** is produced by the local plan generator from the
+  AST. Only fields the AST can populate are present (`has_join`,
+  `has_subquery`, `has_where`, `has_udf`, `has_select_value`, plus the
+  structural fields above).
+- **`GatewayQueryInfo`** is what the Gateway returns over the wire. It
+  carries Gateway-only fields (`rewritten_query`, `group_by_aliases`,
+  `d_count_info`, `has_non_streaming_order_by`, …) in addition to the
+  shared fields.
+- `gateway_plan::shared_fields_match(&LocalQueryInfo)` is the comparison
+  surface: it explicitly ignores the disjoint Gateway-only / local-only
+  fields and only compares the fields both sides can populate. The
+  parity test suite (`tests/gateway_query_plan_comparison.rs`) asserts
+  through this contract so future divergences are caught early.
 
 ### In-Memory Evaluator
+
+Gated behind the `__internal_in_memory_emulator` feature flag. Used by the
+in-memory Cosmos DB emulator and inline unit tests. The evaluator
+intentionally trades full Cosmos parity for emulator usability — see
+`docs/IN_MEMORY_EMULATOR_SPEC.md` for the documented trade-offs.
 
 - `matches_query()`: WHERE clause evaluation against JSON documents
 - `project()`: SELECT clause projection
@@ -116,15 +149,15 @@ Both directions default unknown fields to `None`/`false`/empty.
 
 ## What Is Explicitly Not Implemented
 
-| Component                                | Reason                                                           |
-| ---------------------------------------- | ---------------------------------------------------------------- |
-| IL compilation pipeline                  | Direct AST interpretation suffices                               |
-| VM runtime / bytecode execution          | Backend-only concern                                             |
-| Index plans / physical plans             | Backend-only concern                                             |
-| Distributed query coordination               | Gateway's responsibility                                                      |
-| KQL / JavaScript query support               | Not needed                                                                    |
-| Full ORDER BY / GROUP BY in plan routing     | Plan generation detects these features; execution is server-side              |
-| Production query execution using local plans | Still pending; the supported SDK path continues to request Gateway plans      |
+| Component                                    | Reason                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------ |
+| IL compilation pipeline                      | Direct AST interpretation suffices                                       |
+| VM runtime / bytecode execution              | Backend-only concern                                                     |
+| Index plans / physical plans                 | Backend-only concern                                                     |
+| Distributed query coordination               | Gateway's responsibility                                                 |
+| KQL / JavaScript query support               | Not needed                                                               |
+| Full ORDER BY / GROUP BY in plan routing     | Plan generation detects these features; execution is server-side         |
+| Production query execution using local plans | Still pending; the supported SDK path continues to request Gateway plans |
 
 ## Alternatives considered
 

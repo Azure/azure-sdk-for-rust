@@ -167,11 +167,12 @@ impl CosmosValue {
             Self::Null => Some(serde_json::Value::Null),
             Self::Boolean(b) => Some(serde_json::Value::Bool(*b)),
             Self::Integer(n) => Some(serde_json::Value::Number((*n).into())),
-            Self::Number(n) => Some(
-                serde_json::Number::from_f64(*n)
-                    .map(serde_json::Value::Number)
-                    .unwrap_or(serde_json::Value::Null),
-            ),
+            // Non-finite numbers (NaN / +Inf / -Inf) cannot be represented in
+            // JSON. Treat them as `Undefined` so they are elided from arrays
+            // and objects (matching Cosmos SQL's projection of an undefined
+            // value), instead of silently coercing to `null` which would
+            // collide with explicit `null` properties.
+            Self::Number(n) => serde_json::Number::from_f64(*n).map(serde_json::Value::Number),
             Self::String(s) => Some(serde_json::Value::String(s.clone())),
             Self::Array(arr) => Some(serde_json::Value::Array(
                 arr.iter().filter_map(|v| v.to_json_opt()).collect(),
@@ -301,5 +302,45 @@ mod tests {
     #[test]
     fn to_json_top_level_undefined_falls_back_to_null() {
         assert_eq!(CosmosValue::Undefined.to_json(), serde_json::Value::Null);
+    }
+
+    // (#3) Regression: non-finite f64 values used to coerce to `Value::Null`
+    // in `to_json`, which silently collided with explicit `null` properties
+    // and could be produced from `c.x / 0` or `c.x % 0`. They must instead be
+    // elided from containers (matching how Cosmos SQL projects `Undefined`).
+    #[test]
+    fn to_json_object_elides_non_finite_number_properties() {
+        let obj = CosmosValue::Object(vec![
+            ("nan".to_string(), CosmosValue::Number(f64::NAN)),
+            ("pos_inf".to_string(), CosmosValue::Number(f64::INFINITY)),
+            (
+                "neg_inf".to_string(),
+                CosmosValue::Number(f64::NEG_INFINITY),
+            ),
+            ("explicit_null".to_string(), CosmosValue::Null),
+            ("finite".to_string(), CosmosValue::Number(1.5)),
+        ]);
+        let json = obj.to_json();
+        let expected = serde_json::json!({
+            "explicit_null": null,
+            "finite": 1.5,
+        });
+        assert_eq!(
+            json, expected,
+            "non-finite f64 properties must be elided like Undefined; \
+             explicit Null preserved"
+        );
+    }
+
+    #[test]
+    fn to_json_top_level_non_finite_falls_back_to_null() {
+        assert_eq!(
+            CosmosValue::Number(f64::NAN).to_json(),
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            CosmosValue::Number(f64::INFINITY).to_json(),
+            serde_json::Value::Null
+        );
     }
 }

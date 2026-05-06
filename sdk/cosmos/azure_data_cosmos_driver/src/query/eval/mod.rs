@@ -1149,15 +1149,38 @@ fn eval_binary(op: SqlBinaryOp, left: &CosmosValue, right: &CosmosValue) -> Cosm
         },
         SqlBinaryOp::And => eval_and(left, right),
         SqlBinaryOp::Or => eval_or(left, right),
-        SqlBinaryOp::Add => numeric_op(left, right, |a, b| a + b),
-        SqlBinaryOp::Subtract => numeric_op(left, right, |a, b| a - b),
-        SqlBinaryOp::Multiply => numeric_op(left, right, |a, b| a * b),
-        SqlBinaryOp::Divide => {
-            numeric_op(left, right, |a, b| if b == 0.0 { f64::NAN } else { a / b })
-        }
-        SqlBinaryOp::Modulo => {
-            numeric_op(left, right, |a, b| if b == 0.0 { f64::NAN } else { a % b })
-        }
+        SqlBinaryOp::Add => numeric_op(left, right, |a, b| Some(a + b)),
+        SqlBinaryOp::Subtract => numeric_op(left, right, |a, b| Some(a - b)),
+        SqlBinaryOp::Multiply => numeric_op(left, right, |a, b| Some(a * b)),
+        // Division and modulo by zero return `Undefined` (matches Cosmos SQL
+        // semantics) rather than producing a non-finite `f64`. The local plan
+        // generator's PK-value invariant (`#13`) and the JSON serializer in
+        // `value::to_json` both rely on `CosmosValue::Number` always carrying a
+        // finite value, so we never produce `NaN` / `+Inf` / `-Inf` here.
+        SqlBinaryOp::Divide => numeric_op(left, right, |a, b| {
+            if b == 0.0 {
+                None
+            } else {
+                let r = a / b;
+                if r.is_finite() {
+                    Some(r)
+                } else {
+                    None
+                }
+            }
+        }),
+        SqlBinaryOp::Modulo => numeric_op(left, right, |a, b| {
+            if b == 0.0 {
+                None
+            } else {
+                let r = a % b;
+                if r.is_finite() {
+                    Some(r)
+                } else {
+                    None
+                }
+            }
+        }),
         SqlBinaryOp::StringConcat => match (left, right) {
             (CosmosValue::String(a), CosmosValue::String(b)) => {
                 CosmosValue::String(format!("{a}{b}"))
@@ -1241,19 +1264,30 @@ fn eval_unary(op: SqlUnaryOp, val: &CosmosValue) -> CosmosValue {
     }
 }
 
-fn numeric_op(left: &CosmosValue, right: &CosmosValue, f: fn(f64, f64) -> f64) -> CosmosValue {
-    match (left, right) {
-        (CosmosValue::Number(a), CosmosValue::Number(b)) => CosmosValue::Number(f(*a, *b)),
-        (CosmosValue::Integer(a), CosmosValue::Integer(b)) => {
-            CosmosValue::Number(f(*a as f64, *b as f64))
-        }
-        (CosmosValue::Number(a), CosmosValue::Integer(b)) => CosmosValue::Number(f(*a, *b as f64)),
-        (CosmosValue::Integer(a), CosmosValue::Number(b)) => CosmosValue::Number(f(*a as f64, *b)),
-        _ => CosmosValue::Undefined,
+fn numeric_op(
+    left: &CosmosValue,
+    right: &CosmosValue,
+    f: fn(f64, f64) -> Option<f64>,
+) -> CosmosValue {
+    let pair = match (left, right) {
+        (CosmosValue::Number(a), CosmosValue::Number(b)) => Some((*a, *b)),
+        (CosmosValue::Integer(a), CosmosValue::Integer(b)) => Some((*a as f64, *b as f64)),
+        (CosmosValue::Number(a), CosmosValue::Integer(b)) => Some((*a, *b as f64)),
+        (CosmosValue::Integer(a), CosmosValue::Number(b)) => Some((*a as f64, *b)),
+        _ => None,
+    };
+    match pair.and_then(|(a, b)| f(a, b)) {
+        Some(n) => CosmosValue::Number(n),
+        None => CosmosValue::Undefined,
     }
 }
 
 fn int_op(left: &CosmosValue, right: &CosmosValue, f: fn(i64, i64) -> i64) -> CosmosValue {
+    // (#5) `f64 as i64` is a saturating conversion in Rust >= 1.45 (values
+    // outside `i64::MIN..=i64::MAX` clamp to the boundary, NaN converts to 0).
+    // This is intentionally distinct from JS bitwise semantics (which truncate
+    // to int32) - the in-memory evaluator targets emulator scenarios and the
+    // Gateway is the source of truth for parity-sensitive workloads.
     let to_i64 = |v: &CosmosValue| -> Option<i64> {
         match v {
             CosmosValue::Number(n) => Some(*n as i64),
@@ -2554,5 +2588,36 @@ mod tests {
         assert!(
             !matches_query(&serde_json::json!({"a": true, "b": false}), &p.query, &[]).unwrap()
         );
+    }
+
+    // (#3) Regression: `c.x / 0` and `c.x % 0` previously produced
+    // `CosmosValue::Number(NaN)`, which then silently coerced to `Value::Null`
+    // inside object/array projections. Both must now produce `Undefined` so
+    // they are elided from projections (and so the PK-value finiteness
+    // invariant in `value::to_json` cannot be violated by user expressions).
+    #[test]
+    fn divide_by_zero_is_undefined_in_projection() {
+        let docs = vec![serde_json::json!({"x": 1})];
+        let results = query_documents("SELECT VALUE { v: c.x / 0 } FROM c", &[], &docs).unwrap();
+        // The `v` property holds `Undefined` and must be elided from the
+        // projected object - NOT serialized as `null`.
+        assert_eq!(results, vec![serde_json::json!({})]);
+    }
+
+    #[test]
+    fn modulo_by_zero_is_undefined_in_projection() {
+        let docs = vec![serde_json::json!({"x": 7})];
+        let results = query_documents("SELECT VALUE { v: c.x % 0 } FROM c", &[], &docs).unwrap();
+        assert_eq!(results, vec![serde_json::json!({})]);
+    }
+
+    #[test]
+    fn divide_by_zero_undefined_filters_where_clause() {
+        // `WHERE (c.x / 0) > 0` must NOT match - `Undefined > 0` is
+        // `Undefined`, which fails the strict-Boolean check in the WHERE
+        // pass.
+        let p = crate::query::parse("SELECT * FROM c WHERE (c.x / 0) > 0").unwrap();
+        let doc = serde_json::json!({"x": 5});
+        assert!(!matches_query(&doc, &p.query, &[]).unwrap());
     }
 }

@@ -548,16 +548,16 @@ fn is_ident_char(b: u8) -> bool {
 // (#17) Length-bucketed keyword lookup lives in the sibling keywords module.
 
 /// Extract the string content from a string literal token text (strip quotes, unescape).
+///
+/// The lexer routes unterminated strings to [`TokenKind::ErrUnterminatedString`]
+/// before this helper is reached, so the input is always a properly-quoted
+/// `'...'` string literal.
 pub(crate) fn extract_string_content(token_text: &str) -> String {
-    // Remove surrounding quotes — handle unterminated strings gracefully
     let inner = if token_text.len() >= 2
         && token_text.starts_with(char::from(b'\''))
         && token_text.ends_with(char::from(b'\''))
     {
         &token_text[1..token_text.len() - 1]
-    } else if !token_text.is_empty() && token_text.starts_with(char::from(b'\'')) {
-        // Unterminated string: strip leading quote only
-        &token_text[1..]
     } else {
         token_text
     };

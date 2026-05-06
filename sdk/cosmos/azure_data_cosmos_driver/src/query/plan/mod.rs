@@ -657,9 +657,22 @@ fn union_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKe
 }
 
 fn normalize_pk_union(values: Vec<Vec<PartitionKeyValue>>) -> PartitionKeyFilter {
-    let mut deduped = Vec::new();
+    // Dedup using a hashable key derived from the canonical JSON
+    // serialization of each value tuple. The previous `Vec::contains` lookup
+    // was O(n^2) for long IN-lists (e.g. `c.pk IN (...1000 values...)`
+    // OR'd with another equality), which scales poorly when the parser hands
+    // us large literal lists.
+    let mut seen: std::collections::HashSet<String> =
+        std::collections::HashSet::with_capacity(values.len());
+    let mut deduped: Vec<Vec<PartitionKeyValue>> = Vec::with_capacity(values.len());
     for value in values {
-        if !deduped.contains(&value) {
+        // Each `PartitionKeyValue` is `Serialize`; the serialized form is
+        // a canonical key (the `Number(f64)` variant relies on the
+        // finiteness invariant - see `#13` - so f64 bit patterns map 1:1
+        // to JSON `Number`s).
+        let key =
+            serde_json::to_string(&value).expect("PartitionKeyValue serialization is infallible");
+        if seen.insert(key) {
             deduped.push(value);
         }
     }

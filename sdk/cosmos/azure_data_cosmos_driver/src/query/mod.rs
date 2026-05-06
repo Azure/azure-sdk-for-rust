@@ -10,13 +10,17 @@
 
 pub(crate) mod ast;
 pub(crate) mod common;
+#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
 pub(crate) mod eval;
 pub(crate) mod gateway_plan;
 pub(crate) mod lexer;
 pub(crate) mod parser;
 pub(crate) mod plan;
+#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
 mod value;
 
+#[allow(unused_imports)]
+// Used by tests, the in-memory evaluator, and the (not-yet-wired) local plan caller.
 pub(crate) use parser::parse;
 
 /// Comma-separated list of query features the local plan generator advertises

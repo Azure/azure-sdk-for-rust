@@ -76,11 +76,18 @@ native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
 __internal_mocking = []
 # `__internal_testing` exposes a small, intentionally-unstable surface
-# (`CosmosOperation::query_plan`, `query::__test_only_generate_query_plan_for_pk_paths`,
-# and `query::SUPPORTED_QUERY_FEATURES`) for cross-crate gateway-comparison tests.
-# Production code MUST NOT enable this feature; it is not covered by SemVer and
-# may change or disappear at any time.
+# (`CosmosOperation::query_plan` and `query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES`,
+# plus `query::__test_only_generate_query_plan_for_pk_paths`) for cross-crate
+# gateway-comparison tests. Production code MUST NOT enable this feature; it is
+# not covered by SemVer and may change or disappear at any time.
 __internal_testing = []
+# `__internal_in_memory_emulator` exposes the in-memory query evaluator
+# (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
+# emulator. The evaluator intentionally trades full Cosmos parity for emulator
+# usability (see `docs/IN_MEMORY_EMULATOR_SPEC.md` and the doc comments on the
+# `eval` module). Production code MUST NOT enable this feature; it is not
+# covered by SemVer and may change or disappear at any time.
+__internal_in_memory_emulator = []
 __tls = []
 
 [package.metadata.docs.rs]
