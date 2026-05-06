@@ -157,7 +157,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
         .await?;
 
-    let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
+    let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
 
     // No Overwrite Existing Blob Scenario
     let response = blob_client
@@ -836,7 +836,7 @@ async fn test_upload_block_blob_with_tags(ctx: TestContext) -> Result<(), Box<dy
         &blob_client,
         Some(RequestContent::from(b"tagged blob content".to_vec())),
         Some(BlockBlobClientUploadOptions {
-            blob_tags_string: Some("version=1".to_string()),
+            tags: Some(HashMap::from([("version".to_string(), "1".to_string())]).into()),
             ..Default::default()
         }),
     )

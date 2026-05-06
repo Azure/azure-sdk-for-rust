@@ -6,8 +6,34 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use super::{BlobTag, Block, ContainerItem, CorsRule, FilterBlobItem};
+use super::{BlobItem, BlobTag, Block, ContainerItem, CorsRule, FilterBlobItem};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "Blobs")]
+pub(crate) struct Blob_itemsBlob {
+    #[serde(default)]
+    Blob: Vec<BlobItem>,
+}
+
+impl Blob_itemsBlob {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobItem>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Blob_itemsBlob::deserialize(deserializer)?.Blob)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<BlobItem>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Blob_itemsBlob {
+            Blob: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "TagSet")]
@@ -39,21 +65,18 @@ impl Blob_tag_setTag {
 #[serde(rename = "Blobs")]
 pub(crate) struct BlobsBlob {
     #[serde(default)]
-    Blob: Option<Vec<FilterBlobItem>>,
+    Blob: Vec<FilterBlobItem>,
 }
 
 impl BlobsBlob {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<FilterBlobItem>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<FilterBlobItem>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(BlobsBlob::deserialize(deserializer)?.Blob)
     }
 
-    pub fn wrap<S>(
-        to_serialize: &Option<Vec<FilterBlobItem>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<FilterBlobItem>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

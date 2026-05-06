@@ -746,7 +746,7 @@ mod blob_client {
             &blob_client,
             None,
             Some(BlockBlobClientUploadOptions {
-                blob_tags_string: Some("env=test".to_string()),
+                tags: Some(HashMap::from([("env".to_string(), "test".to_string())]).into()),
                 ..Default::default()
             }),
         )
@@ -1291,7 +1291,7 @@ mod block_blob_client {
             .upload(
                 RequestContent::from(b"tagged".to_vec()),
                 Some(BlockBlobClientUploadOptions {
-                    blob_tags_string: Some("kind=block".to_string()),
+                    tags: Some(HashMap::from([("kind".to_string(), "block".to_string())]).into()),
                     ..Default::default()
                 }),
             )

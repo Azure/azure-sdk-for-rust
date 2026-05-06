@@ -10,9 +10,9 @@ use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
-    BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
-    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
+    BlobContainerClientCreateOptions, BlobContainerClientGetAccountInfoResultHeaders,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
+    BlobContainerClientListFindBlobsByTagsOptions, BlobContainerClientSetMetadataOptions, BlobType,
     BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
     StorageErrorCode,
 };
@@ -125,7 +125,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
-    let blob_list = list_blob_segment_response.segment.blob_items;
+    let blob_list = list_blob_segment_response.blob_items;
     for blob in blob_list {
         let blob_name = blob.name.unwrap();
         let properties = blob.properties.unwrap();
@@ -190,7 +190,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     let first_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = first_page.unwrap().into_model()?;
     let continuation_token = list_blob_segment_response.next_marker;
-    let blob_list = list_blob_segment_response.segment.blob_items;
+    let blob_list = list_blob_segment_response.blob_items;
     assert_eq!(2, blob_list.len());
     for blob in blob_list {
         let blob_name = blob.name.unwrap();
@@ -207,7 +207,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         .into_pages();
     let second_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = second_page.unwrap().into_model()?;
-    let blob_list = list_blob_segment_response.segment.blob_items;
+    let blob_list = list_blob_segment_response.blob_items;
     assert_eq!(2, blob_list.len());
     for blob in blob_list {
         let blob_name = blob.name.unwrap();
@@ -227,7 +227,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         let current_page = page.unwrap().into_model()?;
         match page_count {
             1 => {
-                let blob_list = current_page.segment.blob_items;
+                let blob_list = current_page.blob_items;
                 assert_eq!(2, blob_list.len());
 
                 for blob in blob_list {
@@ -238,7 +238,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
                 }
             }
             2 => {
-                let blob_list = current_page.segment.blob_items;
+                let blob_list = current_page.blob_items;
                 assert_eq!(2, blob_list.len());
 
                 for blob in blob_list {
@@ -283,7 +283,7 @@ async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(
     let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
-    let blob_items = list_blob_segment_response.segment.blob_items;
+    let blob_items = list_blob_segment_response.blob_items;
 
     // Assert
     assert_eq!(test_cases.len(), blob_items.len());
@@ -411,12 +411,16 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     create_test_blob(
         &container_client.blob_client(&blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
-        Some(
-            BlockBlobClientUploadOptions::default().with_tags(HashMap::from([
-                ("foo".to_string(), "bar".to_string()),
-                ("alice".to_string(), "bob".to_string()),
-            ])),
-        ),
+        Some(BlockBlobClientUploadOptions {
+            tags: Some(
+                HashMap::from([
+                    ("foo".to_string(), "bar".to_string()),
+                    ("alice".to_string(), "bob".to_string()),
+                ])
+                .into(),
+            ),
+            ..Default::default()
+        }),
     )
     .await?;
     let blob2_name = get_blob_name(ctx.recording());
@@ -424,7 +428,10 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     create_test_blob(
         &container_client.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
-        Some(BlockBlobClientUploadOptions::default().with_tags(blob2_tags.clone())),
+        Some(BlockBlobClientUploadOptions {
+            tags: Some(blob2_tags.clone().into()),
+            ..Default::default()
+        }),
     )
     .await?;
 
@@ -435,7 +442,10 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         create_test_blob(
             &container_client.blob_client(&name),
             Some(RequestContent::from("data".as_bytes().into())),
-            Some(BlockBlobClientUploadOptions::default().with_tags(shared_tag.clone())),
+            Some(BlockBlobClientUploadOptions {
+                tags: Some(shared_tag.clone().into()),
+                ..Default::default()
+            }),
         )
         .await?;
     }
@@ -448,11 +458,11 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
-    let response = container_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)
-        .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
+    let mut pager = container_client
+        .list_find_blobs_by_tags("\"foo\"='bar'", None)?
+        .into_pages();
+    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+    let blobs = &filter_blob_segment.blobs;
     assert!(
         blobs
             .iter()
@@ -461,11 +471,11 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
-    let response = container_client
-        .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)
-        .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
+    let mut pager = container_client
+        .list_find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
+        .into_pages();
+    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+    let blobs = &filter_blob_segment.blobs;
     assert!(
         blobs
             .iter()
@@ -474,15 +484,15 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     );
 
     // Max Results Scenario
-    let options = BlobContainerClientFindBlobsByTagsOptions {
+    let options = BlobContainerClientListFindBlobsByTagsOptions {
         maxresults: Some(2),
         ..Default::default()
     };
-    let response = container_client
-        .find_blobs_by_tags("\"env\"='test'", Some(options))
-        .await?;
-    let page = response.into_model()?;
-    let blobs = page.blobs.unwrap_or_default();
+    let mut pager = container_client
+        .list_find_blobs_by_tags("\"env\"='test'", Some(options))?
+        .into_pages();
+    let page = pager.try_next().await?.unwrap().into_model()?;
+    let blobs = &page.blobs;
     assert!(
         blobs.len() <= 2,
         "page should contain at most 2 blobs due to maxresults=2, got {}",
@@ -598,10 +608,10 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
     create_test_blob(
         &container_client.blob_client(&tags_blob_name),
         None,
-        Some(
-            BlockBlobClientUploadOptions::default()
-                .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
-        ),
+        Some(BlockBlobClientUploadOptions {
+            tags: Some(HashMap::from([("env".to_string(), "test".to_string())]).into()),
+            ..Default::default()
+        }),
     )
     .await?;
 
@@ -620,7 +630,7 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
         .unwrap()
         .into_model()?;
 
-    let items = page.segment.blob_items;
+    let items = page.blob_items;
 
     // Metadata blob: metadata should be populated
     let meta_blob = items
@@ -673,12 +683,7 @@ async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Err
         .unwrap()
         .into_model()?;
 
-    let names: Vec<String> = page
-        .segment
-        .blob_items
-        .into_iter()
-        .filter_map(|b| b.name)
-        .collect();
+    let names: Vec<String> = page.blob_items.into_iter().filter_map(|b| b.name).collect();
     assert_eq!(1, names.len());
     assert_eq!(blob_with_prefix, names[0]);
 
@@ -714,7 +719,6 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
         .into_model()?;
     assert!(
         page_without
-            .segment
             .blob_items
             .iter()
             .all(|b| b.name.as_deref() != Some(blob_name.as_str())),
@@ -734,7 +738,6 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
         .into_model()?;
     assert!(
         page_with
-            .segment
             .blob_items
             .iter()
             .any(|b| b.name.as_deref() == Some(blob_name.as_str())),
@@ -773,7 +776,6 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
         .into_model()?;
     assert!(
         page_without
-            .segment
             .blob_items
             .iter()
             .all(|b| b.name.as_deref() != Some(blob_name.as_str())),
@@ -792,7 +794,6 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
         .unwrap()
         .into_model()?;
     let deleted_blob = page_with
-        .segment
         .blob_items
         .into_iter()
         .find(|b| b.name.as_deref() == Some(blob_name.as_str()))
@@ -843,7 +844,6 @@ async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<d
     // operations, not synchronous Put Blob From URL. The Copy include flag is
     // accepted and the destination blob still appears in the listing.
     let dest_blob = page
-        .segment
         .blob_items
         .into_iter()
         .find(|b| b.name.as_deref() == Some(dest_name.as_str()))

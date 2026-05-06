@@ -6,14 +6,42 @@ use crate::models::{
     BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions, PageBlobClientCreateOptions,
     SignedIdentifier, SignedIdentifiers,
 };
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
+
+/// Converts a `BlobTags` to the `x-ms-tags` header string format (`key=value&key2=value2`).
+///
+/// Keys and values are percent-encoded to handle special characters (`&`, `=`, spaces, etc.).
+/// Returns `None` if there are no valid tag entries.
+pub(crate) fn blob_tags_to_string(tags: &BlobTags) -> Option<String> {
+    let result = match &tags.blob_tag_set {
+        Some(tag_set) => tag_set
+            .iter()
+            .filter_map(|tag| match (&tag.key, &tag.value) {
+                (Some(k), Some(v)) => {
+                    let encoded_key = percent_encode(k.as_bytes(), NON_ALPHANUMERIC);
+                    let encoded_value = percent_encode(v.as_bytes(), NON_ALPHANUMERIC);
+                    Some(format!("{}={}", encoded_key, encoded_value))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("&"),
+        None => String::new(),
+    };
+    if result.is_empty() {
+        None
+    } else {
+        Some(result)
+    }
+}
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
 /// # Arguments
 ///
 /// * `self` - The options bag to be modified.
 impl PageBlobClientCreateOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -26,7 +54,7 @@ impl PageBlobClientCreateOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl AppendBlobClientCreateOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -39,7 +67,7 @@ impl AppendBlobClientCreateOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -52,29 +80,9 @@ impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
 ///
 /// * `self` - The options bag to be modified.
 impl BlockBlobClientUploadOptions<'_> {
-    pub fn with_if_not_exists(self) -> Self {
+    pub fn if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
-            ..self
-        }
-    }
-}
-
-/// Augments the current options bag to include blob tags.
-/// # Arguments
-///
-/// * `self` - The options bag to be modified.
-/// * `tags` - A HashMap of key-value pairs representing the blob tags.
-impl BlockBlobClientUploadOptions<'_> {
-    pub fn with_tags(self, tags: HashMap<String, String>) -> Self {
-        let tags_string = tags
-            .iter()
-            .map(|(key, value)| format!("{}={}", key, value))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        Self {
-            blob_tags_string: Some(tags_string),
             ..self
         }
     }
