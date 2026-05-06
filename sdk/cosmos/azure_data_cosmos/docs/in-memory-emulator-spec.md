@@ -255,8 +255,8 @@ EmulatorStore
 | `_etag`               | `String`      | Quoted UUID                                                                                                             |
 | `_ts`                 | `u64`         | Last-modified timestamp (Unix epoch seconds)                                                                            |
 | `_lsn`                | `u64`         | Current LSN of this partition                                                                                           |
-| `min_inclusive`       | `Epk`         | Lower EPK bound (inclusive), e.g. `Epk::MIN`                                                                            |
-| `max_exclusive`       | `Epk`         | Upper EPK bound (exclusive), e.g. `Epk::MAX`                                                                            |
+| `min_inclusive`       | `Epk`         | Lower EPK bound (inclusive), e.g. `Epk::min()`                                                                            |
+| `max_exclusive`       | `Epk`         | Upper EPK bound (exclusive), e.g. `Epk::max()`                                                                            |
 | `status`              | `String`      | `"online"` (or absent during split/merge lock)                                                                          |
 | `parents`             | `Vec<String>` | Parent partition IDs after split/merge (empty for initial partitions)                                                   |
 | `rid_prefix`          | `u32`         | Partition-local RID prefix for document allocation                                                                      |
@@ -319,7 +319,7 @@ Container (4 partitions, EPK range = "" .. "FF")
 └── PhysicalPartition 3: ["BFFF...FF",     "FF")          ← PKRange ID 3
 ```
 
-The hex-encoded EPK space `[Epk::MIN, Epk::MAX)` is divided into N equal-width ranges.
+The hex-encoded EPK space `[Epk::min(), Epk::max())` is divided into N equal-width ranges.
 Range boundaries are computed by dividing the numeric hash space and converting back to hex.
 
 ### The `Epk` Newtype
@@ -445,8 +445,8 @@ For hierarchical PK with N components, the EPK is `N * 32` hex characters long.
 #### EPK Range Boundaries
 
 EPK ranges use `Epk` comparison (lexicographic on the underlying uppercase hex string):
-- **Min inclusive**: `Epk::MIN` — empty string, corresponds to empty partition key
-- **Max exclusive**: `Epk::MAX` — `"FF"`, corresponds to infinity partition key
+- **Min inclusive**: `Epk::min()` — empty string, corresponds to empty partition key
+- **Max exclusive**: `Epk::max()` — `"FF"`, corresponds to infinity partition key
 
 The emulator's `epk` module re-exports the production `EffectivePartitionKey` from
 `azure_data_cosmos_driver::models::effective_partition_key` and delegates all hashing to
@@ -498,7 +498,7 @@ child's RID.
 - **`coll_id`**: Monotonically increasing `u32` counter. High bit of the first byte is set
   to `1` to distinguish collections from users (which share the same position but have the
   high bit unset).
-- **`doc_id`**: Monotonically increasing `u64` counter per collection. The top nibble of the
+- **`doc_id`**: Monotonically increasing `u64` counter per collection. The low nibble of the
   last byte encodes the child resource type (`0x0` = Document, `0x5` = PartitionKeyRange,
   `0x8` = StoredProcedure, etc.).
 - All integers are big-endian.
@@ -858,6 +858,13 @@ store.merge_partitions(db_id, coll_id, partition_id_a, partition_id_b, min_lock_
 - **`resume_replication(target_region)`**: Clears the flag and drains the buffer, applying
   all accumulated writes in order. Each replicated document updates the target partition's
   LSN via `fetch_max`.
+- **Drain order**: The buffer is FIFO across **all** source regions, but on resume the
+  emulator sorts pending entries by `(db, coll, epk, id, ts, lsn, source_region)` before
+  applying them. This keeps Last-Writer-Wins on `(_ts, lsn)` deterministic when two
+  source regions enqueue conflicting mutations against the same `(epk, id)`. The trade-off
+  is that per-source FIFO causal order is **not** preserved across the drain. Tests that
+  need per-source causal order should pause one target region at a time, or assert only on
+  the post-drain LWW outcome.
 - **Use cases**: Testing session-not-available scenarios after region failover, verifying
   the driver's retry logic when reads fail due to replication lag, simulating network
   partitions between regions.
@@ -1477,7 +1484,7 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
 2. ~~**Partition key range IDs**: Single range ID `0` per logical partition sufficient?~~
    **Resolved** — each container has multiple physical partitions (default 4, configurable),
    each covering an EPK hash range. Documents are stored by physical partition → EPK hash →
-   item ID. This model supports future ReadFeed, ChangeFeed, and Query operations that
+   item ID. This model supports future ChangeFeed and Query operations that
    iterate over EPK ranges. See [Section 5](#5-in-memory-store-design).
 
 3. ~~**Content-response-on-write**: Respect the
@@ -1489,7 +1496,7 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
    **Resolved** — hierarchical binary encoding following the
    [Java SDK `ResourceId`](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ResourceId.java)
    implementation. Child resources encode their parent's RID (db 4B → collection 4B with
-   high bit → document 8B with type nibble). Numeric identifiers are monotonically
+   high bit → document 8B with low type nibble). Numeric identifiers are monotonically
    increasing. See [Section 5 — Hierarchical RID Encoding](#hierarchical-rid-encoding).
 
 5. ~~**Request auth validation**: Should the emulator validate Authorization headers?~~

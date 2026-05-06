@@ -905,16 +905,16 @@ async fn handle_create(
             }
         }
 
-        // Compute RU charge and check throttle BEFORE mutating the store.
+        // Compute RU charge eagerly, but do NOT debit the throttle bucket
+        // until we are sure we will commit the write. Throttling under the
+        // read-lock probe means concurrent conflicts (returning 1.0 RU) would
+        // mismatch the bucket debit, producing non-deterministic
+        // RU-budget assertions in throttling tests.
         let num_props = RuChargingModel::count_properties(&body);
         let charge = store
             .config()
             .ru_model()
             .compute_create_ru(request_body.len(), num_props);
-
-        if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled(), start) {
-            return Err(response);
-        }
 
         let stored_doc = {
             let mut docs = partition.documents.write().unwrap();
@@ -935,6 +935,13 @@ async fn handle_create(
                     start,
                 )
                 .build());
+            }
+
+            // Debit the throttle bucket only now that the conflict check has
+            // passed under the write lock (#2 / #3): on a 429 the response
+            // RU charge matches the actual debit.
+            if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled(), start) {
+                return Err(response);
             }
 
             let lsn = partition.advance_lsn();
@@ -1049,7 +1056,10 @@ fn handle_read(
         }
 
         // Check forced session unavailability (one-shot)
-        if partition.session_state.check_and_clear_forced() {
+        if partition
+            .session_state
+            .check_and_clear_forced_for(epk.as_str())
+        {
             return Err(error_response(
                 StatusCode::NotFound,
                 Some(1002),
@@ -1309,23 +1319,16 @@ async fn handle_replace(
             }
         }
 
-        // Compute RU charge and check throttle BEFORE acquiring the write
-        // lock — keeps throttled requests from serializing other writers /
-        // readers on the partition.
+        // Compute RU charge eagerly. Throttle debit is deferred to the
+        // post-precondition write-lock window so a 429 only fires when the
+        // operation would otherwise have committed (#2 / #3). Without this,
+        // a throttled-and-then-NotFound replace would still have charged
+        // the per-second budget for work that never landed.
         let num_props = RuChargingModel::count_properties(&body);
         let charge = store
             .config()
             .ru_model()
             .compute_replace_or_delete_ru(request_body.len(), num_props);
-
-        if let Some(response) = check_throttle(
-            partition,
-            charge,
-            store.config().throttling_enabled(),
-            start,
-        ) {
-            return Err(response);
-        }
 
         // Replace
         let new_doc = {
@@ -1379,6 +1382,17 @@ async fn handle_replace(
                     )
                     .build());
                 }
+            }
+
+            // Debit the throttle bucket only after preconditions pass under
+            // the write lock (#2 / #3).
+            if let Some(response) = check_throttle(
+                partition,
+                charge,
+                store.config().throttling_enabled(),
+                start,
+            ) {
+                return Err(response);
             }
 
             let lsn = partition.advance_lsn();
@@ -1512,21 +1526,23 @@ async fn handle_upsert(
             return Err(response);
         }
 
-        // Determine whether this upsert is a create or replace BEFORE charging.
-        // Without this, throttle accounting and the reported RU charge would be
-        // mismatched (create charge debited from the bucket but a replace charge
-        // surfaced in the response), and replace-via-upsert would consume less
-        // budget than the same op invoked as a Replace.
+        // The create-vs-replace decision, RU charge, throttle debit, and
+        // commit must all happen under the write lock for correctness (#3):
+        // a previous version probed existence under a read lock, then
+        // re-acquired a write lock and inserted unconditionally, which let a
+        // concurrent create slip in between probe and commit. The upsert
+        // would then return 201 Created while overwriting an existing
+        // document, charge create-RU for what was semantically a replace,
+        // and allocate a fresh `_rid` for a document the prior writer's
+        // client believed already had a stable RID.
         //
-        // The existence probe runs under a *read* lock (so concurrent reads on
-        // the partition are not blocked while we compute the charge) and we
-        // only escalate to a write lock once throttling has passed. Avoiding
-        // `entry(..).or_default()` here also prevents a leaked empty
-        // `BTreeMap` entry on the throttled / error paths.
+        // RID allocation is deferred to the write lock so we don't burn a
+        // monotonic counter slot on a path that turns out to be a replace.
         let num_props = RuChargingModel::count_properties(&body);
-        let (status, rid, self_link) = {
-            let docs = partition.documents.read().unwrap();
-            match docs.get(&epk).and_then(|l| l.get(&doc_id)) {
+        let (new_doc, status, charge) = {
+            let mut docs = partition.documents.write().unwrap();
+            let logical = docs.entry(epk.clone()).or_default();
+            let (status, rid, self_link) = match logical.get(&doc_id) {
                 Some(existing) => (
                     StatusCode::Ok,
                     existing.rid.clone(),
@@ -1540,54 +1556,53 @@ async fn handle_upsert(
                     let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
                     (StatusCode::Created, doc_rid, self_link)
                 }
+            };
+
+            let charge = if status == StatusCode::Created {
+                store
+                    .config()
+                    .ru_model()
+                    .compute_create_ru(request_body.len(), num_props)
+            } else {
+                store
+                    .config()
+                    .ru_model()
+                    .compute_replace_or_delete_ru(request_body.len(), num_props)
+            };
+
+            // Throttle debit only after the create-vs-replace decision is
+            // locked in (#2 / #3), so the reported RU charge matches the
+            // bucket debit even when the operation is rejected with 429.
+            if let Some(response) = check_throttle(
+                partition,
+                charge,
+                store.config().throttling_enabled(),
+                start,
+            ) {
+                return Err(response);
             }
+
+            let lsn = partition.advance_lsn();
+            partition.advance_local_lsn();
+            let ts = current_timestamp();
+            let etag = new_etag();
+
+            inject_system_properties(&rid, &self_link, &etag, ts, &mut body);
+            let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
+            let new_doc = StoredDocument {
+                body: body.clone(),
+                id: doc_id.clone(),
+                rid,
+                etag: etag.clone(),
+                ts,
+                self_link,
+                lsn,
+                epk: epk.clone(),
+                body_size_bytes,
+            };
+            logical.insert(doc_id.clone(), new_doc.clone());
+            (new_doc, status, charge)
         };
-
-        let charge = if status == StatusCode::Created {
-            store
-                .config()
-                .ru_model()
-                .compute_create_ru(request_body.len(), num_props)
-        } else {
-            store
-                .config()
-                .ru_model()
-                .compute_replace_or_delete_ru(request_body.len(), num_props)
-        };
-
-        if let Some(response) = check_throttle(
-            partition,
-            charge,
-            store.config().throttling_enabled(),
-            start,
-        ) {
-            return Err(response);
-        }
-
-        let lsn = partition.advance_lsn();
-        partition.advance_local_lsn();
-        let ts = current_timestamp();
-        let etag = new_etag();
-
-        inject_system_properties(&rid, &self_link, &etag, ts, &mut body);
-        let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
-        let new_doc = StoredDocument {
-            body: body.clone(),
-            id: doc_id.clone(),
-            rid,
-            etag: etag.clone(),
-            ts,
-            self_link,
-            lsn,
-            epk: epk.clone(),
-            body_size_bytes,
-        };
-
-        {
-            let mut docs = partition.documents.write().unwrap();
-            let logical = docs.entry(epk.clone()).or_default();
-            logical.insert(doc_id, new_doc.clone());
-        }
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(
@@ -1716,23 +1731,15 @@ async fn handle_delete(
             }
         }
 
-        // Compute RU charge and check throttle BEFORE acquiring the write
-        // lock.
+        // Compute RU charge eagerly. Throttle debit is deferred to the
+        // post-precondition write-lock window so a 429 only fires when the
+        // operation would otherwise have committed (#2 / #3).
         let num_props = RuChargingModel::count_properties(&existing.body);
         let body_size = existing.body_size_bytes;
         let charge = store
             .config()
             .ru_model()
             .compute_replace_or_delete_ru(body_size, num_props);
-
-        if let Some(response) = check_throttle(
-            partition,
-            charge,
-            store.config().throttling_enabled(),
-            start,
-        ) {
-            return Err(response);
-        }
 
         let tombstone = {
             let mut docs = partition.documents.write().unwrap();
@@ -1785,6 +1792,17 @@ async fn handle_delete(
                     )
                     .build());
                 }
+            }
+
+            // Debit the throttle bucket only after preconditions pass under
+            // the write lock (#2 / #3).
+            if let Some(response) = check_throttle(
+                partition,
+                charge,
+                store.config().throttling_enabled(),
+                start,
+            ) {
+                return Err(response);
             }
 
             let lsn = partition.advance_lsn();

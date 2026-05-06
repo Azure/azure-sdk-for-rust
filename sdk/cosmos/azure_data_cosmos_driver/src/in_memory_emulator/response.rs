@@ -56,10 +56,10 @@ pub mod headers {
 }
 use headers::{
     ACTIVITY_ID, ALT_CONTENT_PATH, CONTENT_PATH, CONTENT_TYPE, DATE, ETAG, GATEWAY_VERSION,
-    GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_COUNT, LAST_STATE_CHANGE_UTC, LOCAL_LSN, LSN,
-    NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID, QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN,
-    REQUEST_CHARGE, RESOURCE_QUOTA, RESOURCE_USAGE, RETRY_AFTER, SERVER_DURATION_MS,
-    SERVICE_VERSION, SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID, VERSION,
+    GLOBAL_COMMITTED_LSN, ITEM_COUNT, LAST_STATE_CHANGE_UTC, LOCAL_LSN, LSN,
+    NUMBER_OF_READ_REGIONS, QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, REQUEST_CHARGE,
+    RESOURCE_QUOTA, RESOURCE_USAGE, RETRY_AFTER, SERVER_DURATION_MS, SERVICE_VERSION,
+    SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID, VERSION,
 };
 
 const COSMOS_VERSION: &str = "2020-07-15";
@@ -85,6 +85,20 @@ impl ResponseBuilder {
             ACTIVITY_ID.clone(),
             HeaderValue::from(uuid::Uuid::new_v4().to_string()),
         );
+        // Real Cosmos DB emits these headers on *every* response, including
+        // control-plane and error responses. We pre-populate them here so
+        // dual-backend response comparisons work without per-test
+        // allowlists. For point operations the handler overwrites the
+        // partition-derived values via `decorate_point_response` so the
+        // emitted values reflect actual partition state instead of the
+        // synthetic defaults used for control-plane responses.
+        //
+        // `partition_key_range_id` and `internal_partition_id` are
+        // intentionally NOT pre-seeded with garbage values (the prior
+        // implementation set a random UUID and `"0"` respectively, which
+        // surfaced meaningless values on control-plane responses and could
+        // mask correlation bugs). Handlers that target a physical partition
+        // attach the real values via `decorate_point_response`.
         headers.insert(
             TRANSPORT_REQUEST_ID.clone(),
             HeaderValue::from((uuid::Uuid::new_v4().as_u128() as u32).to_string()),
@@ -113,16 +127,10 @@ impl ResponseBuilder {
             HeaderValue::from_static("version=emulator"),
         );
         headers.insert(
-            INTERNAL_PARTITION_ID.clone(),
-            HeaderValue::from(uuid::Uuid::new_v4().to_string()),
-        );
-        headers.insert(
-            PARTITION_KEY_RANGE_ID.clone(),
-            HeaderValue::from_static("0"),
-        );
-        headers.insert(
             RESOURCE_QUOTA.clone(),
-            HeaderValue::from_static("documentSize=10240;documentsSize=10485760;documentsCount=-1;collectionSize=10485760;"),
+            HeaderValue::from_static(
+                "documentSize=10240;documentsSize=10485760;documentsCount=-1;collectionSize=10485760;",
+            ),
         );
         headers.insert(
             RESOURCE_USAGE.clone(),

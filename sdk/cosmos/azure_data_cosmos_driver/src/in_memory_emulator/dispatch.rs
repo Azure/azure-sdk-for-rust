@@ -91,8 +91,20 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .unwrap_or(false);
 
     let path = url.path();
+    // Reject trailing slashes after the leading `/`. `/dbs/mydb/colls/mycoll/docs/`
+    // would otherwise parse to depth=5 and misroute to Create. Only the root
+    // path "/" is allowed to be a single slash.
+    let has_trailing_slash = path.len() > 1 && path.ends_with('/');
     let segments = parse_path_segments(path);
-    let operation = resolve_operation(method.as_ref(), &segments, is_upsert, is_query);
+    let operation = if has_trailing_slash {
+        OperationType::Unsupported(format!(
+            "{} {} (trailing slash rejected)",
+            method.as_ref(),
+            path
+        ))
+    } else {
+        resolve_operation(method.as_ref(), &segments, is_upsert, is_query)
+    };
 
     // Index by *position*, not by keyword search. Cosmos URLs are
     // `/dbs/{db}/colls/{coll}/docs/{doc}/...`, so the keyword always
@@ -385,5 +397,31 @@ mod tests {
         let req = make_request("GET", "/dbs/mydb/colls/mycoll/pkranges");
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::ReadPKRanges);
+    }
+
+    #[test]
+    fn trailing_slash_on_docs_collection_is_rejected() {
+        // Without explicit rejection this would resolve to Create (POST) /
+        // a misrouted GET; both are wrong because the gateway does not
+        // accept trailing slashes on resource paths. Surfacing as
+        // Unsupported makes the misuse loud instead of silent.
+        let req = make_request("POST", "/dbs/mydb/colls/mycoll/docs/");
+        let parsed = parse_request(&req);
+        assert!(matches!(parsed.operation, OperationType::Unsupported(_)));
+    }
+
+    #[test]
+    fn trailing_slash_on_document_is_rejected() {
+        let req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/d1/");
+        let parsed = parse_request(&req);
+        assert!(matches!(parsed.operation, OperationType::Unsupported(_)));
+    }
+
+    #[test]
+    fn root_path_is_still_read_account() {
+        // The single-slash root path must continue to resolve normally.
+        let req = make_request("GET", "/");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::ReadAccount);
     }
 }

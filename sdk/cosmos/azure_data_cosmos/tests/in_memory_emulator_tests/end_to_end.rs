@@ -199,6 +199,7 @@ impl SdkDualBackend {
 
         let emulator_client = CosmosClientBuilder::new()
             .with_driver_runtime_builder(emulator.runtime_builder())
+            .with_emulator_http_client(emulator.clone())
             .build(
                 emulator_account,
                 RoutingStrategy::ProximityTo(Region::EAST_US),
@@ -919,6 +920,7 @@ async fn sdk_create_retries_after_429_throttling() {
     );
     let emulator_client = CosmosClientBuilder::new()
         .with_driver_runtime_builder(emulator.runtime_builder())
+        .with_emulator_http_client(emulator.clone())
         .build(
             emulator_account,
             RoutingStrategy::ProximityTo(Region::EAST_US),
@@ -1072,6 +1074,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
     let emu_client = CosmosClientBuilder::new()
         .with_driver_runtime_builder(runtime_builder)
+        .with_emulator_http_client(emulator.clone())
         .build(emu_account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -1299,4 +1302,66 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
         .await?;
 
     Ok(Some(client))
+}
+
+/// Regression test for #5 (SDK pipeline transport leak): when the
+/// emulator HTTP client is wired in via both `with_driver_runtime_builder`
+/// and `with_emulator_http_client`, a fully-built `CosmosClient` must be
+/// usable end-to-end against a hostname that does not resolve. If the SDK
+/// pipeline silently retains a real reqwest transport, any request that
+/// flows through `pipeline_core` (account refresh, fault-injection short
+/// circuit, etc.) will fail with a DNS error instead of being served by
+/// the in-memory store.
+#[tokio::test]
+async fn sdk_pipeline_is_hermetic_with_emulator_http_client() {
+    // Hostname guaranteed not to resolve. If anything bypasses the emulator
+    // and reaches the network, we'll see a DNS / connect error here.
+    let unroutable_url = "https://emulator.invalid.test.local";
+
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(unroutable_url).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    emulator.store().create_database("hermetic-db");
+    emulator.store().create_container(
+        "hermetic-db",
+        "hermetic-coll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    let account = CosmosAccountReference::with_master_key(
+        unroutable_url.parse().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    let client = CosmosClientBuilder::new()
+        .with_driver_runtime_builder(emulator.runtime_builder())
+        .with_emulator_http_client(emulator.clone())
+        .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await
+        .expect("CosmosClient must build hermetically against the emulator");
+
+    let container = client
+        .database_client("hermetic-db")
+        .container_client("hermetic-coll")
+        .await
+        .expect("container_client must succeed without network");
+
+    let item = TestItem {
+        id: "h1".into(),
+        pk: "p".into(),
+        value: 1,
+    };
+    container
+        .create_item("p", &item.id, &item, None)
+        .await
+        .expect("SDK create_item must succeed against the in-memory emulator");
 }

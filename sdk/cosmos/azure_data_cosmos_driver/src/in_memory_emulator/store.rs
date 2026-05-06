@@ -66,9 +66,15 @@ fn apply_doc_to_partition(partition: &PhysicalPartition, doc: &StoredDocument, i
         } else {
             logical.insert(doc.id.clone(), doc.clone());
         }
+        // Only bump local_lsn when the mutation actually lands. The per-region
+        // local LSN is a count of *applied* writes; advancing it for stale
+        // replications that lose the LWW comparison would emit session tokens
+        // whose local-LSN segment exceeds anything a real Cosmos gateway would
+        // produce and silently break dual-backend assertions on
+        // `x-ms-cosmos-llsn`.
+        partition.local_lsn.fetch_add(1, Ordering::SeqCst);
     }
     partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
-    partition.local_lsn.fetch_add(1, Ordering::SeqCst);
 }
 async fn await_control_plane_handle(handle: tokio::task::JoinHandle<()>) {
     if let Err(e) = handle.await {
@@ -108,6 +114,11 @@ pub struct EmulatorStore {
     /// Per-store counter for the `x-ms-transport-request-id` header.
     /// Wraps on overflow (the SDK side parses the header as a `u32`).
     transport_request_counter: AtomicU32,
+    /// Bounded permit pool for in-flight delayed replication tasks. Capped at
+    /// `10 * available_parallelism` so a write storm with default 20–50ms
+    /// replication delay cannot spawn an unbounded backlog of `tokio` tasks
+    /// before the first batch finishes and gets reaped.
+    replication_semaphore: Arc<tokio::sync::Semaphore>,
 }
 
 impl EmulatorStore {
@@ -127,6 +138,12 @@ impl EmulatorStore {
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
+            replication_semaphore: Arc::new(tokio::sync::Semaphore::new(
+                std::thread::available_parallelism()
+                    .map(|n| n.get())
+                    .unwrap_or(1)
+                    .saturating_mul(10),
+            )),
         })
     }
 
@@ -372,7 +389,7 @@ impl EmulatorStore {
             let mut containers = region.containers.write().unwrap();
             containers.insert(
                 (db_id.to_string(), coll_id.to_string()),
-                ContainerState::new(&meta, &self.rid_generator),
+                ContainerState::new(&meta, &self.rid_generator, self.config.throttling_enabled()),
             );
         }
 
@@ -441,7 +458,9 @@ impl EmulatorStore {
                 ),
             )
         })?;
-        partition.session_state.set_force_unavailable();
+        partition
+            .session_state
+            .set_force_unavailable_for(epk.as_str());
         Ok(())
     }
 
@@ -565,9 +584,15 @@ impl EmulatorStore {
                 // Immediate replication — no async needed
                 store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
             } else {
-                // Async delayed replication
+                // Async delayed replication. Bound concurrency via the
+                // per-store semaphore so a burst of writes against a multi-
+                // region account cannot spawn an unbounded `JoinSet`. Each
+                // task holds one permit for the lifetime of its sleep +
+                // apply, which serializes excess work behind the cap.
                 let store_clone = store;
+                let semaphore = Arc::clone(&self.replication_semaphore);
                 self.replication_tasks.lock().unwrap().spawn(async move {
+                    let _permit = semaphore.acquire_owned().await.ok();
                     tokio::time::sleep(delay).await;
                     store_clone
                         .apply_replication(&target, &source, &db, &coll, &document, is_delete);
@@ -578,7 +603,7 @@ impl EmulatorStore {
 
     /// Applies a replicated document to a target region.
     fn apply_replication(
-        &self,
+        self: &Arc<Self>,
         target_region: &str,
         source_region: &str,
         db_id: &str,
@@ -629,10 +654,89 @@ impl EmulatorStore {
             let key = (db_id.to_string(), coll_id.to_string());
             if let Some(state) = containers.get(&key) {
                 if let Some(partition) = state.find_partition(&doc.epk) {
+                    if partition.is_locked() {
+                        // Drop the read guards before scheduling the retry so
+                        // the spawned task can re-acquire them.
+                        drop(containers);
+                        drop(regions);
+                        self.defer_replication_during_lock(
+                            target_region,
+                            source_region,
+                            db_id,
+                            coll_id,
+                            doc,
+                            is_delete,
+                        );
+                        return;
+                    }
                     apply_doc_to_partition(partition, doc, is_delete);
                 }
             }
         }
+    }
+
+    /// Schedules a bounded retry of `apply_replication` while the EPK's
+    /// target partition is locked for split/merge. After the lock clears
+    /// `find_partition` returns the new child partition (split) or the
+    /// merged successor (merge), and the doc lands in the correct place.
+    /// Without this hop, late-arriving replicated writes during a split
+    /// land in the BTreeMap of the parent partition that is about to be
+    /// replaced — the doc snapshot taken inside `execute_split` misses it
+    /// and the document is silently lost.
+    fn defer_replication_during_lock(
+        self: &Arc<Self>,
+        target_region: &str,
+        source_region: &str,
+        db_id: &str,
+        coll_id: &str,
+        doc: &StoredDocument,
+        is_delete: bool,
+    ) {
+        const MAX_ATTEMPTS: u32 = 50;
+        const RETRY_DELAY: Duration = Duration::from_millis(20);
+
+        let store = Arc::clone(self);
+        let target = target_region.to_string();
+        let source = source_region.to_string();
+        let db = db_id.to_string();
+        let coll = coll_id.to_string();
+        let document = doc.clone();
+        let semaphore = Arc::clone(&self.replication_semaphore);
+        self.replication_tasks.lock().unwrap().spawn(async move {
+            let _permit = semaphore.acquire_owned().await.ok();
+            for attempt in 0..MAX_ATTEMPTS {
+                tokio::time::sleep(RETRY_DELAY).await;
+                let still_locked = {
+                    let regions = store.regions.read().unwrap();
+                    let Some(region_store) = regions.get(&target) else {
+                        return;
+                    };
+                    let containers = region_store.containers.read().unwrap();
+                    let key = (db.clone(), coll.clone());
+                    let Some(state) = containers.get(&key) else {
+                        return;
+                    };
+                    state
+                        .find_partition(&document.epk)
+                        .map(|p| p.is_locked())
+                        .unwrap_or(false)
+                };
+                if !still_locked {
+                    store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                    return;
+                }
+                if attempt + 1 == MAX_ATTEMPTS {
+                    tracing::warn!(
+                        target_region = %target,
+                        source_region = %source,
+                        db_id = %db,
+                        coll_id = %coll,
+                        epk = %document.epk,
+                        "in-memory emulator: dropping replicated write after extended split/merge lock",
+                    );
+                }
+            }
+        });
     }
 }
 
@@ -810,8 +914,12 @@ pub(crate) struct ContainerStateSnapshot {
 }
 
 impl ContainerState {
-    pub(crate) fn new(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Self {
-        let partitions = create_partitions(meta, rid_gen);
+    pub(crate) fn new(
+        meta: &ContainerMetadata,
+        rid_gen: &RidGenerator,
+        throttling_enabled: bool,
+    ) -> Self {
+        let partitions = create_partitions(meta, rid_gen, throttling_enabled);
         Self {
             metadata: meta.clone(),
             physical_partitions: partitions,
@@ -947,7 +1055,11 @@ fn pkrange_rid_for(meta: &ContainerMetadata, rid_gen: &RidGenerator, partition_i
 }
 
 /// Creates physical partitions for a container by dividing the EPK space equally.
-fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<PhysicalPartition> {
+fn create_partitions(
+    meta: &ContainerMetadata,
+    rid_gen: &RidGenerator,
+    throttling_enabled: bool,
+) -> Vec<PhysicalPartition> {
     let n = meta.partition_count;
     let mut partitions = Vec::with_capacity(n as usize);
 
@@ -973,7 +1085,11 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
 
         let rid = pkrange_rid_for(meta, rid_gen, i);
 
-        let per_partition_ru = meta.provisioned_throughput_ru.map(|total| total / n);
+        let per_partition_ru = if throttling_enabled {
+            meta.provisioned_throughput_ru.map(|total| total / n)
+        } else {
+            None
+        };
 
         partitions.push(PhysicalPartition {
             id: i,
@@ -1024,11 +1140,26 @@ fn compute_partition_boundaries(n: u32) -> Vec<String> {
 }
 
 /// Returns true if `epk` represents the open lower bound of the EPK space.
+///
+/// Intentionally treats *any* all-`'0'` hex string as the lower-bound sentinel
+/// (and the empty string as the canonical sentinel), so the bound parsing in
+/// `compute_epk_midpoint` accepts every spelling we ever produce. A V2 EPK is
+/// 32 hex chars with the top 2 bits cleared, so its first nibble is in
+/// `0x0..=0x3` — a 32-char "00000000000000000000000000000000" hash is
+/// astronomically unlikely (probability ~2^-126) and would, if it ever
+/// occurred, simply be classified as the open lower bound and routed to
+/// partition 0, which is exactly where a value of 0 belongs. Do not flag this
+/// as a bug; tightening the check would require differentiating "sentinel
+/// open bound" from "real all-zeros hash" everywhere boundaries flow, which
+/// has no observable upside.
 fn is_epk_min(epk: &Epk) -> bool {
     epk.as_str().is_empty() || epk.as_str().chars().all(|c| c == '0')
 }
 
 /// Returns true if `epk` represents the open upper bound of the EPK space.
+///
+/// Mirrors `is_epk_min`: accepts both the canonical `"FF"` sentinel and the
+/// fully-expanded 32-char "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" form.
 fn is_epk_max(epk: &Epk) -> bool {
     let s = epk.as_str();
     s == "FF" || s.eq_ignore_ascii_case("ffffffffffffffffffffffffffffffff")
@@ -1308,7 +1439,11 @@ impl EmulatorStore {
                 drop(parent_docs);
 
                 let n = state.physical_partitions.len() as f64 + 1.0;
-                let per_partition_ru = total_throughput.map(|total| total / (n as u32));
+                let per_partition_ru = if self.config.throttling_enabled() {
+                    total_throughput.map(|total| total / (n as u32))
+                } else {
+                    None
+                };
 
                 let child1 = PhysicalPartition {
                     id: child_id_1,
@@ -1542,15 +1677,51 @@ impl EmulatorStore {
                     }
                 }
 
+                // Rebase document LSNs onto the child partition's reset LSN
+                // counter. Without rebasing, merged-in docs keep the parents'
+                // (often large) LSN values while the child resets to 1, so
+                // (a) subsequent writes to the child lose the LWW comparison
+                //     against pre-merge docs on tie-break, and
+                // (b) session tokens emitted by the child advertise a
+                //     global_lsn that's smaller than `doc.lsn` of stored
+                //     items, confusing the read-after-write check.
+                // Sort by `(ts, original_lsn, id)` to preserve the original
+                // ordering, then assign 1..=N in that order.
+                let mut all_entries: Vec<(Epk, String, StoredDocument)> = merged_docs
+                    .iter()
+                    .flat_map(|(epk, items)| {
+                        items
+                            .iter()
+                            .map(move |(id, d)| (epk.clone(), id.clone(), d.clone()))
+                    })
+                    .collect();
+                all_entries.sort_by(|a, b| (a.2.ts, a.2.lsn, &a.1).cmp(&(b.2.ts, b.2.lsn, &b.1)));
+                let mut rebased_docs: BTreeMap<Epk, BTreeMap<String, StoredDocument>> =
+                    BTreeMap::new();
+                let mut next_lsn: u64 = 0;
+                for (epk, id, mut doc) in all_entries {
+                    next_lsn += 1;
+                    doc.lsn = next_lsn;
+                    rebased_docs.entry(epk).or_default().insert(id, doc);
+                }
+                let merged_docs = rebased_docs;
+                // Child's high-water LSN matches the largest assigned doc LSN
+                // (or 1 for an empty merge so reads still see a non-zero LSN).
+                let child_initial_lsn = next_lsn.max(1);
+
                 let n = state.physical_partitions.len() as f64 - 1.0;
-                let per_partition_ru = total_throughput.map(|total| total / (n.max(1.0) as u32));
+                let per_partition_ru = if self.config.throttling_enabled() {
+                    total_throughput.map(|total| total / (n.max(1.0) as u32))
+                } else {
+                    None
+                };
 
                 let child = PhysicalPartition {
                     id: child_id,
                     epk_min: merged_min.clone(),
                     epk_max: merged_max.clone(),
-                    lsn: AtomicU64::new(1),
-                    local_lsn: AtomicU64::new(1),
+                    lsn: AtomicU64::new(child_initial_lsn),
+                    local_lsn: AtomicU64::new(child_initial_lsn),
                     vector_clock_version: AtomicU64::new(child_version),
                     documents: RwLock::new(merged_docs),
                     session_state: SessionState::new(),

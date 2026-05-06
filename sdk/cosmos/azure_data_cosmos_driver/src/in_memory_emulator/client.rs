@@ -60,7 +60,7 @@ impl InMemoryEmulatorHttpClient {
     /// let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(
     ///     VirtualAccountConfig::new(vec![
     ///         VirtualRegion::new("East US", Url::parse("https://eastus.emulator.local").unwrap()),
-    ///     ]).unwrap()
+    ///     ])?,
     /// ));
     ///
     /// let runtime = emulator.runtime_builder().build().await?;

@@ -8,12 +8,21 @@
 //! the [Java SDK `ResourceId`](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ResourceId.java).
 
 use base64::Engine;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::Mutex;
 
 /// Generates hierarchical resource IDs with monotonically increasing counters.
+///
+/// Real Cosmos DB scopes the collection counter per database (the collection
+/// RID encodes parent db_id + a per-db collection counter), so every database
+/// starts its first container at coll_id=1. The `coll_counters` map preserves
+/// that invariant; a single global counter would advance the middle bytes of
+/// the collection RID across unrelated databases and break the documented
+/// "matches the Java SDK ResourceId" guarantee.
 pub(crate) struct RidGenerator {
     db_counter: AtomicU32,
-    coll_counter: AtomicU32,
+    coll_counters: Mutex<HashMap<u32, u32>>,
     doc_counter: AtomicU64,
 }
 
@@ -21,7 +30,7 @@ impl RidGenerator {
     pub fn new() -> Self {
         Self {
             db_counter: AtomicU32::new(1),
-            coll_counter: AtomicU32::new(1),
+            coll_counters: Mutex::new(HashMap::new()),
             doc_counter: AtomicU64::new(1),
         }
     }
@@ -34,8 +43,16 @@ impl RidGenerator {
     }
 
     /// Generates a new collection RID (8 bytes: db_id BE + coll_id BE with high bit set).
+    ///
+    /// `coll_id` is allocated per-database so each database's first container is
+    /// `coll_id=1`, matching the real-service ResourceId encoding.
     pub fn next_collection_rid(&self, db_id: u32) -> (u32, String) {
-        let coll_id = self.coll_counter.fetch_add(1, Ordering::SeqCst);
+        let coll_id = {
+            let mut counters = self.coll_counters.lock().unwrap();
+            let entry = counters.entry(db_id).or_insert(0);
+            *entry += 1;
+            *entry
+        };
         let coll_with_high_bit = coll_id | 0x80000000;
         let mut bytes = [0u8; 8];
         bytes[..4].copy_from_slice(&db_id.to_be_bytes());

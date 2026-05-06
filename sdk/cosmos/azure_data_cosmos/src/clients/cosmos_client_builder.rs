@@ -96,6 +96,14 @@ pub struct CosmosClientBuilder {
     /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
     #[cfg(feature = "__internal_in_memory_emulator")]
     driver_runtime_builder: Option<CosmosDriverRuntimeBuilder>,
+    /// Custom HTTP client used as the SDK pipeline's transport when the
+    /// in-memory emulator is in play. Without this the SDK pipeline keeps a
+    /// real reqwest client even when the *driver* has been routed through
+    /// the emulator, so any code path that fires through `pipeline_core`
+    /// (account refreshes, future gateway hops, fault-injection short-
+    /// circuits) will silently reach the network.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    emulator_http_client: Option<Arc<dyn azure_core::http::HttpClient>>,
 }
 
 impl CosmosClientBuilder {
@@ -250,6 +258,21 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Replaces the SDK pipeline's HTTP transport with the supplied client
+    /// (typically the in-memory emulator). Without this, the pipeline keeps a
+    /// real reqwest transport even when the driver has been routed through
+    /// the emulator, leaving SDK-level requests (account refresh, etc.) free
+    /// to reach the network.
+    #[doc(hidden)]
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    pub fn with_emulator_http_client(
+        mut self,
+        client: Arc<dyn azure_core::http::HttpClient>,
+    ) -> Self {
+        self.emulator_http_client = Some(client);
+        self
+    }
+
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. You can create one using
@@ -347,6 +370,19 @@ impl CosmosClientBuilder {
         #[cfg(not(feature = "fault_injection"))]
         let transport: Option<azure_core::http::Transport> =
             base_client.map(azure_core::http::Transport::new);
+
+        // When an emulator HTTP client is supplied, use it for the SDK
+        // pipeline transport too — otherwise the pipeline would keep a real
+        // reqwest client and anything that goes through `pipeline_core`
+        // (account refreshes, fault-injection short-circuits, future
+        // gateway hops) would silently reach the network even though the
+        // *driver* has been routed through the emulator.
+        #[cfg(feature = "__internal_in_memory_emulator")]
+        let transport = if let Some(emu) = self.emulator_http_client.as_ref() {
+            Some(azure_core::http::Transport::new(Arc::clone(emu)))
+        } else {
+            transport
+        };
 
         // Create internal ClientOptions - users cannot configure this directly
         let client_options = ClientOptions {

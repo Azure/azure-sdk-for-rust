@@ -273,6 +273,12 @@ pub struct ReplicationConfig {
     max_delay: Duration,
     max_buffered_replications: usize,
     delay_fn: Option<ReplicationDelayFn>,
+    /// Optional fixed seed for the jitter PRNG. When set, replication delays
+    /// within `[min_delay, max_delay]` are sampled from a deterministic
+    /// xorshift sequence keyed by this seed instead of the thread-local
+    /// time-seeded state. Useful for reproducing flakes from delayed-
+    /// replication races without falling back to `immediate()` / `fixed()`.
+    jitter_seed: Option<std::sync::Arc<std::sync::Mutex<u64>>>,
 }
 
 impl std::fmt::Debug for ReplicationConfig {
@@ -282,6 +288,10 @@ impl std::fmt::Debug for ReplicationConfig {
             .field("max_delay", &self.max_delay)
             .field("max_buffered_replications", &self.max_buffered_replications)
             .field("delay_fn", &self.delay_fn.as_ref().map(|_| "<custom>"))
+            .field(
+                "jitter_seed",
+                &self.jitter_seed.as_ref().map(|_| "<seeded>"),
+            )
             .finish()
     }
 }
@@ -294,6 +304,7 @@ impl ReplicationConfig {
             max_delay: Duration::ZERO,
             max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
             delay_fn: None,
+            jitter_seed: None,
         }
     }
 
@@ -304,6 +315,7 @@ impl ReplicationConfig {
             max_delay: delay,
             max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
             delay_fn: None,
+            jitter_seed: None,
         }
     }
 
@@ -320,6 +332,7 @@ impl ReplicationConfig {
             max_delay: max,
             max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
             delay_fn: None,
+            jitter_seed: None,
         })
     }
 
@@ -340,6 +353,17 @@ impl ReplicationConfig {
         self
     }
 
+    /// Pins the jitter PRNG to a fixed seed so [`Self::sample_delay`] returns a
+    /// deterministic, reproducible sequence within `[min_delay, max_delay]`.
+    /// Use this in tests that want to reproduce a flake from delayed-
+    /// replication races without resorting to `immediate()` / `fixed()`.
+    pub fn with_jitter_seed(mut self, seed: u64) -> Self {
+        // Avoid the all-zeros seed, which is a fixed point of xorshift64.
+        let s = if seed == 0 { 0xDEAD_BEEF_u64 } else { seed };
+        self.jitter_seed = Some(std::sync::Arc::new(std::sync::Mutex::new(s)));
+        self
+    }
+
     /// Returns whether this is immediate (zero-delay) replication.
     pub fn is_immediate(&self) -> bool {
         self.delay_fn.is_none() && self.max_delay == Duration::ZERO
@@ -355,7 +379,11 @@ impl ReplicationConfig {
             return self.min_delay;
         }
         let range = self.max_delay - self.min_delay;
-        let frac = rand_fraction();
+        let frac = if let Some(state) = &self.jitter_seed {
+            seeded_xorshift_fraction(state)
+        } else {
+            rand_fraction()
+        };
         self.min_delay + range.mul_f64(frac)
     }
 
@@ -382,6 +410,7 @@ impl Default for ReplicationConfig {
             max_delay: Duration::from_millis(50),
             max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
             delay_fn: None,
+            jitter_seed: None,
         }
     }
 }
@@ -394,6 +423,19 @@ impl Default for ReplicationConfig {
 /// initial seed. Tests that require reproducible replication delays must
 /// either pin the seed via a separate code path (not provided today) or use
 /// `ReplicationConfig::immediate()` / `ReplicationConfig::fixed`.
+/// Seeded xorshift fraction in `[0, 1)` keyed by a caller-supplied state.
+/// Same algorithm as [`rand_fraction`] but uses the per-config mutex as the
+/// state, so sequences are deterministic and isolated per `ReplicationConfig`.
+fn seeded_xorshift_fraction(state: &std::sync::Arc<std::sync::Mutex<u64>>) -> f64 {
+    let mut guard = state.lock().unwrap();
+    let mut x = *guard;
+    x ^= x << 13;
+    x ^= x >> 7;
+    x ^= x << 17;
+    *guard = x;
+    ((x >> 11) as f64) / ((1u64 << 53) as f64)
+}
+
 fn rand_fraction() -> f64 {
     use std::cell::Cell;
     use std::time::SystemTime;

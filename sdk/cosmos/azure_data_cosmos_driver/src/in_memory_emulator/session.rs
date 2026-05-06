@@ -8,7 +8,8 @@
 //!
 //! Also accepts V1 tokens (`{pkrangeId}:-1#{lsn}`) for backward compatibility.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::HashSet;
+use std::sync::Mutex;
 
 /// Newtype wrapper around the region-id `u64` carried in V2 session tokens.
 ///
@@ -249,27 +250,36 @@ pub(crate) fn parse_composite_session_token(
         .collect()
 }
 
-/// Per-partition session state, tracking forced unavailability.
+/// Per-partition session state, tracking forced unavailability scoped to
+/// specific effective partition keys.
+///
+/// Earlier the flag was a single `AtomicBool` per physical partition, which
+/// meant `force_session_not_available(region, db, coll, "[\"pk1\"]")` would
+/// trip the *next* read of any logical partition key that happened to hash
+/// to the same physical partition. With the default 4 physical partitions
+/// (and many user PKs typically sharing each), targeted edge-case tests were
+/// brittle. The set keys on the EPK already computed by the caller, so we
+/// match exactly the logical partition the test asked for.
 pub(crate) struct SessionState {
-    force_unavailable: AtomicBool,
+    forced_epks: Mutex<HashSet<String>>,
 }
 
 impl SessionState {
     pub fn new() -> Self {
         Self {
-            force_unavailable: AtomicBool::new(false),
+            forced_epks: Mutex::new(HashSet::new()),
         }
     }
 
-    /// Sets the forced-unavailability flag (one-shot).
-    pub fn set_force_unavailable(&self) {
-        self.force_unavailable.store(true, Ordering::SeqCst);
+    /// Marks the given EPK as forced-unavailable on the next read (one-shot).
+    pub fn set_force_unavailable_for(&self, epk: &str) {
+        self.forced_epks.lock().unwrap().insert(epk.to_string());
     }
 
-    /// Checks and clears the forced-unavailability flag.
+    /// Checks and clears the forced-unavailability marker for `epk`.
     /// Returns true if it was set (one-shot: only fires once).
-    pub fn check_and_clear_forced(&self) -> bool {
-        self.force_unavailable.swap(false, Ordering::SeqCst)
+    pub fn check_and_clear_forced_for(&self, epk: &str) -> bool {
+        self.forced_epks.lock().unwrap().remove(epk)
     }
 }
 
@@ -381,10 +391,21 @@ mod tests {
     #[test]
     fn forced_unavailability_one_shot() {
         let state = SessionState::new();
-        assert!(!state.check_and_clear_forced());
+        let epk = "ABCD";
+        assert!(!state.check_and_clear_forced_for(epk));
 
-        state.set_force_unavailable();
-        assert!(state.check_and_clear_forced());
-        assert!(!state.check_and_clear_forced());
+        state.set_force_unavailable_for(epk);
+        assert!(state.check_and_clear_forced_for(epk));
+        assert!(!state.check_and_clear_forced_for(epk));
+    }
+
+    #[test]
+    fn forced_unavailability_scoped_per_epk() {
+        let state = SessionState::new();
+        state.set_force_unavailable_for("AAAA");
+        // Other EPKs in the same physical partition must not trip.
+        assert!(!state.check_and_clear_forced_for("BBBB"));
+        // The targeted EPK still trips on its own next read.
+        assert!(state.check_and_clear_forced_for("AAAA"));
     }
 }
