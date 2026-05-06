@@ -16,8 +16,15 @@ use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 ///
 /// Managed via CAS in `LocationStateStore` alongside `AccountEndpointState`.
 /// Mutations create a new instance and swap it atomically via `crossbeam_epoch`.
+//
+// `pub` (rather than `pub(crate)`) so that `crate::testing` can surface
+// this type for memory benchmarks under the `__internal_testing` feature
+// flag. The enclosing `routing` module is `pub(crate)` and
+// `partition_endpoint_state` is `pub(crate) mod`, so external consumers
+// still cannot reach this via `crate::driver::routing::*`; it remains
+// accessible only through the `crate::testing::*` re-exports.
 #[derive(Clone, Debug)]
-pub(crate) struct PartitionEndpointState {
+pub struct PartitionEndpointState {
     /// PPAF map: writes on single-master accounts.
     /// Key: partition key range ID.
     pub failover_overrides: HashMap<PartitionKeyRangeId, PartitionFailoverEntry>,
@@ -67,8 +74,10 @@ impl Default for PartitionEndpointState {
 /// Health status of a partition failover entry.
 ///
 /// Tracks the lifecycle of a failed-over partition through recovery.
+//
+// See `PartitionEndpointState` for the rationale behind `pub` here.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum HealthStatus {
+pub enum HealthStatus {
     /// Partition is failed-over to an alternate region.
     /// All requests route to the override endpoint.
     Unhealthy,
@@ -80,8 +89,10 @@ pub(crate) enum HealthStatus {
 /// Per-partition failover entry.
 ///
 /// Immutable value — mutations produce a new instance via CAS.
+//
+// See `PartitionEndpointState` for the rationale behind `pub` here.
 #[derive(Clone, Debug)]
-pub(crate) struct PartitionFailoverEntry {
+pub struct PartitionFailoverEntry {
     /// Current endpoint this partition is routed to.
     pub current_endpoint: CosmosEndpoint,
     /// Original endpoint that first failed (used for failback probing).
@@ -113,8 +124,10 @@ pub(crate) struct PartitionFailoverEntry {
 }
 
 /// Configuration for partition-level failover, read once at construction.
+//
+// See `PartitionEndpointState` for the rationale behind `pub` here.
 #[derive(Clone, Debug)]
-pub(crate) struct PartitionFailoverConfig {
+pub struct PartitionFailoverConfig {
     /// Read failures before circuit trips (default: 10).
     pub read_failure_threshold: i32,
 

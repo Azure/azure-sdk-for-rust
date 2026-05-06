@@ -27,7 +27,7 @@ pub mod fault_injection;
 pub mod models;
 pub mod options;
 pub(crate) mod system;
-#[cfg(feature = "__internal_mocking")]
+#[cfg(feature = "__internal_testing")]
 pub mod testing;
 
 // Re-export key types at crate root

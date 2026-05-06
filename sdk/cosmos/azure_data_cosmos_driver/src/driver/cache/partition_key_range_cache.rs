@@ -27,7 +27,7 @@ const MAX_FETCH_ITERATIONS: usize = 10;
 /// Callers construct this from the HTTP response: parsing the body for ranges,
 /// extracting the `etag` header as `continuation`, and checking for HTTP 304 (Not Modified).
 #[derive(Debug)]
-pub(crate) struct PkRangeFetchResult {
+pub struct PkRangeFetchResult {
     /// The partition key ranges returned in this page (empty if `not_modified` is true).
     pub ranges: Vec<crate::models::partition_key_range::PartitionKeyRange>,
     /// The continuation token (from the `etag` response header) for the next fetch.
@@ -45,7 +45,7 @@ pub(crate) struct PkRangeFetchResult {
 /// The routing map is fetched lazily from the service the first time a
 /// container is queried, then cached until invalidated.
 #[derive(Debug)]
-pub(crate) struct PartitionKeyRangeCache {
+pub struct PartitionKeyRangeCache {
     /// Keyed by [`ContainerReference`], which provides the container RID
     /// needed for the `x-ms-expected-rid` header on pkrange changefeed calls.
     cache: AsyncCache<ContainerReference, ContainerRoutingMap>,

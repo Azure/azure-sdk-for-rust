@@ -26,6 +26,13 @@ pub(crate) use account_metadata_cache::{AccountMetadataCache, AccountProperties,
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
 pub(crate) use container_cache::ContainerCache;
-pub(crate) use partition_key_range_cache::{
-    parse_pk_ranges_response, PartitionKeyRangeCache, PkRangeFetchResult,
-};
+pub(crate) use partition_key_range_cache::parse_pk_ranges_response;
+
+// `pub` re-exports (rather than `pub(crate)`) so that
+// `crate::testing` can surface these for memory benchmarks under the
+// `__internal_testing` feature flag. The enclosing `cache` module is
+// `pub(crate)`, so external consumers still cannot reach these via
+// `crate::driver::cache::*`; they remain accessible only through the
+// `crate::testing::*` re-exports.
+pub use container_routing_map::{ContainerRoutingMap, RoutingMapError};
+pub use partition_key_range_cache::{PartitionKeyRangeCache, PkRangeFetchResult};

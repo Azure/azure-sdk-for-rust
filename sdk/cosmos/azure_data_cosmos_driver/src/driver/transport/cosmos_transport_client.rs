@@ -12,7 +12,7 @@
 //! Most types in this module are `pub(crate)` — they are implementation details
 //! of the driver. The four core transport types ([`HttpRequest`], [`HttpResponse`],
 //! [`TransportError`], [`TransportClient`]) are `pub` so they can be re-exported
-//! via the `testing` module under the `__internal_mocking` feature flag.
+//! via the `testing` module under the `__internal_testing` feature flag.
 
 use std::fmt;
 use std::time::Duration;
