@@ -33,7 +33,7 @@ pub(crate) struct QueryPlan {
 
 /// Structural information about a query as produced by the local plan generator.
 ///
-/// F21: split from the previously-unified `LocalQueryInfo`. This struct now contains
+/// split from the previously-unified `LocalQueryInfo`. This struct now contains
 /// only the fields the local AST analyzer can populate — the shared structural
 /// fields the SDK pipeline needs (TOP / OFFSET / LIMIT / DISTINCT / ORDER BY /
 /// GROUP BY / aggregates / SELECT VALUE) plus the local-analysis booleans
@@ -130,7 +130,7 @@ pub(crate) enum SortOrder {
 
 /// Recognized aggregate function kinds.
 ///
-/// `ARRAY_AGG` is intentionally absent (F5): the in-memory evaluator does not
+/// `ARRAY_AGG` is intentionally absent: the in-memory evaluator does not
 /// implement it and `SUPPORTED_QUERY_FEATURES` does not advertise it, so the
 /// planner must not pretend it is structurally an aggregate. Re-add the variant
 /// only after both the evaluator and the supported-features advertisement
@@ -222,15 +222,39 @@ pub(crate) enum PartitionKeyValue {
 
 impl PartitionKeyValue {
     /// Construct a [`PartitionKeyValue::Number`] enforcing the finiteness
-    /// invariant required by the JSON-canonical dedup hash key in
-    /// [`normalize_pk_union`]. Returns `None` for `NaN`/`±∞`; callers that
-    /// receive `None` should surface an `InvalidParameter` for the offending
-    /// source so the diagnostic remains precise.
+    /// invariant. Returns `None` for `NaN`/`±∞`; callers that receive `None`
+    /// should surface an `InvalidParameter` for the offending source so the
+    /// diagnostic remains precise. The finiteness invariant also guarantees
+    /// that the manual [`Hash`]/[`Eq`] impls below are well-defined for every
+    /// `Number` value the planner ever observes.
     pub(crate) fn try_number(n: f64) -> Option<Self> {
         if n.is_finite() {
             Some(PartitionKeyValue::Number(n))
         } else {
             None
+        }
+    }
+}
+
+// `Eq` is sound because the only floating-point variant (`Number`) is
+// constructed exclusively through `try_number`, which rejects NaN/±∞ — so
+// `==` is reflexive on every value the planner ever produces. The matching
+// `Hash` impl hashes the discriminant plus a per-variant payload so that
+// `a == b` implies `hash(a) == hash(b)`, which is what `HashSet` requires.
+impl Eq for PartitionKeyValue {}
+impl std::hash::Hash for PartitionKeyValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::mem::discriminant(self).hash(state);
+        match self {
+            PartitionKeyValue::String(s) => s.hash(state),
+            PartitionKeyValue::Number(n) => n.to_bits().hash(state),
+            PartitionKeyValue::Bool(b) => b.hash(state),
+            PartitionKeyValue::Null | PartitionKeyValue::Undefined => {}
+            PartitionKeyValue::UnboundParameter(s) => s.hash(state),
+            PartitionKeyValue::InvalidParameter { name, reason } => {
+                name.hash(state);
+                reason.hash(state);
+            }
         }
     }
 }
@@ -453,7 +477,7 @@ fn analyze_query(
 /// match the Gateway's. Callers receiving this error should fall back to fetching
 /// the plan from the Gateway (#2).
 ///
-/// F11: errors from this helper carry the [`LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK`]
+/// errors from this helper carry the [`LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK`]
 /// sentinel string in their message, so the integration layer that wires the
 /// local plan generator into the SDK can distinguish a "please fall back to
 /// Gateway" outcome from a generic conversion failure without parsing free-form
@@ -495,7 +519,7 @@ impl LocalPlanFallbackError {
 /// resolved to a concrete literal (unbound or bound to an unusable JSON type).
 /// Used by `intersect_pk_filters` to avoid producing a bogus `Contradictory`
 /// when one conjunct contains an unresolved parameter and the other contains a
-/// real literal (F8).
+/// real literal.
 fn is_unresolved_pk_value(v: &PartitionKeyValue) -> bool {
     matches!(
         v,
@@ -518,6 +542,26 @@ fn collect_path_parts(expr: &SqlScalarExpression, parts: &mut Vec<String>) -> bo
                 false
             }
         }
+        // Bracket access with a literal string index is semantically equivalent
+        // to dotted property access (`c["foo"]` ≡ `c.foo`), and the Gateway
+        // query-plan endpoint emits the dotted form in `orderByExpressions` /
+        // `groupByExpressions`, so we can produce a local plan that matches.
+        // Integer subscripts (`c.a[0]`) are *not* property paths — they index
+        // into arrays and the Gateway emits them with the bracket syntax
+        // preserved; flattening to `"c.a.0"` would silently diverge from the
+        // Gateway, so those fall through to `false` and trigger the
+        // `NEEDS_GATEWAY_FALLBACK` sentinel. Non-literal indices (e.g.
+        // `c[@param]`) are likewise not paths.
+        // Bracket access (`c["name"]`, `c['name']`, `c.scores[0]`) is *not*
+        // treated as a property path here. Empirically (see the
+        // `gw_local_parity_*_bracket_path*` tests in
+        // `tests/gateway_query_plan_comparison.rs`), the Cosmos Gateway
+        // preserves the source bracket syntax verbatim in
+        // `orderByExpressions` / `groupByExpressions` (`"c[\"name\"]"`) rather
+        // than flattening to `"c.name"`. Producing the dotted form locally
+        // would silently diverge from the Gateway, breaking plan-shape parity
+        // with other SDKs. Surface the fallback sentinel instead so the
+        // integration layer defers to the Gateway query-plan endpoint.
         _ => false,
     }
 }
@@ -545,7 +589,7 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
         } => {
             if *is_udf {
                 info.has_udf = true;
-                // F10: do NOT recurse into UDF arguments for aggregate detection.
+                // do NOT recurse into UDF arguments for aggregate detection.
                 // Cosmos disallows aggregates inside UDF arg lists; recursing here
                 // would silently advertise an aggregate the Gateway never emits.
                 // We still walk the args to catch nested UDFs / subqueries, but
@@ -562,7 +606,7 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
                     "AVG" => info.aggregates.push(AggregateKind::Avg),
                     "MIN" => info.aggregates.push(AggregateKind::Min),
                     "MAX" => info.aggregates.push(AggregateKind::Max),
-                    // F5/F19: ARRAY_AGG is intentionally NOT advertised as a
+                    // ARRAY_AGG is intentionally NOT advertised as a
                     // local-plan aggregate — the in-memory evaluator does not
                     // implement it, and the supported-query-features list does
                     // not include it. A query containing ARRAY_AGG falls into
@@ -641,7 +685,7 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
 }
 
 /// Walk an expression tree without recording aggregates. Used inside UDF
-/// argument lists (F10) where any apparent aggregate must be ignored \u2014
+/// argument lists where any apparent aggregate must be ignored \u2014
 /// Cosmos disallows aggregates inside UDF args, and the Gateway never
 /// reports them on `queryInfo.aggregates`. Other state (`has_subquery`,
 /// `has_udf` for nested UDFs) is still recorded.
@@ -810,7 +854,7 @@ fn union_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKe
             a.extend(b);
             normalize_pk_union(a)
         }
-        // F1: `Contradictory ∪ X = X`. The contradictory side contributes no
+        // `Contradictory ∪ X = X`. The contradictory side contributes no
         // values to the union; preserving the other side avoids forcing a
         // cross-partition fan-out for queries like
         // `(c.pk='a' AND c.pk='b') OR c.pk='c'`.
@@ -822,22 +866,18 @@ fn union_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKe
 }
 
 fn normalize_pk_union(values: Vec<Vec<PartitionKeyValue>>) -> PartitionKeyFilter {
-    // Dedup using a hashable key derived from the canonical JSON
-    // serialization of each value tuple. The previous `Vec::contains` lookup
-    // was O(n^2) for long IN-lists (e.g. `c.pk IN (...1000 values...)`
-    // OR'd with another equality), which scales poorly when the parser hands
-    // us large literal lists.
-    let mut seen: std::collections::HashSet<String> =
+    // Dedup directly through the `Hash + Eq` impls on `PartitionKeyValue`.
+    // The previous `Vec::contains` lookup was O(n^2) for long IN-lists (e.g.
+    // `c.pk IN (...1000 values...) OR ...`); the prior fix routed through
+    // `serde_json::to_string` per entry, which kept the asymptotics linear
+    // but allocated a JSON string per value. Hashing the value tuples
+    // directly avoids both the quadratic blowup and the per-value allocation.
+    let mut seen: std::collections::HashSet<Vec<PartitionKeyValue>> =
         std::collections::HashSet::with_capacity(values.len());
     let mut deduped: Vec<Vec<PartitionKeyValue>> = Vec::with_capacity(values.len());
     for value in values {
-        // Each `PartitionKeyValue` is `Serialize`; the serialized form is
-        // a canonical key (the `Number(f64)` variant relies on the
-        // finiteness invariant - see `#13` - so f64 bit patterns map 1:1
-        // to JSON `Number`s).
-        let key =
-            serde_json::to_string(&value).expect("PartitionKeyValue serialization is infallible");
-        if seen.insert(key) {
+        if !seen.contains(&value) {
+            seen.insert(value.clone());
             deduped.push(value);
         }
     }
@@ -871,7 +911,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
         // Both sides have equality — they must agree, otherwise the
         // conjunction is provably empty.
         //
-        // F8: an `UnboundParameter` / `InvalidParameter` value is not a real
+        // an `UnboundParameter` / `InvalidParameter` value is not a real
         // PK literal — the `==` check between e.g. `String("a")` and
         // `UnboundParameter("x")` would always be `false` and produce a
         // bogus `Contradictory`. Defer to the side that has a usable
@@ -897,7 +937,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
         (PartitionKeyFilter::Equality(eq), PartitionKeyFilter::InList(list))
         | (PartitionKeyFilter::InList(list), PartitionKeyFilter::Equality(eq)) => {
             if eq.iter().any(is_unresolved_pk_value) {
-                // F8: the equality side carries an unbound/invalid parameter;
+                // the equality side carries an unbound/invalid parameter;
                 // it cannot prune the IN list. Keep the IN list as-is.
                 normalize_pk_union(list)
             } else if list.contains(&eq) {
@@ -933,7 +973,7 @@ fn extract_hierarchical_pk(
     root_alias: Option<&str>,
     parameters: &Params,
 ) -> PartitionKeyFilter {
-    // F13: handle top-level OR by extracting HPK from each disjunct and
+    // handle top-level OR by extracting HPK from each disjunct and
     // unioning the results. `(c.tenant='a' AND c.userId='u1') OR
     // (c.tenant='b' AND c.userId='u2')` becomes an `InList` of full HPK
     // tuples instead of falling back to a cross-partition fan-out.
@@ -950,7 +990,7 @@ fn extract_hierarchical_pk(
     let mut conjuncts = Vec::new();
     flatten_and(expr, &mut conjuncts);
 
-    // F9: per component, accept either `Equal` or a positive `IN (...)` list,
+    // per component, accept either `Equal` or a positive `IN (...)` list,
     // then cartesian-product across components. The Gateway recognizes
     // `WHERE c.tenant IN ('a','b') AND c.userId='u1'` for HPK
     // `(/tenant,/userId)` and routes to the two specific tuples; previously
@@ -991,7 +1031,7 @@ fn extract_hierarchical_pk(
                         }
                     }
                 }
-                // F9: positive IN over the component's path.
+                // positive IN over the component's path.
                 SqlScalarExpression::In {
                     expression,
                     items,
@@ -1171,7 +1211,7 @@ fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
             // Always canonicalize to f64 (#3). `as_f64` returns `None` only for
             // non-finite values that serde_json refuses to round-trip; surface
             // those as InvalidParameter so the diagnostic is precise. Route via
-            // `try_number` (F17) so any future relaxation of `serde_json`'s
+            // `try_number` so any future relaxation of `serde_json`'s
             // round-trip rule still preserves the finiteness invariant.
             n.as_f64()
                 .and_then(PartitionKeyValue::try_number)
@@ -1219,7 +1259,7 @@ fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
 ///     &[],
 /// )
 /// .unwrap();
-/// assert_eq!(plan["LocalQueryInfo"]["hasWhere"], serde_json::json!(true));
+/// assert_eq!(plan["queryInfo"]["hasWhere"], serde_json::json!(true));
 /// # }
 /// # #[cfg(not(feature = "__internal_testing"))]
 /// # fn main() {}
@@ -1286,7 +1326,7 @@ mod tests {
         }
     }
 
-    /// F1: `(c.pk='a' AND c.pk='b') OR c.pk='c'` \u2014 the contradictory disjunct
+    /// `(c.pk='a' AND c.pk='b') OR c.pk='c'` \u2014 the contradictory disjunct
     /// must not absorb the surviving equality.
     #[test]
     fn pk_or_with_contradictory_disjunct_preserves_other_side() {
@@ -1297,7 +1337,7 @@ mod tests {
         );
     }
 
-    /// F8: `c.pk = 'a' AND c.pk = @unbound` \u2014 the unbound parameter must not
+    /// `c.pk = 'a' AND c.pk = @unbound` \u2014 the unbound parameter must not
     /// turn the conjunction into `Contradictory`. The literal side wins.
     #[test]
     fn pk_and_with_unbound_parameter_keeps_literal_side() {
@@ -1309,7 +1349,7 @@ mod tests {
         );
     }
 
-    /// F17: `PartitionKeyValue::try_number` enforces the finiteness invariant.
+    /// `PartitionKeyValue::try_number` enforces the finiteness invariant.
     #[test]
     fn try_number_rejects_non_finite() {
         assert!(PartitionKeyValue::try_number(f64::NAN).is_none());
@@ -1319,7 +1359,7 @@ mod tests {
         assert!(PartitionKeyValue::try_number(1.5).is_some());
     }
 
-    /// F10: aggregates inside UDF arg lists must not be reflected in
+    /// aggregates inside UDF arg lists must not be reflected in
     /// `info.aggregates`.
     #[test]
     fn aggregate_inside_udf_arg_not_advertised() {
@@ -1328,7 +1368,7 @@ mod tests {
         assert!(qp.query_info.has_udf);
         assert!(
             qp.query_info.aggregates.is_empty(),
-            "F10: aggregates inside UDF args must be skipped; got {:?}",
+            "aggregates inside UDF args must be skipped; got {:?}",
             qp.query_info.aggregates
         );
     }
@@ -1353,6 +1393,29 @@ mod tests {
         assert_eq!(int_form.query_info, float_form.query_info);
     }
 
+    /// Bracket access (`c["name"]`, `c['name']`, `c.scores[0]`) must surface
+    /// the NEEDS_GATEWAY_FALLBACK sentinel rather than producing a dotted
+    /// path. Gateway empirically preserves the source bracket syntax verbatim
+    /// in `orderByExpressions` / `groupByExpressions` (see the
+    /// `gw_local_parity_*_bracket_path*` tests in
+    /// `tests/gateway_query_plan_comparison.rs`); flattening to a dotted path
+    /// locally would silently diverge from the Gateway response.
+    #[test]
+    fn bracket_paths_fall_back_to_gateway() {
+        for sql in [
+            "SELECT * FROM c ORDER BY c['name'] ASC",
+            "SELECT * FROM c ORDER BY c[\"name\"] ASC",
+            "SELECT * FROM c ORDER BY c.scores[0] ASC",
+        ] {
+            let p = parse(sql).unwrap();
+            let err = generate_query_plan(&p.query, &["/pk"])
+                .expect_err(&format!("bracket path must surface fallback: {sql}"));
+            assert!(
+                format!("{err}").contains(LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK),
+                "fallback sentinel missing for {sql}: {err}"
+            );
+        }
+    }
     /// Non-path GROUP BY expressions (`GROUP BY c.x & 1`) must surface a
     /// fail-fast error rather than silently emitting a non-Gateway-comparable
     /// plan. The Gateway accepts and rewrites such queries; the local plan

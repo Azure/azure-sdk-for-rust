@@ -125,11 +125,11 @@ pub enum TokenKind {
     /// consuming the partial token as a normal `StringLiteral`.
     ErrUnterminatedString,
 
-    /// F12: lexer error — a double-quoted identifier ran past EOF without a
+    /// lexer error — a double-quoted identifier ran past EOF without a
     /// closing quote. Same diagnostic principle as `ErrUnterminatedString`.
     ErrUnterminatedQuotedIdentifier,
 
-    /// F12: lexer error — a `/* ... */` block comment ran past EOF without a
+    /// lexer error — a `/* ... */` block comment ran past EOF without a
     /// closing `*/`. Surfacing this as a token (rather than silently swallowing
     /// the rest of the input) means the parser fails with a precise diagnostic
     /// rather than producing a confusing "unexpected EOF" later.
@@ -229,7 +229,7 @@ pub struct Lexer<'a> {
     source: &'a str,
     bytes: &'a [u8],
     pos: usize,
-    /// F12: when `skip_whitespace_and_comments` runs into an unterminated
+    /// when `skip_whitespace_and_comments` runs into an unterminated
     /// `/* ... */` block, it stashes the start offset here so that the next
     /// `next_token` call emits a single `ErrUnterminatedBlockComment` token
     /// instead of silently swallowing the rest of the input.
@@ -251,7 +251,7 @@ impl<'a> Lexer<'a> {
     pub(crate) fn next_token(&mut self) -> Token<'a> {
         self.skip_whitespace_and_comments();
 
-        // F12: if `skip_whitespace_and_comments` ran into an unterminated
+        // if `skip_whitespace_and_comments` ran into an unterminated
         // block comment, surface it as a single error token before any
         // further work — the partial comment otherwise silently swallows the
         // remainder of the input.
@@ -396,7 +396,7 @@ impl<'a> Lexer<'a> {
             }
 
             _ => {
-                // F13: respect UTF-8 character boundaries. The previous
+                // respect UTF-8 character boundaries. The previous
                 // single-byte advance turned a multi-byte char like `é`
                 // (U+00E9, two bytes) into two single-byte `Identifier`
                 // tokens, producing a wildly wrong AST. Walk forward to
@@ -465,7 +465,7 @@ impl<'a> Lexer<'a> {
                 if self.pos + 1 < self.bytes.len() {
                     self.pos += 2; // skip */
                 } else {
-                    // F12: unterminated block comment — record the start
+                    // unterminated block comment — record the start
                     // offset and advance to EOF; `next_token` will emit a
                     // single `ErrUnterminatedBlockComment` token before
                     // returning `Eof`.
@@ -510,7 +510,7 @@ impl<'a> Lexer<'a> {
             self.pos += 1; // skip closing "
             self.make_token(start, TokenKind::Identifier)
         } else {
-            // F12: unterminated `"...` — surface as an error token so the
+            // unterminated `"...` — surface as an error token so the
             // parser fails with a precise diagnostic instead of silently
             // consuming the partial identifier.
             self.make_token(start, TokenKind::ErrUnterminatedQuotedIdentifier)
@@ -696,7 +696,7 @@ mod tests {
             tokens.iter().map(|t| t.kind).collect::<Vec<_>>()
         );
     }
-    /// F12: same diagnostic shape for unterminated `"...` quoted identifier.
+    /// same diagnostic shape for unterminated `"...` quoted identifier.
     #[test]
     fn unterminated_quoted_identifier_yields_error_token() {
         let tokens = Lexer::tokenize("SELECT \"unclosed FROM c");
@@ -710,7 +710,7 @@ mod tests {
         );
     }
 
-    /// F12: unterminated `/* ... */` block comment must surface as an error
+    /// unterminated `/* ... */` block comment must surface as an error
     /// token rather than silently swallowing the rest of the input.
     #[test]
     fn unterminated_block_comment_yields_error_token() {
@@ -725,7 +725,7 @@ mod tests {
         );
     }
 
-    /// F13: a non-ASCII character must produce a single error token whose
+    /// a non-ASCII character must produce a single error token whose
     /// span covers the full UTF-8 char (one Unicode scalar value), not a
     /// sequence of single-byte tokens straddling the char boundary.
     #[test]

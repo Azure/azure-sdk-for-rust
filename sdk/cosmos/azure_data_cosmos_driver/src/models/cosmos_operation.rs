@@ -597,34 +597,10 @@ impl CosmosOperation {
     /// gated on the `__internal_testing` feature flag so that cross-crate
     /// gateway-comparison tests can build the request directly. Production
     /// callers must not use it.
-    ///
-    /// F21: single `pub fn` exposed only when the `__internal_testing` feature
-    /// (or `cfg(test)`) is on. The previous shape duplicated the signature
-    /// across two `cfg`-gated definitions distinguished only by visibility,
-    /// producing confusing `cargo doc` output and making the surface harder
-    /// to audit.
     #[cfg(any(test, feature = "__internal_testing"))]
     pub fn query_plan(
         container: ContainerReference,
-        options: crate::options::OperationOptions,
-    ) -> (Self, crate::options::OperationOptions) {
-        Self::query_plan_impl(container, options)
-    }
-
-    /// Crate-internal sibling of [`query_plan`](Self::query_plan) for the
-    /// (not-yet-wired) local plan caller. Keeps the surface available
-    /// crate-wide regardless of feature configuration.
-    #[allow(dead_code)] // until the local-plan generator wires this in
-    pub(crate) fn query_plan_internal(
-        container: ContainerReference,
-        options: crate::options::OperationOptions,
-    ) -> (Self, crate::options::OperationOptions) {
-        Self::query_plan_impl(container, options)
-    }
-
-    fn query_plan_impl(
-        container: ContainerReference,
-        options: crate::options::OperationOptions,
+        mut options: crate::options::OperationOptions,
     ) -> (Self, crate::options::OperationOptions) {
         use azure_core::http::headers::{HeaderName, HeaderValue};
 
@@ -636,17 +612,14 @@ impl CosmosOperation {
         // Start from the caller's existing custom headers (if any) and merge
         // the four mandatory query-plan headers in. Mandatory headers always
         // win on key collision — the Gateway rejects mismatched values.
-        let mut headers = options
-            .custom_headers()
-            .cloned()
-            .unwrap_or_else(std::collections::HashMap::new);
+        let mut headers = options.take_custom_headers().unwrap_or_default();
         headers.insert(
             HeaderName::from_static("x-ms-cosmos-is-query-plan-request"),
             HeaderValue::from_static("True"),
         );
         headers.insert(
             HeaderName::from_static("x-ms-cosmos-supported-query-features"),
-            HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+            HeaderValue::from_static(crate::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES),
         );
         headers.insert(
             HeaderName::from_static("x-ms-documentdb-isquery"),
@@ -875,7 +848,7 @@ mod tests {
         );
         expect(
             HeaderName::from_static("x-ms-cosmos-supported-query-features"),
-            HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+            HeaderValue::from_static(crate::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES),
         );
         expect(
             HeaderName::from_static("x-ms-documentdb-isquery"),

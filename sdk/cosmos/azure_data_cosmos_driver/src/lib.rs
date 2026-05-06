@@ -34,6 +34,14 @@ pub mod options;
 // per-item `#[allow(dead_code)]` would mean ~50 annotations across lexer/parser/
 // eval/plan scaffolding without changing what the compiler actually checks.
 //
+// The two `mod query;` declarations differ only in visibility, which is gated on
+// the `__internal_testing` feature: when that feature is on we expose a small,
+// `#[doc(hidden)]` test-only surface (`__test_only_generate_query_plan_for_pk_paths`,
+// `__TEST_ONLY_SUPPORTED_QUERY_FEATURES`) so cross-crate gateway-comparison
+// tests can drive the local plan generator without depending on internal types;
+// otherwise the module is `pub(crate)` and nothing leaks out of the crate.
+// Keep both arms in sync if you add another item under `mod query`.
+//
 // TODO(local-plan-wire-up): drop `allow(dead_code)` once the driver wires the
 // local plan generator into the query execution path.
 #[cfg(any(test, feature = "__internal_testing"))]

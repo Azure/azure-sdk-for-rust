@@ -1353,7 +1353,7 @@ fn not_between_no_pk() {
 
 #[test]
 fn aggregate_array_agg() {
-    // F5/F19: ARRAY_AGG is intentionally NOT advertised as a local-plan
+    // ARRAY_AGG is intentionally NOT advertised as a local-plan
     // aggregate. The supported-features list does not include it and the
     // in-memory evaluator does not implement it, so the planner should
     // surface the query as a non-aggregate (the Gateway also rejects this
@@ -4434,7 +4434,7 @@ fn hpk_non_equality_on_second_component() {
 
 #[test]
 fn hpk_in_on_first_component_extracts_cartesian() {
-    // F9: IN on the leading HPK component combined with equality on the
+    // IN on the leading HPK component combined with equality on the
     // remainder produces a cartesian-product `InList` (or `Equality` when
     // the product collapses to a single tuple), matching the Gateway.
     let qp = plan_hpk("SELECT * FROM c WHERE c.tenant IN ('a', 'b') AND c.userId = 'u1'");
@@ -4449,7 +4449,7 @@ fn hpk_in_on_first_component_extracts_cartesian() {
 
 #[test]
 fn hpk_in_on_second_component_extracts_cartesian() {
-    // F9: same as above with the IN on the trailing component.
+    // same as above with the IN on the trailing component.
     let qp = plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId IN ('u1', 'u2')");
     match qp.pk_filters {
         PartitionKeyFilter::InList(ref tuples) => {
@@ -4534,7 +4534,7 @@ fn hpk_is_null_on_component_no_extract() {
 
 #[test]
 fn hpk_or_of_full_hpk_tuples_extracts_inlist() {
-    // F13: Two full HPK tuples ORed together extract to an `InList` of full
+    // Two full HPK tuples ORed together extract to an `InList` of full
     // HPK tuples instead of falling back to a cross-partition fan-out.
     assert_eq!(
         plan_hpk(
@@ -4561,7 +4561,7 @@ fn hpk_or_of_full_hpk_tuples_extracts_inlist() {
 
 #[test]
 fn hpk_or_of_three_full_hpk_tuples_extracts_inlist() {
-    // F13: nested OR of three full HPK tuples — recursion in
+    // nested OR of three full HPK tuples — recursion in
     // extract_hierarchical_pk's OR arm + union_pk_filters' InList+Equality
     // combo flattens these into a single InList.
     assert_eq!(
@@ -4593,7 +4593,7 @@ fn hpk_or_of_three_full_hpk_tuples_extracts_inlist() {
 
 #[test]
 fn hpk_or_with_one_partial_tuple_falls_back_to_unconstrained() {
-    // F13: if one disjunct misses an HPK component, the union becomes
+    // if one disjunct misses an HPK component, the union becomes
     // `Unconstrained` (per `union_pk_filters` rules — Unconstrained is
     // absorbing on the OR side because we can't bound that disjunct).
     assert_eq!(

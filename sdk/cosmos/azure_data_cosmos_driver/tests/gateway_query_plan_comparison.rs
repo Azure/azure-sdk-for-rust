@@ -1072,7 +1072,7 @@ async fn gw_sum_integer_aggregate() {
     validate_pk("SELECT SUM(c.intCol) FROM c").await;
 }
 
-/// F4: cross-type MIN/MAX must follow Cosmos' total ordering
+/// cross-type MIN/MAX must follow Cosmos' total ordering
 /// (`null<bool<num<str<arr<obj`). Plan-level shape is unaffected here; the
 /// test pins parser/plan parity for `MIN`/`MAX` calls.
 #[tokio::test]
@@ -1080,7 +1080,7 @@ async fn gw_min_max_cross_type_aggregate() {
     validate_pk("SELECT MIN(c.mixed), MAX(c.mixed) FROM c").await;
 }
 
-/// F9: hierarchical PK with IN on the leading component must extract a
+/// hierarchical PK with IN on the leading component must extract a
 /// cartesian-product `InList` instead of falling back to cross-partition.
 /// Plan-level parity test; the value parity (which physical partitions are
 /// targeted) is exercised by the local plan unit tests above.
@@ -1089,7 +1089,7 @@ async fn gw_hpk_with_in_on_first_component() {
     validate_hpk("SELECT * FROM c WHERE c.tenant IN ('a', 'b') AND c.userId = 'u1'").await;
 }
 
-/// F9: HPK with IN on the trailing component.
+/// HPK with IN on the trailing component.
 #[tokio::test]
 async fn gw_hpk_with_in_on_second_component() {
     validate_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId IN ('u1', 'u2')").await;
@@ -1117,7 +1117,7 @@ async fn gw_like_with_single_char_escape() {
     validate_pk("SELECT * FROM c WHERE c.name LIKE 'a#_b' ESCAPE '#'").await;
 }
 
-/// F19: duplicate aggregates in the SELECT list (`SELECT COUNT(1), COUNT(c.x)`)
+/// duplicate aggregates in the SELECT list (`SELECT COUNT(1), COUNT(c.x)`)
 /// — the Gateway returns the dedup'd kind list. Pin local/Gateway parity on
 /// the aggregate set.
 #[tokio::test]
@@ -1125,14 +1125,14 @@ async fn gw_duplicate_aggregates_dedup() {
     validate_pk("SELECT COUNT(1), COUNT(c.x) FROM c").await;
 }
 
-/// F22: `~ <fractional number>` must yield `Undefined` in the evaluator;
+/// `~ <fractional number>` must yield `Undefined` in the evaluator;
 /// at the plan level it is just a unary expression. Pin parser/plan parity.
 #[tokio::test]
 async fn gw_bitwise_not_on_fractional_number() {
     validate_pk("SELECT VALUE ~3.7 FROM c").await;
 }
 
-// F6: keyword-as-property name preserves source casing. Cosmos JSON property
+// keyword-as-property name preserves source casing. Cosmos JSON property
 // lookup is case-sensitive. The Gateway rejects bare `c.left` / `c.LEFT`
 // where `LEFT` is a reserved word, so we exercise the case-sensitivity
 // invariant via the bracket form, which Gateway accepts.
@@ -1493,4 +1493,54 @@ async fn gw_local_parity_unterminated_quoted_identifier() {
 #[tokio::test]
 async fn gw_local_parity_unterminated_block_comment() {
     validate_symmetric_pk("SELECT * FROM c /* unterminated").await;
+}
+
+// ── Bracketed property paths in ORDER BY / GROUP BY ─────────────────────────
+// All bracket forms — single-quoted (`c['foo']`), double-quoted (`c["foo"]`),
+// and integer subscript (`c.a[0]`) — must surface the
+// `NEEDS_GATEWAY_FALLBACK` sentinel and let the integration layer defer to
+// the Gateway query-plan endpoint. Empirically the Gateway preserves the
+// source bracket syntax verbatim in `orderByExpressions` /
+// `groupByExpressions` (e.g. `"c[\"name\"]"`) rather than flattening to a
+// dotted path; producing the dotted form locally would silently diverge
+// from the Gateway and break plan-shape parity with other SDKs. These tests
+// pin that behavior.
+
+#[tokio::test]
+async fn gw_local_parity_order_by_string_bracket_path_falls_back() {
+    validate_pk_local_falls_back_to_gateway("SELECT * FROM c ORDER BY c[\"name\"] ASC").await;
+}
+
+#[tokio::test]
+async fn gw_local_parity_order_by_single_quoted_bracket_path_falls_back() {
+    validate_pk_local_falls_back_to_gateway("SELECT * FROM c ORDER BY c['name'] ASC").await;
+}
+
+#[tokio::test]
+async fn gw_local_parity_order_by_nested_bracket_path_falls_back() {
+    validate_pk_local_falls_back_to_gateway(
+        "SELECT * FROM c ORDER BY c[\"address\"][\"city\"] ASC",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn gw_local_parity_group_by_bracket_path_falls_back() {
+    validate_pk_local_falls_back_to_gateway(
+        "SELECT c[\"city\"], COUNT(1) AS cnt FROM c WHERE c.pk = 'x' GROUP BY c[\"city\"]",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn gw_local_parity_order_by_array_index_falls_back() {
+    validate_pk_local_falls_back_to_gateway("SELECT * FROM c ORDER BY c.scores[0] ASC").await;
+}
+
+#[tokio::test]
+async fn gw_local_parity_group_by_array_index_falls_back() {
+    validate_pk_local_falls_back_to_gateway(
+        "SELECT c.scores[0] AS s0, COUNT(1) AS cnt FROM c GROUP BY c.scores[0]",
+    )
+    .await;
 }

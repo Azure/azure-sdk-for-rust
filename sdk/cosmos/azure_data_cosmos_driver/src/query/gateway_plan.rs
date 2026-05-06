@@ -6,7 +6,7 @@
 //! Deserializes the JSON response from the Cosmos DB Gateway's query plan endpoint
 //! (`x-ms-cosmos-is-query-plan-request: True`). The structural `queryInfo`
 //! payload uses the schema-specific [`GatewayQueryInfo`] type — distinct from
-//! the local plan generator's [`super::plan::LocalQueryInfo`] (F21).
+//! the local plan generator's [`super::plan::LocalQueryInfo`].
 //!
 //! The two types share a structural core (TOP / OFFSET / LIMIT / DISTINCT /
 //! ORDER BY / GROUP BY / aggregates / SELECT VALUE) plus disjoint extras:
@@ -43,7 +43,7 @@ pub(crate) struct GatewayQueryPlan {
 
 /// Structural information about a query as returned by the Gateway query plan endpoint.
 ///
-/// F21: split from the previously-unified `QueryInfo`. Carries the shared
+/// split from the previously-unified `QueryInfo`. Carries the shared
 /// structural fields (TOP / OFFSET / LIMIT / DISTINCT / ORDER BY / GROUP BY /
 /// aggregates / SELECT VALUE) plus the gateway-only fields
 /// (`rewritten_query`, `group_by_aliases`,
@@ -132,16 +132,46 @@ impl GatewayQueryInfo {
     /// local-only booleans, and downstream code receiving the converted value
     /// would have no way to tell whether a `false` came from local AST
     /// analysis or from the conversion default.
-    pub(crate) fn shared_fields_match(&self, local: &LocalQueryInfo) -> bool {
-        self.distinct_type == local.distinct_type
-            && self.top == local.top
-            && self.offset == local.offset
-            && self.limit == local.limit
-            && self.order_by == local.order_by
-            && self.order_by_expressions == local.order_by_expressions
-            && self.group_by_expressions == local.group_by_expressions
-            && self.aggregates == local.aggregates
-            && self.has_select_value == local.has_select_value
+    /// Returns `Ok(())` if all shared fields agree, otherwise `Err(mismatches)`
+    /// containing the names of every diverging field. The list is stable so
+    /// callers (test assertions, diagnostics) can format it directly.
+    pub(crate) fn shared_fields_match(
+        &self,
+        local: &LocalQueryInfo,
+    ) -> Result<(), Vec<&'static str>> {
+        let mut mismatches: Vec<&'static str> = Vec::new();
+        if self.distinct_type != local.distinct_type {
+            mismatches.push("distinct_type");
+        }
+        if self.top != local.top {
+            mismatches.push("top");
+        }
+        if self.offset != local.offset {
+            mismatches.push("offset");
+        }
+        if self.limit != local.limit {
+            mismatches.push("limit");
+        }
+        if self.order_by != local.order_by {
+            mismatches.push("order_by");
+        }
+        if self.order_by_expressions != local.order_by_expressions {
+            mismatches.push("order_by_expressions");
+        }
+        if self.group_by_expressions != local.group_by_expressions {
+            mismatches.push("group_by_expressions");
+        }
+        if self.aggregates != local.aggregates {
+            mismatches.push("aggregates");
+        }
+        if self.has_select_value != local.has_select_value {
+            mismatches.push("has_select_value");
+        }
+        if mismatches.is_empty() {
+            Ok(())
+        } else {
+            Err(mismatches)
+        }
     }
 }
 
@@ -257,7 +287,7 @@ mod tests {
 
     #[test]
     fn shared_fields_match_ignores_disjoint_extras() {
-        // F21 (revised): comparing a Gateway response against a local plan
+        // comparing a Gateway response against a local plan
         // ignores the disjoint extras on either side — gateway-only
         // (rewrittenQuery, has_non_streaming_order_by, d_count_info,
         // group_by_aliases, group_by_alias_to_aggregate_type) and local-only
@@ -298,7 +328,8 @@ mod tests {
             has_udf: true,
         };
 
-        assert!(gw.shared_fields_match(&local));
+        gw.shared_fields_match(&local)
+            .expect("shared fields must match");
     }
 
     #[test]
@@ -312,12 +343,16 @@ mod tests {
             top: Some(6),
             ..Default::default()
         };
-        assert!(!gw.shared_fields_match(&local_diff));
+        let mismatches = gw
+            .shared_fields_match(&local_diff)
+            .expect_err("differing top must surface");
+        assert_eq!(mismatches, vec!["top"]);
 
         let local_same = crate::query::plan::LocalQueryInfo {
             top: Some(5),
             ..Default::default()
         };
-        assert!(gw.shared_fields_match(&local_same));
+        gw.shared_fields_match(&local_same)
+            .expect("matching shared fields must return Ok");
     }
 }

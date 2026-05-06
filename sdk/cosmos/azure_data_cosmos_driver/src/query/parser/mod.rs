@@ -79,7 +79,7 @@ impl<'a> Parser<'a> {
             TokenKind::ErrUnterminatedString => {
                 Err(self.error("unterminated string literal: missing closing single quote".into()))
             }
-            // F12: same diagnostic principle as `ErrUnterminatedString`.
+            // same diagnostic principle as `ErrUnterminatedString`.
             TokenKind::ErrUnterminatedQuotedIdentifier => {
                 Err(self
                     .error("unterminated quoted identifier: missing closing double quote".into()))
@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
     }
 
     fn error(&self, message: String) -> ParseError {
-        // F12: when the parser is about to bail out, prefer the lexer's
+        // when the parser is about to bail out, prefer the lexer's
         // diagnostic if the current token is a lex-error variant. Otherwise
         // a downstream "expected X" message would mask the real problem
         // (the malformed token never gets to the explicit `expect` call
@@ -962,7 +962,7 @@ impl<'a> Parser<'a> {
                     self.expect(TokenKind::RParen)?;
                     SqlScalarExpression::Array(Box::new(query))
                 } else {
-                    // F6: preserve source casing for keyword-as-property.
+                    // preserve source casing for keyword-as-property.
                     // `c.array` must look up `"array"`, not `"ARRAY"`.
                     SqlScalarExpression::PropertyRef(array_text)
                 }
@@ -1041,7 +1041,7 @@ impl<'a> Parser<'a> {
                 let name = if self.current.kind == TokenKind::Identifier {
                     extract_identifier(self.current.text).to_string()
                 } else {
-                    // F6: preserve the source casing of keyword-as-identifier.
+                    // preserve the source casing of keyword-as-identifier.
                     // Cosmos JSON property lookup is case-sensitive, so
                     // `c.left` must search for the property `"left"`, not
                     // `"LEFT"`. The previous `to_ascii_uppercase` collapsed
