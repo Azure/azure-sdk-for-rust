@@ -25,13 +25,39 @@ use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
 use super::store::{
     current_timestamp, new_etag, ContainerMetadata, EmulatorStore, PhysicalPartition,
-    RegionStoreRef, StoredDocument,
+    StoredDocument,
 };
 use super::system_properties::{
     account_properties_to_json, container_to_json, database_to_json, inject_system_properties,
     pkranges_to_json,
 };
 use crate::models::PartitionKeyDefinition;
+
+/// If any non-source target region's replication queue is saturated, returns
+/// a 429/3075 error response so callers can short-circuit before committing.
+fn replication_back_pressure_response(
+    store: &EmulatorStore,
+    region_name: &str,
+    start: Instant,
+) -> Option<AsyncRawResponse> {
+    let (target, retry_ms) = store.find_overflowed_replication_target(region_name)?;
+    Some(
+        error_response(
+            StatusCode::TooManyRequests,
+            Some(3075),
+            "TooManyRequests",
+            &format!(
+                "Replication queue for target region '{}' is saturated; the source must back off and retry.",
+                target
+            ),
+            0.0,
+            "",
+            start,
+        )
+        .with_retry_after_ms(retry_ms)
+        .build(),
+    )
+}
 
 async fn with_request_activity_id(
     response: AsyncRawResponse,
@@ -41,7 +67,10 @@ async fn with_request_activity_id(
         return response;
     };
 
-    let raw = response.try_into_raw_response().await.unwrap();
+    let raw = response
+        .try_into_raw_response()
+        .await
+        .expect("emulator responses are always buffered; streaming responses are not produced by this emulator");
     let mut headers = raw.headers().clone();
     headers.insert(
         ACTIVITY_ID.clone(),
@@ -622,7 +651,7 @@ fn session_token_for(partition: &PhysicalPartition, region_id: u64) -> String {
     )
 }
 
-struct PointResponseHeaders {
+pub(crate) struct PointResponseHeaders {
     partition_key_range_id: u32,
     internal_partition_id: String,
     transport_request_id: u64,
@@ -633,46 +662,40 @@ struct PointResponseHeaders {
     resource_usage: String,
 }
 
-fn point_response_headers(
-    region_ref: &RegionStoreRef,
-    db_id: &str,
-    coll_id: &str,
-    epk: &Epk,
-) -> Option<PointResponseHeaders> {
-    region_ref
-        .with_container(db_id, coll_id, |state| {
-            state.find_partition(epk).map(|partition| {
-                let documents = partition.documents.read().unwrap();
-                let documents_in_partition = documents
-                    .values()
-                    .map(std::collections::BTreeMap::len)
-                    .sum::<usize>();
-                PointResponseHeaders {
-                    partition_key_range_id: partition.id,
-                    internal_partition_id: partition.rid.clone(),
-                    transport_request_id: partition.current_lsn().max(1),
-                    global_committed_lsn: partition.current_lsn(),
-                    quorum_acked_lsn: partition.current_lsn(),
-                    quorum_acked_local_lsn: partition.current_local_lsn(),
-                    local_lsn: partition.current_local_lsn(),
-                    resource_usage: format!(
-                        "documentSize=0;documentsSize={documents_in_partition};documentsCount={documents_in_partition};collectionSize={documents_in_partition};"
-                    ),
-                }
-            })
-        })
-        .flatten()
+impl PointResponseHeaders {
+    /// Builds the response-header snapshot from a partition reference while the
+    /// caller still holds the relevant lock. Capturing here (rather than in a
+    /// later, lock-free pass) is what guarantees the header LSN/document-count
+    /// values agree with the response body the same handler is about to
+    /// produce — a concurrent writer on the same partition cannot interleave
+    /// between the body capture and the header capture.
+    fn from_partition(partition: &PhysicalPartition, transport_request_id: u64) -> Self {
+        let documents = partition.documents.read().unwrap();
+        let documents_in_partition = documents
+            .values()
+            .map(std::collections::BTreeMap::len)
+            .sum::<usize>();
+        Self {
+            partition_key_range_id: partition.id,
+            internal_partition_id: partition.rid.clone(),
+            transport_request_id,
+            global_committed_lsn: partition.current_lsn(),
+            quorum_acked_lsn: partition.current_lsn(),
+            quorum_acked_local_lsn: partition.current_local_lsn(),
+            local_lsn: partition.current_local_lsn(),
+            resource_usage: format!(
+                "documentSize=0;documentsSize={documents_in_partition};documentsCount={documents_in_partition};collectionSize={documents_in_partition};"
+            ),
+        }
+    }
 }
 
 fn decorate_point_response(
     builder: ResponseBuilder,
-    region_ref: &RegionStoreRef,
-    db_id: &str,
-    coll_id: &str,
-    epk: &Epk,
+    headers: Option<PointResponseHeaders>,
     item_lsn: Option<u64>,
 ) -> ResponseBuilder {
-    let Some(headers) = point_response_headers(region_ref, db_id, coll_id, epk) else {
+    let Some(headers) = headers else {
         return builder;
     };
 
@@ -771,6 +794,10 @@ async fn handle_create(
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+
+    if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
+        return resp;
+    }
 
     let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
         Ok(v) => v,
@@ -903,6 +930,7 @@ async fn handle_create(
             let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
 
             inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
+            let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
             let stored_doc = StoredDocument {
                 body: body.clone(),
                 id: doc_id.clone(),
@@ -912,6 +940,7 @@ async fn handle_create(
                 self_link,
                 lsn,
                 epk: epk.clone(),
+                body_size_bytes,
             };
             logical.insert(doc_id.clone(), stored_doc.clone());
             stored_doc
@@ -919,12 +948,16 @@ async fn handle_create(
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
 
-        Ok((stored_doc, token, charge, body))
+        Ok((stored_doc, token, charge, body, headers))
     });
 
     match result {
-        Some(Ok((doc, token, charge, response_body))) => {
+        Some(Ok((doc, token, charge, response_body, headers))) => {
             // Trigger replication
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
@@ -940,15 +973,7 @@ async fn handle_create(
                     .with_lsn(doc.lsn)
             };
 
-            decorate_point_response(
-                builder,
-                &region_ref,
-                db_id,
-                coll_id,
-                &doc.epk,
-                Some(doc.lsn),
-            )
-            .build()
+            decorate_point_response(builder, headers, Some(doc.lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -1023,7 +1048,7 @@ fn handle_read(
         // client into thinking its caught up — the caller would retry with
         // a token that the partition trivially satisfies and treat the
         // failure as transient. Echoing back what they asked for makes the
-        // mismatch visible (review #8).
+        // mismatch visible.
         if store.config().consistency().is_session() {
             if let Some(session_header) = &parsed.session_token {
                 let tokens = match super::session::parse_composite_session_token(session_header) {
@@ -1078,9 +1103,16 @@ fn handle_read(
                 let charge = store
                     .config()
                     .ru_model()
-                    .compute_read_ru(serde_json::to_vec(&doc.body).unwrap_or_default().len());
+                    .compute_read_ru(doc.body_size_bytes);
                 let lsn = partition.current_lsn();
-                return Ok((doc.body.clone(), doc.etag.clone(), token, charge, lsn));
+                let body = doc.body.clone();
+                let etag = doc.etag.clone();
+                drop(docs);
+                let headers = Some(PointResponseHeaders::from_partition(
+                    partition,
+                    store.next_transport_request_id(),
+                ));
+                return Ok((body, etag, token, charge, lsn, headers));
             }
         }
 
@@ -1100,17 +1132,11 @@ fn handle_read(
     });
 
     match result {
-        Some(Ok((body, etag, token, charge, lsn))) => {
+        Some(Ok((body, etag, token, charge, lsn, headers))) => {
             let builder = success_response(StatusCode::Ok, &body, charge, &token, start)
                 .with_etag(&etag)
                 .with_lsn(lsn);
-            let (_, epk) = region_ref
-                .with_container(db_id, coll_id, |state| {
-                    let empty_body = serde_json::Value::Null;
-                    resolve_partition_key(parsed, &empty_body, &state.metadata).unwrap()
-                })
-                .unwrap();
-            decorate_point_response(builder, &region_ref, db_id, coll_id, &epk, Some(lsn)).build()
+            decorate_point_response(builder, headers, Some(lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -1127,6 +1153,10 @@ async fn handle_replace(
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let doc_id = parsed.doc_id.as_deref().unwrap_or("");
+
+    if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
+        return resp;
+    }
 
     let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
         Ok(v) => v,
@@ -1209,8 +1239,7 @@ async fn handle_replace(
 
         // Lookup existing under a *read* lock so concurrent reads on the
         // partition are not blocked while we run precondition / throttle
-        // checks. We re-acquire a write lock at commit time below — see
-        // review #6.
+        // checks. We re-acquire a write lock at commit time below.
         let existing_etag = {
             let docs = partition.documents.read().unwrap();
             let existing = docs.get(&epk).and_then(|l| l.get(doc_id));
@@ -1252,7 +1281,7 @@ async fn handle_replace(
 
         // Compute RU charge and check throttle BEFORE acquiring the write
         // lock — keeps throttled requests from serializing other writers /
-        // readers on the partition (review #6).
+        // readers on the partition.
         let num_props = RuChargingModel::count_properties(&body);
         let charge = store
             .config()
@@ -1328,6 +1357,7 @@ async fn handle_replace(
             let etag = new_etag();
 
             inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut body);
+            let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
             let new_doc = StoredDocument {
                 body: body.clone(),
                 id: doc_id.to_string(),
@@ -1337,16 +1367,22 @@ async fn handle_replace(
                 self_link: current.self_link,
                 lsn,
                 epk: epk.clone(),
+                body_size_bytes,
             };
             logical.insert(doc_id.to_string(), new_doc.clone());
             new_doc
         };
 
-        Ok((new_doc, token, charge, body))
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+
+        Ok((new_doc, token, charge, body, headers))
     });
 
     match result {
-        Some(Ok((doc, token, charge, response_body))) => {
+        Some(Ok((doc, token, charge, response_body, headers))) => {
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
@@ -1361,15 +1397,7 @@ async fn handle_replace(
                     .with_lsn(doc.lsn)
             };
 
-            decorate_point_response(
-                builder,
-                &region_ref,
-                db_id,
-                coll_id,
-                &doc.epk,
-                Some(doc.lsn),
-            )
-            .build()
+            decorate_point_response(builder, headers, Some(doc.lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -1385,6 +1413,10 @@ async fn handle_upsert(
 ) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+
+    if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
+        return resp;
+    }
 
     let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
         Ok(v) => v,
@@ -1460,7 +1492,7 @@ async fn handle_upsert(
         // the partition are not blocked while we compute the charge) and we
         // only escalate to a write lock once throttling has passed. Avoiding
         // `entry(..).or_default()` here also prevents a leaked empty
-        // `BTreeMap` entry on the throttled / error paths — see review #2.
+        // `BTreeMap` entry on the throttled / error paths.
         let num_props = RuChargingModel::count_properties(&body);
         let (status, rid, self_link) = {
             let docs = partition.documents.read().unwrap();
@@ -1508,6 +1540,7 @@ async fn handle_upsert(
         let etag = new_etag();
 
         inject_system_properties(&rid, &self_link, &etag, ts, &mut body);
+        let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
         let new_doc = StoredDocument {
             body: body.clone(),
             id: doc_id.clone(),
@@ -1517,6 +1550,7 @@ async fn handle_upsert(
             self_link,
             lsn,
             epk: epk.clone(),
+            body_size_bytes,
         };
 
         {
@@ -1527,11 +1561,15 @@ async fn handle_upsert(
 
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id);
-        Ok((new_doc, status, token, charge, body))
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+        Ok((new_doc, status, token, charge, body, headers))
     });
 
     match result {
-        Some(Ok((doc, status, token, charge, response_body))) => {
+        Some(Ok((doc, status, token, charge, response_body, headers))) => {
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
@@ -1546,15 +1584,7 @@ async fn handle_upsert(
                     .with_lsn(doc.lsn)
             };
 
-            decorate_point_response(
-                builder,
-                &region_ref,
-                db_id,
-                coll_id,
-                &doc.epk,
-                Some(doc.lsn),
-            )
-            .build()
+            decorate_point_response(builder, headers, Some(doc.lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -1570,6 +1600,10 @@ async fn handle_delete(
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let doc_id = parsed.doc_id.as_deref().unwrap_or("");
+
+    if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
+        return resp;
+    }
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
@@ -1609,7 +1643,7 @@ async fn handle_delete(
 
         // Look up the existing doc under a *read* lock; only escalate to
         // a write lock at commit time so throttled / precondition-failed
-        // requests do not serialize other writers/readers (review #6).
+        // requests do not serialize other writers/readers.
         let existing = {
             let docs = partition.documents.read().unwrap();
             match docs.get(&epk).and_then(|l| l.get(doc_id)).cloned() {
@@ -1649,9 +1683,9 @@ async fn handle_delete(
         }
 
         // Compute RU charge and check throttle BEFORE acquiring the write
-        // lock (review #6).
+        // lock.
         let num_props = RuChargingModel::count_properties(&existing.body);
-        let body_size = serde_json::to_vec(&existing.body).unwrap_or_default().len();
+        let body_size = existing.body_size_bytes;
         let charge = store
             .config()
             .ru_model()
@@ -1732,22 +1766,27 @@ async fn handle_delete(
                 self_link: current.self_link,
                 lsn,
                 epk: current.epk,
+                body_size_bytes: 0,
             }
         };
 
-        Ok((tombstone, token, charge))
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+
+        Ok((tombstone, token, charge, headers))
     });
 
     match result {
-        Some(Ok((tombstone, token, charge))) => {
+        Some(Ok((tombstone, token, charge, headers))) => {
             store.replicate(region_name, db_id, coll_id, &tombstone, true);
 
             let builder = ResponseBuilder::new(StatusCode::NoContent, start)
                 .with_request_charge(charge)
                 .with_session_token(&token)
                 .with_lsn(tombstone.lsn);
-            decorate_point_response(builder, &region_ref, db_id, coll_id, &tombstone.epk, None)
-                .build()
+            decorate_point_response(builder, headers, None).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),

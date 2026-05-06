@@ -221,21 +221,23 @@ async fn throttled_replace_does_not_modify_document() {
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
 
-    // If the replace was throttled, verify the original value is preserved.
-    if response.status() == StatusCode::TooManyRequests {
-        // Read back the seed item — it should still have "original".
-        // Wait for a new RU window to avoid throttling the read.
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "seed", r#"["pk1"]"#);
-        let response = ctx.emulator.execute_request(&req).await.unwrap();
-        assert_eq!(response.status(), StatusCode::Ok);
-        let body = read_response_body(response).await;
-        assert_eq!(
-            body["value"], "original",
-            "throttled replace must not modify the document",
-        );
-    }
-    // If not throttled (budget recovered), the test is inconclusive but not a failure.
+    // The fill loop above exhausts the per-second budget in the current
+    // window, so this immediately-following replace must be throttled. Wait
+    // for a fresh budget window before issuing the read-back.
+    assert_eq!(
+        response.status(),
+        StatusCode::TooManyRequests,
+        "replace immediately after a throttle-exhausting fill must be throttled (deterministic 1s budget window)"
+    );
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "seed", r#"["pk1"]"#);
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Ok);
+    let body = read_response_body(response).await;
+    assert_eq!(
+        body["value"], "original",
+        "throttled replace must not modify the document",
+    );
 }
 
 #[tokio::test]
@@ -284,21 +286,23 @@ async fn throttled_delete_does_not_remove_document() {
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
 
-    if response.status() == StatusCode::TooManyRequests {
-        // Verify the document still exists after the throttled delete.
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        let req = read_item_request(
-            &ctx.gateway_url,
-            "testdb",
-            "testcoll",
-            "keep-me",
-            r#"["pk1"]"#,
-        );
-        let response = ctx.emulator.execute_request(&req).await.unwrap();
-        assert_eq!(
-            response.status(),
-            StatusCode::Ok,
-            "throttled delete must not remove the document",
-        );
-    }
+    assert_eq!(
+        response.status(),
+        StatusCode::TooManyRequests,
+        "delete immediately after a throttle-exhausting fill must be throttled (deterministic 1s budget window)"
+    );
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "keep-me",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(
+        response.status(),
+        StatusCode::Ok,
+        "throttled delete must not remove the document",
+    );
 }

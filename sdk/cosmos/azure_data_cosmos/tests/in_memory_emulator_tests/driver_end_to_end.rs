@@ -661,7 +661,7 @@ async fn read_after_split_refreshes_driver_routing_map() {
         routed_partition_id,
         std::time::Duration::ZERO,
     );
-    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    backend.emulator_store.drain_pending_control_plane().await;
 
     let read = backend
         .emulator_driver

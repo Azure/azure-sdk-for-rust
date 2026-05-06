@@ -227,8 +227,7 @@ impl CosmosClientBuilder {
     ///   `with_allow_emulator_invalid_certificates`.
     /// - **Fault injection rules** (`with_fault_injection_rules`): the SDK
     ///   appends each rule from its own fault-injection builder to the
-    ///   rules already configured on the supplied builder (additive — see
-    ///   review #12). Both sources contribute and neither is silently
+    ///   rules already configured on the supplied builder (additive). Both sources contribute and neither is silently
     ///   dropped.
     /// - **Throughput control groups** (`register_throughput_control_group`):
     ///   the SDK appends each group registered via

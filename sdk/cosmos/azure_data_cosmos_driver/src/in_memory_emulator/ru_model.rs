@@ -32,7 +32,7 @@ impl RuChargingModel {
     ///
     /// Caps the multiplier at `2^62` so that `next_power_of_two` cannot panic
     /// in debug or silently wrap to 0 in release for pathological inputs
-    /// (review #16). Real Cosmos limits documents to 2 MB, so this cap is
+    ///. Real Cosmos limits documents to 2 MB, so this cap is
     /// purely defensive — it never triggers for any realistic body.
     fn size_multiplier(doc_size: usize) -> f64 {
         if doc_size == 0 {

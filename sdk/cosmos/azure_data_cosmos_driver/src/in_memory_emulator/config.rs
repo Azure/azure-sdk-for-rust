@@ -256,11 +256,34 @@ impl ConsistencyLevel {
     }
 }
 
-/// Replication delay configuration.
-#[derive(Clone, Debug)]
+/// Default cap on the number of pending entries the per-region replication
+/// buffer will hold while paused. Once the buffer reaches this cap the
+/// emulator returns 429/3075 to subsequent writes from the source region
+/// (matching the real service's `RetryWith` / `ReplicaTooMuchTimeBehind`
+/// behavior) instead of buffering indefinitely.
+pub const DEFAULT_MAX_BUFFERED_REPLICATIONS: usize = 10_000;
+
+/// Type alias for the per-replication delay sampling function.
+pub type ReplicationDelayFn = std::sync::Arc<dyn Fn() -> Duration + Send + Sync>;
+
+/// Replication delay and back-pressure configuration.
+#[derive(Clone)]
 pub struct ReplicationConfig {
     min_delay: Duration,
     max_delay: Duration,
+    max_buffered_replications: usize,
+    delay_fn: Option<ReplicationDelayFn>,
+}
+
+impl std::fmt::Debug for ReplicationConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReplicationConfig")
+            .field("min_delay", &self.min_delay)
+            .field("max_delay", &self.max_delay)
+            .field("max_buffered_replications", &self.max_buffered_replications)
+            .field("delay_fn", &self.delay_fn.as_ref().map(|_| "<custom>"))
+            .finish()
+    }
 }
 
 impl ReplicationConfig {
@@ -269,6 +292,8 @@ impl ReplicationConfig {
         Self {
             min_delay: Duration::ZERO,
             max_delay: Duration::ZERO,
+            max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
+            delay_fn: None,
         }
     }
 
@@ -277,6 +302,8 @@ impl ReplicationConfig {
         Self {
             min_delay: delay,
             max_delay: delay,
+            max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
+            delay_fn: None,
         }
     }
 
@@ -291,16 +318,39 @@ impl ReplicationConfig {
         Ok(Self {
             min_delay: min,
             max_delay: max,
+            max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
+            delay_fn: None,
         })
+    }
+
+    /// Sets the maximum number of replication entries that can be buffered
+    /// while a target region is paused. Writes that would push the buffer
+    /// past this cap are rejected with 429/3075.
+    pub fn with_max_buffered_replications(mut self, max: usize) -> Self {
+        self.max_buffered_replications = max.max(1);
+        self
+    }
+
+    /// Overrides the per-replication delay sampling function with a caller-
+    /// supplied closure. Useful for tests that want deterministic delays
+    /// (e.g. `|| Duration::ZERO`) without depending on the thread-local
+    /// xorshift PRNG.
+    pub fn with_replication_delay_fn(mut self, f: ReplicationDelayFn) -> Self {
+        self.delay_fn = Some(f);
+        self
     }
 
     /// Returns whether this is immediate (zero-delay) replication.
     pub fn is_immediate(&self) -> bool {
-        self.max_delay == Duration::ZERO
+        self.delay_fn.is_none() && self.max_delay == Duration::ZERO
     }
 
-    /// Samples a delay duration from the configured range.
+    /// Samples a delay duration from the configured range (or the custom
+    /// delay function, if set).
     pub fn sample_delay(&self) -> Duration {
+        if let Some(f) = &self.delay_fn {
+            return f();
+        }
         if self.min_delay == self.max_delay {
             return self.min_delay;
         }
@@ -316,14 +366,22 @@ impl ReplicationConfig {
     pub fn max_delay(&self) -> Duration {
         self.max_delay
     }
+
+    /// Returns the configured cap on buffered replications.
+    pub fn max_buffered_replications(&self) -> usize {
+        self.max_buffered_replications
+    }
 }
 
 impl Default for ReplicationConfig {
-    /// Default: 20-50ms random delay.
+    /// Default: 20-50ms random delay, buffer cap of
+    /// [`DEFAULT_MAX_BUFFERED_REPLICATIONS`].
     fn default() -> Self {
         Self {
             min_delay: Duration::from_millis(20),
             max_delay: Duration::from_millis(50),
+            max_buffered_replications: DEFAULT_MAX_BUFFERED_REPLICATIONS,
+            delay_fn: None,
         }
     }
 }
@@ -373,11 +431,23 @@ impl ContainerConfig {
     }
 
     /// Sets the number of physical partitions.
+    ///
+    /// Must be in the inclusive range `1..=100_000`. The upper bound prevents
+    /// pathological inputs (e.g. `u32::MAX`) from triggering 4-billion-element
+    /// `Vec` allocations during container creation; real Cosmos DB physical
+    /// partition counts are several orders of magnitude below this cap.
     pub fn with_partition_count(mut self, count: u32) -> azure_core::Result<Self> {
+        const MAX_PARTITION_COUNT: u32 = 100_000;
         if count == 0 {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "partition count must be > 0",
+            ));
+        }
+        if count > MAX_PARTITION_COUNT {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("partition count must be <= {MAX_PARTITION_COUNT}"),
             ));
         }
         self.partition_count = count;

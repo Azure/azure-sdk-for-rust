@@ -516,7 +516,6 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
     pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
         self
@@ -601,7 +600,7 @@ impl CosmosDriverRuntimeBuilder {
     /// runtime builder from multiple sources (e.g. the
     /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
     /// a user-supplied builder) do not silently lose previously-configured
-    /// rules — see review #12.
+    /// rules.
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_rules(
         mut self,

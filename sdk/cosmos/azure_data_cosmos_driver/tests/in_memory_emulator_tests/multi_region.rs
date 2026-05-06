@@ -272,3 +272,72 @@ async fn create_item_on_read_region_returns_403_3_with_correct_headers() {
         "etag should not be present on 403.3 error",
     );
 }
+
+#[tokio::test]
+async fn paused_replication_buffer_full_returns_429_3075() {
+    use azure_core::http::Url;
+    use azure_data_cosmos_driver::in_memory_emulator::ReplicationConfig;
+
+    // Build a 2-region account where the replication buffer for any target
+    // region is capped at 3 entries — small enough to fill quickly.
+    let east_url = "https://eastus.emulator.local";
+    let west_url = "https://westus.emulator.local";
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+    ])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate().with_max_buffered_replications(3));
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container(
+        "testdb",
+        "testcoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    // Pause West US so the replication buffer fills with each East US write.
+    store.pause_replication("West US");
+
+    // Three writes succeed — buffer fills exactly to the cap.
+    for i in 0..3 {
+        let body = serde_json::json!({"id": format!("item-{i}"), "pk": "pk1", "value": i});
+        let req = create_item_request(east_url, "testdb", "testcoll", &body, r#"["pk1"]"#, false);
+        let response = emulator.execute_request(&req).await.unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::Created,
+            "write {i} should succeed (buffer not yet full)"
+        );
+    }
+
+    // Fourth write must short-circuit with 429/3075 — back-pressure from a
+    // paused, saturated target.
+    let body = serde_json::json!({"id": "overflow", "pk": "pk1", "value": 4});
+    let req = create_item_request(east_url, "testdb", "testcoll", &body, r#"["pk1"]"#, false);
+    let response = emulator.execute_request(&req).await.unwrap();
+    assert_eq!(
+        response.status(),
+        StatusCode::TooManyRequests,
+        "write must be rejected when target replication queue is saturated"
+    );
+    let substatus = response
+        .headers()
+        .get_optional_str(&SUBSTATUS)
+        .unwrap_or("0");
+    assert_eq!(substatus, "3075", "substatus must signal queue overflow");
+
+    // Resume — buffer drains, subsequent writes succeed again.
+    store.resume_replication("West US");
+    let body = serde_json::json!({"id": "after-resume", "pk": "pk1", "value": 5});
+    let req = create_item_request(east_url, "testdb", "testcoll", &body, r#"["pk1"]"#, false);
+    let response = emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+}

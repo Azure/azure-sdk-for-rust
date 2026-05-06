@@ -37,7 +37,7 @@ async fn split_creates_two_children() {
     store.split_partition("testdb", "testcoll", 0, Duration::ZERO);
 
     // Give tokio a moment to complete the split
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    store.drain_pending_control_plane().await;
 
     // Verify partition count increased
     let req = Request::new(Url::parse(&url).unwrap(), Method::Get);
@@ -136,7 +136,7 @@ async fn split_preserves_vector_clock_version() {
 
     // Split partition 0
     store.split_partition("testdb", "testcoll", 0, Duration::ZERO);
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    store.drain_pending_control_plane().await;
 
     // Check PKRanges — children should have same vectorClockVersion as parent (0)
     let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
@@ -162,7 +162,7 @@ async fn merge_adjacent_partitions() {
 
     // Merge partitions 0 and 1 (adjacent in the EPK space)
     store.merge_partitions("testdb", "testcoll", 0, 1, Duration::ZERO);
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    store.drain_pending_control_plane().await;
 
     // Verify partition count decreased
     let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
@@ -224,7 +224,7 @@ async fn merge_rejects_non_adjacent_partitions() {
         routed_item.expect("expected to route at least one item into partition 0 or 2");
 
     store.merge_partitions("testdb", "testcoll", 0, 2, Duration::ZERO);
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    store.drain_pending_control_plane().await;
 
     let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
     let req = Request::new(Url::parse(&url).unwrap(), Method::Get);
@@ -261,7 +261,7 @@ async fn merge_increments_vector_clock_version() {
 
     // Merge partitions 0 and 1
     store.merge_partitions("testdb", "testcoll", 0, 1, Duration::ZERO);
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    store.drain_pending_control_plane().await;
 
     // Check child's vectorClockVersion — should be max(parent_versions) + 1 = 1
     let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
@@ -347,7 +347,7 @@ async fn read_after_split_succeeds() {
 
     // Split the partition that actually owns the item.
     store.split_partition("testdb", "testcoll", routed_partition_id, Duration::ZERO);
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    store.drain_pending_control_plane().await;
 
     // Read the item — should still work after split
     let req = read_item_request(

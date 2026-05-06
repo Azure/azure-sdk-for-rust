@@ -72,8 +72,28 @@ impl HeaderValidationSpec {
 
     /// Default spec for a successful point-read or point-write operation.
     ///
-    /// Most Cosmos-specific headers should be present in both; values like
-    /// activity_id, session_token, and etag will differ between backends.
+    /// Many Cosmos-response headers cannot be value-compared against an
+    /// emulator response. The relaxations below fall into three categories:
+    ///
+    /// - **`Exists` / `NonNegative`** — value is request-scoped or wall-clock
+    ///   dependent and will legitimately differ. Examples: `activity_id`
+    ///   (per-request UUID), `request_charge` (RU model approximations),
+    ///   `session_token` / `etag` / `lsn` (depend on real-account history),
+    ///   `server_duration_ms`.
+    /// - **`Symmetric`** — header presence must match (both present or both
+    ///   absent), values are allowed to differ. Used for headers whose value
+    ///   depends on real-replica internals the emulator cannot meaningfully
+    ///   reproduce: `transport_request_id`, `global_committed_lsn`,
+    ///   `local_lsn`, `number_of_read_regions`, `last_state_change_utc`,
+    ///   `gateway_version`, `service_version`, indexing/transformation
+    ///   progress, `correlated_activity_id` (client-set), `retry_after_ms`,
+    ///   `offer_replace_pending`, `has_tentative_writes`, query/continuation
+    ///   metrics (no-op on point ops).
+    /// - **`Ignore`** — emulator does not (and intentionally will not)
+    ///   produce these headers, or they encode internal pkrange state that
+    ///   has no public meaning: `item_lsn`, `item_local_lsn`,
+    ///   `quorum_acked_lsn`, `quorum_acked_local_lsn`, `resource_quota`,
+    ///   `resource_usage`, `partition_key_range_id`, `internal_partition_id`.
     pub fn for_point_operation() -> Self {
         Self::new()
             .with_rule("activity_id", HeaderMatch::Exists)

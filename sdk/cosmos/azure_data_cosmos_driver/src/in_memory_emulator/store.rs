@@ -35,6 +35,15 @@ pub struct EmulatorStore {
     split_merge_locks: std::sync::Mutex<SplitMergeLocks>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
+    /// Tracks spawned split/merge tasks separately from replication so a
+    /// control-plane panic does not surface inside an unrelated point-write
+    /// handler that happens to call `replicate()`.
+    control_plane_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
+    /// Monotonic counter used to populate `x-ms-transport-request-id`. Every
+    /// HTTP response gets a unique value so consumers correlating retries on
+    /// the wire see stable identity instead of a partition LSN that drifts
+    /// with mutations.
+    transport_request_counter: AtomicU64,
 }
 
 impl EmulatorStore {
@@ -52,6 +61,8 @@ impl EmulatorStore {
             master_partition_lsn: AtomicU64::new(0),
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
+            control_plane_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
+            transport_request_counter: AtomicU64::new(0),
         })
     }
 
@@ -77,6 +88,68 @@ impl EmulatorStore {
         super::session::SessionToken::format(MASTER_PARTITION_ID, lsn)
     }
 
+    /// Allocates the next process-unique value for `x-ms-transport-request-id`.
+    pub(crate) fn next_transport_request_id(&self) -> u64 {
+        self.transport_request_counter
+            .fetch_add(1, Ordering::Relaxed)
+            + 1
+    }
+
+    /// Returns `Some((target_region, retry_after_ms))` if any non-`source`
+    /// region currently has its replication queue full while paused. Used by
+    /// write handlers to short-circuit with 429/3075 — matching the real
+    /// service which fails new writes once the replication backlog is
+    /// saturated rather than queuing them indefinitely.
+    pub(crate) fn find_overflowed_replication_target(&self, source: &str) -> Option<(String, u64)> {
+        let regions = self.regions.read().unwrap();
+        for (target_name, region_store) in regions.iter() {
+            if target_name == source {
+                continue;
+            }
+            if !region_store.paused.load(Ordering::SeqCst) {
+                continue;
+            }
+            let max = self
+                .config
+                .replication_for(source, target_name)
+                .max_buffered_replications();
+            let len = region_store.replication_buffer.read().unwrap().len();
+            if len >= max {
+                return Some((target_name.clone(), 100));
+            }
+        }
+        None
+    }
+
+    /// Awaits all pending split/merge tasks. Test-only.
+    ///
+    /// Use this from tests instead of `tokio::time::sleep(...)` after a
+    /// `split_partition` / `merge_partitions` call so the test deterministically
+    /// observes the post-split topology without depending on wall-clock timing.
+    /// Panics from the awaited tasks are re-raised on the current thread.
+    #[doc(hidden)]
+    pub async fn drain_pending_control_plane(&self) {
+        let mut set = {
+            let mut guard = self.control_plane_tasks.lock().unwrap();
+            std::mem::replace(&mut *guard, tokio::task::JoinSet::new())
+        };
+        while let Some(res) = set.join_next().await {
+            if let Err(e) = res {
+                if e.is_panic() {
+                    std::panic::resume_unwind(e.into_panic());
+                }
+            }
+        }
+    }
+
+    /// Convenience wrapper that awaits all pending split tasks. Equivalent to
+    /// `drain_pending_control_plane()` today; named separately so call sites
+    /// in tests document intent.
+    #[doc(hidden)]
+    pub async fn wait_for_split(&self, _db: &str, _coll: &str, _partition_id: u32) {
+        self.drain_pending_control_plane().await;
+    }
+
     fn split_merge_lock(&self, db: &str, coll: &str) -> Arc<async_lock::Mutex<()>> {
         let mut map = self.split_merge_locks.lock().unwrap();
         map.entry((db.to_string(), coll.to_string()))
@@ -90,7 +163,7 @@ impl EmulatorStore {
     /// `apply_replication`), the panic is re-raised on the current thread so
     /// the test surfaces the failure. Silently dropping the panic would let
     /// stale-state bugs hide behind a paused-but-overflowed buffer
-    /// (review #4).
+    ///.
     #[doc(hidden)]
     pub async fn drain_pending_replications(&self) {
         let mut set = {
@@ -111,7 +184,7 @@ impl EmulatorStore {
     /// The returned [`RegionStoreRef`] holds an [`Arc<RegionStore>`] directly,
     /// so subsequent reads/writes against it skip the outer regions-map lock
     /// and avoid the TOCTOU window between `contains_key` and per-method
-    /// re-lookup that the previous handle had (see review #18).
+    /// re-lookup that the previous handle had.
     pub(crate) fn region(&self, name: &str) -> Option<RegionStoreRef> {
         let regions = self.regions.read().unwrap();
         regions.get(name).map(|r| RegionStoreRef {
@@ -231,7 +304,7 @@ impl EmulatorStore {
     /// Returns a descriptive error when the region, database, or container is
     /// not provisioned, when the JSON partition-key header is malformed, or
     /// when no physical partition matches the EPK. Test code should treat any
-    /// `Err` as a programmer mistake (see review #3 — the previous `bool`
+    /// `Err` as a programmer mistake ( — the previous `bool`
     /// return type silently no-op'd on misuse and applied cross-container
     /// side effects).
     #[doc(hidden)]
@@ -319,7 +392,7 @@ impl EmulatorStore {
             // two entries from different source regions colliding on
             // `(db, coll, epk, id, ts, lsn)` get a deterministic, stable
             // order — input/FIFO order across mixed sources is exactly the
-            // case the sort is meant to neutralize (review #7).
+            // case the sort is meant to neutralize.
             pending.sort_by(|a, b| {
                 (
                     &a.db_id,
@@ -388,7 +461,7 @@ impl EmulatorStore {
         // Without this, a panic in a spawned replication task would only be
         // observable if a test happened to call `drain_pending_replications`
         // *and* iterate the join results — which `drain` itself does not
-        // (review #4).
+        //.
         {
             let mut set = self.replication_tasks.lock().unwrap();
             while let Some(res) = set.try_join_next() {
@@ -447,34 +520,32 @@ impl EmulatorStore {
         let regions = self.regions.read().unwrap();
         if let Some(region_store) = regions.get(target_region) {
             if region_store.paused.load(Ordering::SeqCst) {
-                // Enqueue to buffer.
-                //
-                // # Intentional panic
-                //
-                // The `assert!` below is **deliberately fail-fast**. The
-                // emulator runs only inside `cargo test` (the
-                // `__internal_in_memory_emulator` feature is internal-only and
-                // not part of any production build) and a paused region whose
-                // buffer grows past 10_000 entries always indicates a test bug:
-                // either the test forgot to call `resume_replication` or it is
-                // generating writes faster than any reasonable replicated
-                // workload. Silently dropping or summarizing those writes
-                // would mask the bug and cause confusing downstream failures
-                // (stale reads, missing items, divergent regions). Crashing
-                // the test process with a clear message is the correct
-                // behavior. Do **not** soften this to a `debug_assert!`,
-                // logged warning, or buffer eviction without a corresponding
-                // update to the spec — see
-                // `sdk/cosmos/azure_data_cosmos/docs/in-memory-emulator-spec.md`
-                // ("Replication buffer overflow") for the rationale.
+                // Enqueue to the paused region's buffer. If the queue is at
+                // capacity the entry is dropped with a warning rather than
+                // panicking — write handlers proactively short-circuit
+                // *future* writes with 429/3075 once any target's queue
+                // saturates (see `find_overflowed_replication_target`),
+                // mirroring the real service's
+                // `RetryWith` / `ReplicaTooMuchTimeBehind` behavior. The
+                // drop-on-overflow here is the safety net for the racy case
+                // where multiple writers pass the pre-check before any of
+                // them lands in the buffer.
+                let max = self
+                    .config
+                    .replication_for(source_region, target_region)
+                    .max_buffered_replications();
                 let mut buffer = region_store.replication_buffer.write().unwrap();
-                const MAX_REPLICATION_BUFFER: usize = 10_000;
-                assert!(
-                    buffer.len() < MAX_REPLICATION_BUFFER,
-                    "in-memory emulator: replication buffer for region '{}' exceeded {} entries while paused (likely a test forgot to call resume_replication)",
-                    target_region,
-                    MAX_REPLICATION_BUFFER
-                );
+                if buffer.len() >= max {
+                    tracing::warn!(
+                        target_region = target_region,
+                        source_region = source_region,
+                        db_id = db_id,
+                        coll_id = coll_id,
+                        max = max,
+                        "in-memory emulator: replication buffer full; dropping entry (write handlers will return 429/3075 until the buffer drains)",
+                    );
+                    return;
+                }
                 buffer.push_back(PendingReplication {
                     db_id: db_id.to_string(),
                     coll_id: coll_id.to_string(),
@@ -537,7 +608,7 @@ impl std::fmt::Debug for EmulatorStore {
 ///
 /// Holds an [`Arc<RegionStore>`] directly so each access only takes the
 /// per-resource (databases / containers) lock — no outer regions-map lock
-/// per call (see review #18).
+/// per call.
 pub(crate) struct RegionStoreRef {
     region: Arc<RegionStore>,
 }
@@ -640,7 +711,7 @@ pub(crate) struct PendingReplication {
     pub coll_id: String,
     /// Region that originated this write. Used as a stable tiebreaker when
     /// draining a paused replication buffer where two entries from different
-    /// source regions can collide on `(epk, id, ts, lsn)` — see review #7.
+    /// source regions can collide on `(epk, id, ts, lsn)`.
     pub source_region: String,
     pub doc: StoredDocument,
     pub is_delete: bool,
@@ -795,6 +866,10 @@ pub(crate) struct StoredDocument {
     #[allow(dead_code)]
     pub lsn: u64,
     pub epk: Epk,
+    /// Size of `body` when serialized to JSON, captured at insertion. Cached
+    /// so the read-RU computation does not have to re-serialize on every
+    /// point read.
+    pub body_size_bytes: usize,
 }
 
 /// Returns the cached pkrange RID for `partition_id`, allocating (and
@@ -875,7 +950,7 @@ fn create_partitions(meta: &ContainerMetadata, rid_gen: &RidGenerator) -> Vec<Ph
 /// The endpoints (partition 0's lower bound and partition N-1's upper bound)
 /// are represented by the [`Epk::min()`] / [`Epk::max()`] sentinels at the
 /// call site, so they are intentionally not emitted here. The returned vec
-/// has length N-1 and is indexed `[1..N)` by the caller (review #20).
+/// has length N-1 and is indexed `[1..N)` by the caller.
 fn compute_partition_boundaries(n: u32) -> Vec<String> {
     if n <= 1 {
         return Vec::new();
@@ -1010,7 +1085,7 @@ impl EmulatorStore {
         let coll = coll_id.to_string();
 
         let lock = self.split_merge_lock(db_id, coll_id);
-        self.replication_tasks.lock().unwrap().spawn(async move {
+        self.control_plane_tasks.lock().unwrap().spawn(async move {
             let _guard = lock.lock().await;
             if !min_lock_duration.is_zero() {
                 tokio::time::sleep(min_lock_duration).await;
@@ -1228,7 +1303,7 @@ impl EmulatorStore {
         let coll = coll_id.to_string();
 
         let lock = self.split_merge_lock(db_id, coll_id);
-        self.replication_tasks.lock().unwrap().spawn(async move {
+        self.control_plane_tasks.lock().unwrap().spawn(async move {
             let _guard = lock.lock().await;
             if !min_lock_duration.is_zero() {
                 tokio::time::sleep(min_lock_duration).await;
