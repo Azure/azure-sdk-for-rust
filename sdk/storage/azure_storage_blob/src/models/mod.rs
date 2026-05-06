@@ -22,6 +22,82 @@ pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 
+use azure_core::fmt::SafeDebug;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+/// The blob metadata.
+#[derive(Clone, Default, SafeDebug)]
+#[non_exhaustive]
+pub struct BlobMetadata {
+    /// The metadata key-value pairs.
+    pub values: Option<HashMap<String, String>>,
+
+    /// Whether the blob metadata is encrypted.
+    pub encrypted: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for BlobMetadata {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct BlobMetadataVisitor;
+        impl<'de> serde::de::Visitor<'de> for BlobMetadataVisitor {
+            type Value = BlobMetadata;
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a BlobMetadata struct definition")
+            }
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut values = HashMap::new();
+                let mut encrypted = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_ref() {
+                        "@Encrypted" => encrypted = Some(map.next_value()?),
+                        _ => {
+                            let value: String = map.next_value()?;
+                            values.insert(key, value);
+                        }
+                    }
+                }
+                let values = match values.len() {
+                    0 => None,
+                    _ => Some(values),
+                };
+                Ok(BlobMetadata { values, encrypted })
+            }
+        }
+        deserializer.deserialize_map(BlobMetadataVisitor)
+    }
+}
+
+impl Serialize for BlobMetadata {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(
+            1 + match &self.values {
+                Some(values) => values.len(),
+                None => 0,
+            },
+        ))?;
+        if let Some(values) = &self.values {
+            for (k, v) in values {
+                map.serialize_entry(k, v)?;
+            }
+        }
+        if let Some(encrypted) = &self.encrypted {
+            map.serialize_entry("@Encrypted", encrypted)?;
+        }
+        map.end()
+    }
+}
+
 /// Serde deserialization helpers for [`BlobName`] XML elements.
 ///
 /// Deserializes a [`BlobName`] XML element directly into a `String`.

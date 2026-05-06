@@ -13,6 +13,7 @@ use super::{
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     RehydratePriority, StorageErrorCode,
 };
+use crate::models::BlobMetadata;
 use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -171,17 +172,6 @@ pub struct BlobItem {
     /// The version id of the blob.
     #[serde(rename = "VersionId", skip_serializing_if = "Option::is_none")]
     pub version_id: Option<String>,
-}
-
-/// The blob metadata.
-#[derive(Clone, Default, SafeDebug)]
-#[non_exhaustive]
-pub struct BlobMetadata {
-    /// Contains unnamed additional properties.
-    pub additional_properties: Option<HashMap<String, String>>,
-
-    /// Whether the blob metadata is encrypted.
-    pub encrypted: Option<String>,
 }
 
 /// Represents a blob name.
