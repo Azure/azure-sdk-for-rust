@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Added `#[non_exhaustive]` to `AttributeArray`, `AttributeValue`, `SpanStatus`, and `SpanKind`.
+- `new_http_client()` now panics if the `reqwest` feature is not enabled.
 
 ### Bugs Fixed
 
