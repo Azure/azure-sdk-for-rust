@@ -70,7 +70,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
         if request.url().scheme() != "https" {
             return Err(Error::with_message(
                 ErrorKind::Other,
-                "authorized requests are not permitted for non-TLS protected (https) endpoints",
+                "authorized requests are not permitted for non-TLS protected endpoints",
             ));
         }
 
@@ -394,7 +394,7 @@ mod tests {
             .expect_err("request should fail for non-https url");
 
         assert_eq!(err.kind(), &ErrorKind::Other);
-        assert!(err.to_string().contains("https"));
+        assert!(err.to_string().contains("TLS"));
     }
 
     async fn run_test(tokens: &[AccessToken]) {

@@ -494,6 +494,6 @@ async fn get_key_requires_https() {
         .expect_err("request should fail for non-https url");
     assert!(err.to_string().contains("non-transport error"));
     assert!(
-        matches!(err.downcast_ref::<azure_core::Error>(), Some(e) if e.to_string().contains("https"))
+        matches!(err.downcast_ref::<azure_core::Error>(), Some(e) if e.to_string().contains("TLS"))
     );
 }
