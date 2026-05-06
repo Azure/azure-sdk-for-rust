@@ -65,8 +65,8 @@ Write-Host "Latest version: $latestVersion"
 $packageJsonUrl = "https://raw.githubusercontent.com/Azure/typespec-rust/v$latestVersion/packages/typespec-rust/package.json"
 Write-Host "Fetching upstream package.json from v$latestVersion tag"
 $upstreamPackage = Invoke-RestMethod -Uri $packageJsonUrl
-$upstreamDevDeps = $upstreamPackage.devDependencies
-$upstreamPeerDeps = $upstreamPackage.peerDependencies
+$upstreamDevDeps = if ($upstreamPackage.devDependencies) { $upstreamPackage.devDependencies } else { [PSCustomObject]@{} }
+$upstreamPeerDeps = if ($upstreamPackage.peerDependencies) { $upstreamPackage.peerDependencies } else { [PSCustomObject]@{} }
 
 # Read our emitter-package.json and check if an update is needed.
 $emitterPackage = Get-Content $EmitterPackagePath -Raw | ConvertFrom-Json
