@@ -11,7 +11,6 @@ use crate::{
         BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         SessionToken,
     },
-    resource_context::ResourceLink,
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
     Query, ReplaceContainerOptions, ThroughputOptions,
@@ -36,7 +35,6 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) async fn new(
         context: ClientContext,
-        _database_link: &ResourceLink,
         container_id: &str,
         database_id: &str,
     ) -> azure_core::Result<Self> {

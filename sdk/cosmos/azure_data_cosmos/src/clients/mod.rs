@@ -12,13 +12,7 @@ mod throughput_poller;
 
 use std::sync::Arc;
 
-use crate::{
-    pipeline::GatewayPipeline,
-    routing::{
-        global_endpoint_manager::GlobalEndpointManager,
-        global_partition_endpoint_manager::GlobalPartitionEndpointManager,
-    },
-};
+use crate::pipeline::GatewayPipeline;
 use azure_data_cosmos_driver::CosmosDriver;
 
 /// Shared infrastructure threaded from [`CosmosClient`](super::CosmosClient)
@@ -31,10 +25,6 @@ use azure_data_cosmos_driver::CosmosDriver;
 pub(crate) struct ClientContext {
     pub(crate) pipeline: Arc<GatewayPipeline>,
     pub(crate) driver: Arc<CosmosDriver>,
-    #[allow(dead_code)]
-    pub(crate) global_endpoint_manager: Arc<GlobalEndpointManager>,
-    #[allow(dead_code)]
-    pub(crate) global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager>,
 }
 
 pub use container_client::ContainerClient;
