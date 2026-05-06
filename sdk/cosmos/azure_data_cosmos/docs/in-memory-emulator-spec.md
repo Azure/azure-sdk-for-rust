@@ -911,9 +911,14 @@ let config = VirtualAccountConfig::new(regions)
 
 ```rust
 ContainerConfig::new()
-    .with_partition_count(4)
-    .with_throughput(4000) // 4000 RU/s total → 1000 RU/s per partition
+    .with_partition_count(4)?
+    .with_throughput(4000)? // 4000 RU/s total → 1000 RU/s per partition
 ```
+
+Both `with_partition_count` and `with_throughput` validate their input
+eagerly and return `azure_core::Result<Self>`, so chained calls require
+`?`. Use them inside a function that returns `azure_core::Result<_>` (or
+unwrap in tests).
 
 Minimum provisioned throughput is 400 RU/s; values below this and a partition count of `0` are rejected with an `azure_core::Error` from `with_throughput` / `with_partition_count`.
 
@@ -1419,8 +1424,8 @@ store.create_container_with_config(
     "testcoll",
     PartitionKeyDefinition::new(vec!["/pk"]),
     ContainerConfig::new()
-        .with_partition_count(8)
-        .with_throughput(4000), // 4000 RU/s → 500 RU/s per partition
+        .with_partition_count(8)?
+        .with_throughput(4000)?, // 4000 RU/s → 500 RU/s per partition
 );
 ```
 

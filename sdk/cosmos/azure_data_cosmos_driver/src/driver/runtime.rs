@@ -516,6 +516,11 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
+    #[cfg(any(
+        test,
+        feature = "__internal_in_memory_emulator",
+        feature = "__internal_mocking"
+    ))]
     pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
         self

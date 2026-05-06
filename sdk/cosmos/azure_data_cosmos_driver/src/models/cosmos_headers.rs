@@ -325,10 +325,19 @@ pub struct CosmosResponseHeaders {
     /// Whether the region has tentative (not yet committed) writes (`x-ms-cosmos-allow-tentative-writes`).
     pub has_tentative_writes: Option<bool>,
 
-    /// Partition key range ID for the responding partition (`x-ms-documentdb-partitionkeyrangeid`).
+    /// Partition key range ID for the responding partition
+    /// (`x-ms-documentdb-partitionkeyrangeid`).
+    ///
+    /// Identifies which physical partition handled the operation. For
+    /// informational and diagnostic purposes only — clients should not use
+    /// this value to route subsequent requests, as the topology may change
+    /// (split / merge) without notice.
     pub partition_key_range_id: Option<String>,
 
     /// Internal partition ID (`x-ms-cosmos-internal-partition-id`).
+    ///
+    /// Opaque identifier assigned by the service for diagnostic correlation.
+    /// May change without notice — do not depend on its format or stability.
     pub internal_partition_id: Option<String>,
 
     /// Stored procedure log output (`x-ms-documentdb-script-log-results`).

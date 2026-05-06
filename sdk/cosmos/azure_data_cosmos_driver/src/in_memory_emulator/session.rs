@@ -10,6 +10,19 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
+/// Newtype wrapper around the region-id `u64` carried in V2 session tokens.
+///
+/// Exists purely to make swapped-argument bugs in `SessionToken::format_v2`
+/// (where region-id and local-LSN are adjacent `u64` parameters) a compile
+/// error.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) struct RegionId(pub u64);
+
+/// Newtype wrapper around the per-region local-LSN `u64` carried in V2
+/// session tokens. See [`RegionId`] for rationale.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) struct LocalLsn(pub u64);
+
 /// Parsed session token for a single partition key range.
 ///
 /// V2 format: `{pkrange_id}:{version}#{global_lsn}#{region_id}={local_lsn}`
@@ -27,18 +40,38 @@ impl SessionToken {
     ///
     /// V2: `"0:1#100#0=100"` → pkrange_id=0, version=1, global_lsn=100, region 0=100
     /// V1: `"0:-1#5"` → pkrange_id=0, version=0, global_lsn=5, no regions
+    /// Convenience wrapper around `parse_detailed` for callers that don't
+    /// care which segment failed.
+    #[cfg(test)]
     pub fn parse(s: &str) -> Option<Self> {
-        let (pkrange_str, rest) = s.split_once(':')?;
-        let pkrange_id = pkrange_str.parse::<u32>().ok()?;
+        Self::parse_detailed(s).ok()
+    }
+
+    /// Parses a session token, returning a structured error that identifies
+    /// which segment failed to parse.
+    ///
+    /// Used by handlers that need to surface the failure reason (e.g. to a
+    /// 400 response body) rather than just "Invalid session token". Drift
+    /// between the emulator's parser and the SDK's parser is a common source
+    /// of dual-backend test flakes — pointing at the offending segment makes
+    /// triage cheap.
+    pub fn parse_detailed(s: &str) -> Result<Self, SessionTokenParseError> {
+        use SessionTokenParseError::*;
+        let (pkrange_str, rest) = s.split_once(':').ok_or(MissingPkRangeSeparator)?;
+        let pkrange_id = pkrange_str
+            .parse::<u32>()
+            .map_err(|_| InvalidPkRangeId(pkrange_str.to_string()))?;
 
         let mut hash_parts = rest.split('#');
-        let version_str = hash_parts.next()?;
+        let version_str = hash_parts.next().ok_or(MissingVersion)?;
 
         // V1 check: version is "-1"
         if version_str == "-1" {
-            let lsn_str = hash_parts.next()?;
-            let lsn = lsn_str.parse::<u64>().ok()?;
-            return Some(SessionToken {
+            let lsn_str = hash_parts.next().ok_or(MissingV1Lsn)?;
+            let lsn = lsn_str
+                .parse::<u64>()
+                .map_err(|_| InvalidV1Lsn(lsn_str.to_string()))?;
+            return Ok(SessionToken {
                 pkrange_id,
                 version: 0,
                 global_lsn: lsn,
@@ -47,22 +80,32 @@ impl SessionToken {
         }
 
         // V2: version#globalLSN#region=lsn#...
-        let version = version_str.parse::<u64>().ok()?;
-        let global_lsn_str = hash_parts.next()?;
-        let global_lsn = global_lsn_str.parse::<u64>().ok()?;
+        let version = version_str
+            .parse::<u64>()
+            .map_err(|_| InvalidVersion(version_str.to_string()))?;
+        let global_lsn_str = hash_parts.next().ok_or(MissingGlobalLsn)?;
+        let global_lsn = global_lsn_str
+            .parse::<u64>()
+            .map_err(|_| InvalidGlobalLsn(global_lsn_str.to_string()))?;
 
         let mut region_progress = Vec::new();
         for segment in hash_parts {
             if segment.is_empty() {
                 continue;
             }
-            let (region_str, lsn_str) = segment.split_once('=')?;
-            let region_id = region_str.parse::<u64>().ok()?;
-            let lsn = lsn_str.parse::<u64>().ok()?;
+            let (region_str, lsn_str) = segment
+                .split_once('=')
+                .ok_or_else(|| InvalidRegionSegment(segment.to_string()))?;
+            let region_id = region_str
+                .parse::<u64>()
+                .map_err(|_| InvalidRegionId(region_str.to_string()))?;
+            let lsn = lsn_str
+                .parse::<u64>()
+                .map_err(|_| InvalidRegionLsn(lsn_str.to_string()))?;
             region_progress.push((region_id, lsn));
         }
 
-        Some(SessionToken {
+        Ok(SessionToken {
             pkrange_id,
             version,
             global_lsn,
@@ -75,17 +118,55 @@ impl SessionToken {
     /// `local_lsn` is the number of mutations applied at this region for the
     /// partition, which differs from `global_lsn` for any partition that
     /// receives writes via replication rather than originating them.
+    ///
+    /// `prior_progress`, if non-empty, carries per-region LSNs from a token a
+    /// caller previously observed (typically the incoming `x-ms-session-token`
+    /// of the request being served). Entries are merged into the output by
+    /// taking `max(prior, local)` per region so the session token a driver
+    /// accumulates against the emulator does not lose multi-region progress
+    /// on every roundtrip — matching the behaviour of the real gateway.
+    ///
+    /// `region` and `local_lsn` are wrapped in newtypes (`RegionId`,
+    /// `LocalLsn`) to make swapped-argument bugs a compile error: in the wire
+    /// format these are adjacent `u64` values and trivial to transpose.
     pub fn format_v2(
         pkrange_id: u32,
         version: u64,
         global_lsn: u64,
-        region_id: u64,
-        local_lsn: u64,
+        region: RegionId,
+        local_lsn: LocalLsn,
+        prior_progress: &[(u64, u64)],
     ) -> String {
-        format!(
-            "{}:{}#{}#{}={}",
-            pkrange_id, version, global_lsn, region_id, local_lsn
-        )
+        let RegionId(region_id) = region;
+        let LocalLsn(local_lsn) = local_lsn;
+        if prior_progress.is_empty() {
+            return format!(
+                "{}:{}#{}#{}={}",
+                pkrange_id, version, global_lsn, region_id, local_lsn
+            );
+        }
+        // Merge: start from prior progress, overwrite/insert the local region
+        // with max(prior_local, local_lsn), then emit in stable region-id
+        // order.
+        let mut merged: Vec<(u64, u64)> = prior_progress.to_vec();
+        let mut found = false;
+        for (rid, lsn) in merged.iter_mut() {
+            if *rid == region_id {
+                *lsn = (*lsn).max(local_lsn);
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            merged.push((region_id, local_lsn));
+        }
+        merged.sort_by_key(|(rid, _)| *rid);
+        let mut out = format!("{}:{}#{}", pkrange_id, version, global_lsn);
+        for (rid, lsn) in merged {
+            use std::fmt::Write;
+            let _ = write!(out, "#{}={}", rid, lsn);
+        }
+        out
     }
 
     /// Formats a V1 session token (backward compatibility).
@@ -94,15 +175,76 @@ impl SessionToken {
     }
 }
 
+/// Identifies which segment of a session token failed to parse.
+///
+/// Surfaced through `SessionToken::parse_detailed` and
+/// `parse_composite_session_token` so handlers can include the offending
+/// fragment in error responses (and dual-backend tests can pinpoint
+/// emulator/SDK parser drift).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum SessionTokenParseError {
+    /// Token did not contain the `:` separating pkrange id from version.
+    MissingPkRangeSeparator,
+    /// Pkrange id segment was not a valid `u32`.
+    InvalidPkRangeId(String),
+    /// Token was missing the version segment after `:`.
+    MissingVersion,
+    /// V1 token (`pkrange:-1#lsn`) was missing the LSN segment.
+    MissingV1Lsn,
+    /// V1 LSN was not a valid `u64`.
+    InvalidV1Lsn(String),
+    /// V2 version segment was not a valid `u64`.
+    InvalidVersion(String),
+    /// V2 token was missing the global LSN segment after the version.
+    MissingGlobalLsn,
+    /// V2 global LSN was not a valid `u64`.
+    InvalidGlobalLsn(String),
+    /// A V2 region segment did not contain `=` (expected `region=lsn`).
+    InvalidRegionSegment(String),
+    /// V2 region id was not a valid `u64`.
+    InvalidRegionId(String),
+    /// V2 region LSN was not a valid `u64`.
+    InvalidRegionLsn(String),
+    /// A composite token had an empty entry (e.g. trailing `,`).
+    EmptyComposite,
+}
+
+impl std::fmt::Display for SessionTokenParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use SessionTokenParseError::*;
+        match self {
+            MissingPkRangeSeparator => write!(f, "missing ':' separator after pkrange id"),
+            InvalidPkRangeId(s) => write!(f, "invalid pkrange id '{}'", s),
+            MissingVersion => write!(f, "missing version segment"),
+            MissingV1Lsn => write!(f, "missing V1 LSN after '-1'"),
+            InvalidV1Lsn(s) => write!(f, "invalid V1 LSN '{}'", s),
+            InvalidVersion(s) => write!(f, "invalid version '{}'", s),
+            MissingGlobalLsn => write!(f, "missing global LSN segment"),
+            InvalidGlobalLsn(s) => write!(f, "invalid global LSN '{}'", s),
+            InvalidRegionSegment(s) => {
+                write!(f, "region segment '{}' missing '=' separator", s)
+            }
+            InvalidRegionId(s) => write!(f, "invalid region id '{}'", s),
+            InvalidRegionLsn(s) => write!(f, "invalid region LSN '{}'", s),
+            EmptyComposite => write!(f, "empty composite session token entry"),
+        }
+    }
+}
+
 /// Parses a composite session token string (comma-separated) into individual tokens.
-pub(crate) fn parse_composite_session_token(s: &str) -> Result<Vec<SessionToken>, ()> {
+///
+/// Returns the segment-specific failure on the first malformed entry so the
+/// caller can include it in an error response.
+pub(crate) fn parse_composite_session_token(
+    s: &str,
+) -> Result<Vec<SessionToken>, SessionTokenParseError> {
     s.split(',')
         .map(|part| {
             let trimmed = part.trim();
             if trimmed.is_empty() {
-                return Err(());
+                return Err(SessionTokenParseError::EmptyComposite);
             }
-            SessionToken::parse(trimmed).ok_or(())
+            SessionToken::parse_detailed(trimmed)
         })
         .collect()
 }
@@ -165,7 +307,7 @@ mod tests {
     #[test]
     fn format_v2_token() {
         // Single-region: local LSN equals global LSN.
-        let s = SessionToken::format_v2(0, 1, 100, 0, 100);
+        let s = SessionToken::format_v2(0, 1, 100, RegionId(0), LocalLsn(100), &[]);
         assert_eq!(s, "0:1#100#0=100");
     }
 
@@ -173,8 +315,40 @@ mod tests {
     fn format_v2_token_distinguishes_local_from_global() {
         // Multi-region: a region that received this write via replication
         // reports the local-LSN component independently of the global LSN.
-        let s = SessionToken::format_v2(2, 4, 100, 1, 73);
+        let s = SessionToken::format_v2(2, 4, 100, RegionId(1), LocalLsn(73), &[]);
         assert_eq!(s, "2:4#100#1=73");
+    }
+
+    #[test]
+    fn format_v2_preserves_prior_multi_region_progress() {
+        // Incoming token tracks three regions; we re-emit at region 1 with a
+        // newer local LSN. Regions 0 and 2 must survive the roundtrip.
+        let incoming = SessionToken::parse("0:5#200#0=200#1=150#2=120").unwrap();
+        let s = SessionToken::format_v2(
+            0,
+            5,
+            200,
+            RegionId(1),
+            LocalLsn(180),
+            &incoming.region_progress,
+        );
+        // Sorted by region id; region 1 advanced from 150 -> 180.
+        assert_eq!(s, "0:5#200#0=200#1=180#2=120");
+    }
+
+    #[test]
+    fn format_v2_local_lsn_takes_max_against_prior() {
+        // Stale incoming local LSN must not regress the emitted value.
+        let prior = vec![(0, 100), (1, 80)];
+        let s = SessionToken::format_v2(0, 1, 100, RegionId(1), LocalLsn(40), &prior);
+        assert_eq!(s, "0:1#100#0=100#1=80");
+    }
+
+    #[test]
+    fn format_v2_inserts_new_region_when_absent_from_prior() {
+        let prior = vec![(0, 100)];
+        let s = SessionToken::format_v2(0, 1, 100, RegionId(2), LocalLsn(7), &prior);
+        assert_eq!(s, "0:1#100#0=100#2=7");
     }
 
     #[test]

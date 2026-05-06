@@ -147,7 +147,18 @@ impl ResponseBuilder {
         self
     }
 
+    /// Sets the `x-ms-session-token` response header.
+    ///
+    /// An empty string is a no-op rather than emitting `x-ms-session-token: `,
+    /// because real Cosmos DB only sends a session token on operations that
+    /// actually progress the session vector. Emitting an empty header makes
+    /// drivers see a no-progress token from a control-plane response and
+    /// retry incorrectly on session-not-available errors.
     pub fn with_session_token(mut self, token: &str) -> Self {
+        if token.is_empty() {
+            self.headers.remove(SESSION_TOKEN.clone());
+            return self;
+        }
         self.headers
             .insert(SESSION_TOKEN.clone(), HeaderValue::from(token.to_string()));
         self
@@ -286,4 +297,46 @@ fn format_rfc1123_date() -> String {
     OffsetDateTime::now_utc()
         .format(FORMAT)
         .unwrap_or_else(|_| String::from("Thu, 01 Jan 1970 00:00:00 GMT"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::http::StatusCode;
+    use std::time::Instant;
+
+    #[test]
+    fn with_session_token_skips_empty_token() {
+        // An empty session token must NOT produce an `x-ms-session-token: `
+        // header. Real Cosmos only emits the header on operations that
+        // advance the session vector; emitting an empty header makes
+        // drivers treat control-plane responses as no-progress tokens and
+        // mis-handle session-not-available retries.
+        let builder = ResponseBuilder::new(StatusCode::Ok, Instant::now()).with_session_token("");
+        let resp = builder.build();
+        assert!(
+            resp.headers().get_optional_str(&SESSION_TOKEN).is_none(),
+            "empty session token must not emit the header"
+        );
+    }
+
+    #[test]
+    fn with_session_token_emits_non_empty_token() {
+        let builder =
+            ResponseBuilder::new(StatusCode::Ok, Instant::now()).with_session_token("0:1#5#0=5");
+        let resp = builder.build();
+        assert_eq!(
+            resp.headers().get_optional_str(&SESSION_TOKEN),
+            Some("0:1#5#0=5")
+        );
+    }
+
+    #[test]
+    fn with_session_token_clears_previously_set_value_when_called_with_empty() {
+        let builder = ResponseBuilder::new(StatusCode::Ok, Instant::now())
+            .with_session_token("0:1#5#0=5")
+            .with_session_token("");
+        let resp = builder.build();
+        assert!(resp.headers().get_optional_str(&SESSION_TOKEN).is_none());
+    }
 }

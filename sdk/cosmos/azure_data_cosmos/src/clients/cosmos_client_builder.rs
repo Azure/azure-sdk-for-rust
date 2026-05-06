@@ -224,7 +224,12 @@ impl CosmosClientBuilder {
     ///
     /// - **Connection pool** (`with_connection_pool`): always replaced by an
     ///   SDK-derived pool that reflects `with_proxy_allowed` and
-    ///   `with_allow_emulator_invalid_certificates`.
+    ///   `with_allow_emulator_invalid_certificates`. The pool is then passed
+    ///   to whatever `HttpClientFactory` is in effect — the default reqwest
+    ///   factory honors it, but the in-memory emulator transport supplied via
+    ///   `with_http_client_factory` ignores its argument since it does not
+    ///   perform real HTTP. Tests against the emulator therefore see no
+    ///   connection-pool behaviour regardless of what is configured here.
     /// - **Fault injection rules** (`with_fault_injection_rules`): the SDK
     ///   appends each rule from its own fault-injection builder to the
     ///   rules already configured on the supplied builder (additive). Both sources contribute and neither is silently

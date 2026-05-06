@@ -194,7 +194,7 @@ fn handle_create_database(
                 None,
                 "BadRequest",
                 "Invalid JSON body",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -210,7 +210,7 @@ fn handle_create_database(
                 None,
                 "BadRequest",
                 "Missing 'id' field in database creation request",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -279,7 +279,7 @@ fn handle_read_database(
                 "Entity with the specified id does not exist in the system. ResourceId: {}",
                 db_id
             ),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -308,7 +308,7 @@ fn handle_delete_database(
                 "Entity with the specified id does not exist in the system. ResourceId: {}",
                 db_id
             ),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -349,7 +349,7 @@ fn handle_create_container(
             None,
             "NotFound",
             &format!("Database '{}' does not exist", db_id),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -364,7 +364,7 @@ fn handle_create_container(
                 None,
                 "BadRequest",
                 "Invalid JSON body",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -380,7 +380,7 @@ fn handle_create_container(
                 None,
                 "BadRequest",
                 "Missing 'id' field",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -398,7 +398,7 @@ fn handle_create_container(
                     None,
                     "BadRequest",
                     "Invalid partitionKey definition",
-                    1.0,
+                    0.0,
                     "",
                     start,
                 )
@@ -411,7 +411,7 @@ fn handle_create_container(
                 None,
                 "BadRequest",
                 "Missing partitionKey definition in container creation request",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -472,7 +472,7 @@ fn handle_read_container(
             None,
             "NotFound",
             &format!("Database '{}' does not exist", db_id),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -491,7 +491,7 @@ fn handle_read_container(
             None,
             "NotFound",
             &format!("Container '{}' does not exist", coll_id),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -517,7 +517,7 @@ fn handle_delete_container(
             None,
             "NotFound",
             &format!("Container '{}' does not exist", coll_id),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -556,7 +556,7 @@ fn handle_read_pkranges(
             None,
             "NotFound",
             &format!("Database '{}' does not exist", db_id),
-            1.0,
+            0.0,
             "",
             start,
         )
@@ -576,7 +576,7 @@ fn handle_read_pkranges(
                 None,
                 "NotFound",
                 &format!("Container '{}' does not exist", coll_id),
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -627,7 +627,7 @@ fn bad_partition_key_response(err: azure_core::Error, start: Instant) -> AsyncRa
         None,
         "BadRequest",
         &err.to_string(),
-        1.0,
+        0.0,
         "",
         start,
     )
@@ -641,20 +641,38 @@ fn bad_partition_key_response(err: azure_core::Error, start: Instant) -> AsyncRa
 /// includes in the per-region segment of the token. Using `current_lsn`
 /// (which tracks the global high-water LSN) for both components produces
 /// tokens that look correct only on single-region accounts.
-fn session_token_for(partition: &PhysicalPartition, region_id: u64) -> String {
+fn session_token_for(
+    partition: &PhysicalPartition,
+    region_id: u64,
+    incoming: Option<&SessionToken>,
+) -> String {
+    use super::session::{LocalLsn, RegionId};
+    let prior: &[(u64, u64)] = incoming.map_or(&[], |t| t.region_progress.as_slice());
     SessionToken::format_v2(
         partition.id,
         partition.current_version(),
         partition.current_lsn(),
-        region_id,
-        partition.current_local_lsn(),
+        RegionId(region_id),
+        LocalLsn(partition.current_local_lsn()),
+        prior,
     )
+}
+
+/// Pulls the incoming session-token entry for a specific partition out of the
+/// request, if any. Used so the response token can preserve per-region
+/// progress the client has already accumulated for partitions other than the
+/// local one. Malformed composite tokens are silently treated as missing
+/// (handlers that need to surface a 400 do so independently).
+fn incoming_session_for(parsed: &ParsedRequest, pkrange_id: u32) -> Option<SessionToken> {
+    let raw = parsed.session_token.as_deref()?;
+    let tokens = super::session::parse_composite_session_token(raw).ok()?;
+    tokens.into_iter().find(|t| t.pkrange_id == pkrange_id)
 }
 
 pub(crate) struct PointResponseHeaders {
     partition_key_range_id: u32,
     internal_partition_id: String,
-    transport_request_id: u64,
+    transport_request_id: u32,
     global_committed_lsn: u64,
     quorum_acked_lsn: u64,
     quorum_acked_local_lsn: u64,
@@ -669,7 +687,7 @@ impl PointResponseHeaders {
     /// values agree with the response body the same handler is about to
     /// produce — a concurrent writer on the same partition cannot interleave
     /// between the body capture and the header capture.
-    fn from_partition(partition: &PhysicalPartition, transport_request_id: u64) -> Self {
+    fn from_partition(partition: &PhysicalPartition, transport_request_id: u32) -> Self {
         let documents = partition.documents.read().unwrap();
         let documents_in_partition = documents
             .values()
@@ -807,7 +825,7 @@ async fn handle_create(
                 None,
                 "BadRequest",
                 "Invalid JSON body",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -823,7 +841,7 @@ async fn handle_create(
                 None,
                 "BadRequest",
                 "Missing 'id' field in document",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -869,7 +887,7 @@ async fn handle_create(
             if let Some(logical) = docs.get(&epk) {
                 if logical.contains_key(&doc_id) {
                     let region_id = store.config().region_id_for(region_name);
-                    let token = session_token_for(partition, region_id);
+                    let token = session_token_for(partition, region_id, incoming_session_for(parsed, partition.id).as_ref());
                     return Err(error_response(
                         StatusCode::Conflict,
                         None,
@@ -903,7 +921,7 @@ async fn handle_create(
             let logical = docs.entry(epk.clone()).or_default();
             if logical.contains_key(&doc_id) {
                 let region_id = store.config().region_id_for(region_name);
-                let token = session_token_for(partition, region_id);
+                let token = session_token_for(partition, region_id, incoming_session_for(parsed, partition.id).as_ref());
                 return Err(error_response(
                     StatusCode::Conflict,
                     None,
@@ -947,7 +965,7 @@ async fn handle_create(
         };
 
         let region_id = store.config().region_id_for(region_name);
-        let token = session_token_for(partition, region_id);
+        let token = session_token_for(partition, region_id, incoming_session_for(parsed, partition.id).as_ref());
         let headers = Some(PointResponseHeaders::from_partition(
             partition,
             store.next_transport_request_id(),
@@ -1019,7 +1037,11 @@ fn handle_read(
         };
 
         let region_id = store.config().region_id_for(region_name);
-        let token = session_token_for(partition, region_id);
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
 
         // Check partition lock
         if let Some(response) = check_partition_lock(partition, start) {
@@ -1033,7 +1055,7 @@ fn handle_read(
                 Some(1002),
                 "ReadSessionNotAvailable",
                 "The read session is not available for the input session token.",
-                1.0,
+                0.0,
                 &token,
                 start,
             )
@@ -1053,13 +1075,13 @@ fn handle_read(
             if let Some(session_header) = &parsed.session_token {
                 let tokens = match super::session::parse_composite_session_token(session_header) {
                     Ok(tokens) => tokens,
-                    Err(()) => {
+                    Err(parse_err) => {
                         return Err(error_response(
                             StatusCode::BadRequest,
                             None,
                             "BadRequest",
-                            "Invalid session token",
-                            1.0,
+                            &format!("Invalid session token: {}", parse_err),
+                            0.0,
                             &token,
                             start,
                         )
@@ -1069,12 +1091,20 @@ fn handle_read(
                 for st in &tokens {
                     if st.pkrange_id == partition.id {
                         let partition_version = partition.current_version();
+                        // 1002 echoes back what the client requested. We
+                        // intentionally pass `LocalLsn(st.global_lsn)` so the
+                        // emitted token mirrors the requested global LSN —
+                        // this is *not* the partition's true local LSN. See
+                        // the comment block above for why echoing is needed.
                         let request_token = SessionToken::format_v2(
                             partition.id,
                             st.version,
                             st.global_lsn,
-                            region_id,
-                            st.global_lsn,
+                            super::session::RegionId(region_id),
+                            super::session::LocalLsn(st.global_lsn),
+                            // Preserve the rest of the client's known
+                            // multi-region progress on the echoed token.
+                            &st.region_progress,
                         );
                         if st.version > partition_version
                             || (st.version == partition_version
@@ -1085,7 +1115,7 @@ fn handle_read(
                                 Some(1002),
                                 "ReadSessionNotAvailable",
                                 "The read session is not available for the input session token.",
-                                1.0,
+                                0.0,
                                 &request_token,
                                 start,
                             )
@@ -1124,7 +1154,7 @@ fn handle_read(
                 "Entity with the specified id does not exist in the system. ResourceId: {}",
                 doc_id
             ),
-            1.0,
+            0.0,
             &token,
             start,
         )
@@ -1166,7 +1196,7 @@ async fn handle_replace(
                 None,
                 "BadRequest",
                 "Invalid JSON body",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -1182,7 +1212,7 @@ async fn handle_replace(
                 None,
                 "BadRequest",
                 "Document id in request body must match the resource id in the request URI",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -1194,7 +1224,7 @@ async fn handle_replace(
                 None,
                 "BadRequest",
                 "Missing 'id' field in document",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -1235,7 +1265,7 @@ async fn handle_replace(
         }
 
         let region_id = store.config().region_id_for(region_name);
-        let token = session_token_for(partition, region_id);
+        let token = session_token_for(partition, region_id, incoming_session_for(parsed, partition.id).as_ref());
 
         // Lookup existing under a *read* lock so concurrent reads on the
         // partition are not blocked while we run precondition / throttle
@@ -1254,7 +1284,7 @@ async fn handle_replace(
                             "Entity with the specified id does not exist in the system. ResourceId: {}",
                             doc_id
                         ),
-                        1.0,
+                        0.0,
                         &token,
                         start,
                     )
@@ -1311,7 +1341,7 @@ async fn handle_replace(
                             "Entity with the specified id does not exist in the system. ResourceId: {}",
                             doc_id
                         ),
-                        1.0,
+                        0.0,
                         &token,
                         start,
                     )
@@ -1329,7 +1359,7 @@ async fn handle_replace(
                             "Entity with the specified id does not exist in the system. ResourceId: {}",
                             doc_id
                         ),
-                        1.0,
+                        0.0,
                         &token,
                         start,
                     )
@@ -1426,7 +1456,7 @@ async fn handle_upsert(
                 None,
                 "BadRequest",
                 "Invalid JSON body",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -1442,7 +1472,7 @@ async fn handle_upsert(
                 None,
                 "BadRequest",
                 "Missing 'id' field in document",
-                1.0,
+                0.0,
                 "",
                 start,
             )
@@ -1560,7 +1590,11 @@ async fn handle_upsert(
         }
 
         let region_id = store.config().region_id_for(region_name);
-        let token = session_token_for(partition, region_id);
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
         let headers = Some(PointResponseHeaders::from_partition(
             partition,
             store.next_transport_request_id(),
@@ -1639,7 +1673,7 @@ async fn handle_delete(
         }
 
         let region_id = store.config().region_id_for(region_name);
-        let token = session_token_for(partition, region_id);
+        let token = session_token_for(partition, region_id, incoming_session_for(parsed, partition.id).as_ref());
 
         // Look up the existing doc under a *read* lock; only escalate to
         // a write lock at commit time so throttled / precondition-failed
@@ -1657,7 +1691,7 @@ async fn handle_delete(
                             "Entity with the specified id does not exist in the system. ResourceId: {}",
                             doc_id
                         ),
-                        1.0,
+                        0.0,
                         &token,
                         start,
                     )
@@ -1713,7 +1747,7 @@ async fn handle_delete(
                             "Entity with the specified id does not exist in the system. ResourceId: {}",
                             doc_id
                         ),
-                        1.0,
+                        0.0,
                         &token,
                         start,
                     )
@@ -1731,7 +1765,7 @@ async fn handle_delete(
                             "Entity with the specified id does not exist in the system. ResourceId: {}",
                             doc_id
                         ),
-                        1.0,
+                        0.0,
                         &token,
                         start,
                     )
@@ -1843,7 +1877,7 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
         None,
         "NotFound",
         &format!("Container '{}/{}' does not exist", db_id, coll_id),
-        1.0,
+        0.0,
         "",
         start,
     )

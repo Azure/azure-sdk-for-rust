@@ -338,7 +338,15 @@ async fn read_with_malformed_session_token_returns_400() {
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, body) = collect_response(response).await;
     assert_eq!(status, StatusCode::BadRequest);
-    assert_eq!(body["message"], "Invalid session token");
+    // Error message now includes the segment-specific failure to make
+    // emulator/SDK parser drift cheap to triage.
+    let message = body["message"]
+        .as_str()
+        .expect("error body should have a string `message`");
+    assert!(
+        message.starts_with("Invalid session token"),
+        "expected error message to start with 'Invalid session token', got '{message}'"
+    );
 }
 
 #[tokio::test]

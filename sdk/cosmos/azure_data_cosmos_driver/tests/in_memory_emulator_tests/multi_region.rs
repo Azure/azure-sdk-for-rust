@@ -219,13 +219,18 @@ async fn create_item_on_read_region_returns_403_3_with_correct_headers() {
         "x-ms-request-charge should be non-negative, got {charge}",
     );
 
-    // ── Session token (may be empty for rejected writes) ─────────
-    // The real service returns a session token header even on 403.3;
-    // the emulator should too.
-    assert!(
-        headers.get_optional_str(&SESSION_TOKEN).is_some(),
-        "x-ms-session-token header should be present (even if empty)",
-    );
+    // ── Session token (omitted for rejected writes) ──────────────
+    // Rejected writes do not advance the session vector, so the
+    // emulator omits the `x-ms-session-token` response header rather
+    // than emitting an empty value (which would mislead drivers into
+    // treating it as a no-progress checkpoint). When the header IS
+    // present its value must be non-empty.
+    if let Some(tok) = headers.get_optional_str(&SESSION_TOKEN) {
+        assert!(
+            !tok.is_empty(),
+            "x-ms-session-token, if present, must be non-empty (got '')",
+        );
+    }
 
     // ── Standard Cosmos response headers ─────────────────────────
     assert!(

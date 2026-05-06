@@ -94,9 +94,15 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let segments = parse_path_segments(path);
     let operation = resolve_operation(method.as_ref(), &segments, is_upsert, is_query);
 
-    let db_id = extract_segment(&segments, "dbs");
-    let coll_id = extract_segment(&segments, "colls");
-    let doc_id = extract_segment(&segments, "docs");
+    // Index by *position*, not by keyword search. Cosmos URLs are
+    // `/dbs/{db}/colls/{coll}/docs/{doc}/...`, so the keyword always
+    // appears at an even index and the value follows it. Searching by
+    // keyword string is wrong: a path like `/dbs/colls/colls/mycoll/docs`
+    // (where the database happens to be named `colls`) returns the
+    // database name when looking up the container.
+    let db_id = segment_after_keyword(&segments, 0, "dbs");
+    let coll_id = segment_after_keyword(&segments, 2, "colls");
+    let doc_id = segment_after_keyword(&segments, 4, "docs");
 
     ParsedRequest {
         operation,
@@ -131,13 +137,28 @@ fn parse_path_segments(path: &str) -> Vec<String> {
         .collect()
 }
 
-/// Extracts the segment value following a resource type keyword (e.g., "dbs" → next segment).
-fn extract_segment(segments: &[String], resource_type: &str) -> Option<String> {
-    segments
-        .iter()
-        .position(|s| s == resource_type)
-        .and_then(|i| segments.get(i + 1))
-        .cloned()
+/// Extracts the segment value at the position immediately after a fixed
+/// keyword position in a Cosmos resource path.
+///
+/// Cosmos URLs follow the rigid shape `/dbs/{db}/colls/{coll}/docs/{doc}`:
+/// the keyword `dbs` is always at index 0, `colls` at index 2, `docs` at
+/// index 4. A previous implementation searched for the keyword by string
+/// match, which broke when a user's resource happened to be named after a
+/// keyword (e.g. a database named `colls`). Anchoring by position makes
+/// such collisions impossible while still returning `None` for paths that
+/// don't carry the segment in the expected slot.
+///
+/// Returns `None` if the keyword is not at `keyword_index`, or if no
+/// value follows it.
+fn segment_after_keyword(
+    segments: &[String],
+    keyword_index: usize,
+    keyword: &str,
+) -> Option<String> {
+    if segments.get(keyword_index).map(String::as_str) != Some(keyword) {
+        return None;
+    }
+    segments.get(keyword_index + 1).cloned()
 }
 
 /// Resolves the operation type from HTTP method + path segments + headers.
@@ -246,6 +267,63 @@ mod tests {
         let req = make_request("GET", "/");
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::ReadAccount);
+    }
+
+    #[test]
+    fn segment_after_keyword_anchors_by_position() {
+        // Path: /dbs/colls/colls/mycoll/docs/d1
+        // Database is named "colls" — searching for the keyword "colls" by
+        // string match would return the database name when looking for the
+        // container. Position-anchoring returns the correct value.
+        let segments = vec![
+            "dbs".to_string(),
+            "colls".to_string(),
+            "colls".to_string(),
+            "mycoll".to_string(),
+            "docs".to_string(),
+            "d1".to_string(),
+        ];
+        assert_eq!(
+            segment_after_keyword(&segments, 0, "dbs"),
+            Some("colls".to_string())
+        );
+        assert_eq!(
+            segment_after_keyword(&segments, 2, "colls"),
+            Some("mycoll".to_string())
+        );
+        assert_eq!(
+            segment_after_keyword(&segments, 4, "docs"),
+            Some("d1".to_string())
+        );
+    }
+
+    #[test]
+    fn segment_after_keyword_returns_none_when_keyword_absent_at_position() {
+        let segments = vec!["dbs".to_string(), "mydb".to_string()];
+        // No `colls` segment → coll lookup returns None.
+        assert_eq!(segment_after_keyword(&segments, 2, "colls"), None);
+    }
+
+    #[test]
+    fn parse_request_resolves_container_named_after_keyword() {
+        // Database name is `colls` — used to be ambiguous under the old
+        // string-search extractor.
+        let req = make_request("GET", "/dbs/colls/colls/mycoll");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::ReadContainer);
+        assert_eq!(parsed.db_id.as_deref(), Some("colls"));
+        assert_eq!(parsed.coll_id.as_deref(), Some("mycoll"));
+    }
+
+    #[test]
+    fn parse_request_resolves_document_when_container_named_docs() {
+        // Container name is `docs` — same bug class as above.
+        let req = make_request("GET", "/dbs/mydb/colls/docs/docs/d1");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::Read);
+        assert_eq!(parsed.db_id.as_deref(), Some("mydb"));
+        assert_eq!(parsed.coll_id.as_deref(), Some("docs"));
+        assert_eq!(parsed.doc_id.as_deref(), Some("d1"));
     }
 
     #[test]

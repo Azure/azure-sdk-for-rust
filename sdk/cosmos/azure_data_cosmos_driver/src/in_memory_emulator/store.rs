@@ -21,6 +21,62 @@ type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
 pub(crate) const MASTER_PARTITION_ID: u32 = u32::MAX;
 
 /// Top-level emulator store holding all regions.
+/// Identifies the resource a control-plane task acts on. Used by
+/// `wait_for_split` / future filtered drains to wake only the tasks that
+/// correspond to a given `(db, coll, partition)` triple.
+#[derive(Clone, Debug)]
+struct ControlPlaneTaskKey {
+    db: String,
+    coll: String,
+    /// Set of partition ids the task references — splits have one parent,
+    /// merges have two. Match if any element matches.
+    partitions: Vec<u32>,
+}
+
+impl ControlPlaneTaskKey {
+    fn matches(&self, db: &str, coll: &str, partition_id: u32) -> bool {
+        self.db == db && self.coll == coll && self.partitions.contains(&partition_id)
+    }
+}
+
+/// Applies a single document mutation to a partition under LWW
+/// (Last-Writer-Wins) on `(_ts, lsn)`.
+///
+/// This is the only place that performs the LWW comparison and the LSN
+/// bumps for replicated/replayed writes — both `apply_replication` and the
+/// drain loop in `resume_replication` route through here so the rule cannot
+/// drift between the two paths. The LWW comparison honors the
+/// `conflictResolutionPolicy` (LastWriterWins on `/_ts`) advertised in
+/// container metadata.
+///
+/// Always advances `partition.lsn` to `max(current, doc.lsn)` and bumps
+/// `partition.local_lsn` by one — the per-region local LSN counts every
+/// mutation applied at this region regardless of which write won the LWW
+/// comparison.
+fn apply_doc_to_partition(partition: &PhysicalPartition, doc: &StoredDocument, is_delete: bool) {
+    let mut docs = partition.documents.write().unwrap();
+    let logical = docs.entry(doc.epk.clone()).or_default();
+    let should_apply = match logical.get(&doc.id) {
+        None => true,
+        Some(existing) => (doc.ts, doc.lsn) > (existing.ts, existing.lsn),
+    };
+    if should_apply {
+        if is_delete {
+            logical.remove(&doc.id);
+        } else {
+            logical.insert(doc.id.clone(), doc.clone());
+        }
+    }
+    partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
+    partition.local_lsn.fetch_add(1, Ordering::SeqCst);
+}
+async fn await_control_plane_handle(handle: tokio::task::JoinHandle<()>) {
+    if let Err(e) = handle.await {
+        if e.is_panic() {
+            std::panic::resume_unwind(e.into_panic());
+        }
+    }
+}
 pub struct EmulatorStore {
     config: VirtualAccountConfig,
     rid_generator: RidGenerator,
@@ -38,12 +94,20 @@ pub struct EmulatorStore {
     /// Tracks spawned split/merge tasks separately from replication so a
     /// control-plane panic does not surface inside an unrelated point-write
     /// handler that happens to call `replicate()`.
-    control_plane_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
+    /// Tagged registry of in-flight control-plane tasks (split, merge).
+    ///
+    /// Each entry carries the `(db, coll, partition_ids)` it operates on so
+    /// callers like `wait_for_split` can await only the tasks that match —
+    /// avoiding "waiting on container A also waits on every other
+    /// container's split/merge in the entire store" surprises.
+    control_plane_tasks: std::sync::Mutex<Vec<(ControlPlaneTaskKey, tokio::task::JoinHandle<()>)>>,
     /// Monotonic counter used to populate `x-ms-transport-request-id`. Every
     /// HTTP response gets a unique value so consumers correlating retries on
     /// the wire see stable identity instead of a partition LSN that drifts
     /// with mutations.
-    transport_request_counter: AtomicU64,
+    /// Per-store counter for the `x-ms-transport-request-id` header.
+    /// Wraps on overflow (the SDK side parses the header as a `u32`).
+    transport_request_counter: AtomicU32,
 }
 
 impl EmulatorStore {
@@ -61,8 +125,8 @@ impl EmulatorStore {
             master_partition_lsn: AtomicU64::new(0),
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
-            control_plane_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
-            transport_request_counter: AtomicU64::new(0),
+            control_plane_tasks: std::sync::Mutex::new(Vec::new()),
+            transport_request_counter: AtomicU32::new(0),
         })
     }
 
@@ -88,11 +152,17 @@ impl EmulatorStore {
         super::session::SessionToken::format(MASTER_PARTITION_ID, lsn)
     }
 
-    /// Allocates the next process-unique value for `x-ms-transport-request-id`.
-    pub(crate) fn next_transport_request_id(&self) -> u64 {
+    /// Allocates the next value for `x-ms-transport-request-id`.
+    ///
+    /// Wraps on overflow rather than panicking — the header is informational
+    /// and the SDK side parses it as `u32`, so a `u64`-shaped emulator
+    /// counter would silently round-trip to `None` past `u32::MAX` and break
+    /// request correlation. Keeping the counter at `u32` width matches the
+    /// real service's wire format.
+    pub(crate) fn next_transport_request_id(&self) -> u32 {
         self.transport_request_counter
             .fetch_add(1, Ordering::Relaxed)
-            + 1
+            .wrapping_add(1)
     }
 
     /// Returns `Some((target_region, retry_after_ms))` if any non-`source`
@@ -129,25 +199,40 @@ impl EmulatorStore {
     /// Panics from the awaited tasks are re-raised on the current thread.
     #[doc(hidden)]
     pub async fn drain_pending_control_plane(&self) {
-        let mut set = {
+        let drained: Vec<_> = {
             let mut guard = self.control_plane_tasks.lock().unwrap();
-            std::mem::replace(&mut *guard, tokio::task::JoinSet::new())
+            std::mem::take(&mut *guard)
         };
-        while let Some(res) = set.join_next().await {
-            if let Err(e) = res {
-                if e.is_panic() {
-                    std::panic::resume_unwind(e.into_panic());
-                }
-            }
+        for (_, handle) in drained {
+            await_control_plane_handle(handle).await;
         }
     }
 
-    /// Convenience wrapper that awaits all pending split tasks. Equivalent to
-    /// `drain_pending_control_plane()` today; named separately so call sites
-    /// in tests document intent.
+    /// Awaits only the in-flight split tasks for `(db, coll, partition_id)`,
+    /// leaving unrelated tasks (other containers, merges of other partitions)
+    /// running. Tests use this to assert post-split topology without
+    /// inadvertently serializing on every other control-plane operation in
+    /// the store.
     #[doc(hidden)]
-    pub async fn wait_for_split(&self, _db: &str, _coll: &str, _partition_id: u32) {
-        self.drain_pending_control_plane().await;
+    pub async fn wait_for_split(&self, db: &str, coll: &str, partition_id: u32) {
+        let matching: Vec<_> = {
+            let mut guard = self.control_plane_tasks.lock().unwrap();
+            // Partition the registry: keep non-matching, return matching.
+            let mut keep = Vec::new();
+            let mut take = Vec::new();
+            for (key, handle) in std::mem::take(&mut *guard) {
+                if key.matches(db, coll, partition_id) {
+                    take.push(handle);
+                } else {
+                    keep.push((key, handle));
+                }
+            }
+            *guard = keep;
+            take
+        };
+        for handle in matching {
+            await_control_plane_handle(handle).await;
+        }
     }
 
     fn split_merge_lock(&self, db: &str, coll: &str) -> Arc<async_lock::Mutex<()>> {
@@ -418,23 +503,7 @@ impl EmulatorStore {
                 let key = (entry.db_id.clone(), entry.coll_id.clone());
                 if let Some(state) = containers.get(&key) {
                     if let Some(partition) = state.find_partition(&entry.doc.epk) {
-                        let mut docs = partition.documents.write().unwrap();
-                        let logical = docs.entry(entry.doc.epk.clone()).or_default();
-                        let should_apply = match logical.get(&entry.doc.id) {
-                            None => true,
-                            Some(existing) => {
-                                (entry.doc.ts, entry.doc.lsn) > (existing.ts, existing.lsn)
-                            }
-                        };
-                        if should_apply {
-                            if entry.is_delete {
-                                logical.remove(&entry.doc.id);
-                            } else {
-                                logical.insert(entry.doc.id.clone(), entry.doc.clone());
-                            }
-                        }
-                        partition.lsn.fetch_max(entry.doc.lsn, Ordering::SeqCst);
-                        partition.local_lsn.fetch_add(1, Ordering::SeqCst);
+                        apply_doc_to_partition(partition, &entry.doc, entry.is_delete);
                     }
                 }
             }
@@ -560,36 +629,7 @@ impl EmulatorStore {
             let key = (db_id.to_string(), coll_id.to_string());
             if let Some(state) = containers.get(&key) {
                 if let Some(partition) = state.find_partition(&doc.epk) {
-                    let mut docs = partition.documents.write().unwrap();
-                    let logical = docs.entry(doc.epk.clone()).or_default();
-                    // Last-Writer-Wins on (_ts, lsn): if there is already a
-                    // record for this id with a strictly newer timestamp, or
-                    // the same timestamp and a strictly higher lsn, the
-                    // incoming replicated mutation is stale and must be
-                    // dropped. This honors the conflictResolutionPolicy
-                    // advertised in container metadata
-                    // (LastWriterWins on /_ts) and prevents an out-of-order
-                    // arrival (paused-then-resumed buffer, multi-master
-                    // concurrent writes) from clobbering newer state.
-                    let should_apply = match logical.get(&doc.id) {
-                        None => true,
-                        Some(existing) => (doc.ts, doc.lsn) > (existing.ts, existing.lsn),
-                    };
-                    if should_apply {
-                        if is_delete {
-                            logical.remove(&doc.id);
-                        } else {
-                            logical.insert(doc.id.clone(), doc.clone());
-                        }
-                    }
-                    // Always advance the partition's global LSN watermark; the
-                    // LSN reflects the replication stream, not which write
-                    // ultimately won the LWW comparison.
-                    partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
-                    // Bump local LSN at this region (target replica): this is
-                    // the count of mutations applied here, regardless of
-                    // origin.
-                    partition.local_lsn.fetch_add(1, Ordering::SeqCst);
+                    apply_doc_to_partition(partition, doc, is_delete);
                 }
             }
         }
@@ -880,18 +920,30 @@ pub(crate) struct StoredDocument {
 /// region — matching the real Cosmos DB invariant that pkrange RIDs are a
 /// property of the container, not the replica.
 fn pkrange_rid_for(meta: &ContainerMetadata, rid_gen: &RidGenerator, partition_id: u32) -> String {
+    // Fast path: read lock, return existing.
     {
         let map = meta.pkrange_rids.read().unwrap();
         if let Some(rid) = map.get(&partition_id) {
             return rid.clone();
         }
     }
+    // Slow path: take the write lock first, then check again, then allocate.
+    //
+    // We deliberately do not use `or_insert_with(|| next_pkrange_rid(..))`
+    // because we want to avoid even *constructing* a fresh RID when another
+    // thread raced us to insert one — `next_pkrange_rid` advances the
+    // global per-collection counter on `RidGenerator`, and consuming a
+    // counter value only to discard it under contention causes the global
+    // RID space to advance faster than necessary, producing
+    // non-deterministic RID values across runs (annoying for any test that
+    // asserts on RID-prefix structure).
     let mut map = meta.pkrange_rids.write().unwrap();
-    map.entry(partition_id)
-        .or_insert_with(|| {
-            rid_gen.next_pkrange_rid(meta.numeric_db_id, meta.numeric_coll_id, partition_id)
-        })
-        .clone()
+    if let Some(rid) = map.get(&partition_id) {
+        return rid.clone();
+    }
+    let rid = rid_gen.next_pkrange_rid(meta.numeric_db_id, meta.numeric_coll_id, partition_id);
+    map.insert(partition_id, rid.clone());
+    rid
 }
 
 /// Creates physical partitions for a container by dividing the EPK space equally.
@@ -1085,7 +1137,12 @@ impl EmulatorStore {
         let coll = coll_id.to_string();
 
         let lock = self.split_merge_lock(db_id, coll_id);
-        self.control_plane_tasks.lock().unwrap().spawn(async move {
+        let key = ControlPlaneTaskKey {
+            db: db_id.to_string(),
+            coll: coll_id.to_string(),
+            partitions: vec![partition_id],
+        };
+        let handle = tokio::spawn(async move {
             let _guard = lock.lock().await;
             if !min_lock_duration.is_zero() {
                 tokio::time::sleep(min_lock_duration).await;
@@ -1094,10 +1151,29 @@ impl EmulatorStore {
             // then unlocks partitions when done
             store.execute_split(&db, &coll, partition_id);
         });
+        self.control_plane_tasks.lock().unwrap().push((key, handle));
     }
 
     /// Performs the actual split after the lock period.
     fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32) {
+        // Local-only enum used to ferry preview state out of a egions read
+        // guard so we can drop the guard before re-acquiring it on the abort
+        // path. Avoids recursive same-thread RwLock::read (unspecified in std).
+        enum SplitPreview {
+            Found {
+                parent_lsn: u64,
+                parent_version: u64,
+                parent_min: Epk,
+                parent_max: Epk,
+                midpoint: Epk,
+                child_id_1: u32,
+                child_id_2: u32,
+                child_rid_1: String,
+                child_rid_2: String,
+                total_throughput: Option<u32>,
+            },
+            AbortUnlock,
+        }
         // Compute child IDs/RIDs ONCE based on the first region's view; all regions
         // share the same partition layout so this is consistent.
         let key = (db_id.to_string(), coll_id.to_string());
@@ -1129,22 +1205,13 @@ impl EmulatorStore {
                                 partition_id = partition_id,
                                 "in-memory emulator: aborting split — unlocking parent",
                             );
-                            // Unlock the parent in every region so the partition
-                            // does not stay wedged at locked=true.
-                            let regions = self.regions.read().unwrap();
-                            for region in regions.values() {
-                                let containers = region.containers.read().unwrap();
-                                if let Some(state) = containers.get(&key) {
-                                    if let Some(p) = state
-                                        .physical_partitions
-                                        .iter()
-                                        .find(|p| p.id == partition_id)
-                                    {
-                                        p.locked.store(false, Ordering::SeqCst);
-                                    }
-                                }
-                            }
-                            return;
+                            // Defer unlock until after the outer read guard on
+                            // `self.regions` is dropped. Re-acquiring a read
+                            // lock on the same RwLock from the same thread
+                            // while another guard is live has unspecified
+                            // behavior in std and may deadlock.
+                            found = Some(SplitPreview::AbortUnlock);
+                            break;
                         }
                     };
                     // Both child IDs come from the shared per-container
@@ -1159,7 +1226,7 @@ impl EmulatorStore {
                     let child_rid_2 =
                         pkrange_rid_for(&state.metadata, &self.rid_generator, child_id_2);
                     let total_throughput = state.metadata.provisioned_throughput_ru;
-                    found = Some((
+                    found = Some(SplitPreview::Found {
                         parent_lsn,
                         parent_version,
                         parent_min,
@@ -1170,13 +1237,13 @@ impl EmulatorStore {
                         child_rid_1,
                         child_rid_2,
                         total_throughput,
-                    ));
+                    });
                     break;
                 }
             }
             found
         };
-        let (
+        let SplitPreview::Found {
             parent_lsn,
             parent_version,
             parent_min,
@@ -1187,9 +1254,29 @@ impl EmulatorStore {
             child_rid_1,
             child_rid_2,
             total_throughput,
-        ) = match preview {
-            Some(t) => t,
+        } = (match preview {
+            Some(SplitPreview::Found { .. }) => preview.unwrap(),
+            Some(SplitPreview::AbortUnlock) => {
+                // Outer `regions` read guard has been dropped here.
+                let regions = self.regions.read().unwrap();
+                for region in regions.values() {
+                    let containers = region.containers.read().unwrap();
+                    if let Some(state) = containers.get(&key) {
+                        if let Some(p) = state
+                            .physical_partitions
+                            .iter()
+                            .find(|p| p.id == partition_id)
+                        {
+                            p.locked.store(false, Ordering::SeqCst);
+                        }
+                    }
+                }
+                return;
+            }
             None => return,
+        })
+        else {
+            unreachable!()
         };
         let child_lsn = parent_lsn + 1;
 
@@ -1303,13 +1390,19 @@ impl EmulatorStore {
         let coll = coll_id.to_string();
 
         let lock = self.split_merge_lock(db_id, coll_id);
-        self.control_plane_tasks.lock().unwrap().spawn(async move {
+        let key = ControlPlaneTaskKey {
+            db: db_id.to_string(),
+            coll: coll_id.to_string(),
+            partitions: vec![partition_id_a, partition_id_b],
+        };
+        let handle = tokio::spawn(async move {
             let _guard = lock.lock().await;
             if !min_lock_duration.is_zero() {
                 tokio::time::sleep(min_lock_duration).await;
             }
             store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
         });
+        self.control_plane_tasks.lock().unwrap().push((key, handle));
     }
 
     fn unlock_partitions(&self, key: &(String, String), partition_ids: &[u32]) {
