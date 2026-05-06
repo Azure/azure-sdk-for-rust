@@ -44,6 +44,7 @@ pub use crate::driver::cache::{
 // `failed_endpoints` / `current_endpoint`.
 pub use crate::driver::routing::endpoint::CosmosEndpoint;
 pub use crate::driver::routing::partition_endpoint_state::{
-    HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+    FailedEndpoints, HealthStatus, PartitionEndpointState, PartitionFailoverConfig,
+    PartitionFailoverEntry,
 };
 pub use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;

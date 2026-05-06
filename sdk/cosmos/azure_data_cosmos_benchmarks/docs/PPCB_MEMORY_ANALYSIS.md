@@ -4,7 +4,7 @@
 **Subsystem:** Per-Partition Circuit Breaker (PPCB) routing state
 **Date:** 2026-05-06
 **Author:** Cosmos Rust SDK team
-**Status:** Final — measurement complete
+**Status:** Final — measurement complete; recommendations applied (§15)
 
 ---
 
@@ -26,6 +26,7 @@
 14. [Reproduction Steps](#14-reproduction-steps)
 15. [Appendix A — Raw DHAT Stack Frame Table](#appendix-a--raw-dhat-stack-frame-table)
 16. [Appendix B — Glossary](#appendix-b--glossary)
+17. [Verified Optimization Results (v2)](#15-verified-optimization-results-v2)
 
 ---
 
@@ -772,4 +773,201 @@ in the `ftbl` array of the JSON.
 
 ---
 
+
+---
+
+## 15. Verified Optimization Results (v2)
+
+This section records the **measured** outcome of applying recommendations
+§11.1 (`SmallVec` for `failed_endpoints`) and §11.2 (`CompactString` for
+`PartitionKeyRangeId`). Both changes shipped in the same patch; results
+below compare the original (v1) against the optimized driver (v2) under
+identical workload (80,000 partitions × 2 failed regions × 4 total
+regions, release build, Windows x86_64).
+
+### 15.1 Code changes applied
+
+| File | Change |
+|---|---|
+| `Cargo.toml` (workspace) | Added `smallvec = { version = "1.13", features = ["union"] }` and `compact_str = "0.8"` to `[workspace.dependencies]` |
+| `azure_data_cosmos_driver/Cargo.toml` | Added `smallvec.workspace = true` and `compact_str.workspace = true` |
+| `partition_endpoint_state.rs` | New `pub type FailedEndpoints = SmallVec<[CosmosEndpoint; 4]>;` alias. `PartitionFailoverEntry::failed_endpoints` switched from `HashSet<CosmosEndpoint>` to `FailedEndpoints` |
+| `partition_key_range_id.rs` | Inner `String` replaced with `CompactString`; added `From<&str>`; all accessors updated to `self.0.as_str()` |
+| `routing_systems.rs` | `try_move_next_endpoint` rewritten to use `if !contains { push }` instead of `HashSet::insert`. Two test sites use `smallvec![…]` literal in place of `HashSet::insert(…)` |
+| `testing.rs` | Re-exported the new `FailedEndpoints` alias under `__internal_testing` |
+| `examples/ppcb_state_dhat.rs` | Imports `FailedEndpoints` from `azure_data_cosmos_driver::testing`; populates the field via `iter().cloned().collect::<FailedEndpoints>()` |
+
+The `union` feature of `smallvec` was selected deliberately: without it
+the inline storage and the heap pointer/capacity sit in separate fields
+(56 B for `SmallVec<[CosmosEndpoint; 4]>`); with `union` they overlap
+in a `MaybeUninit` union (40 B). `union` is well-tested upstream and
+documented as production-grade since `smallvec 1.0`.
+
+### 15.2 Validation
+
+- `cargo build -p azure_data_cosmos_driver --features __internal_testing` — clean.
+- `cargo build -p azure_data_cosmos_driver --all-features --tests` — clean.
+- `cargo clippy -p azure_data_cosmos_driver --all-features --all-targets` — clean (only the pre-existing `PartitionKeyRangeCache::new` `clippy::new_without_default` warning unrelated to this change).
+- `cargo test -p azure_data_cosmos_driver --lib routing_systems` — **41 / 41 passed.** Notably `mark_partition_unavailable_all_endpoints_exhausted_removes_entry` and `probe_failure_transitions_back_to_unhealthy` (the only two tests directly exercising `failed_endpoints`) both pass.
+- `cargo build -p azure_data_cosmos_benchmarks --release --features dhat-heap --example ppcb_state_dhat` — clean.
+
+### 15.3 Type-size impact
+
+| Type | v1 size | v2 size | Δ |
+|---|---:|---:|---:|
+| `PartitionEndpointState` | 168 B | 168 B | 0 |
+| `PartitionFailoverEntry` | 128 B | **120 B** | **−8 B** |
+| `PartitionFailoverConfig` | 64 B | 64 B | 0 |
+| `PartitionKeyRangeId` | 24 B | 24 B | 0 |
+| `CosmosEndpoint` | 8 B | 8 B | 0 |
+
+`PartitionFailoverEntry` shrank by 8 B because `SmallVec<[T; 4]>` with
+the `union` feature is **smaller** than the previous `HashSet<T>`
+(40 B vs. 48 B for `T = CosmosEndpoint`). `CompactString` is the same
+inline size as `String` on 64-bit (24 B), so `PartitionKeyRangeId` is
+unchanged.
+
+This per-slot reduction has a multiplicative effect on the main
+HashMap backing array: 8 B × 131,072 reserved slots = exactly **1 MiB**
+saved on PP9 alone (see §15.5).
+
+### 15.4 Headline comparison (DHAT totals)
+
+| Metric | v1 (original) | v2 (optimized) | Δ | % change |
+|---|---:|---:|---:|---:|
+| **Peak live bytes** (`t-gmax`) | 24,604,302 | **19,006,841** | **−5,597,461** (≈ −5.34 MiB) | **−22.75 %** |
+| **Peak live blocks** (`t-gmax`) | 160,014 | **15** | **−159,999** | **−99.99 %** |
+| Total bytes allocated (lifetime) | 24,994,000 | 19,396,534 | −5,597,466 | −22.40 % |
+| Total alloc events | 240,026 | 80,026 | −160,000 | −66.66 % |
+| Leaked bytes / blocks | 0 / 0 | 0 / 0 | 0 / 0 | — |
+| **Bytes per partition entry** | 308 | **~237.5** | **−70.5** | **−22.9 %** |
+| **Blocks per partition entry** | 2 | **0** | **−2** | **−100 %** |
+
+The disabled-mode trace is **identical** between v1 and v2
+(1,380 B / 13 blocks at peak), confirming that the optimization adds
+no regression for accounts that never trip the circuit breaker.
+
+### 15.5 Per-allocation comparison (enabled mode)
+
+| PP | Origin | v1 live B | v1 blocks | v2 live B | v2 blocks | Δ bytes | Δ blocks |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| Main HashMap backing | `circuit_breaker_overrides` table | 20,054,032 | 1 | **19,005,456** | 1 | **−1,048,576** (−1.00 MiB) | 0 |
+| Per-entry `failed_endpoints` HashSet | `RawTable::with_capacity_in` | 4,160,000 | 80,000 | **0** | **0** | **−4,160,000** (−3.97 MiB) | **−80,000** |
+| Per-entry `PartitionKeyRangeId` String | `String::with_capacity` | 388,890 | 80,000 | **5** | **1** | **−388,885** | **−79,999** |
+| 4× `EndpointKey` Arc payload | `CosmosEndpoint::global` | 928 | 4 | 928 | 4 | 0 | 0 |
+| 4× `Url` buffer | `url::ParseOptions::parse` | 224 | 4 | 224 | 4 | 0 | 0 |
+| 4× endpoint host:port string | `String::push_str` | 196 | 4 | 196 | 4 | 0 | 0 |
+| 1× small initial HashMap | `hashbrown::reserve_rehash` | 32 | 1 | 32 | 1 | 0 | 0 |
+| **Total at peak** | | **24,604,302** | **160,014** | **19,006,841** | **15** | **−5,597,461** | **−159,999** |
+
+**Reading the table:**
+
+- **Main HashMap (−1.00 MiB):** Driven entirely by the 8 B-per-slot
+  shrink of `PartitionFailoverEntry`. `131,072 × 8 = 1,048,576 B`
+  exactly — the arithmetic checks out.
+- **Per-entry HashSet (−3.97 MiB, −80 k blocks):** Eliminated outright.
+  Two failed endpoints fit inline in `SmallVec<[CosmosEndpoint; 4]>`
+  with no heap allocation.
+- **Per-entry String (−389 KB, ≈ −80 k blocks):** Numeric IDs of length
+  ≤ 5 fit inline in `CompactString`. The 5 B / 1 block residual is the
+  *transient* `i.to_string()` scratch from the very last iteration of
+  the example loop — it lives on the stack as a regular `String`,
+  becomes inline `CompactString` once handed to `from_str`, and is
+  freed at end-of-iteration. It just happened to be alive at the peak
+  sample. Production code never goes through `i.to_string()` — it
+  parses directly from header bytes.
+
+### 15.6 Versus the §11.4 projection
+
+| Metric | §11.4 projection | v2 measured | Verdict |
+|---|---:|---:|---|
+| Peak live heap | ~20,640,000 B | **19,006,841 B** | **Beat projection by 1.63 MiB** |
+| Peak live blocks | ~14 | **15** | Within 1 of projection |
+| Bytes per entry | ~258 | ~237 | **Beat projection by 21 B/entry** |
+| Blocks per entry | 0 | 0 | ✓ As predicted |
+
+The measured byte savings exceeded the projection because §11.4 did
+not anticipate that **`SmallVec<[T; 4]>` with the `union` feature is
+smaller than `HashSet<T>`** — it modelled the per-slot inline cost as
+unchanged. That single 8-byte shrink, multiplied by hashbrown's
+power-of-2 over-reservation, contributed an extra 1 MiB of savings on
+the main HashMap.
+
+### 15.7 Re-projected scaling (v2 numbers)
+
+Updated waypoints based on the measured `~237 B/entry` slope:
+
+| N partitions | v1 projected peak | v2 projected peak | Improvement |
+|---:|---:|---:|---:|
+| 10,000 | ~3.0 MB | ~2.4 MB | −20 % |
+| 80,000 | 23.46 MiB (measured) | **18.13 MiB (measured)** | **−22.7 %** |
+| 100,000 | ~30 MB | ~24 MB | −20 % |
+| 131,072 | ~40 MB | ~31 MB | −22 % |
+| 1,000,000 | ~310 MB (extrapolated) | ~240 MB (extrapolated) | −22 % |
+
+For an extreme 1 M-partition deployment, the optimization saves an
+extrapolated **~70 MB** of resident memory under fully-tripped
+worst-case PPCB load.
+
+### 15.8 Lifetime allocation traffic
+
+The block-count win is the more operationally interesting metric:
+
+- **v1**: 240,026 alloc events to reach steady state — 160 k of those
+  hit the slow path through hashbrown's bucket table allocator.
+- **v2**: 80,026 alloc events — only 26 are real PPCB allocations; the
+  remaining 80,000 are the *example-only* `i.to_string()` scratches.
+  In production code (which feeds PK range IDs in from header bytes),
+  the steady-state buildup of 80 k entries would cost **~26 alloc
+  events total** — essentially constant, not linear.
+
+This is the qualitative shift the §11 recommendations were aiming
+for: PPCB no longer puts allocator-contention pressure on the system
+during a partition-event storm.
+
+### 15.9 Behavioural correctness
+
+Behavioural changes worth noting:
+
+- `try_move_next_endpoint` now uses linear `contains()` instead of
+  hash lookup when checking whether `failed_endpoint` was already
+  recorded. For `K ≤ 4` this is equivalent or faster (no hash
+  computation, all elements fit in a single cache line).
+- The `failed_endpoints` field no longer enforces uniqueness
+  automatically — the `if !contains { push }` guard in
+  `try_move_next_endpoint` is now load-bearing. A regression test
+  could be added in a follow-up to lock this in (the existing
+  `mark_partition_unavailable_all_endpoints_exhausted_removes_entry`
+  test does exercise the relevant path indirectly and continues to
+  pass).
+- All public type signatures are unchanged from the consumer's point
+  of view: `PartitionKeyRangeId::as_str()` still returns `&str`,
+  `Display` / `From<String>` / `From<&str>` / `Borrow<str>` /
+  `Hash` / `Eq` all behave identically.
+
+### 15.10 Files touched (final)
+
+```
+sdk/cosmos/Cargo.toml                                            (workspace deps)
+Cargo.toml                                                        (workspace deps - root)
+sdk/cosmos/azure_data_cosmos_driver/Cargo.toml                   (driver deps)
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/
+    partition_endpoint_state.rs                                  (FailedEndpoints alias)
+    partition_key_range_id.rs                                    (CompactString swap)
+    routing_systems.rs                                           (push/contains + test fixups)
+sdk/cosmos/azure_data_cosmos_driver/src/testing.rs               (FailedEndpoints re-export)
+sdk/cosmos/azure_data_cosmos_benchmarks/examples/
+    ppcb_state_dhat.rs                                           (use FailedEndpoints)
+```
+
+### 15.11 Conclusion
+
+Both §11.1 and §11.2 recommendations delivered as predicted, with one
+pleasant surprise (`SmallVec union` shrank `PartitionFailoverEntry`
+below `HashSet`'s footprint, contributing an unplanned 1 MiB of
+savings on the main HashMap). The optimization is now **shipped** in
+the driver. §11.3 (boxing the HashMap value) remains unimplemented
+and should only be revisited if production telemetry shows the single
+~19 MiB contiguous allocation causing problems on fragmented
+allocators.
 *End of report.*

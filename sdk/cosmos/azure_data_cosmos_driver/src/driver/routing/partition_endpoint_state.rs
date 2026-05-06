@@ -4,13 +4,24 @@
 //! Partition-level endpoint routing state for PPAF and PPCB.
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     time::{Duration, Instant},
 };
+
+use smallvec::SmallVec;
 
 use crate::options::OperationOptionsView;
 
 use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
+
+/// Inline-stored set of failed endpoints for one partition entry.
+///
+/// Bounded by the number of regions configured on the account; in practice
+/// `K <= 4`. Using a `SmallVec` (instead of a `HashSet`) keeps the contents
+/// inline inside `PartitionFailoverEntry`, avoiding one heap allocation
+/// per partition entry. Lookup is `O(K)` linear-scan over `Arc`-pointer
+/// equality, which is faster than a hash for the realistic sizes here.
+pub type FailedEndpoints = SmallVec<[CosmosEndpoint; 4]>;
 
 /// Immutable partition-level endpoint routing state.
 ///
@@ -97,8 +108,10 @@ pub struct PartitionFailoverEntry {
     pub current_endpoint: CosmosEndpoint,
     /// Original endpoint that first failed (used for failback probing).
     pub first_failed_endpoint: CosmosEndpoint,
-    /// Set of endpoints already tried.
-    pub failed_endpoints: HashSet<CosmosEndpoint>,
+    /// Endpoints already tried for this partition. Bounded by region
+    /// count (typically `<= 4`), so stored inline via [`FailedEndpoints`]
+    /// to avoid a per-entry heap allocation.
+    pub failed_endpoints: FailedEndpoints,
 
     /// Read failure count (not necessarily consecutive — see §13.2).
     pub read_failure_count: i32,

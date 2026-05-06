@@ -47,14 +47,14 @@
 //! `--release` matters: debug allocations look very different from release
 //! (Vec over-reservation, no SSO, Box::new not inlined).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::env;
 use std::mem::size_of;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos_driver::testing::{
-    CosmosEndpoint, HealthStatus, PartitionEndpointState, PartitionFailoverConfig,
+    CosmosEndpoint, FailedEndpoints, HealthStatus, PartitionEndpointState, PartitionFailoverConfig,
     PartitionFailoverEntry, PartitionKeyRangeId,
 };
 use url::Url;
@@ -163,7 +163,7 @@ fn build_populated_overrides(
     for i in 0..num_partitions {
         let pk_range_id = PartitionKeyRangeId::from_str(&i.to_string()).expect("Infallible parse");
 
-        let failed_endpoints: HashSet<CosmosEndpoint> = failed_slice.iter().cloned().collect();
+        let failed_endpoints: FailedEndpoints = failed_slice.iter().cloned().collect();
 
         let entry = PartitionFailoverEntry {
             current_endpoint: current_endpoint.clone(),
