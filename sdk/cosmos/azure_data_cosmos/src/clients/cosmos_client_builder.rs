@@ -263,6 +263,18 @@ impl CosmosClientBuilder {
     /// real reqwest transport even when the driver has been routed through
     /// the emulator, leaving SDK-level requests (account refresh, etc.) free
     /// to reach the network.
+    ///
+    /// # Interaction with `with_fault_injection`
+    ///
+    /// When both an emulator HTTP client and a fault-injection builder are
+    /// configured, the SDK pipeline's `Transport` is **unconditionally**
+    /// replaced by this emulator client — the fault-injection wrapper that
+    /// would otherwise sit in front of the SDK pipeline transport is
+    /// discarded. The driver still receives the fault-injection rules (they
+    /// are forwarded onto the driver runtime builder), so fault injection
+    /// remains active for any request that flows through the driver. Tests
+    /// that need fault injection on SDK-pipeline-only paths (account
+    /// refresh, etc.) cannot rely on it via this combination.
     #[doc(hidden)]
     #[cfg(feature = "__internal_in_memory_emulator")]
     pub fn with_emulator_http_client(

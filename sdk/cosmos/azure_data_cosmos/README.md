@@ -33,10 +33,6 @@ You can create an Azure Cosmos DB account using:
 
 In order to interact with the Azure Cosmos DB service you'll need to create an instance of the `CosmosClient` struct. To make this possible you will need a URL and key of the Azure Cosmos DB service.
 
-## Internal feature flags
-
-This crate exposes feature flags prefixed with `__internal_` (currently `__internal_in_memory_emulator`). These are intended **only** for in-repo testing and are not part of the public API; they are not subject to semver and may change or be removed without notice. Do not enable them on builds you ship to crates.io or other consumers.
-
 ## Examples
 
 The following section provides several code snippets covering some of the most common Azure Cosmos DB NoSQL API tasks, including:
@@ -139,6 +135,10 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 ### Provide feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
+
+## Developer notes
+
+This crate exposes feature flags prefixed with `__internal_` (currently `__internal_in_memory_emulator`). These are intended **only** for in-repo testing, are not part of the public API, are not subject to semver, and may change or be removed without notice. Do not enable them on builds shipped to crates.io or to other consumers.
 
 ## Contributing
 

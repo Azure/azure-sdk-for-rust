@@ -30,25 +30,14 @@ impl Default for RuChargingModel {
 impl RuChargingModel {
     /// Returns the size bucket multiplier (doubling from 1KB).
     ///
-    /// Caps the multiplier at `2^62` so that `next_power_of_two` cannot panic
-    /// in debug or silently wrap to 0 in release for pathological inputs
-    ///. Real Cosmos limits documents to 2 MB, so this cap is
-    /// purely defensive — it never triggers for any realistic body.
+    /// Real Cosmos DB limits documents to 2 MB, so the input never approaches
+    /// the `u64` range.
     fn size_multiplier(doc_size: usize) -> f64 {
         if doc_size == 0 {
             return 1.0;
         }
-        let kb = ((doc_size as f64) / 1024.0).ceil().max(1.0);
-        // Anything that would round to >= 2^62 KB is past any reasonable cap;
-        // saturate to 2^62 so `next_power_of_two` (which returns the next pow2
-        // *>= self*) stays defined and produces 2^62.
-        const MAX_KB: u64 = 1u64 << 62;
-        let kb_int: u64 = if kb >= MAX_KB as f64 {
-            MAX_KB
-        } else {
-            kb as u64
-        };
-        kb_int.next_power_of_two() as f64
+        let kb = ((doc_size as f64) / 1024.0).ceil().max(1.0) as u64;
+        kb.next_power_of_two() as f64
     }
 
     /// Computes RU charge for a point read.

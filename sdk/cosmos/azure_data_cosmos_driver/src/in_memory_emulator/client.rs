@@ -25,6 +25,16 @@ use crate::options::ConnectionPoolOptions;
 /// Implements [`azure_core::http::HttpClient`], replacing the real HTTP transport
 /// at the bottom of the pipeline stack. The full operation pipeline (endpoint resolution,
 /// session routing, retry, failover, diagnostics) executes normally above this layer.
+///
+/// # Tokio runtime requirement
+///
+/// All emulator entry points that schedule background work — point writes that
+/// trigger non-immediate replication, [`EmulatorStore::split_partition`],
+/// [`EmulatorStore::merge_partitions`], the deferred-replication retry path —
+/// call `tokio::spawn` and therefore **must run inside a Tokio runtime**.
+/// Calling them from a non-Tokio thread will panic. Use `#[tokio::test]` /
+/// `tokio::runtime::Runtime::block_on` or only call them from code already
+/// running inside a Tokio reactor.
 pub struct InMemoryEmulatorHttpClient {
     store: Arc<EmulatorStore>,
 }

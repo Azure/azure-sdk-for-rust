@@ -72,6 +72,13 @@ impl RidGenerator {
         (doc_id, encode_rid(&bytes))
     }
 
+    /// Drops the per-database collection counter for `db_id`. Called when a
+    /// database is deleted so the `coll_counters` map does not accumulate
+    /// permanent residue across delete/recreate cycles.
+    pub fn forget_database(&self, db_id: u32) {
+        self.coll_counters.lock().unwrap().remove(&db_id);
+    }
+
     /// Generates a new partition key range RID (16 bytes: db_id + coll_id + pkr_id with type nibble 0x5).
     pub fn next_pkrange_rid(&self, db_id: u32, coll_id: u32, pkrange_id: u32) -> String {
         let pkr_id = (pkrange_id as u64) << 4 | 0x05; // type nibble 0x5

@@ -55,25 +55,59 @@ impl ControlPlaneTaskKey {
 /// comparison.
 fn apply_doc_to_partition(partition: &PhysicalPartition, doc: &StoredDocument, is_delete: bool) {
     let mut docs = partition.documents.write().unwrap();
-    let logical = docs.entry(doc.epk.clone()).or_default();
-    let should_apply = match logical.get(&doc.id) {
-        None => true,
-        Some(existing) => (doc.ts, doc.lsn) > (existing.ts, existing.lsn),
-    };
-    if should_apply {
-        if is_delete {
-            logical.remove(&doc.id);
-        } else {
-            logical.insert(doc.id.clone(), doc.clone());
+    // Resolve the LWW outcome without mutating the outer map: avoids leaving
+    // an empty inner BTreeMap behind when this call ends up being a no-op
+    // (lost LWW, no-op delete on absent doc, etc.). Without that guard,
+    // every unique EPK that ever saw a failed write left a permanent empty
+    // entry — slow leak under fuzz / churn loads.
+    let (should_apply, was_present) = {
+        let existing = docs.get(&doc.epk).and_then(|m| m.get(&doc.id));
+        match existing {
+            None => (true, false),
+            Some(e) => {
+                // Tiebreak `(ts, lsn)` collisions on `source_region` so two
+                // regions writing the same `(epk, id)` at the same wall-clock
+                // second and starting LSN converge deterministically. The
+                // resume-from-pause drain path already sorts by source_region
+                // for the same reason; this keeps the live path consistent.
+                let cmp = (doc.ts, doc.lsn, doc.source_region.as_str()).cmp(&(
+                    e.ts,
+                    e.lsn,
+                    e.source_region.as_str(),
+                ));
+                (cmp == std::cmp::Ordering::Greater, true)
+            }
         }
-        // Only bump local_lsn when the mutation actually lands. The per-region
-        // local LSN is a count of *applied* writes; advancing it for stale
-        // replications that lose the LWW comparison would emit session tokens
-        // whose local-LSN segment exceeds anything a real Cosmos gateway would
-        // produce and silently break dual-backend assertions on
-        // `x-ms-cosmos-llsn`.
-        partition.local_lsn.fetch_add(1, Ordering::SeqCst);
+    };
+    if !should_apply {
+        // Lost the LWW; advance the high-water LSN so subsequent writes still
+        // observe a non-decreasing partition LSN.
+        partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
+        return;
     }
+    if is_delete && !was_present {
+        // No-op delete: no observable mutation, so no local_lsn bump (#3).
+        // A bumped local_lsn would advertise per-region progress for a
+        // mutation that never happened, breaking session-token assertions.
+        partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
+        return;
+    }
+    if is_delete {
+        if let Some(map) = docs.get_mut(&doc.epk) {
+            map.remove(&doc.id);
+        }
+    } else {
+        docs.entry(doc.epk.clone())
+            .or_default()
+            .insert(doc.id.clone(), doc.clone());
+    }
+    // Only bump local_lsn when the mutation actually lands. The per-region
+    // local LSN is a count of *applied* writes; advancing it for stale
+    // replications that lose the LWW comparison would emit session tokens
+    // whose local-LSN segment exceeds anything a real Cosmos gateway would
+    // produce and silently break dual-backend assertions on
+    // `x-ms-cosmos-llsn`.
+    partition.local_lsn.fetch_add(1, Ordering::SeqCst);
     partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
 }
 async fn await_control_plane_handle(handle: tokio::task::JoinHandle<()>) {
@@ -83,6 +117,16 @@ async fn await_control_plane_handle(handle: tokio::task::JoinHandle<()>) {
         }
     }
 }
+/// Top-level emulator store.
+///
+/// # Tokio runtime requirement
+///
+/// Background work (delayed replication, split/merge execution, deferred
+/// replication during partition locks) is scheduled via `tokio::spawn`.
+/// Methods that may schedule that work — including any point write that goes
+/// through a non-immediate replication config, [`Self::split_partition`], and
+/// [`Self::merge_partitions`] — must therefore be called from inside a Tokio
+/// runtime. Calling them outside one will panic.
 pub struct EmulatorStore {
     config: VirtualAccountConfig,
     rid_generator: RidGenerator,
@@ -119,6 +163,13 @@ pub struct EmulatorStore {
     /// replication delay cannot spawn an unbounded backlog of `tokio` tasks
     /// before the first batch finishes and gets reaped.
     replication_semaphore: Arc<tokio::sync::Semaphore>,
+    /// Count of replication entries dropped because the per-region buffer was
+    /// full. The proactive 429/3075 short-circuit in
+    /// `find_overflowed_replication_target` is racy across concurrent writers,
+    /// so the apply path still has to drop on overflow as a safety net. Tests
+    /// that want to assert the safety net never fired can read this counter
+    /// in teardown via [`Self::dropped_replications`] and fail when non-zero.
+    dropped_replications: AtomicU64,
 }
 
 impl EmulatorStore {
@@ -142,8 +193,10 @@ impl EmulatorStore {
                 std::thread::available_parallelism()
                     .map(|n| n.get())
                     .unwrap_or(1)
-                    .saturating_mul(10),
+                    .saturating_mul(10)
+                    .max(64),
             )),
+            dropped_replications: AtomicU64::new(0),
         })
     }
 
@@ -180,6 +233,13 @@ impl EmulatorStore {
         self.transport_request_counter
             .fetch_add(1, Ordering::Relaxed)
             .wrapping_add(1)
+    }
+
+    /// Number of replication entries dropped as a safety-net for buffer
+    /// overflow (see `dropped_replications` field). Test-only.
+    #[doc(hidden)]
+    pub fn dropped_replications(&self) -> u64 {
+        self.dropped_replications.load(Ordering::SeqCst)
     }
 
     /// Returns `Some((target_region, retry_after_ms))` if any non-`source`
@@ -396,6 +456,73 @@ impl EmulatorStore {
         meta
     }
 
+    /// Cascade-deletes a database from every region. Also purges any buffered
+    /// replication entries for containers in this database (otherwise a paused
+    /// target region would silently drop them on resume) and prunes the
+    /// per-database collection-counter slot in the RID generator.
+    ///
+    /// Returns the numeric db id when the database existed in at least one
+    /// region, otherwise `None`.
+    pub(crate) fn cascade_delete_database(&self, db_id: &str) -> Option<u32> {
+        // Look up the numeric id from any region before we drop the metadata.
+        let numeric_db_id = {
+            let regions = self.regions.read().unwrap();
+            let mut id = None;
+            for region in regions.values() {
+                if let Some(meta) = region.databases.read().unwrap().get(db_id) {
+                    id = Some(meta.numeric_id);
+                    break;
+                }
+            }
+            id
+        };
+        let regions = self.regions.read().unwrap();
+        for region in regions.values() {
+            // Purge buffered replications targeted at any container in this db.
+            let mut buf = region.replication_buffer.write().unwrap();
+            buf.retain(|e| e.db_id != db_id);
+            drop(buf);
+            // Then remove databases + cascade containers.
+            let removed_db = region.databases.write().unwrap().remove(db_id).is_some();
+            if removed_db {
+                region
+                    .containers
+                    .write()
+                    .unwrap()
+                    .retain(|(db, _), _| db != db_id);
+            }
+        }
+        if let Some(id) = numeric_db_id {
+            self.rid_generator.forget_database(id);
+        }
+        numeric_db_id
+    }
+
+    /// Cascade-deletes a container from every region. Also purges any buffered
+    /// replication entries for the container so a paused target region does
+    /// not silently drop them on resume.
+    ///
+    /// Returns `true` when the container existed in at least one region.
+    pub(crate) fn cascade_delete_container(&self, db_id: &str, coll_id: &str) -> bool {
+        let regions = self.regions.read().unwrap();
+        let mut existed = false;
+        for region in regions.values() {
+            let mut buf = region.replication_buffer.write().unwrap();
+            buf.retain(|e| !(e.db_id == db_id && e.coll_id == coll_id));
+            drop(buf);
+            if region
+                .containers
+                .write()
+                .unwrap()
+                .remove(&(db_id.to_string(), coll_id.to_string()))
+                .is_some()
+            {
+                existed = true;
+            }
+        }
+        existed
+    }
+
     /// Forces the next read in the given region against the specified
     /// `(db_id, coll_id, partition_key)` to return 404/1002
     /// (ReadSessionNotAvailable), then resets.
@@ -550,15 +677,24 @@ impl EmulatorStore {
         // observable if a test happened to call `drain_pending_replications`
         // *and* iterate the join results — which `drain` itself does not
         //.
-        {
+        // Reap finished tasks under the lock, but capture any panics into a
+        // local Vec and resume-unwind *after* releasing the lock — otherwise
+        // the panic propagates while the std Mutex guard is live, poisoning
+        // the mutex for every later acquirer.
+        let panics = {
             let mut set = self.replication_tasks.lock().unwrap();
+            let mut panics = Vec::new();
             while let Some(res) = set.try_join_next() {
                 if let Err(e) = res {
                     if e.is_panic() {
-                        std::panic::resume_unwind(e.into_panic());
+                        panics.push(e.into_panic());
                     }
                 }
             }
+            panics
+        };
+        if let Some(p) = panics.into_iter().next() {
+            std::panic::resume_unwind(p);
         }
 
         let regions = self.regions.read().unwrap();
@@ -630,6 +766,7 @@ impl EmulatorStore {
                     .max_buffered_replications();
                 let mut buffer = region_store.replication_buffer.write().unwrap();
                 if buffer.len() >= max {
+                    self.dropped_replications.fetch_add(1, Ordering::SeqCst);
                     tracing::warn!(
                         target_region = target_region,
                         source_region = source_region,
@@ -726,6 +863,7 @@ impl EmulatorStore {
                     return;
                 }
                 if attempt + 1 == MAX_ATTEMPTS {
+                    store.dropped_replications.fetch_add(1, Ordering::SeqCst);
                     tracing::warn!(
                         target_region = %target,
                         source_region = %source,
@@ -796,36 +934,6 @@ impl RegionStoreRef {
             .read()
             .unwrap()
             .contains_key(&(db_id.to_string(), coll_id.to_string()))
-    }
-
-    /// Deletes a database and all its containers in this region.
-    pub fn delete_database(&self, db_id: &str) -> bool {
-        let removed = self
-            .region
-            .databases
-            .write()
-            .unwrap()
-            .remove(db_id)
-            .is_some();
-        if removed {
-            // Cascade: remove all containers in this database
-            self.region
-                .containers
-                .write()
-                .unwrap()
-                .retain(|(db, _), _| db != db_id);
-        }
-        removed
-    }
-
-    /// Deletes a container in this region.
-    pub fn delete_container(&self, db_id: &str, coll_id: &str) -> bool {
-        self.region
-            .containers
-            .write()
-            .unwrap()
-            .remove(&(db_id.to_string(), coll_id.to_string()))
-            .is_some()
     }
 }
 
@@ -1018,6 +1126,12 @@ pub(crate) struct StoredDocument {
     /// so the read-RU computation does not have to re-serialize on every
     /// point read.
     pub body_size_bytes: usize,
+    /// Region that originated this version of the document. Used as a final
+    /// LWW tiebreaker on `(ts, lsn, source_region)` so that two regions
+    /// writing the same `(epk, id)` at the same wall-clock second with the
+    /// same starting LSN converge to a deterministic winner instead of
+    /// last-arrival-wins.
+    pub source_region: String,
 }
 
 /// Returns the cached pkrange RID for `partition_id`, allocating (and
@@ -1766,6 +1880,15 @@ fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Result<Epk, String> {
     };
     let min_val = parse(min, "min")?;
     let max_val = parse(max, "max")?;
+    // V2 EPKs are 126-bit values (top 2 bits cleared by the production
+    // hasher). If a future change broadens that range, midpoint computation
+    // would silently produce a value outside `[parent_min, parent_max]` and
+    // splits would land docs in the wrong child. Trip in debug builds so the
+    // regression surfaces in CI before reaching production tests.
+    debug_assert!(
+        min_val <= max_val && max_val <= (1u128 << 126),
+        "EPK bounds out of range: min={min_val:032X} max={max_val:032X}"
+    );
     // Safe midpoint: `min/2 + max/2` loses 1 bit when both operands are odd.
     // Add the missing carry explicitly.
     let mid = min_val / 2 + max_val / 2 + ((min_val & 1) & (max_val & 1));

@@ -64,6 +64,14 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 - Change feed.
 - Stored procedures / triggers / UDFs.
 - Cross-partition feed reads (`ReadFeed`).
+- Per-container conflict-resolution policy customisation. Every container the
+  emulator surfaces (via `ReadContainer`) hard-codes
+  `conflictResolutionPolicy = { mode: "LastWriterWins", conflictResolutionPath: "/_ts" }`.
+  This matches the LWW comparison the apply path performs on `(ts, lsn,
+  source_region)` and is sufficient for every test scenario currently
+  exercised. If a future test needs custom (or `Custom` mode) conflict
+  resolution, the policy must be made per-container configurable in
+  `ContainerConfig` and threaded through `container_to_json`.
 
 ---
 

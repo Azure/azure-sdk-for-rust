@@ -25,6 +25,10 @@ pub(crate) enum OperationType {
     Delete,
     Query,
     Unsupported(String),
+    /// Trailing-slash on a resource URL. Real Cosmos returns 400 BadRequest
+    /// for these (not 501) — keep the variant separate so the handler can
+    /// emit the right status and substatus.
+    BadRequestPath(String),
 }
 
 /// Parsed request data extracted from an HTTP request.
@@ -97,7 +101,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let has_trailing_slash = path.len() > 1 && path.ends_with('/');
     let segments = parse_path_segments(path);
     let operation = if has_trailing_slash {
-        OperationType::Unsupported(format!(
+        OperationType::BadRequestPath(format!(
             "{} {} (trailing slash rejected)",
             method.as_ref(),
             path
@@ -404,17 +408,18 @@ mod tests {
         // Without explicit rejection this would resolve to Create (POST) /
         // a misrouted GET; both are wrong because the gateway does not
         // accept trailing slashes on resource paths. Surfacing as
-        // Unsupported makes the misuse loud instead of silent.
+        // BadRequestPath (mapped to 400 by the handler) matches the real
+        // gateway's response and makes the misuse loud instead of silent.
         let req = make_request("POST", "/dbs/mydb/colls/mycoll/docs/");
         let parsed = parse_request(&req);
-        assert!(matches!(parsed.operation, OperationType::Unsupported(_)));
+        assert!(matches!(parsed.operation, OperationType::BadRequestPath(_)));
     }
 
     #[test]
     fn trailing_slash_on_document_is_rejected() {
         let req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/d1/");
         let parsed = parse_request(&req);
-        assert!(matches!(parsed.operation, OperationType::Unsupported(_)));
+        assert!(matches!(parsed.operation, OperationType::BadRequestPath(_)));
     }
 
     #[test]

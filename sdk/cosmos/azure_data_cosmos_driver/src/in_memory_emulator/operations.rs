@@ -164,6 +164,7 @@ pub(crate) async fn handle_operation(
              section 1 (Non-Goals).",
             start,
         ),
+        OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
 
@@ -315,12 +316,9 @@ fn handle_delete_database(
         .build();
     }
 
-    // Delete from all regions
-    for vr in store.config().regions() {
-        if let Some(r) = store.region(vr.name()) {
-            r.delete_database(db_id);
-        }
-    }
+    // Cascade-delete: purges buffered replications for this db and prunes
+    // the rid-generator's per-db collection counter.
+    store.cascade_delete_database(db_id);
 
     let token = store.advance_master_partition_lsn();
     ResponseBuilder::new(StatusCode::NoContent, start)
@@ -524,12 +522,9 @@ fn handle_delete_container(
         .build();
     }
 
-    // Delete from all regions
-    for vr in store.config().regions() {
-        if let Some(r) = store.region(vr.name()) {
-            r.delete_container(db_id, coll_id);
-        }
-    }
+    // Cascade-delete: also purges any buffered replications targeted at this
+    // container so a paused target region does not silently drop them later.
+    store.cascade_delete_container(db_id, coll_id);
 
     let token = store.advance_master_partition_lsn();
     ResponseBuilder::new(StatusCode::NoContent, start)
@@ -955,7 +950,13 @@ async fn handle_create(
             let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
 
             inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
-            let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
+            // Cache the *wire* size (the bytes the caller sent), not the
+            // post-injection size, so read-RU and create-RU evaluate the
+            // same `compute_..._ru(size)` formula on identical inputs (#6).
+            // Without this the same doc was charged 1 KB on create and 2 KB
+            // on read whenever the system-prop overhead pushed it across a
+            // power-of-two bucket.
+            let body_size_bytes = request_body.len();
             let stored_doc = StoredDocument {
                 body: body.clone(),
                 id: doc_id.clone(),
@@ -966,6 +967,7 @@ async fn handle_create(
                 lsn,
                 epk: epk.clone(),
                 body_size_bytes,
+                source_region: region_name.to_string(),
             };
             logical.insert(doc_id.clone(), stored_doc.clone());
             stored_doc
@@ -1098,6 +1100,44 @@ fn handle_read(
                         .build());
                     }
                 };
+                // Reject stale pkrange ids (e.g. parent of a completed split that
+                // is *not* an ancestor of this request's partition) with 410/1002
+                // — real Cosmos surfaces PartitionKeyRangeGone here so the client
+                // refreshes its pkrange cache and retries. Without this, a stale
+                // token referencing some other (now-defunct) partition silently
+                // skipped the consistency check (#9).
+                //
+                // Tokens referencing a *direct ancestor* of this partition are
+                // considered valid: the EPK-routed successor partition's LSN is
+                // at least as advanced as any pre-split LSN the client could
+                // legitimately have observed, so the consistency check below is
+                // satisfied trivially. This matches the real gateway, which
+                // routes by EPK and treats stale-but-related tokens as best-
+                // effort rather than fatal.
+                for st in &tokens {
+                    if st.pkrange_id == super::store::MASTER_PARTITION_ID
+                        || st.pkrange_id == partition.id
+                        || partition.parents.contains(&st.pkrange_id)
+                    {
+                        continue;
+                    }
+                    let exists = state
+                        .physical_partitions
+                        .iter()
+                        .any(|p| p.id == st.pkrange_id);
+                    if !exists {
+                        return Err(error_response(
+                            StatusCode::Gone,
+                            Some(1002),
+                            "Gone",
+                            "The partition key range referenced by the session token is no longer present (split/merge).",
+                            0.0,
+                            &token,
+                            start,
+                        )
+                        .build());
+                    }
+                }
                 for st in &tokens {
                     if st.pkrange_id == partition.id {
                         let partition_version = partition.current_version();
@@ -1401,7 +1441,8 @@ async fn handle_replace(
             let etag = new_etag();
 
             inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut body);
-            let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
+            // See create handler for rationale (#6) — cache wire size.
+            let body_size_bytes = request_body.len();
             let new_doc = StoredDocument {
                 body: body.clone(),
                 id: doc_id.to_string(),
@@ -1412,6 +1453,7 @@ async fn handle_replace(
                 lsn,
                 epk: epk.clone(),
                 body_size_bytes,
+                source_region: region_name.to_string(),
             };
             logical.insert(doc_id.to_string(), new_doc.clone());
             new_doc
@@ -1588,7 +1630,8 @@ async fn handle_upsert(
             let etag = new_etag();
 
             inject_system_properties(&rid, &self_link, &etag, ts, &mut body);
-            let body_size_bytes = serde_json::to_vec(&body).map(|v| v.len()).unwrap_or(0);
+            // See create handler for rationale (#6) — cache wire size.
+            let body_size_bytes = request_body.len();
             let new_doc = StoredDocument {
                 body: body.clone(),
                 id: doc_id.clone(),
@@ -1599,6 +1642,7 @@ async fn handle_upsert(
                 lsn,
                 epk: epk.clone(),
                 body_size_bytes,
+                source_region: region_name.to_string(),
             };
             logical.insert(doc_id.clone(), new_doc.clone());
             (new_doc, status, charge)
@@ -1819,6 +1863,7 @@ async fn handle_delete(
                 lsn,
                 epk: current.epk,
                 body_size_bytes: 0,
+                source_region: region_name.to_string(),
             }
         };
 
@@ -1853,6 +1898,19 @@ fn write_forbidden_response(start: Instant) -> AsyncRawResponse {
         Some(3),
         "Forbidden",
         "Write operations are not allowed on this region.",
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        &format!("Invalid request path: {}", path),
         0.0,
         "",
         start,
