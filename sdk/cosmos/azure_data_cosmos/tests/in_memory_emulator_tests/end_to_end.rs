@@ -341,7 +341,7 @@ fn padded_test_item(id: &str, value: i64, padding_len: usize) -> PaddedTestItem 
 async fn sdk_create_database_and_container_through_driver() {
     let backend = SdkDualBackend::setup().await.unwrap();
     let db_name = backend.unique_db_name();
-    let container_name = "sdkcp";
+    let container_name = "sdk_cp";
 
     let emu_create_db = backend
         .emulator_client
@@ -899,7 +899,7 @@ async fn sdk_create_retries_after_429_throttling() {
     emulator_store.create_database(&db_name);
     emulator_store.create_container_with_config(
         &db_name,
-        "throttlecoll",
+        "throttle_coll",
         serde_json::from_value(serde_json::json!({
             "paths": ["/pk"],
             "kind": "Hash",
@@ -928,7 +928,7 @@ async fn sdk_create_retries_after_429_throttling() {
 
     let emu_container = emulator_client
         .database_client(&db_name)
-        .container_client("throttlecoll")
+        .container_client("throttle_coll")
         .await
         .unwrap();
 

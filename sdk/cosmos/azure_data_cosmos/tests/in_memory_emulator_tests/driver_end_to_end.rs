@@ -954,7 +954,7 @@ async fn create_retries_after_429_throttling() {
     emulator_store.create_database(&db_name);
     emulator_store.create_container_with_config(
         &db_name,
-        "throttlecoll",
+        "throttle_coll",
         serde_json::from_value(serde_json::json!({
             "paths": ["/pk"],
             "kind": "Hash",
@@ -977,7 +977,7 @@ async fn create_retries_after_429_throttling() {
         .await
         .unwrap();
     let container = driver
-        .resolve_container(&db_name, "throttlecoll")
+        .resolve_container(&db_name, "throttle_coll")
         .await
         .unwrap();
 

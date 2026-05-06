@@ -14,6 +14,8 @@
 //! per-field rules for system properties (e.g. `_rid`, `_ts`) that differ
 //! between backends.
 
+// cspell:ignore acked llsn
+
 use std::collections::HashMap;
 
 use azure_data_cosmos_driver::models::CosmosResponseHeaders;

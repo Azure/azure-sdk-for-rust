@@ -3,6 +3,8 @@
 
 //! Point operation and control-plane operation handlers.
 
+// cspell:ignore acked llsn
+
 use std::sync::Arc;
 use std::time::Instant;
 
