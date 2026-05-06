@@ -124,6 +124,16 @@ pub enum TokenKind {
     /// quote. The parser converts this into a `ParseError` instead of silently
     /// consuming the partial token as a normal `StringLiteral`.
     ErrUnterminatedString,
+
+    /// F12: lexer error — a double-quoted identifier ran past EOF without a
+    /// closing quote. Same diagnostic principle as `ErrUnterminatedString`.
+    ErrUnterminatedQuotedIdentifier,
+
+    /// F12: lexer error — a `/* ... */` block comment ran past EOF without a
+    /// closing `*/`. Surfacing this as a token (rather than silently swallowing
+    /// the rest of the input) means the parser fails with a precise diagnostic
+    /// rather than producing a confusing "unexpected EOF" later.
+    ErrUnterminatedBlockComment,
 }
 
 impl fmt::Display for TokenKind {
@@ -135,6 +145,8 @@ impl fmt::Display for TokenKind {
             Self::FloatLiteral => "float",
             Self::Parameter => "parameter",
             Self::ErrUnterminatedString => "unterminated string literal",
+            Self::ErrUnterminatedQuotedIdentifier => "unterminated quoted identifier",
+            Self::ErrUnterminatedBlockComment => "unterminated block comment",
             Self::Select => "SELECT",
             Self::From => "FROM",
             Self::Where => "WHERE",
@@ -217,6 +229,11 @@ pub struct Lexer<'a> {
     source: &'a str,
     bytes: &'a [u8],
     pos: usize,
+    /// F12: when `skip_whitespace_and_comments` runs into an unterminated
+    /// `/* ... */` block, it stashes the start offset here so that the next
+    /// `next_token` call emits a single `ErrUnterminatedBlockComment` token
+    /// instead of silently swallowing the rest of the input.
+    pending_block_comment_error: Option<usize>,
 }
 
 impl<'a> Lexer<'a> {
@@ -226,12 +243,28 @@ impl<'a> Lexer<'a> {
             source,
             bytes: source.as_bytes(),
             pos: 0,
+            pending_block_comment_error: None,
         }
     }
 
     /// Produce the next token. Returns `Eof` when the input is exhausted.
     pub(crate) fn next_token(&mut self) -> Token<'a> {
         self.skip_whitespace_and_comments();
+
+        // F12: if `skip_whitespace_and_comments` ran into an unterminated
+        // block comment, surface it as a single error token before any
+        // further work — the partial comment otherwise silently swallows the
+        // remainder of the input.
+        if let Some(err_start) = self.pending_block_comment_error.take() {
+            return Token {
+                kind: TokenKind::ErrUnterminatedBlockComment,
+                text: &self.source[err_start..self.pos],
+                span: Span {
+                    start: err_start,
+                    end: self.pos,
+                },
+            };
+        }
 
         if self.pos >= self.bytes.len() {
             return Token {
@@ -363,9 +396,18 @@ impl<'a> Lexer<'a> {
             }
 
             _ => {
-                // Unknown character — advance past it and return an identifier token
-                // so the parser can produce a proper error.
-                self.pos += 1;
+                // F13: respect UTF-8 character boundaries. The previous
+                // single-byte advance turned a multi-byte char like `é`
+                // (U+00E9, two bytes) into two single-byte `Identifier`
+                // tokens, producing a wildly wrong AST. Walk forward to
+                // the next char boundary so the error token spans exactly
+                // one Unicode scalar value, which the parser can report
+                // cleanly.
+                let mut next_pos = self.pos + 1;
+                while next_pos < self.bytes.len() && !self.source.is_char_boundary(next_pos) {
+                    next_pos += 1;
+                }
+                self.pos = next_pos;
                 self.make_token(start, TokenKind::Identifier)
             }
         }
@@ -413,6 +455,7 @@ impl<'a> Lexer<'a> {
                 && self.bytes[self.pos] == b'/'
                 && self.bytes[self.pos + 1] == b'*'
             {
+                let comment_start = self.pos;
                 self.pos += 2;
                 while self.pos + 1 < self.bytes.len()
                     && !(self.bytes[self.pos] == b'*' && self.bytes[self.pos + 1] == b'/')
@@ -421,6 +464,14 @@ impl<'a> Lexer<'a> {
                 }
                 if self.pos + 1 < self.bytes.len() {
                     self.pos += 2; // skip */
+                } else {
+                    // F12: unterminated block comment — record the start
+                    // offset and advance to EOF; `next_token` will emit a
+                    // single `ErrUnterminatedBlockComment` token before
+                    // returning `Eof`.
+                    self.pos = self.bytes.len();
+                    self.pending_block_comment_error = Some(comment_start);
+                    return;
                 }
                 continue;
             }
@@ -457,8 +508,13 @@ impl<'a> Lexer<'a> {
         }
         if self.pos < self.bytes.len() {
             self.pos += 1; // skip closing "
+            self.make_token(start, TokenKind::Identifier)
+        } else {
+            // F12: unterminated `"...` — surface as an error token so the
+            // parser fails with a precise diagnostic instead of silently
+            // consuming the partial identifier.
+            self.make_token(start, TokenKind::ErrUnterminatedQuotedIdentifier)
         }
-        self.make_token(start, TokenKind::Identifier)
     }
 
     fn scan_parameter(&mut self, start: usize) -> Token<'a> {
@@ -640,7 +696,49 @@ mod tests {
             tokens.iter().map(|t| t.kind).collect::<Vec<_>>()
         );
     }
+    /// F12: same diagnostic shape for unterminated `"...` quoted identifier.
+    #[test]
+    fn unterminated_quoted_identifier_yields_error_token() {
+        let tokens = Lexer::tokenize("SELECT \"unclosed FROM c");
+        assert_eq!(tokens.first().map(|t| t.kind), Some(TokenKind::Select));
+        assert!(
+            tokens
+                .iter()
+                .any(|t| t.kind == TokenKind::ErrUnterminatedQuotedIdentifier),
+            "expected ErrUnterminatedQuotedIdentifier; got {:?}",
+            tokens.iter().map(|t| t.kind).collect::<Vec<_>>()
+        );
+    }
 
+    /// F12: unterminated `/* ... */` block comment must surface as an error
+    /// token rather than silently swallowing the rest of the input.
+    #[test]
+    fn unterminated_block_comment_yields_error_token() {
+        let tokens = Lexer::tokenize("SELECT /* unclosed");
+        assert_eq!(tokens.first().map(|t| t.kind), Some(TokenKind::Select));
+        assert!(
+            tokens
+                .iter()
+                .any(|t| t.kind == TokenKind::ErrUnterminatedBlockComment),
+            "expected ErrUnterminatedBlockComment; got {:?}",
+            tokens.iter().map(|t| t.kind).collect::<Vec<_>>()
+        );
+    }
+
+    /// F13: a non-ASCII character must produce a single error token whose
+    /// span covers the full UTF-8 char (one Unicode scalar value), not a
+    /// sequence of single-byte tokens straddling the char boundary.
+    #[test]
+    fn non_ascii_character_respects_char_boundary() {
+        let tokens = Lexer::tokenize("\u{00e9}"); // 'é', 2 UTF-8 bytes
+                                                  // The lexer routes unknown chars to a single-byte `Identifier`-kinded
+                                                  // error token (the parser then produces a clean diagnostic). The
+                                                  // important property F13 enforces is that the token spans the full
+                                                  // 2-byte char — not 1 byte that splits the UTF-8 sequence.
+        assert_eq!(tokens.len(), 1, "expected one token, got {:?}", tokens);
+        assert_eq!(tokens[0].text.len(), 2);
+        assert_eq!(tokens[0].text, "\u{00e9}");
+    }
     #[test]
     fn numbers() {
         let tokens = Lexer::tokenize("42 3.14 1e10 2.5E-3");

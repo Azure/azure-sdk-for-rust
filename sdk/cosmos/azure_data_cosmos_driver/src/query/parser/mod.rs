@@ -79,6 +79,14 @@ impl<'a> Parser<'a> {
             TokenKind::ErrUnterminatedString => {
                 Err(self.error("unterminated string literal: missing closing single quote".into()))
             }
+            // F12: same diagnostic principle as `ErrUnterminatedString`.
+            TokenKind::ErrUnterminatedQuotedIdentifier => {
+                Err(self
+                    .error("unterminated quoted identifier: missing closing double quote".into()))
+            }
+            TokenKind::ErrUnterminatedBlockComment => {
+                Err(self.error("unterminated block comment: missing closing `*/`".into()))
+            }
             _ => Ok(()),
         }
     }
@@ -118,6 +126,23 @@ impl<'a> Parser<'a> {
     }
 
     fn error(&self, message: String) -> ParseError {
+        // F12: when the parser is about to bail out, prefer the lexer's
+        // diagnostic if the current token is a lex-error variant. Otherwise
+        // a downstream "expected X" message would mask the real problem
+        // (the malformed token never gets to the explicit `expect` call
+        // that would have called `check_pending_lex_error`).
+        let message = match self.current.kind {
+            TokenKind::ErrUnterminatedString => {
+                "unterminated string literal: missing closing single quote".to_string()
+            }
+            TokenKind::ErrUnterminatedQuotedIdentifier => {
+                "unterminated quoted identifier: missing closing double quote".to_string()
+            }
+            TokenKind::ErrUnterminatedBlockComment => {
+                "unterminated block comment: missing closing `*/`".to_string()
+            }
+            _ => message,
+        };
         ParseError {
             message,
             span: self.current.span,
@@ -929,6 +954,7 @@ impl<'a> Parser<'a> {
 
             // ARRAY ( subquery )
             TokenKind::Array => {
+                let array_text = self.current.text.to_string();
                 self.advance();
                 if self.at(TokenKind::LParen) {
                     self.advance();
@@ -936,8 +962,9 @@ impl<'a> Parser<'a> {
                     self.expect(TokenKind::RParen)?;
                     SqlScalarExpression::Array(Box::new(query))
                 } else {
-                    // Could be just the identifier "ARRAY" used as a property
-                    SqlScalarExpression::PropertyRef("ARRAY".to_string())
+                    // F6: preserve source casing for keyword-as-property.
+                    // `c.array` must look up `"array"`, not `"ARRAY"`.
+                    SqlScalarExpression::PropertyRef(array_text)
                 }
             }
 
@@ -1014,8 +1041,13 @@ impl<'a> Parser<'a> {
                 let name = if self.current.kind == TokenKind::Identifier {
                     extract_identifier(self.current.text).to_string()
                 } else {
-                    // Use keyword text as identifier name
-                    self.current.text.to_ascii_uppercase()
+                    // F6: preserve the source casing of keyword-as-identifier.
+                    // Cosmos JSON property lookup is case-sensitive, so
+                    // `c.left` must search for the property `"left"`, not
+                    // `"LEFT"`. The previous `to_ascii_uppercase` collapsed
+                    // both casings to `"LEFT"` and silently produced wrong
+                    // member-access results.
+                    self.current.text.to_string()
                 };
                 self.advance();
 

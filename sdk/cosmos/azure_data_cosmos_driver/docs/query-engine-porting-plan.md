@@ -147,6 +147,20 @@ intentionally trades full Cosmos parity for emulator usability — see
 
 ---
 
+## Known Limitations / Parity Gaps
+
+These are deliberate (and small) divergences from the Gateway, tracked here so
+a future PR can close the gap without re-discovering it from scratch.
+
+| Area | Gap | Notes |
+| --- | --- | --- |
+| PK extraction | `c["pk"]` and `c.address["city"]` style indexer references are not extracted as PK references; the local plan falls back to cross-partition routing for them. The Gateway recognizes these forms. | F5 in the post-review notes. |
+| `LENGTH` builtin | The local evaluator counts Unicode scalar values; the Gateway returns UTF-16 code-unit count (matching JS / .NET `string.Length`). Surrogate-pair characters diverge. | F35. |
+| Bitwise ops on `f64` | `&` `\|` `^` `<<` `>>` use `f64 as i64` saturating cast; the Gateway uses C++/JS int32 truncation. Documented inline in `eval::int_op`. | F23. |
+| Parameterized `TOP @n` | Locally accepted when the parameter is bound; the Gateway rejects parameterized `TOP` with HTTP 400 even when bound. The integration layer must avoid sending such queries to the Gateway. | F14. |
+| `LIKE … ESCAPE 'xy'` (multi-char) | Local evaluator returns `Undefined` (row does not match); the Gateway rejects the query. Plan-level shape is unaffected. | F15. |
+| `~` on fractional `Number` | Local evaluator returns `Undefined`; the Gateway rejects non-integral bitwise input. | F22. |
+
 ## What Is Explicitly Not Implemented
 
 | Component                                    | Reason                                                                   |

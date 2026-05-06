@@ -26,19 +26,22 @@ pub(crate) use parser::parse;
 /// Comma-separated list of query features the local plan generator advertises
 /// to the Cosmos DB Gateway via `x-ms-cosmos-supported-query-features`.
 ///
-/// Kept in sync with the structural features the local plan generator and
-/// pipeline can actually execute. Used both by the internal query-plan request
-/// builder (`CosmosOperation::query_plan`) and by gateway-comparison tests so
-/// the two stay in lockstep.
+/// Kept in lockstep with the supported-features list the Java and .NET SDKs
+/// advertise so the Gateway returns the same query plan shape across SDKs.
+/// This enables exhaustive cross-SDK plan-parity testing today via
+/// [`tests/gateway_query_plan_comparison.rs`](../../tests/gateway_query_plan_comparison.rs).
 ///
-/// (#8) `MultipleAggregates` and `CompositeAggregate` are intentionally NOT
-/// advertised: the in-memory evaluator only handles single-aggregate queries
-/// over `COUNT|SUM|AVG|MIN|MAX` inline today and cannot execute the rewritten
-/// query that the Gateway returns when those features are enabled. Re-add them
-/// once the evaluator gains support, otherwise the Gateway will hand back a
-/// plan the local pipeline cannot run.
-pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
-    "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,GroupBy";
+/// **Plan generation vs. query execution.** Advertising a feature here only
+/// affects what the Gateway is willing to *plan*. Whether the SDK can actually
+/// *execute* the resulting plan is a separate concern — the local query
+/// pipeline does not yet support the more advanced rewrite shapes (multiple
+/// aggregates, composite aggregates, DCount, CountIf, non-streaming ORDER BY,
+/// hybrid search, weighted rank fusion). The integration PR that wires the
+/// local plan generator into the production query path is expected to gate
+/// the production header on a stricter, pipeline-aware subset of this list,
+/// while leaving the testing-side advertisement broad so plan-shape parity is
+/// validated end-to-end against the live Gateway.
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "Aggregate,CompositeAggregate,CountIf,DCount,Distinct,GroupBy,HybridSearch,MultipleAggregates,MultipleOrderBy,NonStreamingOrderBy,NonValueAggregate,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
 
 /// Re-export of [`SUPPORTED_QUERY_FEATURES`] for cross-crate gateway-comparison
 /// tests. Production callers must not depend on this — it shares the

@@ -597,6 +597,12 @@ impl CosmosOperation {
     /// gated on the `__internal_testing` feature flag so that cross-crate
     /// gateway-comparison tests can build the request directly. Production
     /// callers must not use it.
+    ///
+    /// F21: single `pub fn` exposed only when the `__internal_testing` feature
+    /// (or `cfg(test)`) is on. The previous shape duplicated the signature
+    /// across two `cfg`-gated definitions distinguished only by visibility,
+    /// producing confusing `cargo doc` output and making the surface harder
+    /// to audit.
     #[cfg(any(test, feature = "__internal_testing"))]
     pub fn query_plan(
         container: ContainerReference,
@@ -604,9 +610,12 @@ impl CosmosOperation {
     ) -> (Self, crate::options::OperationOptions) {
         Self::query_plan_impl(container, options)
     }
-    #[cfg(not(any(test, feature = "__internal_testing")))]
-    #[allow(dead_code)] // until the local-plan generator wires this in (#13)
-    pub(crate) fn query_plan(
+
+    /// Crate-internal sibling of [`query_plan`](Self::query_plan) for the
+    /// (not-yet-wired) local plan caller. Keeps the surface available
+    /// crate-wide regardless of feature configuration.
+    #[allow(dead_code)] // until the local-plan generator wires this in
+    pub(crate) fn query_plan_internal(
         container: ContainerReference,
         options: crate::options::OperationOptions,
     ) -> (Self, crate::options::OperationOptions) {

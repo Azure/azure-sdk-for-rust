@@ -162,17 +162,14 @@ pub(crate) struct GatewayQueryRange {
     pub(crate) is_min_inclusive: bool,
 
     /// Whether the maximum is inclusive. Cosmos partition-key ranges are
-    /// `[min, max)` by default, so the JSON `isMaxInclusive` defaults to `false`.
-    #[serde(default = "default_false")]
+    /// `[min, max)` by default, so the JSON `isMaxInclusive` defaults to `false`
+    /// — which is what `bool::default()` produces under `#[serde(default)]`.
+    #[serde(default)]
     pub(crate) is_max_inclusive: bool,
 }
 
 fn default_true() -> bool {
     true
-}
-
-fn default_false() -> bool {
-    false
 }
 
 #[cfg(test)]

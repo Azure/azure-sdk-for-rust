@@ -1353,18 +1353,23 @@ fn not_between_no_pk() {
 
 #[test]
 fn aggregate_array_agg() {
+    // F5/F19: ARRAY_AGG is intentionally NOT advertised as a local-plan
+    // aggregate. The supported-features list does not include it and the
+    // in-memory evaluator does not implement it, so the planner should
+    // surface the query as a non-aggregate (the Gateway also rejects this
+    // pattern with HTTP 400). The test asserts that the local planner does
+    // not falsely advertise the aggregate.
     assert_eq!(
         plan("SELECT c.city, ARRAY_AGG(c.name) FROM c GROUP BY c.city"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
             query_info: LocalQueryInfo {
                 group_by_expressions: vec!["c.city".into()],
-                aggregates: vec![AggregateKind::ArrayAgg],
+                aggregates: vec![],
                 ..qi()
             },
         }
     );
-    // Gateway rejects this query with HTTP 400: ARRAY_AGG not supported by Gateway query plan endpoint
 }
 
 #[test]
@@ -4428,32 +4433,31 @@ fn hpk_non_equality_on_second_component() {
 }
 
 #[test]
-fn hpk_in_on_first_component_no_extract() {
-    // IN list on first HPK component — HPK extraction only supports equality
-    assert_eq!(
-        plan_hpk("SELECT * FROM c WHERE c.tenant IN ('a', 'b') AND c.userId = 'u1'"),
-        QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: LocalQueryInfo {
-                has_where: true,
-                ..qi()
-            },
+fn hpk_in_on_first_component_extracts_cartesian() {
+    // F9: IN on the leading HPK component combined with equality on the
+    // remainder produces a cartesian-product `InList` (or `Equality` when
+    // the product collapses to a single tuple), matching the Gateway.
+    let qp = plan_hpk("SELECT * FROM c WHERE c.tenant IN ('a', 'b') AND c.userId = 'u1'");
+    match qp.pk_filters {
+        PartitionKeyFilter::InList(ref tuples) => {
+            assert_eq!(tuples.len(), 2);
+            assert!(qp.query_info.has_where);
         }
-    );
+        ref other => panic!("expected InList, got {other:?}"),
+    }
 }
 
 #[test]
-fn hpk_in_on_second_component_no_extract() {
-    assert_eq!(
-        plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId IN ('u1', 'u2')"),
-        QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
-            query_info: LocalQueryInfo {
-                has_where: true,
-                ..qi()
-            },
+fn hpk_in_on_second_component_extracts_cartesian() {
+    // F9: same as above with the IN on the trailing component.
+    let qp = plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId IN ('u1', 'u2')");
+    match qp.pk_filters {
+        PartitionKeyFilter::InList(ref tuples) => {
+            assert_eq!(tuples.len(), 2);
+            assert!(qp.query_info.has_where);
         }
-    );
+        ref other => panic!("expected InList, got {other:?}"),
+    }
 }
 
 #[test]

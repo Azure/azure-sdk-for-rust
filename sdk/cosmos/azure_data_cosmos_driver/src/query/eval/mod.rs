@@ -304,31 +304,58 @@ fn eval_aggregate(
             let arg = args
                 .first()
                 .ok_or_else(|| EvalError::TypeError("SUM requires an argument".into()))?;
-            let mut sum = 0.0f64;
+            // F3: integer-pure aggregation — mirror Cosmos' integer
+            // discipline. While every operand observed is an `Integer` and
+            // the running sum stays within `i64`, accumulate as `i64` so
+            // the final JSON serializes as `6` rather than `6.0`. Promote
+            // to `f64` on first non-integer operand or on overflow.
+            let mut int_sum: i64 = 0;
+            let mut float_sum: f64 = 0.0;
+            let mut all_integer = true;
             let mut has_value = false;
             for doc in group {
                 match eval_scalar(arg, doc, root_alias, params)? {
-                    CosmosValue::Number(n) => {
-                        sum += n;
+                    CosmosValue::Integer(n) => {
+                        if all_integer {
+                            match int_sum.checked_add(n) {
+                                Some(v) => int_sum = v,
+                                None => {
+                                    float_sum = int_sum as f64 + n as f64;
+                                    all_integer = false;
+                                }
+                            }
+                        } else {
+                            float_sum += n as f64;
+                        }
                         has_value = true;
                     }
-                    CosmosValue::Integer(n) => {
-                        sum += n as f64;
+                    CosmosValue::Number(n) => {
+                        if all_integer {
+                            float_sum = int_sum as f64 + n;
+                            all_integer = false;
+                        } else {
+                            float_sum += n;
+                        }
                         has_value = true;
                     }
                     _ => {}
                 }
             }
-            if has_value {
-                Ok(CosmosValue::Number(sum))
-            } else {
+            if !has_value {
                 Ok(CosmosValue::Undefined)
+            } else if all_integer {
+                Ok(CosmosValue::Integer(int_sum))
+            } else {
+                Ok(CosmosValue::Number(float_sum))
             }
         }
         "AVG" => {
             let arg = args
                 .first()
                 .ok_or_else(|| EvalError::TypeError("AVG requires an argument".into()))?;
+            // AVG always yields a fractional result; the Cosmos engine
+            // returns a JSON number that round-trips as `f64`. We do not
+            // bother with the integer-pure path here.
             let mut sum = 0.0f64;
             let mut count = 0i64;
             for doc in group {
@@ -354,6 +381,10 @@ fn eval_aggregate(
             let arg = args
                 .first()
                 .ok_or_else(|| EvalError::TypeError("MIN requires an argument".into()))?;
+            // F4: use Cosmos' cross-type total-ordering (`null<bool<num<str<arr<obj`)
+            // so MIN over a heterogeneous group returns the smallest value
+            // under that ordering rather than "the first non-undefined value
+            // encountered". This matches what the Gateway returns.
             let mut min_val: Option<CosmosValue> = None;
             for doc in group {
                 let val = eval_scalar(arg, doc, root_alias, params)?;
@@ -362,10 +393,13 @@ fn eval_aggregate(
                 }
                 min_val = Some(match min_val {
                     None => val,
-                    Some(current) => match val.cosmos_cmp(&current) {
-                        Some(Ordering::Less) => val,
-                        _ => current,
-                    },
+                    Some(current) => {
+                        if total_cmp_for_sort(&val, &current) == Ordering::Less {
+                            val
+                        } else {
+                            current
+                        }
+                    }
                 });
             }
             Ok(min_val.unwrap_or(CosmosValue::Undefined))
@@ -374,6 +408,7 @@ fn eval_aggregate(
             let arg = args
                 .first()
                 .ok_or_else(|| EvalError::TypeError("MAX requires an argument".into()))?;
+            // F4: same cross-type ordering as MIN.
             let mut max_val: Option<CosmosValue> = None;
             for doc in group {
                 let val = eval_scalar(arg, doc, root_alias, params)?;
@@ -382,10 +417,13 @@ fn eval_aggregate(
                 }
                 max_val = Some(match max_val {
                     None => val,
-                    Some(current) => match val.cosmos_cmp(&current) {
-                        Some(Ordering::Greater) => val,
-                        _ => current,
-                    },
+                    Some(current) => {
+                        if total_cmp_for_sort(&val, &current) == Ordering::Greater {
+                            val
+                        } else {
+                            current
+                        }
+                    }
                 });
             }
             Ok(max_val.unwrap_or(CosmosValue::Undefined))
@@ -561,6 +599,11 @@ fn total_cmp_for_sort(a: &CosmosValue, b: &CosmosValue) -> Ordering {
 }
 
 /// Compare two documents according to an ORDER BY clause.
+///
+/// F20 note: superseded by inline pre-computed-keys sort in `query_documents`
+/// (eval errors must propagate, which `sort_by` cannot do). Kept for now
+/// behind `#[allow(dead_code)]` until callers outside this module are removed.
+#[allow(dead_code)]
 fn compare_for_order_by(
     a: &serde_json::Value,
     b: &serde_json::Value,
@@ -584,6 +627,7 @@ fn compare_for_order_by(
     Ordering::Equal
 }
 
+#[allow(dead_code)] // F20: superseded by inline pre-computed-keys sort.
 fn compare_for_grouped_order_by(
     projected_a: &serde_json::Value,
     group_a: &[serde_json::Value],
@@ -798,28 +842,51 @@ pub fn query_documents(
         };
 
     // ── Step 3: ORDER BY ─────────────────────────────────────────────────
+    //
+    // F20: pre-compute ORDER BY keys so eval errors propagate (the previous
+    // `sort_by` swallowed them as `Undefined`, hiding bugs like an unbound
+    // parameter and producing nondeterministic ordering). The emulator now
+    // surfaces a typed error rather than silently returning incorrect rows.
     if let Some(order_by) = &query.order_by {
+        let mut keys: Vec<Vec<CosmosValue>> = Vec::with_capacity(results.len());
+        for i in 0..results.len() {
+            let mut row_keys = Vec::with_capacity(order_by.items.len());
+            for item in &order_by.items {
+                let v = if let Some(groups) = &groups {
+                    let null = serde_json::Value::Null;
+                    let representative = groups[i].first().unwrap_or(&null);
+                    eval_grouped_order_by_value(
+                        &results[i],
+                        representative,
+                        &groups[i],
+                        &item.expression,
+                        eval_alias,
+                        parameters,
+                    )
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                } else {
+                    eval_scalar(&item.expression, &originals[i], eval_alias, parameters).map_err(
+                        |e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e),
+                    )?
+                };
+                row_keys.push(v);
+            }
+            keys.push(row_keys);
+        }
         let mut indices: Vec<usize> = (0..results.len()).collect();
         indices.sort_by(|&a, &b| {
-            if let Some(groups) = &groups {
-                compare_for_grouped_order_by(
-                    &results[a],
-                    &groups[a],
-                    &results[b],
-                    &groups[b],
-                    order_by,
-                    eval_alias,
-                    parameters,
-                )
-            } else {
-                compare_for_order_by(
-                    &originals[a],
-                    &originals[b],
-                    order_by,
-                    eval_alias,
-                    parameters,
-                )
+            for (idx, item) in order_by.items.iter().enumerate() {
+                let cmp = match item.order {
+                    SqlSortOrder::Descending => {
+                        total_cmp_for_sort(&keys[a][idx], &keys[b][idx]).reverse()
+                    }
+                    _ => total_cmp_for_sort(&keys[a][idx], &keys[b][idx]),
+                };
+                if cmp != Ordering::Equal {
+                    return cmp;
+                }
             }
+            Ordering::Equal
         });
         results = indices.iter().map(|&i| results[i].clone()).collect();
     }
@@ -995,6 +1062,17 @@ fn eval_scalar(
         } => {
             let val = eval_scalar(expression, doc, root_alias, params)?;
             let pattern_val = eval_scalar(pattern, doc, root_alias, params)?;
+            // F15: validate that the ESCAPE clause supplies exactly one
+            // character. Cosmos rejects multi-character escape literals; the
+            // previous code silently used the first char and dropped the
+            // rest, hiding caller mistakes. Treat invalid escapes as
+            // `Undefined` (the row will not match) which is the closest
+            // emulator-friendly approximation of the Gateway's error.
+            if let Some(esc) = escape.as_deref() {
+                if esc.chars().count() != 1 {
+                    return Ok(CosmosValue::Undefined);
+                }
+            }
             match (&val, &pattern_val) {
                 (CosmosValue::String(s), CosmosValue::String(p)) => {
                     let matched = sql_like_match(s, p, escape.as_deref());
@@ -1149,9 +1227,13 @@ fn eval_binary(op: SqlBinaryOp, left: &CosmosValue, right: &CosmosValue) -> Cosm
         },
         SqlBinaryOp::And => eval_and(left, right),
         SqlBinaryOp::Or => eval_or(left, right),
-        SqlBinaryOp::Add => numeric_op(left, right, |a, b| Some(a + b)),
-        SqlBinaryOp::Subtract => numeric_op(left, right, |a, b| Some(a - b)),
-        SqlBinaryOp::Multiply => numeric_op(left, right, |a, b| Some(a * b)),
+        // F2: when both sides are `Integer`, prefer i64 arithmetic and only
+        // promote to `f64` on overflow. The previous `(a as f64) + (b as f64)`
+        // path silently lost precision past 2^53 and changed the JSON
+        // serialization from `6` to `6.0`, breaking gateway-comparison parity.
+        SqlBinaryOp::Add => arith_op(left, right, i64::checked_add, |a, b| Some(a + b)),
+        SqlBinaryOp::Subtract => arith_op(left, right, i64::checked_sub, |a, b| Some(a - b)),
+        SqlBinaryOp::Multiply => arith_op(left, right, i64::checked_mul, |a, b| Some(a * b)),
         // Division and modulo by zero return `Undefined` (matches Cosmos SQL
         // semantics) rather than producing a non-finite `f64`. The local plan
         // generator's PK-value invariant (`#13`) and the JSON serializer in
@@ -1248,7 +1330,11 @@ fn eval_unary(op: SqlUnaryOp, val: &CosmosValue) -> CosmosValue {
         },
         SqlUnaryOp::Minus => match val {
             CosmosValue::Number(n) => CosmosValue::Number(-n),
-            CosmosValue::Integer(n) => CosmosValue::Integer(-n),
+            // F7: Cosmos backend (the C++ engine this is ported from) wraps
+            // on integer negation overflow rather than panicking. `-i64::MIN`
+            // would panic in debug and wrap in release with the default
+            // `Neg`; use `wrapping_neg` for predictable behavior in both.
+            CosmosValue::Integer(n) => CosmosValue::Integer(n.wrapping_neg()),
             _ => CosmosValue::Undefined,
         },
         SqlUnaryOp::Plus => match val {
@@ -1257,7 +1343,13 @@ fn eval_unary(op: SqlUnaryOp, val: &CosmosValue) -> CosmosValue {
             _ => CosmosValue::Undefined,
         },
         SqlUnaryOp::BitwiseNot => match val {
-            CosmosValue::Number(n) => CosmosValue::Integer(!(*n as i64)),
+            // F22: Cosmos rejects non-integral bitwise input — a fractional
+            // `Number` cannot be bitwise-negated. Match that behavior by
+            // returning `Undefined` instead of silently truncating.
+            CosmosValue::Number(n) if n.fract() == 0.0 && n.is_finite() => {
+                CosmosValue::Integer(!(*n as i64))
+            }
+            CosmosValue::Number(_) => CosmosValue::Undefined,
             CosmosValue::Integer(n) => CosmosValue::Integer(!n),
             _ => CosmosValue::Undefined,
         },
@@ -1279,6 +1371,32 @@ fn numeric_op(
     match pair.and_then(|(a, b)| f(a, b)) {
         Some(n) => CosmosValue::Number(n),
         None => CosmosValue::Undefined,
+    }
+}
+
+/// Integer-pure arithmetic with f64 fallback (F2).
+///
+/// When both operands are `Integer`, evaluate via `int_fn` (a `checked_*`
+/// `i64` op). On `Some(v)` keep the result as `Integer(v)` so that the JSON
+/// serialization preserves Cosmos' integer type discipline (`6` rather than
+/// `6.0`). On `None` (overflow), promote to `f64` so the operation still
+/// yields a well-defined numeric result. When either operand is already a
+/// floating-point `Number`, fall back to `float_fn` directly.
+fn arith_op(
+    left: &CosmosValue,
+    right: &CosmosValue,
+    int_fn: fn(i64, i64) -> Option<i64>,
+    float_fn: fn(f64, f64) -> Option<f64>,
+) -> CosmosValue {
+    match (left, right) {
+        (CosmosValue::Integer(a), CosmosValue::Integer(b)) => match int_fn(*a, *b) {
+            Some(r) => CosmosValue::Integer(r),
+            None => match float_fn(*a as f64, *b as f64) {
+                Some(r) if r.is_finite() => CosmosValue::Number(r),
+                _ => CosmosValue::Undefined,
+            },
+        },
+        _ => numeric_op(left, right, float_fn),
     }
 }
 
@@ -1490,10 +1608,109 @@ mod tests {
 
     #[test]
     fn unnamed_computed_projections_use_unique_synthesized_names() {
+        // F2: integer-pure arithmetic stays as `Integer`, so `1 + 1` serializes
+        // as `2` (matching Cosmos' integer discipline) rather than `2.0`.
         let p = crate::query::parse("SELECT 1 + 1, 2 + 2 FROM c").unwrap();
         let doc = serde_json::json!({});
         let result = project(&doc, &p.query, &[]).unwrap();
-        assert_eq!(result, serde_json::json!({"$1": 2.0, "$2": 4.0}));
+        assert_eq!(result, serde_json::json!({"$1": 2, "$2": 4}));
+    }
+
+    /// F2: large integer arithmetic preserves precision (no `as f64` collapse).
+    #[test]
+    fn integer_arithmetic_preserves_i64_precision() {
+        let p = crate::query::parse("SELECT VALUE 9007199254740992 + 1 FROM c").unwrap();
+        let doc = serde_json::json!({});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::json!(9007199254740993i64));
+    }
+
+    /// F2: integer arithmetic that overflows i64 promotes to f64 (no panic).
+    #[test]
+    fn integer_arithmetic_overflow_promotes_to_f64() {
+        let p = crate::query::parse(&format!("SELECT VALUE {} + 1 FROM c", i64::MAX)).unwrap();
+        let doc = serde_json::json!({});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        // Promoted to f64 — exact value is i64::MAX as f64 + 1.0, which rounds.
+        assert!(result.is_number());
+    }
+
+    /// F4: MIN over a heterogeneous group uses Cosmos' total ordering, so the
+    /// smallest item is the boolean (which sorts below any number/string).
+    #[test]
+    fn min_aggregate_uses_cross_type_total_ordering() {
+        let docs = vec![
+            serde_json::json!({"v": "alpha"}),
+            serde_json::json!({"v": 1}),
+            serde_json::json!({"v": false}),
+        ];
+        let results = query_documents("SELECT VALUE MIN(c.v) FROM c", &[], &docs).unwrap();
+        assert_eq!(results, vec![serde_json::json!(false)]);
+    }
+
+    /// F4: MAX over a heterogeneous group returns the largest item under
+    /// Cosmos' total ordering — the string `"alpha"` outranks the number `1`
+    /// and the boolean `false`.
+    #[test]
+    fn max_aggregate_uses_cross_type_total_ordering() {
+        let docs = vec![
+            serde_json::json!({"v": "alpha"}),
+            serde_json::json!({"v": 1}),
+            serde_json::json!({"v": false}),
+        ];
+        let results = query_documents("SELECT VALUE MAX(c.v) FROM c", &[], &docs).unwrap();
+        assert_eq!(results, vec![serde_json::json!("alpha")]);
+    }
+
+    /// F7: unary `-i64::MIN` must not panic and must wrap (matches the
+    /// upstream C++ engine's behavior). The SQL parser cannot represent
+    /// `i64::MIN` as a positive literal, so we exercise the helper directly.
+    #[test]
+    fn unary_minus_on_i64_min_wraps_without_panic() {
+        let v = CosmosValue::Integer(i64::MIN);
+        let r = eval_unary(SqlUnaryOp::Minus, &v);
+        // wrapping_neg(i64::MIN) == i64::MIN.
+        assert!(matches!(r, CosmosValue::Integer(n) if n == i64::MIN));
+    }
+
+    /// F22: bitwise NOT on a fractional number must yield `Undefined`.
+    #[test]
+    fn bitwise_not_on_fractional_number_returns_undefined() {
+        let p = crate::query::parse("SELECT VALUE ~3.7 FROM c").unwrap();
+        let doc = serde_json::json!({});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        // `Undefined` round-trips to JSON `null` via `to_json`.
+        assert_eq!(result, serde_json::Value::Null);
+    }
+
+    /// F3: SUM over integer-only inputs returns an integer JSON number.
+    #[test]
+    fn sum_over_integers_returns_integer() {
+        let docs = vec![
+            serde_json::json!({"v": 1}),
+            serde_json::json!({"v": 2}),
+            serde_json::json!({"v": 3}),
+        ];
+        let results = query_documents("SELECT VALUE SUM(c.v) FROM c", &[], &docs).unwrap();
+        assert_eq!(results, vec![serde_json::json!(6)]);
+    }
+
+    /// F3: SUM with any float operand returns a float JSON number.
+    #[test]
+    fn sum_with_float_operand_returns_float() {
+        let docs = vec![serde_json::json!({"v": 1}), serde_json::json!({"v": 2.5})];
+        let results = query_documents("SELECT VALUE SUM(c.v) FROM c", &[], &docs).unwrap();
+        assert_eq!(results, vec![serde_json::json!(3.5)]);
+    }
+
+    /// F15: a multi-character `ESCAPE` argument makes the LIKE return undefined
+    /// (the row does not match) rather than silently using only the first char.
+    #[test]
+    fn like_with_multi_char_escape_returns_undefined() {
+        let p = crate::query::parse("SELECT VALUE c.s LIKE 'a' ESCAPE 'xy' FROM c").unwrap();
+        let doc = serde_json::json!({"s": "a"});
+        let result = project(&doc, &p.query, &[]).unwrap();
+        assert_eq!(result, serde_json::Value::Null);
     }
 
     #[test]

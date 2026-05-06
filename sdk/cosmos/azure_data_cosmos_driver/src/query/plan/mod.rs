@@ -129,6 +129,12 @@ pub(crate) enum SortOrder {
 }
 
 /// Recognized aggregate function kinds.
+///
+/// `ARRAY_AGG` is intentionally absent (F5): the in-memory evaluator does not
+/// implement it and `SUPPORTED_QUERY_FEATURES` does not advertise it, so the
+/// planner must not pretend it is structurally an aggregate. Re-add the variant
+/// only after both the evaluator and the supported-features advertisement
+/// gain support.
 #[derive(SafeDebug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub(crate) enum AggregateKind {
@@ -137,7 +143,6 @@ pub(crate) enum AggregateKind {
     Avg,
     Min,
     Max,
-    ArrayAgg,
 }
 
 // ─── Partition Key Filter ────────────────────────────────────────────────────
@@ -181,6 +186,13 @@ pub(crate) enum PartitionKeyValue {
     /// SQL literals are both stored here so that PK routing comparisons follow the
     /// same canonical semantics the Cosmos backend uses for effective-partition-key
     /// (EPK) hashing — `c.pk = 1` and `c.pk = 1.0` target the same partition.
+    ///
+    /// **Construct via [`PartitionKeyValue::try_number`]** so that the
+    /// finiteness invariant (NaN / ±∞ are not valid PK values and would
+    /// silently break the JSON-canonical dedup hash key in
+    /// [`normalize_pk_union`]) is enforced. The variant remains directly
+    /// constructible inside this crate to keep test fixtures concise, but
+    /// production code paths route through `try_number`.
     Number(f64),
     Bool(bool),
     Null,
@@ -206,6 +218,21 @@ pub(crate) enum PartitionKeyValue {
         /// Human-readable reason the bound value cannot be used as a PK value.
         reason: String,
     },
+}
+
+impl PartitionKeyValue {
+    /// Construct a [`PartitionKeyValue::Number`] enforcing the finiteness
+    /// invariant required by the JSON-canonical dedup hash key in
+    /// [`normalize_pk_union`]. Returns `None` for `NaN`/`±∞`; callers that
+    /// receive `None` should surface an `InvalidParameter` for the offending
+    /// source so the diagnostic remains precise.
+    pub(crate) fn try_number(n: f64) -> Option<Self> {
+        if n.is_finite() {
+            Some(PartitionKeyValue::Number(n))
+        } else {
+            None
+        }
+    }
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -425,6 +452,12 @@ fn analyze_query(
 /// debug-formatted placeholder would silently produce a JSON plan that does not
 /// match the Gateway's. Callers receiving this error should fall back to fetching
 /// the plan from the Gateway (#2).
+///
+/// F11: errors from this helper carry the [`LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK`]
+/// sentinel string in their message, so the integration layer that wires the
+/// local plan generator into the SDK can distinguish a "please fall back to
+/// Gateway" outcome from a generic conversion failure without parsing free-form
+/// text fragments.
 fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core::Error> {
     let mut parts = Vec::new();
     if collect_path_parts(expr, &mut parts) {
@@ -433,10 +466,41 @@ fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core:
         Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::DataConversion,
             format!(
-                "GROUP BY / ORDER BY expression is not a property path; local plan generation cannot reproduce the Gateway's rewrite. Fall back to the Gateway query-plan endpoint. expression: {expr:?}"
+                "{} GROUP BY / ORDER BY expression is not a property path; local plan generation cannot reproduce the Gateway's rewrite. Fall back to the Gateway query-plan endpoint. expression: {expr:?}",
+                LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK
             ),
         ))
     }
+}
+
+/// Sentinel marker carried in error messages that the local plan generator
+/// emits when the integration layer should fall back to the Gateway query-plan
+/// endpoint instead of failing the operation.
+///
+/// The local plan generator is intentionally not yet wired into the SDK
+/// production path; once it is, the wiring layer can match on this sentinel to
+/// distinguish a recoverable "plan this on the server" outcome from a hard
+/// error. Kept as a constant rather than a typed error variant because the
+/// outer return type is already `azure_core::Error` and we do not want to
+/// fragment the error model just for an internal fallback signal.
+pub(crate) struct LocalPlanFallbackError;
+
+impl LocalPlanFallbackError {
+    /// Sentinel substring callers can search for to detect a fallback request.
+    /// Stable across patch releases of the driver crate.
+    pub(crate) const NEEDS_GATEWAY_FALLBACK: &'static str = "[NEEDS_GATEWAY_FALLBACK]";
+}
+
+/// Returns `true` when this PK value is a parameter reference that could not be
+/// resolved to a concrete literal (unbound or bound to an unusable JSON type).
+/// Used by `intersect_pk_filters` to avoid producing a bogus `Contradictory`
+/// when one conjunct contains an unresolved parameter and the other contains a
+/// real literal (F8).
+fn is_unresolved_pk_value(v: &PartitionKeyValue) -> bool {
+    matches!(
+        v,
+        PartitionKeyValue::UnboundParameter(_) | PartitionKeyValue::InvalidParameter { .. }
+    )
 }
 
 #[allow(clippy::collapsible_match)] // clippy suggests a match guard, but that won't compile with &mut
@@ -481,6 +545,15 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
         } => {
             if *is_udf {
                 info.has_udf = true;
+                // F10: do NOT recurse into UDF arguments for aggregate detection.
+                // Cosmos disallows aggregates inside UDF arg lists; recursing here
+                // would silently advertise an aggregate the Gateway never emits.
+                // We still walk the args to catch nested UDFs / subqueries, but
+                // through a path that suppresses aggregate detection.
+                for arg in args {
+                    visit_expr_for_info_no_aggregates(arg, info);
+                }
+                return;
             } else {
                 let upper = name.to_ascii_uppercase();
                 match upper.as_str() {
@@ -489,7 +562,12 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
                     "AVG" => info.aggregates.push(AggregateKind::Avg),
                     "MIN" => info.aggregates.push(AggregateKind::Min),
                     "MAX" => info.aggregates.push(AggregateKind::Max),
-                    "ARRAY_AGG" => info.aggregates.push(AggregateKind::ArrayAgg),
+                    // F5/F19: ARRAY_AGG is intentionally NOT advertised as a
+                    // local-plan aggregate — the in-memory evaluator does not
+                    // implement it, and the supported-query-features list does
+                    // not include it. A query containing ARRAY_AGG falls into
+                    // the generic non-aggregate path; routing/aggregation will
+                    // surface the correct error from the evaluator.
                     _ => {}
                 }
             }
@@ -556,6 +634,86 @@ fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
         SqlScalarExpression::ObjectCreate(props) => {
             for prop in props {
                 visit_expr_for_info(&prop.expression, info);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Walk an expression tree without recording aggregates. Used inside UDF
+/// argument lists (F10) where any apparent aggregate must be ignored \u2014
+/// Cosmos disallows aggregates inside UDF args, and the Gateway never
+/// reports them on `queryInfo.aggregates`. Other state (`has_subquery`,
+/// `has_udf` for nested UDFs) is still recorded.
+fn visit_expr_for_info_no_aggregates(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
+    match expr {
+        SqlScalarExpression::FunctionCall { args, is_udf, .. } => {
+            if *is_udf {
+                info.has_udf = true;
+            }
+            for arg in args {
+                visit_expr_for_info_no_aggregates(arg, info);
+            }
+        }
+        SqlScalarExpression::Exists(_)
+        | SqlScalarExpression::Subquery(_)
+        | SqlScalarExpression::Array(_) => {
+            info.has_subquery = true;
+        }
+        SqlScalarExpression::Binary { left, right, .. } => {
+            visit_expr_for_info_no_aggregates(left, info);
+            visit_expr_for_info_no_aggregates(right, info);
+        }
+        SqlScalarExpression::Unary { operand, .. } => {
+            visit_expr_for_info_no_aggregates(operand, info);
+        }
+        SqlScalarExpression::Conditional {
+            condition,
+            if_true,
+            if_false,
+        } => {
+            visit_expr_for_info_no_aggregates(condition, info);
+            visit_expr_for_info_no_aggregates(if_true, info);
+            visit_expr_for_info_no_aggregates(if_false, info);
+        }
+        SqlScalarExpression::Coalesce { left, right } => {
+            visit_expr_for_info_no_aggregates(left, info);
+            visit_expr_for_info_no_aggregates(right, info);
+        }
+        SqlScalarExpression::In {
+            expression, items, ..
+        } => {
+            visit_expr_for_info_no_aggregates(expression, info);
+            for item in items {
+                visit_expr_for_info_no_aggregates(item, info);
+            }
+        }
+        SqlScalarExpression::Between {
+            expression,
+            low,
+            high,
+            ..
+        } => {
+            visit_expr_for_info_no_aggregates(expression, info);
+            visit_expr_for_info_no_aggregates(low, info);
+            visit_expr_for_info_no_aggregates(high, info);
+        }
+        SqlScalarExpression::Like {
+            expression,
+            pattern,
+            ..
+        } => {
+            visit_expr_for_info_no_aggregates(expression, info);
+            visit_expr_for_info_no_aggregates(pattern, info);
+        }
+        SqlScalarExpression::ArrayCreate(items) => {
+            for item in items {
+                visit_expr_for_info_no_aggregates(item, info);
+            }
+        }
+        SqlScalarExpression::ObjectCreate(props) => {
+            for prop in props {
+                visit_expr_for_info_no_aggregates(&prop.expression, info);
             }
         }
         _ => {}
@@ -652,6 +810,13 @@ fn union_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> PartitionKe
             a.extend(b);
             normalize_pk_union(a)
         }
+        // F1: `Contradictory ∪ X = X`. The contradictory side contributes no
+        // values to the union; preserving the other side avoids forcing a
+        // cross-partition fan-out for queries like
+        // `(c.pk='a' AND c.pk='b') OR c.pk='c'`.
+        (PartitionKeyFilter::Contradictory, other) | (other, PartitionKeyFilter::Contradictory) => {
+            other
+        }
         _ => PartitionKeyFilter::Unconstrained,
     }
 }
@@ -705,18 +870,37 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
 
         // Both sides have equality — they must agree, otherwise the
         // conjunction is provably empty.
+        //
+        // F8: an `UnboundParameter` / `InvalidParameter` value is not a real
+        // PK literal — the `==` check between e.g. `String("a")` and
+        // `UnboundParameter("x")` would always be `false` and produce a
+        // bogus `Contradictory`. Defer to the side that has a usable
+        // literal so the routing layer can still narrow the request.
         (PartitionKeyFilter::Equality(a), PartitionKeyFilter::Equality(b)) => {
-            if a == b {
-                PartitionKeyFilter::Equality(a)
-            } else {
-                PartitionKeyFilter::Contradictory
+            let a_unresolved = a.iter().any(is_unresolved_pk_value);
+            let b_unresolved = b.iter().any(is_unresolved_pk_value);
+            match (a_unresolved, b_unresolved) {
+                (true, true) => PartitionKeyFilter::Unconstrained,
+                (true, false) => PartitionKeyFilter::Equality(b),
+                (false, true) => PartitionKeyFilter::Equality(a),
+                (false, false) => {
+                    if a == b {
+                        PartitionKeyFilter::Equality(a)
+                    } else {
+                        PartitionKeyFilter::Contradictory
+                    }
+                }
             }
         }
 
         // Equality AND InList — narrow the IN list to just the equality value if present.
         (PartitionKeyFilter::Equality(eq), PartitionKeyFilter::InList(list))
         | (PartitionKeyFilter::InList(list), PartitionKeyFilter::Equality(eq)) => {
-            if list.contains(&eq) {
+            if eq.iter().any(is_unresolved_pk_value) {
+                // F8: the equality side carries an unbound/invalid parameter;
+                // it cannot prune the IN list. Keep the IN list as-is.
+                normalize_pk_union(list)
+            } else if list.contains(&eq) {
                 PartitionKeyFilter::Equality(eq)
             } else {
                 PartitionKeyFilter::Contradictory
@@ -765,49 +949,124 @@ fn extract_hierarchical_pk(
     }
     let mut conjuncts = Vec::new();
     flatten_and(expr, &mut conjuncts);
-    let mut pk_values = Vec::with_capacity(pk_segments.len());
+
+    // F9: per component, accept either `Equal` or a positive `IN (...)` list,
+    // then cartesian-product across components. The Gateway recognizes
+    // `WHERE c.tenant IN ('a','b') AND c.userId='u1'` for HPK
+    // `(/tenant,/userId)` and routes to the two specific tuples; previously
+    // the local plan generator dropped to `Unconstrained` and forced a
+    // cross-partition fan-out.
+    //
+    // The cartesian product is bounded by `MAX_HPK_TUPLES` to keep an
+    // adversarial query (`IN (...1000 vals) AND IN (...1000 vals)`) from
+    // generating a million-tuple `InList`. When the cap is exceeded we fall
+    // back to `Unconstrained` rather than emitting an enormous filter.
+    const MAX_HPK_TUPLES: usize = 1024;
+
+    // Per-component accepted values. We short-circuit if any component is
+    // unconstrained.
+    let mut per_component: Vec<Vec<PartitionKeyValue>> = Vec::with_capacity(pk_segments.len());
     for pk_path in pk_segments {
-        // Collect ALL equality constraints for this PK component across all conjuncts.
-        let mut component_value: Option<PartitionKeyValue> = None;
-        let mut conflict = false;
+        let mut equal_value: Option<PartitionKeyValue> = None;
+        let mut in_values: Option<Vec<PartitionKeyValue>> = None;
         for conjunct in &conjuncts {
-            if let SqlScalarExpression::Binary {
-                op: SqlBinaryOp::Equal,
-                left,
-                right,
-            } = conjunct
-            {
-                let val = if is_pk_reference(left, pk_path, root_alias) {
-                    extract_literal_value(right, parameters)
-                } else if is_pk_reference(right, pk_path, root_alias) {
-                    extract_literal_value(left, parameters)
-                } else {
-                    None
-                };
-                if let Some(v) = val {
-                    match &component_value {
-                        None => component_value = Some(v),
-                        Some(existing) => {
-                            if *existing != v {
-                                // Contradictory constraints on same component
-                                conflict = true;
-                                break;
-                            }
-                            // Same value — redundant but consistent, skip.
+            match conjunct {
+                SqlScalarExpression::Binary {
+                    op: SqlBinaryOp::Equal,
+                    left,
+                    right,
+                } => {
+                    let val = if is_pk_reference(left, pk_path, root_alias) {
+                        extract_literal_value(right, parameters)
+                    } else if is_pk_reference(right, pk_path, root_alias) {
+                        extract_literal_value(left, parameters)
+                    } else {
+                        None
+                    };
+                    if let Some(v) = val {
+                        match &equal_value {
+                            None => equal_value = Some(v),
+                            Some(existing) if *existing == v => {} // redundant
+                            Some(_) => return PartitionKeyFilter::Contradictory,
                         }
                     }
                 }
+                // F9: positive IN over the component's path.
+                SqlScalarExpression::In {
+                    expression,
+                    items,
+                    not: false,
+                } if is_pk_reference(expression, pk_path, root_alias) => {
+                    let mut vs: Vec<PartitionKeyValue> = Vec::with_capacity(items.len());
+                    let mut all_literal = true;
+                    for item in items {
+                        match extract_literal_value(item, parameters) {
+                            Some(v) => vs.push(v),
+                            None => {
+                                all_literal = false;
+                                break;
+                            }
+                        }
+                    }
+                    if !all_literal {
+                        continue;
+                    }
+                    // Multiple IN lists for the same component narrow rather
+                    // than union (AND semantics).
+                    in_values = Some(match in_values {
+                        None => vs,
+                        Some(existing) => existing.into_iter().filter(|v| vs.contains(v)).collect(),
+                    });
+                    if matches!(in_values.as_ref(), Some(v) if v.is_empty()) {
+                        return PartitionKeyFilter::Contradictory;
+                    }
+                }
+                _ => {}
             }
         }
-        if conflict {
-            return PartitionKeyFilter::Contradictory;
-        }
-        match component_value {
-            Some(v) => pk_values.push(v),
-            None => return PartitionKeyFilter::Unconstrained,
-        }
+
+        let component_values: Vec<PartitionKeyValue> = match (equal_value, in_values) {
+            (Some(eq), Some(list)) => {
+                if list.contains(&eq) {
+                    vec![eq]
+                } else {
+                    return PartitionKeyFilter::Contradictory;
+                }
+            }
+            (Some(eq), None) => vec![eq],
+            (None, Some(list)) => list,
+            (None, None) => return PartitionKeyFilter::Unconstrained,
+        };
+        per_component.push(component_values);
     }
-    PartitionKeyFilter::Equality(pk_values)
+
+    // Cartesian product across components.
+    let total: usize = per_component.iter().map(|v| v.len()).product();
+    if total == 0 {
+        return PartitionKeyFilter::Contradictory;
+    }
+    if total > MAX_HPK_TUPLES {
+        // Avoid emitting a pathological InList; defer to cross-partition.
+        return PartitionKeyFilter::Unconstrained;
+    }
+    let mut tuples: Vec<Vec<PartitionKeyValue>> = vec![Vec::with_capacity(per_component.len())];
+    for component in &per_component {
+        let mut next: Vec<Vec<PartitionKeyValue>> =
+            Vec::with_capacity(tuples.len() * component.len());
+        for prefix in &tuples {
+            for v in component {
+                let mut t = prefix.clone();
+                t.push(v.clone());
+                next.push(t);
+            }
+        }
+        tuples = next;
+    }
+    if tuples.len() == 1 {
+        PartitionKeyFilter::Equality(tuples.into_iter().next().unwrap())
+    } else {
+        PartitionKeyFilter::InList(tuples)
+    }
 }
 
 fn flatten_and<'a>(expr: &'a SqlScalarExpression, out: &mut Vec<&'a SqlScalarExpression>) {
@@ -870,17 +1129,15 @@ fn extract_literal_value(
             // Both numeric literal forms canonicalize to `Number(f64)` to mirror the
             // backend's EPK-hash equivalence between `1` and `1.0` (#3).
             //
-            // Invariant (#13): every `PartitionKeyValue::Number(f)` flowing through
-            // `normalize_pk_union`'s `Vec::contains`-based dedup must be finite —
-            // NaN would silently break dedup. The parser cannot emit NaN (it has no
-            // NaN literal) and `serde_json` rejects non-finite numbers, so the
-            // invariant holds today; the asserts make it explicit and will catch
-            // any future code path that introduces a runtime double.
-            SqlLiteral::Number(n) => {
-                debug_assert!(n.is_finite(), "PartitionKeyValue::Number must be finite");
-                Some(PartitionKeyValue::Number(*n))
-            }
-            SqlLiteral::Integer(n) => Some(PartitionKeyValue::Number(*n as f64)),
+            // Invariant (#13/F17): every `PartitionKeyValue::Number(f)` flowing
+            // through `normalize_pk_union`'s JSON-canonical dedup must be
+            // finite — NaN/±∞ would silently break dedup. The parser cannot
+            // emit NaN (it has no NaN literal) and `serde_json` rejects
+            // non-finite numbers, so the invariant holds today; the
+            // `PartitionKeyValue::try_number` constructor enforces it at
+            // runtime.
+            SqlLiteral::Number(n) => PartitionKeyValue::try_number(*n),
+            SqlLiteral::Integer(n) => PartitionKeyValue::try_number(*n as f64),
             SqlLiteral::Boolean(b) => Some(PartitionKeyValue::Bool(*b)),
             SqlLiteral::Null => Some(PartitionKeyValue::Null),
             SqlLiteral::Undefined => Some(PartitionKeyValue::Undefined),
@@ -913,12 +1170,14 @@ fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
         serde_json::Value::Number(n) => {
             // Always canonicalize to f64 (#3). `as_f64` returns `None` only for
             // non-finite values that serde_json refuses to round-trip; surface
-            // those as InvalidParameter so the diagnostic is precise.
+            // those as InvalidParameter so the diagnostic is precise. Route via
+            // `try_number` (F17) so any future relaxation of `serde_json`'s
+            // round-trip rule still preserves the finiteness invariant.
             n.as_f64()
-                .map(PartitionKeyValue::Number)
+                .and_then(PartitionKeyValue::try_number)
                 .unwrap_or_else(|| PartitionKeyValue::InvalidParameter {
                     name: needle.to_string(),
-                    reason: format!("number value `{n}` is not representable as f64"),
+                    reason: format!("number value `{n}` is not a finite f64"),
                 })
         }
         serde_json::Value::Bool(b) => PartitionKeyValue::Bool(*b),
@@ -1025,6 +1284,95 @@ mod tests {
             PartitionKeyFilter::InList(list) => assert_eq!(list.len(), 2),
             other => panic!("expected InList, got {other:?}"),
         }
+    }
+
+    /// F1: `(c.pk='a' AND c.pk='b') OR c.pk='c'` \u2014 the contradictory disjunct
+    /// must not absorb the surviving equality.
+    #[test]
+    fn pk_or_with_contradictory_disjunct_preserves_other_side() {
+        let qp = plan("SELECT * FROM c WHERE (c.pk = 'a' AND c.pk = 'b') OR c.pk = 'c'");
+        assert_eq!(
+            qp.pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("c".into())])
+        );
+    }
+
+    /// F8: `c.pk = 'a' AND c.pk = @unbound` \u2014 the unbound parameter must not
+    /// turn the conjunction into `Contradictory`. The literal side wins.
+    #[test]
+    fn pk_and_with_unbound_parameter_keeps_literal_side() {
+        let p = parse("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = @unbound").unwrap();
+        let qp = generate_query_plan_with_parameters(&p.query, &["/pk"], &[]).unwrap();
+        assert_eq!(
+            qp.pk_filters,
+            PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())])
+        );
+    }
+
+    /// F17: `PartitionKeyValue::try_number` enforces the finiteness invariant.
+    #[test]
+    fn try_number_rejects_non_finite() {
+        assert!(PartitionKeyValue::try_number(f64::NAN).is_none());
+        assert!(PartitionKeyValue::try_number(f64::INFINITY).is_none());
+        assert!(PartitionKeyValue::try_number(f64::NEG_INFINITY).is_none());
+        assert!(PartitionKeyValue::try_number(0.0).is_some());
+        assert!(PartitionKeyValue::try_number(1.5).is_some());
+    }
+
+    /// F10: aggregates inside UDF arg lists must not be reflected in
+    /// `info.aggregates`.
+    #[test]
+    fn aggregate_inside_udf_arg_not_advertised() {
+        let p = parse("SELECT udf.foo(COUNT(c.x)) FROM c").unwrap();
+        let qp = generate_query_plan(&p.query, &["/pk"]).unwrap();
+        assert!(qp.query_info.has_udf);
+        assert!(
+            qp.query_info.aggregates.is_empty(),
+            "F10: aggregates inside UDF args must be skipped; got {:?}",
+            qp.query_info.aggregates
+        );
+    }
+
+    /// `c.pk = 1` and `c.pk = 1.0` must hash to the same effective partition
+    /// key, so the locally-extracted PK filter must canonicalize both literal
+    /// forms to the same `Number(f64)` representation. Both the pkFilters and
+    /// the structural queryInfo must be byte-identical between the two forms.
+    #[test]
+    fn numeric_pk_canonicalization_int_and_float_match() {
+        let int_form = generate_query_plan(
+            &parse("SELECT * FROM c WHERE c.pk = 1").unwrap().query,
+            &["/pk"],
+        )
+        .unwrap();
+        let float_form = generate_query_plan(
+            &parse("SELECT * FROM c WHERE c.pk = 1.0").unwrap().query,
+            &["/pk"],
+        )
+        .unwrap();
+        assert_eq!(int_form.pk_filters, float_form.pk_filters);
+        assert_eq!(int_form.query_info, float_form.query_info);
+    }
+
+    /// Non-path GROUP BY expressions (`GROUP BY c.x & 1`) must surface a
+    /// fail-fast error rather than silently emitting a non-Gateway-comparable
+    /// plan. The Gateway accepts and rewrites such queries; the local plan
+    /// generator cannot reproduce that rewrite, so the integration layer must
+    /// fall back to the Gateway query-plan endpoint when this error fires.
+    #[test]
+    fn non_path_group_by_errors() {
+        let p = parse("SELECT c.x & 1 AS parity, COUNT(1) FROM c GROUP BY c.x & 1").unwrap();
+        let err = generate_query_plan(&p.query, &["/pk"]).expect_err(
+            "non-path GROUP BY must surface an error so callers can fall back to Gateway",
+        );
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("GROUP BY / ORDER BY"),
+            "unexpected error message: {msg}"
+        );
+        assert!(
+            msg.contains(LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK),
+            "error must carry the fallback sentinel; got: {msg}"
+        );
     }
 
     #[test]
