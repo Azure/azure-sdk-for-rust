@@ -10,7 +10,8 @@ use crate::{
     credentials::{self, MockCredential},
     proxy::{
         client::{
-            ClientAddSanitizerOptions, ClientRemoveSanitizersOptions, ClientSetMatcherOptions,
+            new_http_client, ClientAddSanitizerOptions, ClientRemoveSanitizersOptions,
+            ClientSetMatcherOptions,
         },
         models::{SanitizerList, StartPayload, VariablePayload},
         policy::RecordingPolicy,
@@ -25,7 +26,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         headers::{AsHeaders, Header, HeaderName, HeaderValue},
-        ClientOptions,
+        ClientOptions, Transport,
     },
     test::TestMode,
 };
@@ -72,7 +73,7 @@ impl Recording {
         S: Sanitizer,
         azure_core::Error: From<<S as AsHeaders>::Error>,
     {
-        let Some(client) = self.proxy.client() else {
+        let Some(client) = self.proxy.client_ref() else {
             return Ok(());
         };
 
@@ -117,14 +118,18 @@ impl Recording {
     ///     let recording = ctx.recording();
     ///
     ///     let mut options = MyClientOptions::default();
-    ///     recording.instrument(&mut options.client_options);
+    ///     recording.instrument(&mut options.client_options, None);
     ///
     ///     let client = MyClient::new("https://azure.net", Some(options));
     ///     client.invoke().await
     /// }
     /// ```
-    pub fn instrument(&self, options: &mut ClientOptions) {
-        let Some(client) = self.proxy.client() else {
+    pub fn instrument(
+        &self,
+        client_options: &mut ClientOptions,
+        options: Option<InstrumentOptions>,
+    ) {
+        let Some(client) = self.proxy.client_ref() else {
             return;
         };
 
@@ -140,7 +145,7 @@ impl Recording {
                 })
                 .clone();
 
-            options.per_call_policies.push(test_mode_policy);
+            client_options.per_call_policies.push(test_mode_policy);
         }
 
         let recording_policy = self
@@ -155,7 +160,11 @@ impl Recording {
             })
             .clone();
 
-        options.per_try_policies.push(recording_policy);
+        client_options.per_try_policies.push(recording_policy);
+
+        let client =
+            new_http_client(options.map(Into::into)).expect("failed to create HTTP client");
+        client_options.transport = Some(Transport::new(client));
     }
 
     /// Update a recording with settings appropriate for a performance test.
@@ -182,7 +191,7 @@ impl Recording {
     ///     let recording = ctx.recording();
     ///
     ///     let mut options = MyServiceClientOptions::default();
-    ///     recording.instrument_perf(&mut options.client_options)?;
+    ///     recording.instrument_perf(&mut options.client_options, None)?;
     ///
     ///     let client = MyServiceClient::new("https://azure.net", Some(options));
     ///     client.invoke().await
@@ -195,8 +204,12 @@ impl Recording {
     /// Note that this function is a no-op for live tests - it only affects recorded tests
     /// in playback mode.
     ///
-    pub fn instrument_perf(&self, options: &mut ClientOptions) -> azure_core::Result<()> {
-        self.instrument(options);
+    pub fn instrument_perf(
+        &self,
+        client_options: &mut ClientOptions,
+        options: Option<InstrumentOptions>,
+    ) -> azure_core::Result<()> {
+        self.instrument(client_options, options);
         self.remove_recording(false)
     }
 
@@ -308,7 +321,7 @@ impl Recording {
     ///
     /// You can find a list of default sanitizers in [source code](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/Common/SanitizerDictionary.cs).
     pub async fn remove_sanitizers(&self, sanitizers: &[&str]) -> azure_core::Result<()> {
-        let Some(client) = self.proxy.client() else {
+        let Some(client) = self.proxy.client_ref() else {
             return Ok(());
         };
 
@@ -328,7 +341,7 @@ impl Recording {
 
     /// Sets a [`Matcher`] to compare requests and/or responses.
     pub async fn set_matcher(&self, matcher: Matcher) -> azure_core::Result<()> {
-        let Some(client) = self.proxy.client() else {
+        let Some(client) = self.proxy.client_ref() else {
             return Ok(());
         };
 
@@ -527,7 +540,7 @@ impl Recording {
     ///
     /// If playing back a recording, environment variable that were recorded will be reloaded.
     pub(crate) async fn start(&mut self) -> azure_core::Result<()> {
-        let Some(client) = self.proxy.client() else {
+        let Some(client) = self.proxy.client_ref() else {
             // Assumes running live test.
             return Ok(());
         };
@@ -563,7 +576,7 @@ impl Recording {
     ///
     /// If recording, environment variables that were retrieved will be recorded.
     pub(crate) async fn stop(&self) -> azure_core::Result<()> {
-        let Some(client) = self.proxy.client() else {
+        let Some(client) = self.proxy.client_ref() else {
             // Assumes running live test.
             return Ok(());
         };
@@ -599,6 +612,24 @@ impl Drop for Recording {
     /// Stops the recording or playback.
     fn drop(&mut self) {
         futures::executor::block_on(self.stop()).unwrap_or_else(|err| panic!("{err}"));
+    }
+}
+
+/// Options [`Recording::instrument()`].
+///
+/// This should be a subset of [`HttpClientOptions`](azure_core::http::HttpClientOptions).
+#[derive(Clone, Debug)]
+pub struct InstrumentOptions {
+    /// Automatically decompress responses if the `content-encoding` header indicates a supported compression encoding.
+    /// Defaults to `true`.
+    pub automatic_decompression: bool,
+}
+
+impl Default for InstrumentOptions {
+    fn default() -> Self {
+        Self {
+            automatic_decompression: true,
+        }
     }
 }
 

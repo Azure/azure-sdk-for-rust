@@ -85,6 +85,7 @@ impl From<Args> for azure_core_test::proxy::ProxyOptions {
     fn from(args: Args) -> Self {
         Self {
             auto: args.auto,
+            https: true,
             insecure: args.insecure,
             auto_shutdown_in_seconds: args.auto_shutdown_in_seconds,
         }

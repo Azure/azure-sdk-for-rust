@@ -13,7 +13,7 @@ async fn readme(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -22,7 +22,7 @@ async fn readme(ctx: TestContext) -> Result<()> {
     )?;
 
     let mut key_options = KeyClientOptions::default();
-    recording.instrument(&mut key_options.client_options);
+    recording.instrument(&mut key_options.client_options, None);
 
     let key_client = KeyClient::new(
         client.endpoint().as_str(),

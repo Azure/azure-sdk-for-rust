@@ -4,7 +4,9 @@
 //! Unit tests for the blob checkpoint store models and utilities.
 
 use azure_core::Result;
-use azure_core_test::{recorded, CustomDefaultMatcher, Matcher, Recording, TestContext};
+use azure_core_test::{
+    recorded, CustomDefaultMatcher, InstrumentOptions, Matcher, Recording, TestContext,
+};
 use azure_messaging_eventhubs::{models::Checkpoint, CheckpointStore};
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
@@ -14,7 +16,13 @@ use tracing::trace;
 pub fn create_test_checkpoint_store(recording: &Recording) -> Result<Arc<BlobCheckpointStore>> {
     let credential = recording.credential();
     let mut options = BlobContainerClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(
+        &mut options.client_options,
+        Some(InstrumentOptions {
+            // Storage does not use automatic decompression by default.
+            automatic_decompression: false,
+        }),
+    );
     let blob_container_client = BlobContainerClient::new(
         &recording.var("AZURE_STORAGE_BLOB_ENDPOINT", None),
         &recording.var("AZURE_STORAGE_BLOB_CONTAINER", None),
@@ -178,11 +186,7 @@ async fn update_checkpoint_empty_values(ctx: TestContext) -> Result<()> {
     };
 
     // Update the checkpoint - should still work even with empty metadata
-    let result = checkpoint_store.update_checkpoint(checkpoint).await;
-    assert!(
-        result.is_ok(),
-        "Updating checkpoint with empty values should succeed"
-    );
+    checkpoint_store.update_checkpoint(checkpoint).await?;
 
     Ok(())
 }
@@ -209,22 +213,23 @@ async fn update_checkpoint_multiple_updates(ctx: TestContext) -> Result<()> {
     };
 
     // First update
-    let result1 = checkpoint_store.update_checkpoint(checkpoint.clone()).await;
-    assert!(result1.is_ok(), "First checkpoint update should succeed");
+    checkpoint_store
+        .update_checkpoint(checkpoint.clone())
+        .await?;
 
     // Update the same checkpoint with new values
     checkpoint.offset = Some("200".to_string());
     checkpoint.sequence_number = Some(20);
 
-    let result2 = checkpoint_store.update_checkpoint(checkpoint.clone()).await;
-    assert!(result2.is_ok(), "Second checkpoint update should succeed");
+    checkpoint_store
+        .update_checkpoint(checkpoint.clone())
+        .await?;
 
     // Third update with different values
     checkpoint.offset = Some("300".to_string());
     checkpoint.sequence_number = Some(30);
 
-    let result3 = checkpoint_store.update_checkpoint(checkpoint).await;
-    assert!(result3.is_ok(), "Third checkpoint update should succeed");
+    checkpoint_store.update_checkpoint(checkpoint).await?;
 
     Ok(())
 }
@@ -261,8 +266,7 @@ async fn update_checkpoint_verify_in_list_checkpoints(ctx: TestContext) -> Resul
     };
 
     // Update the checkpoint
-    let update_result = checkpoint_store.update_checkpoint(checkpoint).await;
-    assert!(update_result.is_ok(), "Updating checkpoint should succeed");
+    checkpoint_store.update_checkpoint(checkpoint).await?;
 
     // Now list checkpoints and verify our update is there
     let checkpoints = checkpoint_store

@@ -51,7 +51,7 @@ pub async fn start(
                         // Work around change to query parameter ordering introduced in https://github.com/Azure/azure-sdk-for-rust/pull/3437.
                         // Tracking reversion: https://github.com/Azure/azure-sdk-for-rust/issues/3438.
                         proxy
-                            .client()
+                            .client_ref()
                             .expect("expected test-proxy Client")
                             .set_matcher(
                                 CustomDefaultMatcher {

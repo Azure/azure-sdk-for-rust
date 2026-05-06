@@ -77,7 +77,7 @@ impl PerfTest for GetSecrets {
         let credential = recording.credential();
 
         let mut client_options = SecretClientOptions::default();
-        recording.instrument_perf(&mut client_options.client_options)?;
+        recording.instrument_perf(&mut client_options.client_options, None)?;
 
         let vault_url = self
             .vault_url

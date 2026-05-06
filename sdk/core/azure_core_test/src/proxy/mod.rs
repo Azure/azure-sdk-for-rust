@@ -33,6 +33,13 @@ const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode");
 const RECORDING_UPSTREAM_BASE_URI: HeaderName =
     HeaderName::from_static("x-recording-upstream-base-uri");
 
+// cspell:ignore aspnetcore
+const KESTREL_CERT_PATH: &str = "eng/common/testproxy/dotnet-devcert.pfx";
+const KESTREL_CERT_CA_PATH: &str = "eng/common/testproxy/dotnet-devcert.crt";
+const KESTREL_CERT_PATH_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Path";
+const KESTREL_CERT_PASSWORD_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Password";
+const KESTREL_CERT_PASSWORD: &str = "password";
+
 pub use bootstrap::start;
 
 /// Represents the running `test-proxy` service.
@@ -55,7 +62,7 @@ impl Proxy {
             .env(
                 KESTREL_CERT_PATH_ENV,
                 // cspell:ignore testproxy devcert
-                git_dir.join("eng/common/testproxy/dotnet-devcert.pfx"),
+                git_dir.join(KESTREL_CERT_PATH),
             )
             .env(KESTREL_CERT_PASSWORD_ENV, KESTREL_CERT_PASSWORD)
             .stdout(Stdio::piped())
@@ -90,8 +97,9 @@ impl Proxy {
             }
         });
 
+        let ca_path = git_dir.join(KESTREL_CERT_CA_PATH);
         if let Some(endpoint) = &self.endpoint {
-            self.client = Some(Client::new(endpoint.clone())?);
+            self.client = Some(Client::new(endpoint.clone(), &ca_path, None)?);
         }
 
         Ok(())
@@ -181,12 +189,14 @@ impl Proxy {
 
 impl Proxy {
     /// Gets a proxy representing an existing test-proxy process.
-    pub fn existing() -> Result<Self> {
-        let endpoint: Url = "http://localhost:5000".parse()?;
+    pub fn existing(git_dir: &Path) -> Result<Self> {
+        // Always bind over TLS. See https://github.com/Azure/azure-sdk-for-rust/issues/4348.
+        let endpoint: Url = "https://localhost:5001".parse()?;
+        let ca_path = git_dir.join(KESTREL_CERT_CA_PATH);
         Ok(Self {
             command: None,
             endpoint: Some(endpoint.clone()),
-            client: Some(Client::new(endpoint)?),
+            client: Some(Client::new(endpoint, &ca_path, None)?),
         })
     }
 
@@ -211,17 +221,17 @@ impl Drop for Proxy {
 }
 
 pub(crate) trait ProxyExt<'a> {
-    fn client(&'a self) -> Option<&'a Client>;
+    fn client_ref(&'a self) -> Option<&'a Client>;
 }
 
 impl<'a> ProxyExt<'a> for Arc<Proxy> {
-    fn client(&'a self) -> Option<&'a Client> {
+    fn client_ref(&'a self) -> Option<&'a Client> {
         self.client.as_ref()
     }
 }
 
 impl<'a> ProxyExt<'a> for Option<Arc<Proxy>> {
-    fn client(&'a self) -> Option<&'a Client> {
+    fn client_ref(&'a self) -> Option<&'a Client> {
         self.as_ref().and_then(|proxy| proxy.client.as_ref())
     }
 }
@@ -231,6 +241,9 @@ impl<'a> ProxyExt<'a> for Option<Arc<Proxy>> {
 pub struct ProxyOptions {
     /// `true` to bind to any available port; otherwise, bind to only the default port `:5000`.
     pub auto: bool,
+
+    /// Bind only to an HTTPS endpoint i.e., `https://localhost`. The default is `true`.
+    pub https: bool,
 
     /// Allow insecure upstream SSL certs.
     pub insecure: bool,
@@ -250,9 +263,18 @@ impl ProxyOptions {
             self.auto_shutdown_in_seconds.to_string(),
         ]);
 
+        let endpoint = format!("{}://0.0.0.0:0", self.scheme());
         if self.auto {
-            args.extend_from_slice(&["--", "--urls", "http://0.0.0.0:0"].map(Into::into));
+            args.extend_from_slice(&["--", "--urls", &endpoint].map(Into::into));
         }
+    }
+
+    fn scheme(&self) -> &'static str {
+        if self.https {
+            return "https";
+        }
+
+        "http"
     }
 }
 
@@ -260,6 +282,7 @@ impl Default for ProxyOptions {
     fn default() -> Self {
         Self {
             auto: true,
+            https: true,
             insecure: false,
             auto_shutdown_in_seconds: 300,
         }

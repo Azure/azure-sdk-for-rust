@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::InstrumentOptions;
+
 use super::{
     matchers::Matcher,
     models::{
@@ -11,14 +13,87 @@ use super::{
     RecordingId, RECORDING_ID,
 };
 use azure_core::{
+    error::{ErrorKind, ResultExt},
     http::{
         headers::{AsHeaders, ACCEPT, CONTENT_TYPE},
         request::{Request, RequestContent},
-        ClientMethodOptions, ClientOptions, Method, Pipeline, PipelineSendOptions, Response, Url,
+        ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, PipelineSendOptions,
+        Response, Transport, Url,
     },
     Bytes, Result,
 };
-use tracing::Span;
+use reqwest::Certificate;
+use std::{io::Read, path::Path, sync::Arc, time::Duration};
+use tracing::{debug, Span};
+
+static CA_PEM: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+
+/// Options [`Recording::instrument()`].
+///
+/// This should be a subset of [`azure_core::http::HttpClientOptions`].
+#[derive(Clone, Debug)]
+pub struct HttpClientOptions {
+    /// Automatically decompress responses if the `content-encoding` header indicates a supported compression encoding.
+    /// Defaults to `true`.
+    pub automatic_decompression: bool,
+}
+
+impl Default for HttpClientOptions {
+    fn default() -> Self {
+        Self {
+            automatic_decompression: true,
+        }
+    }
+}
+
+impl From<InstrumentOptions> for HttpClientOptions {
+    fn from(options: InstrumentOptions) -> Self {
+        Self {
+            automatic_decompression: options.automatic_decompression,
+        }
+    }
+}
+
+/// Creates a new [`reqwest::Client`] configured to test-proxy.
+///
+/// This should work like [`azure_core::http::new_http_client()`] but with appropriate TLS configuration for self-signed TLS certificates.
+pub fn new_http_client(options: Option<HttpClientOptions>) -> Result<Arc<dyn HttpClient>> {
+    // TODO: As we design https://github.com/Azure/azure-sdk-for-rust/issues/4217 we should consider how we can use some sort of callback or `#[cfg(test)]`-guarded field to obviate this function.
+
+    debug!("creating an http client using `reqwest`");
+    let options = options.unwrap_or_default();
+
+    const DEFAULT_CONNECTION_TIMEOUT: Duration = Duration::from_secs(20);
+    const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(60);
+
+    let pem = CA_PEM.get().ok_or_else(|| {
+        azure_core::Error::new(
+            ErrorKind::Other,
+            "expected self-signed CA to be initialized",
+        )
+    })?;
+    let ca = Certificate::from_pem(pem)
+        .with_context(ErrorKind::Other, "failed to decode self-signed CA")?;
+
+    let client = ::reqwest::ClientBuilder::new()
+        .connect_timeout(DEFAULT_CONNECTION_TIMEOUT)
+        .read_timeout(DEFAULT_READ_TIMEOUT)
+        .gzip(options.automatic_decompression)
+        .deflate(options.automatic_decompression)
+        // By default, reqwest will chase 3xx redirects up to 10 links. REST API guidelines
+        // discourage services from using 3xx redirects, so disabling the reqwest redirect logic
+        // simplifies the client logic.
+        .redirect(::reqwest::redirect::Policy::none())
+        // Accept self-signed CA for test-proxy on localhost.
+        .tls_backend_rustls()
+        .tls_certs_merge([ca])
+        // BUGBUG: reqwest/rustls does not accept self-signed CAs for TLS: https://github.com/seanmonstar/reqwest/issues/1554
+        .tls_danger_accept_invalid_certs(true)
+        .build()
+        .with_context(ErrorKind::Other, "failed to build test-proxy client")?;
+
+    Ok(Arc::new(client))
+}
 
 /// The test-proxy client.
 ///
@@ -32,13 +107,29 @@ pub struct Client {
 
 #[allow(dead_code)]
 impl Client {
-    pub fn new(endpoint: Url) -> Result<Self> {
+    pub fn new(endpoint: Url, ca_path: &Path, options: Option<HttpClientOptions>) -> Result<Self> {
+        let _ = CA_PEM.get_or_init(|| {
+            let mut pem = Vec::new();
+            std::fs::File::open(ca_path)
+                .unwrap_or_else(|_| panic!("failed to open '{}'", ca_path.display()))
+                .read_to_end(&mut pem)
+                .unwrap_or_else(|_| panic!("failed to read '{}'", ca_path.display()));
+            pem
+        });
+
+        let client = new_http_client(options)?;
+        let transport = Transport::new(client.clone());
+
+        let options = ClientOptions {
+            transport: Some(transport),
+            ..Default::default()
+        };
         Ok(Self {
             endpoint,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
-                ClientOptions::default(),
+                options,
                 Vec::default(),
                 Vec::default(),
                 None,

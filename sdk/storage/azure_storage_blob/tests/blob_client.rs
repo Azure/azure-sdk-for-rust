@@ -22,8 +22,8 @@ use azure_storage_blob::{
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
-    StorageAccount, TestPolicy,
+    create_test_blob, get_blob_name, get_container_client, get_container_name, recorded_test_setup,
+    ClientOptionsExt, StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
 use flate2::{write::GzEncoder, Compression};
@@ -524,7 +524,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Recording Setup
     let recording = ctx.recording();
     let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
+    let endpoint = recorded_test_setup(recording, StorageAccount::Standard, &mut client_options);
 
     // ContainerClient Options
     let container_client_options = BlobContainerClientOptions {
@@ -537,12 +537,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         client_options: client_options.clone(),
         ..Default::default()
     };
-
-    // Endpoint
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
 
     let container_name = get_container_name(recording);
     // Create Container & Container Client
