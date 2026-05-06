@@ -1,4 +1,4 @@
-<!-- cspell:ignore queryengines LALR WCHAR bitflags STARTSWITH ENDSWITH LTRIM RTRIM -->
+<!-- cspell:ignore queryengines LALR WCHAR bitflags STARTSWITH ENDSWITH LTRIM RTRIM sqlparser -->
 # Cosmos DB Query Engine — Rust Implementation
 
 ## Summary

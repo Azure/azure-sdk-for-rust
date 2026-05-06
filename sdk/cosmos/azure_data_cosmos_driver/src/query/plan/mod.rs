@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore asymptotics unioning
+
 //! Query plan generation: partition key extraction and full structural query analysis.
 //!
 //! This module produces a `QueryPlan` that mirrors the structure returned by the

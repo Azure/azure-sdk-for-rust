@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore kinded
+
 //! Lexer (tokenizer) for Cosmos DB SQL.
 //!
 //! Hand-crafted scanner that operates on UTF-8 `&str` input, producing tokens

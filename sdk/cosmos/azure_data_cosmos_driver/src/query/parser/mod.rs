@@ -1976,7 +1976,7 @@ mod tests {
     #[test]
     fn deeply_nested_and_chain_does_not_stack_overflow() {
         // Run on a fresh thread with a generous stack so we measure the
-        // plan generator's behaviour on deep input rather than the test
+        // plan generator's behavior on deep input rather than the test
         // harness's default 2 MiB stack on Windows. 4000 nested ANDs is
         // representative of generated queries we have seen in the wild.
         let handle = std::thread::Builder::new()

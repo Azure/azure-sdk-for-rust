@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore nopk startswith
+// cspell:ignore nopk startswith desync countif
 
 //! Gateway validation tests for the client-side query plan generator.
 //!

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore STARTSWITH ENDSWITH LTRIM RTRIM TOSTRING multibyte
+// cspell:ignore STARTSWITH ENDSWITH LTRIM RTRIM TOSTRING multibyte nonneg
 
 //! Built-in scalar function evaluation. Split out of val/mod.rs (#16) so the
 //! ~200-line function dispatch table lives in its own file.
