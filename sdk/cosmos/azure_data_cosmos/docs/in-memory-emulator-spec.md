@@ -359,7 +359,7 @@ fields, and BTreeMap keys use `Epk`.
 
 Cosmos DB uses a **modified Murmur hash** algorithm, and the specific variant depends on
 the `PartitionKeyDefinition`'s kind and version. The emulator delegates EPK hashing to
-the production [`crate::models::effective_partition_key`](../../sdk/cosmos/azure_data_cosmos_driver/src/models/effective_partition_key.rs)
+the production [`crate::models::effective_partition_key`]<!--(https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/models/effective_partition_key.rs)-->
 implementation in `azure_data_cosmos_driver`. Both the emulator and the production driver
 share the same `azure_data_cosmos_driver` crate, so there is no cyclic dependency: the
 emulator can — and does — re-export the production type rather than reimplementing the

@@ -11,6 +11,7 @@ use std::time::Instant;
 // Header-name constants used by both the emulator's response builder and the
 // integration tests that assert on emulator responses. Re-exported from a
 // `#[doc(hidden)] pub` module so tests can use the same values without drifting.
+// cspell:ignore activityid acked llsn gatewayversion serviceversion fixdate
 #[doc(hidden)]
 pub mod headers {
     use azure_core::http::headers::HeaderName;

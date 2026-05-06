@@ -129,7 +129,7 @@ pub(crate) async fn handle_operation(
         }
         OperationType::Query => unsupported_response(
             "SQL queries are not supported by the in-memory emulator. \
-             See sdk/cosmos/azure_data_cosmos_driver/docs/IN_MEMORY_EMULATOR_SPEC.md \
+             See sdk/cosmos/azure_data_cosmos/docs/in-memory-emulator-spec.md \
              section 1 (Non-Goals).",
             start,
         ),

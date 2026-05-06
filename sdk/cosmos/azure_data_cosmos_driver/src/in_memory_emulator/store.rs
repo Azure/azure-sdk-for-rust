@@ -458,14 +458,14 @@ impl EmulatorStore {
                 // buffer grows past 10_000 entries always indicates a test bug:
                 // either the test forgot to call `resume_replication` or it is
                 // generating writes faster than any reasonable replicated
-                // workload. Silently dropping or summarising those writes
+                // workload. Silently dropping or summarizing those writes
                 // would mask the bug and cause confusing downstream failures
                 // (stale reads, missing items, divergent regions). Crashing
                 // the test process with a clear message is the correct
                 // behavior. Do **not** soften this to a `debug_assert!`,
                 // logged warning, or buffer eviction without a corresponding
                 // update to the spec — see
-                // `azure_data_cosmos_driver/docs/IN_MEMORY_EMULATOR_SPEC.md`
+                // `sdk/cosmos/azure_data_cosmos/docs/in-memory-emulator-spec.md`
                 // ("Replication buffer overflow") for the rationale.
                 let mut buffer = region_store.replication_buffer.write().unwrap();
                 const MAX_REPLICATION_BUFFER: usize = 10_000;
