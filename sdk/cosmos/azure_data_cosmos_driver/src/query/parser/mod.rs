@@ -168,15 +168,10 @@ impl<'a> Parser<'a> {
                 self.advance();
                 Ok(Some(SqlTopSpec::Literal(n)))
             }
-            TokenKind::FloatLiteral => {
-                let n = self
-                    .current
-                    .text
-                    .parse::<f64>()
-                    .map_err(|_| self.error("invalid TOP value".into()))?;
-                self.advance();
-                Ok(Some(SqlTopSpec::Literal(n as i64)))
-            }
+            TokenKind::FloatLiteral => Err(self.error(
+                "TOP value must be an integer literal or @parameter; floating-point not allowed"
+                    .into(),
+            )),
             TokenKind::Parameter => {
                 let name = extract_parameter_name(self.current.text).to_string();
                 self.advance();
@@ -447,7 +442,10 @@ impl<'a> Parser<'a> {
     // ─── Scalar Expressions (Pratt parser) ───────────────────────────────
 
     fn parse_scalar_expression(&mut self) -> Result<SqlScalarExpression, ParseError> {
-        self.parse_ternary()
+        self.push_nesting()?;
+        let result = self.parse_ternary();
+        self.pop_nesting();
+        result
     }
 
     /// Ternary: `expr ? expr : expr` and coalesce `expr ?? expr`
@@ -545,12 +543,12 @@ impl<'a> Parser<'a> {
                     return self.parse_like(expr, true);
                 }
                 _ => {
-                    // Wasn't a NOT IN/BETWEEN/LIKE, so this is an error in this context
-                    // because we already consumed NOT. Wrap it as a NOT unary.
-                    return Ok(SqlScalarExpression::Unary {
-                        op: SqlUnaryOp::Not,
-                        operand: Box::new(expr),
-                    });
+                    // We consumed NOT but the next token is not IN/BETWEEN/LIKE, so this is
+                    // a parse error. Previously this arm silently re-wrapped the already-
+                    // parsed expression as NOT (expr), inverting the user's predicate.
+                    return Err(self.error(
+                        "NOT must be followed by IN, BETWEEN, or LIKE in this position".into(),
+                    ));
                 }
             }
         }
@@ -947,9 +945,10 @@ impl<'a> Parser<'a> {
 
             // Parenthesized expression or subquery
             TokenKind::LParen => {
+                self.push_nesting()?;
                 self.advance();
                 // Check if this is a subquery (starts with SELECT)
-                if self.at(TokenKind::Select) {
+                let result = if self.at(TokenKind::Select) {
                     let query = self.parse_query()?;
                     self.expect(TokenKind::RParen)?;
                     SqlScalarExpression::Subquery(Box::new(query))
@@ -957,7 +956,9 @@ impl<'a> Parser<'a> {
                     let expr = self.parse_scalar_expression()?;
                     self.expect(TokenKind::RParen)?;
                     expr
-                }
+                };
+                self.pop_nesting();
+                result
             }
 
             // UDF function call: udf.name(args)
@@ -1152,7 +1153,11 @@ mod tests {
     #[test]
     fn parse_select_value() {
         let p = parse("SELECT VALUE c.name FROM c").unwrap();
-        matches!(p.query.select.spec, SqlSelectSpec::Value(_));
+        assert!(
+            matches!(p.query.select.spec, SqlSelectSpec::Value(_)),
+            "expected SqlSelectSpec::Value, got {:?}",
+            p.query.select.spec
+        );
     }
 
     #[test]
@@ -1196,7 +1201,10 @@ mod tests {
         )
         .unwrap();
         assert!(!p.query.select.distinct);
-        matches!(p.query.select.spec, SqlSelectSpec::List(_));
+        assert!(
+            matches!(p.query.select.spec, SqlSelectSpec::List(_)),
+            "expected SqlSelectSpec::List"
+        );
         assert!(p.query.order_by.is_some());
         assert!(p.query.offset_limit.is_some());
     }
@@ -1230,7 +1238,10 @@ mod tests {
     fn parse_between() {
         let p = parse("SELECT * FROM c WHERE c.age BETWEEN 18 AND 65").unwrap();
         let w = p.query.where_clause.unwrap();
-        matches!(w.expression, SqlScalarExpression::Between { .. });
+        assert!(
+            matches!(w.expression, SqlScalarExpression::Between { .. }),
+            "expected SqlScalarExpression::Between"
+        );
     }
 
     #[test]
@@ -1290,7 +1301,10 @@ mod tests {
     fn parse_join() {
         let p = parse("SELECT * FROM c JOIN t IN c.tags").unwrap();
         let from = p.query.from.unwrap();
-        matches!(from.collection, SqlCollectionExpression::Join { .. });
+        assert!(
+            matches!(from.collection, SqlCollectionExpression::Join { .. }),
+            "expected SqlCollectionExpression::Join"
+        );
     }
 
     #[test]
@@ -1808,5 +1822,63 @@ mod tests {
         let p = parse("SELECT c.city, c.state, COUNT(1) FROM c GROUP BY c.city, c.state").unwrap();
         let gb = p.query.group_by.unwrap();
         assert_eq!(gb.expressions.len(), 2);
+    }
+
+    // ── Regression tests ────────────────────────────────────────────────
+
+    #[test]
+    fn parse_postfix_not_without_in_between_like_errors() {
+        // Regression: previously, `WHERE c.x = 5 NOT ORDER BY c.y` was silently
+        // rewritten to `WHERE NOT (c.x = 5) ORDER BY c.y`, inverting the user's
+        // predicate.
+        let result = parse("SELECT * FROM c WHERE c.x = 5 NOT ORDER BY c.y");
+        assert!(
+            result.is_err(),
+            "stray postfix NOT should be a parse error, not a silent NOT-rewrite"
+        );
+        let msg = result.unwrap_err().message;
+        let upper = msg.to_ascii_uppercase();
+        assert!(
+            upper.contains("NOT")
+                && (upper.contains("IN") || upper.contains("BETWEEN") || upper.contains("LIKE")),
+            "error message should mention NOT must be followed by IN/BETWEEN/LIKE, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn parse_top_float_literal_is_error() {
+        assert!(parse("SELECT TOP 3.7 * FROM c").is_err());
+    }
+
+    #[test]
+    fn parse_offset_limit_float_literals_are_errors() {
+        assert!(parse("SELECT * FROM c OFFSET 1.5 LIMIT 5").is_err());
+        assert!(parse("SELECT * FROM c OFFSET 0 LIMIT 5.5").is_err());
+    }
+
+    #[test]
+    fn deeply_nested_parens_does_not_stack_overflow() {
+        // Prior to the depth guard, a query with thousands of nested parens would
+        // overflow the parser thread stack. The depth guard must reject it with a
+        // parse error well before that point.
+        let mut sql = String::from("SELECT VALUE ");
+        for _ in 0..2000 {
+            sql.push('(');
+        }
+        sql.push('1');
+        for _ in 0..2000 {
+            sql.push(')');
+        }
+        sql.push_str(" FROM c");
+        let result = parse(&sql);
+        assert!(
+            result.is_err(),
+            "deeply nested parens must be rejected by the depth guard"
+        );
+        let msg = result.unwrap_err().message;
+        assert!(
+            msg.to_ascii_lowercase().contains("nesting"),
+            "expected nesting-depth error, got: {msg}"
+        );
     }
 }

@@ -30,9 +30,9 @@ pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "NonValueAggregate,Aggregate,D
 
 /// Re-export of [`SUPPORTED_QUERY_FEATURES`] for cross-crate gateway-comparison
 /// tests. Production callers must not depend on this — it shares the
-/// `__internal_testing` feature gate (visibility-limited via the parent module).
+/// `__internal_testing` feature gate and is not covered by SemVer.
 #[cfg(any(test, feature = "__internal_testing"))]
-pub(crate) const __TEST_ONLY_SUPPORTED_QUERY_FEATURES: &str = SUPPORTED_QUERY_FEATURES;
+pub const __TEST_ONLY_SUPPORTED_QUERY_FEATURES: &str = SUPPORTED_QUERY_FEATURES;
 
 #[cfg(any(test, feature = "__internal_testing"))]
 pub use plan::__test_only_generate_query_plan_for_pk_paths;

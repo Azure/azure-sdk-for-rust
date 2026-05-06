@@ -49,15 +49,22 @@ impl CosmosValue {
         }
     }
 
-    /// JavaScript-style truthiness check.
+    /// **WARNING:** This is NOT the Cosmos SQL boolean coercion. Cosmos `WHERE`,
+    /// `AND`, `OR`, and `NOT` only accept `Boolean(true)` as "matches" and treat any
+    /// other type — including `Number(1)`, non-empty strings, arrays, and objects —
+    /// as `Undefined` (i.e., the row is filtered out). Use direct pattern-matching on
+    /// `Boolean(true)` for SQL semantics; **never** call this from a SQL evaluation
+    /// path.
     ///
-    /// **NOT** the Cosmos SQL boolean coercion — Cosmos `WHERE`, `AND`, `OR`,
-    /// and `NOT` only accept `Boolean(true)` as "matches" and treat any other
-    /// type as `Undefined`. Use direct pattern-matching on `Boolean(true)` for
-    /// SQL semantics. This helper is reserved for non-SQL ergonomic checks
-    /// (e.g., evaluator-internal short-circuit hints in conditional/coalesce
-    /// paths that already have separate Boolean-only handling).
-    pub(crate) fn is_truthy(&self) -> bool {
+    /// This helper exists for non-SQL ergonomic checks inside the evaluator
+    /// (e.g., internal short-circuit hints in conditional/coalesce paths that
+    /// already have separate Boolean-only handling). It implements JavaScript-style
+    /// truthiness: `false`, `Null`, `Undefined`, `Number(0)`, `Integer(0)`, and the
+    /// empty string are falsy; everything else is truthy. The deliberately
+    /// awkward name discourages reach-for-it-by-default use; if you find
+    /// yourself calling it from a new code path, double-check whether you
+    /// actually want SQL `Boolean` semantics instead.
+    pub(crate) fn internal_js_truthy(&self) -> bool {
         match self {
             Self::Boolean(b) => *b,
             Self::Null | Self::Undefined => false,
@@ -167,22 +174,40 @@ impl CosmosValue {
     }
 
     /// Convert to `serde_json::Value`.
+    ///
+    /// Top-level `Undefined` is rendered as `Value::Null` for callers that
+    /// require a concrete JSON value; container positions (object properties
+    /// and array elements) elide `Undefined` per Cosmos SQL semantics.
     pub(crate) fn to_json(&self) -> serde_json::Value {
+        self.to_json_opt().unwrap_or(serde_json::Value::Null)
+    }
+
+    /// Convert to a `serde_json::Value`, returning `None` for `Undefined`.
+    ///
+    /// Cosmos SQL semantics: in object property positions and array element
+    /// positions, `Undefined` is omitted entirely. Callers that need a
+    /// top-level representation should fall back to `Value::Null`.
+    fn to_json_opt(&self) -> Option<serde_json::Value> {
         match self {
-            Self::Null | Self::Undefined => serde_json::Value::Null,
-            Self::Boolean(b) => serde_json::Value::Bool(*b),
-            Self::Integer(n) => serde_json::Value::Number((*n).into()),
-            Self::Number(n) => serde_json::Number::from_f64(*n)
-                .map(serde_json::Value::Number)
-                .unwrap_or(serde_json::Value::Null),
-            Self::String(s) => serde_json::Value::String(s.clone()),
-            Self::Array(arr) => serde_json::Value::Array(arr.iter().map(|v| v.to_json()).collect()),
+            Self::Undefined => None,
+            Self::Null => Some(serde_json::Value::Null),
+            Self::Boolean(b) => Some(serde_json::Value::Bool(*b)),
+            Self::Integer(n) => Some(serde_json::Value::Number((*n).into())),
+            Self::Number(n) => Some(
+                serde_json::Number::from_f64(*n)
+                    .map(serde_json::Value::Number)
+                    .unwrap_or(serde_json::Value::Null),
+            ),
+            Self::String(s) => Some(serde_json::Value::String(s.clone())),
+            Self::Array(arr) => Some(serde_json::Value::Array(
+                arr.iter().filter_map(|v| v.to_json_opt()).collect(),
+            )),
             Self::Object(props) => {
                 let map: serde_json::Map<String, serde_json::Value> = props
                     .iter()
-                    .map(|(k, v)| (k.clone(), v.to_json()))
+                    .filter_map(|(k, v)| v.to_json_opt().map(|jv| (k.clone(), jv)))
                     .collect();
-                serde_json::Value::Object(map)
+                Some(serde_json::Value::Object(map))
             }
         }
     }
@@ -200,9 +225,8 @@ impl PartialEq for CosmosValue {
 }
 
 fn float_eq(a: f64, b: f64) -> bool {
-    if a.is_nan() && b.is_nan() {
-        return true;
-    }
+    // IEEE 754 / Cosmos SQL semantics: NaN is not equal to anything,
+    // including itself. Do not special-case NaN here.
     a == b
 }
 
@@ -260,11 +284,58 @@ mod tests {
 
     #[test]
     fn truthy_values() {
-        assert!(CosmosValue::Boolean(true).is_truthy());
-        assert!(!CosmosValue::Boolean(false).is_truthy());
-        assert!(!CosmosValue::Null.is_truthy());
-        assert!(!CosmosValue::Undefined.is_truthy());
-        assert!(CosmosValue::Number(1.0).is_truthy());
-        assert!(!CosmosValue::Number(0.0).is_truthy());
+        assert!(CosmosValue::Boolean(true).internal_js_truthy());
+        assert!(!CosmosValue::Boolean(false).internal_js_truthy());
+        assert!(!CosmosValue::Null.internal_js_truthy());
+        assert!(!CosmosValue::Undefined.internal_js_truthy());
+        assert!(CosmosValue::Number(1.0).internal_js_truthy());
+        assert!(!CosmosValue::Number(0.0).internal_js_truthy());
+    }
+
+    #[test]
+    fn nan_is_not_equal_to_nan() {
+        // Cosmos SQL semantics, IEEE 754, every other JSON stack: NaN != NaN.
+        let nan = f64::NAN;
+        assert!(!float_eq(nan, nan));
+        assert_eq!(
+            CosmosValue::Number(nan).cosmos_eq(&CosmosValue::Number(nan)),
+            CosmosValue::Boolean(false)
+        );
+    }
+
+    #[test]
+    fn to_json_object_elides_undefined_properties() {
+        let obj = CosmosValue::Object(vec![
+            ("present".to_string(), CosmosValue::Integer(1)),
+            ("missing".to_string(), CosmosValue::Undefined),
+            ("explicit_null".to_string(), CosmosValue::Null),
+        ]);
+        let json = obj.to_json();
+        let expected = serde_json::json!({
+            "present": 1,
+            "explicit_null": null,
+        });
+        assert_eq!(
+            json, expected,
+            "Undefined properties must be omitted; explicit Null preserved"
+        );
+    }
+
+    #[test]
+    fn to_json_array_elides_undefined_elements() {
+        let arr = CosmosValue::Array(vec![
+            CosmosValue::Integer(1),
+            CosmosValue::Undefined,
+            CosmosValue::Null,
+            CosmosValue::Integer(2),
+        ]);
+        let json = arr.to_json();
+        let expected = serde_json::json!([1, null, 2]);
+        assert_eq!(json, expected, "Undefined elements omitted; Null preserved");
+    }
+
+    #[test]
+    fn to_json_top_level_undefined_falls_back_to_null() {
+        assert_eq!(CosmosValue::Undefined.to_json(), serde_json::Value::Null);
     }
 }

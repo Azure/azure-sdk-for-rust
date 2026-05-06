@@ -28,16 +28,29 @@ pub(crate) struct QueryPlan {
     pub(crate) query_info: QueryInfo,
 }
 
-/// Structural information about a query.
+/// Structural information about a query as produced by the local plan generator.
 ///
-/// This is the unified type used for both local plan generation and gateway
-/// response deserialization. Fields present only in gateway responses
-/// (e.g., `rewritten_query`) default to `None`/empty when generated locally.
-/// Fields present only in local analysis (e.g., `has_join`) default to `false`
-/// when deserialized from the gateway.
-#[derive(SafeDebug, Clone, PartialEq, Default, Serialize, Deserialize)]
+/// F21: split from the previously-unified `QueryInfo`. This struct now contains
+/// only the fields the local AST analyzer can populate — the shared structural
+/// fields the SDK pipeline needs (TOP / OFFSET / LIMIT / DISTINCT / ORDER BY /
+/// GROUP BY / aggregates / SELECT VALUE) plus the local-analysis booleans
+/// (`has_join`, `has_subquery`, `has_where`, `has_udf`).
+///
+/// Gateway-only fields (`rewritten_query`, `group_by_aliases`,
+/// `group_by_alias_to_aggregate_type`, `has_non_streaming_order_by`,
+/// `d_count_info`) live on
+/// [`crate::query::gateway_plan::GatewayQueryInfo`]. To compare a Gateway
+/// response against a locally-generated plan use
+/// [`crate::query::gateway_plan::GatewayQueryInfo::shared_fields_match`],
+/// which compares only the structural core the two types share. There is no
+/// `From<GatewayQueryInfo> for LocalQueryInfo` conversion: such a
+/// conversion would have to fabricate values for the local-only booleans
+/// (`has_join`, `has_subquery`, `has_where`, `has_udf`) and downstream code
+/// would have no way to tell those manufactured `false`s apart from values
+/// produced by local AST analysis.
+#[derive(SafeDebug, Clone, PartialEq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct QueryInfo {
+pub(crate) struct LocalQueryInfo {
     /// The kind of DISTINCT, if any.
     #[serde(default)]
     pub(crate) distinct_type: DistinctType,
@@ -66,33 +79,13 @@ pub(crate) struct QueryInfo {
     #[serde(default)]
     pub(crate) group_by_expressions: Vec<String>,
 
-    /// GROUP BY aliases (gateway only).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(crate) group_by_aliases: Vec<String>,
-
     /// Aggregate functions used in the query.
     #[serde(default)]
     pub(crate) aggregates: Vec<AggregateKind>,
 
-    /// GROUP BY alias to aggregate type mapping (gateway only).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) group_by_alias_to_aggregate_type: Option<serde_json::Value>,
-
-    /// The rewritten query text, if the gateway rewrites it (gateway only).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) rewritten_query: Option<String>,
-
     /// Whether the SELECT clause uses `SELECT VALUE`.
     #[serde(default)]
     pub(crate) has_select_value: bool,
-
-    /// Whether the query contains non-streaming ORDER BY (gateway only).
-    #[serde(default)]
-    pub(crate) has_non_streaming_order_by: bool,
-
-    /// DCount information (gateway only).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) d_count_info: Option<serde_json::Value>,
 
     /// Whether the query contains a JOIN (local analysis only).
     #[serde(default)]
@@ -110,6 +103,12 @@ pub(crate) struct QueryInfo {
     #[serde(default)]
     pub(crate) has_udf: bool,
 }
+
+// Backwards-compat alias: the bulk of the unit-test surface (~4800 lines of
+// structural plan-comparison tests) refers to `QueryInfo { ... }`. Keep the
+// alias so the rename doesn't churn that test file. New code should refer to
+// `LocalQueryInfo` directly.
+pub(crate) type QueryInfo = LocalQueryInfo;
 
 /// The kind of DISTINCT operator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -243,7 +242,7 @@ pub(crate) fn generate_query_plan(
 /// Each entry is a `(name, value)` pair. Names are stored *without* the leading `@`.
 /// Values are arbitrary JSON values; only integer values are accepted as substitutions
 /// for parameterized `TOP` / `OFFSET` / `LIMIT` clauses.
-pub(crate) type Params = [(String, serde_json::Value)];
+pub(crate) use crate::query::common::Params;
 
 /// Generate a complete query plan, substituting query parameters into parameterized
 /// `TOP`, `OFFSET`, and `LIMIT` clauses.
@@ -288,50 +287,21 @@ pub(crate) fn generate_query_plan_with_parameters(
     })
 }
 
-/// Look up a parameter value by name and return it as an `i64`.
+/// Look up a parameter value by name and return it as a non-negative `i64`.
 ///
-/// Used to substitute parameterized `TOP` / `OFFSET` / `LIMIT` values. Accepts only
-/// non-negative integer JSON values; rejects floats (even integer-valued ones like `5.0`),
-/// strings, booleans, and missing parameters.
+/// Used to substitute parameterized `TOP` / `OFFSET` / `LIMIT` values. Thin
+/// `azure_core::Error`-flavored wrapper around the shared
+/// [`crate::query::common::resolve_non_negative_integer_parameter`] helper so
+/// the plan and eval pipelines validate parameters identically. Adds a
+/// `TOP/OFFSET/LIMIT` clause-context tag to the error message so callers can
+/// distinguish it from other parameter-resolution failures.
 fn resolve_integer_parameter(name: &str, parameters: &Params) -> Result<i64, azure_core::Error> {
-    let needle = name.trim_start_matches('@');
-    let entry = parameters
-        .iter()
-        .find(|(n, _)| n.trim_start_matches('@') == needle)
-        .ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
-                    "query references parameter @{needle} in a TOP/OFFSET/LIMIT clause but no value was supplied"
-                ),
-            )
-        })?;
-    match &entry.1 {
-        serde_json::Value::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                if i < 0 {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!(
-                            "parameter @{needle} used in TOP/OFFSET/LIMIT must be non-negative; got {i}"
-                        ),
-                    ));
-                }
-                Ok(i)
-            } else {
-                Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    format!(
-                        "parameter @{needle} used in TOP/OFFSET/LIMIT must be an integer; got {n}"
-                    ),
-                ))
-            }
-        }
-        other => Err(azure_core::Error::with_message(
+    crate::query::common::resolve_non_negative_integer_parameter(parameters, name).map_err(|msg| {
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::DataConversion,
-            format!("parameter @{needle} used in TOP/OFFSET/LIMIT must be an integer; got {other}"),
-        )),
-    }
+            format!("{msg} (TOP/OFFSET/LIMIT clause)"),
+        )
+    })
 }
 
 // ─── Query Analysis ──────────────────────────────────────────────────────────
@@ -766,6 +736,20 @@ fn extract_hierarchical_pk(
     root_alias: Option<&str>,
     parameters: &Params,
 ) -> PartitionKeyFilter {
+    // F13: handle top-level OR by extracting HPK from each disjunct and
+    // unioning the results. `(c.tenant='a' AND c.userId='u1') OR
+    // (c.tenant='b' AND c.userId='u2')` becomes an `InList` of full HPK
+    // tuples instead of falling back to a cross-partition fan-out.
+    if let SqlScalarExpression::Binary {
+        op: SqlBinaryOp::Or,
+        left,
+        right,
+    } = expr
+    {
+        let left_pk = extract_hierarchical_pk(left, pk_segments, root_alias, parameters);
+        let right_pk = extract_hierarchical_pk(right, pk_segments, root_alias, parameters);
+        return union_pk_filters(left_pk, right_pk);
+    }
     let mut conjuncts = Vec::new();
     flatten_and(expr, &mut conjuncts);
     let mut pk_values = Vec::with_capacity(pk_segments.len());

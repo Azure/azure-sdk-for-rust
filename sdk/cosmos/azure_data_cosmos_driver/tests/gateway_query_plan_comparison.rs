@@ -8,11 +8,21 @@
 //! These tests compare locally-generated query plans against the Gateway's
 //! query plan endpoint to ensure parity. They require a live Cosmos DB account.
 //!
-//! Tests are skipped when `AZURE_COSMOS_CONNECTION_STRING` is not set.
+//! Skip / fail behavior is centralized in [`framework::resolve_test_env`]:
+//! - `AZURE_COSMOS_TEST_MODE=Required` or running on Azure Pipelines (i.e.
+//!   `SYSTEM_TEAMPROJECTID` is set) → missing `AZURE_COSMOS_CONNECTION_STRING`
+//!   panics the test.
+//! - Otherwise (`AZURE_COSMOS_TEST_MODE=Allowed`, the default) → tests are
+//!   skipped with a printed message.
 //!
 //! Run with: `AZURE_COSMOS_CONNECTION_STRING=... cargo test -p azure_data_cosmos_driver --features __internal_testing --test gateway_query_plan_comparison`
 
 #![cfg(feature = "__internal_testing")]
+// The framework module is shared across test binaries; not all exports are used
+// by every binary.
+#![allow(dead_code, unused_imports)]
+
+mod framework;
 
 use std::sync::Arc;
 
@@ -21,53 +31,23 @@ use tokio::sync::OnceCell;
 
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
-    AccountReference, ConnectionString, ContainerReference, CosmosOperation, PartitionKeyDefinition,
+    ContainerReference, CosmosOperation, PartitionKeyDefinition,
 };
-use azure_data_cosmos_driver::options::{
-    ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions,
-};
+use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
+
+use framework::resolve_test_env;
 
 // ─── Test infrastructure ─────────────────────────────────────────────────────
 
-const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
-// Matches `azure_data_cosmos::tests::framework::test_client::EMULATOR_CONNECTION_STRING`
-// (see `sdk/cosmos/azure_data_cosmos/tests/framework/test_client.rs`). Keep
-// these two in sync — the emulator is published with this well-known key and
-// uses `127.0.0.1` rather than `localhost` so its self-signed cert SAN matches.
-const EMULATOR_CONNECTION_STRING: &str =
-    "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-
-// SUPPORTED_QUERY_FEATURES is now sourced from the driver crate via __test_only_supported_query_features.
-
-fn resolve_env() -> Option<(AccountReference, ConnectionPoolOptions)> {
-    let conn_str_raw = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-        Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
-        Ok(val) => val,
-        Err(_) => return None,
-    };
-    let conn_str: ConnectionString = conn_str_raw.parse().ok()?;
-    let endpoint = conn_str.account_endpoint().parse().ok()?;
-    let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
-
-    let mut pool_builder = ConnectionPoolOptions::builder();
-    if conn_str_raw.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
-        pool_builder = pool_builder
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
-    }
-    let pool = pool_builder.build().ok()?;
-    Some((account, pool))
-}
-
 async fn build_driver() -> Option<Arc<CosmosDriver>> {
-    let (account, pool) = resolve_env()?;
+    let env = resolve_test_env().expect("failed to resolve test environment")?;
     let runtime = CosmosDriverRuntime::builder()
-        .with_connection_pool(pool)
+        .with_connection_pool(env.connection_pool)
         .build()
         .await
         .ok()?;
-    let driver = runtime.get_or_create_driver(account, None).await.ok()?;
+    let driver = runtime.get_or_create_driver(env.account, None).await.ok()?;
     Some(driver)
 }
 
@@ -156,15 +136,16 @@ async fn fetch_gateway_plan(
     let body = serde_json::to_vec(&query_body)?;
 
     // Headers required for a query-plan request are folded in by
-    // `CosmosOperation::query_plan` (see #12). We only add the cross-partition
-    // toggle here, which is specific to gateway-comparison tests.
-    let (operation, op_options) = CosmosOperation::query_plan(container.clone());
-    let mut custom_headers = op_options.custom_headers().cloned().unwrap_or_default();
+    // `CosmosOperation::query_plan` (see #12). We pre-populate the
+    // cross-partition toggle (specific to gateway-comparison tests) and let
+    // the factory merge the four mandatory query-plan headers on top.
+    let mut custom_headers = std::collections::HashMap::new();
     custom_headers.insert(
         HeaderName::from("x-ms-documentdb-query-enablecrosspartition"),
         HeaderValue::from("True"),
     );
-    let op_options = OperationOptions::default().with_custom_headers(custom_headers);
+    let caller_options = OperationOptions::default().with_custom_headers(custom_headers);
+    let (operation, op_options) = CosmosOperation::query_plan(container.clone(), caller_options);
     let operation = operation.with_body(body);
 
     let response = driver.execute_operation(operation, op_options).await?;
@@ -232,8 +213,19 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
     // no functional divergence. Skip the equality check in the rewrite case.
     let local_limit = local.get("limit").and_then(|v| v.as_i64());
     let gw_limit = gw.get("limit").and_then(|v| v.as_i64());
-    if gw_rewritten.is_none() && local_limit != gw_limit {
-        panic!("[limit] sql={sql}\n  local={local_limit:?}  gw={gw_limit:?}");
+    if gw_rewritten.is_none() {
+        if local_limit != gw_limit {
+            panic!("[limit] sql={sql}\n  local={local_limit:?}  gw={gw_limit:?}");
+        }
+    } else {
+        // F22 direction-check: when the Gateway rewrites the query, the
+        // top-level `limit` must be dropped (folded into the per-partition
+        // rewrittenQuery). If it ever stops doing so, this carve-out's
+        // premise is wrong and the silent skip would mask a real divergence.
+        assert!(
+            gw_limit.is_none(),
+            "[limit carve-out premise broken] sql={sql}\n  Gateway emitted rewrittenQuery but did not drop top-level limit; gw_limit={gw_limit:?}"
+        );
     }
 
     // ── orderBy / orderByExpressions ─────────────────────────────────────────
@@ -274,6 +266,26 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         if local_obe != gw_obe {
             panic!("[orderByExpressions] sql={sql}\n  local={local_obe:?}  gw={gw_obe:?}");
         }
+    } else {
+        // F22 direction-check: when GROUP BY is present, the Gateway folds
+        // the ORDER BY into the per-partition rewritten queries and returns
+        // empty `orderBy` / `orderByExpressions` arrays. If it ever starts
+        // returning a non-empty top-level orderBy in this case, the carve-out
+        // is wrong and the silent skip would mask a divergence.
+        let gw_ob = gw
+            .get("orderBy")
+            .and_then(|v| v.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
+        let gw_obe = gw
+            .get("orderByExpressions")
+            .and_then(|v| v.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
+        assert!(
+            gw_ob == 0 && gw_obe == 0,
+            "[orderBy carve-out premise broken] sql={sql}\n  Gateway returned non-empty orderBy/orderByExpressions despite GROUP BY presence; gw_orderBy_len={gw_ob}  gw_orderByExpressions_len={gw_obe}"
+        );
     }
 
     // ── groupByExpressions (no carve-out) ────────────────────────────────────
@@ -317,6 +329,20 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         if local_agg != gw_agg {
             panic!("[aggregates] sql={sql}\n  local={local_agg:?}  gw={gw_agg:?}");
         }
+    } else {
+        // F22 direction-check: when rewrittenQuery is present, the Gateway
+        // moves aggregates into `groupByAliasToAggregateType` and returns an
+        // empty top-level `aggregates`. If it ever stops doing so, the silent
+        // skip above would mask a divergence in aggregate handling.
+        let gw_agg_len = gw
+            .get("aggregates")
+            .and_then(|v| v.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
+        assert!(
+            gw_agg_len == 0,
+            "[aggregates carve-out premise broken] sql={sql}\n  Gateway emitted rewrittenQuery but did not drop top-level aggregates; gw_aggregates_len={gw_agg_len}"
+        );
     }
 
     // ── hasSelectValue (no carve-out) ────────────────────────────────────────
@@ -501,6 +527,35 @@ async fn gw_pk_equality() {
     validate_pk("SELECT * FROM c WHERE c.pk = null").await;
     validate_pk("SELECT * FROM c WHERE c.pk = -99").await;
     validate_pk("SELECT * FROM c WHERE 'hello' = c.pk").await;
+}
+
+/// Validate the numeric-PK precision boundary (#9). The local plan generator
+/// canonicalizes integer PK literals to `f64`, which loses precision past
+/// `2^53`. This test confirms that the Gateway behaves the same way: integer
+/// literals beyond `2^53` are reflected back unchanged in the partition-key
+/// filter (i.e. the Gateway does not promote them to `i64` either, so the
+/// `i64 as f64` collapse the local plan does is parity-correct).
+///
+/// If this test ever starts failing, the Gateway has changed its precision
+/// model and the local PK canonicalization in `query::plan` (see
+/// `extract_pk_filter` for single-PK and `expr_to_pk_value` for HPK) needs to
+/// be revisited; the unit test `pk_eq_large_integer` would also need
+/// updating.
+#[tokio::test]
+async fn gw_pk_numeric_precision_boundary() {
+    // Below 2^53 — exact in f64, no precision concern.
+    validate_pk("SELECT * FROM c WHERE c.pk = 9007199254740992").await;
+    // Exactly 2^53 + 1 — first odd integer not representable in f64.
+    // Both forms below collapse to the same f64 (9007199254740992.0); the
+    // local plan generator surfaces that. The gateway is expected to do the
+    // same, so the queryInfo.partitionKeyFilters must agree.
+    validate_pk("SELECT * FROM c WHERE c.pk = 9007199254740993").await;
+    validate_pk("SELECT * FROM c WHERE c.pk = 9007199254740992.0").await;
+    // Negative side of the boundary.
+    validate_pk("SELECT * FROM c WHERE c.pk = -9007199254740993").await;
+    // Floating-point literal forms.
+    validate_pk("SELECT * FROM c WHERE c.pk = 1.5e10").await;
+    validate_pk("SELECT * FROM c WHERE c.pk = 0.1").await;
 }
 
 #[tokio::test]
@@ -847,5 +902,21 @@ async fn local_plan_non_path_group_by_errors() {
     assert!(
         format!("{err}").contains("GROUP BY / ORDER BY"),
         "unexpected error message: {err}"
+    );
+}
+
+// ─── Cross-crate visibility sanity check for the supported-features constant ─
+//
+// The driver crate keeps `SUPPORTED_QUERY_FEATURES` `pub(crate)` so production
+// callers cannot reach it; only the `__internal_testing`-gated alias
+// `__TEST_ONLY_SUPPORTED_QUERY_FEATURES` is reachable from this integration
+// test. This test makes the contract explicit so accidental visibility changes
+// (or constant edits) do not silently desync the local plan generator from
+// what is advertised to the Gateway in `x-ms-cosmos-supported-query-features`.
+#[test]
+fn internal_testing_supported_features_constant_is_reachable() {
+    assert_eq!(
+        azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES,
+        "NonValueAggregate,Aggregate,Distinct,MultipleOrderBy,OffsetAndLimit,OrderBy,Top,CompositeAggregate,GroupBy,MultipleAggregates",
     );
 }

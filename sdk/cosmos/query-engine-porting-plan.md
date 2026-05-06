@@ -125,3 +125,15 @@ Both directions default unknown fields to `None`/`false`/empty.
 | KQL / JavaScript query support               | Not needed                                                                    |
 | Full ORDER BY / GROUP BY in plan routing     | Plan generation detects these features; execution is server-side              |
 | Production query execution using local plans | Still pending; the supported SDK path continues to request Gateway plans      |
+
+## Alternatives considered
+
+This implementation is a port of the Cosmos SQL native engine; an off-the-shelf parser like
+[`sqlparser-rs`](https://crates.io/crates/sqlparser) was not adopted because (a) Cosmos SQL
+has dialect-specific JSON-path syntax (`c.address.city`, array subscripts, `IN` over arrays)
+and operators (`??`, ternary, `EXISTS`/`ARRAY` subqueries) that don't map cleanly onto a
+generic SQL parser's AST, (b) the porting strategy validates correctness against the
+Gateway via [`tests/gateway_query_plan_comparison.rs`](azure_data_cosmos_driver/tests/gateway_query_plan_comparison.rs)
+for end-to-end parity, and (c) hand-written parsing keeps the AST under tight control for
+the partition-key extraction and plan-generation passes that are the main reason the local
+plan generator exists.

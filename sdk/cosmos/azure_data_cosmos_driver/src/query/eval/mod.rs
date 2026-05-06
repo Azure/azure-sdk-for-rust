@@ -41,22 +41,10 @@ impl std::fmt::Display for EvalError {
 
 impl std::error::Error for EvalError {}
 
-type Params = [(String, serde_json::Value)];
-
-fn normalize_parameter_name(name: &str) -> &str {
-    name.trim_start_matches('@')
-}
-
-fn resolve_parameter_value<'a>(
-    parameters: &'a Params,
-    name: &str,
-) -> Option<&'a serde_json::Value> {
-    let needle = normalize_parameter_name(name);
-    parameters
-        .iter()
-        .find(|(param_name, _)| normalize_parameter_name(param_name) == needle)
-        .map(|(_, value)| value)
-}
+use crate::query::common::{
+    normalize_parameter_name, resolve_non_negative_integer_parameter, resolve_parameter_value,
+    Params,
+};
 
 /// Check if a JSON document matches a query's WHERE clause.
 ///
@@ -440,7 +428,7 @@ fn eval_scalar_with_group(
         } => {
             let cond =
                 eval_scalar_with_group(condition, representative, root_alias, params, group)?;
-            if cond.is_truthy() {
+            if cond.internal_js_truthy() {
                 eval_scalar_with_group(if_true, representative, root_alias, params, group)
             } else {
                 eval_scalar_with_group(if_false, representative, root_alias, params, group)
@@ -824,7 +812,12 @@ pub fn query_documents(
     // ── Step 4: TOP ──────────────────────────────────────────────────────
     if let Some(top) = &query.select.top {
         let n = match top {
-            SqlTopSpec::Literal(n) => *n as usize,
+            SqlTopSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!("TOP literal must be non-negative; got {n}"),
+                )
+            })?,
             SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name)
                 .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
                 as usize,
@@ -835,13 +828,23 @@ pub fn query_documents(
     // ── Step 5: OFFSET / LIMIT ───────────────────────────────────────────
     if let Some(ol) = &query.offset_limit {
         let offset = match &ol.offset {
-            SqlOffsetSpec::Literal(n) => *n as usize,
+            SqlOffsetSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!("OFFSET literal must be non-negative; got {n}"),
+                )
+            })?,
             SqlOffsetSpec::Parameter(name) => resolve_integer_param(parameters, name)
                 .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
                 as usize,
         };
         let limit = match &ol.limit {
-            SqlLimitSpec::Literal(n) => *n as usize,
+            SqlLimitSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    format!("LIMIT literal must be non-negative; got {n}"),
+                )
+            })?,
             SqlLimitSpec::Parameter(name) => resolve_integer_param(parameters, name)
                 .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
                 as usize,
@@ -857,34 +860,18 @@ pub fn query_documents(
     Ok(results)
 }
 
-/// Resolve a parameter to an integer value for TOP/OFFSET/LIMIT.
+/// Resolve a parameter to a non-negative integer value for TOP/OFFSET/LIMIT.
+///
+/// Thin `EvalError`-flavored wrapper around the shared
+/// [`resolve_non_negative_integer_parameter`] helper so the eval and plan
+/// pipelines validate parameters identically.
 fn resolve_integer_param(parameters: &Params, name: &str) -> Result<i64, EvalError> {
-    let Some(param_value) = resolve_parameter_value(parameters, name) else {
+    if resolve_parameter_value(parameters, name).is_none() {
         return Err(EvalError::ParameterNotFound(
             normalize_parameter_name(name).to_string(),
         ));
-    };
-
-    match param_value {
-        serde_json::Value::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                if i < 0 {
-                    return Err(EvalError::TypeError(format!(
-                        "parameter @{name} must be non-negative; got {i}"
-                    )));
-                }
-                Ok(i)
-            } else {
-                Err(EvalError::TypeError(format!(
-                    "parameter @{name} must be an integer; got {n}"
-                )))
-            }
-        }
-        _ => Err(EvalError::TypeError(format!(
-            "parameter @{name} must be a number, got {}",
-            param_value
-        ))),
     }
+    resolve_non_negative_integer_parameter(parameters, name).map_err(EvalError::TypeError)
 }
 
 /// Evaluate a scalar expression against a document.
@@ -1008,7 +995,7 @@ fn eval_scalar(
             if_false,
         } => {
             let cond = eval_scalar(condition, doc, root_alias, params)?;
-            if cond.is_truthy() {
+            if cond.internal_js_truthy() {
                 eval_scalar(if_true, doc, root_alias, params)
             } else {
                 eval_scalar(if_false, doc, root_alias, params)
@@ -1937,6 +1924,30 @@ mod tests {
         let params = vec![("n".to_string(), serde_json::json!(-1))];
         let result = query_documents("SELECT TOP @n * FROM c", &params, &docs);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn top_literal_negative_is_error() {
+        let docs = vec![serde_json::json!({"id": "1"})];
+        let err = query_documents("SELECT TOP -1 * FROM c", &[], &docs)
+            .expect_err("negative TOP literal must error");
+        assert!(format!("{err}").to_ascii_uppercase().contains("TOP"));
+    }
+
+    #[test]
+    fn offset_literal_negative_is_error() {
+        let docs = vec![serde_json::json!({"id": "1"})];
+        let err = query_documents("SELECT * FROM c OFFSET -1 LIMIT 5", &[], &docs)
+            .expect_err("negative OFFSET literal must error");
+        assert!(format!("{err}").to_ascii_uppercase().contains("OFFSET"));
+    }
+
+    #[test]
+    fn limit_literal_negative_is_error() {
+        let docs = vec![serde_json::json!({"id": "1"})];
+        let err = query_documents("SELECT * FROM c OFFSET 0 LIMIT -1", &[], &docs)
+            .expect_err("negative LIMIT literal must error");
+        assert!(format!("{err}").to_ascii_uppercase().contains("LIMIT"));
     }
 
     // ── Bug fix tests: SUBSTRING character indexing ─────────────────────

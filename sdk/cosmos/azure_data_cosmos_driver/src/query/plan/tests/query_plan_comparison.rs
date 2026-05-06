@@ -8,6 +8,11 @@
 //! Every test asserts the **entire** `QueryPlan` struct — both `pk_filters` and
 //! every field of `query_info` — so that any regression in any part of the plan
 //! is caught immediately.
+//!
+//! A handful of tests fully spell out every `QueryInfo` field *and* trail with
+//! `..qi()` — the redundant `..qi()` is intentional codegen-style ballast so
+//! that future field additions don't silently leave the test under-specified.
+#![allow(clippy::needless_update)]
 
 use super::super::{
     generate_query_plan, generate_query_plan_with_parameters, AggregateKind, DistinctType,
@@ -4524,12 +4529,71 @@ fn hpk_is_null_on_component_no_extract() {
 }
 
 #[test]
-fn hpk_or_of_full_hpk_tuples_no_extract() {
-    // Two full HPK tuples ORed together — HPK doesn't support OR, so cross-partition
+fn hpk_or_of_full_hpk_tuples_extracts_inlist() {
+    // F13: Two full HPK tuples ORed together extract to an `InList` of full
+    // HPK tuples instead of falling back to a cross-partition fan-out.
     assert_eq!(
         plan_hpk(
             "SELECT * FROM c WHERE (c.tenant = 'a' AND c.userId = 'u1') OR (c.tenant = 'b' AND c.userId = 'u2')"
         ),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::InList(vec![
+                vec![
+                    PartitionKeyValue::String("a".into()),
+                    PartitionKeyValue::String("u1".into()),
+                ],
+                vec![
+                    PartitionKeyValue::String("b".into()),
+                    PartitionKeyValue::String("u2".into()),
+                ],
+            ]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn hpk_or_of_three_full_hpk_tuples_extracts_inlist() {
+    // F13: nested OR of three full HPK tuples — recursion in
+    // extract_hierarchical_pk's OR arm + union_pk_filters' InList+Equality
+    // combo flattens these into a single InList.
+    assert_eq!(
+        plan_hpk(
+            "SELECT * FROM c WHERE (c.tenant = 'a' AND c.userId = 'u1') OR (c.tenant = 'b' AND c.userId = 'u2') OR (c.tenant = 'c' AND c.userId = 'u3')"
+        ),
+        QueryPlan {
+            pk_filters: PartitionKeyFilter::InList(vec![
+                vec![
+                    PartitionKeyValue::String("a".into()),
+                    PartitionKeyValue::String("u1".into()),
+                ],
+                vec![
+                    PartitionKeyValue::String("b".into()),
+                    PartitionKeyValue::String("u2".into()),
+                ],
+                vec![
+                    PartitionKeyValue::String("c".into()),
+                    PartitionKeyValue::String("u3".into()),
+                ],
+            ]),
+            query_info: QueryInfo {
+                has_where: true,
+                ..qi()
+            },
+        }
+    );
+}
+
+#[test]
+fn hpk_or_with_one_partial_tuple_falls_back_to_unconstrained() {
+    // F13: if one disjunct misses an HPK component, the union becomes
+    // `Unconstrained` (per `union_pk_filters` rules — Unconstrained is
+    // absorbing on the OR side because we can't bound that disjunct).
+    assert_eq!(
+        plan_hpk("SELECT * FROM c WHERE (c.tenant = 'a' AND c.userId = 'u1') OR (c.tenant = 'b')"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
             query_info: QueryInfo {
