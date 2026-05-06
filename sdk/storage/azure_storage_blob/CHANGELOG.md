@@ -4,7 +4,6 @@
 
 ### Breaking Changes
 
-- Renamed `BlobMetadata.additional_properties` to `values`.
 - `BlobServiceClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobSegment, XmlFormat>>`.
 - `BlobContainerClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilteredBlobResponse, XmlFormat>>`.
 - Renamed `FilterBlobSegment` to `FilteredBlobResponse`.
@@ -20,6 +19,7 @@
 - Renamed `BlockBlobClientUploadBlobFromUrlOptions::with_if_not_exists()` to `if_not_exists()`.
 - Renamed `BlockBlobClientUploadOptions::with_if_not_exists()` to `if_not_exists()`.
 - `structured_body_type` and `structured_content_length` fields on `AppendBlobClientAppendBlockOptions` and `BlockBlobClientStageBlockOptions` are now `pub(crate)`.
+- `structured_body_type` on `BlobClientDownloadOptions` is now `pub(crate)`.
 - Removed the `endpoint()` method from all clients. Use `url()` instead.
 
 ### Bugs Fixed
