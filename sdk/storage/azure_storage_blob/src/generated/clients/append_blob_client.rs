@@ -38,11 +38,6 @@ pub struct AppendBlobClientOptions {
 }
 
 impl AppendBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Append Block operation commits a new block of data to the end of an append blob.
     ///
     /// # Arguments

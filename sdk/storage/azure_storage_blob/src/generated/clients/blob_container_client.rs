@@ -47,11 +47,6 @@ pub struct BlobContainerClientOptions {
 }
 
 impl BlobContainerClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Acquire Lease operation requests a new lease on a container. The lease lock duration can be 15 to 60 seconds, or can
     /// be infinite.
     ///

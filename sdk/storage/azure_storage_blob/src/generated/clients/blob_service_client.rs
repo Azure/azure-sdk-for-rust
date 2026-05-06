@@ -38,11 +38,6 @@ pub struct BlobServiceClientOptions {
 }
 
 impl BlobServiceClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Filter Blobs operation enables callers to list blobs across all containers whose tags match a given search expression.
     ///
     /// # Arguments

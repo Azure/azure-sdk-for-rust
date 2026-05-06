@@ -40,11 +40,6 @@ pub struct BlockBlobClientOptions {
 }
 
 impl BlockBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Commit Block List operation writes a blob by specifying the list of block IDs that make up the blob. In order to be
     /// written as part of a blob, a block must have been successfully written to the server in a prior Put Block operation. You
     /// can call Put Block List to update a blob by uploading only those blocks that have changed, then committing the new and

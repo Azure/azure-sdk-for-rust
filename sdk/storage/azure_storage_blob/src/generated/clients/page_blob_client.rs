@@ -44,11 +44,6 @@ pub struct PageBlobClientOptions {
 }
 
 impl PageBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Clear Pages operation clears a range of pages from a page blob
     ///
     /// # Arguments
