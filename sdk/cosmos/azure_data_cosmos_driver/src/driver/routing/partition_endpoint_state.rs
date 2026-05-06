@@ -34,6 +34,13 @@ pub(crate) struct PartitionEndpointState {
 
     /// Configuration read from env vars at construction time.
     pub config: PartitionFailoverConfig,
+
+    /// Test-only liveness canary. Set by tests that want to observe whether a
+    /// particular `PartitionEndpointState` instance is dropped (e.g., the
+    /// `apply_partition` use-after-free regression test). Production code never
+    /// reads or writes this field; it is `None` in all non-test constructions.
+    #[cfg(test)]
+    pub(crate) _test_canary: Option<std::sync::Arc<()>>,
 }
 
 impl PartitionEndpointState {
@@ -45,6 +52,8 @@ impl PartitionEndpointState {
             circuit_breaker_overrides: HashMap::new(),
             per_partition_automatic_failover_enabled: false,
             config,
+            #[cfg(test)]
+            _test_canary: None,
         }
     }
 }
