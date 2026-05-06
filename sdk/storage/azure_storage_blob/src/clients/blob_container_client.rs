@@ -61,6 +61,7 @@ impl BlobContainerClient {
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 
+        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
         if let Some(token_credential) = credential {
             if !container_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
@@ -68,11 +69,10 @@ impl BlobContainerClient {
                     format!("{container_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
-            ));
-            options.client_options.per_try_policies.push(auth_policy);
+            )));
         }
 
         let pipeline = Pipeline::new(
@@ -80,7 +80,7 @@ impl BlobContainerClient {
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            Vec::default(),
+            per_retry_policies,
             None,
         );
 
