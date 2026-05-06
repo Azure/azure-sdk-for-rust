@@ -49,13 +49,10 @@ impl Default for HttpClientOptions {
 ///   when calling this function.
 #[cfg_attr(not(feature = "reqwest"), allow(unused_variables))]
 pub fn new_http_client(options: Option<HttpClientOptions>) -> Arc<dyn HttpClient> {
-    #[cfg(feature = "reqwest")]
-    {
+    if cfg!(feature = "reqwest") {
         new_reqwest_client(options)
-    }
-    #[cfg(not(feature = "reqwest"))]
-    {
-        new_noop_client()
+    } else {
+        panic!("The `reqwest` feature is required to use the default HTTP client. Please enable the `reqwest` feature or provide a custom `HttpClient` implementation.")
     }
 }
 
