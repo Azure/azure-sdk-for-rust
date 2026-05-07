@@ -330,8 +330,11 @@ impl CosmosClientBuilder {
         // Create Cosmos headers policy to override User-Agent with Cosmos-specific value.
         // This runs as a per-call policy after azure_core's UserAgentPolicy.
         let crate_version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
+        // Extract before self.options is moved into GatewayPipeline so we can
+        // also forward it to the driver runtime builder below.
+        let user_agent_suffix = self.options.user_agent_suffix.clone();
         let cosmos_headers_policy: Arc<dyn azure_core::http::policies::Policy> = Arc::new(
-            CosmosHeadersPolicy::new(crate_version, self.options.user_agent_suffix.as_deref()),
+            CosmosHeadersPolicy::new(crate_version, user_agent_suffix.as_deref()),
         );
 
         let pipeline_core = azure_core::http::Pipeline::new(
@@ -414,6 +417,25 @@ impl CosmosClientBuilder {
         #[allow(unused_mut)]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
 
+        // Forward the user-agent suffix so requests made by the driver
+        // (PKRange resolution, container metadata, etc.) carry the same
+        // identifier as requests made through the SDK pipeline.
+        if let Some(ref suffix) = user_agent_suffix {
+            if let Some(driver_suffix) =
+                azure_data_cosmos_driver::options::UserAgentSuffix::try_new(suffix.as_str())
+            {
+                driver_runtime_builder =
+                    driver_runtime_builder.with_user_agent_suffix(driver_suffix);
+            } else {
+                tracing::warn!(
+                    suffix = %suffix,
+                    "user_agent_suffix is too long or contains invalid characters for the \
+                     driver runtime (max 25 chars, alphanumeric/hyphen/underscore/dot/tilde); \
+                     it will not be set on the driver"
+                );
+            }
+        }
+
         // Forward SDK connection settings to the driver's connection pool.
         let mut pool_builder = ConnectionPoolOptions::builder();
         if self.allow_proxy {
@@ -480,3 +502,80 @@ fn build_driver_account(
 // CosmosClient::builder().build() now eagerly creates a CosmosDriver,
 // which requires a real endpoint. Re-add once fault injection is linked
 // from the SDK to the driver.
+
+#[cfg(test)]
+mod tests {
+    use azure_data_cosmos_driver::options::UserAgentSuffix;
+
+    use crate::CosmosClientOptions;
+
+    #[test]
+    fn user_agent_suffix_valid_forwards_to_driver() {
+        let options = CosmosClientOptions {
+            user_agent_suffix: Some("my-app".to_string()),
+            ..Default::default()
+        };
+
+        let driver_suffix = options
+            .user_agent_suffix
+            .as_deref()
+            .and_then(UserAgentSuffix::try_new);
+
+        assert!(
+            driver_suffix.is_some(),
+            "valid suffix should convert to UserAgentSuffix"
+        );
+        assert_eq!(driver_suffix.unwrap().as_str(), "my-app");
+    }
+
+    #[test]
+    fn user_agent_suffix_too_long_does_not_forward_to_driver() {
+        // UserAgentSuffix has a 25-char max; build a string that exceeds it.
+        let long_suffix = "a".repeat(26);
+        let options = CosmosClientOptions {
+            user_agent_suffix: Some(long_suffix),
+            ..Default::default()
+        };
+
+        let driver_suffix = options
+            .user_agent_suffix
+            .as_deref()
+            .and_then(UserAgentSuffix::try_new);
+
+        assert!(
+            driver_suffix.is_none(),
+            "suffix exceeding 25 chars should not convert"
+        );
+    }
+
+    #[test]
+    fn user_agent_suffix_invalid_chars_does_not_forward_to_driver() {
+        // Spaces are not allowed in UserAgentSuffix.
+        let options = CosmosClientOptions {
+            user_agent_suffix: Some("my app".to_string()),
+            ..Default::default()
+        };
+
+        let driver_suffix = options
+            .user_agent_suffix
+            .as_deref()
+            .and_then(UserAgentSuffix::try_new);
+
+        assert!(
+            driver_suffix.is_none(),
+            "suffix with invalid characters should not convert"
+        );
+    }
+
+    #[test]
+    fn user_agent_suffix_none_does_not_forward_to_driver() {
+        let options = CosmosClientOptions::default();
+
+        let driver_suffix = options
+            .user_agent_suffix
+            .as_deref()
+            .and_then(UserAgentSuffix::try_new);
+
+        assert!(driver_suffix.is_none(), "no suffix set should yield None");
+    }
+}

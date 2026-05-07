@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Fixed `with_user_agent_suffix()` not being forwarded to the driver runtime. Requests made by the driver (PKRange resolution, container metadata, etc.) now include the configured user-agent suffix.
+
 ### Other Changes
 
 - Per-partition automatic failover (PPAF) and per-partition circuit breaker (PPCB) are now driven by the `azure_data_cosmos_driver` crate, replacing the SDK's prior implementation. Behavior is unchanged from a configuration standpoint — the existing `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment variable continues to work — but routing is now per-`(partition_key_range_id, region)` instead of per-region. Driver-level changes are described in [`azure_data_cosmos_driver` 0.3.0](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md). ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
