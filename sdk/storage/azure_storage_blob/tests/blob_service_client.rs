@@ -228,7 +228,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     // Find "hello world" blob by its tag {"foo": "bar"}
     let blobs: Vec<_> = service_client
-        .list_find_blobs_by_tags("\"foo\"='bar'", None)?
+        .find_blobs_by_tags("\"foo\"='bar'", None)?
         .try_collect()
         .await?;
     assert!(
@@ -240,7 +240,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let blobs: Vec<_> = service_client
-        .list_find_blobs_by_tags("\"fizz\"='buzz'", None)?
+        .find_blobs_by_tags("\"fizz\"='buzz'", None)?
         .try_collect()
         .await?;
     assert!(
@@ -252,7 +252,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     // Find "six seven" blob by its tag {"tagged": "true"}
     let blobs: Vec<_> = service_client
-        .list_find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)?
+        .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)?
         .try_collect()
         .await?;
     assert!(

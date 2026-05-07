@@ -12,9 +12,8 @@ use azure_storage_blob::models::{
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
     BlobContainerClientCreateOptions, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-    BlobContainerClientListFindBlobsByTagsOptions, BlobContainerClientSetMetadataOptions, BlobType,
-    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
-    StorageErrorCode,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
+    ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use azure_storage_blob_test::{
@@ -459,7 +458,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
 
     // Find "hello world" blob by its tag {"foo": "bar"}
     let mut pager = container_client
-        .list_find_blobs_by_tags("\"foo\"='bar'", None)?
+        .find_blobs_by_tags("\"foo\"='bar'", None)?
         .into_pages();
     let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
     let blobs = &filter_blob_segment.blobs;
@@ -472,7 +471,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let mut pager = container_client
-        .list_find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
+        .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
         .into_pages();
     let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
     let blobs = &filter_blob_segment.blobs;
@@ -489,7 +488,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         ..Default::default()
     };
     let mut pager = container_client
-        .list_find_blobs_by_tags("\"env\"='test'", Some(options))?
+        .find_blobs_by_tags("\"env\"='test'", Some(options))?
         .into_pages();
     let page = pager.try_next().await?.unwrap().into_model()?;
     let blobs = &page.blobs;
@@ -641,7 +640,7 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
         .metadata
         .as_ref()
         .expect("metadata should be populated");
-    assert_eq!(Some(&metadata), blob_meta.additional_properties.as_ref());
+    assert_eq!(Some(&metadata), blob_meta.values.as_ref());
 
     // Tags blob: blob_tags should be populated
     let tags_blob = items

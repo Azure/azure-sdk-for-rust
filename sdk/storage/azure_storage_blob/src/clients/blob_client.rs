@@ -230,7 +230,6 @@ impl BlobClient {
             range_get_content_crc64: options.range_get_content_crc64,
             range_get_content_md5: options.range_get_content_md5,
             snapshot: options.snapshot,
-            structured_body_type: options.structured_body_type,
             timeout: options.timeout,
             version_id: options.version_id,
         };
