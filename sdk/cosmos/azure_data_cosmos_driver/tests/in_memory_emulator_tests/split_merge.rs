@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore splittable
+
 //! Partition split and merge integration tests.
 
 use super::*;

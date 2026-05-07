@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore epks llsn
+// cspell:ignore epks llsn splittable
 //! In-memory document store with multi-region support.
 
 use std::collections::{BTreeMap, HashMap, VecDeque};

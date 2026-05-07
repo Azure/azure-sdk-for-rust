@@ -18,7 +18,7 @@
 //! `force_session_not_available`, `split_partition`, `merge_partitions`, the
 //! `test_headers` re-export, and friends) — is exposed **only** behind the
 //! `__internal_in_memory_emulator` Cargo feature and is **not part of the public
-//! API contract**. Names, signatures, and observable behaviour may change in any
+//! API contract**. Names, signatures, and observable behavior may change in any
 //! release without a deprecation cycle. The module exists to support deterministic
 //! integration testing of `azure_data_cosmos` and `azure_data_cosmos_driver`; it is
 //! not intended for use by external crates.

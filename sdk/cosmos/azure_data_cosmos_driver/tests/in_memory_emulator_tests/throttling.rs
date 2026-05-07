@@ -354,7 +354,7 @@ async fn create_container_honors_offer_throughput_header() {
     let mut req = Request::new(Url::parse(&url).unwrap(), Method::Post);
     req.set_body(
         serde_json::to_vec(&serde_json::json!({
-            "id": "thrucoll",
+            "id": "throughput_coll",
             "partitionKey": {
                 "paths": ["/pk"],
                 "kind": "Hash",
@@ -379,7 +379,7 @@ async fn create_container_honors_offer_throughput_header() {
         let req = create_item_request(
             GATEWAY_URL,
             "testdb",
-            "thrucoll",
+            "throughput_coll",
             &body,
             r#"["pk1"]"#,
             false,
