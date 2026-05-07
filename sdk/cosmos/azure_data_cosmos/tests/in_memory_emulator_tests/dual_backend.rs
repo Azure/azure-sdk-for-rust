@@ -125,8 +125,24 @@ impl DualBackend {
         format!("dual-test-{}", self.run_id)
     }
 
-    /// Pre-provisions a database and container in the emulator store.
+    /// Pre-provisions a database and container in the emulator store. Defaults to
+    /// V2 `Hash`; use [`Self::provision_emulator_v1`] for V1 coverage.
     pub fn provision_emulator(&self, db: &str, container: &str, pk_path: &str) {
+        self.provision_emulator_with_version(db, container, pk_path, 2);
+    }
+
+    /// Pre-provisions a V1 `Hash` container in the emulator store.
+    pub fn provision_emulator_v1(&self, db: &str, container: &str, pk_path: &str) {
+        self.provision_emulator_with_version(db, container, pk_path, 1);
+    }
+
+    fn provision_emulator_with_version(
+        &self,
+        db: &str,
+        container: &str,
+        pk_path: &str,
+        pk_version: u32,
+    ) {
         self.emulator_store.create_database(db);
         self.emulator_store.create_container(
             db,
@@ -134,7 +150,7 @@ impl DualBackend {
             serde_json::from_value(serde_json::json!({
                 "paths": [pk_path],
                 "kind": "Hash",
-                "version": 2
+                "version": pk_version,
             }))
             .unwrap(),
         );
@@ -158,18 +174,41 @@ impl DualBackend {
         Ok(())
     }
 
-    /// Creates a container on the real account via the driver.
+    /// Creates a container on the real account via the driver. Defaults to V2
+    /// `Hash` partition key.
     pub async fn create_real_container(
         &self,
         db_name: &str,
         container_name: &str,
         pk_path: &str,
     ) -> Result<(), Box<dyn Error>> {
+        self.create_real_container_with_version(db_name, container_name, pk_path, 2)
+            .await
+    }
+
+    /// Creates a V1 `Hash` container on the real account via the driver.
+    pub async fn create_real_container_v1(
+        &self,
+        db_name: &str,
+        container_name: &str,
+        pk_path: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        self.create_real_container_with_version(db_name, container_name, pk_path, 1)
+            .await
+    }
+
+    async fn create_real_container_with_version(
+        &self,
+        db_name: &str,
+        container_name: &str,
+        pk_path: &str,
+        pk_version: u32,
+    ) -> Result<(), Box<dyn Error>> {
         if let (Some(driver), Some(account)) = (&self.real_driver, &self.real_account) {
             let db_ref = DatabaseReference::from_name(account.clone(), db_name.to_string());
             let body = serde_json::to_vec(&serde_json::json!({
                 "id": container_name,
-                "partitionKey": {"paths": [pk_path], "kind": "Hash", "version": 2}
+                "partitionKey": {"paths": [pk_path], "kind": "Hash", "version": pk_version},
             }))?;
             let op = CosmosOperation::create_container(db_ref).with_body(body);
             let result = driver

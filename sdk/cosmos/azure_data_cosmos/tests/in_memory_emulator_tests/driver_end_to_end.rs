@@ -1412,3 +1412,217 @@ async fn try_real_failover_comparison(
 
     read_result.ok()
 }
+
+// ─── V1 partition-key coverage ─────────────────────────────────────────────
+//
+// Real Cosmos DB no longer creates V1 `Hash` containers by default, but
+// pre-existing V1 containers in customer accounts are still routed to. The
+// emulator must therefore correctly distribute V1 EPKs across physical
+// partitions and round-trip point operations against them. Without the
+// version-aware boundary scheme in [`in_memory_emulator::store`], every V1
+// EPK lex-compared below `boundary[0]` (a V2-style 32-char hex) and landed
+// in partition 0, defeating partitioning entirely.
+
+async fn setup_with_v1_container() -> (
+    DualBackend,
+    String,
+    azure_data_cosmos_driver::models::ContainerReference,
+    Option<azure_data_cosmos_driver::models::ContainerReference>,
+) {
+    let backend = DualBackend::setup().await.unwrap();
+    let db_name = backend.unique_db_name();
+    let container_name = "testcoll-v1";
+    let pk_path = "/pk";
+
+    backend.provision_emulator_v1(&db_name, container_name, pk_path);
+
+    if backend.has_real_backend() {
+        backend.create_real_database(&db_name).await.unwrap();
+        backend
+            .create_real_container_v1(&db_name, container_name, pk_path)
+            .await
+            .unwrap();
+    }
+
+    let emu_container = backend
+        .emulator_driver
+        .resolve_container(&db_name, container_name)
+        .await
+        .unwrap();
+    let real_container = if let Some(ref real_driver) = backend.real_driver {
+        Some(
+            real_driver
+                .resolve_container(&db_name, container_name)
+                .await
+                .unwrap(),
+        )
+    } else {
+        None
+    };
+
+    (backend, db_name, emu_container, real_container)
+}
+
+#[tokio::test]
+async fn v1_create_read_replace_delete_through_driver() {
+    let (backend, db_name, emu_container, real_container) = setup_with_v1_container().await;
+
+    // Create
+    let create_body = serde_json::json!({"id": "v1-item-1", "pk": "v1-pk-A", "value": 1});
+    let create_bytes = serde_json::to_vec(&create_body).unwrap();
+    let (emu_create, real_create) = backend
+        .execute_and_compare(
+            &emu_container,
+            real_container.as_ref(),
+            |container| {
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
+                let op = CosmosOperation::create_item(item).with_body(create_bytes.clone());
+                (op, OperationOptions::default())
+            },
+            &HeaderValidationSpec::for_point_operation(),
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
+        .unwrap();
+    assert_eq!(u16::from(emu_create.status().status_code()), 201);
+    if let Some(ref real) = real_create {
+        assert_eq!(u16::from(real.status().status_code()), 201);
+    }
+
+    // Read
+    let (emu_read, _) = backend
+        .execute_and_compare(
+            &emu_container,
+            real_container.as_ref(),
+            |container| {
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
+                (
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
+            },
+            &HeaderValidationSpec::for_point_operation(),
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
+        .unwrap();
+    assert_eq!(u16::from(emu_read.status().status_code()), 200);
+    let doc: serde_json::Value = serde_json::from_slice(emu_read.body()).unwrap();
+    assert_eq!(doc["id"], "v1-item-1");
+    assert_eq!(doc["pk"], "v1-pk-A");
+    assert_eq!(doc["value"], 1);
+
+    // Replace
+    let replace_body = serde_json::json!({"id": "v1-item-1", "pk": "v1-pk-A", "value": 99});
+    let replace_bytes = serde_json::to_vec(&replace_body).unwrap();
+    let (emu_replace, _) = backend
+        .execute_and_compare(
+            &emu_container,
+            real_container.as_ref(),
+            |container| {
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
+                let op = CosmosOperation::replace_item(item).with_body(replace_bytes.clone());
+                (op, OperationOptions::default())
+            },
+            &HeaderValidationSpec::for_point_operation(),
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
+        .unwrap();
+    assert_eq!(u16::from(emu_replace.status().status_code()), 200);
+
+    // Delete
+    let (emu_delete, _) = backend
+        .execute_and_compare(
+            &emu_container,
+            real_container.as_ref(),
+            |container| {
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
+                (
+                    CosmosOperation::delete_item(item),
+                    OperationOptions::default(),
+                )
+            },
+            &HeaderValidationSpec::for_delete_operation(),
+            BodyValidationSpec::Ignore,
+        )
+        .await
+        .unwrap();
+    assert_eq!(u16::from(emu_delete.status().status_code()), 204);
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+/// Drives ~200 V1 writes across distinct partition-key values to confirm that
+/// V1 routing distributes load across physical partitions in the emulator —
+/// the regression bait for the "all V1 EPKs land in partition 0" bug.
+#[tokio::test]
+async fn v1_writes_distribute_across_partitions() {
+    let (backend, db_name, emu_container, _) = setup_with_v1_container().await;
+
+    let mut written = 0usize;
+    for i in 0..200 {
+        let pk = format!("v1-tenant-{}", i);
+        let id = format!("v1-doc-{}", i);
+        let body = serde_json::json!({"id": id, "pk": pk, "value": i as i64});
+        let body_bytes = serde_json::to_vec(&body).unwrap();
+        let resp = backend
+            .emulator_driver
+            .execute_operation(
+                CosmosOperation::create_item(ItemReference::from_name(
+                    &emu_container,
+                    PartitionKey::from(pk.clone()),
+                    id.clone(),
+                ))
+                .with_body(body_bytes),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(u16::from(resp.status().status_code()), 201);
+        written += 1;
+    }
+
+    // Tally partition-key range ids reported on subsequent reads. We don't
+    // assert exact distribution here (the per-partition tally test in the
+    // `store` unit tests covers that with controlled fixtures); we only
+    // require that more than one distinct pkrange handles the workload,
+    // which is enough to catch the all-in-one-partition regression even at
+    // a small `N=200` sample.
+    let mut distinct_pkranges = std::collections::HashSet::new();
+    for i in 0..200 {
+        let pk = format!("v1-tenant-{}", i);
+        let id = format!("v1-doc-{}", i);
+        let resp = backend
+            .emulator_driver
+            .execute_operation(
+                CosmosOperation::read_item(ItemReference::from_name(
+                    &emu_container,
+                    PartitionKey::from(pk),
+                    id,
+                )),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap();
+        if let Some(token) = resp.headers().session_token.as_ref() {
+            if let Some(prefix) = token.as_str().split(':').next() {
+                if let Ok(pkrange_id) = prefix.parse::<u32>() {
+                    distinct_pkranges.insert(pkrange_id);
+                }
+            }
+        }
+    }
+    assert_eq!(written, 200);
+    assert!(
+        distinct_pkranges.len() > 1,
+        "V1 writes routed to only {:?} distinct pkrange(s) — distribution is broken",
+        distinct_pkranges,
+    );
+
+    backend.cleanup_real_database(&db_name).await;
+}

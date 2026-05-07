@@ -12,7 +12,7 @@ use super::config::{ContainerConfig, VirtualAccountConfig};
 use super::epk::Epk;
 use super::rid::RidGenerator;
 use super::session::SessionState;
-use crate::models::PartitionKeyDefinition;
+use crate::models::{PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion};
 
 type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
 /// Sentinel pkrange id used for control-plane (database/container/offer) session
@@ -1228,10 +1228,12 @@ fn create_partitions(
     let n = meta.partition_count;
     let mut partitions = Vec::with_capacity(n as usize);
 
-    // For EPK space division, we use a simple scheme:
-    // Divide the hex space [00..00, FF..FF) into N equal ranges.
-    // We use 32-char hex strings (16 bytes) as boundary markers.
-    let boundaries = compute_partition_boundaries(n);
+    // EPK space partitioning. The boundary scheme depends on the container's
+    // partition-key version: V1 hashes are encoded over a uint32 range, while
+    // V2 (Hash + MultiHash) hashes occupy the 126-bit range. See
+    // `compute_partition_boundaries` for details.
+    let boundaries =
+        compute_partition_boundaries(n, meta.partition_key.kind(), meta.partition_key.version());
 
     for i in 0..n {
         // `boundaries` holds the N-1 *internal* boundaries; partition i's
@@ -1279,22 +1281,44 @@ fn create_partitions(
 }
 
 /// Computes the N-1 internal EPK boundary strings that divide the reachable
-/// 128-bit hex space into N equal ranges.
+/// hash space into N equal ranges, returning the boundaries in lex-comparable
+/// hex form. The endpoints (partition 0's lower bound and partition N-1's
+/// upper bound) are represented by the [`Epk::min()`] / [`Epk::max()`]
+/// sentinels at the call site, so they are intentionally not emitted here.
 ///
-/// The endpoints (partition 0's lower bound and partition N-1's upper bound)
-/// are represented by the [`Epk::min()`] / [`Epk::max()`] sentinels at the
-/// call site, so they are intentionally not emitted here. The returned vec
-/// has length N-1 and is indexed `[1..N)` by the caller.
-fn compute_partition_boundaries(n: u32) -> Vec<String> {
+/// # Boundary scheme by partition key kind/version
+///
+/// - **V2 `Hash` and `MultiHash`**: hashes occupy the 126-bit range
+///   `[0, 2^126)` (V2 hash clears the top 2 bits). Boundaries are 32-char
+///   uppercase hex of evenly-spaced 126-bit values. `MultiHash` EPKs are
+///   per-component 16-byte hashes concatenated, but the **first** component
+///   is also a V2 hash, so partitioning by the first 32 hex chars routes
+///   correctly: longer concatenated EPKs simply tie-break above the matching
+///   prefix.
+/// - **V1 `Hash`**: hashes are uint32 values, encoded into the EPK string
+///   as `Number(hash as f64)` via `write_number_v1_binary`. Boundaries
+///   are evenly-spaced uint32 values encoded the same way, so lex-compare on
+///   the encoded hex matches numeric compare on the uint32 hash. Without
+///   this V1-specific path, every V1 EPK (which starts with `"05..."`)
+///   sorts below the V2 boundary[0] = `"10..."` and lands in partition 0,
+///   defeating partitioning entirely.
+fn compute_partition_boundaries(
+    n: u32,
+    kind: PartitionKeyKind,
+    version: PartitionKeyVersion,
+) -> Vec<String> {
     if n <= 1 {
         return Vec::new();
     }
-    // V2 EPK hash clears the top 2 bits, so EPKs lie in [0, 2^126).
-    // Divide that reachable space evenly across N partitions.
-    //
-    // 32-character uppercase hex (16 bytes) is used for every boundary so
-    // that lex-compare on equal-length hex strings matches numeric compare,
-    // which is what `compute_epk_midpoint` relies on.
+    match (kind, version) {
+        (PartitionKeyKind::Hash, PartitionKeyVersion::V1) => v1_boundaries(n),
+        // V2 Hash and MultiHash both partition by the first 16-byte V2 hash.
+        _ => v2_boundaries(n),
+    }
+}
+
+/// V2 / MultiHash boundaries: evenly-spaced 126-bit values in 32-char hex.
+fn v2_boundaries(n: u32) -> Vec<String> {
     let mut boundaries = Vec::with_capacity((n - 1) as usize);
     let total: u128 = 1u128 << 126;
     let step = total / n as u128;
@@ -1305,6 +1329,38 @@ fn compute_partition_boundaries(n: u32) -> Vec<String> {
     boundaries
 }
 
+/// V1 boundaries: evenly-spaced uint32 hash values, each encoded via
+/// `write_number_v1_binary` (the same encoding `effective_partition_key_hash_v1`
+/// uses for the leading hash component of every V1 EPK).
+///
+/// V1 EPKs are formed as `[Number(hash_uint32 as f64)] [components...]`, so
+/// any real EPK whose leading-hash equals a boundary's encoded uint32 sorts
+/// strictly *above* the boundary (the EPK has the appended-component bytes,
+/// the boundary does not). That matches the half-open `[min_inclusive,
+/// max_exclusive)` convention used by [`PhysicalPartition::contains_epk`].
+fn v1_boundaries(n: u32) -> Vec<String> {
+    let mut boundaries = Vec::with_capacity((n - 1) as usize);
+    let total: u64 = 1u64 << 32;
+    let step = total / n as u64;
+    for i in 1..n {
+        let boundary_hash = (step * i as u64) as u32;
+        let mut buf = Vec::new();
+        crate::models::partition_key::write_number_v1_binary(boundary_hash as f64, &mut buf);
+        boundaries.push(bytes_to_hex_upper(&buf));
+    }
+    boundaries
+}
+
+/// Uppercase hex encoding of a byte slice. Local helper so the V1 boundary
+/// code does not depend on the production crate's private hex helpers.
+fn bytes_to_hex_upper(bytes: &[u8]) -> String {
+    use std::fmt::Write;
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        let _ = write!(&mut s, "{:02X}", b);
+    }
+    s
+}
 /// Returns true if `epk` represents the open lower bound of the EPK space.
 ///
 /// Intentionally treats *any* all-`'0'` hex string as the lower-bound sentinel
@@ -2008,7 +2064,15 @@ impl EmulatorStore {
 
 /// Computes the EPK midpoint between two EPK bounds (hex strings).
 ///
-/// Returns `Err` if either bound is not parseable. Callers in the split path
+/// Returns `Err` if either bound is not parseable. Only V2 `Hash` /
+/// `MultiHash` boundaries (32-char hex of a 126-bit value) are supported;
+/// V1 `Hash` boundaries (variable-length encoded `Number` values) cannot
+/// be midpoint-bisected here and will return `Err`. Splits on V1
+/// containers are therefore not supported in this emulator — the split task
+/// surfaces the error and unlocks the parent partition rather than wedging
+/// it. V1 routing itself is fully supported via [`v1_boundaries`].
+///
+/// Callers in the split path
 /// must surface the error and unlock the parent partition rather than panic;
 /// a corrupt bound at the split site would otherwise wedge the partition
 /// `locked = true` forever inside a spawned task with no caller to observe
@@ -2090,6 +2154,180 @@ mod tests {
         }
         for (i, c) in counts.iter().enumerate() {
             assert!(*c > 0, "partition {} had 0 docs (counts={:?})", i, counts);
+        }
+    }
+
+    /// Regression test for the V1 routing bug: every V1 EPK starts with the
+    /// Number type marker byte `05`, so under the old V2-only boundary
+    /// scheme (`"10..."`, `"20..."`, `"30..."` for 4 partitions) every
+    /// V1 EPK lex-compared below boundary[0] and landed in partition 0.
+    /// With version-aware boundaries, V1 EPKs distribute across all
+    /// partitions according to the uint32 hash range.
+    #[test]
+    fn partitions_distribute_across_full_v1_epk_space() {
+        use super::super::epk::{compute_epk, parse_partition_key_header};
+        use crate::models::PartitionKeyDefinition;
+        let pk_def: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 1
+        }))
+        .unwrap();
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        store.create_container_with_config(
+            "db",
+            "c",
+            pk_def,
+            super::super::config::ContainerConfig::new()
+                .with_partition_count(8)
+                .build()
+                .unwrap(),
+        );
+        let region_ref = store.region("r1").unwrap();
+        let mut counts = vec![0usize; 8];
+        for i in 0..2000 {
+            let pk_json = format!("[\"v1key-{}\"]", i);
+            let comps = parse_partition_key_header(&pk_json).unwrap();
+            let epk = compute_epk(
+                &comps,
+                crate::models::PartitionKeyKind::Hash,
+                crate::models::PartitionKeyVersion::V1,
+            );
+            region_ref
+                .with_container("db", "c", |state| {
+                    let p = state
+                        .find_partition(&epk)
+                        .unwrap_or_else(|| panic!("V1 EPK {} did not route to any partition", epk));
+                    counts[p.id as usize] += 1;
+                })
+                .unwrap();
+        }
+        for (i, c) in counts.iter().enumerate() {
+            assert!(
+                *c > 0,
+                "V1 partition {} had 0 docs (counts={:?}) — V1 EPK routing is broken",
+                i,
+                counts,
+            );
+        }
+        // Every partition should see at least ~1% of the load. A perfectly
+        // uniform distribution would put 250 in each; we accept >= 25 (10%
+        // of expected) as a sanity bound that catches all-in-one-partition
+        // regressions without flaking on minor hash skew.
+        for (i, c) in counts.iter().enumerate() {
+            assert!(
+                *c >= 25,
+                "V1 partition {} got only {} docs (counts={:?}); expected at least ~25",
+                i,
+                c,
+                counts,
+            );
+        }
+    }
+
+    /// MultiHash EPKs concatenate per-component 16-byte V2 hashes, so the
+    /// first 32 hex chars are the first component's V2 hash. The existing
+    /// 126-bit boundary scheme partitions correctly by that first component.
+    #[test]
+    fn partitions_distribute_across_multihash_epk_space() {
+        use super::super::epk::{compute_epk, parse_partition_key_header};
+        use crate::models::PartitionKeyDefinition;
+        let pk_def: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/tenant", "/user"], "kind": "MultiHash", "version": 2
+        }))
+        .unwrap();
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        store.create_container_with_config(
+            "db",
+            "c",
+            pk_def,
+            super::super::config::ContainerConfig::new()
+                .with_partition_count(8)
+                .build()
+                .unwrap(),
+        );
+        let region_ref = store.region("r1").unwrap();
+        let mut counts = vec![0usize; 8];
+        for i in 0..2000 {
+            // Vary tenant to drive distribution; user fixed.
+            let pk_json = format!("[\"tenant-{}\", \"user1\"]", i);
+            let comps = parse_partition_key_header(&pk_json).unwrap();
+            let epk = compute_epk(
+                &comps,
+                crate::models::PartitionKeyKind::MultiHash,
+                crate::models::PartitionKeyVersion::V2,
+            );
+            region_ref
+                .with_container("db", "c", |state| {
+                    let p = state.find_partition(&epk).unwrap_or_else(|| {
+                        panic!("MultiHash EPK {} did not route to any partition", epk)
+                    });
+                    counts[p.id as usize] += 1;
+                })
+                .unwrap();
+        }
+        for (i, c) in counts.iter().enumerate() {
+            assert!(
+                *c > 0,
+                "MultiHash partition {} had 0 docs (counts={:?})",
+                i,
+                counts
+            );
+        }
+    }
+
+    /// V1 boundaries must each start with the Number type marker `"05"`
+    /// (because they encode `Number(uint32_hash as f64)` via
+    /// `write_number_v1_binary`). If they don't, real V1 EPKs (which all
+    /// start with `"05"`) won't lex-compare meaningfully against them.
+    #[test]
+    fn v1_boundaries_share_prefix_with_v1_epk_format() {
+        let bs = super::v1_boundaries(4);
+        assert_eq!(bs.len(), 3);
+        for b in &bs {
+            assert!(
+                b.starts_with("05"),
+                "V1 boundary {b} must start with Number type marker '05'",
+            );
+        }
+        // Boundaries must be strictly increasing.
+        for w in bs.windows(2) {
+            assert!(
+                w[0] < w[1],
+                "V1 boundaries not strictly increasing: {:?}",
+                bs
+            );
+        }
+    }
+
+    /// V2 boundaries must be 32-char hex with the top 2 bits of the first
+    /// nibble cleared (range `[00..40)`).
+    #[test]
+    fn v2_boundaries_within_126_bit_range() {
+        let bs = super::v2_boundaries(4);
+        assert_eq!(bs.len(), 3);
+        for b in &bs {
+            assert_eq!(b.len(), 32, "V2 boundary must be 32 hex chars: {b}");
+            let first_nibble = u8::from_str_radix(&b[..1], 16).unwrap();
+            assert!(
+                first_nibble < 0x4,
+                "V2 boundary {b} first nibble {:X} must be <0x4 (top 2 bits cleared)",
+                first_nibble,
+            );
         }
     }
 
