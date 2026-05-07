@@ -34,9 +34,9 @@ async fn setup_throttled(throughput_ru: u32) -> TestContext {
         }))
         .unwrap(),
         azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new()
-            .with_partition_count(1)
-            .unwrap() // single partition for predictable budget
+            .with_partition_count(1) // single partition for predictable budget
             .with_throughput(throughput_ru)
+            .build()
             .unwrap(),
     );
 
@@ -118,10 +118,20 @@ async fn throttle_disabled_no_429() {
 async fn container_creation_min_400() {
     let err = azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new()
         .with_throughput(100)
+        .build()
         .unwrap_err();
     assert!(err
         .to_string()
         .contains("provisioned throughput must be >= 400 RU/s"));
+}
+
+#[tokio::test]
+async fn container_creation_zero_partitions_rejected() {
+    let err = azure_data_cosmos_driver::in_memory_emulator::ContainerConfig::new()
+        .with_partition_count(0)
+        .build()
+        .unwrap_err();
+    assert!(err.to_string().contains("partition count must be > 0"));
 }
 
 #[tokio::test]

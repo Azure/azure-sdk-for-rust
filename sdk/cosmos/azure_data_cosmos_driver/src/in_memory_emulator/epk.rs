@@ -78,26 +78,61 @@ pub(crate) fn parse_partition_key_header(
 /// Extracts partition key value(s) from a document body using the container's
 /// partition key path definitions.
 ///
-/// Returns `BadRequest` if any extracted component is non-scalar or non-finite.
-/// Missing properties are mapped to [`PartitionKeyValue::undefined`] to match
-/// the real service's "missing partition key property" handling.
+/// Returns `BadRequest` if the body is not a JSON object, if any path
+/// traversal encounters a non-object intermediate, or if any extracted
+/// component is non-scalar or non-finite. Missing properties (where every
+/// intermediate is an object but the leaf is absent) are mapped to
+/// [`PartitionKeyValue::undefined`] to match the real service's "missing
+/// partition key property" handling.
 pub(crate) fn extract_pk_from_body(
     body: &serde_json::Value,
     pk_paths: &[impl AsRef<str>],
 ) -> azure_core::Result<Vec<PartitionKeyValue>> {
+    if !body.is_object() {
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "document body must be a JSON object to extract a partition key",
+        ));
+    }
     pk_paths
         .iter()
-        .map(|path| {
-            let path_str = path.as_ref().trim_start_matches('/');
-            let val = path_str
-                .split('/')
-                .try_fold(body, |curr, segment| curr.get(segment));
-            match val {
-                None => Ok(PartitionKeyValue::undefined()),
-                Some(v) => json_to_pk_component(v),
-            }
-        })
+        .map(|path| extract_pk_at_path(body, path.as_ref()))
         .collect()
+}
+
+/// Walks `body` along `path` (slash-separated, leading `/` stripped),
+/// rejecting non-object intermediates and converting the leaf to a
+/// [`PartitionKeyValue`]. A leaf-absent traversal returns
+/// [`PartitionKeyValue::undefined`].
+fn extract_pk_at_path(
+    body: &serde_json::Value,
+    path: &str,
+) -> azure_core::Result<PartitionKeyValue> {
+    let path_str = path.trim_start_matches('/');
+    if path_str.is_empty() {
+        return json_to_pk_component(body);
+    }
+    let segments: Vec<&str> = path_str.split('/').collect();
+    let last_idx = segments.len() - 1;
+    let mut current = body;
+    for (i, segment) in segments.iter().enumerate() {
+        let obj = current.as_object().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "partition key path component '{}' encountered a non-object intermediate",
+                    segment
+                ),
+            )
+        })?;
+        match obj.get(*segment) {
+            Some(next) if i == last_idx => return json_to_pk_component(next),
+            Some(next) => current = next,
+            None => return Ok(PartitionKeyValue::undefined()),
+        }
+    }
+    // Unreachable: loop returns or assigns on every iteration.
+    Ok(PartitionKeyValue::undefined())
 }
 
 /// Converts a single JSON value to a [`PartitionKeyValue`], rejecting non-scalars
@@ -215,6 +250,23 @@ mod tests {
     fn extract_pk_object_value_errors() {
         let body = serde_json::json!({"pk": {"nested": "object"}});
         assert!(extract_pk_from_body(&body, &["/pk"]).is_err());
+    }
+
+    #[test]
+    fn extract_pk_non_object_body_errors() {
+        let body = serde_json::json!([1, 2, 3]);
+        assert!(extract_pk_from_body(&body, &["/pk"]).is_err());
+        let body = serde_json::json!("string");
+        assert!(extract_pk_from_body(&body, &["/pk"]).is_err());
+    }
+
+    #[test]
+    fn extract_pk_non_object_intermediate_errors() {
+        // Real Cosmos rejects PK paths that traverse a scalar intermediate.
+        let body = serde_json::json!({"a": 42});
+        assert!(extract_pk_from_body(&body, &["/a/b"]).is_err());
+        let body = serde_json::json!({"a": [1, 2, 3]});
+        assert!(extract_pk_from_body(&body, &["/a/b"]).is_err());
     }
 
     #[test]

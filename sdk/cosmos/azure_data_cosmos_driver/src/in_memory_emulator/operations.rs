@@ -240,7 +240,7 @@ fn handle_create_database(
 
     let meta = store.create_database_internal(&db_id);
     let response_body = database_to_json(&meta);
-    let token = store.advance_master_partition_lsn();
+    let token = store.advance_master_partition_lsn(region_name);
     if parsed.content_response_on_write {
         success_response(StatusCode::Created, &response_body, 1.0, &token, start)
             .with_etag(&meta.etag)
@@ -320,7 +320,7 @@ fn handle_delete_database(
     // the rid-generator's per-db collection counter.
     store.cascade_delete_database(db_id);
 
-    let token = store.advance_master_partition_lsn();
+    let token = store.advance_master_partition_lsn(region_name);
     ResponseBuilder::new(StatusCode::NoContent, start)
         .with_request_charge(1.0)
         .with_session_token(&token)
@@ -438,7 +438,7 @@ fn handle_create_container(
         ContainerConfig::default(),
     );
     let response_body = container_to_json(&meta);
-    let token = store.advance_master_partition_lsn();
+    let token = store.advance_master_partition_lsn(region_name);
     if parsed.content_response_on_write {
         success_response(StatusCode::Created, &response_body, 1.0, &token, start)
             .with_etag(&meta.etag)
@@ -526,7 +526,7 @@ fn handle_delete_container(
     // container so a paused target region does not silently drop them later.
     store.cascade_delete_container(db_id, coll_id);
 
-    let token = store.advance_master_partition_lsn();
+    let token = store.advance_master_partition_lsn(region_name);
     ResponseBuilder::new(StatusCode::NoContent, start)
         .with_request_charge(1.0)
         .with_session_token(&token)
@@ -676,12 +676,13 @@ pub(crate) struct PointResponseHeaders {
 }
 
 impl PointResponseHeaders {
-    /// Builds the response-header snapshot from a partition reference while the
-    /// caller still holds the relevant lock. Capturing here (rather than in a
-    /// later, lock-free pass) is what guarantees the header LSN/document-count
-    /// values agree with the response body the same handler is about to
-    /// produce — a concurrent writer on the same partition cannot interleave
-    /// between the body capture and the header capture.
+    /// Builds the response-header snapshot from a partition reference.
+    ///
+    /// Captured under the containers read lock but **after** the per-partition
+    /// write lock has already been released, so the document-count component of
+    /// x-ms-resource-usage is best-effort and may race with concurrent
+    /// writers on the same partition. This matches real Cosmos DB, where
+    /// x-ms-resource-usage is also a best-effort snapshot.
     fn from_partition(partition: &PhysicalPartition, transport_request_id: u32) -> Self {
         let documents = partition.documents.read().unwrap();
         let documents_in_partition = documents
@@ -933,7 +934,7 @@ async fn handle_create(
             }
 
             // Debit the throttle bucket only now that the conflict check has
-            // passed under the write lock (#2 / #3): on a 429 the response
+            // passed under the write lock: on a 429 the response
             // RU charge matches the actual debit.
             if let Some(response) = check_throttle(partition, charge, store.config().throttling_enabled(), start) {
                 return Err(response);
@@ -952,7 +953,7 @@ async fn handle_create(
             inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
             // Cache the *wire* size (the bytes the caller sent), not the
             // post-injection size, so read-RU and create-RU evaluate the
-            // same `compute_..._ru(size)` formula on identical inputs (#6).
+            // same `compute_..._ru(size)` formula on identical inputs.
             // Without this the same doc was charged 1 KB on create and 2 KB
             // on read whenever the system-prop overhead pushed it across a
             // power-of-two bucket.
@@ -1105,7 +1106,7 @@ fn handle_read(
                 // — real Cosmos surfaces PartitionKeyRangeGone here so the client
                 // refreshes its pkrange cache and retries. Without this, a stale
                 // token referencing some other (now-defunct) partition silently
-                // skipped the consistency check (#9).
+                // skipped the consistency check.
                 //
                 // Tokens referencing a *direct ancestor* of this partition are
                 // considered valid: the EPK-routed successor partition's LSN is
@@ -1317,6 +1318,37 @@ async fn handle_replace(
         let region_id = store.config().region_id_for(region_name);
         let token = session_token_for(partition, region_id, incoming_session_for(parsed, partition.id).as_ref());
 
+        // Cosmos rejects PK mutation on Replace: the partition key value(s)
+        // extracted from the new body must match the existing document's
+        // stored EPK. Without this check the new body could route to a
+        // different physical partition while the original doc would remain
+        // orphaned on the old partition (silent divergence in tests).
+        let body_components = match super::epk::extract_pk_from_body(
+            &body,
+            state.metadata.partition_key.paths(),
+        ) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
+        let body_epk = super::epk::compute_epk(
+            &body_components,
+            state.metadata.partition_key.kind(),
+            state.metadata.partition_key.version(),
+        );
+        if body_epk != epk {
+            return Err(error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "PartitionKey extracted from document doesn't match the partition key supplied on the request. \
+                 Partition key values are immutable on Replace.",
+                1.0,
+                &token,
+                start,
+            )
+            .build());
+        }
+
         // Lookup existing under a *read* lock so concurrent reads on the
         // partition are not blocked while we run precondition / throttle
         // checks. We re-acquire a write lock at commit time below.
@@ -1324,7 +1356,22 @@ async fn handle_replace(
             let docs = partition.documents.read().unwrap();
             let existing = docs.get(&epk).and_then(|l| l.get(doc_id));
             match existing {
-                Some(e) => e.etag.clone(),
+                Some(e) => {
+                    if e.epk != epk {
+                        return Err(error_response(
+                            StatusCode::BadRequest,
+                            None,
+                            "BadRequest",
+                            "PartitionKey of the existing document does not match the partition key on the request. \
+                             Partition key values are immutable on Replace.",
+                            1.0,
+                            &token,
+                            start,
+                        )
+                        .build());
+                    }
+                    e.etag.clone()
+                }
                 None => {
                     return Err(error_response(
                         StatusCode::NotFound,
@@ -1361,7 +1408,7 @@ async fn handle_replace(
 
         // Compute RU charge eagerly. Throttle debit is deferred to the
         // post-precondition write-lock window so a 429 only fires when the
-        // operation would otherwise have committed (#2 / #3). Without this,
+        // operation would otherwise have committed. Without this,
         // a throttled-and-then-NotFound replace would still have charged
         // the per-second budget for work that never landed.
         let num_props = RuChargingModel::count_properties(&body);
@@ -1425,7 +1472,7 @@ async fn handle_replace(
             }
 
             // Debit the throttle bucket only after preconditions pass under
-            // the write lock (#2 / #3).
+            // the write lock.
             if let Some(response) = check_throttle(
                 partition,
                 charge,
@@ -1441,7 +1488,7 @@ async fn handle_replace(
             let etag = new_etag();
 
             inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut body);
-            // See create handler for rationale (#6) — cache wire size.
+            // See create handler for rationale — cache wire size.
             let body_size_bytes = request_body.len();
             let new_doc = StoredDocument {
                 body: body.clone(),
@@ -1569,7 +1616,7 @@ async fn handle_upsert(
         }
 
         // The create-vs-replace decision, RU charge, throttle debit, and
-        // commit must all happen under the write lock for correctness (#3):
+        // commit must all happen under the write lock for correctness:
         // a previous version probed existence under a read lock, then
         // re-acquired a write lock and inserted unconditionally, which let a
         // concurrent create slip in between probe and commit. The upsert
@@ -1613,7 +1660,7 @@ async fn handle_upsert(
             };
 
             // Throttle debit only after the create-vs-replace decision is
-            // locked in (#2 / #3), so the reported RU charge matches the
+            // locked in, so the reported RU charge matches the
             // bucket debit even when the operation is rejected with 429.
             if let Some(response) = check_throttle(
                 partition,
@@ -1630,7 +1677,7 @@ async fn handle_upsert(
             let etag = new_etag();
 
             inject_system_properties(&rid, &self_link, &etag, ts, &mut body);
-            // See create handler for rationale (#6) — cache wire size.
+            // See create handler for rationale — cache wire size.
             let body_size_bytes = request_body.len();
             let new_doc = StoredDocument {
                 body: body.clone(),
@@ -1777,7 +1824,7 @@ async fn handle_delete(
 
         // Compute RU charge eagerly. Throttle debit is deferred to the
         // post-precondition write-lock window so a 429 only fires when the
-        // operation would otherwise have committed (#2 / #3).
+        // operation would otherwise have committed.
         let num_props = RuChargingModel::count_properties(&existing.body);
         let body_size = existing.body_size_bytes;
         let charge = store
@@ -1839,7 +1886,7 @@ async fn handle_delete(
             }
 
             // Debit the throttle bucket only after preconditions pass under
-            // the write lock (#2 / #3).
+            // the write lock.
             if let Some(response) = check_throttle(
                 partition,
                 charge,

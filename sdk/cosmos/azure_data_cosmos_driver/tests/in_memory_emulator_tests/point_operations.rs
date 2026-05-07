@@ -159,6 +159,73 @@ async fn replace_rejects_body_id_mismatch() {
 }
 
 #[tokio::test]
+async fn replace_rejects_partition_key_mutation() {
+    // Replacing an item with a body whose partition-key value differs from
+    // the existing item's PK must fail with 400 BadRequest. Without this
+    // guard the new body could route to a different physical partition while
+    // the original document remained orphaned on the old partition (silent
+    // divergence).
+    let ctx = setup_single_region().await;
+
+    let body = serde_json::json!({"id": "item-pkmut", "pk": "pk-original", "value": 1});
+    let req = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk-original"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, created) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+    let etag = created["_etag"].as_str().unwrap().to_string();
+
+    // Realistic PK-mutation attempt: header carries the EXISTING PK so
+    // the request routes to the right partition and the existing doc is
+    // located, but the body's pk field disagrees. Real Cosmos rejects
+    // this with 400 BadRequest because partition-key values are immutable
+    // on Replace.
+    let replacement = serde_json::json!({"id": "item-pkmut", "pk": "pk-different", "value": 2});
+    let req = replace_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item-pkmut",
+        &replacement,
+        r#"["pk-original"]"#,
+        Some(&etag),
+        true,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(
+        status,
+        StatusCode::BadRequest,
+        "PK mutation must be rejected; got body={body}",
+    );
+    let msg = body["message"].as_str().unwrap_or("");
+    assert!(
+        msg.contains("Partition key") || msg.contains("partition key"),
+        "error message should mention partition key, got: {msg}",
+    );
+
+    // Original document must still be readable on its original PK.
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item-pkmut",
+        r#"["pk-original"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, doc) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(doc["pk"], "pk-original");
+    assert_eq!(doc["value"], 1);
+}
+
+#[tokio::test]
 async fn echoes_request_activity_id() {
     let ctx = setup_single_region().await;
 

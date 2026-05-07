@@ -276,10 +276,17 @@ impl SessionState {
         self.forced_epks.lock().unwrap().insert(epk.to_string());
     }
 
-    /// Checks and clears the forced-unavailability marker for `epk`.
+    /// Checks and clears the forced-unavailability marker for pk.
     /// Returns true if it was set (one-shot: only fires once).
     pub fn check_and_clear_forced_for(&self, epk: &str) -> bool {
         self.forced_epks.lock().unwrap().remove(epk)
+    }
+
+    /// Returns a snapshot of the currently-pending forced-unavailable EPKs.
+    /// Used during partition split/merge so child partitions can inherit any
+    /// pending markers whose EPK falls within their new range.
+    pub fn snapshot_forced_epks(&self) -> Vec<String> {
+        self.forced_epks.lock().unwrap().iter().cloned().collect()
     }
 }
 

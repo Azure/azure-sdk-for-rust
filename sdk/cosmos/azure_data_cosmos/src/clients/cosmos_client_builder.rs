@@ -360,6 +360,20 @@ impl CosmosClientBuilder {
         #[cfg(not(all(not(target_arch = "wasm32"), feature = "reqwest")))]
         let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = None;
 
+        // When an in-memory emulator HTTP client is supplied, treat it as
+        // the *inner* transport for the SDK pipeline (replacing the real
+        // reqwest client). Doing this *before* fault injection wrapping
+        // means a fault-injection builder still wraps around the emulator
+        // — so SDK-pipeline-only paths (account refreshes, etc.) get both
+        // fault injection AND the emulator, instead of silently dropping
+        // the FI wrapper as the prior code did.
+        #[cfg(feature = "__internal_in_memory_emulator")]
+        let base_client: Option<Arc<dyn azure_core::http::HttpClient>> =
+            match self.emulator_http_client.as_ref() {
+                Some(emu) => Some(Arc::clone(emu)),
+                None => base_client,
+            };
+
         #[cfg(feature = "fault_injection")]
         let (transport, driver_fi_rules): (
             Option<azure_core::http::Transport>,
@@ -382,19 +396,6 @@ impl CosmosClientBuilder {
         #[cfg(not(feature = "fault_injection"))]
         let transport: Option<azure_core::http::Transport> =
             base_client.map(azure_core::http::Transport::new);
-
-        // When an emulator HTTP client is supplied, use it for the SDK
-        // pipeline transport too — otherwise the pipeline would keep a real
-        // reqwest client and anything that goes through `pipeline_core`
-        // (account refreshes, fault-injection short-circuits, future
-        // gateway hops) would silently reach the network even though the
-        // *driver* has been routed through the emulator.
-        #[cfg(feature = "__internal_in_memory_emulator")]
-        let transport = if let Some(emu) = self.emulator_http_client.as_ref() {
-            Some(azure_core::http::Transport::new(Arc::clone(emu)))
-        } else {
-            transport
-        };
 
         // Create internal ClientOptions - users cannot configure this directly
         let client_options = ClientOptions {

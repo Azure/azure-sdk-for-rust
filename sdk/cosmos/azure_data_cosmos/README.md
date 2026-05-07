@@ -140,6 +140,8 @@ If you encounter bugs or have suggestions, [open an issue](https://github.com/Az
 
 This crate exposes feature flags prefixed with `__internal_` (currently `__internal_in_memory_emulator`). These are intended **only** for in-repo testing, are not part of the public API, are not subject to semver, and may change or be removed without notice. Do not enable them on builds shipped to crates.io or to other consumers.
 
+Note: enabling `__internal_in_memory_emulator` also implicitly enables the `key_auth` feature (the in-memory emulator authenticates with master keys), which will appear in your dependency graph (`cargo tree`) when the emulator feature is on.
+
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit [https://cla.microsoft.com](https://cla.microsoft.com).

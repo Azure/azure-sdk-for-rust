@@ -71,15 +71,45 @@ impl VirtualAccountConfig {
     }
 
     /// Adds a per-direction replication override.
+    ///
+    /// Validates that both `source` and `target` match the name of a
+    /// configured region (case-sensitive). Returns `azure_core::Error` on
+    /// either mismatch ΓÇö silently dropping a typo in the region name (the
+    /// previous behavior) made misuse hard to spot in tests.
     pub fn with_replication_override(
         mut self,
         source: &str,
         target: &str,
         config: ReplicationConfig,
-    ) -> Self {
+    ) -> azure_core::Result<Self> {
+        let known: Vec<&str> = self.regions.iter().map(|r| r.name.as_str()).collect();
+        if !known.contains(&source) {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "replication override source region '{}' is not configured (known: {:?})",
+                    source, known
+                ),
+            ));
+        }
+        if !known.contains(&target) {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "replication override target region '{}' is not configured (known: {:?})",
+                    target, known
+                ),
+            ));
+        }
+        if source == target {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "replication override source and target must be different regions",
+            ));
+        }
         self.replication_overrides
             .insert((source.to_string(), target.to_string()), config);
-        self
+        Ok(self)
     }
 
     /// Sets the RU charging model.
@@ -467,46 +497,61 @@ pub struct ContainerConfig {
     provisioned_throughput_ru: Option<u32>,
 }
 
+/// Inclusive upper bound on the number of physical partitions a container
+/// can be configured with. The cap prevents pathological inputs (e.g.
+/// `u32::MAX`) from triggering 4-billion-element `Vec` allocations during
+/// container creation; real Cosmos DB physical partition counts are several
+/// orders of magnitude below this value.
+pub const MAX_PARTITION_COUNT: u32 = 100_000;
+
 impl ContainerConfig {
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Sets the number of physical partitions.
+    /// Sets the number of physical partitions. Validation is deferred to
+    /// [`Self::build`].
+    pub fn with_partition_count(mut self, count: u32) -> Self {
+        self.partition_count = count;
+        self
+    }
+
+    /// Sets the provisioned throughput in RU/s. Validation is deferred to
+    /// [`Self::build`].
+    pub fn with_throughput(mut self, ru_per_second: u32) -> Self {
+        self.provisioned_throughput_ru = Some(ru_per_second);
+        self
+    }
+
+    /// Validates the configuration and returns the finalized
+    /// [`ContainerConfig`].
     ///
-    /// Must be in the inclusive range `1..=100_000`. The upper bound prevents
-    /// pathological inputs (e.g. `u32::MAX`) from triggering 4-billion-element
-    /// `Vec` allocations during container creation; real Cosmos DB physical
-    /// partition counts are several orders of magnitude below this cap.
-    pub fn with_partition_count(mut self, count: u32) -> azure_core::Result<Self> {
-        const MAX_PARTITION_COUNT: u32 = 100_000;
-        if count == 0 {
+    /// Validation rules:
+    /// - `partition_count` must be in `1..=MAX_PARTITION_COUNT`.
+    /// - `provisioned_throughput_ru`, when set, must be `>= 400` RU/s.
+    ///
+    /// Returns `azure_core::Error` on the first violation.
+    pub fn build(self) -> azure_core::Result<Self> {
+        if self.partition_count == 0 {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "partition count must be > 0",
             ));
         }
-        if count > MAX_PARTITION_COUNT {
+        if self.partition_count > MAX_PARTITION_COUNT {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!("partition count must be <= {MAX_PARTITION_COUNT}"),
             ));
         }
-        self.partition_count = count;
-        Ok(self)
-    }
-
-    /// Sets the provisioned throughput in RU/s.
-    /// Minimum is 400 RU/s. When set and throttling is enabled, the emulator
-    /// returns 429/3200 when consumed RU/s exceeds this limit.
-    pub fn with_throughput(mut self, ru_per_second: u32) -> azure_core::Result<Self> {
-        if ru_per_second < 400 {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "provisioned throughput must be >= 400 RU/s",
-            ));
+        if let Some(ru) = self.provisioned_throughput_ru {
+            if ru < 400 {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "provisioned throughput must be >= 400 RU/s",
+                ));
+            }
         }
-        self.provisioned_throughput_ru = Some(ru_per_second);
         Ok(self)
     }
 

@@ -86,7 +86,7 @@ fn apply_doc_to_partition(partition: &PhysicalPartition, doc: &StoredDocument, i
         return;
     }
     if is_delete && !was_present {
-        // No-op delete: no observable mutation, so no local_lsn bump (#3).
+        // No-op delete: no observable mutation, so no local_lsn bump.
         // A bumped local_lsn would advertise per-region progress for a
         // mutation that never happened, breaking session-token assertions.
         partition.lsn.fetch_max(doc.lsn, Ordering::SeqCst);
@@ -131,12 +131,7 @@ pub struct EmulatorStore {
     config: VirtualAccountConfig,
     rid_generator: RidGenerator,
     regions: RwLock<HashMap<String, Arc<RegionStore>>>,
-    /// LSN counter for the "master partition" that tracks control plane operations
-    /// (database/container CRUD, throughput changes). The real Cosmos DB service
-    /// stores metadata in a special MasterPartition and replicates it similarly
-    /// to user documents, producing LSN and session tokens for control plane
-    /// responses.
-    master_partition_lsn: AtomicU64,
+
     /// Per-(db, coll) async mutex serializing split/merge execution.
     split_merge_locks: std::sync::Mutex<SplitMergeLocks>,
     /// Tracks spawned replication tasks so tests can drain them.
@@ -165,11 +160,19 @@ pub struct EmulatorStore {
     replication_semaphore: Arc<tokio::sync::Semaphore>,
     /// Count of replication entries dropped because the per-region buffer was
     /// full. The proactive 429/3075 short-circuit in
-    /// `find_overflowed_replication_target` is racy across concurrent writers,
+    /// ind_overflowed_replication_target is racy across concurrent writers,
     /// so the apply path still has to drop on overflow as a safety net. Tests
     /// that want to assert the safety net never fired can read this counter
-    /// in teardown via [`Self::dropped_replications`] and fail when non-zero.
+    /// in teardown via [Self::dropped_replications] and fail when non-zero.
     dropped_replications: AtomicU64,
+    /// Captured panic payloads from background replication tasks. Live write
+    /// handlers do **not** unwind on a captured panic — doing so threw away
+    /// the in-flight HTTP response of an unrelated successful write, and the
+    /// failure manifested non-causally in some other test. Instead, panics
+    /// are accumulated here and surfaced when tests call
+    /// [Self::drain_pending_replications] (which is the test-shutdown
+    /// barrier) or [Self::take_captured_panics] for explicit inspection.
+    captured_panics: std::sync::Mutex<Vec<Box<dyn std::any::Any + Send + 'static>>>,
 }
 
 impl EmulatorStore {
@@ -184,7 +187,7 @@ impl EmulatorStore {
             config,
             rid_generator: RidGenerator::new(),
             regions: RwLock::new(regions),
-            master_partition_lsn: AtomicU64::new(0),
+
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
@@ -197,6 +200,7 @@ impl EmulatorStore {
                     .max(64),
             )),
             dropped_replications: AtomicU64::new(0),
+            captured_panics: std::sync::Mutex::new(Vec::new()),
         })
     }
 
@@ -217,8 +221,17 @@ impl EmulatorStore {
     /// from any user pkrange. We use the sentinel pkrange id [`MASTER_PARTITION_ID`]
     /// so that control-plane session tokens never collide with the data-plane
     /// pkrange-0 namespace if a downstream consumer ever merges them.
-    pub(crate) fn advance_master_partition_lsn(&self) -> String {
-        let lsn = self.master_partition_lsn.fetch_add(1, Ordering::SeqCst) + 1;
+    /// Advances the per-region master-partition LSN and returns a V1 session
+    /// token. Tracking control-plane metadata per-region matches the real
+    /// service: each region's master partition advances independently, so a
+    /// control-plane session token from region A is not directly comparable to
+    /// one from region B.
+    pub(crate) fn advance_master_partition_lsn(&self, region_name: &str) -> String {
+        let regions = self.regions.read().unwrap();
+        let lsn = match regions.get(region_name) {
+            Some(rs) => rs.master_partition_lsn.fetch_add(1, Ordering::SeqCst) + 1,
+            None => 0, // unknown region — emit a 0 token rather than panicking
+        };
         super::session::SessionToken::format(MASTER_PARTITION_ID, lsn)
     }
 
@@ -319,13 +332,15 @@ impl EmulatorStore {
             .clone()
     }
 
-    /// Awaits all pending in-flight replication tasks. Test-only.
+    /// Awaits all pending in-flight replication tasks and surfaces any
+    /// previously-captured background panics. Test-only.
     ///
-    /// If any task panicked (typically the buffer-overflow guard inside
-    /// `apply_replication`), the panic is re-raised on the current thread so
-    /// the test surfaces the failure. Silently dropping the panic would let
-    /// stale-state bugs hide behind a paused-but-overflowed buffer
-    ///.
+    /// Panics from background tasks are captured into `captured_panics`
+    /// (rather than unwinding the live write that triggered the reap) so
+    /// they don't poison unrelated in-flight requests. This drain is the
+    /// barrier where tests observe them — it re-raises the **first**
+    /// captured panic on the current thread, matching the prior behavior.
+    /// Subsequent panics (if any) are dropped after a `tracing::error!`.
     #[doc(hidden)]
     pub async fn drain_pending_replications(&self) {
         let mut set = {
@@ -335,10 +350,35 @@ impl EmulatorStore {
         while let Some(res) = set.join_next().await {
             if let Err(e) = res {
                 if e.is_panic() {
-                    std::panic::resume_unwind(e.into_panic());
+                    self.captured_panics.lock().unwrap().push(e.into_panic());
                 }
             }
         }
+        let panics: Vec<Box<dyn std::any::Any + Send + 'static>> = {
+            let mut guard = self.captured_panics.lock().unwrap();
+            std::mem::take(&mut *guard)
+        };
+        let extra = panics.len().saturating_sub(1);
+        let mut iter = panics.into_iter();
+        if let Some(first) = iter.next() {
+            if extra > 0 {
+                tracing::error!(
+                    extra = extra,
+                    "in-memory emulator: drain saw multiple background panics; only the first is re-raised",
+                );
+            }
+            std::panic::resume_unwind(first);
+        }
+    }
+
+    /// Returns and clears any panic payloads captured from background
+    /// replication tasks without re-raising them. Useful for tests that want
+    /// to inspect or assert on background failures explicitly.
+    ///
+    /// Gated behind the `__internal_in_memory_emulator` crate feature.
+    #[doc(hidden)]
+    pub fn take_captured_panics(&self) -> Vec<Box<dyn std::any::Any + Send + 'static>> {
+        std::mem::take(&mut *self.captured_panics.lock().unwrap())
     }
 
     /// Returns a reference to the region store for the given region name.
@@ -665,36 +705,36 @@ impl EmulatorStore {
         doc: &StoredDocument,
         is_delete: bool,
     ) {
-        // Reap any replication tasks that have already finished so the JoinSet
-        // does not grow unboundedly across long-running tests with delayed
-        // replication. `try_join_next` is non-blocking and returns immediately
-        // when no task is ready.
+        // Reap any replication tasks that have already finished so the
+        // JoinSet does not grow unboundedly across long-running tests with
+        // delayed replication. `try_join_next` is non-blocking and returns
+        // immediately when no task is ready.
         //
-        // If a reaped task panicked (e.g. the buffer-overflow `assert!` in
-        // `apply_replication`), resume-unwind on the current thread so the
-        // failure surfaces in the test rather than being silently swallowed.
-        // Without this, a panic in a spawned replication task would only be
-        // observable if a test happened to call `drain_pending_replications`
-        // *and* iterate the join results — which `drain` itself does not
-        //.
-        // Reap finished tasks under the lock, but capture any panics into a
-        // local Vec and resume-unwind *after* releasing the lock — otherwise
-        // the panic propagates while the std Mutex guard is live, poisoning
-        // the mutex for every later acquirer.
-        let panics = {
+        // If a reaped task panicked, **do not** resume-unwind on this
+        // thread: the caller is in the middle of producing the HTTP response
+        // for an unrelated successful write, and unwinding here would make
+        // that write appear to fail to the client even though the store has
+        // committed it. Instead capture the panic into `captured_panics`
+        // and surface it on the next `drain_pending_replications` call
+        // (i.e. at test teardown) along with a `tracing::error!` for live
+        // visibility.
+        {
             let mut set = self.replication_tasks.lock().unwrap();
-            let mut panics = Vec::new();
+            let mut local = Vec::new();
             while let Some(res) = set.try_join_next() {
                 if let Err(e) = res {
                     if e.is_panic() {
-                        panics.push(e.into_panic());
+                        local.push(e.into_panic());
                     }
                 }
             }
-            panics
-        };
-        if let Some(p) = panics.into_iter().next() {
-            std::panic::resume_unwind(p);
+            if !local.is_empty() {
+                tracing::error!(
+                    panics = local.len(),
+                    "in-memory emulator: background replication task(s) panicked; deferred to drain_pending_replications",
+                );
+                self.captured_panics.lock().unwrap().extend(local);
+            }
         }
 
         let regions = self.regions.read().unwrap();
@@ -943,6 +983,10 @@ pub(crate) struct RegionStore {
     pub containers: RwLock<HashMap<(String, String), ContainerState>>,
     pub paused: AtomicBool,
     pub replication_buffer: RwLock<VecDeque<PendingReplication>>,
+    /// Per-region master-partition LSN counter for control-plane operations
+    /// (database / container CRUD, throughput changes). Real Cosmos DB
+    /// advances each region's master partition independently.
+    pub master_partition_lsn: AtomicU64,
 }
 
 impl RegionStore {
@@ -952,6 +996,7 @@ impl RegionStore {
             containers: RwLock::new(HashMap::new()),
             paused: AtomicBool::new(false),
             replication_buffer: RwLock::new(VecDeque::new()),
+            master_partition_lsn: AtomicU64::new(0),
         }
     }
 }
@@ -1070,6 +1115,12 @@ pub(crate) struct PhysicalPartition {
     pub parents: Vec<u32>,
     pub locked: AtomicBool,
     pub throughput_tracker: Option<ThroughputTracker>,
+    /// Replicated writes that arrived while this partition was locked for a
+    /// split/merge. `execute_split` / `execute_merge` drain this buffer
+    /// while still holding the containers write lock so the entries
+    /// participate in child construction (split: routed by EPK to the right
+    /// child; merge: included in the LSN rebase pool).
+    pub deferred_replications: RwLock<Vec<(StoredDocument, bool)>>,
 }
 
 impl PhysicalPartition {
@@ -1220,6 +1271,7 @@ fn create_partitions(
             parents: Vec::new(),
             locked: AtomicBool::new(false),
             throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
+            deferred_replications: RwLock::new(Vec::new()),
         });
     }
 
@@ -1401,7 +1453,7 @@ impl EmulatorStore {
 
     /// Performs the actual split after the lock period.
     fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32) {
-        // Local-only enum used to ferry preview state out of a egions read
+        // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
         enum SplitPreview {
@@ -1552,6 +1604,21 @@ impl EmulatorStore {
                 }
                 drop(parent_docs);
 
+                // Redistribute pending forced-session-not-available markers
+                // by EPK so a marker the test set on the parent before the
+                // split still fires when the relevant child handles the read.
+                let parent_forced = parent.session_state.snapshot_forced_epks();
+                let child1_session = SessionState::new();
+                let child2_session = SessionState::new();
+                for epk_str in parent_forced {
+                    let epk = Epk::from(epk_str.clone());
+                    if epk < midpoint {
+                        child1_session.set_force_unavailable_for(&epk_str);
+                    } else {
+                        child2_session.set_force_unavailable_for(&epk_str);
+                    }
+                }
+
                 let n = state.physical_partitions.len() as f64 + 1.0;
                 let per_partition_ru = if self.config.throttling_enabled() {
                     total_throughput.map(|total| total / (n as u32))
@@ -1559,21 +1626,27 @@ impl EmulatorStore {
                     None
                 };
 
+                // Per-region local LSN: child inherits *this* region's
+                // applied-mutation count + 1. Capturing globally on the
+                // preview pass would inflate non-write-region counts.
+                let child_local_lsn = parent.current_local_lsn() + 1;
+
                 let child1 = PhysicalPartition {
                     id: child_id_1,
                     epk_min: parent_min.clone(),
                     epk_max: midpoint.clone(),
                     lsn: AtomicU64::new(child_lsn),
-                    local_lsn: AtomicU64::new(child_lsn),
+                    local_lsn: AtomicU64::new(child_local_lsn),
                     vector_clock_version: AtomicU64::new(parent_version),
                     documents: RwLock::new(docs_1),
-                    session_state: SessionState::new(),
+                    session_state: child1_session,
                     rid: child_rid_1.clone(),
                     rid_prefix: child_id_1,
                     throughput_fraction: 1.0 / n,
                     parents: vec![partition_id],
                     locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
+                    deferred_replications: RwLock::new(Vec::new()),
                 };
 
                 let child2 = PhysicalPartition {
@@ -1581,17 +1654,33 @@ impl EmulatorStore {
                     epk_min: midpoint.clone(),
                     epk_max: parent_max.clone(),
                     lsn: AtomicU64::new(child_lsn),
-                    local_lsn: AtomicU64::new(child_lsn),
+                    local_lsn: AtomicU64::new(child_local_lsn),
                     vector_clock_version: AtomicU64::new(parent_version),
                     documents: RwLock::new(docs_2),
-                    session_state: SessionState::new(),
+                    session_state: child2_session,
                     rid: child_rid_2.clone(),
                     rid_prefix: child_id_2,
                     throughput_fraction: 1.0 / n,
                     parents: vec![partition_id],
                     locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
+                    deferred_replications: RwLock::new(Vec::new()),
                 };
+
+                // Drain any replicated writes that arrived while the parent
+                // was locked, route by EPK to whichever child covers them,
+                // and apply via the standard LWW path. The drain happens
+                // under the containers write lock, so no concurrent writer
+                // can push new entries to the parent buffer between the
+                // drain and the parent removal.
+                let deferred: Vec<(StoredDocument, bool)> = {
+                    let mut buf = parent.deferred_replications.write().unwrap();
+                    std::mem::take(&mut *buf)
+                };
+                for (doc, is_delete) in deferred {
+                    let target = if doc.epk < midpoint { &child1 } else { &child2 };
+                    apply_doc_to_partition(target, &doc, is_delete);
+                }
 
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
@@ -1775,6 +1864,31 @@ impl EmulatorStore {
                 };
                 let lower = &state.physical_partitions[lower_idx];
                 let upper = &state.physical_partitions[upper_idx];
+
+                // Drain deferred replications that arrived while the parents
+                // were locked, BEFORE merging docs. The drained entries
+                // participate in the rebase below so they receive fresh
+                // child-partition LSNs alongside the merged-in originals.
+                // Without this, a deferred apply that wakes up after the
+                // lock clears would land on the child carrying its
+                // source-region's pre-merge LSN — and the LWW comparison on
+                // `(ts, lsn, source_region)` against rebased entries
+                // (LSNs 1..=N) becomes meaningless.
+                let mut deferred_lower: Vec<(StoredDocument, bool)> = {
+                    let mut buf = lower.deferred_replications.write().unwrap();
+                    std::mem::take(&mut *buf)
+                };
+                let mut deferred_upper: Vec<(StoredDocument, bool)> = {
+                    let mut buf = upper.deferred_replications.write().unwrap();
+                    std::mem::take(&mut *buf)
+                };
+
+                // Per-region local LSN: child inherits `max(this region's
+                // parents)` plus any deferred mutations applied during the
+                // merge. Captured per-region (not from the preview pass) so
+                // non-write-region replicas don't inflate.
+                let parents_local_lsn = lower.current_local_lsn().max(upper.current_local_lsn());
+
                 let mut merged_docs: BTreeMap<Epk, BTreeMap<String, StoredDocument>> =
                     BTreeMap::new();
                 {
@@ -1791,16 +1905,37 @@ impl EmulatorStore {
                     }
                 }
 
+                // Apply each deferred entry into the merged_docs pool with
+                // LWW-on-(ts, lsn, source_region) so a stale buffered write
+                // does not overwrite a fresher in-store doc. Deletes remove
+                // the matching entry. The result then participates in the
+                // LSN rebase below.
+                let mut applied_deferred = 0u64;
+                for (doc, is_delete) in deferred_lower.drain(..).chain(deferred_upper.drain(..)) {
+                    let bucket = merged_docs.entry(doc.epk.clone()).or_default();
+                    let should_apply = match bucket.get(&doc.id) {
+                        None => true,
+                        Some(existing) => {
+                            (doc.ts, doc.lsn, doc.source_region.as_str())
+                                > (existing.ts, existing.lsn, existing.source_region.as_str())
+                        }
+                    };
+                    if !should_apply {
+                        continue;
+                    }
+                    if is_delete {
+                        bucket.remove(&doc.id);
+                    } else {
+                        bucket.insert(doc.id.clone(), doc);
+                    }
+                    applied_deferred += 1;
+                }
+                // Strip empty buckets that resulted from delete-only drains.
+                merged_docs.retain(|_, v| !v.is_empty());
+
                 // Rebase document LSNs onto the child partition's reset LSN
-                // counter. Without rebasing, merged-in docs keep the parents'
-                // (often large) LSN values while the child resets to 1, so
-                // (a) subsequent writes to the child lose the LWW comparison
-                //     against pre-merge docs on tie-break, and
-                // (b) session tokens emitted by the child advertise a
-                //     global_lsn that's smaller than `doc.lsn` of stored
-                //     items, confusing the read-after-write check.
-                // Sort by `(ts, original_lsn, id)` to preserve the original
-                // ordering, then assign 1..=N in that order.
+                // counter. Sort by `(ts, original_lsn, id)` to preserve the
+                // original ordering, then assign 1..=N in that order.
                 let mut all_entries: Vec<(Epk, String, StoredDocument)> = merged_docs
                     .iter()
                     .flat_map(|(epk, items)| {
@@ -1822,6 +1957,16 @@ impl EmulatorStore {
                 // Child's high-water LSN matches the largest assigned doc LSN
                 // (or 1 for an empty merge so reads still see a non-zero LSN).
                 let child_initial_lsn = next_lsn.max(1);
+                let child_local_lsn = parents_local_lsn + applied_deferred + 1;
+
+                // Merge forced-session-not-available markers from both parents.
+                let merged_session = SessionState::new();
+                for epk_str in lower.session_state.snapshot_forced_epks() {
+                    merged_session.set_force_unavailable_for(&epk_str);
+                }
+                for epk_str in upper.session_state.snapshot_forced_epks() {
+                    merged_session.set_force_unavailable_for(&epk_str);
+                }
 
                 let n = state.physical_partitions.len() as f64 - 1.0;
                 let per_partition_ru = if self.config.throttling_enabled() {
@@ -1835,16 +1980,17 @@ impl EmulatorStore {
                     epk_min: merged_min.clone(),
                     epk_max: merged_max.clone(),
                     lsn: AtomicU64::new(child_initial_lsn),
-                    local_lsn: AtomicU64::new(child_initial_lsn),
+                    local_lsn: AtomicU64::new(child_local_lsn),
                     vector_clock_version: AtomicU64::new(child_version),
                     documents: RwLock::new(merged_docs),
-                    session_state: SessionState::new(),
+                    session_state: merged_session,
                     rid: child_rid.clone(),
                     rid_prefix: child_id,
                     throughput_fraction: 1.0 / n.max(1.0),
                     parents: vec![partition_id_a, partition_id_b],
                     locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
+                    deferred_replications: RwLock::new(Vec::new()),
                 };
 
                 let (first_remove, second_remove) = if lower_idx > upper_idx {
@@ -1922,6 +2068,7 @@ mod tests {
             pk_def,
             super::super::config::ContainerConfig::new()
                 .with_partition_count(8)
+                .build()
                 .unwrap(),
         );
         let region_ref = store.region("r1").unwrap();

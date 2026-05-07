@@ -49,17 +49,12 @@ pub mod headers {
         HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
     pub static INTERNAL_PARTITION_ID: HeaderName =
         HeaderName::from_static("x-ms-cosmos-internal-partition-id");
-    #[allow(dead_code)]
-    pub static CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-content-path");
-    #[allow(dead_code)]
-    pub static ALT_CONTENT_PATH: HeaderName = HeaderName::from_static("x-ms-alt-content-path");
 }
 use headers::{
-    ACTIVITY_ID, ALT_CONTENT_PATH, CONTENT_PATH, CONTENT_TYPE, DATE, ETAG, GATEWAY_VERSION,
-    GLOBAL_COMMITTED_LSN, ITEM_COUNT, LAST_STATE_CHANGE_UTC, LOCAL_LSN, LSN,
-    NUMBER_OF_READ_REGIONS, QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, REQUEST_CHARGE,
-    RESOURCE_QUOTA, RESOURCE_USAGE, RETRY_AFTER, SERVER_DURATION_MS, SERVICE_VERSION,
-    SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID, VERSION,
+    ACTIVITY_ID, CONTENT_TYPE, DATE, ETAG, GATEWAY_VERSION, GLOBAL_COMMITTED_LSN, ITEM_COUNT,
+    LAST_STATE_CHANGE_UTC, LOCAL_LSN, LSN, NUMBER_OF_READ_REGIONS, QUORUM_ACKED_LOCAL_LSN,
+    QUORUM_ACKED_LSN, REQUEST_CHARGE, RESOURCE_QUOTA, RESOURCE_USAGE, RETRY_AFTER,
+    SERVER_DURATION_MS, SERVICE_VERSION, SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID, VERSION,
 };
 
 const COSMOS_VERSION: &str = "2020-07-15";
@@ -209,30 +204,8 @@ impl ResponseBuilder {
         self
     }
 
-    #[allow(dead_code)]
-    pub fn with_content_path(mut self, rid: &str) -> Self {
-        self.headers
-            .insert(CONTENT_PATH.clone(), HeaderValue::from(rid.to_string()));
-        self
-    }
-
-    #[allow(dead_code)]
-    pub fn with_alt_content_path(mut self, path: &str) -> Self {
-        self.headers.insert(
-            ALT_CONTENT_PATH.clone(),
-            HeaderValue::from(path.to_string()),
-        );
-        self
-    }
-
     pub fn with_json_body(mut self, body: &serde_json::Value) -> Self {
         self.body = serde_json::to_vec(body).unwrap_or_default();
-        self
-    }
-
-    #[allow(dead_code)]
-    pub fn with_raw_body(mut self, body: Vec<u8>) -> Self {
-        self.body = body;
         self
     }
 

@@ -963,8 +963,8 @@ async fn create_retries_after_429_throttling() {
         .unwrap(),
         ContainerConfig::new()
             .with_partition_count(1)
-            .unwrap()
             .with_throughput(400)
+            .build()
             .unwrap(),
     );
 
