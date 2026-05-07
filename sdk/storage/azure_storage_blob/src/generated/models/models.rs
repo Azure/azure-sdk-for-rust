@@ -6,8 +6,8 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_itemsBlob, Blob_tag_setTag, BlobsBlob, Committed_blocksBlock,
-        Container_itemsContainer, CorsCorsRule, Uncommitted_blocksBlock,
+        Blob_itemsBlobItem, Blob_itemsFilterBlobItem, Blob_tag_setBlobTag, Committed_blocksBlock,
+        Container_itemsContainerItem, CorsCorsRule, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -489,9 +489,9 @@ pub struct BlobTags {
     /// Represents the blob tags.
     #[serde(
         default,
-        deserialize_with = "Blob_tag_setTag::unwrap",
+        deserialize_with = "Blob_tag_setBlobTag::unwrap",
         rename = "TagSet",
-        serialize_with = "Blob_tag_setTag::wrap",
+        serialize_with = "Blob_tag_setBlobTag::wrap",
         skip_serializing_if = "Option::is_none"
     )]
     pub blob_tag_set: Option<Vec<BlobTag>>,
@@ -828,11 +828,11 @@ pub struct FilteredBlobResponse {
     /// The blob segment.
     #[serde(
         default,
-        deserialize_with = "BlobsBlob::unwrap",
+        deserialize_with = "Blob_itemsFilterBlobItem::unwrap",
         rename = "Blobs",
-        serialize_with = "BlobsBlob::wrap"
+        serialize_with = "Blob_itemsFilterBlobItem::wrap"
     )]
-    pub blobs: Vec<FilterBlobItem>,
+    pub blob_items: Vec<FilterBlobItem>,
 
     /// The next marker of the blobs.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
@@ -874,9 +874,9 @@ pub struct ListBlobsResponse {
     /// The blob items.
     #[serde(
         default,
-        deserialize_with = "Blob_itemsBlob::unwrap",
+        deserialize_with = "Blob_itemsBlobItem::unwrap",
         rename = "Blobs",
-        serialize_with = "Blob_itemsBlob::wrap"
+        serialize_with = "Blob_itemsBlobItem::wrap"
     )]
     pub blob_items: Vec<BlobItem>,
 
@@ -913,9 +913,9 @@ pub struct ListContainersResponse {
     /// The container segment.
     #[serde(
         default,
-        deserialize_with = "Container_itemsContainer::unwrap",
+        deserialize_with = "Container_itemsContainerItem::unwrap",
         rename = "Containers",
-        serialize_with = "Container_itemsContainer::wrap"
+        serialize_with = "Container_itemsContainerItem::wrap"
     )]
     pub container_items: Vec<ContainerItem>,
 

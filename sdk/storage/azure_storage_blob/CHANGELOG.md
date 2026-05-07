@@ -7,8 +7,8 @@
 - `BlobServiceClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobSegment, XmlFormat>>`.
 - `BlobContainerClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilteredBlobResponse, XmlFormat>>`.
 - Renamed `FilterBlobSegment` to `FilteredBlobResponse`.
--
-- [TEMP] Changed `FilteredBlobResponse.blobs` from `Option<Vec<FilterBlobItem>>` to `Vec<FilterBlobItem>`.
+- Renamed `FilteredBlobResponse.blobs` to `FilteredBlobResponse.blob_items`.
+- Changed `FilteredBlobResponse.blob_items` from `Option<Vec<FilterBlobItem>>` to `Vec<FilterBlobItem>`.
 - Renamed `ListContainersSegmentResponse` to `ListContainersResponse`.
 - Removed `BlobFlatListSegment` wrapper; `ListBlobsResponse.blob_items` is now `Vec<BlobItem>` directly (previously accessed via `.segment.blob_items`).
 - Renamed `BlobProperties.customer_provided_key_sha256` to `encryption_key_sha256`.

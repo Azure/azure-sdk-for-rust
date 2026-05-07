@@ -462,7 +462,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .find_blobs_by_tags("\"foo\"='bar'", None)?
         .into_pages();
     let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+    let blobs = &filter_blob_segment.blob_items;
     assert!(
         blobs
             .iter()
@@ -475,7 +475,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
         .into_pages();
     let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+    let blobs = &filter_blob_segment.blob_items;
     assert!(
         blobs
             .iter()
@@ -492,7 +492,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .find_blobs_by_tags("\"env\"='test'", Some(options))?
         .into_pages();
     let page = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &page.blobs;
+    let blobs = &page.blob_items;
     assert!(
         blobs.len() <= 2,
         "page should contain at most 2 blobs due to maxresults=2, got {}",
