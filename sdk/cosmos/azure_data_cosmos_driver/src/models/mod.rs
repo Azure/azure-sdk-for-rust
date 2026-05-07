@@ -463,8 +463,8 @@ pub enum OperationType {
     /// Get a query plan.
     ///
     /// The only constructor for an operation of this kind is the private
-    /// [`CosmosOperation::query_plan`](crate::models::CosmosOperation::query_plan)
-    /// (test-only). It pre-populates the four mandatory headers the Gateway
+    /// `CosmosOperation::query_plan`
+    /// (test-only, gated on the `__internal_testing` cargo feature). It pre-populates the four mandatory headers the Gateway
     /// requires (`x-ms-cosmos-is-query-plan-request`,
     /// `x-ms-cosmos-supported-query-features`, `x-ms-documentdb-isquery`,
     /// `Content-Type: application/query+json`); other code paths cannot
