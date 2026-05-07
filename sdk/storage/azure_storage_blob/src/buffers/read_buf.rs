@@ -61,6 +61,10 @@ impl ReadBuf {
         self.buf.len()
     }
 
+    pub fn remaining(&self) -> usize {
+        self.capacity() - self.len()
+    }
+
     /// Gets a mutable reference to the slice of bytes between `len()` and `capacity()`.
     pub fn spare_capacity_mut(&mut self) -> &mut [u8] {
         &mut self.buf[self.cursor..]
