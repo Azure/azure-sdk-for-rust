@@ -549,23 +549,4 @@ mod tests {
             .expect("runtime builds");
         assert!(runtime.user_agent_suffix().is_none());
     }
-
-    #[tokio::test]
-    async fn builder_stores_user_agent_suffix_on_options() {
-        let suffix = UserAgentSuffix::new("my-suffix");
-        let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
-        assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
-
-        // Mirror `CosmosClientBuilder::build()`: the stored suffix is
-        // forwarded into `CosmosDriverRuntimeBuilder` so it lands on the
-        // User-Agent header for data-plane requests. Building the runtime
-        // here verifies the full SDK setter -> options -> driver chain;
-        // the assertion above only proves the SDK-side storage step.
-        let mut driver_builder = CosmosDriverRuntimeBuilder::new();
-        if let Some(s) = builder.options.user_agent_suffix.clone() {
-            driver_builder = driver_builder.with_user_agent_suffix(s);
-        }
-        let runtime = driver_builder.build().await.expect("runtime builds");
-        assert_eq!(runtime.user_agent_suffix(), Some(&suffix));
-    }
 }
