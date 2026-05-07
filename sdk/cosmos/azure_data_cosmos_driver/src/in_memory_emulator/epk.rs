@@ -302,11 +302,7 @@ mod tests {
                 serde_json::json!({"pk": 42.0}),
                 "[42.0]",
             ),
-            (
-                "fractional 1.5",
-                serde_json::json!({"pk": 1.5}),
-                "[1.5]",
-            ),
+            ("fractional 1.5", serde_json::json!({"pk": 1.5}), "[1.5]"),
             ("large 1e10", serde_json::json!({"pk": 1e10}), "[1e10]"),
             (
                 "u64 boundary 2^53",
