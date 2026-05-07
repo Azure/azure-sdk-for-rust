@@ -89,3 +89,77 @@ where
     }
     Ok(count)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::task::Poll;
+
+    use super::*;
+
+    struct MockAsyncRead {
+        count: Option<usize>,
+    }
+    impl AsyncRead for MockAsyncRead {
+        fn poll_read(
+            self: std::pin::Pin<&mut Self>,
+            _cx: &mut std::task::Context<'_>,
+            _buf: &mut [u8],
+        ) -> std::task::Poll<std::io::Result<usize>> {
+            Poll::Ready(
+                self.count
+                    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "mock error")),
+            )
+        }
+    }
+
+    #[tokio::test]
+    async fn validated_read_success() {
+        for (slice_len, async_read_count) in [
+            (0, 0),
+            (1, 0),
+            (1, 1),
+            (1024, 1024),
+            (12345, 1024),
+            (12345, 123),
+        ] {
+            // sanity check we're testing the right thing
+            assert!(slice_len >= async_read_count);
+
+            let mut buf = vec![0; slice_len];
+            let mut async_read = MockAsyncRead {
+                count: Some(async_read_count),
+            };
+            assert_eq!(
+                validated_read(&mut buf, &mut async_read).await.unwrap(),
+                async_read_count
+            )
+        }
+    }
+
+    #[tokio::test]
+    async fn validated_read_propagates_error() {
+        let mut buf = vec![0; 1024];
+        let mut async_read = MockAsyncRead { count: None };
+        assert_eq!(
+            validated_read(&mut buf, &mut async_read)
+                .await
+                .unwrap_err()
+                .to_string(),
+            "mock error"
+        )
+    }
+
+    #[tokio::test]
+    async fn validated_read_detects_bad_count() {
+        for (slice_len, async_read_count) in [(0, 1), (1, 2), (1024, 1234), (123, 12345)] {
+            // sanity check we're testing the right thing
+            assert!(slice_len < async_read_count);
+
+            let mut buf = vec![0; slice_len];
+            let mut async_read = MockAsyncRead {
+                count: Some(async_read_count),
+            };
+            assert!(validated_read(&mut buf, &mut async_read).await.is_err())
+        }
+    }
+}
