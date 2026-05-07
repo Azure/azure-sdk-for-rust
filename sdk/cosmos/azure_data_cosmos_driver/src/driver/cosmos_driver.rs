@@ -7,10 +7,16 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    driver::{
+        dataflow::{
+            PartitionRoutingRefresh, Pipeline, PipelineContext, Request, RequestExecutor,
+            RequestTarget,
+        },
+        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    },
     models::{
-        AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference,
+        request_header_names, AccountEndpoint, AccountReference, ActivityId, ContainerProperties,
+        ContainerReference, CosmosOperation, CosmosResponse, DatabaseProperties, DatabaseReference,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -18,6 +24,7 @@ use crate::{
     },
 };
 use arc_swap::ArcSwap;
+use azure_core::http::headers::{HeaderName, HeaderValue};
 use futures::future::BoxFuture;
 use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -33,6 +40,34 @@ use super::{
     },
     CosmosDriverRuntime,
 };
+
+struct DriverRequestExecutor<'a> {
+    driver: &'a CosmosDriver,
+    options: &'a OperationOptions,
+}
+
+impl RequestExecutor for DriverRequestExecutor<'_> {
+    fn execute_request<'a>(
+        &'a mut self,
+        operation: &'a CosmosOperation,
+        _target: &'a RequestTarget,
+        _partition_routing_refresh: PartitionRoutingRefresh,
+        continuation: Option<&'a str>,
+    ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+        let driver = self.driver;
+        let mut options = self.options.clone();
+        if let Some(continuation) = continuation {
+            let mut custom_headers = options.custom_headers().cloned().unwrap_or_default();
+            custom_headers.insert(
+                HeaderName::from_static(request_header_names::CONTINUATION),
+                HeaderValue::from(continuation.to_owned()),
+            );
+            options = options.with_custom_headers(custom_headers);
+        }
+
+        Box::pin(async move { driver.execute_operation_direct(operation, &options).await })
+    }
+}
 
 /// Cosmos DB driver instance.
 ///
@@ -972,8 +1007,35 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
+        let Some(partition_key) = operation.partition_key().cloned() else {
+            return self.execute_operation_direct(&operation, &options).await;
+        };
+
+        let target = RequestTarget::logical_partition_key(partition_key);
+        let root = Request::new(operation, target);
+        let mut pipeline = Pipeline::new(Box::new(root));
+        let mut executor = DriverRequestExecutor {
+            driver: self,
+            options: &options,
+        };
+        let mut context = PipelineContext::new(&mut executor);
+
+        match pipeline.next_page(&mut context).await? {
+            Some(response) => Ok(response),
+            None => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "request dataflow pipeline completed without emitting a response",
+            )),
+        }
+    }
+
+    async fn execute_operation_direct(
+        &self,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> azure_core::Result<CosmosResponse> {
         // Step 1: Build the single OperationOptionsView for layered resolution.
-        let effective_options = self.operation_options_view(&options);
+        let effective_options = self.operation_options_view(options);
 
         // Step 2: Resolve effective throughput control group (if any).
         let effective_control_group = match operation.container() {
@@ -1048,7 +1110,7 @@ impl CosmosDriver {
 
         // Step 7: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
-            &operation,
+            operation,
             &effective_options,
             options.custom_headers(),
             self.location_state_store.as_ref(),

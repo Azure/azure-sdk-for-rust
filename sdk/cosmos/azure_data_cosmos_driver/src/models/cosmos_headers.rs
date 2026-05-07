@@ -24,6 +24,7 @@ pub(crate) mod request_header_names {
     pub const IS_BATCH_REQUEST: &str = "x-ms-cosmos-is-batch-request";
     pub const BATCH_ATOMIC: &str = "x-ms-cosmos-batch-atomic";
     pub const BATCH_CONTINUE_ON_ERROR: &str = "x-ms-cosmos-batch-continue-on-error";
+    pub const CONTINUATION: &str = "x-ms-continuation";
     pub const OFFER_THROUGHPUT: &str = "x-ms-offer-throughput";
     pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
