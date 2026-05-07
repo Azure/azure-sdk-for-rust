@@ -1007,10 +1007,24 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        let Some(partition_key) = operation.partition_key().cloned() else {
-            return self.execute_operation_direct(&operation, &options).await;
-        };
+        match operation.target() {
+            crate::models::OperationTarget::None => {
+                return self.execute_operation_direct(&operation, &options).await;
+            }
+            crate::models::OperationTarget::FeedRange(_) => {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "FeedRange targeting is not yet implemented for execute_operation; \
+                     use the dataflow pipeline directly for feed range operations",
+                ));
+            }
+            crate::models::OperationTarget::PartitionKey(_) => {}
+        }
 
+        let partition_key = operation
+            .partition_key()
+            .expect("PartitionKey target matched above but partition_key() returned None")
+            .clone();
         let target = RequestTarget::logical_partition_key(partition_key);
         let root = Request::new(operation, target);
         let mut pipeline = Pipeline::new(Box::new(root));

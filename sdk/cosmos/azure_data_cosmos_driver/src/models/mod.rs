@@ -31,8 +31,10 @@ pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
 #[allow(dead_code)]
 pub mod effective_partition_key;
+mod feed_range;
 #[allow(dead_code)]
 mod murmur_hash;
+mod operation_target;
 #[allow(dead_code)]
 pub mod partition_key_range;
 #[allow(dead_code)]
@@ -53,6 +55,8 @@ pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
 pub use etag::{ETag, Precondition};
+pub use feed_range::FeedRange;
+pub use operation_target::OperationTarget;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;

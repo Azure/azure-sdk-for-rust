@@ -240,6 +240,38 @@ impl FeedRange {
             max_exclusive: max,
         })
     }
+    /// Converts this SDK `FeedRange` into the driver's `FeedRange` type.
+    ///
+    /// The driver's `FeedRange` is used internally for pipeline routing and
+    /// does not carry serialization logic.
+    #[allow(
+        dead_code,
+        reason = "will be used when query/change-feed operations target feed ranges"
+    )]
+    pub(crate) fn to_driver_feed_range(&self) -> azure_data_cosmos_driver::models::FeedRange {
+        azure_data_cosmos_driver::models::FeedRange::new(
+            azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey::from(
+                self.min_inclusive.as_str(),
+            ),
+            azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey::from(
+                self.max_exclusive.as_str(),
+            ),
+        )
+    }
+
+    /// Creates an SDK `FeedRange` from the driver's `FeedRange` type.
+    #[allow(
+        dead_code,
+        reason = "will be used when query/change-feed operations target feed ranges"
+    )]
+    pub(crate) fn from_driver_feed_range(
+        driver_range: &azure_data_cosmos_driver::models::FeedRange,
+    ) -> Self {
+        Self {
+            min_inclusive: EffectivePartitionKey::from(driver_range.min_inclusive().as_str()),
+            max_exclusive: EffectivePartitionKey::from(driver_range.max_exclusive().as_str()),
+        }
+    }
 }
 
 impl fmt::Display for FeedRange {
