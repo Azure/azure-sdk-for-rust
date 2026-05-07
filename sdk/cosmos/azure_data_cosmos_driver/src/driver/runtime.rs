@@ -744,4 +744,53 @@ mod tests {
         assert!(!second_error.to_string().is_empty());
         assert!(runtime.driver_registry.read().unwrap().is_empty());
     }
+
+    /// Verifies that the user-agent suffix set on the runtime appears in the
+    /// `User-Agent` HTTP header that the driver attaches to outgoing requests.
+    ///
+    /// This mirrors how `fetch_account_properties_with_runtime` (and other
+    /// driver internals) build the header value: they call
+    /// `runtime.user_agent().as_str()` and pass it to `apply_cosmos_headers`.
+    ///
+    /// Coverage for `runtime.user_agent().suffix()` itself is provided by
+    /// `cosmos_driver::tests::user_agent_computed_from_suffix`; this test
+    /// covers the additional hop into the request headers, which is otherwise
+    /// untested.
+    #[tokio::test]
+    async fn user_agent_suffix_appears_in_request_headers() {
+        use crate::driver::transport::{
+            cosmos_headers::apply_cosmos_headers, cosmos_transport_client::HttpRequest,
+        };
+        use azure_core::http::headers::{HeaderValue, Headers, USER_AGENT};
+        use azure_core::http::Method;
+
+        let suffix = UserAgentSuffix::try_new("test-app").expect("valid suffix");
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_user_agent_suffix(suffix)
+            .build()
+            .await
+            .unwrap();
+
+        // Replicate the header construction used in driver request paths.
+        let user_agent_hv = HeaderValue::from(runtime.user_agent().as_str().to_owned());
+        let mut request = HttpRequest {
+            url: Url::parse("https://test.documents.azure.com/").unwrap(),
+            method: Method::Get,
+            headers: Headers::new(),
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        apply_cosmos_headers(&mut request, &user_agent_hv);
+
+        let header_value = request
+            .headers
+            .get_optional_str(&USER_AGENT)
+            .expect("User-Agent header should be set by apply_cosmos_headers");
+        assert!(
+            header_value.contains("test-app"),
+            "User-Agent header '{header_value}' should contain the suffix 'test-app'"
+        );
+    }
 }
