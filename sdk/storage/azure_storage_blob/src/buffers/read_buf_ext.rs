@@ -33,7 +33,7 @@ impl ReadBufExt for ReadBuf {
             let mut dst = self.spare_capacity_mut();
             let written = dst.write(data)?;
             // SAFETY: We trust values returned from std::io::impls.
-            unsafe { self.set_len(self.len() + written) };
+            unsafe { self.unchecked_set_len(self.len() + written) };
             data = &data[written..];
         }
         Ok(())
@@ -45,7 +45,7 @@ impl ReadBufExt for ReadBuf {
     {
         let count = validated_read(self.spare_capacity_mut(), stream).await?;
         // SAFETY: `count` has been validated as <= `self.spare_capacity_mut().len()`
-        unsafe { self.set_len(self.len() + count) };
+        unsafe { self.unchecked_set_len(self.len() + count) };
         Ok(count)
     }
     async fn read_exactly_from<R>(&mut self, stream: &mut R, len: usize) -> Result<usize>
@@ -58,7 +58,7 @@ impl ReadBufExt for ReadBuf {
             let dst = &mut self.spare_capacity_mut()[..to_read];
             let count = validated_read(dst, stream).await?;
             // SAFETY: `count` has been validated as <= `dst.len()`, a slice of `self.spare_capacity_mut()`
-            unsafe { self.set_len(self.len() + count) };
+            unsafe { self.unchecked_set_len(self.len() + count) };
 
             if count == 0 {
                 return Ok(total_read);
