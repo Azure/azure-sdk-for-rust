@@ -15,8 +15,8 @@ use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
 use super::response::headers::{
-    ACTIVITY_ID, GATEWAY_VERSION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
-    ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
+    ACTIVITY_ID, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN, ITEM_LSN,
+    LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
     QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
     TRANSPORT_REQUEST_ID,
 };
@@ -59,23 +59,37 @@ fn replication_back_pressure_response(
     )
 }
 
-async fn with_request_activity_id(
+/// Post-processes a dispatched response to stamp the per-request `x-ms-activity-id`
+/// (echoed from the request when present) and to ensure every response carries a
+/// monotonic `x-ms-transport-request-id`.
+///
+/// `ResponseBuilder::new` no longer pre-seeds `x-ms-transport-request-id`; point-op
+/// handlers stamp it from `store.next_transport_request_id()` via
+/// `decorate_point_response`, and any response that reaches this post-processor
+/// without one (control-plane, error, unsupported) gets stamped here from the same
+/// store counter. The `if absent` check avoids double-incrementing for point ops.
+async fn finalize_response(
+    store: &Arc<EmulatorStore>,
     response: AsyncRawResponse,
     activity_id: Option<&str>,
 ) -> AsyncRawResponse {
-    let Some(activity_id) = activity_id else {
-        return response;
-    };
-
     let raw = response
         .try_into_raw_response()
         .await
         .expect("emulator responses are always buffered; streaming responses are not produced by this emulator");
     let mut headers = raw.headers().clone();
-    headers.insert(
-        ACTIVITY_ID.clone(),
-        HeaderValue::from(activity_id.to_string()),
-    );
+    if let Some(activity_id) = activity_id {
+        headers.insert(
+            ACTIVITY_ID.clone(),
+            HeaderValue::from(activity_id.to_string()),
+        );
+    }
+    if headers.get_optional_str(&TRANSPORT_REQUEST_ID).is_none() {
+        headers.insert(
+            TRANSPORT_REQUEST_ID.clone(),
+            HeaderValue::from(store.next_transport_request_id().to_string()),
+        );
+    }
     AsyncRawResponse::from_bytes(raw.status(), headers, raw.body().as_ref().to_vec())
 }
 
@@ -90,7 +104,7 @@ pub(crate) async fn handle_operation(
     let response = match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, start),
         OperationType::CreateDatabase => {
-            handle_create_database(store, region_name, parsed, request_body, start)
+            handle_create_database(store, region_name, parsed, request_body, start).await
         }
         OperationType::ReadDatabase => handle_read_database(
             store,
@@ -104,14 +118,17 @@ pub(crate) async fn handle_operation(
             parsed.db_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::CreateContainer => handle_create_container(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            parsed,
-            request_body,
-            start,
-        ),
+        OperationType::CreateContainer => {
+            handle_create_container(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                parsed,
+                request_body,
+                start,
+            )
+            .await
+        }
         OperationType::ReadContainer => handle_read_container(
             store,
             region_name,
@@ -168,7 +185,7 @@ pub(crate) async fn handle_operation(
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
 
-    with_request_activity_id(response, parsed.activity_id.as_deref()).await
+    finalize_response(store, response, parsed.activity_id.as_deref()).await
 }
 
 // --- Control-Plane Operations ---
@@ -180,7 +197,7 @@ fn handle_read_account(store: &Arc<EmulatorStore>, start: Instant) -> AsyncRawRe
         .build()
 }
 
-fn handle_create_database(
+async fn handle_create_database(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
@@ -218,6 +235,13 @@ fn handle_create_database(
             .build();
         }
     };
+
+    // Serialize the (exists?, create) pair so two concurrent requests for
+    // the same database id cannot both observe "does not exist" and both
+    // emit 201/Created. The lock is per-`db_id` so unrelated database
+    // creates run in parallel.
+    let cp_lock = store.control_plane_lock_db(&db_id);
+    let _cp_guard = cp_lock.lock().await;
 
     // Check if already exists
     if let Some(region_ref) = store.region(region_name) {
@@ -327,7 +351,7 @@ fn handle_delete_database(
         .build()
 }
 
-fn handle_create_container(
+async fn handle_create_container(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     db_id: &str,
@@ -418,6 +442,13 @@ fn handle_create_container(
     };
 
     // Check for duplicate
+    // Serialize the (exists?, create) pair on the per-(db, coll)
+    // control-plane lock, mirroring `handle_create_database`. Without this,
+    // two concurrent CreateContainer calls for the same id can both observe
+    // "not present" and both proceed to `create_container_with_config_internal`.
+    let cp_lock = store.control_plane_lock_coll(db_id, &coll_id);
+    let _cp_guard = cp_lock.lock().await;
+
     if region_ref.container_exists(db_id, &coll_id) {
         return error_response(
             StatusCode::Conflict,
@@ -431,12 +462,30 @@ fn handle_create_container(
         .build();
     }
 
-    let meta = store.create_container_with_config_internal(
-        db_id,
-        &coll_id,
-        pk_def,
-        ContainerConfig::default(),
-    );
+    // Honor caller-specified provisioned throughput from `x-ms-offer-throughput`.
+    // When the header is missing, `ContainerConfig::default()` keeps
+    // `provisioned_throughput_ru = None` (no throttling), matching the prior
+    // behavior. When present and below the 400 RU/s minimum, surface the same
+    // 400/BadRequest the real service would emit instead of silently clamping.
+    let mut container_config = ContainerConfig::default();
+    if let Some(ru) = parsed.offer_throughput {
+        container_config = container_config.with_throughput(ru);
+        if let Err(err) = container_config.clone().build() {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &err.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    }
+
+    let meta =
+        store.create_container_with_config_internal(db_id, &coll_id, pk_def, container_config);
     let response_body = container_to_json(&meta);
     let token = store.advance_master_partition_lsn(region_name);
     if parsed.content_response_on_write {
@@ -732,7 +781,10 @@ fn decorate_point_response(
             LAST_STATE_CHANGE_UTC.clone(),
             "Thu, 01 Jan 1970 00:00:00 GMT",
         )
-        .with_header_value(GATEWAY_VERSION.clone(), "2.0.0")
+        // GATEWAY_VERSION is intentionally NOT overridden here — `ResponseBuilder::new`
+        // already pre-seeds it to `"version=emulator"` for every response. Doc-plane and
+        // control-plane responses both flow through that default, so dual-backend tests
+        // do not need a per-handler allowlist for divergent gateway version values.
         .with_header_value(SERVICE_VERSION.clone(), "version=emulator")
         .with_header_value(
             RESOURCE_QUOTA.clone(),

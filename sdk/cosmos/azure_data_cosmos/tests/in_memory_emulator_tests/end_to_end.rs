@@ -1052,7 +1052,8 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     // Build the runtime with fault injection layered on top of the emulator.
     let runtime_builder = emulator
         .runtime_builder()
-        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)]);
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .expect("distinct fault injection rule id");
 
     // Provision resources in the emulator store.
     let db_name = format!("sdk-fi-{run_id}");
@@ -1249,7 +1250,7 @@ async fn resolve_real_client_with_fault_injection(
     );
 
     // Apply fault injection to the runtime builder and pass it to the SDK.
-    let runtime_builder = CosmosDriverRuntime::builder().with_fault_injection_rules(vec![rule]);
+    let runtime_builder = CosmosDriverRuntime::builder().with_fault_injection_rules(vec![rule])?;
 
     let client = CosmosClientBuilder::new()
         .with_driver_runtime_builder(runtime_builder)

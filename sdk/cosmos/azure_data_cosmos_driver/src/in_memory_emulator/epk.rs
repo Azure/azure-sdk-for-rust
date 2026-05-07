@@ -280,4 +280,90 @@ mod tests {
         );
         assert_eq!(epk.as_str(), "19819C94CE42A1654CCC8110539D9589");
     }
+
+    /// Header-vs-body parity: a partition key value extracted from an item
+    /// body MUST hash to the same EPK as the wire-format header value the
+    /// SDK computes for the matching point operation. Without this, a
+    /// document inserted as `{"pk": 42}` would land in a different
+    /// partition than a read carrying `x-ms-documentdb-partitionkey: [42]`,
+    /// so the read would 404 even though the doc is in the container.
+    ///
+    /// Covers the numeric paths most likely to drift: small integers,
+    /// fractional doubles, large doubles past 2^53, and the boundary
+    /// between number-as-int and number-as-f64 representations.
+    #[test]
+    fn header_and_body_extraction_produce_identical_epk() {
+        let cases: Vec<(&str, serde_json::Value, &str)> = vec![
+            ("integer 42", serde_json::json!({"pk": 42}), "[42]"),
+            ("integer 0", serde_json::json!({"pk": 0}), "[0]"),
+            ("negative integer", serde_json::json!({"pk": -7}), "[-7]"),
+            (
+                "integer-as-f64 42.0",
+                serde_json::json!({"pk": 42.0}),
+                "[42.0]",
+            ),
+            (
+                "fractional 1.5",
+                serde_json::json!({"pk": 1.5}),
+                "[1.5]",
+            ),
+            ("large 1e10", serde_json::json!({"pk": 1e10}), "[1e10]"),
+            (
+                "u64 boundary 2^53",
+                serde_json::json!({"pk": 9_007_199_254_740_992_u64}),
+                "[9007199254740992]",
+            ),
+            ("string", serde_json::json!({"pk": "abc"}), r#"["abc"]"#),
+            ("bool true", serde_json::json!({"pk": true}), "[true]"),
+            ("bool false", serde_json::json!({"pk": false}), "[false]"),
+            ("null", serde_json::json!({"pk": null}), "[null]"),
+        ];
+
+        for (label, body, header) in cases {
+            let from_body = extract_pk_from_body(&body, &["/pk"]).unwrap_or_else(|e| {
+                panic!("body extraction failed for {}: {}", label, e);
+            });
+            let from_header = parse_partition_key_header(header).unwrap_or_else(|e| {
+                panic!("header parsing failed for {}: {}", label, e);
+            });
+            assert_eq!(
+                from_body, from_header,
+                "components diverge for {}: body={:?} header={:?}",
+                label, from_body, from_header
+            );
+
+            let epk_body = compute_epk(&from_body, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
+            let epk_header = compute_epk(
+                &from_header,
+                PartitionKeyKind::Hash,
+                PartitionKeyVersion::V2,
+            );
+            assert_eq!(
+                epk_body,
+                epk_header,
+                "EPK diverges for {}: body={} header={}",
+                label,
+                epk_body.as_str(),
+                epk_header.as_str(),
+            );
+
+            // V1 too — hierarchical-PK V1 containers exist and the same
+            // body/header parity must hold there.
+            let epk_body_v1 =
+                compute_epk(&from_body, PartitionKeyKind::Hash, PartitionKeyVersion::V1);
+            let epk_header_v1 = compute_epk(
+                &from_header,
+                PartitionKeyKind::Hash,
+                PartitionKeyVersion::V1,
+            );
+            assert_eq!(
+                epk_body_v1,
+                epk_header_v1,
+                "V1 EPK diverges for {}: body={} header={}",
+                label,
+                epk_body_v1.as_str(),
+                epk_header_v1.as_str(),
+            );
+        }
+    }
 }

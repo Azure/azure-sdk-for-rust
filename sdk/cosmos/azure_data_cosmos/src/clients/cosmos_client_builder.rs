@@ -241,8 +241,12 @@ impl CosmosClientBuilder {
     ///   connection-pool behaviour regardless of what is configured here.
     /// - **Fault injection rules** (`with_fault_injection_rules`): the SDK
     ///   appends each rule from its own fault-injection builder to the
-    ///   rules already configured on the supplied builder (additive). Both sources contribute and neither is silently
-    ///   dropped.
+    ///   rules already configured on the supplied builder (additive). Both
+    ///   sources contribute and neither is silently dropped. `build` returns
+    ///   an error if a rule on the SDK builder shares its `id` with one
+    ///   already registered on the supplied driver runtime builder, so
+    ///   callers wiring a runtime builder of their own are responsible for
+    ///   keeping rule ids globally unique.
     /// - **Throughput control groups** (`register_throughput_control_group`):
     ///   the SDK appends each group registered via
     ///   `with_throughput_control_group` (additive — does not clear existing
@@ -268,14 +272,13 @@ impl CosmosClientBuilder {
     /// # Interaction with `with_fault_injection`
     ///
     /// When both an emulator HTTP client and a fault-injection builder are
-    /// configured, the SDK pipeline's `Transport` is **unconditionally**
-    /// replaced by this emulator client — the fault-injection wrapper that
-    /// would otherwise sit in front of the SDK pipeline transport is
-    /// discarded. The driver still receives the fault-injection rules (they
-    /// are forwarded onto the driver runtime builder), so fault injection
-    /// remains active for any request that flows through the driver. Tests
-    /// that need fault injection on SDK-pipeline-only paths (account
-    /// refresh, etc.) cannot rely on it via this combination.
+    /// configured, the emulator is installed as the **inner** transport for
+    /// the SDK pipeline and the fault-injection wrapper is composed *around*
+    /// it (`fault_builder.with_inner_client(emulator)`). The emulator
+    /// therefore receives only requests that fault injection has not
+    /// short-circuited, and fault injection remains active for every request
+    /// flowing through the SDK pipeline — including SDK-pipeline-only paths
+    /// such as account-refresh — instead of being silently discarded.
     #[doc(hidden)]
     #[cfg(feature = "__internal_in_memory_emulator")]
     pub fn with_emulator_http_client(
@@ -525,7 +528,7 @@ impl CosmosClientBuilder {
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =
-                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules);
+                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules)?;
         }
         for group in self.throughput_control_groups {
             driver_runtime_builder = driver_runtime_builder

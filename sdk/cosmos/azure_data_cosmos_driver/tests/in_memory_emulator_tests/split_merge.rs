@@ -363,3 +363,124 @@ async fn read_after_split_succeeds() {
     assert_eq!(doc["id"], "item1");
     assert_eq!(doc["value"], 1);
 }
+
+/// Splitting a V1-hash container must succeed and route post-split reads
+/// correctly. Before V1-aware split midpoint support, `compute_epk_midpoint`
+/// rejected V1 boundaries and `split_partition` aborted with the parent
+/// re-unlocked but no children created — leaving V1 containers permanently
+/// non-splittable.
+///
+/// This test creates a V1 container, splits a partition that actually owns
+/// at least one previously-inserted document, drains the split task, and
+/// then verifies (a) the partition count grew by exactly 1 and (b) the
+/// pre-split document remains readable on its (new) child partition. (a)
+/// catches the regression where the split silently no-ops; (b) catches a
+/// regression where the V1 midpoint is computed in the wrong space and
+/// docs end up on the side of the boundary that no longer covers them.
+#[tokio::test]
+async fn split_v1_container_creates_two_children_and_routes_reads() {
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        Url::parse(GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container(
+        "testdb",
+        "v1coll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 1
+        }))
+        .unwrap(),
+    );
+
+    let gateway_url = GATEWAY_URL;
+
+    // Insert a handful of distinct PKs so multiple partitions become
+    // populated; pick one whose routed partition has docs to verify
+    // post-split routing.
+    let mut routed: std::collections::HashMap<u32, Vec<String>> = Default::default();
+    for i in 0..16 {
+        let id = format!("v1-item-{i}");
+        let pk = format!("pk-{i}");
+        let body = serde_json::json!({"id": &id, "pk": &pk, "value": i});
+        let pk_header = format!("[\"{pk}\"]");
+        let req = create_item_request(gateway_url, "testdb", "v1coll", &body, &pk_header, false);
+        let response = emulator.execute_request(&req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::Created);
+        let pid: u32 = response
+            .headers()
+            .get_optional_str(&SESSION_TOKEN)
+            .and_then(|token| token.split(':').next())
+            .and_then(|prefix| prefix.parse().ok())
+            .expect("create should return a session token with a numeric partition id");
+        routed.entry(pid).or_default().push(id);
+    }
+
+    // Pick a partition that owns at least one document so the post-split
+    // read assertion is meaningful.
+    let (target_pid, target_ids) = routed
+        .into_iter()
+        .find(|(_, ids)| !ids.is_empty())
+        .expect("at least one partition should have received a document");
+
+    // Snapshot the pre-split partition count.
+    let url = format!("{gateway_url}/dbs/testdb/colls/v1coll/pkranges");
+    let req = Request::new(Url::parse(&url).unwrap(), Method::Get);
+    let response = emulator.execute_request(&req).await.unwrap();
+    let (_, _, body) = collect_response(response).await;
+    let pre_count = body["PartitionKeyRanges"].as_array().unwrap().len();
+
+    // Split the partition we know owns documents.
+    store.split_partition("testdb", "v1coll", target_pid, Duration::ZERO);
+    store.drain_pending_control_plane().await;
+
+    // Topology must have grown by exactly 1 (one parent removed, two children added).
+    let req = Request::new(Url::parse(&url).unwrap(), Method::Get);
+    let response = emulator.execute_request(&req).await.unwrap();
+    let (_, _, body) = collect_response(response).await;
+    let ranges = body["PartitionKeyRanges"].as_array().unwrap();
+    assert_eq!(
+        ranges.len(),
+        pre_count + 1,
+        "V1 split must produce exactly two children from one parent",
+    );
+    // And exactly two of those ranges must list the parent id.
+    let target_pid_str = target_pid.to_string();
+    let children: Vec<&serde_json::Value> = ranges
+        .iter()
+        .filter(|r| {
+            r["parents"]
+                .as_array()
+                .map(|p| p.iter().any(|x| x == &serde_json::json!(target_pid_str)))
+                .unwrap_or(false)
+        })
+        .collect();
+    assert_eq!(
+        children.len(),
+        2,
+        "split must produce two children with parent={target_pid}",
+    );
+
+    // Every previously-inserted doc on the parent must remain readable.
+    for id in &target_ids {
+        // Recover the original PK suffix from the doc id ("v1-item-{i}" → "pk-{i}").
+        let suffix = id
+            .strip_prefix("v1-item-")
+            .expect("test-controlled id format");
+        let pk_header = format!("[\"pk-{suffix}\"]");
+        let req = read_item_request(gateway_url, "testdb", "v1coll", id, &pk_header);
+        let response = emulator.execute_request(&req).await.unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::Ok,
+            "post-split read of {id} must succeed",
+        );
+    }
+}

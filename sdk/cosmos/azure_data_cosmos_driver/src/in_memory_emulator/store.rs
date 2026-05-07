@@ -66,16 +66,23 @@ fn apply_doc_to_partition(partition: &PhysicalPartition, doc: &StoredDocument, i
         match existing {
             None => (true, false),
             Some(e) => {
-                // Tiebreak `(ts, lsn)` collisions on `source_region` so two
-                // regions writing the same `(epk, id)` at the same wall-clock
-                // second and starting LSN converge deterministically. The
-                // resume-from-pause drain path already sorts by source_region
-                // for the same reason; this keeps the live path consistent.
-                let cmp = (doc.ts, doc.lsn, doc.source_region.as_str()).cmp(&(
-                    e.ts,
-                    e.lsn,
-                    e.source_region.as_str(),
-                ));
+                // LWW comparison on `(ts, lsn)` only — strictly greater wins.
+                // On a `(ts, lsn)` tie we keep the locally-stored doc (the
+                // existing entry) and discard the incoming one. Multi-master
+                // conflict resolution only happens in the burning region (the
+                // local write region for the partition), and on a true tie
+                // letting the local doc win is correct: there is no
+                // observable distinction between "we already applied an
+                // identical write" and "two regions raced to identical
+                // state", and any tiebreaker over `source_region` would
+                // make the converged value depend on which region a test
+                // happens to query first. The resume-from-pause drain still
+                // sorts by `source_region` as a final stable-ordering key
+                // (so two paused entries at the same `(ts, lsn)` apply in
+                // a deterministic order), but it routes through this same
+                // function, so the keep-local-on-tie rule still wins
+                // overall.
+                let cmp = (doc.ts, doc.lsn).cmp(&(e.ts, e.lsn));
                 (cmp == std::cmp::Ordering::Greater, true)
             }
         }
@@ -135,6 +142,23 @@ pub struct EmulatorStore {
 
     /// Per-(db, coll) async mutex serializing split/merge execution.
     split_merge_locks: std::sync::Mutex<SplitMergeLocks>,
+    /// Per-control-plane-resource async mutex serializing the
+    /// `existence-check + create-internal` sequence in
+    /// `handle_create_database` and `handle_create_container`.
+    ///
+    /// Without this, two concurrent create requests for the same id can
+    /// both observe "does not exist", both proceed to
+    /// `create_*_internal`, and produce duplicate metadata (last writer
+    /// wins on the regional snapshot but earlier callers see a 201/Created
+    /// for an entity that no longer exists). The lock makes the pair
+    /// atomic per resource without serializing unrelated creates.
+    ///
+    /// Keys: `db_id` for database creates, `format!("{db}::{coll}")` for
+    /// container creates. Map entries are never removed — control-plane
+    /// resources are bounded in real workloads (and in tests), so leaking
+    /// per-id locks is preferable to a remove-on-drop dance that races
+    /// fresh acquisitions.
+    control_plane_locks: std::sync::Mutex<HashMap<String, Arc<async_lock::Mutex<()>>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
     /// Tracks spawned split/merge tasks separately from replication so a
@@ -190,6 +214,7 @@ impl EmulatorStore {
             regions: RwLock::new(regions),
 
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
+            control_plane_locks: std::sync::Mutex::new(HashMap::new()),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
@@ -331,6 +356,38 @@ impl EmulatorStore {
         map.entry((db.to_string(), coll.to_string()))
             .or_insert_with(|| Arc::new(async_lock::Mutex::new(())))
             .clone()
+    }
+
+    /// Returns the async mutex serializing the `(existence check, create)`
+    /// pair for a control-plane resource keyed by `key`.
+    ///
+    /// Use [`Self::control_plane_lock_db`] / [`Self::control_plane_lock_coll`]
+    /// for type-safe key construction; this raw form is exposed for handlers
+    /// that compose their own keys.
+    pub(crate) fn control_plane_lock(&self, key: &str) -> Arc<async_lock::Mutex<()>> {
+        let mut map = self.control_plane_locks.lock().unwrap();
+        if let Some(existing) = map.get(key) {
+            return existing.clone();
+        }
+        let new_lock = Arc::new(async_lock::Mutex::new(()));
+        map.insert(key.to_string(), new_lock.clone());
+        new_lock
+    }
+
+    /// Per-database control-plane lock for `handle_create_database`.
+    pub(crate) fn control_plane_lock_db(&self, db: &str) -> Arc<async_lock::Mutex<()>> {
+        self.control_plane_lock(db)
+    }
+
+    /// Per-(db, coll) control-plane lock for `handle_create_container`. The
+    /// key is namespaced under `db` so the same `coll` id under different
+    /// databases does not contend on the same lock.
+    pub(crate) fn control_plane_lock_coll(
+        &self,
+        db: &str,
+        coll: &str,
+    ) -> Arc<async_lock::Mutex<()>> {
+        self.control_plane_lock(&format!("{}::{}", db, coll))
     }
 
     /// Awaits all pending in-flight replication tasks and surfaces any
@@ -633,6 +690,14 @@ impl EmulatorStore {
     }
 
     /// Pauses replication TO the given target region.
+    ///
+    /// While paused, replicated writes destined for `target_region` accumulate in that
+    /// region's replication buffer instead of being applied. Tests that compare per-region
+    /// state for consistency MUST drain the buffer before asserting — call
+    /// [`Self::resume_replication`] (which drains synchronously) and then
+    /// [`Self::drain_pending_replications`] to await any background apply tasks. Querying
+    /// a paused target's documents directly while writes are still buffered will observe
+    /// stale state and is not a valid consistency assertion.
     #[doc(hidden)]
     pub fn pause_replication(&self, target_region: &str) {
         let regions = self.regions.read().unwrap();
@@ -801,12 +866,19 @@ impl EmulatorStore {
                 // drop-on-overflow here is the safety net for the racy case
                 // where multiple writers pass the pre-check before any of
                 // them lands in the buffer.
+                //
+                // The proactive check uses `len >= max` to short-circuit; the
+                // apply path drops at `len > max` (one slot of headroom) so a
+                // strictly serial workload that pushes exactly to `max` never
+                // trips the safety net counter — the proactive 429/3075 fires
+                // first on the next write attempt and `dropped_replications`
+                // stays at zero (which is what tests assert in teardown).
                 let max = self
                     .config
                     .replication_for(source_region, target_region)
                     .max_buffered_replications();
                 let mut buffer = region_store.replication_buffer.write().unwrap();
-                if buffer.len() >= max {
+                if buffer.len() > max {
                     self.dropped_replications.fetch_add(1, Ordering::SeqCst);
                     tracing::warn!(
                         target_region = target_region,
@@ -1178,11 +1250,16 @@ pub(crate) struct StoredDocument {
     /// so the read-RU computation does not have to re-serialize on every
     /// point read.
     pub body_size_bytes: usize,
-    /// Region that originated this version of the document. Used as a final
-    /// LWW tiebreaker on `(ts, lsn, source_region)` so that two regions
-    /// writing the same `(epk, id)` at the same wall-clock second with the
-    /// same starting LSN converge to a deterministic winner instead of
-    /// last-arrival-wins.
+    /// Region that originated this version of the document.
+    ///
+    /// Captured at write time and carried with the doc through replication
+    /// for diagnostic purposes (it shows up in tracing fields). It is **not**
+    /// part of the LWW comparison: `apply_doc_to_partition` resolves
+    /// `(ts, lsn)` ties by keeping the locally-stored doc, deliberately
+    /// avoiding any tiebreaker that depends on which region happened to
+    /// produce the colliding write. See the comment in
+    /// `apply_doc_to_partition` for the rationale.
+    #[allow(dead_code)]
     pub source_region: String,
 }
 
@@ -1549,25 +1626,28 @@ impl EmulatorStore {
                     let parent_version = parent.current_version();
                     let parent_min = parent.epk_min.clone();
                     let parent_max = parent.epk_max.clone();
-                    let midpoint = match compute_epk_midpoint(&parent_min, &parent_max) {
-                        Ok(m) => m,
-                        Err(err) => {
-                            tracing::error!(
-                                error = %err,
-                                db_id = db_id,
-                                coll_id = coll_id,
-                                partition_id = partition_id,
-                                "in-memory emulator: aborting split — unlocking parent",
-                            );
-                            // Defer unlock until after the outer read guard on
-                            // `self.regions` is dropped. Re-acquiring a read
-                            // lock on the same RwLock from the same thread
-                            // while another guard is live has unspecified
-                            // behavior in std and may deadlock.
-                            found = Some(SplitPreview::AbortUnlock);
-                            break;
-                        }
-                    };
+                    let pk_kind = state.metadata.partition_key.kind();
+                    let pk_version = state.metadata.partition_key.version();
+                    let midpoint =
+                        match compute_epk_midpoint(&parent_min, &parent_max, pk_kind, pk_version) {
+                            Ok(m) => m,
+                            Err(err) => {
+                                tracing::error!(
+                                    error = %err,
+                                    db_id = db_id,
+                                    coll_id = coll_id,
+                                    partition_id = partition_id,
+                                    "in-memory emulator: aborting split — unlocking parent",
+                                );
+                                // Defer unlock until after the outer read guard on
+                                // `self.regions` is dropped. Re-acquiring a read
+                                // lock on the same RwLock from the same thread
+                                // while another guard is live has unspecified
+                                // behavior in std and may deadlock.
+                                found = Some(SplitPreview::AbortUnlock);
+                                break;
+                            }
+                        };
                     // Both child IDs come from the shared per-container
                     // counter on `ContainerMetadata`, so they are identical
                     // across regions. Likewise RIDs go through the shared
@@ -1963,19 +2043,17 @@ impl EmulatorStore {
                 }
 
                 // Apply each deferred entry into the merged_docs pool with
-                // LWW-on-(ts, lsn, source_region) so a stale buffered write
-                // does not overwrite a fresher in-store doc. Deletes remove
-                // the matching entry. The result then participates in the
-                // LSN rebase below.
+                // LWW-on-(ts, lsn) so a stale buffered write does not
+                // overwrite a fresher in-store doc. On a `(ts, lsn)` tie the
+                // existing entry wins, matching `apply_doc_to_partition`.
+                // Deletes remove the matching entry. The result then
+                // participates in the LSN rebase below.
                 let mut applied_deferred = 0u64;
                 for (doc, is_delete) in deferred_lower.drain(..).chain(deferred_upper.drain(..)) {
                     let bucket = merged_docs.entry(doc.epk.clone()).or_default();
                     let should_apply = match bucket.get(&doc.id) {
                         None => true,
-                        Some(existing) => {
-                            (doc.ts, doc.lsn, doc.source_region.as_str())
-                                > (existing.ts, existing.lsn, existing.source_region.as_str())
-                        }
+                        Some(existing) => (doc.ts, doc.lsn) > (existing.ts, existing.lsn),
                     };
                     if !should_apply {
                         continue;
@@ -2078,7 +2156,40 @@ impl EmulatorStore {
 /// a corrupt bound at the split site would otherwise wedge the partition
 /// `locked = true` forever inside a spawned task with no caller to observe
 /// the panic.
-fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Result<Epk, String> {
+/// Computes the EPK midpoint between two EPK bounds.
+///
+/// Dispatches on `(kind, version)`:
+/// - V2 `Hash` / `MultiHash` (32-char hex of a 126-bit value): bisects in
+///   the 128-bit numeric space.
+/// - V1 `Hash` (variable-length encoded `Number` value): decodes both bounds
+///   to their underlying `u32` hash, bisects, and re-encodes via
+///   [`write_number_v1_binary`](crate::models::partition_key::write_number_v1_binary).
+///
+/// Returns `Err` for any other combination — only `Hash` partitioning is
+/// splittable in this emulator. Callers in the split path must surface the
+/// error and unlock the parent partition rather than panic; a corrupt bound
+/// at the split site would otherwise wedge the partition `locked = true`
+/// forever inside a spawned task with no caller to observe the panic.
+fn compute_epk_midpoint(
+    min: &Epk,
+    max: &Epk,
+    kind: PartitionKeyKind,
+    version: PartitionKeyVersion,
+) -> Result<Epk, String> {
+    match (kind, version) {
+        (PartitionKeyKind::Hash, PartitionKeyVersion::V1) => compute_epk_midpoint_v1(min, max),
+        // V2 Hash and MultiHash both bisect in the 126-bit hex space.
+        (PartitionKeyKind::Hash, PartitionKeyVersion::V2) | (PartitionKeyKind::MultiHash, _) => {
+            compute_epk_midpoint_v2(min, max)
+        }
+        (k, v) => Err(format!(
+            "split unsupported for partition key (kind={:?}, version={:?})",
+            k, v
+        )),
+    }
+}
+
+fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
     let parse = |epk: &Epk, label: &str| -> Result<u128, String> {
         if is_epk_min(epk) {
             return Ok(0u128);
@@ -2104,6 +2215,121 @@ fn compute_epk_midpoint(min: &Epk, max: &Epk) -> Result<Epk, String> {
     // Add the missing carry explicitly.
     let mid = min_val / 2 + max_val / 2 + ((min_val & 1) & (max_val & 1));
     Ok(Epk::from(format!("{:032X}", mid)))
+}
+
+/// V1 split midpoint.
+///
+/// V1 boundaries from [`v1_boundaries`] are uint32 hash values fed through
+/// [`write_number_v1_binary`](crate::models::partition_key::write_number_v1_binary)
+/// (with `value as f64`). Decoding is the inverse of that pipeline:
+///
+/// 1. Hex → bytes.
+/// 2. Strip the leading [`component::NUMBER`] type marker, then reassemble
+///    the original 64-bit `encode_double_as_uint64` payload by concatenating
+///    `byte[1]` (top 8 bits) with the top 7 bits of each subsequent byte
+///    placed at descending shift positions `49, 42, …, 0`. Missing trailing
+///    bytes (the encoder stops emitting once the remaining payload is zero)
+///    contribute zeros.
+/// 3. Reverse `encode_double_as_uint64` and recover the underlying `u32`.
+///
+/// Sentinels (`Epk::min()` / `Epk::max()`) map to `0` and `u32::MAX`. The
+/// midpoint is computed in `u32` space (wrap-safe via `u64`) and re-encoded
+/// the same way `v1_boundaries` produces its bounds, so the resulting EPK is
+/// indistinguishable from a freshly-provisioned 2-partition layout for the
+/// child range.
+fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
+    let parse = |epk: &Epk, label: &str| -> Result<u32, String> {
+        if is_epk_min(epk) {
+            return Ok(0u32);
+        }
+        if is_epk_max(epk) {
+            return Ok(u32::MAX);
+        }
+        decode_v1_number_hex_to_u32(epk.as_str())
+            .map_err(|e| format!("corrupted V1 EPK partition bound {}={:?}: {e}", label, epk))
+    };
+    let min_val = parse(min, "min")?;
+    let max_val = parse(max, "max")?;
+    if min_val >= max_val {
+        return Err(format!(
+            "V1 split midpoint requires min < max (min={min_val} max={max_val})"
+        ));
+    }
+    // Bisect in u32 space; promote to u64 to avoid overflow when the parent
+    // spans the full range.
+    let mid = ((min_val as u64 + max_val as u64) / 2) as u32;
+    let mut buf = Vec::new();
+    crate::models::partition_key::write_number_v1_binary(mid as f64, &mut buf);
+    Ok(Epk::from(bytes_to_hex_upper(&buf)))
+}
+
+/// V1 EPK type-marker byte for `Number` components — must match
+/// `partition_key::component::NUMBER`. The latter is private so we mirror
+/// the literal here; a unit test (`v1_number_marker_matches_encoder`)
+/// pins the value to the encoder's output and fails fast if the encoder
+/// ever changes the marker.
+const V1_NUMBER_MARKER: u8 = 0x05;
+
+/// Inverse of `write_number_v1_binary` for `value as f64` where `value: u32`.
+/// Returns the original `u32` (rejects non-finite or out-of-range decodes).
+fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
+    if !hex.len().is_multiple_of(2) {
+        return Err(format!("V1 EPK hex has odd length: {hex}"));
+    }
+    let mut bytes = Vec::with_capacity(hex.len() / 2);
+    for i in (0..hex.len()).step_by(2) {
+        let byte = u8::from_str_radix(&hex[i..i + 2], 16)
+            .map_err(|e| format!("V1 EPK contains non-hex bytes: {hex} ({e})"))?;
+        bytes.push(byte);
+    }
+    if bytes.len() < 2 {
+        return Err(format!("V1 Number EPK too short: {hex}"));
+    }
+    if bytes[0] != V1_NUMBER_MARKER {
+        return Err(format!(
+            "not a Number-typed V1 EPK (first byte = 0x{:02X}): {hex}",
+            bytes[0]
+        ));
+    }
+
+    // byte[1] is the top 8 bits of the encoded u64 payload.
+    let mut encoded: u64 = (bytes[1] as u64) << 56;
+    // Each subsequent byte contributes 7 bits (its top 7 bits, i.e. bits 7..1)
+    // placed at descending shift positions: 49, 42, 35, 28, 21, 14, 7, 0.
+    // The encoder drops trailing bytes once the remaining payload is zero,
+    // so missing bytes implicitly contribute zeros.
+    for (k, &b) in bytes[2..].iter().enumerate() {
+        let shift: i32 = 49 - 7 * k as i32;
+        if shift < 0 {
+            // Past the bottom of the payload — extra bytes must not corrupt
+            // the decoded value. (`v1_boundaries` never produces them, but a
+            // defensive bound prevents hex tampering from skewing splits.)
+            break;
+        }
+        let payload_bits = ((b >> 1) & 0x7F) as u64;
+        encoded |= payload_bits << shift;
+    }
+
+    // Reverse `encode_double_as_uint64`:
+    //   non-negative input → result has high bit set, recover via XOR
+    //   negative input → result was `!v + 1`, recover via `!(encoded - 1)`
+    let bits = if encoded & 0x8000_0000_0000_0000 != 0 {
+        encoded ^ 0x8000_0000_0000_0000
+    } else {
+        !(encoded.wrapping_sub(1))
+    };
+    let value = f64::from_le_bytes(bits.to_le_bytes());
+    if !value.is_finite() {
+        return Err(format!(
+            "decoded V1 Number is non-finite: {value} (hex={hex})"
+        ));
+    }
+    if value < 0.0 || value > u32::MAX as f64 {
+        return Err(format!(
+            "decoded V1 Number outside u32 range: {value} (hex={hex})"
+        ));
+    }
+    Ok(value as u32)
 }
 
 #[cfg(test)]
@@ -2330,6 +2556,143 @@ mod tests {
                 first_nibble,
             );
         }
+    }
+
+    /// Pin `V1_NUMBER_MARKER` to the encoder's emitted type byte. If the
+    /// production encoder ever changes the Number marker, the V1 decoder
+    /// will silently misclassify input — fail loudly here instead.
+    #[test]
+    fn v1_number_marker_matches_encoder() {
+        let mut buf = Vec::new();
+        crate::models::partition_key::write_number_v1_binary(0.0_f64, &mut buf);
+        assert_eq!(
+            buf[0],
+            super::V1_NUMBER_MARKER,
+            "V1_NUMBER_MARKER (0x{:02X}) must match the encoder's first byte (0x{:02X})",
+            super::V1_NUMBER_MARKER,
+            buf[0],
+        );
+    }
+
+    /// Round-trip every value used by `v1_boundaries(n)` for a few partition
+    /// counts: encode → hex → `decode_v1_number_hex_to_u32` recovers the
+    /// original `u32`. Covers the only inputs `compute_epk_midpoint_v1` ever
+    /// has to invert in practice.
+    #[test]
+    fn decode_v1_number_round_trips_v1_boundaries() {
+        for n in [2u32, 4, 8, 16, 100, 1024] {
+            let bs = super::v1_boundaries(n);
+            for (i, hex) in bs.iter().enumerate() {
+                let expected = ((1u64 << 32) / n as u64) as u32 * (i as u32 + 1);
+                let recovered = super::decode_v1_number_hex_to_u32(hex)
+                    .unwrap_or_else(|e| panic!("decode failed for n={n} i={i} hex={hex}: {e}"));
+                assert_eq!(
+                    recovered, expected,
+                    "decode mismatch for n={n} i={i}: hex={hex} expected={expected} got={recovered}"
+                );
+            }
+        }
+    }
+
+    /// `decode_v1_number_hex_to_u32` must round-trip every value
+    /// `compute_epk_midpoint_v1` could produce or consume — including 0,
+    /// `u32::MAX`, and a spread of arbitrary u32s — so a split's midpoint
+    /// re-encoded boundary will decode identically on the next split.
+    #[test]
+    fn decode_v1_number_round_trips_arbitrary_u32() {
+        let cases: &[u32] = &[
+            0,
+            1,
+            127,
+            128,
+            255,
+            256,
+            65_535,
+            65_536,
+            16_777_215,
+            16_777_216,
+            (u32::MAX / 2),
+            u32::MAX - 1,
+            u32::MAX,
+        ];
+        for &v in cases {
+            let mut buf = Vec::new();
+            crate::models::partition_key::write_number_v1_binary(v as f64, &mut buf);
+            let hex = super::bytes_to_hex_upper(&buf);
+            let back = super::decode_v1_number_hex_to_u32(&hex)
+                .unwrap_or_else(|e| panic!("decode failed for v={v} hex={hex}: {e}"));
+            assert_eq!(back, v, "round-trip failed for v={v} hex={hex} back={back}");
+        }
+    }
+
+    /// `compute_epk_midpoint_v1` must produce a boundary that lies strictly
+    /// between `min` and `max` in the encoded V1 EPK lex ordering — that is
+    /// what enables `PhysicalPartition::contains_epk`'s half-open interval
+    /// check after a split. Verify on the full-range parent (`Epk::min()`,
+    /// `Epk::max()`) and on a narrower parent.
+    #[test]
+    fn compute_epk_midpoint_v1_lies_between_bounds() {
+        use crate::models::{PartitionKeyKind, PartitionKeyVersion};
+
+        // Full range: midpoint of u32 [0, MAX] is u32::MAX / 2 = 0x7FFFFFFF.
+        let mid_full = super::compute_epk_midpoint(
+            &Epk::min(),
+            &Epk::max(),
+            PartitionKeyKind::Hash,
+            PartitionKeyVersion::V1,
+        )
+        .expect("full-range V1 midpoint");
+        let mid_full_u32 = super::decode_v1_number_hex_to_u32(mid_full.as_str()).unwrap();
+        assert_eq!(mid_full_u32, u32::MAX / 2);
+
+        // Narrow range: encode two u32 hashes as boundaries and verify the
+        // midpoint decodes to the arithmetic mean.
+        let lo_u32 = 1_000_000_000u32;
+        let hi_u32 = 3_000_000_000u32;
+        let encode = |v: u32| -> Epk {
+            let mut buf = Vec::new();
+            crate::models::partition_key::write_number_v1_binary(v as f64, &mut buf);
+            Epk::from(super::bytes_to_hex_upper(&buf))
+        };
+        let mid_narrow = super::compute_epk_midpoint(
+            &encode(lo_u32),
+            &encode(hi_u32),
+            PartitionKeyKind::Hash,
+            PartitionKeyVersion::V1,
+        )
+        .expect("narrow V1 midpoint");
+        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(mid_narrow.as_str()).unwrap();
+        assert_eq!(mid_narrow_u32, ((lo_u32 as u64 + hi_u32 as u64) / 2) as u32);
+
+        // Lex-order check: the encoded midpoint must sit strictly between
+        // the encoded bounds. (V1 encoding is order-preserving, so this is
+        // a function-level invariant — not an artifact of any single test
+        // input.)
+        let lo_hex = encode(lo_u32);
+        let hi_hex = encode(hi_u32);
+        assert!(
+            lo_hex.as_str() < mid_narrow.as_str() && mid_narrow.as_str() < hi_hex.as_str(),
+            "V1 midpoint not strictly between bounds: lo={} mid={} hi={}",
+            lo_hex.as_str(),
+            mid_narrow.as_str(),
+            hi_hex.as_str(),
+        );
+    }
+
+    /// Non-hash partition kinds (e.g. `Range`) cannot be split — surface
+    /// the error so the split task can unlock the parent and retry-or-stop
+    /// instead of producing nonsense bounds.
+    #[test]
+    fn compute_epk_midpoint_rejects_non_hash() {
+        use crate::models::{PartitionKeyKind, PartitionKeyVersion};
+        let err = super::compute_epk_midpoint(
+            &Epk::min(),
+            &Epk::max(),
+            PartitionKeyKind::Range,
+            PartitionKeyVersion::V2,
+        )
+        .unwrap_err();
+        assert!(err.contains("split unsupported"), "unexpected error: {err}");
     }
 
     #[test]

@@ -1129,6 +1129,7 @@ async fn read_failover_on_503_via_fault_injection() {
     let emulator_runtime = emulator
         .runtime_builder()
         .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .expect("distinct fault injection rule id")
         .build()
         .await
         .unwrap();
@@ -1328,6 +1329,7 @@ async fn try_real_failover_comparison(
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(pool)
         .with_fault_injection_rules(vec![Arc::clone(&real_rule)])
+        .ok()?
         .build()
         .await
         .ok()?;

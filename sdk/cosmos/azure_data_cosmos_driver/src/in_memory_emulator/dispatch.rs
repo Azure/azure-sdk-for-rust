@@ -44,6 +44,11 @@ pub(crate) struct ParsedRequest {
     pub session_token: Option<String>,
     pub activity_id: Option<String>,
     pub content_response_on_write: bool,
+    /// Provisioned RU/s parsed from the `x-ms-offer-throughput` request header.
+    /// Forwarded to container creation so the emulator honors caller-specified
+    /// throughput instead of silently falling back to `ContainerConfig::default()`
+    /// (which has no provisioned RU/s and disables throttling for the container).
+    pub offer_throughput: Option<u32>,
     #[allow(dead_code)]
     pub is_upsert: bool, // used during dispatch resolution
 }
@@ -58,6 +63,7 @@ static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 static PREFER: HeaderName = HeaderName::from_static("prefer");
 static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
+static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -94,6 +100,14 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&IS_QUERY)
         .map(|v| v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
+    // Parse `x-ms-offer-throughput` (RU/s) from the request headers. Invalid /
+    // non-numeric values are treated as absent; the container creation handler
+    // then uses `ContainerConfig::default()`. A failing parse is intentionally
+    // not surfaced as 400 so requests from older clients that send empty or
+    // legacy values still succeed (matching real-service tolerance).
+    let offer_throughput = headers
+        .get_optional_str(&OFFER_THROUGHPUT)
+        .and_then(|s| s.trim().parse::<u32>().ok());
 
     let path = url.path();
     // Reject trailing slashes after the leading `/`. `/dbs/mydb/colls/mycoll/docs/`
@@ -131,6 +145,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         session_token,
         activity_id,
         content_response_on_write,
+        offer_throughput,
         is_upsert,
     }
 }

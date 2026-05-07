@@ -54,7 +54,7 @@ use headers::{
     ACTIVITY_ID, CONTENT_TYPE, DATE, ETAG, GATEWAY_VERSION, GLOBAL_COMMITTED_LSN, ITEM_COUNT,
     LAST_STATE_CHANGE_UTC, LOCAL_LSN, LSN, NUMBER_OF_READ_REGIONS, QUORUM_ACKED_LOCAL_LSN,
     QUORUM_ACKED_LSN, REQUEST_CHARGE, RESOURCE_QUOTA, RESOURCE_USAGE, RETRY_AFTER,
-    SERVER_DURATION_MS, SERVICE_VERSION, SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID, VERSION,
+    SERVER_DURATION_MS, SERVICE_VERSION, SESSION_TOKEN, SUBSTATUS, VERSION,
 };
 
 const COSMOS_VERSION: &str = "2020-07-15";
@@ -94,10 +94,15 @@ impl ResponseBuilder {
         // surfaced meaningless values on control-plane responses and could
         // mask correlation bugs). Handlers that target a physical partition
         // attach the real values via `decorate_point_response`.
-        headers.insert(
-            TRANSPORT_REQUEST_ID.clone(),
-            HeaderValue::from((uuid::Uuid::new_v4().as_u128() as u32).to_string()),
-        );
+        //
+        // `x-ms-transport-request-id` is intentionally NOT pre-seeded here
+        // either. Point-op responses set it explicitly via
+        // `decorate_point_response` from the store's monotonic counter, and
+        // any response that reaches the dispatch post-processor without one
+        // gets stamped there from the same counter. Pre-seeding with a
+        // random UUID-derived `u32` was masking the case where a handler
+        // forgot to thread the counter through, and produced
+        // non-monotonic values that broke retry-correlation assertions.
         headers.insert(GLOBAL_COMMITTED_LSN.clone(), HeaderValue::from_static("0"));
         headers.insert(QUORUM_ACKED_LSN.clone(), HeaderValue::from_static("0"));
         headers.insert(

@@ -602,17 +602,48 @@ impl CosmosDriverRuntimeBuilder {
     /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
     /// a user-supplied builder) do not silently lose previously-configured
     /// rules.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` when any rule's `id` collides with another rule already
+    /// configured on this builder, or with another rule in the same call.
+    /// Rule ids identify a fault injection rule across reconfigure /
+    /// disable / re-enable operations, so silently keeping one of two rules
+    /// with the same id would surface as "my fault injection didn't fire"
+    /// long after the duplicate was introduced — and depend on insertion
+    /// order. Surfacing the collision at builder time keeps the failure
+    /// local to the misconfiguration.
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> Self {
+    ) -> azure_core::Result<Self> {
+        if rules.is_empty() {
+            return Ok(self);
+        }
+
+        // Build the set of ids already present so collisions across both
+        // (existing-vs-new) and (new-vs-new) are caught in one pass.
+        let mut seen: std::collections::HashSet<String> = self
+            .fault_injection_rules
+            .as_ref()
+            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
+            .unwrap_or_default();
+
+        for rule in &rules {
+            if !seen.insert(rule.id().to_string()) {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("duplicate fault injection rule id: {}", rule.id()),
+                ));
+            }
+        }
+
         match &mut self.fault_injection_rules {
             Some(existing) => existing.extend(rules),
-            None if rules.is_empty() => {}
             None => self.fault_injection_rules = Some(rules),
         }
-        self
+        Ok(self)
     }
 
     /// Builds the [`CosmosDriverRuntime`].

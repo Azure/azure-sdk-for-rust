@@ -316,3 +316,91 @@ async fn throttled_delete_does_not_remove_document() {
         "throttled delete must not remove the document",
     );
 }
+
+/// Regression: container creation requests carrying `x-ms-offer-throughput`
+/// must produce a container that actually honors the requested RU/s.
+///
+/// Before the fix, `handle_create_container` ignored the header and built the
+/// container with `ContainerConfig::default()` (no provisioned RU/s), so
+/// throttling never engaged regardless of what the caller requested. This
+/// test creates a container over the wire with a 400 RU/s offer header on a
+/// throttling-enabled account, then drives writes hard enough to exhaust the
+/// per-second budget. A 429/3200 response (with `x-ms-retry-after-ms`) proves
+/// the offer was applied. The companion negative case (no header → no
+/// throttling) is covered by [`throttle_disabled_no_429`] above for the
+/// no-throttling-enabled scenario; here we focus on the positive flow.
+#[tokio::test]
+async fn create_container_honors_offer_throughput_header() {
+    use azure_core::http::headers::{HeaderName, HeaderValue};
+    use azure_core::http::{Method, Request, Url};
+
+    static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
+
+    // Throttling-enabled single-region account, no container provisioned yet.
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        Url::parse(GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_throttling_enabled(true);
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    emulator.store().create_database("testdb");
+
+    // Create the container over the wire, with a 400 RU/s throughput header
+    // and a single partition (so the entire budget concentrates on one
+    // partition and can be exhausted deterministically).
+    let url = format!("{}/dbs/testdb/colls", GATEWAY_URL);
+    let mut req = Request::new(Url::parse(&url).unwrap(), Method::Post);
+    req.set_body(
+        serde_json::to_vec(&serde_json::json!({
+            "id": "thrucoll",
+            "partitionKey": {
+                "paths": ["/pk"],
+                "kind": "Hash",
+                "version": 2
+            }
+        }))
+        .unwrap(),
+    );
+    req.headers_mut()
+        .insert(OFFER_THROUGHPUT.clone(), HeaderValue::from_static("400"));
+    let response = emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+
+    // The default 4-partition container would split 400 RU/s into 100 RU per
+    // partition, but `x-ms-offer-throughput` does not control partition
+    // count — it only sets the total RU/s. To make the assertion robust
+    // against the default partition count, pump enough creates to exhaust
+    // even the per-partition budget.
+    let mut throttled = false;
+    for i in 0..1000 {
+        let body = serde_json::json!({"id": format!("item{}", i), "pk": "pk1", "value": i});
+        let req = create_item_request(
+            GATEWAY_URL,
+            "testdb",
+            "thrucoll",
+            &body,
+            r#"["pk1"]"#,
+            false,
+        );
+        let response = emulator.execute_request(&req).await.unwrap();
+        if response.status() == StatusCode::TooManyRequests {
+            assert_eq!(
+                response
+                    .headers()
+                    .get_optional_str(&SUBSTATUS)
+                    .unwrap_or("0"),
+                "3200"
+            );
+            assert!(response.headers().get_optional_str(&RETRY_AFTER).is_some());
+            throttled = true;
+            break;
+        }
+        assert_eq!(response.status(), StatusCode::Created);
+    }
+    assert!(
+        throttled,
+        "expected x-ms-offer-throughput=400 to engage throttling within 1000 creates"
+    );
+}
