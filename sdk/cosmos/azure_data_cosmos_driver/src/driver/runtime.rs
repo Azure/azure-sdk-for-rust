@@ -494,8 +494,8 @@ impl CosmosDriverRuntimeBuilder {
     ///
     /// Good examples: AKS cluster name, Azure VM ID (if limited nodes),
     /// app name with region.
-    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
-        self.user_agent_suffix = Some(suffix);
+    pub fn with_user_agent_suffix(mut self, suffix: impl Into<UserAgentSuffix>) -> Self {
+        self.user_agent_suffix = Some(suffix.into());
         self
     }
 

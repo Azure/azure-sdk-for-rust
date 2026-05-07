@@ -233,6 +233,32 @@ impl AsRef<str> for UserAgentSuffix {
     }
 }
 
+/// Convenience conversion from a string slice.
+///
+/// # Panics
+///
+/// Panics if the value fails [`UserAgentSuffix::new`] validation
+/// (max 25 characters, HTTP-header-safe). Use [`UserAgentSuffix::try_new`]
+/// when input is untrusted.
+impl From<&str> for UserAgentSuffix {
+    fn from(value: &str) -> Self {
+        Self::new(value)
+    }
+}
+
+/// Convenience conversion from an owned `String`.
+///
+/// # Panics
+///
+/// Panics if the value fails [`UserAgentSuffix::new`] validation
+/// (max 25 characters, HTTP-header-safe). Use [`UserAgentSuffix::try_new`]
+/// when input is untrusted.
+impl From<String> for UserAgentSuffix {
+    fn from(value: String) -> Self {
+        Self::new(value)
+    }
+}
+
 impl fmt::Display for UserAgentSuffix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
