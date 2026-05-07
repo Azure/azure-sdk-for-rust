@@ -667,6 +667,10 @@ async fn validate_pk_local_falls_back_to_gateway(sql: &str) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_simple_select() {
     validate_pk("SELECT * FROM c").await;
     validate_pk("SELECT c.name, c.age FROM c").await;
@@ -675,6 +679,10 @@ async fn gw_simple_select() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_pk_equality() {
     validate_pk("SELECT * FROM c WHERE c.pk = 'hello'").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 42").await;
@@ -697,6 +705,10 @@ async fn gw_pk_equality() {
 /// be revisited; the unit test `pk_eq_large_integer` would also need
 /// updating.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_pk_numeric_precision_boundary() {
     // Below 2^53 — exact in f64, no precision concern.
     validate_pk("SELECT * FROM c WHERE c.pk = 9007199254740992").await;
@@ -714,6 +726,10 @@ async fn gw_pk_numeric_precision_boundary() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_pk_and_or_in() {
     validate_pk("SELECT * FROM c WHERE c.pk = 'x' AND c.age > 21").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 'a' OR c.pk = 'b'").await;
@@ -721,6 +737,10 @@ async fn gw_pk_and_or_in() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_cross_partition() {
     validate_pk("SELECT * FROM c WHERE c.age > 21").await;
     validate_pk("SELECT * FROM c WHERE c.pk > 'x'").await;
@@ -729,18 +749,30 @@ async fn gw_cross_partition() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_top() {
     validate_pk("SELECT TOP 10 * FROM c").await;
     validate_pk("SELECT TOP 5 * FROM c WHERE c.pk = 'x'").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_offset_limit() {
     validate_pk("SELECT * FROM c OFFSET 5 LIMIT 20").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 'x' OFFSET 0 LIMIT 10").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_distinct() {
     validate_pk("SELECT DISTINCT c.name FROM c").await;
     validate_pk("SELECT DISTINCT c.name FROM c ORDER BY c.name ASC").await;
@@ -751,6 +783,10 @@ async fn gw_distinct() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_order_by() {
     validate_pk("SELECT * FROM c ORDER BY c.name ASC").await;
     validate_pk("SELECT * FROM c ORDER BY c.age DESC").await;
@@ -761,6 +797,10 @@ async fn gw_order_by() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_aggregates() {
     validate_pk("SELECT COUNT(1) FROM c").await;
     validate_pk("SELECT SUM(c.price) FROM c").await;
@@ -773,6 +813,10 @@ async fn gw_aggregates() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_group_by() {
     validate_pk("SELECT c.city, COUNT(1) FROM c GROUP BY c.city").await;
     validate_pk("SELECT c.city, c.state, COUNT(1) FROM c GROUP BY c.city, c.state").await;
@@ -781,11 +825,19 @@ async fn gw_group_by() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_join() {
     validate_pk("SELECT c.id, t FROM c JOIN t IN c.tags WHERE c.pk = 'x'").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_subqueries() {
     validate_pk("SELECT * FROM c WHERE EXISTS(SELECT VALUE t FROM t IN c.tags)").await;
     validate_pk("SELECT ARRAY(SELECT t FROM t IN c.tags) FROM c").await;
@@ -793,12 +845,20 @@ async fn gw_subqueries() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_select_value() {
     validate_pk("SELECT VALUE c.name FROM c WHERE c.pk = 'x'").await;
     validate_pk("SELECT VALUE COUNT(1) FROM c").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_complex_combined() {
     validate_pk(
         "SELECT c.city, COUNT(1), SUM(c.revenue) FROM c WHERE c.pk = 'x' GROUP BY c.city ORDER BY c.city ASC",
@@ -810,6 +870,10 @@ async fn gw_complex_combined() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_functions() {
     validate_pk("SELECT * FROM c WHERE CONTAINS(c.name, 'test')").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 'x' AND STARTSWITH(c.name, 'A')").await;
@@ -817,6 +881,10 @@ async fn gw_functions() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_nested_paths() {
     validate_nested("SELECT * FROM c WHERE c.address.city = 'Seattle'").await;
     validate_nested("SELECT * FROM c WHERE c.address.city = 'Seattle' AND c.age > 21").await;
@@ -825,6 +893,10 @@ async fn gw_nested_paths() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_hierarchical_pk() {
     validate_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId = 'u1'").await;
     validate_hpk("SELECT * FROM c WHERE c.tenant = 'acme'").await;
@@ -833,6 +905,10 @@ async fn gw_hierarchical_pk() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_hierarchical_pk3() {
     validate_hpk3(
         "SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1' AND c.sessionId = 's1'",
@@ -843,6 +919,10 @@ async fn gw_hierarchical_pk3() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_complex_with_hpk() {
     validate_hpk(
         "SELECT c.city, COUNT(1) AS cnt FROM c JOIN t IN c.tags WHERE c.tenant = 'acme' AND c.userId = 'u1' GROUP BY c.city ORDER BY c.city ASC",
@@ -850,12 +930,20 @@ async fn gw_complex_with_hpk() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_from_alias() {
     validate_pk("SELECT * FROM root AS r WHERE r.pk = 'hello'").await;
     validate_pk("SELECT * FROM root r WHERE r.pk = 'hello'").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_and_intersection() {
     validate_pk("SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'a'").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 'a' AND c.pk IN ('a', 'b')").await;
@@ -865,6 +953,10 @@ async fn gw_and_intersection() {
 // ── Gateway 400 tests ────────────────────────────────────────────────────────
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_400_is_null() {
     validate_pk_expects_400(
         "SELECT * FROM c WHERE c.pk IS NULL",
@@ -874,6 +966,10 @@ async fn gw_400_is_null() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_400_is_not_null() {
     validate_pk_expects_400(
         "SELECT * FROM c WHERE c.pk IS NOT NULL",
@@ -883,6 +979,10 @@ async fn gw_400_is_not_null() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_400_alias_mismatch() {
     validate_hpk_expects_400(
         "SELECT * FROM root AS r WHERE c.tenant = 'acme' AND c.userId = 'u1'",
@@ -904,6 +1004,10 @@ async fn validate_pk_with_params(sql: &str, params: &[(&str, serde_json::Value)]
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_top_parameter_substituted() {
     validate_pk_with_params("SELECT TOP @n * FROM c", &[("@n", serde_json::json!(10))]).await;
     validate_pk_with_params(
@@ -914,6 +1018,10 @@ async fn gw_top_parameter_substituted() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_offset_limit_parameter_substituted() {
     validate_pk_with_params(
         "SELECT * FROM c OFFSET @off LIMIT @lim",
@@ -934,6 +1042,10 @@ async fn gw_offset_limit_parameter_substituted() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_400_top_parameter_without_value() {
     // Gateway rejects parameterized TOP without a supplied value with HTTP 400.
     validate_pk_expects_400(
@@ -944,6 +1056,10 @@ async fn gw_400_top_parameter_without_value() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_400_offset_limit_parameter_without_value() {
     // Gateway rejects parameterized OFFSET/LIMIT without supplied values with HTTP 400.
     validate_pk_expects_400(
@@ -954,6 +1070,10 @@ async fn gw_400_offset_limit_parameter_without_value() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn local_plan_top_parameter_without_value_errors() {
     // Mirror of the Gateway-400 test: when the caller does not supply a value for
     // a parameterized TOP/OFFSET/LIMIT, the *local* plan generator must fail
@@ -973,6 +1093,10 @@ async fn local_plan_top_parameter_without_value_errors() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn local_plan_offset_limit_parameter_without_value_errors() {
     let result = azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths(
         "SELECT * FROM c OFFSET @off LIMIT @lim",
@@ -995,6 +1119,10 @@ async fn local_plan_offset_limit_parameter_without_value_errors() {
 // when the parameter is bound in the query-plan request body.
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_pk_parameter_substitution() {
     validate_pk_with_params(
         "SELECT * FROM c WHERE c.pk = @val",
@@ -1041,16 +1169,28 @@ fn internal_testing_supported_features_constant_is_reachable() {
 // and WHERE positions identically to the Gateway. End-to-end value parity
 // is covered by inline tests in `query::eval::builtins`.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_concat_in_projection() {
     validate_pk("SELECT CONCAT(c.first, c.last) FROM c").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_concat_in_where_clause() {
     validate_pk("SELECT * FROM c WHERE CONCAT(c.first, c.last) = 'AliceSmith'").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_concat_with_literal_argument() {
     validate_pk("SELECT CONCAT(c.name, '@example.com') FROM c").await;
 }
@@ -1060,6 +1200,10 @@ async fn gw_concat_with_literal_argument() {
 /// the Gateway likewise reports a single-PK target, so the queryInfo plans
 /// agree even though `pkFilters` is purely a local concept.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_pk_or_with_contradictory_disjunct() {
     validate_pk("SELECT * FROM c WHERE (c.pk = 'a' AND c.pk = 'b') OR c.pk = 'c'").await;
 }
@@ -1068,6 +1212,10 @@ async fn gw_pk_or_with_contradictory_disjunct() {
 /// JSON number (`6`), not as `6.0`. The plan-level shape is unaffected — this
 /// pins parser/plan parity for the SUM aggregate against the Gateway.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_sum_integer_aggregate() {
     validate_pk("SELECT SUM(c.intCol) FROM c").await;
 }
@@ -1076,6 +1224,10 @@ async fn gw_sum_integer_aggregate() {
 /// (`null<bool<num<str<arr<obj`). Plan-level shape is unaffected here; the
 /// test pins parser/plan parity for `MIN`/`MAX` calls.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_min_max_cross_type_aggregate() {
     validate_pk("SELECT MIN(c.mixed), MAX(c.mixed) FROM c").await;
 }
@@ -1085,17 +1237,29 @@ async fn gw_min_max_cross_type_aggregate() {
 /// Plan-level parity test; the value parity (which physical partitions are
 /// targeted) is exercised by the local plan unit tests above.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_hpk_with_in_on_first_component() {
     validate_hpk("SELECT * FROM c WHERE c.tenant IN ('a', 'b') AND c.userId = 'u1'").await;
 }
 
 /// HPK with IN on the trailing component.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_hpk_with_in_on_second_component() {
     validate_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId IN ('u1', 'u2')").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_aggregate_inside_udf_arg_not_advertised() {
     // The Gateway rejects this query (aggregates inside UDF args are not
     // allowed). The local generator's behavior — not advertising the
@@ -1113,6 +1277,10 @@ async fn gw_aggregate_inside_udf_arg_not_advertised() {
 /// escapes are evaluator-side concerns and don't affect the plan shape. Use
 /// `#` as the escape char (the Gateway rejects `\` as an escape).
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_like_with_single_char_escape() {
     validate_pk("SELECT * FROM c WHERE c.name LIKE 'a#_b' ESCAPE '#'").await;
 }
@@ -1121,6 +1289,10 @@ async fn gw_like_with_single_char_escape() {
 /// — the Gateway returns the dedup'd kind list. Pin local/Gateway parity on
 /// the aggregate set.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_duplicate_aggregates_dedup() {
     validate_pk("SELECT COUNT(1), COUNT(c.x) FROM c").await;
 }
@@ -1128,6 +1300,10 @@ async fn gw_duplicate_aggregates_dedup() {
 /// `~ <fractional number>` must yield `Undefined` in the evaluator;
 /// at the plan level it is just a unary expression. Pin parser/plan parity.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_bitwise_not_on_fractional_number() {
     validate_pk("SELECT VALUE ~3.7 FROM c").await;
 }
@@ -1137,11 +1313,19 @@ async fn gw_bitwise_not_on_fractional_number() {
 // where `LEFT` is a reserved word, so we exercise the case-sensitivity
 // invariant via the bracket form, which Gateway accepts.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_keyword_as_property_lower_case() {
     validate_pk("SELECT c[\"left\"] FROM c WHERE c.pk = 'x'").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_keyword_as_property_upper_case() {
     validate_pk("SELECT c[\"LEFT\"] FROM c WHERE c.pk = 'x'").await;
 }
@@ -1161,6 +1345,10 @@ async fn gw_keyword_as_property_upper_case() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_01() {
     validate_pk("SELECT 'Hello World'").await;
     validate_pk("SELECT (SELECT VALUE {a: 1, b: 2}).a AS val").await;
@@ -1184,6 +1372,10 @@ async fn gw_local_parity_pk_01() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_02() {
     validate_pk("SELECT * FROM c WHERE c.a.b.c.d = 1").await;
     validate_pk("SELECT * FROM c WHERE c.active").await;
@@ -1209,6 +1401,10 @@ async fn gw_local_parity_pk_02() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_03() {
     validate_pk("SELECT * FROM c WHERE c.pk = 'a' OR c.other = 'b'").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 'a' OR c.pk = 'a'").await;
@@ -1233,6 +1429,10 @@ async fn gw_local_parity_pk_03() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_04() {
     validate_pk("SELECT * FROM c WHERE c.pk IN ('only')").await;
     validate_pk("SELECT * FROM c WHERE c.pk IN (@a, @b, @c)").await;
@@ -1258,6 +1458,10 @@ async fn gw_local_parity_pk_04() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_05() {
     validate_pk("SELECT * FROM c WHERE udf.myFunc(c.x) > 0").await;
     validate_pk("SELECT 1 + 2 AS result").await;
@@ -1288,6 +1492,10 @@ async fn gw_local_parity_pk_05() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_06() {
     validate_pk("SELECT p.name FROM (SELECT * FROM c) p").await;
     validate_pk("SELECT r.name FROM root AS r").await;
@@ -1311,6 +1519,10 @@ async fn gw_local_parity_pk_06() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_pk_07() {
     validate_pk("SELECT VALUE 3 << 2").await;
     validate_pk("SELECT VALUE 3 >> 2").await;
@@ -1328,6 +1540,10 @@ async fn gw_local_parity_pk_07() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_hpk_01() {
     validate_hpk("SELECT * FROM c WHERE 'acme' = c.tenant AND 'u1' = c.userId").await;
     validate_hpk("SELECT * FROM c WHERE 'acme' = c.tenant AND c.userId = 'u1'").await;
@@ -1354,6 +1570,10 @@ async fn gw_local_parity_hpk_01() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_hpk_02() {
     validate_hpk("SELECT * FROM c WHERE c.tenant = @t AND c.userId = @u").await;
     validate_hpk("SELECT * FROM c WHERE c.tenant = 1.5 AND c.userId = 'u1'").await;
@@ -1365,6 +1585,10 @@ async fn gw_local_parity_hpk_02() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_hpk3_01() {
     validate_hpk3("SELECT * FROM c WHERE c.sessionId = 's1'").await;
     validate_hpk3("SELECT * FROM c WHERE c.tenant = @t AND c.userId = @u AND c.sessionId = @s")
@@ -1373,6 +1597,10 @@ async fn gw_local_parity_hpk3_01() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_nested_01() {
     validate_nested("SELECT * FROM c ORDER BY c.address.city ASC, c.age DESC").await;
     validate_nested("SELECT c.address.city AS city FROM c").await;
@@ -1417,6 +1645,10 @@ async fn validate_pk_gateway_only(sql: &str) {
 /// composite-style aggregate projection when `CompositeAggregate` is
 /// advertised. Local-side parity is TODO.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_composite_aggregate_smoke() {
     // The exact syntactic surface that requires the CompositeAggregate flag
     // varies by backend version. Use a minimal multi-aggregate object
@@ -1459,11 +1691,19 @@ async fn gw_composite_aggregate_smoke() {
 // the divergence is documented and the test passes.
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_numeric_pk_int_form() {
     validate_symmetric_pk("SELECT * FROM c WHERE c.pk = 1").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_numeric_pk_float_form() {
     validate_symmetric_pk("SELECT * FROM c WHERE c.pk = 1.0").await;
 }
@@ -1478,6 +1718,10 @@ async fn gw_local_parity_numeric_pk_float_form() {
 /// support is added, switch to `validate_symmetric_pk` so plan-level parity
 /// is enforced.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_non_path_group_by_falls_back() {
     validate_pk_local_falls_back_to_gateway(
         "SELECT c.x & 1 AS parity, COUNT(1) FROM c GROUP BY c.x & 1",
@@ -1486,11 +1730,19 @@ async fn gw_local_parity_non_path_group_by_falls_back() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_unterminated_quoted_identifier() {
     validate_symmetric_pk("SELECT * FROM \"unterminated").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_unterminated_block_comment() {
     validate_symmetric_pk("SELECT * FROM c /* unterminated").await;
 }
@@ -1507,16 +1759,28 @@ async fn gw_local_parity_unterminated_block_comment() {
 // pin that behavior.
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_order_by_string_bracket_path_falls_back() {
     validate_pk_local_falls_back_to_gateway("SELECT * FROM c ORDER BY c[\"name\"] ASC").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_order_by_single_quoted_bracket_path_falls_back() {
     validate_pk_local_falls_back_to_gateway("SELECT * FROM c ORDER BY c['name'] ASC").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_order_by_nested_bracket_path_falls_back() {
     validate_pk_local_falls_back_to_gateway(
         "SELECT * FROM c ORDER BY c[\"address\"][\"city\"] ASC",
@@ -1525,6 +1789,10 @@ async fn gw_local_parity_order_by_nested_bracket_path_falls_back() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_group_by_bracket_path_falls_back() {
     validate_pk_local_falls_back_to_gateway(
         "SELECT c[\"city\"], COUNT(1) AS cnt FROM c WHERE c.pk = 'x' GROUP BY c[\"city\"]",
@@ -1533,11 +1801,19 @@ async fn gw_local_parity_group_by_bracket_path_falls_back() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_order_by_array_index_falls_back() {
     validate_pk_local_falls_back_to_gateway("SELECT * FROM c ORDER BY c.scores[0] ASC").await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 async fn gw_local_parity_group_by_array_index_falls_back() {
     validate_pk_local_falls_back_to_gateway(
         "SELECT c.scores[0] AS s0, COUNT(1) AS cnt FROM c GROUP BY c.scores[0]",
