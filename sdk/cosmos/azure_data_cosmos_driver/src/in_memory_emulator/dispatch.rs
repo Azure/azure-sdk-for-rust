@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore misroute misrouted
 //! Request parsing, URL routing, and operation resolution.
 
 use azure_core::http::headers::HeaderName;

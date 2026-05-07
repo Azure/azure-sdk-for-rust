@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore unroutable
 //! End-to-end tests that exercise the full SDK pipeline (CosmosClient →
 //! ContainerClient → driver → in-memory emulator) **and** (optionally) a real
 //! Cosmos DB account.

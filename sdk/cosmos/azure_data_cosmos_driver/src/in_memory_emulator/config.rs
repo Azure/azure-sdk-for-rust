@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore PRNG
 //! Virtual account configuration for the in-memory emulator.
 
 use std::collections::HashMap;

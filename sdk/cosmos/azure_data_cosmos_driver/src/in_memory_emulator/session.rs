@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore behaviour epks
 //! Session token parsing, formatting, and state tracking.
 //!
 //! Supports V2 vector-clock session tokens with the wire format:
