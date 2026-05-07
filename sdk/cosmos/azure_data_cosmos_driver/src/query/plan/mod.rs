@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore asymptotics unioning
+// cspell:ignore asymptotics preorder unioning worklist
 
 //! Query plan generation: partition key extraction and full structural query analysis.
 //!
