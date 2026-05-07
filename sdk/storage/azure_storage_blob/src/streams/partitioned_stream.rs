@@ -133,7 +133,7 @@ pub(crate) fn stream_multi_buffer_partitions(
     partition_len: NonZero<u64>,
 ) -> impl Stream<Item = Result<Vec<Bytes>>> {
     let partition_len = partition_len.get();
-    // supports a partition_len up to MAX_CONTIGUOUS_ELEMENT * MULTI_BUF_PARTITION_BUF_LEN (= 8 petabytes on 32-bit systems)
+    // supports a partition_len up to MAX_CONTIGUOUS_ELEMENTS * MULTI_BUF_PARTITION_BUF_LEN (= 8 petabytes on 32-bit systems)
     let vec_len = partition_len
         .div_ceil(MULTI_BUF_PARTITION_BUF_LEN as u64)
         // try_into is casting (down, on 32 bit systems) from u64 to usize.
