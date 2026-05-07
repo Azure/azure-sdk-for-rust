@@ -5,7 +5,7 @@
 
 use super::{
     models_serde,
-    xml_helpers::{CorsCorsRule, Queue_itemsQueue},
+    xml_helpers::{CorsCorsRule, Queue_itemsQueueItem},
     GeoReplicationStatus,
 };
 use azure_core::{fmt::SafeDebug, time::OffsetDateTime};
@@ -158,9 +158,9 @@ pub struct ListQueuesResponse {
     /// The list of queues.
     #[serde(
         default,
-        deserialize_with = "Queue_itemsQueue::unwrap",
+        deserialize_with = "Queue_itemsQueueItem::unwrap",
         rename = "Queues",
-        serialize_with = "Queue_itemsQueue::wrap"
+        serialize_with = "Queue_itemsQueueItem::wrap"
     )]
     pub queue_items: Vec<QueueItem>,
 
