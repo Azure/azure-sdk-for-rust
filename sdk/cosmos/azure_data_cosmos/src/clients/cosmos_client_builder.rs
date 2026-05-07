@@ -106,21 +106,18 @@ impl CosmosClientBuilder {
 
     /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
-    /// Accepts anything convertible into [`UserAgentSuffix`](crate::UserAgentSuffix),
-    /// including `&str` and `String` via the panicking [`From`] impls. For
-    /// untrusted input prefer constructing the suffix explicitly via
-    /// [`UserAgentSuffix::try_new`](crate::UserAgentSuffix::try_new) (max 25
-    /// characters, HTTP-header-safe).
+    /// Construct the suffix explicitly via
+    /// [`UserAgentSuffix::new`](crate::UserAgentSuffix::new) for trusted
+    /// values, or [`UserAgentSuffix::try_new`](crate::UserAgentSuffix::try_new)
+    /// for untrusted input. Validation rules (max 25 characters,
+    /// HTTP-header-safe) are enforced at the construction site rather than
+    /// here, which keeps any panic local to the caller's input handling.
     ///
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
-    ///
-    /// # Panics
-    ///
-    /// Panics if a `&str`/`String` is passed that fails validation.
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<crate::UserAgentSuffix>) -> Self {
-        self.options.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: crate::UserAgentSuffix) -> Self {
+        self.options.user_agent_suffix = Some(suffix);
         self
     }
 
@@ -558,20 +555,5 @@ mod tests {
         let suffix = UserAgentSuffix::new("my-suffix");
         let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
-    }
-
-    /// `&str` and `String` should convert into `UserAgentSuffix` via the
-    /// panicking `From` impls so existing callers don't have to change.
-    #[test]
-    fn builder_accepts_str_via_into() {
-        let from_str = CosmosClientBuilder::new().with_user_agent_suffix("my-suffix");
-        let from_string =
-            CosmosClientBuilder::new().with_user_agent_suffix(String::from("my-suffix"));
-        let expected = UserAgentSuffix::new("my-suffix");
-        assert_eq!(from_str.options.user_agent_suffix.as_ref(), Some(&expected));
-        assert_eq!(
-            from_string.options.user_agent_suffix.as_ref(),
-            Some(&expected)
-        );
     }
 }

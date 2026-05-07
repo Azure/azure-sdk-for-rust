@@ -34,8 +34,8 @@ pub struct CosmosClientOptions {
 }
 
 impl CosmosClientOptions {
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<UserAgentSuffix>) -> Self {
-        self.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+        self.user_agent_suffix = Some(suffix);
         self
     }
 

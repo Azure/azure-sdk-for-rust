@@ -6,15 +6,13 @@
 
 ### Breaking Changes
 
-- `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `impl Into<UserAgentSuffix>` instead of `impl Into<String>`. `&str` and `String` callers continue to work via `From` conversions, but invalid values (longer than 25 characters or containing characters that aren't HTTP-header-safe) now panic at the call site instead of being silently dropped. Use `UserAgentSuffix::try_new` for untrusted input. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
+- `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `UserAgentSuffix` instead of `impl Into<String>`. Callers passing a `&str` or `String` must construct the value explicitly via `UserAgentSuffix::new` (panics on invalid input) or `UserAgentSuffix::try_new` (returns `Option`). Validation rules (max 25 characters, HTTP-header-safe) are now enforced at the construction site instead of being applied silently inside the builder. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
 
 ### Bugs Fixed
 
 - Fixed `CosmosClientBuilder::with_user_agent_suffix` not propagating the suffix to data-plane requests. The suffix was only applied to the SDK's account-metadata pipeline; requests issued through the driver transport pipeline (the vast majority of operations) had a `User-Agent` header without the configured suffix. The suffix is now forwarded to `CosmosDriverRuntimeBuilder` so it appears on every outgoing request. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
 
 ### Other Changes
-
-- Re-exported `UserAgentSuffix` from `azure_data_cosmos_driver`. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
 
 - Per-partition automatic failover (PPAF) and per-partition circuit breaker (PPCB) are now driven by the `azure_data_cosmos_driver` crate, replacing the SDK's prior implementation. Behavior is unchanged from a configuration standpoint — the existing `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment variable continues to work — but routing is now per-`(partition_key_range_id, region)` instead of per-region. Driver-level changes are described in [`azure_data_cosmos_driver` 0.3.0](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md). ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 
