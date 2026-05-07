@@ -157,6 +157,14 @@ pub(crate) async fn execute_operation_pipeline(
             location_state_store.endpoint_unavailability_ttl(),
         );
 
+        // Emit one structured debug record per attempt with the chosen
+        // routing decision. Tests and SREs filter on this to verify which
+        // region/endpoint each operation actually went to. Keep the field
+        // name (`routing_decision`) and message (`routing decision made`)
+        // stable -- `azure_data_cosmos`'s multi-write integration tests grep
+        // for them.
+        tracing::debug!(routing_decision = %routing, "routing decision made");
+
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = compute_execution_context(&retry_state);
 

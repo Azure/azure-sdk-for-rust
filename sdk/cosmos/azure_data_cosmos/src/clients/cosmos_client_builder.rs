@@ -550,12 +550,7 @@ impl CosmosClientBuilder {
             .await?;
 
         Ok(CosmosClient {
-            context: ClientContext {
-                pipeline,
-                driver,
-                global_endpoint_manager,
-                global_partition_endpoint_manager,
-            },
+            context: ClientContext { pipeline, driver },
         })
     }
 }
