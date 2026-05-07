@@ -150,6 +150,7 @@ zip = { version = "8.2", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
+style = { level = "allow", priority = -1 }
 uninlined_format_args = "allow"
 
 [workspace.lints.rust]
