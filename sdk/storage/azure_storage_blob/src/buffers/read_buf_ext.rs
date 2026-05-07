@@ -42,23 +42,10 @@ impl ReadBufExt for ReadBuf {
     where
         R: AsyncRead + Unpin + Send,
     {
-        let dst = self.spare_capacity_mut();
-        let count = stream.read(dst).await?;
-        let new_len = self.len() + count;
-
-        if new_len <= self.capacity() {
-            // SAFETY: This is being performed immediately after the length is proven
-            // to be within capacity.
-            unsafe { self.set_len(new_len) };
-            Ok(count)
-        } else {
-            // The AsyncRead implementation returned an impossible byte read count.
-            // Whether through a bug or through malice, it can't be trusted.
-            Err(Error::with_message(
-                ErrorKind::Io,
-                "AsyncRead::read returned an impossible byte read count.",
-            ))
-        }
+        let count = validated_read(self.spare_capacity_mut(), stream).await?;
+        // SAFETY: `count` has been validated as <= `self.spare_capacity_mut().len()`
+        unsafe { self.set_len(self.len() + count) };
+        Ok(count)
     }
     async fn read_exactly_from<R>(&mut self, stream: &mut R, amount: usize) -> Result<usize>
     where
@@ -68,27 +55,37 @@ impl ReadBufExt for ReadBuf {
         while total_read < amount {
             let to_read = min(self.remaining(), amount.saturating_sub(total_read));
             let dst = &mut self.spare_capacity_mut()[..to_read];
-            let count = stream.read(dst).await?;
+            let count = validated_read(dst, stream).await?;
+            // SAFETY: `count` has been validated as <= `dst.len()`, a slice of `self.spare_capacity_mut()`
+            unsafe { self.set_len(self.len() + count) };
+
             if count == 0 {
                 return Ok(total_read);
             }
             total_read += count;
-            let new_len = self.len() + count;
-
-            if new_len <= self.capacity() {
-                // SAFETY: This is being performed immediately after the length is proven
-                // to be within capacity.
-                unsafe { self.set_len(new_len) };
-            } else {
-                // The AsyncRead implementation returned an impossible byte read count.
-                // Whether through a bug or through malice, it can't be trusted.
-                return Err(Error::with_message(
-                    ErrorKind::Io,
-                    "AsyncRead::read returned an impossible byte read count.",
-                ));
-            }
         }
 
         Ok(total_read)
     }
+}
+
+/// Performs a read into the given slice.
+/// Validates that the count returned is accurate to the buffer provided.
+///
+/// # Returns
+///
+/// - Err if `stream.read(buf).await?` > `buf.len()`
+/// - Otherwise, the `Result` of `stream.read(buf).await`
+async fn validated_read<R>(buf: &mut [u8], stream: &mut R) -> Result<usize>
+where
+    R: AsyncRead + Unpin,
+{
+    let count = stream.read(buf).await?;
+    if count > buf.len() {
+        return Err(Error::with_message(
+            ErrorKind::Io,
+            "AsyncRead::read returned an impossible byte read count.",
+        ));
+    }
+    Ok(count)
 }

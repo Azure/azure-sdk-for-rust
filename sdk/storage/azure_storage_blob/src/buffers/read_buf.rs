@@ -75,7 +75,7 @@ impl ReadBuf {
     /// # Safety
     ///
     /// This method updates the internal cursor of the length without any checks.
-    /// It is the caller's responsibility to ensure this is is within the buffer's capacity.
+    /// It is the caller's responsibility to ensure this is within the buffer's capacity.
     pub unsafe fn set_len(&mut self, position: usize) {
         self.cursor = position;
     }
