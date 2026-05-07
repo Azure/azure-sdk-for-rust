@@ -472,7 +472,13 @@ fn try_move_next_endpoint(
         return true;
     }
 
-    entry.failed_endpoints.insert(failed_endpoint.clone());
+    // `failed_endpoints` is a `SmallVec` (capacity tuned to typical region
+    // counts) — push, then dedup using linear `contains` below. Linear
+    // membership is faster than hashing for `K <= 4` and avoids a per-entry
+    // heap allocation.
+    if !entry.failed_endpoints.contains(failed_endpoint) {
+        entry.failed_endpoints.push(failed_endpoint.clone());
+    }
 
     for candidate in next_endpoints {
         if candidate == &entry.current_endpoint {
@@ -544,8 +550,8 @@ pub(crate) fn remove_probe_succeeded_entry(
 mod tests {
     use super::*;
     use crate::driver::cache::AccountProperties;
+    use crate::driver::routing::partition_endpoint_state::FailedEndpoints;
     use crate::options::Region;
-    use std::collections::HashSet;
 
     fn default_endpoint() -> CosmosEndpoint {
         CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com:443/").unwrap())
@@ -941,8 +947,7 @@ mod tests {
         // PPAF with all read endpoints already failed
         let mut ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
-        let mut failed = HashSet::new();
-        failed.insert(regional_endpoint("westus"));
+        let failed: FailedEndpoints = smallvec::smallvec![regional_endpoint("westus")];
         ps.failover_overrides.insert(
             pk("pk-1"),
             PartitionFailoverEntry {
@@ -1280,8 +1285,7 @@ mod tests {
     fn probe_failure_transitions_back_to_unhealthy() {
         let mut ps = partition_state_with_ppaf_ppcb_enabled();
         let account = single_master_account();
-        let mut failed = HashSet::new();
-        failed.insert(regional_endpoint("eastus"));
+        let failed: FailedEndpoints = smallvec::smallvec![regional_endpoint("eastus")];
         ps.circuit_breaker_overrides.insert(
             pk("pk-1"),
             PartitionFailoverEntry {

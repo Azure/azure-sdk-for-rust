@@ -427,7 +427,7 @@ pub struct CosmosDriverRuntimeBuilder {
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
-    #[cfg(any(test, feature = "__internal_mocking"))]
+    #[cfg(any(test, feature = "__internal_testing"))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
@@ -520,9 +520,9 @@ impl CosmosDriverRuntimeBuilder {
 
     /// Sets a custom HTTP client factory, replacing the default reqwest-based transport.
     ///
-    /// **Unsupported internal API** — only available under the `__internal_mocking` feature
+    /// **Unsupported internal API** — only available under the `__internal_testing` feature
     /// flag. Intended for benchmarks and test harnesses; no stability guarantees.
-    #[cfg(feature = "__internal_mocking")]
+    #[cfg(feature = "__internal_testing")]
     pub fn with_mock_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
         self
@@ -630,13 +630,13 @@ impl CosmosDriverRuntimeBuilder {
         let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(any(test, feature = "__internal_mocking"))]
+                #[cfg(any(test, feature = "__internal_testing"))]
                 {
                     self.http_client_factory
                         .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
                 }
 
-                #[cfg(not(any(test, feature = "__internal_mocking")))]
+                #[cfg(not(any(test, feature = "__internal_testing")))]
                 {
                     Arc::new(DefaultHttpClientFactory::new())
                 }

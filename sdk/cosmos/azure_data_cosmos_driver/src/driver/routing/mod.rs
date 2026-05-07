@@ -4,7 +4,7 @@
 //! Routing state and systems for operation-level endpoint selection.
 
 mod account_endpoint_state;
-mod endpoint;
+pub(crate) mod endpoint;
 mod location_effects;
 mod location_state_store;
 pub(crate) mod partition_endpoint_state;

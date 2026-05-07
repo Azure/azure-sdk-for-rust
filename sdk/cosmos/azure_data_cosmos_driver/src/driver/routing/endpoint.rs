@@ -25,8 +25,15 @@ struct CosmosEndpointData {
 /// A Cosmos DB service endpoint.
 ///
 /// Cloning is cheap — the URL and region data are reference-counted.
+//
+// `pub` (rather than `pub(crate)`) so that `crate::testing` can surface
+// this type for memory benchmarks under the `__internal_testing` feature
+// flag. The enclosing `routing` module is `pub(crate)` and `endpoint` is
+// a private module, so external consumers still cannot reach this via
+// `crate::driver::routing::*`; it remains accessible only through the
+// `crate::testing::*` re-exports.
 #[derive(Clone, Debug)]
-pub(crate) struct CosmosEndpoint(Arc<CosmosEndpointData>);
+pub struct CosmosEndpoint(Arc<CosmosEndpointData>);
 
 impl PartialEq for CosmosEndpoint {
     fn eq(&self, other: &Self) -> bool {
