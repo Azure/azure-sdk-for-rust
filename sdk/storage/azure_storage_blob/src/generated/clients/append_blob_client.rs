@@ -38,11 +38,6 @@ pub struct AppendBlobClientOptions {
 }
 
 impl AppendBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Append Block operation commits a new block of data to the end of an append blob.
     ///
     /// # Arguments
@@ -153,15 +148,6 @@ impl AppendBlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);

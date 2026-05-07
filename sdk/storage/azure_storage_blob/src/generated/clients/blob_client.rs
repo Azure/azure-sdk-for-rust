@@ -46,11 +46,6 @@ pub struct BlobClientOptions {
 }
 
 impl BlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// The Acquire Lease operation requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be
     /// infinite.
     ///

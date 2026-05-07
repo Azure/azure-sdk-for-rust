@@ -10,9 +10,9 @@ use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
-    BlobContainerClientCreateOptions, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-    BlobContainerClientListFindBlobsByTagsOptions, BlobContainerClientSetMetadataOptions, BlobType,
+    BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
+    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
+    BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
     BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
     StorageErrorCode,
 };
@@ -459,10 +459,10 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
 
     // Find "hello world" blob by its tag {"foo": "bar"}
     let mut pager = container_client
-        .list_find_blobs_by_tags("\"foo\"='bar'", None)?
+        .find_blobs_by_tags("\"foo\"='bar'", None)?
         .into_pages();
     let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+    let blobs = &filter_blob_segment.blob_items;
     assert!(
         blobs
             .iter()
@@ -472,10 +472,10 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let mut pager = container_client
-        .list_find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
+        .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
         .into_pages();
     let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blobs;
+    let blobs = &filter_blob_segment.blob_items;
     assert!(
         blobs
             .iter()
@@ -484,15 +484,15 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     );
 
     // Max Results Scenario
-    let options = BlobContainerClientListFindBlobsByTagsOptions {
+    let options = BlobContainerClientFindBlobsByTagsOptions {
         maxresults: Some(2),
         ..Default::default()
     };
     let mut pager = container_client
-        .list_find_blobs_by_tags("\"env\"='test'", Some(options))?
+        .find_blobs_by_tags("\"env\"='test'", Some(options))?
         .into_pages();
     let page = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &page.blobs;
+    let blobs = &page.blob_items;
     assert!(
         blobs.len() <= 2,
         "page should contain at most 2 blobs due to maxresults=2, got {}",
@@ -641,7 +641,7 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
         .metadata
         .as_ref()
         .expect("metadata should be populated");
-    assert_eq!(Some(&metadata), blob_meta.additional_properties.as_ref());
+    assert_eq!(Some(&metadata), blob_meta.values.as_ref());
 
     // Tags blob: blob_tags should be populated
     let tags_blob = items

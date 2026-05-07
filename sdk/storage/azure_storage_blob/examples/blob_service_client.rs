@@ -138,8 +138,8 @@ async fn find_blobs_by_tags(
 
     // Tag names must be in double-quotes and values in single-quotes.
     let filter = "\"sample\" = 'service-client'";
-    let mut blobs = service_client.list_find_blobs_by_tags(filter, None)?;
-    println!("list_find_blobs_by_tags results:");
+    let mut blobs = service_client.find_blobs_by_tags(filter, None)?;
+    println!("find_blobs_by_tags results:");
     while let Some(item) = blobs.try_next().await? {
         println!(
             "  {}/{}",
