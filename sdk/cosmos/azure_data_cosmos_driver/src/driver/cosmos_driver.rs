@@ -10,6 +10,7 @@ use crate::{
     driver::{
         dataflow::{
             planner, PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget,
+            ResolvedRange, TopologyProvider,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
@@ -79,6 +80,27 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             driver
                 .execute_operation_direct(operation, overrides, &self.options)
                 .await
+        })
+    }
+}
+
+/// Stub topology provider for the current single-request pipeline.
+///
+/// Cross-partition feed operations will replace this with a
+/// [`CachedTopologyProvider`](super::dataflow::CachedTopologyProvider) backed
+/// by the driver's partition key range cache.
+struct StubTopologyProvider;
+
+impl TopologyProvider for StubTopologyProvider {
+    fn resolve_ranges<'a>(
+        &'a mut self,
+        _range: &'a crate::models::FeedRange,
+    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+        Box::pin(async {
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "topology resolution not yet wired up for this pipeline",
+            ))
         })
     }
 }
@@ -1027,7 +1049,8 @@ impl CosmosDriver {
             driver: self,
             options: &options,
         };
-        let mut context = PipelineContext::new(&mut executor);
+        let mut topology = StubTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, &mut topology);
 
         match pipeline.next_page(&mut context).await? {
             Some(response) => Ok(response),

@@ -1,0 +1,272 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Topology provider adapter backed by the partition key range cache.
+
+use futures::future::BoxFuture;
+
+use crate::{
+    driver::cache::{PartitionKeyRangeCache, PkRangeFetchResult},
+    models::{ContainerReference, FeedRange},
+};
+
+use super::{ResolvedRange, TopologyProvider};
+
+/// Adapts [`PartitionKeyRangeCache`] to the [`TopologyProvider`] trait.
+///
+/// Holds a reference to the cache, the container being queried, and a function
+/// that fetches partition key ranges from the service. On each
+/// [`resolve_ranges`](TopologyProvider::resolve_ranges) call, it force-refreshes
+/// the cache (since splits are the reason we're resolving) and converts the
+/// resulting `PartitionKeyRange` objects to [`ResolvedRange`] values.
+///
+/// # Type parameters
+///
+/// * `F` — `Fn(ContainerReference, Option<String>) -> Fut` that fetches
+///   pk-ranges from the service. Passed by reference to the cache so the
+///   adapter can call it repeatedly without requiring `Clone`.
+pub(crate) struct CachedTopologyProvider<'a, F> {
+    cache: &'a PartitionKeyRangeCache,
+    container: ContainerReference,
+    fetch_pk_ranges: F,
+}
+
+impl<'a, F> CachedTopologyProvider<'a, F> {
+    /// Creates a topology provider backed by the partition key range cache.
+    pub(crate) fn new(
+        cache: &'a PartitionKeyRangeCache,
+        container: ContainerReference,
+        fetch_pk_ranges: F,
+    ) -> Self {
+        Self {
+            cache,
+            container,
+            fetch_pk_ranges,
+        }
+    }
+}
+
+impl<F, Fut> TopologyProvider for CachedTopologyProvider<'_, F>
+where
+    F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync,
+    Fut: std::future::Future<Output = Option<PkRangeFetchResult>> + Send,
+{
+    fn resolve_ranges<'a>(
+        &'a mut self,
+        range: &'a FeedRange,
+    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+        Box::pin(async move {
+            // Force-refresh because we're recovering from a topology change (split).
+            let pk_ranges = self
+                .cache
+                .resolve_overlapping_ranges(
+                    &self.container,
+                    range.min_inclusive()..range.max_exclusive(),
+                    true,
+                    &self.fetch_pk_ranges,
+                )
+                .await;
+
+            let pk_ranges = match pk_ranges {
+                Some(ranges) if !ranges.is_empty() => ranges,
+                _ => {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "failed to resolve partition key ranges from topology cache",
+                    ));
+                }
+            };
+
+            Ok(pk_ranges
+                .into_iter()
+                .map(|pkr| ResolvedRange {
+                    partition_key_range_id: pkr.id,
+                    range: FeedRange::new(pkr.min_inclusive, pkr.max_exclusive),
+                })
+                .collect())
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{
+        effective_partition_key::EffectivePartitionKey,
+        partition_key_range::PartitionKeyRange as PkRange, ContainerProperties,
+    };
+
+    fn make_container() -> ContainerReference {
+        let account = crate::models::AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let props = ContainerProperties {
+            id: "c".into(),
+            partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            system_properties: Default::default(),
+        };
+        ContainerReference::new(account, "db", "db_rid", "c", "c_rid", &props)
+    }
+
+    async fn single_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        if continuation.is_some() {
+            Some(PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(PkRangeFetchResult {
+                ranges: vec![PkRange::new("0".into(), "", "FF")],
+                continuation: Some("etag-1".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    async fn two_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        if continuation.is_some() {
+            Some(PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(PkRangeFetchResult {
+                ranges: vec![
+                    PkRange::new("1".into(), "", "80"),
+                    PkRange::new("2".into(), "80", "FF"),
+                ],
+                continuation: Some("etag-2".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    async fn three_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        if continuation.is_some() {
+            Some(PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(PkRangeFetchResult {
+                ranges: vec![
+                    PkRange::new("1".into(), "", "40"),
+                    PkRange::new("2".into(), "40", "80"),
+                    PkRange::new("3".into(), "80", "FF"),
+                ],
+                continuation: Some("etag-3".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    async fn failing_fetch(
+        _container: ContainerReference,
+        _continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        None
+    }
+
+    #[tokio::test]
+    async fn resolves_single_range_for_full_epk_space() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider =
+            CachedTopologyProvider::new(&cache, make_container(), single_range_fetch);
+
+        let ranges = provider.resolve_ranges(&FeedRange::full()).await.unwrap();
+
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].partition_key_range_id, "0");
+        assert_eq!(
+            ranges[0].range.min_inclusive(),
+            &EffectivePartitionKey::min()
+        );
+        assert_eq!(
+            ranges[0].range.max_exclusive(),
+            &EffectivePartitionKey::max()
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_split_ranges() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
+
+        let ranges = provider.resolve_ranges(&FeedRange::full()).await.unwrap();
+
+        assert_eq!(ranges.len(), 2);
+        assert_eq!(ranges[0].partition_key_range_id, "1");
+        assert_eq!(
+            ranges[0].range.min_inclusive(),
+            &EffectivePartitionKey::min()
+        );
+        assert_eq!(
+            ranges[0].range.max_exclusive(),
+            &EffectivePartitionKey::from("80")
+        );
+        assert_eq!(ranges[1].partition_key_range_id, "2");
+        assert_eq!(
+            ranges[1].range.min_inclusive(),
+            &EffectivePartitionKey::from("80")
+        );
+        assert_eq!(
+            ranges[1].range.max_exclusive(),
+            &EffectivePartitionKey::max()
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_partial_epk_range() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
+
+        let left_half = FeedRange::new(
+            EffectivePartitionKey::min(),
+            EffectivePartitionKey::from("80"),
+        );
+        let ranges = provider.resolve_ranges(&left_half).await.unwrap();
+
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].partition_key_range_id, "1");
+    }
+
+    #[tokio::test]
+    async fn resolves_three_way_split() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), three_range_fetch);
+
+        let ranges = provider.resolve_ranges(&FeedRange::full()).await.unwrap();
+
+        assert_eq!(ranges.len(), 3);
+        assert_eq!(ranges[0].partition_key_range_id, "1");
+        assert_eq!(ranges[1].partition_key_range_id, "2");
+        assert_eq!(ranges[2].partition_key_range_id, "3");
+    }
+
+    #[tokio::test]
+    async fn returns_error_when_fetch_fails() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), failing_fetch);
+
+        let err = provider
+            .resolve_ranges(&FeedRange::full())
+            .await
+            .unwrap_err();
+        assert!(err
+            .to_string()
+            .contains("failed to resolve partition key ranges"));
+    }
+}
