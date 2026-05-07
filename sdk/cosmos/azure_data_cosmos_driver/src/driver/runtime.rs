@@ -427,7 +427,11 @@ pub struct CosmosDriverRuntimeBuilder {
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
-    #[cfg(any(test, feature = "__internal_mocking"))]
+    #[cfg(any(
+        test,
+        feature = "__internal_in_memory_emulator",
+        feature = "__internal_mocking"
+    ))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
@@ -512,7 +516,7 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
     pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
         self
@@ -590,13 +594,56 @@ impl CosmosDriverRuntimeBuilder {
     /// When set, all HTTP clients created by the transport layer will
     /// evaluate these rules before delegating to the real transport
     /// (per Transport Pipeline Spec §7).
+    /// Appends the supplied rules to any rules already configured on this
+    /// builder (additive). Calling this multiple times accumulates rules in
+    /// insertion order. Mirrors the additive semantics of
+    /// [`Self::register_throughput_control_group`] so callers that compose a
+    /// runtime builder from multiple sources (e.g. the
+    /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
+    /// a user-supplied builder) do not silently lose previously-configured
+    /// rules.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` when any rule's `id` collides with another rule already
+    /// configured on this builder, or with another rule in the same call.
+    /// Rule ids identify a fault injection rule across reconfigure /
+    /// disable / re-enable operations, so silently keeping one of two rules
+    /// with the same id would surface as "my fault injection didn't fire"
+    /// long after the duplicate was introduced — and depend on insertion
+    /// order. Surfacing the collision at builder time keeps the failure
+    /// local to the misconfiguration.
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> Self {
-        self.fault_injection_rules = Some(rules);
-        self
+    ) -> azure_core::Result<Self> {
+        if rules.is_empty() {
+            return Ok(self);
+        }
+
+        // Build the set of ids already present so collisions across both
+        // (existing-vs-new) and (new-vs-new) are caught in one pass.
+        let mut seen: std::collections::HashSet<String> = self
+            .fault_injection_rules
+            .as_ref()
+            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
+            .unwrap_or_default();
+
+        for rule in &rules {
+            if !seen.insert(rule.id().to_string()) {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("duplicate fault injection rule id: {}", rule.id()),
+                ));
+            }
+        }
+
+        match &mut self.fault_injection_rules {
+            Some(existing) => existing.extend(rules),
+            None => self.fault_injection_rules = Some(rules),
+        }
+        Ok(self)
     }
 
     /// Builds the [`CosmosDriverRuntime`].
@@ -630,13 +677,21 @@ impl CosmosDriverRuntimeBuilder {
         let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(any(test, feature = "__internal_mocking"))]
+                #[cfg(any(
+                    test,
+                    feature = "__internal_in_memory_emulator",
+                    feature = "__internal_mocking"
+                ))]
                 {
                     self.http_client_factory
                         .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
                 }
 
-                #[cfg(not(any(test, feature = "__internal_mocking")))]
+                #[cfg(not(any(
+                    test,
+                    feature = "__internal_in_memory_emulator",
+                    feature = "__internal_mocking"
+                )))]
                 {
                     Arc::new(DefaultHttpClientFactory::new())
                 }
