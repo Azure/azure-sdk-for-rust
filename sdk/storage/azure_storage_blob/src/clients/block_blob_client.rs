@@ -157,6 +157,8 @@ impl BlockBlobClient {
             legal_hold: options.legal_hold,
             metadata: options.metadata.clone(),
             method_options: options.method_options.clone(),
+            structured_body_type: None,
+            structured_content_length: None,
             tier: options.tier.clone(),
             timeout: options.per_request_timeout,
             transactional_content_crc64: None,

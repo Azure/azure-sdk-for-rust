@@ -1745,6 +1745,13 @@ pub(crate) struct BlockBlobClientUploadInternalOptions<'a> {
     /// Allows customization of the method call.
     pub(crate) method_options: ClientMethodOptions<'a>,
 
+    /// Required if the request body is a structured message. Specifies the message schema version and properties.
+    pub(crate) structured_body_type: Option<String>,
+
+    /// Required if the request body is a structured message. Specifies the length of the blob/file content inside the message
+    /// body. Will always be smaller than Content-Length.
+    pub(crate) structured_content_length: Option<u64>,
+
     /// The tier to be set on the blob.
     pub(crate) tier: Option<AccessTier>,
 
