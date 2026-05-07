@@ -3,6 +3,7 @@
 
 //! Dataflow pipeline nodes for paged Cosmos DB operations.
 
+pub(crate) mod planner;
 mod request;
 
 use futures::future::BoxFuture;
@@ -62,7 +63,7 @@ impl<'a> PipelineContext<'a> {
 /// allocation is negligible compared to the multi-millisecond network I/O
 /// of a Cosmos DB request.
 #[async_trait::async_trait]
-pub(crate) trait PipelineNode: Send {
+pub(crate) trait PipelineNode: Send + std::any::Any {
     /// Emits the next page of results, or `None` when this node is drained.
     async fn next_page(
         &mut self,
@@ -71,6 +72,13 @@ pub(crate) trait PipelineNode: Send {
 
     /// Returns the node's strongly-owned children.
     fn children(&self) -> &[Box<dyn PipelineNode>];
+}
+
+impl dyn PipelineNode {
+    /// Downcasts this node to a concrete type.
+    pub(crate) fn downcast_ref<T: PipelineNode>(&self) -> Option<&T> {
+        (self as &dyn std::any::Any).downcast_ref::<T>()
+    }
 }
 
 /// A pipeline root that owns the node tree.
@@ -82,6 +90,11 @@ impl Pipeline {
     /// Creates a pipeline from an owned root node.
     pub(crate) fn new(root: Box<dyn PipelineNode>) -> Self {
         Self { root }
+    }
+
+    /// Returns a reference to the root node.
+    pub(crate) fn root(&self) -> &dyn PipelineNode {
+        &*self.root
     }
 
     /// Emits the next page from the root node.

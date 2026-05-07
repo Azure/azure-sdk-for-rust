@@ -374,6 +374,40 @@ impl ResourceType {
         )
     }
 
+    /// Returns true if the given [`OperationTarget`] is valid for this resource type.
+    ///
+    /// Each resource type only supports a subset of targeting modes:
+    /// - Non-partitioned resources (`DatabaseAccount`, `Database`, `DocumentCollection`,
+    ///   `PartitionKeyRange`, `Offer`) require [`OperationTarget::None`].
+    /// - Documents require either a [`OperationTarget::PartitionKey`] or
+    ///   [`OperationTarget::FeedRange`].
+    /// - Server-side code resources (`StoredProcedure`, `Trigger`, `UserDefinedFunction`)
+    ///   accept [`OperationTarget::None`] for CRUD and [`OperationTarget::PartitionKey`]
+    ///   for execution.
+    pub fn is_valid_target(self, target: &OperationTarget) -> bool {
+        match self {
+            ResourceType::DatabaseAccount
+            | ResourceType::Database
+            | ResourceType::DocumentCollection
+            | ResourceType::PartitionKeyRange
+            | ResourceType::Offer => matches!(target, OperationTarget::None),
+
+            ResourceType::Document => matches!(
+                target,
+                OperationTarget::PartitionKey(_) | OperationTarget::FeedRange(_)
+            ),
+
+            ResourceType::StoredProcedure
+            | ResourceType::Trigger
+            | ResourceType::UserDefinedFunction => {
+                matches!(
+                    target,
+                    OperationTarget::None | OperationTarget::PartitionKey(_)
+                )
+            }
+        }
+    }
+
     /// Returns true if this resource type requires a database reference.
     pub fn requires_database(self) -> bool {
         matches!(
@@ -821,5 +855,78 @@ mod tests {
         let merged = a.merge(&b).unwrap();
         // Higher version (2) wins for globalLSN; region 1: max(100, 50) = 100
         assert_eq!(merged.as_str(), "0:2#200#1=100");
+    }
+
+    // --- ResourceType::is_valid_target ---
+
+    #[test]
+    fn none_target_valid_for_database() {
+        assert!(ResourceType::Database.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn none_target_valid_for_database_account() {
+        assert!(ResourceType::DatabaseAccount.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn none_target_valid_for_document_collection() {
+        assert!(ResourceType::DocumentCollection.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn none_target_valid_for_offer() {
+        assert!(ResourceType::Offer.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn none_target_valid_for_partition_key_range() {
+        assert!(ResourceType::PartitionKeyRange.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn none_target_invalid_for_document() {
+        assert!(!ResourceType::Document.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn partition_key_valid_for_document() {
+        let pk = OperationTarget::PartitionKey(PartitionKey::from("pk"));
+        assert!(ResourceType::Document.is_valid_target(&pk));
+    }
+
+    #[test]
+    fn feed_range_valid_for_document() {
+        let fr = OperationTarget::FeedRange(FeedRange::full());
+        assert!(ResourceType::Document.is_valid_target(&fr));
+    }
+
+    #[test]
+    fn partition_key_invalid_for_database() {
+        let pk = OperationTarget::PartitionKey(PartitionKey::from("pk"));
+        assert!(!ResourceType::Database.is_valid_target(&pk));
+    }
+
+    #[test]
+    fn feed_range_invalid_for_database() {
+        let fr = OperationTarget::FeedRange(FeedRange::full());
+        assert!(!ResourceType::Database.is_valid_target(&fr));
+    }
+
+    #[test]
+    fn none_target_valid_for_stored_procedure() {
+        assert!(ResourceType::StoredProcedure.is_valid_target(&OperationTarget::None));
+    }
+
+    #[test]
+    fn partition_key_valid_for_stored_procedure() {
+        let pk = OperationTarget::PartitionKey(PartitionKey::from("pk"));
+        assert!(ResourceType::StoredProcedure.is_valid_target(&pk));
+    }
+
+    #[test]
+    fn feed_range_invalid_for_stored_procedure() {
+        let fr = OperationTarget::FeedRange(FeedRange::full());
+        assert!(!ResourceType::StoredProcedure.is_valid_target(&fr));
     }
 }

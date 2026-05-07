@@ -99,7 +99,6 @@ impl PipelineNode for Request {
         &[]
     }
 }
-
 impl Request {
     async fn handle_partition_topology_change(
         &mut self,

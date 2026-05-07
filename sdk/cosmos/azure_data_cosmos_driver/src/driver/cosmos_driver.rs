@@ -9,8 +9,7 @@ use crate::{
     },
     driver::{
         dataflow::{
-            PartitionRoutingRefresh, Pipeline, PipelineContext, Request, RequestExecutor,
-            RequestTarget,
+            planner, PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
@@ -1022,26 +1021,7 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        let mut pipeline = match operation.target() {
-            crate::models::OperationTarget::FeedRange(_) => {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "FeedRange targeting is not yet implemented for execute_operation; \
-                     use the dataflow pipeline directly for feed range operations",
-                ));
-            }
-            crate::models::OperationTarget::None => {
-                // We can use a single request to perform this operation, because it's not partitioned.
-                let root = Request::new(operation, RequestTarget::NonPartitioned);
-                Pipeline::new(Box::new(root))
-            }
-            crate::models::OperationTarget::PartitionKey(pk) => {
-                // We can use a single request to perform this operation, even if it's a query.
-                let target = RequestTarget::LogicalPartitionKey(pk.clone());
-                let root = Request::new(operation, target);
-                Pipeline::new(Box::new(root))
-            }
-        };
+        let mut pipeline = planner::plan_pipeline(&operation)?;
 
         let mut executor = DriverRequestExecutor {
             driver: self,
