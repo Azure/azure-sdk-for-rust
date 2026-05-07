@@ -10,10 +10,11 @@ use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
-    BlobContainerClientCreateOptions, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
-    ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
+    BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
+    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
+    BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
+    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
+    StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use azure_storage_blob_test::{
@@ -483,7 +484,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     );
 
     // Max Results Scenario
-    let options = BlobContainerClientListFindBlobsByTagsOptions {
+    let options = BlobContainerClientFindBlobsByTagsOptions {
         maxresults: Some(2),
         ..Default::default()
     };
