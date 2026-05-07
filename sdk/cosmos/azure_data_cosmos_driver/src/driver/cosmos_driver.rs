@@ -12,11 +12,12 @@ use crate::{
             PartitionRoutingRefresh, Pipeline, PipelineContext, Request, RequestExecutor,
             RequestTarget,
         },
+        pipeline::operation_pipeline::OperationOverrides,
         routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
     },
     models::{
-        request_header_names, AccountEndpoint, AccountReference, ActivityId, ContainerProperties,
-        ContainerReference, CosmosOperation, CosmosResponse, DatabaseProperties, DatabaseReference,
+        AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
+        CosmosOperation, CosmosResponse, DatabaseProperties, DatabaseReference,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -24,7 +25,6 @@ use crate::{
     },
 };
 use arc_swap::ArcSwap;
-use azure_core::http::headers::{HeaderName, HeaderValue};
 use futures::future::BoxFuture;
 use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -50,22 +50,37 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
     fn execute_request<'a>(
         &'a mut self,
         operation: &'a CosmosOperation,
-        _target: &'a RequestTarget,
+        target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
-        continuation: Option<&'a str>,
+        continuation: Option<String>,
     ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
         let driver = self.driver;
-        let mut options = self.options.clone();
-        if let Some(continuation) = continuation {
-            let mut custom_headers = options.custom_headers().cloned().unwrap_or_default();
-            custom_headers.insert(
-                HeaderName::from_static(request_header_names::CONTINUATION),
-                HeaderValue::from(continuation.to_owned()),
-            );
-            options = options.with_custom_headers(custom_headers);
-        }
+        let overrides = match target {
+            RequestTarget::LogicalPartitionKey(pk) => OperationOverrides {
+                partition_key: Some(pk),
+                continuation,
+                ..Default::default()
+            },
+            RequestTarget::EffectivePartitionKeyRange {
+                range,
+                partition_key_range_id,
+            } => OperationOverrides {
+                partition_key_range_id: Some(partition_key_range_id.clone()),
+                feed_range: Some(range),
+                continuation,
+                ..Default::default()
+            },
+            RequestTarget::NonPartitioned => OperationOverrides {
+                continuation,
+                ..Default::default()
+            },
+        };
 
-        Box::pin(async move { driver.execute_operation_direct(operation, &options).await })
+        Box::pin(async move {
+            driver
+                .execute_operation_direct(operation, overrides, &self.options)
+                .await
+        })
     }
 }
 
@@ -1007,10 +1022,7 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        match operation.target() {
-            crate::models::OperationTarget::None => {
-                return self.execute_operation_direct(&operation, &options).await;
-            }
+        let mut pipeline = match operation.target() {
             crate::models::OperationTarget::FeedRange(_) => {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -1018,16 +1030,19 @@ impl CosmosDriver {
                      use the dataflow pipeline directly for feed range operations",
                 ));
             }
-            crate::models::OperationTarget::PartitionKey(_) => {}
-        }
+            crate::models::OperationTarget::None => {
+                // We can use a single request to perform this operation, because it's not partitioned.
+                let root = Request::new(operation, RequestTarget::NonPartitioned);
+                Pipeline::new(Box::new(root))
+            }
+            crate::models::OperationTarget::PartitionKey(pk) => {
+                // We can use a single request to perform this operation, even if it's a query.
+                let target = RequestTarget::LogicalPartitionKey(pk.clone());
+                let root = Request::new(operation, target);
+                Pipeline::new(Box::new(root))
+            }
+        };
 
-        let partition_key = operation
-            .partition_key()
-            .expect("PartitionKey target matched above but partition_key() returned None")
-            .clone();
-        let target = RequestTarget::logical_partition_key(partition_key);
-        let root = Request::new(operation, target);
-        let mut pipeline = Pipeline::new(Box::new(root));
         let mut executor = DriverRequestExecutor {
             driver: self,
             options: &options,
@@ -1046,6 +1061,7 @@ impl CosmosDriver {
     async fn execute_operation_direct(
         &self,
         operation: &CosmosOperation,
+        overrides: OperationOverrides,
         options: &OperationOptions,
     ) -> azure_core::Result<CosmosResponse> {
         // Step 1: Build the single OperationOptionsView for layered resolution.
@@ -1125,6 +1141,7 @@ impl CosmosDriver {
         // Step 7: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             operation,
+            overrides,
             &effective_options,
             options.custom_headers(),
             self.location_state_store.as_ref(),

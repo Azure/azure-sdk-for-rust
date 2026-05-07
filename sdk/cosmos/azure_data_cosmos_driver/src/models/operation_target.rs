@@ -34,13 +34,3 @@ pub enum OperationTarget {
     /// container key space ([`FeedRange::full()`]).
     FeedRange(FeedRange),
 }
-
-impl OperationTarget {
-    /// Returns the partition key if this is a [`PartitionKey`](Self::PartitionKey) target.
-    pub fn partition_key(&self) -> Option<&PartitionKey> {
-        match self {
-            Self::PartitionKey(pk) => Some(pk),
-            _ => Option::None,
-        }
-    }
-}

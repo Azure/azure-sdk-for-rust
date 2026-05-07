@@ -29,6 +29,10 @@ pub(crate) mod request_header_names {
     pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
+    pub const START_EPK: &str = "x-ms-start-epk";
+    pub const END_EPK: &str = "x-ms-end-epk";
+    pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
+    pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
 }
 
 /// Standard Cosmos DB response header names.

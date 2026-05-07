@@ -3,49 +3,29 @@
 
 //! Request leaf node for the dataflow pipeline.
 
-use std::ops::Range;
-
 use async_trait::async_trait;
 use azure_core::http::StatusCode;
 
-use crate::models::{
-    effective_partition_key::EffectivePartitionKey, CosmosOperation, CosmosResponse, PartitionKey,
-    SubStatusCode,
-};
+use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode};
 
 use super::{PartitionRoutingRefresh, PipelineContext, PipelineNode};
 
 /// The target of a request node.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum RequestTarget {
+    /// The request is to a non-partitioned resource (databases, containers, offers, etc.)
+    NonPartitioned,
+
     /// A single logical partition key.
     LogicalPartitionKey(PartitionKey),
 
     /// An effective partition key range believed to be in one physical partition.
     EffectivePartitionKeyRange {
         /// EPK range scoped by this request.
-        range: Range<EffectivePartitionKey>,
+        range: FeedRange,
         /// Partition key range ID believed to contain `range`.
         partition_key_range_id: String,
     },
-}
-
-impl RequestTarget {
-    /// Creates a logical partition key target.
-    pub(crate) fn logical_partition_key(partition_key: PartitionKey) -> Self {
-        Self::LogicalPartitionKey(partition_key)
-    }
-
-    /// Creates an EPK range target believed to be contained by one physical partition.
-    pub(crate) fn effective_partition_key_range(
-        range: Range<EffectivePartitionKey>,
-        partition_key_range_id: impl Into<String>,
-    ) -> Self {
-        Self::EffectivePartitionKeyRange {
-            range,
-            partition_key_range_id: partition_key_range_id.into(),
-        }
-    }
 }
 
 /// Leaf node that executes one Cosmos DB request per page.
@@ -101,9 +81,9 @@ impl PipelineNode for Request {
         match context
             .execute_request(
                 &self.operation,
-                &self.target,
+                self.target.clone(),
                 PartitionRoutingRefresh::UseCached,
-                self.latest_server_continuation.as_deref(),
+                self.latest_server_continuation.clone(),
             )
             .await
         {
@@ -127,6 +107,10 @@ impl Request {
         error: azure_core::Error,
     ) -> azure_core::Result<Option<CosmosResponse>> {
         match &self.target {
+            RequestTarget::NonPartitioned => {
+                // Non-partitioned resources don't have partition topology changes.
+                Err(error)
+            }
             RequestTarget::LogicalPartitionKey(_) => {
                 if self.logical_partition_topology_retry_used {
                     return Err(error);
@@ -136,9 +120,9 @@ impl Request {
                 context
                     .execute_request(
                         &self.operation,
-                        &self.target,
+                        self.target.clone(),
                         PartitionRoutingRefresh::ForceRefresh,
-                        self.latest_server_continuation.as_deref(),
+                        self.latest_server_continuation.clone(),
                     )
                     .await
                     .map(|response| self.record_response_continuation(response))
@@ -191,7 +175,8 @@ mod tests {
         diagnostics::DiagnosticsContextBuilder,
         driver::dataflow::RequestExecutor,
         models::{
-            AccountReference, ActivityId, CosmosResponseHeaders, CosmosStatus, DatabaseReference,
+            effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
+            CosmosResponseHeaders, CosmosStatus, DatabaseReference,
         },
         options::DiagnosticsOptions,
     };
@@ -216,13 +201,12 @@ mod tests {
         fn execute_request<'a>(
             &'a mut self,
             _operation: &'a CosmosOperation,
-            _target: &'a RequestTarget,
+            _target: RequestTarget,
             partition_routing_refresh: PartitionRoutingRefresh,
-            continuation: Option<&'a str>,
+            continuation: Option<String>,
         ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
             self.refresh_calls.push(partition_routing_refresh);
-            self.continuation_calls
-                .push(continuation.map(str::to_owned));
+            self.continuation_calls.push(continuation);
             let response = self.responses.pop_front().expect("mock request response");
             Box::pin(async move { response })
         }
@@ -238,14 +222,17 @@ mod tests {
     }
 
     fn logical_partition_target() -> RequestTarget {
-        RequestTarget::logical_partition_key(PartitionKey::from("pk"))
+        RequestTarget::LogicalPartitionKey(PartitionKey::from("pk"))
     }
 
     fn epk_range_target() -> RequestTarget {
-        RequestTarget::effective_partition_key_range(
-            EffectivePartitionKey::from("00")..EffectivePartitionKey::from("80"),
-            "0",
-        )
+        RequestTarget::EffectivePartitionKeyRange {
+            range: FeedRange::new(
+                EffectivePartitionKey::min(),
+                EffectivePartitionKey::from("80"),
+            ),
+            partition_key_range_id: "0".to_string(),
+        }
     }
 
     fn response(body: &[u8]) -> CosmosResponse {

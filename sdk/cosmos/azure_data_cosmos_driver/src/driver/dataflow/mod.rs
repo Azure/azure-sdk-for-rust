@@ -26,9 +26,9 @@ pub(crate) trait RequestExecutor: Send {
     fn execute_request<'a>(
         &'a mut self,
         operation: &'a CosmosOperation,
-        target: &'a RequestTarget,
+        target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
-        continuation: Option<&'a str>,
+        continuation: Option<String>,
     ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>>;
 }
 
@@ -46,9 +46,9 @@ impl<'a> PipelineContext<'a> {
     async fn execute_request(
         &mut self,
         operation: &CosmosOperation,
-        target: &RequestTarget,
+        target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
-        continuation: Option<&str>,
+        continuation: Option<String>,
     ) -> azure_core::Result<CosmosResponse> {
         self.request_executor
             .execute_request(operation, target, partition_routing_refresh, continuation)
@@ -138,9 +138,9 @@ mod tests {
         fn execute_request<'a>(
             &'a mut self,
             _operation: &'a CosmosOperation,
-            _target: &'a RequestTarget,
+            _target: RequestTarget,
             _partition_routing_refresh: PartitionRoutingRefresh,
-            _continuation: Option<&'a str>,
+            _continuation: Option<String>,
         ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
             Box::pin(async {
                 Err(azure_core::Error::with_message(

@@ -117,11 +117,6 @@ impl CosmosOperation {
         &self.target
     }
 
-    /// Returns the partition key if this operation targets a single logical partition.
-    pub fn partition_key(&self) -> Option<&PartitionKey> {
-        self.target.partition_key()
-    }
-
     /// Returns the request headers.
     pub fn request_headers(&self) -> &CosmosRequestHeaders {
         &self.request_headers
@@ -738,7 +733,7 @@ mod tests {
             OperationTarget::PartitionKey(PartitionKey::from("pk1")),
         );
 
-        assert!(op.partition_key().is_some());
+        assert!(matches!(op.target(), OperationTarget::PartitionKey(_)));
     }
 
     #[test]
