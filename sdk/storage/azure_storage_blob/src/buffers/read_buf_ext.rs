@@ -107,7 +107,7 @@ mod tests {
         ) -> std::task::Poll<std::io::Result<usize>> {
             Poll::Ready(
                 self.count
-                    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "mock error")),
+                    .ok_or_else(|| std::io::Error::other("mock error")),
             )
         }
     }
