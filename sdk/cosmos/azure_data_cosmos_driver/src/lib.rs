@@ -24,6 +24,8 @@ pub mod diagnostics;
 pub mod driver;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
+#[cfg(feature = "__internal_in_memory_emulator")]
+pub mod in_memory_emulator;
 pub mod models;
 pub mod options;
 // The `query` module is local-plan scaffolding. Many helpers (gateway response
