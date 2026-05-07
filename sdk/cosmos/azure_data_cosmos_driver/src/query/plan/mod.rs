@@ -585,184 +585,138 @@ fn visit_select_for_info(select: &SqlSelectClause, info: &mut LocalQueryInfo) {
 }
 
 fn visit_expr_for_info(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
-    match expr {
-        SqlScalarExpression::FunctionCall {
-            name, args, is_udf, ..
-        } => {
-            if *is_udf {
-                info.has_udf = true;
-                // do NOT recurse into UDF arguments for aggregate detection.
-                // Cosmos disallows aggregates inside UDF arg lists; recursing here
-                // would silently advertise an aggregate the Gateway never emits.
-                // We still walk the args to catch nested UDFs / subqueries, but
-                // through a path that suppresses aggregate detection.
-                for arg in args {
-                    visit_expr_for_info_no_aggregates(arg, info);
-                }
-                return;
-            } else {
-                let upper = name.to_ascii_uppercase();
-                match upper.as_str() {
-                    "COUNT" => info.aggregates.push(AggregateKind::Count),
-                    "SUM" => info.aggregates.push(AggregateKind::Sum),
-                    "AVG" => info.aggregates.push(AggregateKind::Avg),
-                    "MIN" => info.aggregates.push(AggregateKind::Min),
-                    "MAX" => info.aggregates.push(AggregateKind::Max),
-                    // ARRAY_AGG is intentionally NOT advertised as a
-                    // local-plan aggregate — the in-memory evaluator does not
-                    // implement it, and the supported-query-features list does
-                    // not include it. A query containing ARRAY_AGG falls into
-                    // the generic non-aggregate path; routing/aggregation will
-                    // surface the correct error from the evaluator.
-                    _ => {}
-                }
-            }
-            for arg in args {
-                visit_expr_for_info(arg, info);
-            }
-        }
-        SqlScalarExpression::Exists(_)
-        | SqlScalarExpression::Subquery(_)
-        | SqlScalarExpression::Array(_) => {
-            info.has_subquery = true;
-        }
-        SqlScalarExpression::Binary { left, right, .. } => {
-            visit_expr_for_info(left, info);
-            visit_expr_for_info(right, info);
-        }
-        SqlScalarExpression::Unary { operand, .. } => {
-            visit_expr_for_info(operand, info);
-        }
-        SqlScalarExpression::Conditional {
-            condition,
-            if_true,
-            if_false,
-        } => {
-            visit_expr_for_info(condition, info);
-            visit_expr_for_info(if_true, info);
-            visit_expr_for_info(if_false, info);
-        }
-        SqlScalarExpression::Coalesce { left, right } => {
-            visit_expr_for_info(left, info);
-            visit_expr_for_info(right, info);
-        }
-        SqlScalarExpression::In {
-            expression, items, ..
-        } => {
-            visit_expr_for_info(expression, info);
-            for item in items {
-                visit_expr_for_info(item, info);
-            }
-        }
-        SqlScalarExpression::Between {
-            expression,
-            low,
-            high,
-            ..
-        } => {
-            visit_expr_for_info(expression, info);
-            visit_expr_for_info(low, info);
-            visit_expr_for_info(high, info);
-        }
-        SqlScalarExpression::Like {
-            expression,
-            pattern,
-            ..
-        } => {
-            visit_expr_for_info(expression, info);
-            visit_expr_for_info(pattern, info);
-        }
-        SqlScalarExpression::ArrayCreate(items) => {
-            for item in items {
-                visit_expr_for_info(item, info);
-            }
-        }
-        SqlScalarExpression::ObjectCreate(props) => {
-            for prop in props {
-                visit_expr_for_info(&prop.expression, info);
-            }
-        }
-        _ => {}
-    }
+    walk_expr_for_info(expr, info, /* no_aggregates */ false);
 }
 
 /// Walk an expression tree without recording aggregates. Used inside UDF
-/// argument lists where any apparent aggregate must be ignored \u2014
+/// argument lists where any apparent aggregate must be ignored —
 /// Cosmos disallows aggregates inside UDF args, and the Gateway never
 /// reports them on `queryInfo.aggregates`. Other state (`has_subquery`,
 /// `has_udf` for nested UDFs) is still recorded.
 fn visit_expr_for_info_no_aggregates(expr: &SqlScalarExpression, info: &mut LocalQueryInfo) {
-    match expr {
-        SqlScalarExpression::FunctionCall { args, is_udf, .. } => {
-            if *is_udf {
-                info.has_udf = true;
+    walk_expr_for_info(expr, info, /* no_aggregates */ true);
+}
+
+/// Iterative worklist walk shared by both `visit_expr_for_info` and its
+/// `_no_aggregates` variant. Each work-stack entry carries a
+/// `no_aggregates` flag so the original semantics are preserved: descending
+/// into a UDF's argument list (or being called from the no-aggregates entry
+/// point) suppresses aggregate detection for every nested function call.
+///
+/// Iterative on purpose: `analyze_query` runs this on the WHERE clause, and
+/// generated workloads commonly produce left-deep `AND`/`OR` chains with
+/// thousands of conjuncts. Recursive descent would overflow the worker
+/// thread's default stack long before reaching the PK extractor.
+///
+/// Children are pushed in reverse so the LIFO `pop` order matches a
+/// left-to-right preorder traversal — important because `info.aggregates`
+/// records the order in which aggregate calls appear in the source.
+fn walk_expr_for_info(
+    root: &SqlScalarExpression,
+    info: &mut LocalQueryInfo,
+    no_aggregates_root: bool,
+) {
+    let mut stack: Vec<(&SqlScalarExpression, bool)> = vec![(root, no_aggregates_root)];
+    while let Some((expr, no_aggregates)) = stack.pop() {
+        match expr {
+            SqlScalarExpression::FunctionCall {
+                name, args, is_udf, ..
+            } => {
+                if *is_udf {
+                    info.has_udf = true;
+                    // Cosmos disallows aggregates inside UDF arg lists; the
+                    // Gateway never emits them on `queryInfo.aggregates`. Walk
+                    // arguments with aggregate detection suppressed.
+                    for arg in args.iter().rev() {
+                        stack.push((arg, true));
+                    }
+                } else {
+                    if !no_aggregates {
+                        let upper = name.to_ascii_uppercase();
+                        match upper.as_str() {
+                            "COUNT" => info.aggregates.push(AggregateKind::Count),
+                            "SUM" => info.aggregates.push(AggregateKind::Sum),
+                            "AVG" => info.aggregates.push(AggregateKind::Avg),
+                            "MIN" => info.aggregates.push(AggregateKind::Min),
+                            "MAX" => info.aggregates.push(AggregateKind::Max),
+                            // ARRAY_AGG is intentionally NOT advertised as a
+                            // local-plan aggregate — the in-memory evaluator
+                            // does not implement it, and the supported-query-
+                            // features list does not include it. A query
+                            // containing ARRAY_AGG falls into the generic
+                            // non-aggregate path; routing/aggregation will
+                            // surface the correct error from the evaluator.
+                            _ => {}
+                        }
+                    }
+                    for arg in args.iter().rev() {
+                        stack.push((arg, no_aggregates));
+                    }
+                }
             }
-            for arg in args {
-                visit_expr_for_info_no_aggregates(arg, info);
+            SqlScalarExpression::Exists(_)
+            | SqlScalarExpression::Subquery(_)
+            | SqlScalarExpression::Array(_) => {
+                info.has_subquery = true;
             }
-        }
-        SqlScalarExpression::Exists(_)
-        | SqlScalarExpression::Subquery(_)
-        | SqlScalarExpression::Array(_) => {
-            info.has_subquery = true;
-        }
-        SqlScalarExpression::Binary { left, right, .. } => {
-            visit_expr_for_info_no_aggregates(left, info);
-            visit_expr_for_info_no_aggregates(right, info);
-        }
-        SqlScalarExpression::Unary { operand, .. } => {
-            visit_expr_for_info_no_aggregates(operand, info);
-        }
-        SqlScalarExpression::Conditional {
-            condition,
-            if_true,
-            if_false,
-        } => {
-            visit_expr_for_info_no_aggregates(condition, info);
-            visit_expr_for_info_no_aggregates(if_true, info);
-            visit_expr_for_info_no_aggregates(if_false, info);
-        }
-        SqlScalarExpression::Coalesce { left, right } => {
-            visit_expr_for_info_no_aggregates(left, info);
-            visit_expr_for_info_no_aggregates(right, info);
-        }
-        SqlScalarExpression::In {
-            expression, items, ..
-        } => {
-            visit_expr_for_info_no_aggregates(expression, info);
-            for item in items {
-                visit_expr_for_info_no_aggregates(item, info);
+            SqlScalarExpression::Binary { left, right, .. } => {
+                stack.push((right, no_aggregates));
+                stack.push((left, no_aggregates));
             }
-        }
-        SqlScalarExpression::Between {
-            expression,
-            low,
-            high,
-            ..
-        } => {
-            visit_expr_for_info_no_aggregates(expression, info);
-            visit_expr_for_info_no_aggregates(low, info);
-            visit_expr_for_info_no_aggregates(high, info);
-        }
-        SqlScalarExpression::Like {
-            expression,
-            pattern,
-            ..
-        } => {
-            visit_expr_for_info_no_aggregates(expression, info);
-            visit_expr_for_info_no_aggregates(pattern, info);
-        }
-        SqlScalarExpression::ArrayCreate(items) => {
-            for item in items {
-                visit_expr_for_info_no_aggregates(item, info);
+            SqlScalarExpression::Unary { operand, .. } => {
+                stack.push((operand, no_aggregates));
             }
-        }
-        SqlScalarExpression::ObjectCreate(props) => {
-            for prop in props {
-                visit_expr_for_info_no_aggregates(&prop.expression, info);
+            SqlScalarExpression::Conditional {
+                condition,
+                if_true,
+                if_false,
+            } => {
+                stack.push((if_false, no_aggregates));
+                stack.push((if_true, no_aggregates));
+                stack.push((condition, no_aggregates));
             }
+            SqlScalarExpression::Coalesce { left, right } => {
+                stack.push((right, no_aggregates));
+                stack.push((left, no_aggregates));
+            }
+            SqlScalarExpression::In {
+                expression, items, ..
+            } => {
+                for item in items.iter().rev() {
+                    stack.push((item, no_aggregates));
+                }
+                stack.push((expression, no_aggregates));
+            }
+            SqlScalarExpression::Between {
+                expression,
+                low,
+                high,
+                ..
+            } => {
+                stack.push((high, no_aggregates));
+                stack.push((low, no_aggregates));
+                stack.push((expression, no_aggregates));
+            }
+            SqlScalarExpression::Like {
+                expression,
+                pattern,
+                ..
+            } => {
+                stack.push((pattern, no_aggregates));
+                stack.push((expression, no_aggregates));
+            }
+            SqlScalarExpression::ArrayCreate(items) => {
+                for item in items.iter().rev() {
+                    stack.push((item, no_aggregates));
+                }
+            }
+            SqlScalarExpression::ObjectCreate(props) => {
+                for prop in props.iter().rev() {
+                    stack.push((&prop.expression, no_aggregates));
+                }
+            }
+            _ => {}
         }
-        _ => {}
     }
 }
 
@@ -820,23 +774,35 @@ fn extract_single_pk(
             }
             PartitionKeyFilter::Unconstrained
         }
+        // Flatten left-deep AND/OR chains iteratively to avoid blowing the
+        // worker thread's stack on generated queries with 1000s of conjuncts/
+        // disjuncts (the common case for tooling-generated SQL). Each leaf is
+        // analyzed independently and the per-leaf filters are folded with
+        // `intersect` (AND) or `union` (OR) — semantics identical to the
+        // previous recursive descent.
         SqlScalarExpression::Binary {
             op: SqlBinaryOp::And,
-            left,
-            right,
+            ..
         } => {
-            let left_pk = extract_single_pk(left, pk_path, root_alias, parameters);
-            let right_pk = extract_single_pk(right, pk_path, root_alias, parameters);
-            intersect_pk_filters(left_pk, right_pk)
+            let mut conjuncts = Vec::new();
+            flatten_and(expr, &mut conjuncts);
+            conjuncts
+                .into_iter()
+                .map(|c| extract_single_pk(c, pk_path, root_alias, parameters))
+                .reduce(intersect_pk_filters)
+                .unwrap_or(PartitionKeyFilter::Unconstrained)
         }
         SqlScalarExpression::Binary {
             op: SqlBinaryOp::Or,
-            left,
-            right,
+            ..
         } => {
-            let left_pk = extract_single_pk(left, pk_path, root_alias, parameters);
-            let right_pk = extract_single_pk(right, pk_path, root_alias, parameters);
-            union_pk_filters(left_pk, right_pk)
+            let mut disjuncts = Vec::new();
+            flatten_or(expr, &mut disjuncts);
+            disjuncts
+                .into_iter()
+                .map(|d| extract_single_pk(d, pk_path, root_alias, parameters))
+                .reduce(union_pk_filters)
+                .unwrap_or(PartitionKeyFilter::Unconstrained)
         }
         _ => PartitionKeyFilter::Unconstrained,
     }
@@ -979,15 +945,24 @@ fn extract_hierarchical_pk(
     // unioning the results. `(c.tenant='a' AND c.userId='u1') OR
     // (c.tenant='b' AND c.userId='u2')` becomes an `InList` of full HPK
     // tuples instead of falling back to a cross-partition fan-out.
+    // Flatten top-level OR chains iteratively. `(A) OR (B) OR (C) ...`
+    // would otherwise recurse one frame per disjunct and blow a default
+    // worker thread stack on adversarial / generated input. Each disjunct
+    // is analyzed independently and the per-disjunct filters are folded
+    // with `union_pk_filters` — same semantics as the prior recursive
+    // descent.
     if let SqlScalarExpression::Binary {
         op: SqlBinaryOp::Or,
-        left,
-        right,
+        ..
     } = expr
     {
-        let left_pk = extract_hierarchical_pk(left, pk_segments, root_alias, parameters);
-        let right_pk = extract_hierarchical_pk(right, pk_segments, root_alias, parameters);
-        return union_pk_filters(left_pk, right_pk);
+        let mut disjuncts = Vec::new();
+        flatten_or(expr, &mut disjuncts);
+        return disjuncts
+            .into_iter()
+            .map(|d| extract_hierarchical_pk(d, pk_segments, root_alias, parameters))
+            .reduce(union_pk_filters)
+            .unwrap_or(PartitionKeyFilter::Unconstrained);
     }
     let mut conjuncts = Vec::new();
     flatten_and(expr, &mut conjuncts);
@@ -1112,16 +1087,38 @@ fn extract_hierarchical_pk(
 }
 
 fn flatten_and<'a>(expr: &'a SqlScalarExpression, out: &mut Vec<&'a SqlScalarExpression>) {
-    match expr {
-        SqlScalarExpression::Binary {
-            op: SqlBinaryOp::And,
-            left,
-            right,
-        } => {
-            flatten_and(left, out);
-            flatten_and(right, out);
+    flatten_chain(expr, SqlBinaryOp::And, out);
+}
+
+fn flatten_or<'a>(expr: &'a SqlScalarExpression, out: &mut Vec<&'a SqlScalarExpression>) {
+    flatten_chain(expr, SqlBinaryOp::Or, out);
+}
+
+/// Iteratively flatten a left-deep `Binary { op, .. }` chain into its leaf
+/// operands, preserving original left-to-right order. Iterative on purpose so
+/// generated queries with thousands of conjuncts/disjuncts (real-world
+/// workloads regularly exceed 1k AND clauses) cannot overflow the worker
+/// thread's stack the way a naive recursive descent would.
+fn flatten_chain<'a>(
+    root: &'a SqlScalarExpression,
+    op: SqlBinaryOp,
+    out: &mut Vec<&'a SqlScalarExpression>,
+) {
+    // LIFO worklist. Push children right-then-left so the pop order matches
+    // a left-to-right in-order traversal of the original tree.
+    let mut stack: Vec<&'a SqlScalarExpression> = vec![root];
+    while let Some(node) = stack.pop() {
+        match node {
+            SqlScalarExpression::Binary {
+                op: node_op,
+                left,
+                right,
+            } if *node_op == op => {
+                stack.push(right);
+                stack.push(left);
+            }
+            other => out.push(other),
         }
-        _ => out.push(expr),
     }
 }
 

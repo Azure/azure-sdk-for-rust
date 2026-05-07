@@ -51,7 +51,14 @@ pub fn parse(sql: &str) -> Result<SqlProgram, ParseError> {
     Ok(program)
 }
 
-const MAX_NESTING_DEPTH: usize = 128;
+// Maximum subquery / parenthesis nesting depth. Each level walks through the
+// ~14-stage precedence ladder in `parse_scalar_expression`, so each nested
+// level consumes roughly 14 stack frames. 32 keeps the worst-case stack
+// footprint comfortably under 1 MiB even in unoptimized debug builds, so the
+// guard always fires before exhausting a default 2 MiB worker / test-harness
+// thread stack. Real Cosmos SQL queries virtually never exceed single-digit
+// nesting; this is purely a safety ceiling for adversarial / generated input.
+const MAX_NESTING_DEPTH: usize = 32;
 
 struct Parser<'a> {
     lexer: Lexer<'a>,
@@ -1916,9 +1923,11 @@ mod tests {
 
     #[test]
     fn deeply_nested_parens_does_not_stack_overflow() {
-        // Prior to the depth guard, a query with thousands of nested parens would
-        // overflow the parser thread stack. The depth guard must reject it with a
-        // parse error well before that point.
+        // The depth guard (MAX_NESTING_DEPTH) must reject deeply nested parens
+        // with a parse error long before the parser thread stack is exhausted.
+        // Runs on the test harness's default stack on purpose: production
+        // callers do not generally configure 16 MiB stacks, so the guard must
+        // be tight enough to be safe under realistic stack budgets.
         let mut sql = String::from("SELECT VALUE ");
         for _ in 0..2000 {
             sql.push('(');
@@ -1975,40 +1984,32 @@ mod tests {
     /// plan generator's `extract_pk_from_expression` / `intersect_pk_filters`.
     #[test]
     fn deeply_nested_and_chain_does_not_stack_overflow() {
-        // Run on a fresh thread with a generous stack so we measure the
-        // plan generator's behavior on deep input rather than the test
-        // harness's default 2 MiB stack on Windows. 4000 nested ANDs is
-        // representative of generated queries we have seen in the wild.
-        let handle = std::thread::Builder::new()
-            .stack_size(16 * 1024 * 1024)
-            .spawn(|| {
-                let mut sql = String::from("SELECT * FROM c WHERE c.x = 1");
-                for i in 0..4000 {
-                    sql.push_str(&format!(" AND c.x = {i}"));
-                }
-                // Either the depth guard rejects it, or the parser succeeds
-                // and the plan generator processes it without crashing.
-                // Both are acceptable -- what we must NOT do is overflow the
-                // thread stack.
-                match parse(&sql) {
-                    Ok(program) => {
-                        let plan =
-                            crate::query::plan::generate_query_plan(&program.query, &["/pk"]);
-                        assert!(plan.is_ok(), "plan generation must not fail for deep AND");
-                    }
-                    Err(e) => {
-                        let msg = e.message.to_ascii_lowercase();
-                        assert!(
-                            msg.contains("nesting") || msg.contains("depth"),
-                            "if parsing rejects, the error must come from the depth guard, got: {msg}"
-                        );
-                    }
-                }
-            })
-            .expect("spawn");
-        handle
-            .join()
-            .expect("deep AND chain must not stack-overflow");
+        // 4000 left-deep `AND` clauses is representative of generated queries
+        // we have seen in the wild. Both the parser (iterative for AND/OR
+        // chains via the precedence-climbing loop) and the plan-generator
+        // walks (`visit_expr_for_info`, `extract_*_pk`, `flatten_and`)
+        // are explicitly iterative for these cases, so this must run to
+        // completion on a default worker thread stack (~2 MiB on Windows).
+        let mut sql = String::from("SELECT * FROM c WHERE c.x = 1");
+        for i in 0..4000 {
+            sql.push_str(&format!(" AND c.x = {i}"));
+        }
+        // Either the depth guard rejects it, or the parser succeeds and the
+        // plan generator processes it without crashing. Both are acceptable
+        // -- what we must NOT do is overflow the thread stack.
+        match parse(&sql) {
+            Ok(program) => {
+                let plan = crate::query::plan::generate_query_plan(&program.query, &["/pk"]);
+                assert!(plan.is_ok(), "plan generation must not fail for deep AND");
+            }
+            Err(e) => {
+                let msg = e.message.to_ascii_lowercase();
+                assert!(
+                    msg.contains("nesting") || msg.contains("depth"),
+                    "if parsing rejects, the error must come from the depth guard, got: {msg}"
+                );
+            }
+        }
     }
 
     // (#7) The whitelist in `parse_identifier_name` is the contract for
