@@ -1233,8 +1233,7 @@ This is a precondition on the existing `SessionManager` API — if it ever
 moves to a last-write-wins model, the hedging orchestrator must instead
 suppress session capture on hedges that observed cancellation before
 STAGE 4 completed (or capture into a per-hedge buffer that only the winner
-flushes). This invariant is verified by the unit tests in §15.1
-(`session_capture_under_cancellation`).
+flushes). This invariant must be covered by the unit tests listed in §15.1.
 
 ### 9.3 Throughput Control
 
@@ -1253,9 +1252,15 @@ saturation hedging actively makes the experience **worse** by multiplying
 TC pressure and adding orchestration latency on top of the throttle.
 
 This is amplified by the SDK-default auto-enable on PPAF accounts (§5.2):
-a PPAF-enabled account under load gets hedging by default, which it cannot
-opt out of without explicitly setting `AvailabilityStrategy::Disabled` at
-the operation or client level.
+a PPAF-enabled account under load gets hedging by default. Users can opt
+out of that SDK-default behavior via
+`DriverOptions::disable_sdk_default_hedging` or
+`AZURE_COSMOS_HEDGING_DISABLE_SDK_DEFAULT` (§4.4 / §11.3.1), which
+suppresses *only* the PPAF-driven default and leaves any user-configured
+`AvailabilityStrategy` untouched. Setting `AvailabilityStrategy::Disabled`
+at the operation or client level remains the broader way to disable
+hedging entirely (and also blocks any per-operation `Hedging(..)`
+override at lower layers).
 
 **Mitigations the implementation must adopt:**
 
@@ -1426,13 +1431,16 @@ Phase 1, awaiting an `azure_core` metrics surface):
 | `cosmos.hedge.requests_spawned_total` | counter | `request_number` | Total hedge requests spawned (primary = 0) |
 | `cosmos.hedge.first_response_latency_ms` | histogram | `was_primary` (bool) | Latency from orchestrator entry to the winning response |
 | `cosmos.hedge.canceled_total` | counter | `reason` (`winner_found` / `deadline` / `app_canceled`) | Hedges that were canceled before completion |
-| `cosmos.hedge.ru_charge_winner` | histogram | `was_primary` | RU of the winning response (matches what is reported to the caller) |
+| `cosmos.hedge.ru_charge_winner` | histogram | `was_primary` | RU of the winning response; this is the caller-visible RU charge |
+| `cosmos.hedge.ru_charge_total` | histogram | `winner_region`, `attempt_count` | Total RU consumed across all hedge attempts for the operation, including losing hedges; operator-facing only |
 
 Notes:
 
-- RU consumed by losing hedges is **not** reported to the caller (see §17
-  Q3); a separate metric should be introduced if operators need to track
-  hedge cost separately from per-operation cost.
+- RU consumed by losing hedges is **not** reported to the caller. The
+  external per-operation RU contract remains the winning response's RU
+  charge, while any aggregate hedge cost is surfaced via the separate
+  operator metric `cosmos.hedge.ru_charge_total`. See §17 Q3 for the
+  resolved external-contract decision.
 - Histogram bucket layout intentionally unspecified — defer to whichever
   metrics provider `azure_core` settles on.
 - Event/metric names follow OpenTelemetry conventions: dot-separated,
@@ -1449,10 +1457,14 @@ Notes:
 let driver = CosmosDriverRuntimeBuilder::new()
     .build(endpoint, credential, DriverOptionsBuilder::new()
         .with_availability_strategy(AvailabilityStrategy::Hedging(
+            // `HedgingStrategy::new` is fallible (see §4.1) — it returns
+            // `Result<Self, HedgingConfigError>` for zero / non-positive
+            // threshold or step. Propagate with `?` (or `expect` in
+            // examples / tests where the inputs are static).
             HedgingStrategy::new(
                 Duration::from_millis(500),
                 Duration::from_millis(500),
-            ),
+            )?,
         ))
         .build()
     ).await?;
@@ -1472,7 +1484,7 @@ let options = OperationOptionsBuilder::new()
         HedgingStrategy::new(
             Duration::from_millis(200),  // Tighter threshold for this read
             Duration::from_millis(200),
-        ),
+        )?,                              // see §4.1 — fallible constructor
     ))
     .build();
 ```
@@ -1696,8 +1708,8 @@ without sacrificing availability.
 | `is_final_result_404_0` | 404/0 → final |
 | `is_final_result_404_1002` | 404/1002 → transient |
 | `is_final_result_429` | 429 → transient |
-| `hedging_config_validation` | Zero threshold panics |
-| `hedging_config_step_defaults` | Step inherits threshold |
+| `hedging_config_validation` | Zero / non-positive `threshold` returns `HedgingConfigError` (matches the fallible `HedgingStrategy::new` contract in §4.1) |
+| `hedging_config_requires_explicit_step` | `threshold_step` must be provided explicitly; constructor does not default it from `threshold` |
 | `region_exclusion_for_hedge_n` | Correct ExcludeRegions per hedge |
 | `exclude_regions_honored_by_every_retry_trigger` | For each retry trigger class — PPAF write retry, PPCB markdown failback, transport-layer 503, throttling 429, session-token 1002 — fault-inject the trigger inside a hedge and assert the retry attempt does **not** route to a region listed in the hedge's `ExcludeRegions`. Encodes the §8.4 cross-cutting invariant; new retry triggers added in later phases must extend this test. |
 | `app_cancel_preserves_hedge_diagnostics` | Cancel the application token mid-fan-out; assert the returned error carries `HedgeDiagnostics` from the most-advanced in-flight hedge (covers §6.5 invariant #6). |
@@ -1707,7 +1719,7 @@ without sacrificing availability.
 | Test | Setup | Validates |
 |------|-------|-----------|
 | `hedging_read_primary_slow` | 2s delay on Region A reads | Hedge to Region B wins; diagnostics show `was_hedge=true` |
-| `hedging_read_primary_fast` | No faults | Primary wins; no hedge launched; `hedge_diagnostics=None` or `was_hedge=false` |
+| `hedging_read_primary_fast` | No faults | Primary wins; no hedge launched; `hedge_diagnostics=Some(_)` with `was_hedge=false` and `total_requests_launched=1` (matches the §10.1 always-attached contract when the orchestrator is entered) |
 | `hedging_read_primary_503` | 503 on Region A reads | Hedge to Region B wins with success |
 | `hedging_read_all_regions_slow` | 2s delay on all regions | Last region to respond wins (graceful degradation) |
 | `hedging_write_multi_master` | 2s delay on Region A creates | Hedge to Region B succeeds |
@@ -1902,9 +1914,17 @@ goal and require a spec amendment.
    full timeout, which prevents a slow primary from extending the
    user-visible latency past the configured cap.
 
-3. **RU accounting** — Hedged requests consume RU/s. Should diagnostics report the
-   total RU across all hedges, or only the winner's RU? Recommendation: total RU
-   (matching .NET SDK's `RequestCharge` which includes all sub-requests).
+3. **RU accounting** — **Resolved.** The caller-visible per-operation RU
+   charge is the **winning** response's RU only. Aggregate hedge cost
+   (winner + losers) is surfaced separately via the operator-facing
+   `cosmos.hedge.ru_charge_total` metric (see §10.4). Rationale: the
+   public `CosmosResponse.charge` contract should remain a stable proxy
+   for "what this logical operation cost the user against their RU
+   budget"; loser-hedge RU is speculative work the user did not request
+   and would inflate per-operation accounting in a non-deterministic
+   way. Operators who care about total cluster RU draw still get the
+   total via the separate metric. This is an intentional divergence
+   from .NET v3, which folds sub-request RU into `RequestCharge`.
 
 4. **Race with background failback** — **Resolved.** PPCB transitions to
    `ProbeCandidate` and a concurrent hedge against the original region are
