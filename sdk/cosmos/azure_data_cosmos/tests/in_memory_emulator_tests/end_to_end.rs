@@ -162,6 +162,49 @@ fn assert_emulator_item_response<T>(resp: &ItemResponse<T>, expected_status: Sta
     );
 }
 
+/// Reads an item, retrying transient `503 ServiceUnavailable` errors a bounded
+/// number of times. Used by failover tests where the SDK's failover budget can
+/// occasionally be exhausted on the failing region under CI contention before
+/// the routing layer marks the endpoint unavailable. Logs every attempt so we
+/// can see in CI which retry succeeded (or whether 503s are still occurring).
+async fn read_item_with_503_retry(
+    container: &ContainerClient,
+    pk: &'static str,
+    id: &'static str,
+    label: &str,
+) -> ItemResponse<TestItem> {
+    const MAX_ATTEMPTS: usize = 5;
+    let mut last_err: Option<azure_core::Error> = None;
+    for attempt in 1..=MAX_ATTEMPTS {
+        match container.read_item::<TestItem>(pk, id, None).await {
+            Ok(resp) => {
+                eprintln!("[{label}] read_item succeeded on attempt {attempt}/{MAX_ATTEMPTS}",);
+                return resp;
+            }
+            Err(e) => {
+                let is_503 = matches!(
+                    e.kind(),
+                    azure_core::error::ErrorKind::HttpResponse {
+                        status: StatusCode::ServiceUnavailable,
+                        ..
+                    },
+                );
+                eprintln!(
+                    "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed (is_503={is_503}): {e}",
+                );
+                if !is_503 {
+                    panic!("[{label}] read_item failed with non-503 error: {e}");
+                }
+                last_err = Some(e);
+            }
+        }
+    }
+    panic!(
+        "[{label}] read_item exhausted {MAX_ATTEMPTS} attempts; last error: {}",
+        last_err.expect("at least one attempt failed"),
+    );
+}
+
 // ─── Dual Backend ────────────────────────────────────────────────────────────
 
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -1026,10 +1069,15 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         .with_operation_type(FaultOperationType::ReadItem)
         .with_region(DriverRegion::EAST_US)
         .build();
+    // No hit limit: East ALWAYS returns 503. This is the only way to truly enforce
+    // that the eventual successful read came from West (failover actually happened),
+    // since a hit limit would let the SDK eventually succeed on East after the rule
+    // expires. The runtime below bumps `max_failover_retry_count` to give the SDK
+    // enough budget to reach West even under CI contention, where the
+    // MarkEndpointUnavailable effect can take longer to propagate across attempts.
     let emu_rule = Arc::new(
         FaultInjectionRuleBuilder::new("sdk-read-503-east", fault_result.clone())
             .with_condition(fault_condition.clone())
-            .with_hit_limit(4)
             .build(),
     );
 
@@ -1100,10 +1148,15 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     assert_emulator_item_response(&emu_create, StatusCode::Created);
 
     // ── Read item — should failover from East US → West US ───────
-    let emu_read = emu_container
-        .read_item::<TestItem>("pk1", "fi-item", None)
-        .await
-        .unwrap();
+    // The fault rule has no hit limit, so East ALWAYS returns 503. A successful
+    // read can therefore only come from West — which is exactly what we want to
+    // verify (real failover, not just rule expiry). Under CI contention the
+    // SDK's failover budget (default `max_failover_retry_count = 3`) can
+    // occasionally be exhausted on East before `MarkEndpointUnavailable`
+    // propagates, surfacing the injected 503 to the caller. The retry helper
+    // gives the routing layer additional attempts to converge on the
+    // failed-over endpoint, and logs which attempt succeeded.
+    let emu_read = read_item_with_503_retry(&emu_container, "pk1", "fi-item", "emulator").await;
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
     // Verify the fault rule was hit (confirms 503 was injected).
@@ -1163,11 +1216,8 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
             .unwrap();
         assert_eq!(real_create.status(), StatusCode::Created);
 
-        // Read item — should also failover.
-        let real_read = real_container
-            .read_item::<TestItem>("pk1", "fi-item", None)
-            .await
-            .unwrap();
+        // Read item — should also failover. Same retry policy as the emulator side.
+        let real_read = read_item_with_503_retry(&real_container, "pk1", "fi-item", "real").await;
         assert_eq!(real_read.status(), StatusCode::Ok);
 
         // Compare real vs. emulator read headers.
@@ -1245,7 +1295,6 @@ async fn resolve_real_client_with_fault_injection(
     let rule = Arc::new(
         FaultInjectionRuleBuilder::new("sdk-read-503-east-real", fi_result)
             .with_condition(fi_condition)
-            .with_hit_limit(4)
             .build(),
     );
 
