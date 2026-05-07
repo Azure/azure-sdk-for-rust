@@ -106,11 +106,18 @@ impl CosmosClientBuilder {
 
     /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
+    /// Construct the suffix explicitly via
+    /// [`UserAgentSuffix::new`](crate::UserAgentSuffix::new) for trusted
+    /// values, or [`UserAgentSuffix::try_new`](crate::UserAgentSuffix::try_new)
+    /// for untrusted input. Validation rules (max 25 characters,
+    /// HTTP-header-safe) are enforced at the construction site rather than
+    /// here, which keeps any panic local to the caller's input handling.
+    ///
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
-        self.options.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: crate::UserAgentSuffix) -> Self {
+        self.options.user_agent_suffix = Some(suffix);
         self
     }
 
@@ -330,9 +337,11 @@ impl CosmosClientBuilder {
         // Create Cosmos headers policy to override User-Agent with Cosmos-specific value.
         // This runs as a per-call policy after azure_core's UserAgentPolicy.
         let crate_version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
-        let cosmos_headers_policy: Arc<dyn azure_core::http::policies::Policy> = Arc::new(
-            CosmosHeadersPolicy::new(crate_version, self.options.user_agent_suffix.as_deref()),
-        );
+        let cosmos_headers_policy: Arc<dyn azure_core::http::policies::Policy> =
+            Arc::new(CosmosHeadersPolicy::new(
+                crate_version,
+                self.options.user_agent_suffix.as_ref().map(|s| s.as_str()),
+            ));
 
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
@@ -396,6 +405,12 @@ impl CosmosClientBuilder {
             },
         ));
 
+        // Forward the user-agent suffix to the driver so it appears in the
+        // User-Agent header for all data-plane requests issued by the driver
+        // transport pipeline (not just the SDK's account-metadata pipeline).
+        // Capture before `self.options` is moved into `GatewayPipeline` below.
+        let driver_user_agent_suffix = self.options.user_agent_suffix.clone();
+
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint.clone(),
             pipeline_core,
@@ -427,6 +442,11 @@ impl CosmosClientBuilder {
         }
         driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
 
+        // Forward the user-agent suffix captured above to the driver runtime.
+        if let Some(suffix) = driver_user_agent_suffix {
+            driver_runtime_builder = driver_runtime_builder.with_user_agent_suffix(suffix);
+        }
+
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =
@@ -452,12 +472,7 @@ impl CosmosClientBuilder {
             .await?;
 
         Ok(CosmosClient {
-            context: ClientContext {
-                pipeline,
-                driver,
-                global_endpoint_manager,
-                global_partition_endpoint_manager,
-            },
+            context: ClientContext { pipeline, driver },
         })
     }
 }
@@ -485,3 +500,53 @@ fn build_driver_account(
 // CosmosClient::builder().build() now eagerly creates a CosmosDriver,
 // which requires a real endpoint. Re-add once fault injection is linked
 // from the SDK to the driver.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::UserAgentSuffix;
+
+    /// Reproduces the bug where `CosmosClientBuilder::with_user_agent_suffix`
+    /// did not forward the suffix to the driver runtime, causing the
+    /// User-Agent header on data-plane requests to lack the configured suffix.
+    ///
+    /// Mirrors the relevant wiring from `CosmosClientBuilder::build()`:
+    /// the SDK options carry a `UserAgentSuffix`, which `build()` forwards
+    /// onto `CosmosDriverRuntimeBuilder::with_user_agent_suffix`.
+    #[tokio::test]
+    async fn user_agent_suffix_is_forwarded_to_driver_runtime() {
+        let suffix = UserAgentSuffix::new("myapp-westus2");
+
+        let options = CosmosClientOptions {
+            user_agent_suffix: Some(suffix.clone()),
+            ..Default::default()
+        };
+
+        let mut driver_builder = CosmosDriverRuntimeBuilder::new();
+        if let Some(s) = options.user_agent_suffix.clone() {
+            driver_builder = driver_builder.with_user_agent_suffix(s);
+        }
+        let runtime = driver_builder.build().await.expect("runtime builds");
+
+        assert_eq!(
+            runtime.user_agent_suffix(),
+            Some(&suffix),
+            "driver runtime did not receive the user-agent suffix"
+        );
+        assert!(
+            runtime.user_agent().as_str().contains(suffix.as_str()),
+            "computed driver user-agent {:?} does not contain suffix {:?}",
+            runtime.user_agent().as_str(),
+            suffix.as_str(),
+        );
+    }
+
+    #[tokio::test]
+    async fn no_user_agent_suffix_yields_no_driver_suffix() {
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .build()
+            .await
+            .expect("runtime builds");
+        assert!(runtime.user_agent_suffix().is_none());
+    }
+}
