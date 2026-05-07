@@ -29,7 +29,7 @@ mod system_properties;
 pub use client::InMemoryEmulatorHttpClient;
 pub use config::{
     ConsistencyLevel, ContainerConfig, ReplicationConfig, VirtualAccountConfig, VirtualRegion,
-    WriteMode,
+    WriteMode, DEFAULT_MAX_BUFFERED_REPLICATIONS,
 };
 pub use epk::Epk;
 #[doc(hidden)]
