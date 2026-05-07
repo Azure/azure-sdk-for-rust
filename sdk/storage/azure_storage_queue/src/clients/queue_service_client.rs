@@ -62,13 +62,18 @@ impl QueueServiceClient {
         })
     }
 
+    /// Gets the URL of the resource this client is configured for.
+    pub fn url(&self) -> &Url {
+        &self.endpoint
+    }
+
     /// Returns a new instance of QueueClient.
     ///
     /// # Arguments
     ///
     /// * `queue_name` - The name of the queue.
     pub fn queue_client(&self, queue_name: &str) -> Result<QueueClient> {
-        let mut queue_url = self.endpoint().clone();
+        let mut queue_url = self.url().clone();
         queue_url
             .path_segments_mut()
             .map_err(|_| {

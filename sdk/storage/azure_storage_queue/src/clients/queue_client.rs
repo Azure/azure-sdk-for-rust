@@ -87,6 +87,11 @@ impl QueueClient {
         })
     }
 
+    /// Gets the URL of the resource this client is configured for.
+    pub fn url(&self) -> &Url {
+        &self.endpoint
+    }
+
     /// Checks if the queue exists.
     ///
     /// Returns `true` if the queue exists, `false` if the queue does not exist, and propagates all other errors.

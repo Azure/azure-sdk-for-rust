@@ -43,11 +43,6 @@ pub struct QueueClientOptions {
 }
 
 impl QueueClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// Deletes all messages from the specified queue.
     ///
     /// # Arguments
