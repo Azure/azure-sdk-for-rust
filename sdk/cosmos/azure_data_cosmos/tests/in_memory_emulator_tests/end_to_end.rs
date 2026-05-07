@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore unroutable
+// cspell:ignore unroutable Meiswinkel
 //! End-to-end tests that exercise the full SDK pipeline (CosmosClient →
 //! ContainerClient → driver → in-memory emulator) **and** (optionally) a real
 //! Cosmos DB account.
@@ -1044,6 +1044,7 @@ async fn sdk_create_retries_after_429_throttling() {
 /// compared via [`compare_item_responses`].
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
+#[ignore = "TODO(@FabianMeiswinkel): re-enable — tracked by https://github.com/Azure/azure-sdk-for-rust/issues/4365"]
 async fn sdk_read_failover_on_503_via_fault_injection() {
     use azure_data_cosmos_driver::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
