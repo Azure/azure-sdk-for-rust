@@ -10,6 +10,7 @@ use futures::{AsyncRead, AsyncReadExt};
 use crate::buffers::read_buf::ReadBuf;
 
 /// Extensions for `ReadBuf`.
+/// Enforces modification of internal cursor go through unsafe methods defined on the type.
 #[async_trait]
 pub(crate) trait ReadBufExt {
     fn extend_from_slice(&mut self, data: &[u8]) -> Result<()>;
@@ -47,13 +48,13 @@ impl ReadBufExt for ReadBuf {
         unsafe { self.set_len(self.len() + count) };
         Ok(count)
     }
-    async fn read_exactly_from<R>(&mut self, stream: &mut R, amount: usize) -> Result<usize>
+    async fn read_exactly_from<R>(&mut self, stream: &mut R, len: usize) -> Result<usize>
     where
         R: AsyncRead + Unpin + Send,
     {
         let mut total_read = 0;
-        while total_read < amount {
-            let to_read = min(self.remaining(), amount.saturating_sub(total_read));
+        while total_read < len {
+            let to_read = min(self.remaining(), len.saturating_sub(total_read));
             let dst = &mut self.spare_capacity_mut()[..to_read];
             let count = validated_read(dst, stream).await?;
             // SAFETY: `count` has been validated as <= `dst.len()`, a slice of `self.spare_capacity_mut()`
