@@ -18,8 +18,8 @@
 - Renamed `AppendBlobClientCreateOptions::with_if_not_exists()` to `if_not_exists()`.
 - Renamed `BlockBlobClientUploadBlobFromUrlOptions::with_if_not_exists()` to `if_not_exists()`.
 - Renamed `BlockBlobClientUploadOptions::with_if_not_exists()` to `if_not_exists()`.
-- `structured_body_type` and `structured_content_length` fields on `AppendBlobClientAppendBlockOptions` and `BlockBlobClientStageBlockOptions` are now `pub(crate)`.
-- `structured_body_type` on `BlobClientDownloadOptions` is now `pub(crate)`.
+- Removed `structured_body_type` and `structured_content_length` fields from `AppendBlobClientAppendBlockOptions`, `BlockBlobClientStageBlockOptions`, and `PageBlobClientUploadPagesOptions`.
+- Removed `structured_body_type` on `BlobClientDownloadOptions`.
 - Removed the `endpoint()` method from all clients. Use `url()` instead.
 
 ### Bugs Fixed
