@@ -122,15 +122,16 @@ async fn staged_upload(
 async fn copy_from_url(
     container_client: &BlobContainerClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Create a source blob to copy from, tagging it and guarding against accidental
-    // overwrites with `if_not_exists()` and setting `tags` on the options.
+    // Create a source blob to copy from. `if_not_exists()` prevents overwriting an
+    // existing blob, and `with_tags()` sets index tags via the `x-ms-tags` header.
     let source_blob_name = "copy-source.txt";
     let source_client = container_client.blob_client(source_blob_name);
-    let upload_options = BlockBlobClientUploadOptions {
-        tags: Some(HashMap::from([("origin".to_string(), "sample".to_string())]).into()),
-        ..Default::default()
-    }
-    .if_not_exists();
+    let upload_options = BlockBlobClientUploadOptions::default()
+        .if_not_exists()
+        .with_tags(HashMap::from([(
+            "origin".to_string(),
+            "sample".to_string(),
+        )]));
     source_client
         .upload(
             RequestContent::from(b"original source content".to_vec()),

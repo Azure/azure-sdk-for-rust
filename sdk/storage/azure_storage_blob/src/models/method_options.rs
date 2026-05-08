@@ -9,9 +9,7 @@ use azure_core::{
 };
 use time::OffsetDateTime;
 
-use crate::models::{
-    AccessTier, BlobTags, EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode,
-};
+use crate::models::{AccessTier, EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode};
 
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
@@ -114,11 +112,9 @@ pub struct BlockBlobClientUploadOptions<'a> {
 
     /// Optional. Used to set blob tags in various blob operations.
     ///
-    /// You can convert from a `HashMap<String, String>` using `.into()`:
-    /// ```ignore
-    /// tags: Some(my_hashmap.into())
-    /// ```
-    pub tags: Option<BlobTags>,
+    /// This is the percent-encoded `x-ms-tags` header value (`key=value&key2=value2`).
+    /// Use [`Self::with_tags`] to set this from a `HashMap<String, String>` or `BlobTags`.
+    pub blob_tags_string: Option<String>,
 
     /// Optional. Version 2019-07-07 and later. Specifies the algorithm to use for encryption. If not specified, the default is
     /// AES256.
