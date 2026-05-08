@@ -123,9 +123,8 @@ async fn build_client_with_provisioned_container(
         .unwrap(),
     );
 
-    let mut builder = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(emulator.runtime_builder())
-        .with_emulator_http_client(emulator.clone());
+    let mut builder =
+        CosmosClientBuilder::new().with_driver_runtime_builder(emulator.runtime_builder());
     if let Some(s) = suffix {
         builder = builder.with_user_agent_suffix(s);
     }
