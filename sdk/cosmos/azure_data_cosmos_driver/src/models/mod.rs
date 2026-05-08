@@ -21,7 +21,7 @@ mod cosmos_status;
 mod etag;
 mod finite_f64;
 pub(crate) use finite_f64::FiniteF64;
-mod partition_key;
+pub(crate) mod partition_key;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;

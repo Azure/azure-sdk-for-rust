@@ -27,14 +27,22 @@ serde_json.workspace = true
 tracing.workspace = true
 url.workspace = true
 
+# NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
+# `tokio test-util` entries below merge into existing features and add no
+# compile-time cost. `uuid` is only required by the
+# `__internal_in_memory_emulator`-gated dual-backend tests; if its compile
+# footprint becomes a concern, move those tests to a dedicated crate gated on
+# the same feature instead of trying to gate the dev-dep here.
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity = { version = "0.35.0" }
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
+serde = { workspace = true, features = ["derive"] }
 time.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "test-util"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [lints]
 workspace = true
@@ -49,6 +57,7 @@ key_auth = [
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = ["azure_data_cosmos_driver/fault_injection"] # Enables support for fault injection testing
+__internal_in_memory_emulator = ["azure_data_cosmos_driver/__internal_in_memory_emulator", "key_auth"]
 allow_invalid_certificates = [] # Enables accepting invalid TLS certificates (e.g., for emulator testing). Must be combined with a TLS feature (`rustls` or `native_tls`).
 __tls = []
 
