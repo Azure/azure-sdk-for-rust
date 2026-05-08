@@ -237,13 +237,19 @@ async fn infinite_stress_loop<T: StressTestFactory>(
                 StressRunOutput::Panic(_panic_msg) => {}
             }
             match msg {
-                StressRunOutput::Success | StressRunOutput::GracefulError(_) => {}
+                StressRunOutput::Success | StressRunOutput::GracefulError(_) => {
+                    if iteration % 100 == 0 {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&totals)
+                                .unwrap_or("Failed to serialize test results to JSON.".to_string())
+                        )
+                    }
+                }
                 _ => println!(
                     "{}",
-                    serde_json::to_string_pretty(&totals).with_context(
-                        ErrorKind::DataConversion,
-                        "Failed to serialize test results to JSON.",
-                    )?
+                    serde_json::to_string_pretty(&totals)
+                        .unwrap_or("Failed to serialize test results to JSON.".to_string())
                 ),
             }
         }
