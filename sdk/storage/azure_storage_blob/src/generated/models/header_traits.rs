@@ -141,57 +141,51 @@ pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
 impl AppendBlobClientAppendBlockFromUrlResultHeaders
     for Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// This response header is returned only for append operations. It returns the offset at which the block was committed, in
-    /// bytes.
+    /// The offset at which the block was committed, in bytes.
     fn blob_append_offset(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &BLOB_APPEND_OFFSET)
     }
 
-    /// The number of committed blocks present in the blob. This header is returned only for append blobs.
+    /// The number of committed blocks present in the blob.
     fn blob_committed_block_count(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
@@ -234,57 +228,51 @@ pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
 impl AppendBlobClientAppendBlockResultHeaders
     for Response<AppendBlobClientAppendBlockResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// This response header is returned only for append operations. It returns the offset at which the block was committed, in
-    /// bytes.
+    /// The offset at which the block was committed, in bytes.
     fn blob_append_offset(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &BLOB_APPEND_OFFSET)
     }
 
-    /// The number of committed blocks present in the blob. This header is returned only for append blobs.
+    /// The number of committed blocks present in the blob.
     fn blob_committed_block_count(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
@@ -323,45 +311,39 @@ pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
 }
 
 impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResult, NoFormat> {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -396,19 +378,19 @@ pub trait AppendBlobClientSealResultHeaders: private::Sealed {
 }
 
 impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// If this blob has been sealed
+    /// Whether the blob is sealed.
     fn is_sealed(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEALED)
     }
@@ -443,19 +425,19 @@ pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
 }
 
 impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Uniquely identifies a blobs' lease
+    /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
@@ -490,12 +472,12 @@ pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
 }
 
 impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -537,19 +519,19 @@ pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
 }
 
 impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Uniquely identifies a blobs' lease
+    /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
@@ -586,32 +568,29 @@ pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
 }
 
 impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshotResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// Uniquely identifies the snapshot and indicates the snapshot version. It may be used in subsequent requests to access the
-    /// snapshot.
+    /// Uniquely identifies the snapshot and indicates the snapshot version.
     fn snapshot(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &SNAPSHOT)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -681,25 +660,22 @@ pub(crate) trait BlobClientDownloadInternalResultHeaders: private::Sealed {
 }
 
 impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloadInternalResult> {
-    /// This header is returned if it was previously specified for the blob.
+    /// The Cache-Control of the blob.
     fn cache_control(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
     }
 
-    /// This header returns the value that was specified for the 'x-ms-blob-content-disposition' header. The Content-Disposition
-    /// response header field conveys additional information about how to process the response payload, and also can be used to
-    /// attach additional metadata. For example, if set to attachment, it indicates that the user-agent should not display the
-    /// response, but instead show a Save As dialog with a filename other than the blob name specified.
+    /// The Content-Disposition of the blob.
     fn content_disposition(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_DISPOSITION)
     }
 
-    /// This header returns the value that was specified for the Content-Encoding request header
+    /// The Content-Encoding of the blob.
     fn content_encoding(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_ENCODING)
     }
 
-    /// This header returns the value that was specified for the Content-Language request header.
+    /// The Content-Language of the blob.
     fn content_language(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_LANGUAGE)
     }
@@ -709,50 +685,47 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &CONTENT_LENGTH)
     }
 
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// Indicates the range of bytes returned in the event that the client requested a subset of the blob by setting the 'Range'
-    /// request header.
+    /// Indicates the range of bytes returned in this response.
     fn content_range(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_RANGE)
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The number of committed blocks present in the blob. This header is returned only for append blobs.
+    /// The number of committed blocks present in the blob.
     fn blob_committed_block_count(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// MD5 hash of the full blob content only returned for ranged reads. This is the hash of the complete blob, not just the
+    /// requested range.
     fn blob_content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &BLOB_CONTENT_MD5, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// If this blob has been sealed
+    /// Whether the blob is sealed.
     fn is_sealed(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEALED)
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
@@ -762,73 +735,58 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &BLOB_TYPE)
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// Conclusion time of the last attempted Copy Blob operation where this blob was the destination blob. This value can specify
-    /// the time of a completed, aborted, or failed copy attempt. This header does not appear if a copy is pending, if this blob
-    /// has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob
-    /// operation using Set Blob Properties, Put Blob, or Put Block List.
+    /// If this blob was the destination of a copy, specifies the completion time of the last attempted copy operation.
     fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &COPY_COMPLETION_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
-    /// pass to Abort Copy Blob to abort a pending copy.
+    /// Identifier for this copy operation.
     fn copy_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_ID)
     }
 
-    /// Contains the number of bytes copied and the total bytes in the source in the last attempted Copy Blob operation where
-    /// this blob was the destination blob. Can show between 0 and Content-Length bytes copied. This header does not appear if
-    /// this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded
-    /// Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List
+    /// If this blob was the destination of a copy, specifies the number of bytes copied and the total bytes in the source.
     fn copy_progress(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_PROGRESS)
     }
 
-    /// URL up to 2 KB in length that specifies the source blob or file used in the last attempted Copy Blob operation where this
-    /// blob was the destination blob. This header does not appear if this blob has never been the destination in a Copy Blob
-    /// operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob,
-    /// or Put Block List.
+    /// If this blob was the destination of a copy, specifies the source URL.
     fn copy_source(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_SOURCE)
     }
 
-    /// State of the copy operation identified by x-ms-copy-id.
+    /// Status of the copy operation.
     fn copy_status(&self) -> Result<Option<CopyStatus>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
     }
 
-    /// Only appears when x-ms-copy-status is failed or pending. Describes the cause of the last fatal or non-fatal copy operation
-    /// failure. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this
-    /// blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List
+    /// If this blob was the destination of a copy, specifies the cause of the copy operation failure.
     fn copy_status_description(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS_DESCRIPTION)
     }
 
-    /// Returns the date and time the blob was created.
+    /// The date-time the blob was created.
     fn creation_time(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &CREATION_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
@@ -838,32 +796,31 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &IMMUTABILITY_POLICY_MODE)
     }
 
-    /// UTC date/time value generated by the service that indicates the time at which the blob immutability policy will expire.
+    /// The date-time that indicates the time at which the blob immutability policy will expire.
     fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &IMMUTABILITY_POLICY_UNTIL_DATE, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The value of this header indicates whether version of this blob is a current version, see also x-ms-version-id header.
+    /// Indicates whether this is the current version of the blob.
     fn is_current_version(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_CURRENT_VERSION)
     }
 
-    /// UTC date/time value generated by the service that indicates the time at which the blob was last read or written to
+    /// The date-time value that indicates the time at which the blob was last read or written.
     fn last_accessed(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_ACCESS_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    /// Specifies the duration of the lease.
     fn duration(&self) -> Result<Option<LeaseDuration>> {
         Headers::get_optional_as(self.headers(), &LEASE_DURATION)
     }
 
-    /// Lease state of the blob.
+    /// The lease state of the blob.
     fn lease_state(&self) -> Result<Option<LeaseState>> {
         Headers::get_optional_as(self.headers(), &LEASE_STATE)
     }
@@ -890,9 +847,7 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Ok(values)
     }
 
-    /// Optional. Only valid when Object Replication is enabled for the storage container and on the source blob of the replication.
-    /// When retrieving this header, it will return the header with the policy id and rule id (e.g. x-ms-or-policyid_ruleid),
-    /// and the value will be the status of the replication (e.g. complete, failed).
+    /// The object replication status headers.
     fn object_replication_rules(&self) -> Result<HashMap<String, String>> {
         let mut values = HashMap::new();
         for h in self.headers().iter() {
@@ -904,24 +859,22 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Ok(values)
     }
 
-    /// Optional. Only valid when Object Replication is enabled for the storage container and on the destination blob of the replication.
+    /// The object replication policy ID.
     fn object_replication_policy_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &OR_POLICY_ID)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
     }
 
-    /// The number of tags associated with the blob
+    /// The number of tags associated with the blob.
     fn tag_count(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -956,17 +909,17 @@ pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
 }
 
 impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfoResult, NoFormat> {
-    /// Identifies the account kind
+    /// The account kind.
     fn account_kind(&self) -> Result<Option<AccountKind>> {
         Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
     }
 
-    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
+    /// Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
     }
 
-    /// Identifies the sku name of the account
+    /// The SKU name of the account.
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
     }
@@ -1042,25 +995,22 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
 }
 
 impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesResult, NoFormat> {
-    /// This header is returned if it was previously specified for the blob.
+    /// The Cache-Control of the blob.
     fn cache_control(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
     }
 
-    /// This header returns the value that was specified for the 'x-ms-blob-content-disposition' header. The Content-Disposition
-    /// response header field conveys additional information about how to process the response payload, and also can be used to
-    /// attach additional metadata. For example, if set to attachment, it indicates that the user-agent should not display the
-    /// response, but instead show a Save As dialog with a filename other than the blob name specified.
+    /// The Content-Disposition of the blob.
     fn content_disposition(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_DISPOSITION)
     }
 
-    /// This header returns the value that was specified for the Content-Encoding request header
+    /// The Content-Encoding of the blob.
     fn content_encoding(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_ENCODING)
     }
 
-    /// This header returns the value that was specified for the Content-Language request header.
+    /// The Content-Language of the blob.
     fn content_language(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CONTENT_LANGUAGE)
     }
@@ -1070,8 +1020,7 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &CONTENT_LENGTH)
     }
 
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
@@ -1081,56 +1030,51 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The tier of page blob on a premium storage account or tier of block blob on blob storage LRS accounts. For a list of allowed
-    /// premium page blob tiers, see <https://learn.microsoft.com/azure/virtual-machines/disks-types#premium-ssd>. For blob storage
-    /// LRS accounts, valid values are Hot/Cool/Archive.
+    /// The access tier of the blob.
     fn access_tier(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ACCESS_TIER)
     }
 
-    /// The time the tier was changed on the object. This is only returned if the tier on the block blob was ever set.
+    /// The time the tier was changed on the blob. This is only returned if the tier on the blob was ever set.
     fn access_tier_change_time(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &ACCESS_TIER_CHANGE_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// For page blobs on a premium storage account only. If the access tier is not explicitly set on the blob, the tier is inferred
-    /// based on its content length and this header will be returned with true value.
+    /// Included if the access tier is inferred.
     fn access_tier_inferred(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &ACCESS_TIER_INFERRED)
     }
 
-    /// For blob storage LRS accounts, valid values are rehydrate-pending-to-hot/rehydrate-pending-to-cool. If the blob is being
-    /// rehydrated and is not complete then this header is returned indicating that rehydrate is pending and also tells the destination
-    /// tier.
+    /// Included if the blob rehydrate operation is pending. Indicates the destination tier.
     fn archive_status(&self) -> Result<Option<ArchiveStatus>> {
         Headers::get_optional_as(self.headers(), &ARCHIVE_STATUS)
     }
 
-    /// The number of committed blocks present in the blob. This header is returned only for append blobs.
+    /// The number of committed blocks present in the blob.
     fn blob_committed_block_count(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
     }
 
-    /// If this blob has been sealed
+    /// Whether the blob is sealed.
     fn is_sealed(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEALED)
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
@@ -1140,77 +1084,61 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &BLOB_TYPE)
     }
 
-    /// Conclusion time of the last attempted Copy Blob operation where this blob was the destination blob. This value can specify
-    /// the time of a completed, aborted, or failed copy attempt. This header does not appear if a copy is pending, if this blob
-    /// has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob
-    /// operation using Set Blob Properties, Put Blob, or Put Block List.
+    /// If this blob was the destination of a copy, specifies the completion time of the last attempted copy operation.
     fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &COPY_COMPLETION_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Included if the blob is incremental copy blob or incremental copy snapshot, if x-ms-copy-status is success. Snapshot time
-    /// of the last successful incremental copy snapshot for this blob.
+    /// Included if the blob is incremental copy blob or incremental copy snapshot, if x-ms-copy-status is success.
     fn destination_snapshot(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_DESTINATION_SNAPSHOT)
     }
 
-    /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
-    /// pass to Abort Copy Blob to abort a pending copy.
+    /// Identifier for this copy operation.
     fn copy_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_ID)
     }
 
-    /// Contains the number of bytes copied and the total bytes in the source in the last attempted Copy Blob operation where
-    /// this blob was the destination blob. Can show between 0 and Content-Length bytes copied. This header does not appear if
-    /// this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded
-    /// Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List
+    /// If this blob was the destination of a copy, specifies the number of bytes copied and the total bytes in the source.
     fn copy_progress(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_PROGRESS)
     }
 
-    /// URL up to 2 KB in length that specifies the source blob or file used in the last attempted Copy Blob operation where this
-    /// blob was the destination blob. This header does not appear if this blob has never been the destination in a Copy Blob
-    /// operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob,
-    /// or Put Block List.
+    /// If this blob was the destination of a copy, specifies the source URL.
     fn copy_source(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_SOURCE)
     }
 
-    /// State of the copy operation identified by x-ms-copy-id.
+    /// Status of the copy operation.
     fn copy_status(&self) -> Result<Option<CopyStatus>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
     }
 
-    /// Only appears when x-ms-copy-status is failed or pending. Describes the cause of the last fatal or non-fatal copy operation
-    /// failure. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this
-    /// blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List
+    /// If this blob was the destination of a copy, specifies the cause of the copy operation failure.
     fn copy_status_description(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS_DESCRIPTION)
     }
 
-    /// Returns the date and time the blob was created.
+    /// The date-time the blob was created.
     fn creation_time(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &CREATION_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The time this blob will expire.
+    /// The date-time this blob will expire.
     fn expires_on(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &EXPIRY_TIME, |h| parse_rfc7231(h.as_str()))
     }
@@ -1220,7 +1148,7 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &IMMUTABILITY_POLICY_MODE)
     }
 
-    /// UTC date/time value generated by the service that indicates the time at which the blob immutability policy will expire.
+    /// The date-time that indicates the time at which the blob immutability policy will expire.
     fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &IMMUTABILITY_POLICY_UNTIL_DATE, |h| {
             parse_rfc7231(h.as_str())
@@ -1232,25 +1160,24 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &INCREMENTAL_COPY)
     }
 
-    /// The value of this header indicates whether version of this blob is a current version, see also x-ms-version-id header.
+    /// Indicates whether this is the current version of the blob.
     fn is_current_version(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_CURRENT_VERSION)
     }
 
-    /// UTC date/time value generated by the service that indicates the time at which the blob was last read or written to
+    /// The date-time value that indicates the time at which the blob was last read or written.
     fn last_accessed(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_ACCESS_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    /// Specifies the duration of the lease.
     fn duration(&self) -> Result<Option<LeaseDuration>> {
         Headers::get_optional_as(self.headers(), &LEASE_DURATION)
     }
 
-    /// Lease state of the blob.
+    /// The lease state of the blob.
     fn lease_state(&self) -> Result<Option<LeaseState>> {
         Headers::get_optional_as(self.headers(), &LEASE_STATE)
     }
@@ -1277,9 +1204,7 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Ok(values)
     }
 
-    /// Optional. Only valid when Object Replication is enabled for the storage container and on the source blob of the replication.
-    /// When retrieving this header, it will return the header with the policy id and rule id (e.g. x-ms-or-policyid_ruleid),
-    /// and the value will be the status of the replication (e.g. complete, failed).
+    /// The object replication status headers.
     fn object_replication_rules(&self) -> Result<HashMap<String, String>> {
         let mut values = HashMap::new();
         for h in self.headers().iter() {
@@ -1291,30 +1216,27 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Ok(values)
     }
 
-    /// Optional. Only valid when Object Replication is enabled for the storage container and on the destination blob of the replication.
+    /// The object replication policy ID.
     fn object_replication_policy_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &OR_POLICY_ID)
     }
 
-    /// If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High
-    /// and Standard.
+    /// The priority of the rehydration operation.
     fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>> {
         Headers::get_optional_as(self.headers(), &REHYDRATE_PRIORITY)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
     }
 
-    /// The number of tags associated with the blob
+    /// The number of tags associated with the blob.
     fn tag_count(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -1345,12 +1267,12 @@ pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
 }
 
 impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -1387,19 +1309,19 @@ pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
 }
 
 impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Uniquely identifies a blobs' lease
+    /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
@@ -1436,19 +1358,19 @@ pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
 impl BlobContainerClientAcquireLeaseResultHeaders
     for Response<BlobContainerClientAcquireLeaseResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Uniquely identifies a blobs' lease
+    /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
@@ -1485,12 +1407,12 @@ pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
 impl BlobContainerClientBreakLeaseResultHeaders
     for Response<BlobContainerClientBreakLeaseResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -1534,19 +1456,19 @@ pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
 impl BlobContainerClientChangeLeaseResultHeaders
     for Response<BlobContainerClientChangeLeaseResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Uniquely identifies a blobs' lease
+    /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
@@ -1583,17 +1505,17 @@ pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
 impl BlobContainerClientGetAccountInfoResultHeaders
     for Response<BlobContainerClientGetAccountInfoResult, NoFormat>
 {
-    /// Identifies the account kind
+    /// The account kind.
     fn account_kind(&self) -> Result<Option<AccountKind>> {
         Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
     }
 
-    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
+    /// Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
     }
 
-    /// Identifies the sku name of the account
+    /// The SKU name of the account.
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
     }
@@ -1639,12 +1561,12 @@ pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
 impl BlobContainerClientGetPropertiesResultHeaders
     for Response<BlobContainerClientGetPropertiesResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -1661,8 +1583,7 @@ impl BlobContainerClientGetPropertiesResultHeaders
         Headers::get_optional_as(self.headers(), &DEFAULT_ENCRYPTION_SCOPE)
     }
 
-    /// If a blob has a lease and the lease is of infinite duration then the value of this header is set to true, otherwise it
-    /// is set to false.
+    /// Whether to prevent encryption scope override.
     fn prevent_encryption_scope_override(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &DENY_ENCRYPTION_SCOPE_OVERRIDE)
     }
@@ -1677,18 +1598,17 @@ impl BlobContainerClientGetPropertiesResultHeaders
         Headers::get_optional_as(self.headers(), &HAS_LEGAL_HOLD)
     }
 
-    /// Indicates whether version level worm is enabled on a container
+    /// Indicates whether version level WORM (Write Once, Read Many) is enabled on a container.
     fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED)
     }
 
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    /// Specifies the duration of the lease.
     fn duration(&self) -> Result<Option<LeaseDuration>> {
         Headers::get_optional_as(self.headers(), &LEASE_DURATION)
     }
 
-    /// Lease state of the blob.
+    /// The lease state of the blob.
     fn lease_state(&self) -> Result<Option<LeaseState>> {
         Headers::get_optional_as(self.headers(), &LEASE_STATE)
     }
@@ -1738,12 +1658,12 @@ pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
 impl BlobContainerClientReleaseLeaseResultHeaders
     for Response<BlobContainerClientReleaseLeaseResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -1782,19 +1702,19 @@ pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
 impl BlobContainerClientRenewLeaseResultHeaders
     for Response<BlobContainerClientRenewLeaseResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// Uniquely identifies a blobs' lease
+    /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
@@ -1831,17 +1751,17 @@ pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
 impl BlobServiceClientGetAccountInfoResultHeaders
     for Response<BlobServiceClientGetAccountInfoResult, NoFormat>
 {
-    /// Identifies the account kind
+    /// The account kind.
     fn account_kind(&self) -> Result<Option<AccountKind>> {
         Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
     }
 
-    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
+    /// Indicates if the account has hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
     }
 
-    /// Identifies the sku name of the account
+    /// The SKU name of the account.
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
     }
@@ -1883,52 +1803,46 @@ pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
 impl BlockBlobClientCommitBlockListResultHeaders
     for Response<BlockBlobClientCommitBlockListResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -1967,34 +1881,29 @@ pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
 impl BlockBlobClientStageBlockFromUrlResultHeaders
     for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
@@ -2033,34 +1942,29 @@ pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
 impl BlockBlobClientStageBlockResultHeaders
     for Response<BlockBlobClientStageBlockResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
@@ -2101,45 +2005,39 @@ pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
 impl BlockBlobClientUploadBlobFromUrlResultHeaders
     for Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -2181,52 +2079,46 @@ pub(crate) trait BlockBlobClientUploadInternalResultHeaders: private::Sealed {
 impl BlockBlobClientUploadInternalResultHeaders
     for Response<BlockBlobClientUploadInternalResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -2261,12 +2153,12 @@ pub trait BlockListHeaders: private::Sealed {
 }
 
 impl BlockListHeaders for Response<BlockList, XmlFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -2310,30 +2202,29 @@ pub trait PageBlobClientClearPagesResultHeaders: private::Sealed {
 }
 
 impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPagesResult, NoFormat> {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
@@ -2374,45 +2265,39 @@ pub trait PageBlobClientCreateResultHeaders: private::Sealed {
 }
 
 impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult, NoFormat> {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
+    /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
@@ -2447,19 +2332,19 @@ pub trait PageBlobClientResizeResultHeaders: private::Sealed {
 }
 
 impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, NoFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
@@ -2496,19 +2381,19 @@ pub trait PageBlobClientSetSequenceNumberResultHeaders: private::Sealed {
 impl PageBlobClientSetSequenceNumberResultHeaders
     for Response<PageBlobClientSetSequenceNumberResult, NoFormat>
 {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
@@ -2550,51 +2435,46 @@ pub trait PageBlobClientUploadPagesFromUrlResultHeaders: private::Sealed {
 impl PageBlobClientUploadPagesFromUrlResultHeaders
     for Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
@@ -2636,51 +2516,46 @@ pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
 impl PageBlobClientUploadPagesResultHeaders
     for Response<PageBlobClientUploadPagesResult, NoFormat>
 {
-    /// If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the
-    /// client can check for message content integrity.
+    /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
     }
 
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
+    /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
 
-    /// This response header is returned so that the client can check for the integrity of the copied content.
+    /// The CRC64 hash of the content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
     }
 
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
+    /// The SHA-256 hash of the provided encryption key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
     }
 
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
+    /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
+    /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
@@ -2715,12 +2590,12 @@ pub trait PageListHeaders: private::Sealed {
 }
 
 impl PageListHeaders for Response<PageList, XmlFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
@@ -2762,12 +2637,12 @@ pub trait SignedIdentifiersHeaders: private::Sealed {
 }
 
 impl SignedIdentifiersHeaders for Response<SignedIdentifiers, XmlFormat> {
-    /// The ETag contains a value that you can use to perform operations conditionally.
+    /// An opaque identifier for the current state of the resource.
     fn etag(&self) -> Result<Option<Etag>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// The date/time that the container was last modified.
+    /// The date-time that the resource was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())

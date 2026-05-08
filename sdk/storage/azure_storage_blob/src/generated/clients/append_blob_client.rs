@@ -38,7 +38,7 @@ pub struct AppendBlobClientOptions {
 }
 
 impl AppendBlobClient {
-    /// The Append Block operation commits a new block of data to the end of an append blob.
+    /// Uploads a new block of data to the end of an append blob.
     ///
     /// # Arguments
     ///
@@ -167,12 +167,11 @@ impl AppendBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Append Block From URL operation creates a new block to be committed as part of an append blob where the contents are
-    /// read from a URL.
+    /// Uploads a new block of data from the specified URL to the end of an append blob.
     ///
     /// # Arguments
     ///
-    /// * `source_url` - Specify a URL to the copy source.
+    /// * `source_url` - Specifies the URL of the source.
     /// * `content_length` - The length of the request.
     /// * `options` - Optional parameters for the request.
     ///
@@ -347,7 +346,7 @@ impl AppendBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Create operation creates a new append blob.
+    /// Creates a new append blob.
     ///
     /// # Arguments
     ///
@@ -494,8 +493,7 @@ impl AppendBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Seal operation seals the Append Blob to make it read-only. Seal is supported only on version 2019-12-12 version or
-    /// later.
+    /// Seals the append blob to make it read-only.
     ///
     /// # Arguments
     ///

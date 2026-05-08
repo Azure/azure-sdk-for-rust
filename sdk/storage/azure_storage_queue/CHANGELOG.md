@@ -2,13 +2,9 @@
 
 ## 0.7.0 (Unreleased)
 
-### Features Added
-
 ### Breaking Changes
 
-### Bugs Fixed
-
-### Other Changes
+- Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
 
 ## 0.6.0 (2026-04-22)
 
