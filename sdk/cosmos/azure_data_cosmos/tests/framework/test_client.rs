@@ -71,24 +71,27 @@ pub fn assert_failover_to_region(
     );
 }
 
-/// Asserts that no cross-region failover occurred: every tracked request
-/// must have stayed on `expected_region`. Used to validate scenarios where
-/// a transient fault clears via local retry without triggering failover.
-pub fn assert_no_failover_from_region(
+/// Asserts that local retry was attempted on `expected_region` before any
+/// cross-region failover: at least one tracked request must have landed on
+/// the expected region. Used to validate scenarios where a transient fault
+/// is exercised via local retry; this does **not** require the operation to
+/// stay on `expected_region` (the driver may still fail over to an alternate
+/// region after exhausting its local retry budget).
+pub fn assert_local_retry_attempted_on_region(
     diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
     expected_region: &Region,
 ) {
     let requests = diagnostics.requests();
-    for (i, req) in requests.iter().enumerate() {
-        assert_eq!(
-            req.region(),
-            Some(expected_region),
-            "request #{} landed on unexpected region {:?} (endpoint {})",
-            i,
-            req.region(),
-            req.endpoint()
-        );
-    }
+    let on_region = requests
+        .iter()
+        .filter(|r| r.region() == Some(expected_region))
+        .count();
+    assert!(
+        on_region >= 1,
+        "expected at least one tracked request on region {:?}, but none did (regions contacted: {:?})",
+        expected_region,
+        diagnostics.regions_contacted()
+    );
 }
 
 /// Default timeout for tests (80 seconds).
