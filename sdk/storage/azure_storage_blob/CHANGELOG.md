@@ -18,6 +18,7 @@
 - Renamed `BlockBlobClientUploadBlobFromUrlOptions::with_if_not_exists()` to `if_not_exists()`.
 - Renamed `BlockBlobClientUploadOptions::with_if_not_exists()` to `if_not_exists()`.
 - Removed the `endpoint()` method from all clients. Use `url()` instead.
+- Removed `PageBlobClient::get_page_ranges()` along with the `PageList`, `PageRange`, `ClearRange`, `PageBlobClientGetPageRangesOptions`, and `PageListHeaders` types.
 
 ### Bugs Fixed
 

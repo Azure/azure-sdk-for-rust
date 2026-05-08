@@ -1762,47 +1762,6 @@ pub struct PageBlobClientCreateOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `PageBlobClient::get_page_ranges()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct PageBlobClientGetPageRangesOptions<'a> {
-    /// Specify this value to operate only on a blob with a matching Etag value.
-    pub if_match: Option<Etag>,
-
-    /// Specify this value to operate only on a blob if it has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// Specify this value to operate only on a blob with a non-matching Etag value.
-    pub if_none_match: Option<Etag>,
-
-    /// Specifies a SQL-like where clause on blob tags to operate only on a blob with matching tags.
-    pub if_tags: Option<String>,
-
-    /// Specify this value to operate only on a blob if it has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// An opaque string value that identifies the portion of the result set to return with this operation.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// Specifies the range of the blob to operate on.
-    pub range: Option<HttpRange>,
-
-    /// Specifies the snapshot of the blob.
-    pub snapshot: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
-    pub timeout: Option<i32>,
-}
-
 /// Options to be passed to `PageBlobClient::resize()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct PageBlobClientResizeOptions<'a> {

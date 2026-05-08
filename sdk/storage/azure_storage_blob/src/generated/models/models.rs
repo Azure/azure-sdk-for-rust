@@ -593,19 +593,6 @@ pub struct BlockLookupList {
     pub uncommitted: Option<Vec<Vec<u8>>>,
 }
 
-/// A clear range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct ClearRange {
-    /// The end of the byte range.
-    #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
-    pub end: Option<i64>,
-
-    /// The start of the byte range.
-    #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
-    pub start: Option<i64>,
-}
-
 /// Represents a container.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -1016,37 +1003,6 @@ pub struct PageBlobClientUploadPagesFromUrlResult;
 /// Contains results for `PageBlobClient::upload_pages()`
 #[derive(SafeDebug)]
 pub struct PageBlobClientUploadPagesResult;
-
-/// The result of the Get Pages API.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct PageList {
-    /// The clear ranges.
-    #[serde(rename = "ClearRange", skip_serializing_if = "Option::is_none")]
-    pub clear_range: Option<Vec<ClearRange>>,
-
-    /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
-    /// value in the next request to continue the listing operation.
-    #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
-
-    /// The page ranges.
-    #[serde(rename = "PageRange", skip_serializing_if = "Option::is_none")]
-    pub page_range: Option<Vec<PageRange>>,
-}
-
-/// A page range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct PageRange {
-    /// The end of the byte range.
-    #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
-    pub end: Option<i64>,
-
-    /// The start of the byte range.
-    #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
-    pub start: Option<i64>,
-}
 
 /// The retention policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]

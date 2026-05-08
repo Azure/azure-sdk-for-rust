@@ -4,8 +4,7 @@
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobClientCreateSnapshotResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-    HttpRange, PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions,
+    BlobClientGetPropertiesResultHeaders, BlobType, HttpRange, PageBlobClientCreateOptions,
     PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
     PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
     SequenceNumberActionType,
@@ -264,68 +263,6 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 }
 
 #[recorded::test]
-async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let page_blob_client = blob_client.page_blob_client();
-    page_blob_client.create(1024, None).await?;
-
-    // Empty Page Range Scenario
-    let get_page_ranges_response = page_blob_client.get_page_ranges(None).await?;
-    // Assert
-    let page_ranges = get_page_ranges_response.into_model()?;
-    let page_range = page_ranges.page_range;
-    assert!(page_range.is_none());
-
-    // Non-Empty Page Range Scenario
-    let data = vec![b'A'; 512];
-    page_blob_client
-        .upload_pages(
-            RequestContent::from(data.clone()),
-            512,
-            HttpRange::new(0, 512),
-            None,
-        )
-        .await?;
-    let get_page_ranges_response = page_blob_client.get_page_ranges(None).await?;
-    // Assert
-    let page_ranges = get_page_ranges_response.into_model()?;
-    let page_range = page_ranges.page_range.unwrap();
-    for range in page_range {
-        assert_eq!(0, range.start.unwrap());
-        assert_eq!(511, range.end.unwrap());
-    }
-
-    // Range Filter Scenario
-    page_blob_client
-        .upload_pages(
-            RequestContent::from(vec![b'B'; 512]),
-            512,
-            HttpRange::new(512, 512),
-            None,
-        )
-        .await?;
-    let response = page_blob_client
-        .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-            range: Some(HttpRange::new(0, 512)),
-            ..Default::default()
-        }))
-        .await?
-        .into_model()?;
-    // Assert
-    let page_range = response.page_range.unwrap();
-    assert_eq!(1, page_range.len());
-    assert_eq!(0, page_range[0].start.unwrap());
-    assert_eq!(511, page_range[0].end.unwrap());
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
 async fn test_create_page_blob_content_headers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -483,50 +420,6 @@ async fn test_upload_pages_sequence_number_condition(
             }),
         )
         .await?;
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_get_page_ranges_snapshot(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let page_blob_client = blob_client.page_blob_client();
-
-    // Create and fill a page blob, then snapshot it
-    page_blob_client.create(512, None).await?;
-    page_blob_client
-        .upload_pages(
-            RequestContent::from(vec![b'A'; 512]),
-            512,
-            HttpRange::new(0, 512),
-            None,
-        )
-        .await?;
-    let snapshot_id = blob_client
-        .create_snapshot(None)
-        .await?
-        .snapshot()?
-        .unwrap();
-
-    // Snapshot Query Scenario
-    let response = page_blob_client
-        .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-            snapshot: Some(snapshot_id),
-            ..Default::default()
-        }))
-        .await?
-        .into_model()?;
-
-    // Assert
-    let page_range = response.page_range.unwrap();
-    assert_eq!(1, page_range.len());
-    assert_eq!(0, page_range[0].start.unwrap());
-    assert_eq!(511, page_range[0].end.unwrap());
 
     container_client.delete(None).await?;
     Ok(())

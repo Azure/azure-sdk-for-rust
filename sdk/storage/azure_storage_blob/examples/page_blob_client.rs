@@ -8,9 +8,8 @@
 //! demonstrates:
 //! 1. Create a page blob (512 bytes) with the "if not exists" guard.
 //! 2. Upload a page of data using `HttpRange`.
-//! 3. List the valid page ranges to confirm the write.
-//! 4. Clear a page range to zero out the data.
-//! 5. Resize the blob to a larger size.
+//! 3. Clear a page range to zero out the data.
+//! 4. Resize the blob to a larger size.
 //!
 //! # Prerequisites
 //!
@@ -70,24 +69,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     println!("Uploaded page at bytes 0-511");
 
-    // List the valid (non-zero) page ranges.
-    let page_ranges = page_blob_client.get_page_ranges(None).await?.into_model()?;
-    let ranges = page_ranges.page_range.as_deref().unwrap_or(&[]);
-    println!("Valid page ranges ({}):", ranges.len());
-    for r in ranges {
-        println!("  start={:?}, end={:?}", r.start, r.end);
-    }
-
     // Clear the page range (zeroes out those bytes).
     page_blob_client
         .clear_pages(HttpRange::new(0, 512), None)
         .await?;
     println!("Cleared page range 0-511");
-
-    // Verify the page range is gone after clearing.
-    let page_ranges = page_blob_client.get_page_ranges(None).await?.into_model()?;
-    let ranges = page_ranges.page_range.as_deref().unwrap_or(&[]);
-    println!("Valid page ranges after clear: {}", ranges.len());
 
     // Resize the blob to 1024 bytes (must be a multiple of 512).
     page_blob_client.resize(1024, None).await?;
