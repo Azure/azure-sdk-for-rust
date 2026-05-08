@@ -266,6 +266,13 @@ pub struct QueryOptions {
 
     /// Session token for session-consistent queries.
     pub session_token: Option<SessionToken>,
+
+    /// Maximum number of items to return per page.
+    ///
+    /// When set, the server will return at most this many items in each response page.
+    /// This is useful for controlling memory usage and for testing pagination behavior.
+    /// If not set, the server uses its default page size.
+    pub max_item_count: Option<u32>,
 }
 
 impl QueryOptions {
@@ -278,6 +285,12 @@ impl QueryOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
+        self
+    }
+
+    /// Sets the maximum number of items to return per page.
+    pub fn with_max_item_count(mut self, max_item_count: u32) -> Self {
+        self.max_item_count = Some(max_item_count);
         self
     }
 }

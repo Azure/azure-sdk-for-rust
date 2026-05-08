@@ -49,7 +49,7 @@ use std::borrow::Cow;
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default(), None)
+///     .execute_point_operation(CosmosOperation::read_item(item), OperationOptions::default())
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -344,10 +344,9 @@ impl CosmosOperation {
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
     /// let result = driver
-    ///     .execute_operation(
+    ///     .execute_point_operation(
     ///         CosmosOperation::delete_container(container),
     ///         OperationOptions::default(),
-    ///         None,
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -430,11 +429,10 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(
+    ///     .execute_point_operation(
     ///         CosmosOperation::create_item(item)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
     ///         OperationOptions::default(),
-    ///         None,
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -476,7 +474,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default(), None)
+    ///     .execute_point_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }

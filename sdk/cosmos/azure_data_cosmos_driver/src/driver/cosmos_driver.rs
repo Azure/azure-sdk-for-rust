@@ -986,19 +986,21 @@ impl CosmosDriver {
 
     /// Executes a Cosmos DB operation.
     ///
-    /// This method advances the operation by one page. If a `plan` is provided,
-    /// the operation uses that plan's pipeline to execute the next page. If
-    /// `plan` is `None`, the operation is planned first (via
-    /// [`plan_operation`](Self::plan_operation)) and then the first page is
-    /// executed.
+    /// This method executes an operation by planning it first and then immediately
+    /// executing one page. This is sufficient for operations with trivial plans,
+    /// such as point operations and single-partition queries.
+    /// However, if planning is complicated and multiple pages are going to be requested,
+    /// in that case, the caller should use the [`plan_operation`](Self::plan_operation)
+    /// method to build a [`OperationPlan`] and then call [`execute_plan`](Self::execute_plan)
+    /// for each page of the plan.
+    /// Retaining the [`OperationPlan`] allows the caller to resume execution from a
+    /// previous page, maintaining all state, and avoiding unnecessary replanning
+    /// and continuation token management.
     ///
     /// # Parameters
     ///
     /// - `operation`: The operation to execute.
     /// - `options`: Operation-specific options that override driver and runtime defaults.
-    /// - `plan`: An optional mutable reference to a pre-built [`OperationPlan`].
-    ///   Pass `Some` to advance a multi-page feed pipeline. Pass `None` to plan
-    ///   and execute in a single call (the common path for point operations).
     ///
     /// # Returns
     ///
@@ -1043,7 +1045,47 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-        plan: Option<&mut OperationPlan>,
+    ) -> azure_core::Result<Option<crate::models::CosmosResponse>> {
+        let mut plan = self.plan_operation(&operation, &options).await?;
+        self.execute_plan(&mut plan, operation.container().cloned(), options)
+            .await
+    }
+
+    /// Executes a point operation (read/write item, read database, etc.) without a pre-planned pipeline.
+    ///
+    /// This is a convenience method around [`execute_operation`] that asserts at debug-time that the operation
+    /// does not return an empty page.
+    pub async fn execute_point_operation(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
+    ) -> azure_core::Result<crate::models::CosmosResponse> {
+        match self.execute_operation(operation, options).await {
+            Ok(Some(r)) => Ok(r),
+            Ok(None) => {
+                if cfg!(debug_assertions) {
+                    panic!("point operation returned an empty page")
+                }
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "internal error: point operation returned an empty page",
+                ))
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Executes a single page of a pre-planned operation using the given plan and options.
+    ///
+    /// This function mutates the plan in place to account for any changes that occur during execution
+    /// (e.g. topology repairs, advancing page state, etc.).
+    /// After this returns, the plan may be executed again to fetch the next page of results, if any.
+    /// Once this returns `None`, there are no more pages to fetch, and the operation is complete.
+    pub async fn execute_plan(
+        &self,
+        plan: &mut OperationPlan,
+        container: Option<ContainerReference>,
+        options: OperationOptions,
     ) -> azure_core::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -1062,76 +1104,18 @@ impl CosmosDriver {
             options: &options,
         };
 
-        match plan {
-            Some(plan) => {
-                // Caller provided a pre-built plan: use its pipeline with a real
-                // topology provider for split recovery.
-                let container = operation.container();
-                match container {
-                    Some(container_ref) => {
-                        let mut topology = CachedTopologyProvider::new(
-                            &self.pk_range_cache,
-                            container_ref.clone(),
-                            |container, continuation| {
-                                self.fetch_partition_key_ranges(container, continuation)
-                            },
-                        );
-                        let mut context = PipelineContext::new(&mut executor, &mut topology);
-                        plan.pipeline.next_page(&mut context).await
-                    }
-                    None => {
-                        // Non-container operations (metadata, etc.) don't need topology.
-                        let mut topology = StubTopologyProvider;
-                        let mut context = PipelineContext::new(&mut executor, &mut topology);
-                        plan.pipeline.next_page(&mut context).await
-                    }
-                }
-            }
-            None => {
-                // No plan provided: plan the operation first, then execute one page.
-                let container = operation.container().cloned();
-                let mut owned_plan = self.plan_operation(operation, &options).await?;
+        let mut topology = match container {
+            Some(c) => Box::new(CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                c,
+                |container, continuation| self.fetch_partition_key_ranges(container, continuation),
+            )) as Box<dyn TopologyProvider>,
+            None => Box::new(StubTopologyProvider) as Box<dyn TopologyProvider>,
+        };
 
-                match container {
-                    Some(container_ref) => {
-                        let mut topology = CachedTopologyProvider::new(
-                            &self.pk_range_cache,
-                            container_ref,
-                            |container, continuation| {
-                                self.fetch_partition_key_ranges(container, continuation)
-                            },
-                        );
-                        let mut context = PipelineContext::new(&mut executor, &mut topology);
-                        owned_plan.pipeline.next_page(&mut context).await
-                    }
-                    None => {
-                        let mut topology = StubTopologyProvider;
-                        let mut context = PipelineContext::new(&mut executor, &mut topology);
-                        owned_plan.pipeline.next_page(&mut context).await
-                    }
-                }
-            }
-        }
-    }
+        let mut context = PipelineContext::new(&mut executor, topology.as_mut());
 
-    /// Convenience helper for internal point operations.
-    ///
-    /// Plans and executes in one call, asserting that a response is produced.
-    /// Used by internal metadata-fetching helpers that always expect a single
-    /// response page.
-    async fn execute_point_operation(
-        &self,
-        operation: CosmosOperation,
-        options: OperationOptions,
-    ) -> azure_core::Result<CosmosResponse> {
-        self.execute_operation(operation, options, None)
-            .await?
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "point operation completed without producing a response",
-                )
-            })
+        plan.pipeline.next_page(&mut context).await
     }
 
     async fn execute_operation_direct(
@@ -1273,7 +1257,7 @@ impl CosmosDriver {
     /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default(), None)
+    ///     .execute_point_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -1344,9 +1328,20 @@ impl CosmosDriver {
     /// query plan from the backend and builds a fan-out pipeline.
     pub async fn plan_operation(
         &self,
-        operation: CosmosOperation,
+        operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> azure_core::Result<OperationPlan> {
+        if !self.initialized.load(Ordering::Acquire) {
+            let endpoint = AccountEndpoint::from(self.options.account());
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                ),
+            ));
+        }
+
         // Trivial plan: anything that isn't a cross-partition query.
         if operation.is_trivial() {
             let pipeline = planner::build_trivial_pipeline(&operation)?;
@@ -2170,15 +2165,17 @@ mod tests {
         );
     }
 
-    /// Compile-time assertion that the `execute_operation` future is `Send`.
+    /// Compile-time assertion that functions are send.
     ///
     /// This function is never called; it only needs to compile.
-    /// If the future returned by `execute_operation` is not `Send`, compilation will fail.
     #[allow(dead_code, unreachable_code, unused_variables)]
-    fn _assert_execute_operation_future_is_send() {
+    fn _assert_functions_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let driver: &CosmosDriver = todo!();
-        assert_send(driver.execute_operation(todo!(), todo!(), todo!()));
+        assert_send(driver.execute_operation(todo!(), todo!()));
+        assert_send(driver.execute_point_operation(todo!(), todo!()));
+        assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
+        assert_send(driver.plan_operation(todo!(), todo!()));
     }
 
     // Account properties with two readable locations for regional fallback tests.

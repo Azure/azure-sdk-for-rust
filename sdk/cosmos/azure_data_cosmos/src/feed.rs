@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{pin::Pin, task};
+use std::{pin::Pin, sync::Arc, task};
 
 use azure_core::http::{
     headers::Headers,
     pager::{PagerContinuation, PagerResult},
 };
-use azure_data_cosmos_driver::models::CosmosResponseHeaders;
+use azure_data_cosmos_driver::{
+    models::CosmosResponseHeaders, options::OperationOptions, CosmosDriver, OperationPlan,
+};
 use futures::stream::BoxStream;
 use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
@@ -273,9 +275,7 @@ pub struct FeedItemIterator<T: Send> {
 
 impl<T: Send> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
-    pub(crate) fn new(
-        stream: impl Stream<Item = azure_core::Result<QueryFeedPage<T>>> + Send + 'static,
-    ) -> Self {
+    pub(crate) fn new(plan: OperationPlan) -> Self {
         Self {
             pages: Box::pin(stream),
             current: None,
@@ -321,6 +321,12 @@ impl<T: Send> Stream for FeedItemIterator<T> {
 }
 
 pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>);
+
+impl<T: Send> FeedPageIterator<T> {
+    pub fn new(driver: Arc<CosmosDriver>, options: OperationOptions, plan: OperationPlan) -> Self {
+        driver.execute_operation()
+    }
+}
 
 impl<T: Send> Stream for FeedPageIterator<T> {
     type Item = azure_core::Result<QueryFeedPage<T>>;

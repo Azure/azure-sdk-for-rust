@@ -13,8 +13,8 @@ use crate::{
     },
     resource_context::ResourceLink,
     transactional_batch::TransactionalBatch,
-    DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
-    Query, ReplaceContainerOptions, ThroughputOptions,
+    DeleteContainerOptions, FeedItemIterator, FeedPageIterator, ItemReadOptions, ItemWriteOptions,
+    PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions,
 };
 use std::sync::Arc;
 
@@ -736,7 +736,7 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
-    pub fn query_items<T: DeserializeOwned + Send + 'static>(
+    pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
@@ -748,21 +748,22 @@ impl ContainerClient {
 
         let driver_pk = partition_key.into_driver_partition_key();
         let container_ref = self.container_ref.clone();
-        let factory = move || {
-            CosmosOperation::query_items(
-                container_ref.clone(),
-                OperationTarget::PartitionKey(driver_pk.clone()),
-            )
-        };
 
-        crate::query::executor::QueryExecutor::new(
-            self.context.driver.clone(),
-            factory,
-            query,
-            options.operation,
-            options.session_token,
-        )
-        .into_stream()
+        // The first operation to execute in the query items flow.
+        // This holds the session token provided by the user, if any.
+        let mut initial_operation = CosmosOperation::query_items(
+            container_ref.clone(),
+            OperationTarget::PartitionKey(driver_pk.clone()),
+        );
+        if let Some(token) = options.session_token {
+            initial_operation = initial_operation.with_session_token(token);
+        }
+        let plan = self
+            .context
+            .driver
+            .plan_operation(&initial_operation, &options.operation)
+            .await?;
+        Ok(FeedPageIterator::new(options.operation, plan))
     }
 
     /// Executes a transactional batch of operations.
