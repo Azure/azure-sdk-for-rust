@@ -18,9 +18,9 @@ cargo add azure_security_keyvault_certificates
 
 ### Prerequisites
 
-* An [Azure subscription].
-* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
-* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
+- An [Azure subscription].
+- An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+- Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
@@ -99,12 +99,12 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The following section provides several code snippets using a `CertificateClient` like we [instantiated above](#instantiate-a-client):
 
-* [Create a certificate](#create-a-certificate)
-* [Retrieve a certificate](#retrieve-a-certificate)
-* [Update an existing certificate](#update-an-existing-certificate)
-* [Delete a certificate](#delete-a-certificate)
-* [List certificates](#list-certificates)
-* [Key operations using certificates](#key-operations-using-certificates)
+- [Create a certificate](#create-a-certificate)
+- [Retrieve a certificate](#retrieve-a-certificate)
+- [Update an existing certificate](#update-an-existing-certificate)
+- [Delete a certificate](#delete-a-certificate)
+- [List certificates](#list-certificates)
+- [Key operations using certificates](#key-operations-using-certificates)
 
 ### Create a certificate
 
@@ -211,7 +211,7 @@ This example lists all the certificates in the specified Azure Key Vault.
 use azure_security_keyvault_certificates::ResourceExt;
 use futures::TryStreamExt;
 
-let mut pager = client.list_certificate_properties(None)?.into_stream();
+let mut pager = client.list_certificate_properties(None)?;
 while let Some(certificate) = pager.try_next().await? {
     // Get the certificate name from the ID.
     let name = certificate.resource_id()?.name;
