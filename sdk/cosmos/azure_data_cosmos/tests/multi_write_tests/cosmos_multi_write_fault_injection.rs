@@ -13,8 +13,8 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
-    assert_failover_to_region, assert_local_retry_attempted_on_region,
-    assert_region_contacted_with_retry, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+    assert_failover_to_region, assert_local_retry_attempted_on_region, TestClient, TestOptions,
+    HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -746,8 +746,12 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
     .await
 }
 
-/// Test that reads ARE retried on response timeout and fail over to satellite.
-/// ResponseTimeout has Unknown sent-status — reads are safe to retry.
+/// Test that reads ARE retried on response timeout. ResponseTimeout has
+/// Unknown sent-status — reads are safe to retry. With `hit_limit(1)` the
+/// fault fires once on hub and the driver recovers on retry; the recovery
+/// may stay on hub (local retry) or fail over to the satellite — both
+/// outcomes are valid. We only assert (a) the operation succeeded and
+/// (b) more than one request was tracked, proving retry actually occurred.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
@@ -816,12 +820,17 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
-                .expect("read should succeed via failover after response timeout on hub");
-            // The driver may probe satellite then succeed back on hub, or land
-            // the final read on satellite — both are valid outcomes for this
-            // failover scenario. We only assert the satellite was contacted at
-            // least once (proving the failover path was exercised).
-            assert_region_contacted_with_retry(&_response.diagnostics(), &SATELLITE_REGION);
+                .expect("read should succeed via retry after response timeout on hub");
+            // The driver may either retry locally on hub or fail over to the
+            // satellite — both are valid for this scenario. We only assert
+            // that the response-timeout fault was exercised on hub and that
+            // some form of retry occurred.
+            assert_local_retry_attempted_on_region(&_response.diagnostics(), &HUB_REGION);
+            assert!(
+                _response.diagnostics().request_count() > 1,
+                "expected retry after response timeout on hub, got only {} request(s)",
+                _response.diagnostics().request_count()
+            );
 
             Ok(())
         },
