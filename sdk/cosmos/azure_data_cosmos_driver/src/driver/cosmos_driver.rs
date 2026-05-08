@@ -8,8 +8,10 @@ use crate::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
     driver::{
+        cache::{PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
-            planner, PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget,
+            planner, query_plan::QueryPlan, CachedTopologyProvider, OperationPlan,
+            PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget,
             ResolvedRange, TopologyProvider,
         },
         pipeline::operation_pipeline::OperationOverrides,
@@ -95,6 +97,7 @@ impl TopologyProvider for StubTopologyProvider {
     fn resolve_ranges<'a>(
         &'a mut self,
         _range: &'a crate::models::FeedRange,
+        _refresh: super::dataflow::PartitionRoutingRefresh,
     ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
         Box::pin(async {
             Err(azure_core::Error::with_message(
@@ -134,6 +137,8 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// Cache for partition key ranges, used for topology resolution during planning.
+    pk_range_cache: PartitionKeyRangeCache,
 }
 
 impl CosmosDriver {
@@ -833,6 +838,7 @@ impl CosmosDriver {
             location_state_store,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
+            pk_range_cache: PartitionKeyRangeCache::new(),
         }
     }
 
@@ -1043,7 +1049,7 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        let mut pipeline = planner::plan_pipeline(&operation)?;
+        let mut pipeline = planner::build_trivial_pipeline(&operation)?;
 
         let mut executor = DriverRequestExecutor {
             driver: self,
@@ -1262,6 +1268,105 @@ impl CosmosDriver {
             .await?;
 
         Ok(resolved.as_ref().clone())
+    }
+
+    /// Plans the execution of a Cosmos DB operation.
+    ///
+    /// For trivial operations (non-query or single-partition), returns a
+    /// singleton pipeline immediately. For cross-partition queries, fetches a
+    /// query plan from the backend and builds a fan-out pipeline.
+    pub async fn plan_operation(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+    ) -> azure_core::Result<OperationPlan> {
+        // Trivial plan: anything that isn't a cross-partition query.
+        if operation.is_trivial() {
+            let pipeline = planner::build_trivial_pipeline(&operation)?;
+            return Ok(OperationPlan::new(pipeline));
+        }
+
+        // Cross-partition query: fetch query plan from backend.
+        let container = operation.container().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "cross-partition query requires a container reference",
+            )
+        })?;
+
+        let query_plan_operation = CosmosOperation::query_plan(container.clone())
+            .with_body(operation.body().unwrap_or_default().to_vec());
+
+        let response = self
+            .execute_operation_direct(
+                &query_plan_operation,
+                OperationOverrides::default(),
+                options,
+            )
+            .await?;
+
+        let query_plan: QueryPlan = serde_json::from_slice(response.body()).map_err(|e| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!("failed to parse query plan response: {e}"),
+            )
+        })?;
+
+        // Build the fan-out pipeline using the query plan.
+        let container_ref = container.clone();
+        let mut topology = CachedTopologyProvider::new(
+            &self.pk_range_cache,
+            container_ref,
+            |container, continuation| self.fetch_partition_key_ranges(container, continuation),
+        );
+
+        let pipeline = planner::build_sequential_drain(&query_plan, &mut topology, &operation).await?;
+        Ok(OperationPlan::new(pipeline))
+    }
+
+    /// Fetches partition key ranges from the service for the given container.
+    ///
+    /// Used as the fetch function for [`CachedTopologyProvider`].
+    async fn fetch_partition_key_ranges(
+        &self,
+        container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        let operation = CosmosOperation::read_partition_key_ranges(container);
+        let overrides = OperationOverrides {
+            continuation,
+            ..Default::default()
+        };
+        let options = OperationOptions::default();
+
+        let response = self
+            .execute_operation_direct(&operation, overrides, &options)
+            .await
+            .ok()?;
+
+        let not_modified = u16::from(response.status().status_code()) == 304;
+        let etag_continuation = response
+            .headers()
+            .etag
+            .as_ref()
+            .map(|e| e.as_str().to_owned());
+
+        if not_modified {
+            return Some(PkRangeFetchResult {
+                ranges: Vec::new(),
+                continuation: etag_continuation,
+                not_modified: true,
+            });
+        }
+
+        let pk_ranges_response: crate::models::partition_key_range::PkRangesResponse =
+            serde_json::from_slice(response.body()).ok()?;
+
+        Some(PkRangeFetchResult {
+            ranges: pk_ranges_response.partition_key_ranges,
+            continuation: etag_continuation,
+            not_modified: false,
+        })
     }
 }
 

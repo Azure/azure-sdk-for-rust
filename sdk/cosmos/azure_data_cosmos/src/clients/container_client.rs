@@ -23,7 +23,7 @@ use crate::handler::container_connection::ContainerConnection;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_data_cosmos_driver::models::{
     effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
-    CosmosOperation, ItemReference, PartitionKeyKind,
+    CosmosOperation, ItemReference, OperationTarget, PartitionKeyKind,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
@@ -740,8 +740,12 @@ impl ContainerClient {
 
         let driver_pk = partition_key.into_driver_partition_key();
         let container_ref = self.container_ref.clone();
-        let factory =
-            move || CosmosOperation::query_items(container_ref.clone(), driver_pk.clone());
+        let factory = move || {
+            CosmosOperation::query_items(
+                container_ref.clone(),
+                OperationTarget::PartitionKey(driver_pk.clone()),
+            )
+        };
 
         crate::query::executor::QueryExecutor::new(
             self.context.driver.clone(),

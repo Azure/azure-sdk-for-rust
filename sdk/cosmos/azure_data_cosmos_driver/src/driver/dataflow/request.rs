@@ -112,6 +112,10 @@ impl PipelineNode for Request {
     fn children(&self) -> ChildNodes<'_> {
         ChildNodes::None
     }
+
+    fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
+        Vec::new()
+    }
 }
 impl Request {
     async fn handle_partition_topology_change(
@@ -159,7 +163,9 @@ impl Request {
         context: &mut PipelineContext<'_>,
         range: &FeedRange,
     ) -> azure_core::Result<PageResult> {
-        let resolved = context.resolve_ranges(range).await?;
+        let resolved = context
+            .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
+            .await?;
 
         let replacement_nodes: Vec<Box<dyn PipelineNode>> = resolved
             .into_iter()
@@ -495,7 +501,7 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, &mut topology);
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert!(err.to_string().contains("topology fetch failed"));
+        assert_eq!(err.to_string(), "topology fetch failed");
     }
 
     #[tokio::test]

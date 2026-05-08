@@ -5,18 +5,40 @@
 //!
 //! The planner validates an operation's target against its resource type and
 //! constructs the appropriate dataflow [`Pipeline`].
+//!
+//! For cross-partition queries, [`build_sequential_drain`] consumes a backend
+//! [`QueryPlan`](super::query_plan::QueryPlan) and resolves the query's EPK
+//! ranges against the current topology to produce a fan-out pipeline.
 
-use crate::models::{CosmosOperation, OperationTarget};
+use crate::models::{
+    effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange, OperationTarget,
+};
 
-use super::{Pipeline, Request, RequestTarget};
+use super::{
+    query_plan::{QueryInfo, QueryPlan},
+    PartitionRoutingRefresh, Pipeline, PipelineNode, Request, RequestTarget, SequentialDrain,
+    TopologyProvider,
+};
 
-/// Validates and builds a [`Pipeline`] for the given operation.
+/// Builds a single-node [`Pipeline`] for a trivial operation.
 ///
-/// This is the "Planning" phase of operation execution. It:
-/// 1. Validates that the operation's target is compatible with its resource type.
-/// 2. Maps the operation target to a pipeline node tree (currently a single
-///    [`Request`] leaf node for point and single-partition operations).
-pub(crate) fn plan_pipeline(operation: &CosmosOperation) -> azure_core::Result<Pipeline> {
+/// Trivial operations are those that can be satisfied by a single request to
+/// one partition (point reads, single-partition queries, metadata operations).
+/// Use [`CosmosOperation::is_trivial`] to check eligibility before calling.
+///
+/// # Panics (debug builds)
+///
+/// Debug-asserts that the operation is indeed trivial. In release builds,
+/// returns an error if a non-trivial operation (e.g. a cross-partition query)
+/// is passed.
+pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core::Result<Pipeline> {
+    debug_assert!(
+        operation.is_trivial(),
+        "build_trivial_pipeline called with non-trivial operation: {:?} targeting {:?}",
+        operation.operation_type(),
+        operation.target(),
+    );
+
     let resource_type = operation.resource_type();
     let target = operation.target();
 
@@ -36,14 +58,113 @@ pub(crate) fn plan_pipeline(operation: &CosmosOperation) -> azure_core::Result<P
         OperationTarget::FeedRange(_) => {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                "FeedRange targeting is not yet implemented; \
-                 fan-out pipeline planning requires partition resolution",
+                "FeedRange targeting requires a fan-out pipeline; \
+                 use plan_operation for cross-partition queries",
             ));
         }
     };
 
     let root = Request::new(operation.clone(), request_target);
     Ok(Pipeline::new(Box::new(root)))
+}
+
+/// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.
+///
+/// Produces either a single [`Request`] leaf (when planning resolves to a
+/// single physical partition) or a [`SequentialDrain`] over one `Request` per
+/// resolved range. Other cross-partition strategies (streaming `ORDER BY`,
+/// hybrid search, read-many, etc.) will live as sibling functions.
+///
+/// This function:
+/// 1. Validates that the query plan contains no unsupported features (no
+///    top/limit, no ordering, no hybrid search, no aggregates).
+/// 2. Converts the plan's `queryRanges` to [`FeedRange`]s and resolves them
+///    against the current partition topology.
+/// 3. Creates a [`Request`] node for each resolved range and bundles them in a
+///    [`SequentialDrain`].
+pub(crate) async fn build_sequential_drain(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &CosmosOperation,
+) -> azure_core::Result<Pipeline> {
+    validate_query_plan(query_plan)?;
+
+    // Convert query ranges to FeedRanges and resolve against topology.
+    let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    for query_range in &query_plan.query_ranges {
+        let min = EffectivePartitionKey::from(query_range.min.as_str());
+        let max = EffectivePartitionKey::from(query_range.max.as_str());
+        let feed_range = FeedRange::new(min, max);
+        let resolved = topology_provider
+            .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
+            .await?;
+
+        for resolved_range in resolved {
+            let target = RequestTarget::EffectivePartitionKeyRange {
+                range: resolved_range.range,
+                partition_key_range_id: resolved_range.partition_key_range_id,
+            };
+            request_nodes.push(Box::new(Request::new(operation.clone(), target)));
+        }
+    }
+
+    // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
+
+    if request_nodes.is_empty() {
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "query plan produced no partition ranges to query",
+        ));
+    }
+
+    let root: Box<dyn PipelineNode> = if request_nodes.len() == 1 {
+        request_nodes.into_iter().next().unwrap()
+    } else {
+        Box::new(SequentialDrain::new(request_nodes))
+    };
+
+    Ok(Pipeline::new(root))
+}
+
+/// Validates that the query plan does not require features we don't yet support.
+fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
+    if plan.hybrid_search_query_info.is_some() {
+        return Err(unsupported_feature("hybrid search queries"));
+    }
+
+    if let Some(info) = &plan.query_info {
+        validate_query_info(info)?;
+    }
+
+    Ok(())
+}
+
+fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
+    if info.top.is_some() {
+        return Err(unsupported_feature("TOP clause in cross-partition queries"));
+    }
+    if info.limit.is_some() {
+        return Err(unsupported_feature(
+            "LIMIT clause in cross-partition queries",
+        ));
+    }
+    if !info.order_by.is_empty() {
+        return Err(unsupported_feature("ORDER BY in cross-partition queries"));
+    }
+    if !info.aggregates.is_empty() {
+        return Err(unsupported_feature("aggregates in cross-partition queries"));
+    }
+    if !info.group_by_expressions.is_empty() {
+        return Err(unsupported_feature("GROUP BY in cross-partition queries"));
+    }
+    Ok(())
+}
+
+fn unsupported_feature(feature: &str) -> azure_core::Error {
+    azure_core::Error::with_message(
+        azure_core::error::ErrorKind::Other,
+        format!("unsupported query feature: {feature}"),
+    )
 }
 
 fn target_description(target: &OperationTarget) -> &'static str {
@@ -58,11 +179,16 @@ fn target_description(target: &OperationTarget) -> &'static str {
 mod tests {
     use std::borrow::Cow;
 
+    use futures::FutureExt as _;
+
     use super::*;
-    use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, DatabaseReference,
-        ItemReference, OperationType, PartitionKey, PartitionKeyDefinition, ResourceType,
-        SystemProperties,
+    use crate::{
+        driver::dataflow::{mocks::*, query_plan::QueryRange, ResolvedRange},
+        models::{
+            effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
+            ContainerReference, DatabaseReference, ItemReference, OperationType, PartitionKey,
+            PartitionKeyDefinition, ResourceType, SystemProperties,
+        },
     };
 
     fn test_account() -> AccountReference {
@@ -99,12 +225,20 @@ mod tests {
         )
     }
 
-    // --- plan_pipeline tests ---
+    fn cross_partition_query_operation() -> CosmosOperation {
+        CosmosOperation::query_items(
+            test_container(),
+            OperationTarget::FeedRange(FeedRange::full()),
+        )
+        .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+    }
+
+    // --- build_trivial_pipeline tests ---
 
     #[test]
     fn plans_non_partitioned_pipeline_for_database_read() {
         let op = CosmosOperation::read_database(test_database());
-        let pipeline = plan_pipeline(&op).unwrap();
+        let pipeline = build_trivial_pipeline(&op).unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(*request.target(), RequestTarget::NonPartitioned);
@@ -117,7 +251,7 @@ mod tests {
         let pk = PartitionKey::from("pk-value");
         let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let op = CosmosOperation::read_item(item);
-        let pipeline = plan_pipeline(&op).unwrap();
+        let pipeline = build_trivial_pipeline(&op).unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(
@@ -131,12 +265,379 @@ mod tests {
     #[test]
     fn rejects_feed_range_target() {
         let op = CosmosOperation::read_all_items_cross_partition(test_container());
-        let result = plan_pipeline(&op);
 
-        let err = result.err().expect("expected error for FeedRange target");
-        assert!(
-            err.to_string().contains("FeedRange"),
-            "expected FeedRange error, got: {err}"
+        // In debug builds, this panics via debug_assert; in release builds it returns Err.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            build_trivial_pipeline(&op)
+        }));
+
+        match result {
+            // Panicked in debug mode (expected)
+            Err(_) if cfg!(debug_assertions) => {}
+            // Panicked in release mode (bad)
+            Err(_) => panic!("did not expect panic for FeedRange target"),
+            // Returned Err in release mode (also acceptable)
+            Ok(Err(err)) => {
+                assert_eq!(
+                    err.to_string(),
+                    "FeedRange targeting requires a fan-out pipeline; \
+                     use plan_operation for cross-partition queries"
+                );
+            }
+            _ => panic!("expected error or panic for FeedRange target"),
+        }
+    }
+
+    // --- build_sequential_drain tests ---
+
+    /// Shorthand to build a `QueryRange` from hex-prefix EPK strings.
+    fn qr(min: &str, max: &str) -> QueryRange {
+        QueryRange {
+            min: min.to_string(),
+            max: max.to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: false,
+        }
+    }
+
+    /// Shorthand to build a `ResolvedRange` from (min, max, pk_range_id).
+    fn rr(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
+        ResolvedRange {
+            partition_key_range_id: pk_range_id.to_string(),
+            range: FeedRange::new(
+                EffectivePartitionKey::from(min),
+                EffectivePartitionKey::from(max),
+            ),
+        }
+    }
+
+    /// Builds a query plan with the given query ranges (and no query info).
+    fn plan_with_ranges(ranges: Vec<QueryRange>) -> QueryPlan {
+        QueryPlan {
+            partitioned_query_execution_info_version: 1,
+            query_info: None,
+            query_ranges: ranges,
+            hybrid_search_query_info: None,
+        }
+    }
+
+    /// Asserts that the pipeline is a single `Request` targeting the expected EPK range.
+    fn assert_single_request(
+        pipeline: &Pipeline,
+        expected_min: &str,
+        expected_max: &str,
+        expected_pk_range_id: &str,
+    ) {
+        let request = pipeline
+            .root()
+            .downcast_ref::<Request>()
+            .expect("expected single Request root");
+        assert_eq!(
+            *request.target(),
+            RequestTarget::EffectivePartitionKeyRange {
+                range: FeedRange::new(
+                    EffectivePartitionKey::from(expected_min),
+                    EffectivePartitionKey::from(expected_max),
+                ),
+                partition_key_range_id: expected_pk_range_id.to_string(),
+            }
         );
+    }
+
+    /// Asserts that the pipeline is a `SequentialDrain` containing `Request` nodes
+    /// targeting the given EPK ranges (in order).
+    fn assert_drain_requests(pipeline: Pipeline, expected: &[(&str, &str, &str)]) {
+        let drain = pipeline
+            .into_root()
+            .downcast::<SequentialDrain>()
+            .expect("expected SequentialDrain root");
+        let children = drain.into_children();
+        assert_eq!(
+            children.len(),
+            expected.len(),
+            "expected {} request nodes, got {}",
+            expected.len(),
+            children.len(),
+        );
+        for (child, &(min, max, pk_range_id)) in children.into_iter().zip(expected) {
+            let request = child
+                .downcast::<Request>()
+                .expect("expected Request child node");
+            assert_eq!(
+                *request.target(),
+                RequestTarget::EffectivePartitionKeyRange {
+                    range: FeedRange::new(
+                        EffectivePartitionKey::from(min),
+                        EffectivePartitionKey::from(max),
+                    ),
+                    partition_key_range_id: pk_range_id.to_string(),
+                },
+                "mismatch for pk range {pk_range_id}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn builds_single_node_pipeline_for_one_partition() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_single_request(&pipeline, "", "FF", "pkrange-0");
+    }
+
+    #[tokio::test]
+    async fn builds_sequential_drain_for_multiple_partitions() {
+        // Query targets full range, topology has two partitions split at "80".
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
+        );
+    }
+
+    #[tokio::test]
+    async fn builds_pipeline_for_multiple_query_ranges() {
+        // Query plan specifies two disjoint query ranges; each resolves to one partition.
+        let plan = plan_with_ranges(vec![qr("", "40"), qr("80", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "40", "pkrange-A")]),
+            Ok(vec![rr("80", "FF", "pkrange-C")]),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[("", "40", "pkrange-A"), ("80", "FF", "pkrange-C")],
+        );
+    }
+
+    #[tokio::test]
+    async fn query_range_spans_multiple_topology_partitions() {
+        // A single query range [00, C0) spans three topology partitions.
+        let plan = plan_with_ranges(vec![qr("00", "C0")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("00", "40", "pkrange-1"),
+            rr("40", "80", "pkrange-2"),
+            rr("80", "C0", "pkrange-3"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[
+                ("00", "40", "pkrange-1"),
+                ("40", "80", "pkrange-2"),
+                ("80", "C0", "pkrange-3"),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn multiple_query_ranges_each_spanning_multiple_partitions() {
+        // Two query ranges, each resolving to multiple partitions. The resulting
+        // pipeline should have all resolved ranges in order.
+        let plan = plan_with_ranges(vec![qr("", "60"), qr("A0", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![
+            // First query range [, 60) spans two partitions.
+            Ok(vec![
+                rr("", "30", "pkrange-alpha"),
+                rr("30", "60", "pkrange-beta"),
+            ]),
+            // Second query range [A0, FF) spans two partitions.
+            Ok(vec![
+                rr("A0", "D0", "pkrange-gamma"),
+                rr("D0", "FF", "pkrange-delta"),
+            ]),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[
+                ("", "30", "pkrange-alpha"),
+                ("30", "60", "pkrange-beta"),
+                ("A0", "D0", "pkrange-gamma"),
+                ("D0", "FF", "pkrange-delta"),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn topology_partition_wider_than_query_range() {
+        // The topology partition [, FF) is wider than query range [20, 80).
+        // The resolved range matches the topology, not the query range.
+        let plan = plan_with_ranges(vec![qr("20", "80")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_single_request(&pipeline, "", "FF", "pkrange-wide");
+    }
+
+    #[tokio::test]
+    async fn rejects_query_plan_with_top() {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                top: Some(10),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "unsupported query feature: TOP clause in cross-partition queries"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_query_plan_with_limit() {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                limit: Some(20),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "unsupported query feature: LIMIT clause in cross-partition queries"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_query_plan_with_order_by() {
+        use super::super::query_plan::SortOrder;
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                order_by: vec![SortOrder::Ascending],
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "unsupported query feature: ORDER BY in cross-partition queries"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_query_plan_with_aggregates() {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                aggregates: vec!["Count".to_string()],
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "unsupported query feature: aggregates in cross-partition queries"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_query_plan_with_group_by() {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                group_by_expressions: vec!["c.category".to_string()],
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "unsupported query feature: GROUP BY in cross-partition queries"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_query_plan_with_hybrid_search() {
+        let plan = QueryPlan {
+            hybrid_search_query_info: Some(super::super::query_plan::HybridSearchQueryInfo {
+                global_statistics_query: "SELECT COUNT(1) FROM c".to_string(),
+                component_query_infos: vec![],
+                component_weights: vec![],
+                skip: None,
+                take: Some(10),
+                requires_global_statistics: true,
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "unsupported query feature: hybrid search queries"
+        );
+    }
+
+    #[tokio::test]
+    async fn accepts_query_plan_with_no_query_info() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        assert_single_request(&pipeline, "", "FF", "pkrange-0");
+    }
+
+    #[tokio::test]
+    async fn rejects_empty_query_ranges() {
+        let plan = plan_with_ranges(vec![]);
+        let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "query plan produced no partition ranges to query"
+        );
+    }
+
+    #[tokio::test]
+    async fn propagates_topology_resolution_error() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "topology resolution failed",
+        ))]);
+
+        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        assert_eq!(err.to_string(), "topology resolution failed");
     }
 }

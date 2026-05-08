@@ -7,8 +7,11 @@ mod drain;
 #[cfg(test)]
 pub(crate) mod mocks;
 pub(crate) mod planner;
+pub(crate) mod query_plan;
 mod request;
 mod topology;
+
+use std::ops::Index;
 
 use futures::future::BoxFuture;
 
@@ -41,16 +44,22 @@ pub(crate) trait RequestExecutor: Send {
 
 /// Resolves EPK ranges to their current physical partition key ranges.
 ///
-/// Used by pipeline nodes to recover from partition topology changes (splits).
+/// Used by pipeline nodes to recover from partition topology changes (splits)
+/// and by the planner to resolve initial query ranges.
 /// The `PartitionKeyRangeCache` implements this trait in production.
 pub(crate) trait TopologyProvider: Send {
     /// Resolves the physical partitions that currently cover the given EPK range.
+    ///
+    /// `refresh` controls whether the topology cache is refreshed before resolving:
+    /// callers use [`PartitionRoutingRefresh::ForceRefresh`] for split recovery
+    /// and [`PartitionRoutingRefresh::UseCached`] for planning.
     ///
     /// Returns partition key range IDs paired with their EPK sub-ranges, ordered
     /// by EPK from smallest to largest.
     fn resolve_ranges<'a>(
         &'a mut self,
         range: &'a FeedRange,
+        refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>>;
 }
 
@@ -96,8 +105,9 @@ impl<'a> PipelineContext<'a> {
     async fn resolve_ranges(
         &mut self,
         range: &FeedRange,
+        refresh: PartitionRoutingRefresh,
     ) -> azure_core::Result<Vec<ResolvedRange>> {
-        self.topology_provider.resolve_ranges(range).await
+        self.topology_provider.resolve_ranges(range, refresh).await
     }
 }
 
@@ -163,6 +173,24 @@ impl<'a> ChildNodes<'a> {
     }
 }
 
+impl<'a> Index<usize> for ChildNodes<'a> {
+    type Output = Box<dyn PipelineNode>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match self {
+            ChildNodes::None => panic!("index out of bounds"),
+            ChildNodes::Slice(s) => &s[index],
+            ChildNodes::Split(a, b) => {
+                if index < a.len() {
+                    &a[index]
+                } else {
+                    &b[index - a.len()]
+                }
+            }
+        }
+    }
+}
+
 impl<'a> IntoIterator for ChildNodes<'a> {
     type Item = &'a Box<dyn PipelineNode>;
     type IntoIter = std::iter::Chain<
@@ -195,6 +223,9 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
 
     /// Returns the node's children for diagnostic inspection.
     fn children(&self) -> ChildNodes<'_>;
+
+    /// Consumes this node and returns its children as a `Vec`.
+    fn into_children(self) -> Vec<Box<dyn PipelineNode>>;
 }
 
 impl dyn PipelineNode {
@@ -202,11 +233,22 @@ impl dyn PipelineNode {
     pub(crate) fn downcast_ref<T: PipelineNode>(&self) -> Option<&T> {
         (self as &dyn std::any::Any).downcast_ref::<T>()
     }
+
+    /// Downcasts this node to a concrete type.
+    pub(crate) fn downcast<T: PipelineNode>(self: Box<Self>) -> Option<Box<T>> {
+        (self as Box<dyn std::any::Any>).downcast::<T>().ok()
+    }
 }
 
 /// A pipeline root that owns the node tree.
 pub(crate) struct Pipeline {
     root: Box<dyn PipelineNode>,
+}
+
+impl std::fmt::Debug for Pipeline {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Pipeline").finish_non_exhaustive()
+    }
 }
 
 impl Pipeline {
@@ -218,6 +260,11 @@ impl Pipeline {
     /// Returns a reference to the root node.
     pub(crate) fn root(&self) -> &dyn PipelineNode {
         &*self.root
+    }
+
+    /// Consumes the pipeline and returns the root node.
+    pub(crate) fn into_root(self) -> Box<dyn PipelineNode> {
+        self.root
     }
 
     /// Emits the next page from the root node.
@@ -239,6 +286,21 @@ impl Pipeline {
                 "root node cannot request a split; splits must be handled by a parent node",
             )),
         }
+    }
+}
+
+/// An opaque plan for executing a Cosmos DB operation.
+///
+/// Wraps the internal dataflow [`Pipeline`] to hide its structure from callers.
+/// Produced by [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation).
+pub struct OperationPlan {
+    pub(crate) pipeline: Pipeline,
+}
+
+impl OperationPlan {
+    /// Creates an operation plan wrapping the given pipeline.
+    pub(crate) fn new(pipeline: Pipeline) -> Self {
+        Self { pipeline }
     }
 }
 

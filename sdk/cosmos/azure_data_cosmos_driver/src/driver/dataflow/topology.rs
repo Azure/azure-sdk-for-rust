@@ -10,15 +10,15 @@ use crate::{
     models::{ContainerReference, FeedRange},
 };
 
-use super::{ResolvedRange, TopologyProvider};
+use super::{PartitionRoutingRefresh, ResolvedRange, TopologyProvider};
 
 /// Adapts [`PartitionKeyRangeCache`] to the [`TopologyProvider`] trait.
 ///
 /// Holds a reference to the cache, the container being queried, and a function
 /// that fetches partition key ranges from the service. On each
-/// [`resolve_ranges`](TopologyProvider::resolve_ranges) call, it force-refreshes
-/// the cache (since splits are the reason we're resolving) and converts the
-/// resulting `PartitionKeyRange` objects to [`ResolvedRange`] values.
+/// [`resolve_ranges`](TopologyProvider::resolve_ranges) call, it uses the
+/// provided [`PartitionRoutingRefresh`](super::PartitionRoutingRefresh) to
+/// decide whether to refresh the cache first.
 ///
 /// # Type parameters
 ///
@@ -54,15 +54,16 @@ where
     fn resolve_ranges<'a>(
         &'a mut self,
         range: &'a FeedRange,
+        refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+        let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
-            // Force-refresh because we're recovering from a topology change (split).
             let pk_ranges = self
                 .cache
                 .resolve_overlapping_ranges(
                     &self.container,
                     range.min_inclusive()..range.max_exclusive(),
-                    true,
+                    force_refresh,
                     &self.fetch_pk_ranges,
                 )
                 .await;
@@ -186,7 +187,10 @@ mod tests {
         let mut provider =
             CachedTopologyProvider::new(&cache, make_container(), single_range_fetch);
 
-        let ranges = provider.resolve_ranges(&FeedRange::full()).await.unwrap();
+        let ranges = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap();
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "0");
@@ -205,7 +209,10 @@ mod tests {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
-        let ranges = provider.resolve_ranges(&FeedRange::full()).await.unwrap();
+        let ranges = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap();
 
         assert_eq!(ranges.len(), 2);
         assert_eq!(ranges[0].partition_key_range_id, "1");
@@ -237,7 +244,10 @@ mod tests {
             EffectivePartitionKey::min(),
             EffectivePartitionKey::from("80"),
         );
-        let ranges = provider.resolve_ranges(&left_half).await.unwrap();
+        let ranges = provider
+            .resolve_ranges(&left_half, PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap();
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "1");
@@ -248,7 +258,10 @@ mod tests {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), three_range_fetch);
 
-        let ranges = provider.resolve_ranges(&FeedRange::full()).await.unwrap();
+        let ranges = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap();
 
         assert_eq!(ranges.len(), 3);
         assert_eq!(ranges[0].partition_key_range_id, "1");
@@ -262,11 +275,12 @@ mod tests {
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), failing_fetch);
 
         let err = provider
-            .resolve_ranges(&FeedRange::full())
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
             .await
             .unwrap_err();
-        assert!(err
-            .to_string()
-            .contains("failed to resolve partition key ranges"));
+        assert_eq!(
+            err.to_string(),
+            "failed to resolve partition key ranges from topology cache"
+        );
     }
 }

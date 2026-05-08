@@ -34,3 +34,10 @@ pub enum OperationTarget {
     /// container key space ([`FeedRange::full()`]).
     FeedRange(FeedRange),
 }
+
+impl OperationTarget {
+    /// Returns `true` if the target has a partition reference (i.e., it is not [`None`](Self::None)).
+    pub fn has_partition_reference(&self) -> bool {
+        !matches!(self, OperationTarget::None)
+    }
+}

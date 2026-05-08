@@ -175,6 +175,10 @@ impl CosmosOperation {
     ) -> Self {
         let resource_reference = resource_reference.into();
         let resource_type = resource_reference.resource_type();
+        debug_assert!(
+            !resource_type.is_partitioned() || target.has_partition_reference(),
+            "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
+        );
         Self {
             operation_type,
             resource_type,
@@ -575,37 +579,49 @@ impl CosmosOperation {
         )
     }
 
-    /// Queries items within a single partition.
+    /// Queries items in a container.
+    ///
+    /// The `target` determines partition scope: use
+    /// [`OperationTarget::PartitionKey`] for single-partition queries, or
+    /// [`OperationTarget::FeedRange`] for cross-partition queries.
     ///
     /// Use `with_body()` to provide the query JSON.
-    /// This is more efficient than cross-partition queries.
-    pub fn query_items(container: ContainerReference, partition_key: PartitionKey) -> Self {
+    pub fn query_items(container: ContainerReference, target: OperationTarget) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
-        Self::new(
-            OperationType::Query,
-            resource_ref,
-            OperationTarget::PartitionKey(partition_key),
-        )
+        Self::new(OperationType::Query, resource_ref, target)
     }
 
-    /// Queries items across all partitions.
+    /// Creates a query plan request for a container.
     ///
-    /// Use `with_body()` to provide the query JSON.
+    /// The query plan request is sent to the backend gateway to obtain
+    /// execution metadata (partition targeting, rewritten query, etc.)
+    /// before issuing the actual cross-partition query.
     ///
-    /// **Warning:** Cross-partition queries are inherently less efficient than
-    /// single-partition queries. Use `query_items()` with a partition key
-    /// when possible.
-    pub fn query_items_cross_partition(container: ContainerReference) -> Self {
+    /// Use `with_body()` to provide the query JSON (same as the original query).
+    pub(crate) fn query_plan(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
+        let mut headers = CosmosRequestHeaders::new();
+        headers.supported_query_features = Some(String::new());
         Self::new(
-            OperationType::Query,
+            OperationType::QueryPlan,
             resource_ref,
-            OperationTarget::FeedRange(crate::models::FeedRange::full()),
+            OperationTarget::None,
         )
+        .with_request_headers(headers)
+    }
+
+    /// Creates a read-feed request for partition key ranges in a container.
+    ///
+    /// Used to populate the partition key range cache for topology resolution.
+    pub(crate) fn read_partition_key_ranges(container: ContainerReference) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::PartitionKeyRange)
+            .into_feed_reference();
+        Self::new(OperationType::ReadFeed, resource_ref, OperationTarget::None)
     }
 
     /// Returns true if this is a read-only operation.
@@ -616,6 +632,21 @@ impl CosmosOperation {
     /// Returns true if this operation is idempotent.
     pub fn is_idempotent(&self) -> bool {
         self.operation_type.is_idempotent()
+    }
+
+    /// Returns true if this operation can be planned with a single-node pipeline.
+    ///
+    /// An operation is "trivial" when it does not require fan-out across multiple
+    /// physical partitions. This includes all non-query operations and queries
+    /// that target a specific logical partition key (single-partition queries)
+    /// OR queries against a non-partitioned resource (Databases, Containers, Offers, etc.).
+    ///
+    /// Cross-partition queries (those targeting a [`FeedRange`](crate::models::FeedRange))
+    /// are **not** trivial and require a backend query plan to determine the
+    /// fan-out strategy.
+    pub fn is_trivial(&self) -> bool {
+        self.operation_type != OperationType::Query
+            || !matches!(self.target(), OperationTarget::FeedRange(_))
     }
 
     // -- Offer operations --
@@ -698,10 +729,14 @@ mod tests {
 
     #[test]
     fn create_operation() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let pk = PartitionKey::from("pk1");
+        let item_ref = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::new(OperationType::Create, resource_ref, OperationTarget::None);
+        let op = CosmosOperation::new(
+            OperationType::Create,
+            resource_ref,
+            OperationTarget::PartitionKey(pk),
+        );
 
         assert_eq!(op.operation_type(), OperationType::Create);
         assert_eq!(op.resource_type(), ResourceType::Document);
@@ -711,10 +746,14 @@ mod tests {
 
     #[test]
     fn read_operation() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let pk = PartitionKey::from("pk1");
+        let item_ref = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::new(OperationType::Read, resource_ref, OperationTarget::None);
+        let op = CosmosOperation::new(
+            OperationType::Read,
+            resource_ref,
+            OperationTarget::PartitionKey(pk),
+        );
 
         assert_eq!(op.operation_type(), OperationType::Read);
         assert_eq!(op.resource_type(), ResourceType::Document);
@@ -738,22 +777,30 @@ mod tests {
 
     #[test]
     fn operation_with_body() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let pk = PartitionKey::from("pk1");
+        let item_ref = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let body = b"{\"id\":\"doc1\"}".to_vec();
-        let op = CosmosOperation::new(OperationType::Create, resource_ref, OperationTarget::None)
-            .with_body(body.clone());
+        let op = CosmosOperation::new(
+            OperationType::Create,
+            resource_ref,
+            OperationTarget::PartitionKey(pk),
+        )
+        .with_body(body.clone());
 
         assert_eq!(op.body(), Some(body.as_slice()));
     }
 
     #[test]
     fn replace_is_idempotent() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let pk = PartitionKey::from("pk1");
+        let item_ref = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::new(OperationType::Replace, resource_ref, OperationTarget::None);
+        let op = CosmosOperation::new(
+            OperationType::Replace,
+            resource_ref,
+            OperationTarget::PartitionKey(pk),
+        );
 
         assert!(!op.is_read_only());
         assert!(op.is_idempotent());
@@ -761,12 +808,27 @@ mod tests {
 
     #[test]
     fn upsert_is_not_idempotent() {
-        let item_ref =
-            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let pk = PartitionKey::from("pk1");
+        let item_ref = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
-        let op = CosmosOperation::new(OperationType::Upsert, resource_ref, OperationTarget::None);
+        let op = CosmosOperation::new(
+            OperationType::Upsert,
+            resource_ref,
+            OperationTarget::PartitionKey(pk),
+        );
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    /// Creating a partitioned operation without a partition target panics in
+    /// debug builds and silently proceeds in release builds.
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic)]
+    fn rejects_partitioned_operation_without_target() {
+        let item_ref =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let resource_ref: CosmosResourceReference = item_ref.into();
+        let _op = CosmosOperation::new(OperationType::Create, resource_ref, OperationTarget::None);
     }
 }

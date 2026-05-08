@@ -52,6 +52,10 @@ impl PipelineNode for MockLeaf {
     fn children(&self) -> ChildNodes<'_> {
         ChildNodes::None
     }
+
+    fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
+        vec![]
+    }
 }
 
 // ── Request executors ───────────────────────────────────────────────────────
@@ -117,6 +121,7 @@ impl TopologyProvider for NoopTopologyProvider {
     fn resolve_ranges<'a>(
         &'a mut self,
         _range: &'a FeedRange,
+        _refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
         Box::pin(async {
             Err(azure_core::Error::with_message(
@@ -144,6 +149,7 @@ impl TopologyProvider for MockTopologyProvider {
     fn resolve_ranges<'a>(
         &'a mut self,
         _range: &'a FeedRange,
+        _refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
         let result = self
             .results

@@ -92,6 +92,10 @@ impl PipelineNode for SequentialDrain {
             ChildNodes::Split(front, back)
         }
     }
+
+    fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
+        self.children.into_iter().collect()
+    }
 }
 
 #[cfg(test)]
@@ -184,7 +188,7 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, &mut topology);
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert!(err.to_string().contains("test error"));
+        assert_eq!(err.to_string(), "test error");
     }
 
     #[tokio::test]
@@ -347,7 +351,10 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, &mut topology);
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert!(err.to_string().contains("split retries"));
+        assert_eq!(
+            err.to_string(),
+            "exceeded maximum split retries (10) in SequentialDrain"
+        );
     }
 
     #[tokio::test]
@@ -430,7 +437,7 @@ mod tests {
             b"ok"
         );
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert!(err.to_string().contains("boom"));
+        assert_eq!(err.to_string(), "boom");
     }
 
     #[tokio::test]

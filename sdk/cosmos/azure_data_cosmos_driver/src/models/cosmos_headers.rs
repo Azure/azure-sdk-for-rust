@@ -33,6 +33,7 @@ pub(crate) mod request_header_names {
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
+    pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
 }
 
 /// Standard Cosmos DB response header names.
@@ -85,6 +86,12 @@ pub struct CosmosRequestHeaders {
     ///
     /// The driver serializes this to JSON for the header value.
     pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
+
+    /// Supported query features (`x-ms-cosmos-supported-query-features`).
+    ///
+    /// Sent on query plan requests to indicate which query capabilities the
+    /// client supports. The backend uses this to shape its response.
+    pub supported_query_features: Option<String>,
 }
 
 impl CosmosRequestHeaders {
@@ -132,6 +139,12 @@ impl CosmosRequestHeaders {
                     HeaderValue::from(json),
                 );
             }
+        }
+        if let Some(features) = self.supported_query_features.as_ref() {
+            headers.insert(
+                request_header_names::SUPPORTED_QUERY_FEATURES,
+                HeaderValue::from(features.clone()),
+            );
         }
     }
 }
@@ -529,6 +542,7 @@ mod tests {
             precondition: None,
             offer_throughput: None,
             offer_autopilot_settings: None,
+            supported_query_features: None,
         };
 
         assert_eq!(
@@ -549,6 +563,7 @@ mod tests {
             precondition: None,
             offer_throughput: None,
             offer_autopilot_settings: None,
+            supported_query_features: None,
         };
         let mut headers = Headers::new();
 
@@ -572,6 +587,7 @@ mod tests {
             precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
             offer_throughput: None,
             offer_autopilot_settings: None,
+            supported_query_features: None,
         };
         let mut headers = Headers::new();
 
@@ -595,6 +611,7 @@ mod tests {
             precondition: Some(Precondition::if_none_match(ETag::new("*"))),
             offer_throughput: None,
             offer_autopilot_settings: None,
+            supported_query_features: None,
         };
         let mut headers = Headers::new();
 
@@ -618,6 +635,7 @@ mod tests {
             precondition: None,
             offer_throughput: None,
             offer_autopilot_settings: None,
+            supported_query_features: None,
         };
         let mut headers = Headers::new();
 
@@ -641,6 +659,7 @@ mod tests {
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
             offer_throughput: None,
             offer_autopilot_settings: None,
+            supported_query_features: None,
         };
         let mut headers = Headers::new();
 

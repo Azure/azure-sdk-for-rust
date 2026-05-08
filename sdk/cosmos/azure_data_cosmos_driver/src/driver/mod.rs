@@ -21,6 +21,7 @@ mod runtime;
 pub(crate) mod transport;
 
 pub use cosmos_driver::CosmosDriver;
+pub use dataflow::OperationPlan;
 pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 
 /// Walks an error's `.source()` chain and joins all distinct messages into a

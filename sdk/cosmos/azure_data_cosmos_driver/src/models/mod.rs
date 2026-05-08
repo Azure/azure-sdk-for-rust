@@ -349,6 +349,14 @@ impl ResourceType {
         }
     }
 
+    /// Returns true if this resource type is partitioned (requires a partition key to access it).
+    pub fn is_partitioned(self) -> bool {
+        matches!(
+            self,
+            ResourceType::Document // Attachment/Conflict not yet supported
+        )
+    }
+
     /// Returns true if this resource type is metadata (not data plane items).
     pub fn is_metadata(self) -> bool {
         matches!(
