@@ -1,8 +1,10 @@
 # Release History
 
-## 0.36.0 (Unreleased)
+## 1.0.0 (Unreleased)
 
 ### Features Added
+
+- Initial stable release.
 
 ### Breaking Changes
 
