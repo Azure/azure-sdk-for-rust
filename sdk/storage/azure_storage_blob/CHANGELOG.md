@@ -23,6 +23,13 @@
 
 ### Other Changes
 
+- Added `with_tags()` helpers to set blob tags on create/upload options by accepting `BlobTags` or `HashMap<String, String>` and encoding them into the `x-ms-tags` header format:
+  - `PageBlobClientCreateOptions::with_tags()`
+  - `AppendBlobClientCreateOptions::with_tags()`
+  - `BlockBlobClientUploadOptions::with_tags()`
+  - `BlockBlobClientUploadBlobFromUrlOptions::with_tags()`
+  - `BlockBlobClientCommitBlockListOptions::with_tags()`
+
 ## 0.12.0 (2026-04-22)
 
 ### Features Added
